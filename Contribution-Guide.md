@@ -36,7 +36,7 @@ Ideally, it should be possible to perform a conversion in both ways.
 
 ### Library Structure
 
-As the library aims to support multiple algorithms, each algorithms with similar function should be grouped into individual modules/folders (e.g. Stride-Segmentation, Event Detection, Orientation Estimation, ...). Each algorithm should than be implemented in a separate file. If an algorithms requires large amount of code and multiple classes/functions, it can be refactored into its own submodule.
+As the library aims to support multiple algorithms, each algorithms with similar function should be grouped into individual modules/folders (e.g. Stride-Segmentation, Event Detection, Orientation Estimation, ...). Each algorithm should than be implemented in a separate file. If an algorithm requires large amount of code and multiple classes/functions, it can be refactored into its own submodule.
 
 ### Helper Functions and Utils
 
