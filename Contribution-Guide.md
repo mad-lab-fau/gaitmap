@@ -160,6 +160,9 @@ For algorithms (if not better name is available) we use `AuthorNameType` (e.g. `
 ### Documentation
 
 For documentation we follow [numpys guidelines](https://numpydoc.readthedocs.io/en/latest/format.html).
+If the datatype is already provided as TypeHint (see below) it does not need to be specified in the docstring again.
+However, it might be helpful to document additional type information (e.g. the shape of an array that can not be captured by the TypeHint)
+
 All user-facing functions (all functions and methods that do not have a leading underscore) are expected to be properly and fully documented for potential users.
 All private functions are expected to be documented in a way that other developer can understand them.
 Additionally each module should have a docstring explaining its content.
