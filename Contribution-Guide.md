@@ -140,7 +140,7 @@ class AuthorNameEventDetection(BaseEventDetection):
         
         Parameters
         ----------
-        data:
+        data
             Your awesome input data
 
         Returns
@@ -167,7 +167,7 @@ class AuthorNameEventDetection(BaseEventDetection):
 
         Parameters
         ----------
-        data:
+        data
             Your awesome input data
 
         Returns
