@@ -148,7 +148,8 @@ For a set of more general best practices when in comes to scientific code have a
 
 ### General Codestyle
 
-For general codestyle we follow [PEP8](https://www.python.org/dev/peps/pep-0008/)
+For general codestyle we follow [PEP8](https://www.python.org/dev/peps/pep-0008/) with a couple of exceptions (e.g. line length).
+These are documented in the linter config
 
 ### Naming
 
@@ -177,19 +178,3 @@ In case a single function from a external package is used, just import this func
 In case multiple functions from an external package are used, import this package/module under a commonly used alias (e.g. `np` for numpy, `pd` for pandas, ...)
 
 For all package internal imports, use absolut imports.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
