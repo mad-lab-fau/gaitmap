@@ -14,17 +14,17 @@ As for every project you should:
 
 The aim of the project is to provide a **library** that provides all the necessary tools to run a state-of-the-art gait analysis.
 This means this library is meant to be a toolbox and specifically **not** a single pipeline.
-In the long run, this library should include multiple algorithms that allow the user to build a multitude of different pipelines.
+In the long run, this library should include multiple algorithms that allow users to build a multitude of different pipelines.
 
-Following the reasoning, the library should not force the user into a "certain way of doing thing".
+Following the reasoning, the library should not force users into a "certain way of doing thing".
 This means specifically:
 
 1. Classes and functions should only require the bare minimum of input they require
-2. Variations in functionality should be made available to the user either by providing appropriate keyword arguments, separate methods, or even separate functions or classes.
+2. Variations in functionality should be made available to users either by providing appropriate keyword arguments, separate methods, or even separate functions or classes.
 3. Following 2., each function/class should have one function and one function only.
-In the case where "one function" consist of multiple steps (e.g. event detection consists of HS-detection, TO-detection, MS-detection) and it makes sense to group them together to provide a easier interface, the individual functions should still be available to the user to allow him to skip or modify steps as he desires.
-4. The library should not prevent the user from "intentional stupidity".
-For example, if the user decides to apply a event detection method designed to only run on data from sensors attached to the shoe on data from a hip sensor, **let him**.
+In the case where "one function" consist of multiple steps (e.g. event detection consists of HS-detection, TO-detection, MS-detection) and it makes sense to group them together to provide a easier interface, the individual functions should still be available to users to allow him to skip or modify steps as they desires.
+4. The library should not prevent users from "intentional stupidity".
+For example, if users decide to apply a event detection method designed to only run on data from sensors attached to the shoe on data from a hip sensor, **let them**.
 5. Whenever possible the library should allow to provide native datatypes as outputs.
 Native datatypes in this case includes all the container objects Python supports (lists, dicts, etc.) and the base datatypes of `numpy` and `pandas` (np.array, pd.DataFrame, pd.Series). Only if it improves usability and adds significant value (either for understanding or manipulating the output), custom datatypes should be used. One example of this would be a "Stride" dataype, as this would help to keep all relevant information together in one place
 6. Following 5, if custom datatypes are used, functionality needs to exist to convert them into native types that contain all the information.
@@ -61,7 +61,7 @@ From the guide:
 - Each type of algorithm has one (or multiple) "action" methods with a descriptive name. These *action* methods take the actual data as input and will produce results.
 - All *action* methods just return `self` (the object itself)
 - Multiple action methods might be required in one of the following cases:
-    - Give the user more granular functionality (e.g. a `detect_hs` method in addition to a general `detect` method)
+    - Give users more granular functionality (e.g. a `detect_hs` method in addition to a general `detect` method)
     - Multiple steps are required for the algorithm (e.g. fit and predict for ML based algos)
     - Alternative functionality that can/should not be handled by arguments (e.g. `fit` vs `fit_proba` in sklearn)
 
@@ -162,7 +162,7 @@ class AuthorNameEventDetection(BaseEventDetection):
     def detect_hs(self: Type[T], data: np.ndarray) -> T:
         """Example of secondary action function.
             
-        This allows the user to have full control of what he/she 
+        This allows users to have full control of what they 
         wants to do.
 
         Parameters
