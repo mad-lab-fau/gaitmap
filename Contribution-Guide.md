@@ -143,6 +143,8 @@ If the parameter is `None` a random initial value should be used that is control
 All code should follow coherent best practices.
 As far as possible the adherence to these best practices should be tested using linters or a testsuite that runs as part of the CI.
 
+For a set of more general best practices when in comes to scientific code have a look at our [internal code guidelines](https://mad-srv.informatik.uni-erlangen.de/MaD-Public/mad-coding-guidelines)
+
 ### General Codestyle
 
 For general codestyle we follow [PEP8](https://www.python.org/dev/peps/pep-0008/)
