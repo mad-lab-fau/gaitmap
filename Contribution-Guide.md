@@ -68,7 +68,8 @@ From the guide:
 
 Additions to the guide:
 
-- All classes should store the data passed in the "action" step in the class object unless the amount of data would result in an unreasonable performance issue. Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to helper functions, that e.g. can visualize in and outputs.
+- All classes should store the data (and other arguments) passed in the "action" step in the class object unless the amount of data would result in an unreasonable performance issue. Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to helper functions, that e.g. can visualize in and outputs.
+These parameters should be documented under "Other Parameters" to not clutter the docstring.
 - All methods should take care that they do not modify the original data passed to the function. If required a copy of the data can be created, but **not** stored in the object.
 - All classes should have a `_validate(self)` method that handles validation of all the parameters. This function should be called during the "action" (or whenever the parameters are first needed).
 Don't overdue the validation and focus on logical validation (e.g. a value can not be larger than x) and not on type validation. For type validation, we should trust that Python provides the correct error message once an invalid step is performed.
@@ -79,7 +80,45 @@ Don't overdue the validation and focus on logical validation (e.g. a value can n
 
 ```python
 
-class EventDetection(BaseEventDetection):
+class AuthorNameEventDetection(BaseEventDetection):
+    """ This is an example class.
+
+    And here you would explain the full functionality.
+
+    Parameters
+    ----------
+    parameter_one
+        This is everything I know about parameter one
+    parameter_two
+        All the important stuff
+    window_length : float, should be larger 0 and uneven
+        Some info with extra type info
+
+    Other Parameters
+    ----------------
+    data
+        The data used for the action event
+
+    Attributes
+    ----------
+    hs_events_
+        The awesome output 1
+    to_events_
+        The awesome output 2
+    
+    Notes
+    -----
+    And here you would explain the algorithm in detail with references [1]
+
+    .. [1] Author something something, Awesome paper
+
+    Examples
+    --------
+    And of course some nice usage examples
+
+    >>> awesome_stuff = EventDetection(parameter_one=5)
+
+    """
     parameter_one: int
     parameter_two: str
     window_length: float
@@ -96,8 +135,18 @@ class EventDetection(BaseEventDetection):
         self.window_length = window_length
         super().__init__()
 
-    def detect(self, data: np.ndarray):
-        """This is the actual action class."""
+    def detect(self: Type[T], data: np.ndarray) -> T:
+        """This is the actual action method.
+        
+        Parameters
+        ----------
+        data:
+            Your awesome input data
+
+        Returns
+        -------
+        self
+        """
         # Call super of base parent class
         # This should take care of potential preprocessing required.
         # In most cases this should call `_validate` implicit
@@ -110,11 +159,20 @@ class EventDetection(BaseEventDetection):
 
         return self
 
-    def detect_hs(self, data: np.ndarray):
+    def detect_hs(self: Type[T], data: np.ndarray) -> T:
         """Example of secondary action function.
             
         This allows the user to have full control of what he/she 
         wants to do.
+
+        Parameters
+        ----------
+        data:
+            Your awesome input data
+
+        Returns
+        -------
+        self
         """
         # Call validate manually
         self._validate()
@@ -124,13 +182,12 @@ class EventDetection(BaseEventDetection):
 
         return self
 
-    def _validate(self):
+    def _validate(self) -> None:
         """Validate all parameters here."""
 
         if parameter_two is None:
             raise ValueError("`parameter_two` should a real value")
 ```
-
 
 ### Random and Initial State
 
