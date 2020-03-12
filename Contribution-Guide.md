@@ -1,6 +1,14 @@
 To ensure that the project is easy to use, easy to maintain, and easy to expand in the future, all developers should adhere to the guidelines outlined below.
 Further the developers should familiarize themselves with aim and the scope of the project to make better decision when it comes to including new functionality.
 
+**Everything that follows are recommendations**
+As for every project you should:
+- value your future self over your current self (don't use shortcuts or hacks that might become liabilities in the long-term).
+- think before you act.
+- know the rules, before you break them.
+- ask if in doubt
+- ask for a third opinion if you have two competing ones
+
 ## Aim and Scope
 
 The aim of the project is to provide a **library** that provides all the necessary tools to run a state-of-the-art gait analysis.
@@ -137,7 +145,13 @@ As far as possible the adherence to these best practices should be tested using 
 
 ### General Codestyle
 
-For general codestyle we follow [Pep 8](https://www.python.org/dev/peps/pep-0008/)
+For general codestyle we follow [PEP8](https://www.python.org/dev/peps/pep-0008/)
+
+### Naming
+
+We follow the naming conventions outlined in [PEP8](https://www.python.org/dev/peps/pep-0008/#naming-conventions).
+
+For algorithms (if not better name is available) we use `AuthorNameType` (e.g. `BarthEventDetection`).
 
 ### Documentation
 
