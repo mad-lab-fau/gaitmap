@@ -1,13 +1,14 @@
 To ensure that the project is easy to use, easy to maintain, and easy to expand in the future, all developers should adhere to the guidelines outlined below.
 Further the developers should familiarize themselves with aim and the scope of the project to make better decision when it comes to including new functionality.
 
-**Everything that follows are recommendations**
+**Everything that follows are recommendations.**
+
 As for every project you should:
 - value your future self over your current self (don't use shortcuts or hacks that might become liabilities in the long-term).
 - think before you act.
 - know the rules, before you break them.
-- ask if in doubt
-- ask for a third opinion if you have two competing ones
+- ask if in doubt.
+- ask for a third opinion if you have two competing ones.
 
 ## Aim and Scope
 
