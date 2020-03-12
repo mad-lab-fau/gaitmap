@@ -43,22 +43,27 @@ This structure is heavily inspired by the interface of `sklearn` and will follow
 From the guide:
 
 - The `__init__` of each class should only be there to set parameters. No parameter validation or any functionality should be performed here.
+- No actual data should be passed to the `__init__`. Think of it as configuring the algorithm.
 - Defaults for parameters should be provided in the `__init__`
-- The names of the class attributes should be identical with the names used in the `__init__`
-- Results and outputs are stored with a trailing underscore (e.g. `filtered_stride_list_`
+- The names of the class attributes should be identical with the names used in the `__init__`.
+- All parameters that are not directly depended on the input data, should be set in the `__init__` and not in the *action* method (see below). This also includes parameters that should be adapted based on the data, but can theoretically estimated without having the data available (e.g. the optimal threshold for DTW). All these parameters should be set in the `__init__`.
+- Results and outputs are stored with a trailing underscore (e.g. `filtered_stride_list_`.
 - All algorithms of the same type should have a consistent interface with (as far as possible), identical input parameters to allow drop-in replacements of different algorithms
 - Each type of algorithm has one (or multiple) "action" methods with a descriptive name. These *action* methods take the actual data as input and will produce results.
 - All *action* methods just return `self` (the object itself)
+- Multiple action methods might be required in one of the following cases:
+    - Give the user more granular functionality (e.g. a `detect_hs` method in addition to a general `detect` method)
+    - Multiple steps are required for the algorithm (e.g. fit and predict for ML based algos)
+    - Alternative functionality that can/should not be handled by arguments (e.g. `fit` vs `fit_proba` in sklearn)
 
 
-
-Deviations from the guide:
+Additions to the guide:
 
 - All classes should store the data passed in the "action" step in the class object unless the amount of data would result in an unreasonable performance issue. Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to helper functions, that e.g. can visualize in and outputs.
 - All methods should take care that they do not modify the original data passed to the function. If required a copy of the data can be created, but **not** stored in the object.
 - All classes should have a `_validate(self)` method that handles validation of all the parameters. This function should be called during the "action" (or whenever the parameters are first needed).
 Don't overdue the validation and focus on logical validation (e.g. a value can not be larger than x) and not on type validation. For type validation, we should trust that Python provides the correct error message once an invalid step is performed.
-- All classes should inherent from a BaseClass specific to their type that implements common functionality and enforces the interface.
+- All classes should inherent from a BaseClass specific to their type that implements common functionality and enforces the interface. Remember to call respective `super` methods when required.
 
 
 #### Example class structure
@@ -73,26 +78,95 @@ class EventDetection(BaseEventDetection):
 
     data: np.ndarray
 
-    events_: np.ndarray
+    hs_events_: np.ndarray
+    to_events_: np.ndarray
 
     def __init__(self, parameter_one: int = 1, parameter_two: Optional[str] = None, window_length: float = 4.):
-       self.parameter_one = parameter_one
-       self.parameter_two = parameter_two
-       self.window_length = window_length
+        self.parameter_one = parameter_one
+        self.parameter_two = parameter_two
+        self.window_length = window_length
+        super().__init__()
+
+    def detect(self, data: np.ndarray):
+        """This is the actual action class."""
+        # Call super of base parent class
+        # This should take care of potential preprocessing required.
+        # In most cases this should call `_validate` implicit
+        super().detect(data=data)
+
+        self.data = data
+        # Do some calculations
+        self.hs_events_ = ...
+        self.to_events_ = ...
+
+        return self
+
+    def detect_hs(self, data: np.ndarray):
+        """Example of secondary action function.
+            
+        This allows the user to have full control of what he/she 
+        wants to do.
+        """
+        # Call validate manually
+        self._validate()
+        self.data = data
+        # Do some calculations
+        self.hs_events_ = ...
+
+        return self
+
+    def _validate(self):
+        """Validate all parameters here."""
+
+        if parameter_two is None:
+            raise ValueError("`parameter_two` should a real value")
+```
 
 
-   def detect(self, data: np.ndarray):
-       """This is the actual action class."""
-       self.data = data
-       # Do some calculations
-       self.events_ = ...
+### Random and Initial State
+
+If any algorithms rely on random processes/operations, the random state should be configurable, by a optional kwarg in the `__init__` called `random_state`. We follow the [`sklearn` recommendations](https://scikit-learn.org/stable/glossary.html#term-random-state) on this.
+
+Algorithms that require an initial value for some optimization should expose this value via the `__init__`.
+If the parameter is `None` a random initial value should be used that is controlled by the additional `random_state` argument.
+
+## Code guidelines
+
+All code should follow coherent best practices.
+As far as possible the adherence to these best practices should be tested using linters or a testsuite that runs as part of the CI.
+
+### General Codestyle
+
+For general codestyle we follow [Pep 8](https://www.python.org/dev/peps/pep-0008/)
+
+### Documentation
+
+For documentation we follow [numpys guidelines](https://numpydoc.readthedocs.io/en/latest/format.html).
+All user-facing functions (all functions and methods that do not have a leading underscore) are expected to be properly and fully documented for potential users.
+All private functions are expected to be documented in a way that other developer can understand them.
+Additionally each module should have a docstring explaining its content.
+If a module contains only one class this can a single sentence/word (e.g. `"""Event detection based on ... ."""`).
 
 
-   def _validate(self):
-       """Validate all parameters here."""
+### Typehints
 
-       if parameter_two is None:
-           raise ValueError("`parameter_two` should a real value")
+To provide a better developer experience the library should use [TypeHints](https://numpydoc.readthedocs.io/en/latest/format.html) where ever possible.
+
+Remember to use `np.ndarray` instead of `np.array` as type specification of numpy arrays.
+
+### Imports
+
+In case a single function from a external package is used, just import this function.
+In case multiple functions from an external package are used, import this package/module under a commonly used alias (e.g. `np` for numpy, `pd` for pandas, ...)
+
+For all package internal imports, use absolut imports.
+
+
+
+
+
+
+
 
 
 
