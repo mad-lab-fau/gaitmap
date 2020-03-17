@@ -25,6 +25,32 @@ It contains the python interpreter and all site packages.
 You can point your IDE to this folder to use this version of Python.
 For PyCharm you can find information about this [here](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html)
 
+### Testing, linting, etc.
+
+This library uses `pytest` for testing.
+You can run it from the commandline (from the project root) using:
+
+```bash
+pytest
+```
+Alternatively, you can use the `pytest` integration of your IDE.
+
+To ensure consistent code style the library uses strict linting rules.
+You can check your code against these rules using `prospector`.
+
+```bash
+prospector
+```
+
+To make live easier for you, you should use [black](https://github.com/psf/black) to autoformat your code.
+Just run the following from the commandline:
+
+```bash
+black .
+```
+
+Alternatively, you can integrate `black` [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html).
+
 ### Configure IDE
 
 #### PyCharm
