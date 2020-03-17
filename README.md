@@ -13,6 +13,7 @@ If you do not want to change your system interpreter you can use `conda` to inst
 In this case, activate the respective environment before running the installation commands below. 
 
 *gaitmap* uses [poetry](https://python-poetry.org) to manage its dependencies.
+If you have trouble installing `poetry` while using `zsh` as your shell, check this [issue](https://github.com/python-poetry/poetry/issues/507)
 Once you installed poetry, run the following commands to initialize a virtual env and install all development dependencies:
 
 ```bash
