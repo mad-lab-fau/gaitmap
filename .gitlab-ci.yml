@@ -45,7 +45,7 @@ docs:
   <<: *python_base
   script:
     - cd docs && poetry run make html
-    - mv docs/_build/html html_docs
+    - mv _build/html ../html_docs
   artifacts:
     paths:
       - html_docs
