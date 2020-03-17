@@ -3,6 +3,11 @@
 *gaitmap* provides a set of algorithms to analyse your IMU movement data without getting into your way.
 It's API is designed to mimic `sklearn` to provide you an familiar and elegant interface
 
+
+[![pipeline status](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/badges/master/pipeline.svg)](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/commits/master)
+[![coverage report](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/badges/master/coverage.svg)](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/commits/master)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 ## Getting started
 
 ## For developers
