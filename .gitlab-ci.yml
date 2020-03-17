@@ -39,3 +39,30 @@ lint-black:
   <<: *python_base
   script:
     - poetry run black . --check
+
+docs:
+  stage: deploy
+  <<: *python_base
+  script:
+    - cd docs && make html
+    - mv docs/_build/html html_docs
+  artifacts:
+    paths:
+      - html_docs
+    expire_in: 2 month
+
+pages:
+  stage: pages
+  dependencies:
+    - docs
+  tags:
+    - docker
+  script:
+  - mkdir .public
+  - cp -r html_docs/* .public
+  - mv .public public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
