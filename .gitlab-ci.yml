@@ -16,6 +16,8 @@ stages:
   before_script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
+    - pip install poetry
+    - poetry install
 
 test:
   stage: testing
