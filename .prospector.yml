@@ -1,0 +1,28 @@
+strictness: veryhigh
+doc-warnings: true
+
+ignore-paths:
+  - docs
+  - tests
+
+pep8:
+  options:
+    max-line-length: 120
+  disable:
+    - E127
+    - W391
+
+pep257:
+  options:
+    convention: numpy
+  disable:
+    - D104  # Missing docstring in public package, handled by pylint
+    - D404
+
+pylint:
+  options:
+    max-line-length: 120
+  disable:
+    - too-many-ancestors
+    - too-few-public-methods
+    - invalid-unary-operand-type
