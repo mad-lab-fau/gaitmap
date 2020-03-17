@@ -1,0 +1,36 @@
+stages:
+  - testing
+  - deploy
+  - pages
+
+.python_base: &python_base
+  tags:
+    - docker
+  image: python:3.7
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/pip-cache"
+  cache:
+    paths:
+      - "$CI_PROJECT_DIR/pip-cache"
+    key: "$CI_PROJECT_ID"
+  before_script:
+    - git config --global credential.helper store
+    - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
+
+test:
+  stage: testing
+  <<: *python_base
+  script:
+    - pytest
+
+lint-prospector:
+  stage: testing
+  <<: *python_base
+  script:
+    - prospector
+
+lint-black:
+  stage: testing
+  <<: *python_base
+  script:
+    - black . --check
