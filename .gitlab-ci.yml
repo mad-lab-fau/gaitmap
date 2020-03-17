@@ -12,27 +12,29 @@ stages:
   cache:
     paths:
       - "$CI_PROJECT_DIR/pip-cache"
+      - .venv
     key: "$CI_PROJECT_ID"
   before_script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
     - pip install poetry
+    - poetry config settings.virtualenvs.in-project true
     - poetry install
 
 test:
   stage: testing
   <<: *python_base
   script:
-    - pytest
+    - poetry run pytest
 
 lint-prospector:
   stage: testing
   <<: *python_base
   script:
-    - prospector
+    - poetry run prospector
 
 lint-black:
   stage: testing
   <<: *python_base
   script:
-    - black . --check
+    - poetry run black . --check
