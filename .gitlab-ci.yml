@@ -44,7 +44,7 @@ docs:
   stage: deploy
   <<: *python_base
   script:
-    - cd docs && make html
+    - cd docs && poetry run make html
     - mv docs/_build/html html_docs
   artifacts:
     paths:
