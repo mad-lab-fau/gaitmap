@@ -6,6 +6,7 @@ It's API is designed to mimic `sklearn` to provide you an familiar and elegant i
 
 [![pipeline status](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/badges/master/pipeline.svg)](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/commits/master)
 [![coverage report](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/badges/master/coverage.svg)](https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/commits/master)
+[![docs](https://img.shields.io/badge/docs-online-green.svg)](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/README.html)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Getting started
