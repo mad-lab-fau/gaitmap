@@ -13,7 +13,7 @@ stages:
     paths:
       - .cache/pip
       - .venv
-    key: "$CI_PROJECT_ID"
+    key: global-cache-key
   before_script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
