@@ -25,5 +25,12 @@ It contains the python interpreter and all site packages.
 You can point your IDE to this folder to use this version of Python.
 For PyCharm you can find information about this [here](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html)
 
+### Configure IDE
+
+#### PyCharm
+
+- Set docstring convention to `numpy`
+- Set default testrunner to `pytest`
+
 
 
