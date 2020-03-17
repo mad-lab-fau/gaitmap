@@ -8,10 +8,10 @@ stages:
     - docker
   image: python:3.7
   variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/pip-cache"
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   cache:
     paths:
-      - "$CI_PROJECT_DIR/pip-cache"
+      - .cache/pip
       - .venv
     key: "$CI_PROJECT_ID"
   before_script:
