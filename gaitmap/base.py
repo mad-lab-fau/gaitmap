@@ -14,10 +14,11 @@ class BaseAlgorithm:
     1. overwrite `_action_method` with the name of the actual action method of this class type
     2. implement a stub for the action method
 
-    ClassAttributes
+    Attributes
     ----------
     _action_method
         The name of the action method used by the Childclass
+
     """
 
     _action_method: str
@@ -85,7 +86,7 @@ class BaseAlgorithm:
         """
         return {k: getattr(self, k) for k in self._get_param_names()}
 
-    def set_params(self: BaseType, **params: Dict[str, Any]) -> Type[BaseType]:
+    def set_params(self: BaseType, **params: Any) -> Type[BaseType]:
         """Set the parameters of this Algorithm."""
         raise NotImplementedError("This will be implemented in the future")
 

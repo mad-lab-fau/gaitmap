@@ -12,7 +12,8 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
+
+import sphinx_bootstrap_theme
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -42,7 +43,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.imgconverter",
     # "sphinx_gallery.gen_gallery",
-    "sphinx_rtd_theme",
     "recommonmark",
 ]
 
@@ -61,7 +61,7 @@ else:
     extensions.append("sphinx.ext.mathjax")
     mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/" "tex-chtml.js"
 
-autodoc_default_options = {"members": True, "inherited-members": True}
+autodoc_default_options = {"members": True, "inherited-members": True, "special_members": True}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
@@ -87,7 +87,9 @@ add_function_parentheses = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+# Activate the theme.
+html_theme = 'bootstrap'
+html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

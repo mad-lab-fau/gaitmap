@@ -7,11 +7,17 @@ gaitmap Docu Overview
 =====================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Content:
 
    Readme <README.md>
    guides/Contribution-Guide.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference:
+
+   modules/classes.rst
 
 
 Indices and tables
