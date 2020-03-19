@@ -20,7 +20,6 @@ stages:
     - pip install poetry
     - poetry config virtualenvs.in-project true
     - poetry install
-    - poetry update  # Ensure newest package versions are installed when caching is used
 
 test:
   stage: testing
