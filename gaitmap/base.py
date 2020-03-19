@@ -1,3 +1,5 @@
+"""Base class for all algorithm."""
+
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
@@ -5,15 +7,33 @@ BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
 class BaseAlgorithm:
+    """Base class for all algorithms.
+
+    All type-specific algorithm classes should inherit from this class and need to
+
+    1. overwrite `_action_method` with the name of the actual action method of this class type
+    2. implement a stub for the action method
+
+    ClassAttributes
+    ----------
+    _action_method
+        The name of the action method used by the Childclass
+    """
+
     _action_method: str
 
     @property
     def _action_is_applied(self) -> bool:
+        """Check if the action method was already called/results were generated."""
         if len(self.get_attributes()) == 0:
             return True
         return False
 
     def _get_action_method(self) -> Callable:
+        """Get the action method as callable.
+
+        This is intended to be used by wrappers, that do not know the Type of an algorithm
+        """
         return getattr(self, self._action_method)
 
     @classmethod
@@ -47,7 +67,7 @@ class BaseAlgorithm:
             if p.kind == p.VAR_POSITIONAL:
                 raise RuntimeError(
                     "gaitmap-algorithms should always specify their parameters in the signature of their "
-                    "__init__ (no  varargs). {} with constructor {} doesn't  follow this convention.".format(
+                    "__init__ (no varargs). {} with constructor {} doesn't follow this convention.".format(
                         cls, init_signature
                     )
                 )
@@ -59,24 +79,52 @@ class BaseAlgorithm:
 
         Returns
         -------
-        params : mapping of string to any
+        params
             Parameter names mapped to their values.
 
         """
         return {k: getattr(self, k) for k in self._get_param_names()}
 
     def set_params(self: BaseType, **params: Dict[str, Any]) -> Type[BaseType]:
-        pass
+        """Set the parameters of this Algorithm."""
+        raise NotImplementedError('This will be implemented in the future')
 
     def get_other_params(self) -> Dict[str, Any]:
+        """Get all "Other Parameters" of the Algorithm.
+
+        "Other Parameters" are all parameters set outside of the `__init__` that are not considered results.
+        This usually includes the "data" and all other parameters passed to the action method.
+
+        Returns
+        -------
+        params
+            Parameter names mapped to their values.
+
+        """
         params = self.get_params()
         attrs = {
-            v: getattr(self, v)
-            for v in vars(self)
-            if not v.endswith("_") and not v.startswith("_") and v not in params
+            v: getattr(self, v) for v in vars(self) if not v.endswith("_") and not v.startswith("_") and v not in params
         }
         return attrs
 
     def get_attributes(self) -> Dict[str, Any]:
+        """Get all Attributes of the Algorithm.
+
+        "Attributes" are all values considered results of the algorithm.
+        They are indicated by a trailing "_" in their name.
+        The values are only populated after the action method of the algorithm was called.
+
+        Returns
+        -------
+        params
+            Parameter names mapped to their values.
+
+        Raises
+        ------
+        AttributeError
+            If one or more of the attributes are not retrievable from the instance.
+            This usually indicates that the action method was not called yet.
+
+        """
         attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
         return attrs

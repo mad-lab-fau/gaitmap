@@ -21,6 +21,7 @@ pep257:
     - D101  # Missing docstring in public class, handled by pylint
     - D102  # Missing docstring in public method, handled by pylint
     - D104  # Missing docstring in public package, handled by pylint
+    - D203  # Blank line required before class docstring
     - D213  # Docstring Summary should start in second line
 
 
