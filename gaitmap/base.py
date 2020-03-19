@@ -87,7 +87,7 @@ class BaseAlgorithm:
 
     def set_params(self: BaseType, **params: Dict[str, Any]) -> Type[BaseType]:
         """Set the parameters of this Algorithm."""
-        raise NotImplementedError('This will be implemented in the future')
+        raise NotImplementedError("This will be implemented in the future")
 
     def get_other_params(self) -> Dict[str, Any]:
         """Get all "Other Parameters" of the Algorithm.
