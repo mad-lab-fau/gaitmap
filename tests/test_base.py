@@ -1,4 +1,5 @@
 """This tests the BaseAlgorithm and fundamental functionality."""
+from inspect import signature, Parameter
 from typing import Any, Dict, Tuple
 
 import pytest
@@ -7,23 +8,26 @@ from gaitmap.base import BaseAlgorithm
 
 
 def create_test_class(
-    action_method_name, attributes=None, paras=None, other_paras=None, action_method=None
+    action_method_name, attributes=None, params=None, other_params=None, private_params=None, action_method=None
 ) -> BaseAlgorithm:
     attributes = attributes or {}
-    paras = paras or {}
-    other_paras = other_paras or {}
+    params = params or {}
+    other_params = other_params or {}
+    private_params = private_params or {}
 
-    class_dict = {"_action_method": action_method_name}
-    user_set_paras = {
-        **attributes,
-        **paras,
-        **other_paras,
-    }
+    class_dict = {"_action_method": action_method_name, "__init__": lambda x: None}
+    user_set_params = {**attributes, **params, **other_params, **private_params}
     if action_method:
         class_dict = {**class_dict, action_method_name: action_method}
     test_class = type("TestClass", (BaseAlgorithm,), class_dict)
+
+    # Set the signature to conform to the expected conventions
+    sig = signature(test_class.__init__)
+    sig = sig.replace(parameters=(Parameter(k, Parameter.KEYWORD_ONLY) for k in params.keys()))
+    test_class.__init__.__signature__ = sig
+
     test_instance = test_class()
-    for k, v in user_set_paras.items():
+    for k, v in user_set_params.items():
         setattr(test_instance, k, v)
 
     return test_instance
@@ -31,12 +35,15 @@ def create_test_class(
 
 @pytest.fixture(
     params=[
-        dict(action_method_name="test", attributes={}, paras={}, other_paras={}, action_method=None),
+        dict(
+            action_method_name="test", attributes={}, params={}, other_params={}, private_params={}, action_method=None
+        ),
         dict(
             action_method_name="test",
             attributes={"attr1_": "test1", "attr2_": "test2"},
-            paras={"para1": "test1", "para2": "test2"},
-            other_paras={"other_para1": "other_test1", "other_para2": "other_test2"},
+            params={"para1": "test1", "para2": "test2"},
+            other_params={"other_para1": "other_test1", "other_para2": "other_test2"},
+            private_params={"_private": "private_test"},
             action_method=lambda self=None: "test",
         ),
     ]
@@ -61,3 +68,15 @@ def test_get_attributes(example_test_class):
     instance, test_parameters = example_test_class
 
     assert instance.get_attributes() == test_parameters["attributes"]
+
+
+def test_get_parameter(example_test_class):
+    instance, test_parameters = example_test_class
+
+    assert instance.get_params() == test_parameters["params"]
+
+
+def test_get_other_parameter(example_test_class):
+    instance, test_parameters = example_test_class
+
+    assert instance.get_other_params() == test_parameters["other_params"]
