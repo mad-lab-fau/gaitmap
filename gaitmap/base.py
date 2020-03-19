@@ -1,6 +1,6 @@
 from typing import Callable, Dict, TypeVar, Type, Any
 
-BASE_TYPE = TypeVar("BASE_TYPE", bound="BaseAlgorithms")
+BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
 class BaseAlgorithm:
@@ -12,7 +12,7 @@ class BaseAlgorithm:
     def get_params(self) -> Dict[str, Any]:
         pass
 
-    def set_params(self: BASE_TYPE, **params: Dict[str, Any]) -> Type[BASE_TYPE]:
+    def set_params(self: BaseType, **params: Dict[str, Any]) -> Type[BaseType]:
         pass
 
     def get_other_params(self) -> Dict[str, Any]:
@@ -24,6 +24,6 @@ class BaseAlgorithm:
 
     @property
     def _action_is_applied(self) -> bool:
-        if len(self.get_attributes()):
+        if len(self.get_attributes()) == 0:
             return True
         return False
