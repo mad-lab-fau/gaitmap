@@ -47,7 +47,7 @@ def example_test_class(request) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
 
 
 def test_get_action_method(example_test_class):
-    isntance, test_parameters = example_test_class
+    instance, test_parameters = example_test_class
 
     assert instance._action_method == test_parameters["action_method_name"]
     if test_parameters["action_method"] is not None:
