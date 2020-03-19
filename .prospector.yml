@@ -21,11 +21,13 @@ pep257:
     - D101  # Missing docstring in public class, handled by pylint
     - D102  # Missing docstring in public method, handled by pylint
     - D104  # Missing docstring in public package, handled by pylint
+    - D213  # Docstring Summary should start in second line
 
 
 pylint:
   options:
     max-line-length: 120
+    variable-rgx: "[a-z_][a-z0-9_]{0,30}$"  # Allow for single letter variable names
   disable:
     - too-many-ancestors
     - too-few-public-methods
