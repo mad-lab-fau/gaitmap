@@ -19,7 +19,8 @@ class BaseAlgorithm:
         pass
 
     def get_attributes(self) -> Dict[str, Any]:
-        pass
+        attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
+        return attrs
 
     @property
     def _action_is_applied(self) -> bool:
