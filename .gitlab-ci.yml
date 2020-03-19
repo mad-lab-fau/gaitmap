@@ -26,7 +26,7 @@ test:
   stage: testing
   <<: *python_base
   script:
-    - poetry run pytest
+    - poetry run pytest --cov=gaitmap
 
 lint-prospector:
   stage: testing
