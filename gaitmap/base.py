@@ -71,7 +71,13 @@ class BaseAlgorithm:
         pass
 
     def get_other_params(self) -> Dict[str, Any]:
-        pass
+        params = self.get_params()
+        attrs = {
+            v: getattr(self, v)
+            for v in vars(self)
+            if not v.endswith("_") and not v.startswith("_") and v not in params
+        }
+        return attrs
 
     def get_attributes(self) -> Dict[str, Any]:
         attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
