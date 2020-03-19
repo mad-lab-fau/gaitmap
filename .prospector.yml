@@ -16,8 +16,12 @@ pep257:
   options:
     convention: numpy
   disable:
-    - D104  # Missing docstring in public package, handled by pylint
     - D404
+    - D100  # Missing docstring in public module, handled by pylint
+    - D101  # Missing docstring in public class, handled by pylint
+    - D102  # Missing docstring in public method, handled by pylint
+    - D104  # Missing docstring in public package, handled by pylint
+
 
 pylint:
   options:
