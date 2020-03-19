@@ -12,11 +12,14 @@
 #
 import os
 import sys
+from importlib import import_module
+from inspect import getsourcelines
 
 import sphinx_bootstrap_theme
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
+URL = "https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/blob/master"
 
 # -- Project information -----------------------------------------------------
 
@@ -38,7 +41,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "numpydoc",
-    # "sphinx.ext.linkcode",
+    "sphinx.ext.linkcode",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.imgconverter",
@@ -88,7 +91,7 @@ add_function_parentheses = False
 # a list of builtin themes.
 #
 # Activate the theme.
-html_theme = 'bootstrap'
+html_theme = "bootstrap"
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -97,3 +100,30 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 html_static_path = ["_static"]
 
 # -- Options for extensions --------------------------------------------------
+# Linkcode
+
+def get_nested_attr(obj, attr):
+    attrs = attr.split(".", 1)
+    new_obj = getattr(obj, attrs[0])
+    if len(attrs) == 1:
+        return new_obj
+    else:
+        return get_nested_attr(new_obj, attrs[1])
+
+
+def linkcode_resolve(domain, info):
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+    module = import_module(info["module"])
+    obj = get_nested_attr(module, info["fullname"])
+    code_line = None
+    try:
+        code_line = getsourcelines(obj)[-1]
+    except:
+        pass
+    filename = info["module"].replace(".", "/")
+    if code_line:
+        return "{}/{}.py#L{}".format(URL, filename, code_line)
+    return "{}/{}.py".format(URL, filename)
