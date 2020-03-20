@@ -301,4 +301,7 @@ git branch -D new-branch-name
 - Commit often
 - Commit in logical chunks
 - Don't commit temp files
-- Write at least somewhat proper messages
+- Write at least somewhat [proper messages](https://chris.beams.io/posts/git-commit/)
+   - Use the imperative mood in the subject line
+   - Use the body to explain what and why vs. how
+   - ...more see link above
