@@ -15,17 +15,16 @@ def test_sdtw_simple_multi_match(method):
 
     dtw = BarthDtw(
         template=template,
-        template_sampling_rate=100.0,
-        threshold=0.5,
+        template_sampling_rate_hz=100.0,
+        max_cost=0.5,
         min_stride_time_s=None,
         find_matches_method=method,
     )
-    match = dtw.segment(np.array(sequence), sampling_rate=100.0,)
+    dtw = dtw.segment(np.array(sequence), sampling_rate=100.0,)
 
-    assert match == [[5, 7]]
     np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
     assert dtw.costs_ == [0.0]
-    assert dtw.path_start_stops_ == [[5, 7]]
+    np.testing.assert_array_equal(dtw.paths_start_end_, [[5, 7]])
     np.testing.assert_array_equal(
         dtw.acc_cost_mat_,
         [
@@ -45,16 +44,15 @@ def test_sdtw_multi_match(method):
 
     dtw = BarthDtw(
         template=template,
-        template_sampling_rate=100.0,
-        threshold=0.5,
+        template_sampling_rate_hz=100.0,
+        max_cost=0.5,
         min_stride_time_s=None,
         find_matches_method=method,
     )
-    match = dtw.segment(np.array(sequence), sampling_rate=100.0,)
+    dtw = dtw.segment(np.array(sequence), sampling_rate=100.0,)
 
-    assert match == [[5, 7], [18, 20]]
     np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
-    assert dtw.path_start_stops_ == [[5, 7], [18, 20]]
+    np.testing.assert_array_equal(dtw.paths_start_end_, [[5, 7], [18, 20]])
     np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
 
     np.testing.assert_array_equal(dtw.data, sequence)
@@ -63,4 +61,4 @@ def test_sdtw_multi_match(method):
 
 # TODO; Test template interpolate
 # TODO; TEST min distance
-# TODO: Test threshold
+# TODO: Test max_cost
