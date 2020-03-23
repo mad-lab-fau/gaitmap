@@ -1,13 +1,25 @@
 import numpy as np
+import pytest
 
 from gaitmap.stride_segmentation.BarthDTW import BarthDTW
 
 
-def test_sdtw_simple_multi_match():
+@pytest.fixture(params=list(BarthDTW._allowed_methods_map.keys()))
+def method(request):
+    return request.param
+
+
+def test_sdtw_simple_multi_match(method):
     template = np.array([0, 1.0, 0])
     sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    dtw = BarthDTW(template=template, template_sampling_rate=100.0, threshold=0.5, min_stride_time_s=None)
+    dtw = BarthDTW(
+        template=template,
+        template_sampling_rate=100.0,
+        threshold=0.5,
+        min_stride_time_s=None,
+        find_matches_method=method,
+    )
     match = dtw.segment(np.array(sequence), sampling_rate=100.0,)
 
     assert match == [[5, 7]]
@@ -27,11 +39,17 @@ def test_sdtw_simple_multi_match():
     np.testing.assert_array_equal(dtw.template, template)
 
 
-def test_sdtw_multi_match():
+def test_sdtw_multi_match(method):
     template = np.array([0, 1.0, 0])
     sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    dtw = BarthDTW(template=template, template_sampling_rate=100.0, threshold=0.5, min_stride_time_s=None)
+    dtw = BarthDTW(
+        template=template,
+        template_sampling_rate=100.0,
+        threshold=0.5,
+        min_stride_time_s=None,
+        find_matches_method=method,
+    )
     match = dtw.segment(np.array(sequence), sampling_rate=100.0,)
 
     assert match == [[5, 7], [18, 20]]

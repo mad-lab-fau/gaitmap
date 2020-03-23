@@ -30,20 +30,20 @@ def find_local_minima_below_threshold(data: np.ndarray, threshold: float) -> np.
 
 def find_local_minima_with_distance(data: np.ndarray,
                                     distance: float,
-                                    max_cost: Optional[float] = None,
+                                    threshold: Optional[float] = None,
                                     **kwargs) -> np.ndarray:
     """Find local minima using scipy's `find_peaks` function.
 
     Because `find_peaks` is designed to find local maxima, the data multiplied by -1.
-    The same is true for the height value, if supplied.
+    The same is true for the threshold value, if supplied.
 
     Args:
         data: The datastream.
             The default axis to search for the minima is 0.
         distance: The minimal distance in samples two minima need to be apart of each other
-        max_cost: The maximal allowed value for the minimum.
-            `- max_cost` is passed to the `height` argument of `find_peaks`
+        threshold: The maximal allowed value for the minimum.
+            `- threshold` is passed to the `height` argument of `find_peaks`
         kwargs: Directly passed to find_peaks
     """
-    max_cost = -max_cost if max_cost else max_cost
-    return find_peaks(-data, distance=distance, height=max_cost, **kwargs)[0]
+    threshold = -threshold if threshold else threshold
+    return find_peaks(-data, distance=distance, height=threshold, **kwargs)[0]
