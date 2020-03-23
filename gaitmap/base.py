@@ -3,8 +3,7 @@
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
-from scipy.spatial.transform import Rotation
-
+import numpy as np
 import pandas as pd
 
 from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, StrideList
@@ -148,6 +147,13 @@ class BaseAlgorithm:
         """
         attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
         return attrs
+
+
+class BaseStrideSegmentation(BaseAlgorithm):
+    _action_method = "segment"
+
+    def segment(self: BaseType, data: np.ndarray, sampling_rate: float, **kwargs) -> Type[BaseType]:
+        raise NotImplementedError("Needs to be implemented by child class.")
 
 
 class BaseEventDetection(BaseAlgorithm):
