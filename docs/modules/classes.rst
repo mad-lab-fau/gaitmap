@@ -22,9 +22,37 @@ Base classes
    :template: class_with_private.rst
 
     BaseAlgorithm
+    BaseStrideSegmentation
     BaseEventDetection
     BaseOrientationEstimation
 
+:mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
+========================================================================
+
+.. automodule:: gaitmap.stride_segmentation
+    :no-members:
+    :no-inherited-members:
+
+Classes
+---------------------------
+.. currentmodule:: gaitmap.stride_segmentation
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    BarthDtw
+
+Functions
+----------------
+.. currentmodule:: gaitmap.stride_segmentation
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    find_matches_find_peaks
+    find_matches_original
 
 :mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
 =================================================================
