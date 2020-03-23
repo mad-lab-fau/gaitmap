@@ -2,7 +2,7 @@ from pathlib import Path
 import platform
 
 DOIT_CONFIG = {
-    "default_tasks": ["format", "pytest", "lint"],
+    "default_tasks": ["format", "test", "lint"],
     "backend": "json",
 }
 
@@ -16,7 +16,7 @@ def task_format():
 
 def task_format_check():
     """Check, but not change, formatting using black."""
-    return {"actions": [["black", HERE, '--check']], "verbosity": 1}
+    return {"actions": [["black", HERE, "--check"]], "verbosity": 1}
 
 
 def task_test():
