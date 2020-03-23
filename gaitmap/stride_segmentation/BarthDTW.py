@@ -35,7 +35,7 @@ class BarthDTW(BaseStrideSegmentation):
     template: np.ndarray
     template_sampling_rate: float
     interpolate_template: bool
-    threshold: float
+    threshold: Optional[float]
     min_stride_time_s: float
 
     acc_cost_mat_: Optional[np.ndarray] = None
@@ -58,14 +58,14 @@ class BarthDTW(BaseStrideSegmentation):
         template: np.ndarray,
         template_sampling_rate: float,
         threshold: float,
-        min_stride_time_s: float = 0.6,
+        min_stride_time_s: Optional[float] = 0.6,
         interpolate_template: bool = True,
     ):
         self.template = template
         self.template_sampling_rate = template_sampling_rate
         self.interpolate_template = interpolate_template
         self.threshold = threshold
-        self.min_stride_time = min_stride_time_s
+        self.min_stride_time_s = min_stride_time_s
 
     def segment(self, data: np.ndarray, sampling_rate: float, **kwargs) -> List[List[int]]:
         self.data = data
@@ -75,8 +75,8 @@ class BarthDTW(BaseStrideSegmentation):
         self.acc_cost_mat_ = self._calculate_cost_matrix(to_time_series(template), to_time_series(data))
 
         min_distance = None
-        if self.min_stride_time not in (None, 0, 0.0):
-            min_distance = self.min_stride_time * sampling_rate
+        if self.min_stride_time_s not in (None, 0, 0.0):
+            min_distance = self.min_stride_time_s * sampling_rate
         matches = self._find_matches(np.sqrt(self.acc_cost_mat_), self.threshold, min_distance)
         self.paths_ = self._find_multiple_paths(self.acc_cost_mat_, matches)
         self.costs_ = np.sqrt(self.acc_cost_mat_[-1, :][matches])
