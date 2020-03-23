@@ -34,7 +34,7 @@ Base classes
     :no-inherited-members:
 
 Classes
----------------------------
+-------
 .. currentmodule:: gaitmap.stride_segmentation
 
 .. autosummary::
@@ -44,7 +44,7 @@ Classes
     BarthDtw
 
 Functions
-----------------
+---------
 .. currentmodule:: gaitmap.stride_segmentation
 
 .. autosummary::
@@ -53,6 +53,23 @@ Functions
 
     find_matches_find_peaks
     find_matches_original
+
+Utils
+-----
+.. automodule:: gaitmap.stride_segmentation.utils
+    :no-members:
+    :no-inherited-members:
+
+.. currentmodule:: gaitmap.stride_segmentation.utils
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    find_local_minima_below_threshold
+    find_local_minima_with_distance
+    split_array_at_nan
+
 
 :mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
 =================================================================

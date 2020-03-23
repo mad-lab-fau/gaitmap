@@ -10,4 +10,4 @@ as implemented in :py:mod:`gaitmap.event_detection`, to be able to provide infor
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
 
 
-__all__ = [BarthDtw]
+__all__ = ["BarthDtw"]

@@ -150,9 +150,11 @@ class BaseAlgorithm:
 
 
 class BaseStrideSegmentation(BaseAlgorithm):
+    """Base class for all stride segmentation algorithms."""
+
     _action_method = "segment"
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate: float, **kwargs) -> BaseType:
+    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **kwargs) -> BaseType:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
