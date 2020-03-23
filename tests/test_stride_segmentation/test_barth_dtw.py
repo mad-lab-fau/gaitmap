@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from gaitmap.stride_segmentation.BarthDtw import BarthDtw
+from gaitmap.stride_segmentation.barth_dtw import BarthDtw
 
 
 @pytest.fixture(params=list(BarthDtw._allowed_methods_map.keys()))
