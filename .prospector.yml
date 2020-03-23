@@ -4,6 +4,7 @@ doc-warnings: true
 ignore-paths:
   - docs
   - tests
+  - dodo.py
 
 pep8:
   options:

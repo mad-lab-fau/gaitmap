@@ -297,3 +297,6 @@ poetry.lock
 
 # Virtual env
 .venv
+
+# doit
+.doit.*
