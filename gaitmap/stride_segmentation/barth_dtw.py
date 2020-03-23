@@ -199,7 +199,11 @@ class BarthDtw(BaseStrideSegmentation):
         self.sampling_rate_hz = sampling_rate_hz
 
         # Validate and transform inputs
-        template = self._interpolate_template(sampling_rate_hz)
+        if self.resample_template is True and sampling_rate_hz != self.template_sampling_rate_hz:
+            template = self._interpolate_template(sampling_rate_hz)
+        else:
+            template = self.template
+
         min_distance = None
         if self.min_stride_time_s not in (None, 0, 0.0):
             min_distance = self.min_stride_time_s * sampling_rate_hz
@@ -223,9 +227,9 @@ class BarthDtw(BaseStrideSegmentation):
         return self
 
     def _interpolate_template(self, new_sampling_rate: float) -> np.ndarray:
-        template = self.template
-        if self.resample_template is True and new_sampling_rate != self.template_sampling_rate_hz:
-            template = resample(template, int(template.shape[0] * new_sampling_rate / self.template_sampling_rate_hz))
+        template = resample(
+            self.template, int(self.template.shape[0] * new_sampling_rate / self.template_sampling_rate_hz)
+        )
         return template
 
     @staticmethod
