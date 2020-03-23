@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, List, Type
+"""The msDTW based stride segmentation algorithm by Barth et al 2013."""
+from typing import Optional, Sequence, List
 
 import numpy as np
 from scipy.signal import resample
@@ -45,7 +46,6 @@ class BarthDtw(BaseStrideSegmentation):
     template: (n x m) array representing a single stride
         The template of length n used for matching. If the template has multiple dimensions m, the first m dimensions of
         the data are used to perform the matching.
-        TODO: Test multidimensional matchings
     template_sampling_rate_hz
         Sampling rate used for the template. This information is used to resample the template to the sampling rate of
         the data if `resample_template` is `True`. If `resample_template` is `False` this information is ignored.
@@ -62,16 +62,19 @@ class BarthDtw(BaseStrideSegmentation):
         At the moment this is only used when "find_peaks" is selected as `find_matches_method`.
     find_matches_method
         Select the method used to find stride candidates in the cost function.
-         - "original" matches the original implementation in the paper [1]_.
-            In this case :py:func:`find_matches_find_peaks` will be used as method.
-         - "find_peaks" uses `scipy.find_peaks` with additional constraints to find stride candidates.
-            In this case :py:func:`find_matches_original` will be used as method.
+
+        - "original"
+            Matches the original implementation in the paper [1]_.
+            In this case :py:func:`.find_matches_find_peaks` will be used as method.
+        - "find_peaks"
+            Uses `scipy.find_peaks` with additional constraints to find stride candidates.
+            In this case :py:func:`.find_matches_original` will be used as method.
 
     Other Parameters
     ----------------
     data
         The data passed to the py:meth:`segment` method.
-    sampling_rate
+    sampling_rate_hz
         The sampling rate of the data
 
     Notes
@@ -96,7 +99,7 @@ class BarthDtw(BaseStrideSegmentation):
     costs_: Sequence[float]
 
     data: np.ndarray
-    sampling_rate: float
+    sampling_rate_hz: float
 
     _allowed_methods_map = {"original": find_matches_original, "find_peaks": find_matches_find_peaks}
 
@@ -124,15 +127,35 @@ class BarthDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate: float, **kwargs) -> BaseType:
+    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **_) -> BaseType:
+        """Find stride candidates matching the provided template in the data.
+
+        Parameters
+        ----------
+        data: array (n x m)
+            The data array.
+            n needs to be larger than `n_template`.
+            m needs to be larger than `m_template`.
+            Only the `m_template` first columns will be used in the matching process.
+            For example if the template has 2 dimensions only `data[:, :2]` will be used.
+        sampling_rate_hz
+            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
+            a number of samples and it will be used to resample the template if `resample_template` is `True`.
+
+        Returns
+        -------
+            self
+                The class instance with all result attributes populated
+        """
+        # TODO: Test multidimensional matchings
         self.data = data
-        self.sampling_rate = sampling_rate
+        self.sampling_rate_hz = sampling_rate_hz
 
         # Validate and transform inputs
-        template = self._interpolate_template(sampling_rate)
+        template = self._interpolate_template(sampling_rate_hz)
         min_distance = None
         if self.min_stride_time_s not in (None, 0, 0.0):
-            min_distance = self.min_stride_time_s * sampling_rate
+            min_distance = self.min_stride_time_s * sampling_rate_hz
         find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
         if not find_matches_method:
             raise ValueError(
