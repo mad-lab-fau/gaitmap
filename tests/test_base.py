@@ -32,7 +32,12 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
 @pytest.fixture(
     params=[
         dict(
-            action_method_name="test", attributes={}, params={}, other_params={}, private_params={}, action_method=None
+            action_method_name="test",
+            attributes={"attr1_": "test1"},
+            params={},
+            other_params={},
+            private_params={},
+            action_method=None,
         ),
         dict(
             action_method_name="test",
@@ -90,16 +95,60 @@ def test_get_other_parameter(example_test_class_after_action):
     assert instance.get_other_params() == test_parameters["other_params"]
 
 
-def test_attribute_helper(example_test_class_initialised):
+@pytest.mark.parametrize("key", ["wrong_with_", "default"])
+def test_result_names_raise_error_with_tooltip(example_test_class_initialised, key):
     instance, test_parameters = example_test_class_initialised
 
     if not test_parameters["attributes"]:
         pytest.skip("Invalid fixture for this test")
-
-    key = list(test_parameters["attributes"].keys())[0]
+    if key == "default":
+        key = list(test_parameters["attributes"].keys())[0]
     with pytest.raises(AttributeError) as e:
         getattr(instance, key)
 
     assert "result" in str(e.value)
     assert key in str(e.value)
     assert instance._action_method in str(e.value)
+
+
+def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialised):
+    instance, test_parameters = example_test_class_initialised
+
+    key = "not_existend_without_underscore"
+
+    with pytest.raises(AttributeError) as e:
+        getattr(instance, key)
+
+    assert "result" not in str(e.value)
+    assert key in str(e.value)
+    assert instance._action_method not in str(e.value)
+
+
+@pytest.mark.parametrize("key", ["wrong_with_", "wrong_without"])
+def test_attribute_helper_after_action_wrong(example_test_class_after_action, key):
+    instance, test_parameters = example_test_class_after_action
+
+    if not test_parameters["attributes"]:
+        pytest.skip("Invalid fixture for this test")
+
+    with pytest.raises(AttributeError) as e:
+        getattr(instance, key)
+
+    assert "result" not in str(e.value)
+    assert key in str(e.value)
+    assert instance._action_method not in str(e.value)
+
+
+def test_action_is_not_applied(example_test_class_initialised):
+    instance, _ = example_test_class_initialised
+
+    assert instance._action_is_applied is False
+
+
+def test_action_is_applied(example_test_class_after_action):
+    instance, test_parameters = example_test_class_after_action
+
+    if not test_parameters["attributes"]:
+        pytest.skip("Invalid fixture for this test")
+
+    assert instance._action_is_applied is True

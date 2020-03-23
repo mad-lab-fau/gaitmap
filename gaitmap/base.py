@@ -27,8 +27,8 @@ class BaseAlgorithm:
     def _action_is_applied(self) -> bool:
         """Check if the action method was already called/results were generated."""
         if len(self.get_attributes()) == 0:
-            return True
-        return False
+            return False
+        return True
 
     def _get_action_method(self) -> Callable:
         """Get the action method as callable.
@@ -39,7 +39,7 @@ class BaseAlgorithm:
 
     def __getattr__(self, item):
         """Add helpful info for certain missing attributes."""
-        if item.endswith("_") and not item.startswith("__"):
+        if item.endswith("_") and not item.startswith("__") and not self._action_is_applied:
             raise AttributeError(
                 "`{}` appears to be a result. This means you need to call `{}` before accessing it.".format(
                     item, self._action_method
