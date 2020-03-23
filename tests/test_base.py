@@ -88,3 +88,18 @@ def test_get_other_parameter(example_test_class_after_action):
     instance, test_parameters = example_test_class_after_action
 
     assert instance.get_other_params() == test_parameters["other_params"]
+
+
+def test_attribute_helper(example_test_class_initialised):
+    instance, test_parameters = example_test_class_initialised
+
+    if not test_parameters["attributes"]:
+        pytest.skip("Invalid fixture for this test")
+
+    key = list(test_parameters["attributes"].keys())[0]
+    with pytest.raises(AttributeError) as e:
+        getattr(instance, key)
+
+    assert "result" in str(e.value)
+    assert key in str(e.value)
+    assert instance._action_method in str(e.value)
