@@ -73,8 +73,9 @@ Additions to the guide:
 - All classes should store the data (and other arguments) passed in the "action" step in the class object unless the amount of data would result in an unreasonable performance issue. Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to helper functions, that e.g. can visualize in and outputs.
 These parameters should be documented under "Other Parameters" to not clutter the docstring.
 - All methods should take care that they do not modify the original data passed to the function. If required a copy of the data can be created, but **not** stored in the object.
-- All classes should have a `_validate(self)` method that handles validation of all the parameters. This function should be called during the "action" (or whenever the parameters are first needed).
-Don't overdue the validation and focus on logical validation (e.g. a value can not be larger than x) and not on type validation. For type validation, we should trust that Python provides the correct error message once an invalid step is performed.
+- All classes should validate their input parameters during the "action" (or whenever the parameters are first needed).
+Don't overdue the validation and focus on logical validation (e.g. a value can not be larger than x) and not on type validation.
+For type validation, we should trust that Python provides the correct error message once an invalid step is performed.
 - All classes should inherent from a BaseClass specific to their type that implements common functionality and enforces the interface. Remember to call respective `super` methods when required.
 
 
@@ -183,12 +184,6 @@ class AuthorNameEventDetection(BaseEventDetection):
         self.hs_events_ = ...
 
         return self
-
-    def _validate(self) -> None:
-        """Validate all parameters here."""
-
-        if parameter_two is None:
-            raise ValueError("`parameter_two` should a real value")
 ```
 
 ### Random and Initial State
