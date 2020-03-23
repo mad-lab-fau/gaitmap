@@ -38,7 +38,7 @@ docs:
   <<: *python_base
   script:
     - poetry run doit docs
-    - mv _build/html ../html_docs
+    - mv docs/_build/html ./html_docs
   artifacts:
     paths:
       - html_docs
