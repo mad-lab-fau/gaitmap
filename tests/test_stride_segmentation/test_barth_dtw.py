@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from gaitmap.stride_segmentation.BarthDTW import BarthDTW
+from gaitmap.stride_segmentation.BarthDtw import BarthDtw
 
 
-@pytest.fixture(params=list(BarthDTW._allowed_methods_map.keys()))
+@pytest.fixture(params=list(BarthDtw._allowed_methods_map.keys()))
 def method(request):
     return request.param
 
@@ -13,7 +13,7 @@ def test_sdtw_simple_multi_match(method):
     template = np.array([0, 1.0, 0])
     sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    dtw = BarthDTW(
+    dtw = BarthDtw(
         template=template,
         template_sampling_rate=100.0,
         threshold=0.5,
@@ -43,7 +43,7 @@ def test_sdtw_multi_match(method):
     template = np.array([0, 1.0, 0])
     sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    dtw = BarthDTW(
+    dtw = BarthDtw(
         template=template,
         template_sampling_rate=100.0,
         threshold=0.5,

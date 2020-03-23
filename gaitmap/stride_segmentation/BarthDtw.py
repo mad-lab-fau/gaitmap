@@ -18,7 +18,7 @@ def find_matches_original(acc_cost_mat: np.ndarray, max_cost: float, **_) -> np.
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
 
 
-class BarthDTW(BaseStrideSegmentation):
+class BarthDtw(BaseStrideSegmentation):
     """Segment strides using a single stride template and Dynamic Time Warping."""
 
     template: np.ndarray
