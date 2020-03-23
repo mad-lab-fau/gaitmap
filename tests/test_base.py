@@ -7,16 +7,12 @@ import pytest
 from gaitmap.base import BaseAlgorithm
 
 
-def create_test_class(
-    action_method_name, attributes=None, params=None, other_params=None, private_params=None, action_method=None
-) -> BaseAlgorithm:
-    attributes = attributes or {}
+def create_test_class(action_method_name, params=None, private_params=None, action_method=None, **_) -> BaseAlgorithm:
     params = params or {}
-    other_params = other_params or {}
     private_params = private_params or {}
 
     class_dict = {"_action_method": action_method_name, "__init__": lambda x: None}
-    user_set_params = {**attributes, **params, **other_params, **private_params}
+    user_set_params = {**params, **private_params}
     if action_method:
         class_dict = {**class_dict, action_method_name: action_method}
     test_class = type("TestClass", (BaseAlgorithm,), class_dict)
@@ -48,13 +44,25 @@ def create_test_class(
         ),
     ]
 )
-def example_test_class(request) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
-    test_class = create_test_class(**request.param)
-    return test_class, request.param
+def example_test_class_initialised(request) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
+    test_instance = create_test_class(**request.param)
+    return test_instance, request.param
 
 
-def test_get_action_method(example_test_class):
-    instance, test_parameters = example_test_class
+@pytest.fixture()
+def example_test_class_after_action(example_test_class_initialised) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
+    test_instance, params = example_test_class_initialised
+    action_params = {
+        **params["attributes"],
+        **params["other_params"],
+    }
+    for k, v in action_params.items():
+        setattr(test_instance, k, v)
+    return test_instance, params
+
+
+def test_get_action_method(example_test_class_after_action):
+    instance, test_parameters = example_test_class_after_action
 
     assert instance._action_method == test_parameters["action_method_name"]
     if test_parameters["action_method"] is not None:
@@ -64,19 +72,19 @@ def test_get_action_method(example_test_class):
             instance._get_action_method()
 
 
-def test_get_attributes(example_test_class):
-    instance, test_parameters = example_test_class
+def test_get_attributes(example_test_class_after_action):
+    instance, test_parameters = example_test_class_after_action
 
     assert instance.get_attributes() == test_parameters["attributes"]
 
 
-def test_get_parameter(example_test_class):
-    instance, test_parameters = example_test_class
+def test_get_parameter(example_test_class_after_action):
+    instance, test_parameters = example_test_class_after_action
 
     assert instance.get_params() == test_parameters["params"]
 
 
-def test_get_other_parameter(example_test_class):
-    instance, test_parameters = example_test_class
+def test_get_other_parameter(example_test_class_after_action):
+    instance, test_parameters = example_test_class_after_action
 
     assert instance.get_other_params() == test_parameters["other_params"]
