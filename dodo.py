@@ -10,8 +10,13 @@ HERE = Path(__file__).parent
 
 
 def task_format():
-    """Reformat all files using lint."""
+    """Reformat all files using black."""
     return {"actions": [["black", HERE]], "verbosity": 1}
+
+
+def task_format_check():
+    """Check, but not change, formatting using black."""
+    return {"actions": [["black", HERE, '--check']], "verbosity": 1}
 
 
 def task_test():
@@ -25,6 +30,7 @@ def task_lint():
 
 
 def task_docs():
+
     """Build the html docs using Sphinx."""
     if platform.system() == "Windows":
         return {"actions": [[HERE / "docs/make.bat", "html"]], "verbosity": 2}

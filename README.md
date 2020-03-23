@@ -41,10 +41,11 @@ To list the available tasks, run:
 
 ```bash
 $ poetry run doit list
-docs     Build the html docs using Sphinx.
-format   Reformat all files using lint.
-lint     Lint all files with Prospector.
-test     Run Pytest with coverage.
+docs           Build the html docs using Sphinx.
+format         Reformat all files using black.
+format_check   Check, but not change, formatting using black.
+lint           Lint all files with Prospector.
+test           Run Pytest with coverage.
 ```
 
 To run one of the commands execute (e.g. the `test` command):
