@@ -33,36 +33,54 @@ For PyCharm you can find information about this [here](https://www.jetbrains.com
 
 ### Testing, linting, etc.
 
-This library uses `pytest` for testing.
-You can run it from the commandline (from the project root) using:
+To make it easier to run commandline tasks we use [doit](https://pydoit.org/contents.html) to provide a cross-platform 
+cli for common tasks.
+All commands need to be executed in the `venv` created by poetry.
+
+To list the available tasks, run:
 
 ```bash
-poetry run pytest
+$ poetry run doit list
+docs           Build the html docs using Sphinx.
+format         Reformat all files using black.
+format_check   Check, but not change, formatting using black.
+lint           Lint all files with Prospector.
+test           Run Pytest with coverage.
 ```
-Alternatively, you can use the `pytest` integration of your IDE.
 
-To ensure consistent code style the library uses strict linting rules.
-You can check your code against these rules using `prospector`.
-
+To run one of the commands execute (e.g. the `test` command):
 ```bash
-poetry run prospector
+poetry run doit test
 ```
 
-To make live easier for you, you should use [black](https://github.com/psf/black) to autoformat your code.
-Just run the following from the commandline:
-
+To execute `format`, `lint`, and `test` all together, run:
 ```bash
-poetry run black .
+poetry run doit
+# or if you want less output
+petry run doit -v 0
 ```
 
-Alternatively, you can integrate `black` [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html).
+Tou should run this as often as possible!
+At least once before any `git push`.
 
-### Configure IDE
+**Protip**: If you do not want to type `poetry run` all the time, you can also activate the `venv` for your current
+terminal session using `poetry shell`.
+After this you can just type, for example, `doit test`.
 
-#### PyCharm
+#### Tools we are using
 
-- Set docstring convention to `numpy`
-- Set default testrunner to `pytest`
+This library uses `pytest` for **testing**. Besides using the command above, you can also use an IDE integration available
+for most IDEs.
+For *PyCharm* you just need to set the default testrunner to `pytest`.
 
+To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
+autoformat our code.
+Black can also be integrated [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
+do not want to run it from the commandline.
+Because, it is so easy, we also use *black* to format the test-suite.
 
+For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
+*Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
 
+For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
+To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
