@@ -25,25 +25,19 @@ test:
   stage: testing
   <<: *python_base
   script:
-    - poetry run pytest --cov=gaitmap
+    - poetry run doit test
 
-lint-prospector:
+lint:
   stage: testing
   <<: *python_base
   script:
-    - poetry run prospector
-
-lint-black:
-  stage: testing
-  <<: *python_base
-  script:
-    - poetry run black . --check
+    - poetry run doit -v 0 --continue format_check lint
 
 docs:
   stage: deploy
   <<: *python_base
   script:
-    - cd docs && poetry run make html
+    - poetry run doit docs
     - mv _build/html ../html_docs
   artifacts:
     paths:
