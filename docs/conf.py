@@ -44,7 +44,7 @@ extensions = [
     "sphinx.ext.linkcode",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.imgconverter",
+    # "sphinx.ext.imgconverter",
     # "sphinx_gallery.gen_gallery",
     "recommonmark",
 ]
@@ -127,3 +127,15 @@ def linkcode_resolve(domain, info):
     if code_line:
         return "{}/{}.py#L{}".format(URL, filename, code_line)
     return "{}/{}.py".format(URL, filename)
+
+# Intersphinx
+
+# intersphinx configuration
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/{.major}'.format(
+        sys.version_info), None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+}
