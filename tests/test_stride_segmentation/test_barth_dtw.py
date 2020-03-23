@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from gaitmap.stride_segmentation.barth_dtw import BarthDtw
+from gaitmap.stride_segmentation import BarthDtw
 
 
 @pytest.fixture(params=list(BarthDtw._allowed_methods_map.keys()))
@@ -20,7 +20,7 @@ def test_sdtw_simple_multi_match(method):
         min_stride_time_s=None,
         find_matches_method=method,
     )
-    dtw = dtw.segment(np.array(sequence), sampling_rate=100.0,)
+    dtw = dtw.segment(np.array(sequence), sampling_rate_hz=100.0, )
 
     np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
     assert dtw.costs_ == [0.0]
@@ -49,7 +49,7 @@ def test_sdtw_multi_match(method):
         min_stride_time_s=None,
         find_matches_method=method,
     )
-    dtw = dtw.segment(np.array(sequence), sampling_rate=100.0,)
+    dtw = dtw.segment(np.array(sequence), sampling_rate_hz=100.0, )
 
     np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
     np.testing.assert_array_equal(dtw.paths_start_end_, [[5, 7], [18, 20]])
