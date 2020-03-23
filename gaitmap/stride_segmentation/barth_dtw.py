@@ -12,7 +12,7 @@ from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, f
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
-    """Find matches in the accumulated cost matrix using `scipy.signal.find_peaks`.
+    """Find matches in the accumulated cost matrix using :func:`scipy.signal.find_peaks`.
 
     Parameters
     ----------
@@ -110,7 +110,7 @@ class BarthDtw(BaseStrideSegmentation):
             Matches the original implementation in the paper [1]_.
             In this case :py:func:`.find_matches_find_peaks` will be used as method.
         - "find_peaks"
-            Uses `scipy.find_peaks` with additional constraints to find stride candidates.
+            Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
             In this case :py:func:`.find_matches_original` will be used as method.
 
     Other Parameters
