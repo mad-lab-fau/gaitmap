@@ -45,7 +45,7 @@ class BaseAlgorithm:
                     item, self._action_method
                 )
             )
-        super_getter = getattr(super(BaseAlgorithm, self), '__getattr__', None)
+        super_getter = getattr(super(BaseAlgorithm, self), "__getattr__", None)
         if super_getter:
             return super_getter(item)  # pylint: disable=not-callable
         raise AttributeError(item)
