@@ -131,8 +131,8 @@ class BarthDtw(BaseStrideSegmentation):
 
     """
 
-    template: np.ndarray
-    template_sampling_rate_hz: float
+    template: Optional[np.ndarray]
+    template_sampling_rate_hz: Optional[float]
     max_cost: Optional[float]
     resample_template: bool
     min_stride_time_s: float
@@ -159,8 +159,8 @@ class BarthDtw(BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: np.ndarray,
-        template_sampling_rate_hz: float,
+        template: Optional[np.ndarray] = None,
+        template_sampling_rate_hz: Optional[float] = None,
         resample_template: bool = True,
         find_matches_method: Literal["original", "find_peaks"] = "original",
         max_cost: Optional[float] = None,
@@ -199,6 +199,14 @@ class BarthDtw(BaseStrideSegmentation):
         self.sampling_rate_hz = sampling_rate_hz
 
         # Validate and transform inputs
+        if self.template is None:
+            raise ValueError("A `template` must be specified.")
+
+        if self.resample_template and not self.template_sampling_rate_hz:
+            raise ValueError(
+                "To resample the template (`resample_template=True`), `template_sampling_rate_hz` must be specified."
+            )
+
         if self.resample_template is True and sampling_rate_hz != self.template_sampling_rate_hz:
             template = self._interpolate_template(sampling_rate_hz)
         else:
