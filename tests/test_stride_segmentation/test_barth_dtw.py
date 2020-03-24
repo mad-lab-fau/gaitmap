@@ -4,59 +4,51 @@ import pytest
 from gaitmap.stride_segmentation import BarthDtw
 
 
-@pytest.fixture(params=list(BarthDtw._allowed_methods_map.keys()))
-def method(request):
-    return request.param
-
-
-def test_sdtw_simple_multi_match(method):
+class TestSimpleSegment:
     template = np.array([0, 1.0, 0])
-    sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    dtw = BarthDtw(
-        template=template,
-        template_sampling_rate_hz=100.0,
-        max_cost=0.5,
-        min_stride_time_s=None,
-        find_matches_method=method,
-    )
-    dtw = dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
+    @pytest.fixture(params=list(BarthDtw._allowed_methods_map.keys()), autouse=True)
+    def _create_instance(self, request):
+        dtw = BarthDtw(
+            template=self.template,
+            template_sampling_rate_hz=100.0,
+            max_cost=0.5,
+            min_stride_time_s=None,
+            find_matches_method=request.param,
+        )
+        self.dtw = dtw
 
-    np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
-    assert dtw.costs_ == [0.0]
-    np.testing.assert_array_equal(dtw.strides_start_end_, [[5, 7]])
-    np.testing.assert_array_equal(
-        dtw.acc_cost_mat_,
-        [
-            [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
-            [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
-            [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
-        ],
-    )
+    def test_sdtw_simple_multi_match(self):
+        sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    np.testing.assert_array_equal(dtw.data, sequence)
-    np.testing.assert_array_equal(dtw.template, template)
+        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
+        np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
+        assert dtw.costs_ == [0.0]
+        np.testing.assert_array_equal(dtw.strides_start_end_, [[5, 7]])
+        np.testing.assert_array_equal(
+            dtw.acc_cost_mat_,
+            [
+                [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            ],
+        )
 
-def test_sdtw_multi_match(method):
-    template = np.array([0, 1.0, 0])
-    sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
+        np.testing.assert_array_equal(dtw.data, sequence)
+        np.testing.assert_array_equal(dtw.template, self.template)
 
-    dtw = BarthDtw(
-        template=template,
-        template_sampling_rate_hz=100.0,
-        max_cost=0.5,
-        min_stride_time_s=None,
-        find_matches_method=method,
-    )
-    dtw = dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
+    def test_sdtw_multi_match(self):
+        sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-    np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
-    np.testing.assert_array_equal(dtw.strides_start_end_, [[5, 7], [18, 20]])
-    np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
-    np.testing.assert_array_equal(dtw.data, sequence)
-    np.testing.assert_array_equal(dtw.template, template)
+        np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
+        np.testing.assert_array_equal(dtw.strides_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+
+        np.testing.assert_array_equal(dtw.data, sequence)
+        np.testing.assert_array_equal(dtw.template, self.template)
 
 
 # TODO; Test template interpolate
