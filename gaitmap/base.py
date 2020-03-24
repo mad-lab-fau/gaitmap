@@ -1,6 +1,7 @@
 """Base class for all algorithms."""
 
 import inspect
+import types
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
 import numpy as np
@@ -145,7 +146,12 @@ class BaseAlgorithm:
             This usually indicates that the action method was not called yet.
 
         """
-        attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
+        all_attributes = dir(self)
+        attrs = {
+            v: getattr(self, v)
+            for v in all_attributes
+            if v.endswith("_") and not v.startswith("__") and not isinstance(getattr(self, v), types.MethodType)
+        }
         return attrs
 
 
