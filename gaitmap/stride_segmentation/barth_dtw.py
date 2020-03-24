@@ -73,20 +73,20 @@ class BarthDtw(BaseStrideSegmentation):
 
     Attributes
     ----------
-    strides_start_end_: 2D array of shape (n_detected_strides x 2)
+    strides_start_end_ : 2D array of shape (n_detected_strides x 2)
         The start (column 1) and stop (column 2) of each detected stride.
-    costs_: List of length n_detected_strides
+    costs_ : List of length n_detected_strides
         The cost value associated with each stride.
-    acc_cost_mat_: array with the shapes (length_template x length_data)
+    acc_cost_mat_ : array with the shapes (length_template x length_data)
         The accumulated cost matrix of the DTW. The last row represents the cost function.
-    cost_function_: 1D array with the same length as the data
+    cost_function_ : 1D array with the same length as the data
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
     paths_
         The full path through the cost matrix of each detected stride.
 
     Parameters
     ----------
-    template: (n x m) array representing a single stride
+    template : (n x m) array representing a single stride
         The template of length n used for matching. If the template has multiple dimensions m, the first m dimensions of
         the data are used to perform the matching.
     template_sampling_rate_hz
@@ -178,7 +178,7 @@ class BarthDtw(BaseStrideSegmentation):
 
         Parameters
         ----------
-        data: array (n x m)
+        data : array (n x m)
             The data array.
             n needs to be larger than `n_template`.
             m needs to be larger than `m_template`.
