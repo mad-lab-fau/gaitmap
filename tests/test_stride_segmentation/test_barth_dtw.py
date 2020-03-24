@@ -1,7 +1,23 @@
 import numpy as np
 import pytest
 
+from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthDtw
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = BarthDtw
+    __test__ = True
+
+    @pytest.fixture()
+    def after_action_instance(self) -> BaseType:
+        dtw = BarthDtw(
+            template=np.array([0, 1.0, 0]), template_sampling_rate_hz=100.0, max_cost=0.5, min_stride_time_s=None,
+        )
+        data = np.array([0, 1.0, 0])
+        dtw.segment(data, sampling_rate_hz=100)
+        return dtw
 
 
 class TestSimpleSegment:
