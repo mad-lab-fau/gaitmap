@@ -12,6 +12,7 @@ gaitmap Docu Overview
 
    Readme <README.md>
    guides/Contribution-Guide.md
+   guides/Development-Guide.md
 
 .. toctree::
    :maxdepth: 1
