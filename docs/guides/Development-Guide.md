@@ -8,6 +8,13 @@ If you are looking for a higher level overview over the guiding ideas and struct
 
 ## Project Setup and Poetry
 
+*gaitmap* only supports Python 3.7 and newer.
+First, install a compatible version of Python.
+If you do not want to modify your system installation of Python you can use [conda](https://docs.conda.io/en/latest/)
+or [pyenv](https://github.com/pyenv/pyenv).
+However, there are some issues with using conda.
+Please, check the [trouble shooting guide](#trouble-shooting) below.
+
 *gaitmap* uses [poetry](https://python-poetry.org) to manage its dependencies.
 Once you installed poetry, run the following commands to initialize a virtual env and install all development
 dependencies:
