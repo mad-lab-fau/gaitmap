@@ -33,7 +33,7 @@ For PyCharm you can find information about this [here](https://www.jetbrains.com
 
 In case you encounter any error and need more detailed instruction visit the 
 [Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/guides/Development-Guide.html) and the 
-[Contribution Guide](guides/Contribution-Guide.html).
+[Contribution Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/guides/Contribution-Guide.html).
 
 ### Testing, linting, etc.
 
