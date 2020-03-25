@@ -32,8 +32,8 @@ You can point your IDE to this folder to use this version of Python.
 For PyCharm you can find information about this [here](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html)
 
 In case you encounter any error and need more detailed instruction visit the 
-[Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/guides/Development-Guide.html) and the 
-[Contribution Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/guides/Contribution-Guide.html).
+[Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Development-Guide.html) and the 
+[Contribution Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Contribution-Guide.html).
 
 ### Testing, linting, etc.
 
