@@ -65,7 +65,7 @@ def find_matches_original(acc_cost_mat: np.ndarray, max_cost: float, **_) -> np.
 class BarthDtw(BaseStrideSegmentation):
     """Segment strides using a single stride template and Dynamic Time Warping.
 
-    BarthDtw uses a manual detected template of an IMU stride to find multiple occurrences of similar signals in an
+    BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
     continuous data stream.
     The method is not limited to a single sensor-axis or sensor, but can use any number of dimensions of the provided
     input signal simultaneously.
@@ -96,18 +96,18 @@ class BarthDtw(BaseStrideSegmentation):
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template_sampling_rate_hz`.
     max_cost
-        The maximal allowed cost to find a potential stride candidates in the cost function.
+        The maximal allowed cost to find potential stride candidates in the cost function.
         Its usage depends on the exact `find_matches_method` used.
         Refer to the `find_matches_method` to learn more about this.
     min_stride_time_s
         The minimal length of a sequence in seconds to be still considered a stride.
         Matches that result in shorter sequences, will be ignored.
-        At the moment this is only used when "find_peaks" is selected as `find_matches_method`.
+        At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
     find_matches_method
         Select the method used to find stride candidates in the cost function.
 
         - "original"
-            Matches the original implementation in the paper [1]_.
+            Matches the original implementation in the paper [1].
             In this case :py:func:`.find_matches_find_peaks` will be used as method.
         - "find_peaks"
             Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
