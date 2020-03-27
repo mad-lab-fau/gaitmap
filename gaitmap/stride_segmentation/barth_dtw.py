@@ -108,10 +108,10 @@ class BarthDtw(BaseStrideSegmentation):
 
         - "original"
             Matches the original implementation in the paper [1].
-            In this case :py:func:`.find_matches_find_peaks` will be used as method.
+            In this case :py:func:`.find_matches_original` will be used as method.
         - "find_peaks"
             Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :py:func:`.find_matches_original` will be used as method.
+            In this case :py:func:`.find_matches_find_peaks` will be used as method.
 
     Other Parameters
     ----------------
