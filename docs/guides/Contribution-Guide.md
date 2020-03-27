@@ -57,7 +57,13 @@ From the guide:
 - No actual data should be passed to the `__init__`. Think of it as configuring the algorithm.
 - Defaults for parameters should be provided in the `__init__`
 - The names of the class attributes should be identical with the names used in the `__init__`.
-- All parameters that are not directly depended on the input data, should be set in the `__init__` and not in the *action* method (see below). This also includes parameters that should be adapted based on the data, but can theoretically estimated without having the data available (e.g. the optimal threshold for DTW). All these parameters should be set in the `__init__`.
+- All parameters that are not directly depended on the input data, should be set in the `__init__` and not in the
+  *action* method (see below).
+  This also includes parameters that should be adapted based on the data, but can theoretically estimated without having
+  the data available (e.g. the optimal threshold for DTW).
+  All these parameters should be set in the `__init__`.
+  The data and all other measured/directly data-depended parameters are passed in the action method.
+  This includes for example, the raw IMU data, the sampling rate demographic information, etc..
 - Results and outputs are stored with a trailing underscore (e.g. `filtered_stride_list_`.
 - All algorithms of the same type should have a consistent interface with (as far as possible), identical input parameters to allow drop-in replacements of different algorithms
 - Each type of algorithm has one (or multiple) "action" methods with a descriptive name. These *action* methods take the actual data as input and will produce results.
@@ -82,6 +88,10 @@ For type validation, we should trust that Python provides the correct error mess
 #### Example class structure
 
 ```python
+from gaitmap.base import BaseType, BaseEventDetection
+from typing import Optional
+import numpy as np
+
 
 class AuthorNameEventDetection(BaseEventDetection):
     """ This is an example class.
@@ -138,7 +148,7 @@ class AuthorNameEventDetection(BaseEventDetection):
         self.window_length = window_length
         super().__init__()
 
-    def detect(self: Type[T], data: np.ndarray) -> T:
+    def detect(self: BaseType, data: np.ndarray) -> BaseType:
         """This is the actual action method.
         
         Parameters
@@ -162,7 +172,7 @@ class AuthorNameEventDetection(BaseEventDetection):
 
         return self
 
-    def detect_hs(self: Type[T], data: np.ndarray) -> T:
+    def detect_hs(self: BaseType, data: np.ndarray) -> BaseType:
         """Example of secondary action function.
             
         This allows users to have full control of what they 
