@@ -1,4 +1,4 @@
-"""Base class for all algorithm."""
+"""Base class for all algorithms."""
 
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
