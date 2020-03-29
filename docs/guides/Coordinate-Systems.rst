@@ -14,7 +14,7 @@ TL;DR(A)
 This TL;DR(Again) is intended as quick reference, **after** you already read the full documentation below.
 
 * Accelerometer measures a positive value, if movement occurs in the **positive (+)** direction of the axis
-* Gyroscope measures a positive value, if rotation occurs in the direction of the arrow in the image below
+* Gyroscope measures a positive value, if rotation occurs in the direction of the arrow in the :ref:`image below <ff>`
 * Gravity results in a measure of **+1g**, if an axis is pointing **upwards**, and **-1g**, if the axis is pointing
   **downwards**
 
