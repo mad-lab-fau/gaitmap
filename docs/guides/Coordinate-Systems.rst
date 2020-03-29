@@ -18,9 +18,17 @@ This TL;DR(Again) is intended as quick reference, **after** you already read the
 * Gravity results in a measure of **+1g** if an axis is pointing **upwards**, and **-1g** if the axis is pointing
   **downwards**
 
-Sensor Frame (SF)
-    * SCS forms a right-handed coordinate system with axis called **X, Y, Z**
+Foot Sensor Frame (FSF)
+    * FSF forms a right-handed coordinate system with axis called **X, Y, Z**
     * The positive direction of the Gyroscope is determined by the right-hand-rule around each axis
+    * The axis directions are defined as up (Z), to the tip of the shoe (X), and
+      to the **left** (Y)
+
+Foot Body Frame (FBF)
+    * FBF consists of the 3 axis *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
+    * The FBF is **not** right handed and should not be used for any physical calculations
+    * In the FBF the same anatomical movement produces the same sensor signal independent of the feet
+    * The directions for the FBF are taken from [1]_
 
 .. _ff:
 
