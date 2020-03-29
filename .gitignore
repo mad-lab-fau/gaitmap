@@ -300,3 +300,6 @@ poetry.lock
 
 # doit
 .doit.*
+
+# vscode (full)
+.vscode

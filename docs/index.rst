@@ -13,6 +13,7 @@ gaitmap Docu Overview
    Readme <README.md>
    guides/Contribution-Guide.md
    guides/Development-Guide.md
+   guides/Coordinate-Systems.rst
 
 .. toctree::
    :maxdepth: 1
