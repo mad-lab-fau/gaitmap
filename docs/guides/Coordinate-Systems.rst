@@ -27,7 +27,8 @@ Foot Sensor Frame (FSF)
 Foot Body Frame (FBF)
     * consists of the 3 axis *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
     * is **not** right handed and should not be used for any physical calculations
-    * produces the same sensor signal independent of the foot (right/left) for the same anatomical movement (e.g. lateral acceleration = positive acceleration)
+    * produces the same sensor signal independent of the foot (right/left) for the same anatomical movement (e.g.
+      lateral acceleration = positive acceleration)
     * follows convention of directions from [1]_
 
 .. _ff:
@@ -81,8 +82,8 @@ Sensor vs Body Frame
 
 When working with IMUs you always need to differentiate between the local sensor coordinate system and the global world
 coordinate system.
-The former describes everything from the view of the sensor (i.e. directions are fixed based on the axes directions of
-the sensor).
+The former describes everything from the view of the sensor (i.e. when the sensor is rotated or moved the coordinate
+system is adjusted as well).
 The latter describes the sensors orientation and movement relative to a global reference frame set by global objects
 relevant for the performed measurement.
 If measuring human movement it makes sense to use the human body as the reference for our global frame.
@@ -95,7 +96,7 @@ However, if we attach sensors to two opposite-sided extremities of a human, this
 As the movements of our extremities are described as mirror images of each other, it makes sense to choose a BF that
 results in the same sensor signal for the same movement, independent of which extremity we look at.
 For example, a lateral raise of the leg should produce a positive acceleration signal in both sensors.
-This requires that the BF of one sensor is the mirror-image of the other's.
+This requires that the BF of one sensor is the mirror-image (mirrored at the sagittal plane) of the other's.
 As mirroring is a non-cartesian transformation, it is not possible to find rotation matrices that can transform the
 local SFs into their respective BFs.
 Hence, performing the transformation will require the mirroring of individual axis, which breaks the right-handedness of
