@@ -1,6 +1,6 @@
-==========  =======
+===================
 Coordinate  Systems
-==========  =======
+===================
 
 Coordinate systems (or frames) are an important topic when working with IMUs and are getting even more complicated
 when these IMUs are attached to a human body.
