@@ -25,7 +25,7 @@ Foot Sensor Frame (FSF)
       to the **left** (Y)
 
 Foot Body Frame (FBF)
-    * consists of the 3 axis *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
+    * consists of the 3 axes *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
     * is **not** right handed and should not be used for any physical calculations
     * produces the same sensor signal independent of the foot (right/left) for the same anatomical movement (e.g.
       lateral acceleration = positive acceleration)
