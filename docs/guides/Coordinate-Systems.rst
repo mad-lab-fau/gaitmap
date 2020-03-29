@@ -4,31 +4,31 @@ Coordinate  Systems
 
 Coordinate systems (or frames) are an important topic when working with IMUs and are getting even more complicated
 when these IMUs are attached to a human body.
-This libraries makes a couple of deliberate choices when it comes to the definition of coordinate systems and related
+This library makes a couple of deliberate choices when it comes to the definition of coordinate systems and related
 naming conventions.
 Therefore, please read this document carefully before using the pipelines available in *gaitlab*.
 
 TL;DR(A)
 ========
 
-This TL;DR(Again) is intended as quick reference, **after** you already read the document.
+This TL;DR(Again) is intended as quick reference, **after** you already read the full documentation below.
 
-* The Accelerometer measures a positive value, if movement occurs in the **positive (+)** direction of the axis
-* The Gyroscope measures a positive value, if rotation occurs in the direction of the arrow in the image below
-* Gravity results in a measure of **+1g** if an axis is pointing **upwards**, and **-1g** if the axis is pointing
+* Accelerometer measures a positive value, if movement occurs in the **positive (+)** direction of the axis
+* Gyroscope measures a positive value, if rotation occurs in the direction of the arrow in the image below
+* Gravity results in a measure of **+1g**, if an axis is pointing **upwards**, and **-1g**, if the axis is pointing
   **downwards**
 
 Foot Sensor Frame (FSF)
-    * FSF forms a right-handed coordinate system with axis called **X, Y, Z**
-    * The positive direction of the Gyroscope is determined by the right-hand-rule around each axis
-    * The axis directions are defined as up (Z), to the tip of the shoe (X), and
+    * forms a right-handed coordinate system with axes called **X, Y, Z**
+    * uses right-hand-rule around each axis for definition of positive direction of the Gyroscope 
+    * defines axes' directions as up (Z), to the tip of the shoe (X), and
       to the **left** (Y)
 
 Foot Body Frame (FBF)
-    * FBF consists of the 3 axis *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
-    * The FBF is **not** right handed and should not be used for any physical calculations
-    * In the FBF the same anatomical movement produces the same sensor signal independent of the feet
-    * The directions for the FBF are taken from [1]_
+    * consists of the 3 axis *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
+    * is **not** right handed and should not be used for any physical calculations
+    * produces the same sensor signal independent of the foot (right/left) for the same anatomical movement (e.g. lateral acceleration = positive acceleration)
+    * follows convention of directions from [1]_
 
 .. _ff:
 
@@ -81,7 +81,7 @@ Sensor vs Body Frame
 
 When working with IMUs you always need to differentiate between the local sensor coordinate system and the global world
 coordinate system.
-The former describes everything from the view of the sensor (i.e. direction are fixed based on the axis directions of
+The former describes everything from the view of the sensor (i.e. directions are fixed based on the axes directions of
 the sensor).
 The latter describes the sensors orientation and movement relative to a global reference frame set by global objects
 relevant for the performed measurement.
@@ -94,9 +94,9 @@ body frame (BF) can be achieved by a single rotation matrix describing the relat
 However, if we attach sensors to two opposite-sided extremities of a human, this is not as easy anymore.
 As the movements of our extremities are described as mirror images of each other, it makes sense to choose a BF that
 results in the same sensor signal for the same movement, independent of which extremity we look at.
-For example, a lateral raise of the leg should produce a positive Acc signal in both sensors.
+For example, a lateral raise of the leg should produce a positive acceleration signal in both sensors.
 This requires that the BF of one sensor is the mirror-image of the other's.
-As mirroring is a non-cartasian transformation, it is not possible to find rotation matrices that can transform the
+As mirroring is a non-cartesian transformation, it is not possible to find rotation matrices that can transform the
 local SFs into their respective BFs.
 Hence, performing the transformation will require the mirroring of individual axis, which breaks the right-handedness of
 the coordinate system.
@@ -105,7 +105,7 @@ sides, we also need to break the right-hand-rule for the movement direction arou
 
 .. warning:: Therefore, we must not use such a BF to perform any sort of physical calculations that involve the signal
              for more than one axis!
-             In particular rotations can not be performed in this coordinate system.
+             In particular rotations cannot be performed in this coordinate system.
 
 This inability to perform certain mathematical options potentially requires us to switch from the SF to the BF multiple
 times during an analysis pipeline.
@@ -113,7 +113,7 @@ For example, initial sensor alignment, filtering, and calibration needs to be pe
 The identification of certain movements and events is usually done best in the BF, so that the same algorithm can be
 used for each foot.
 Orientation and position estimations of the sensors need to be performed in the SF again and the results need to be
-converted back to the BF to get final biochemical measures and joint angles.
+converted back to the BF to get final biomechanical measures and joint angles.
 
 Foot Coordinate System
 ----------------------
@@ -123,26 +123,26 @@ better with the directions of movement the specific body segment can perform.
 The following section describes the chosen SF and BFs for sensors attached anywhere at the feet.
 These frames are called *foot sensor frame* (FSF) and *(left/right) foot body frame* ((L/R)FBF).
 
-To make the transformation from the FSF to the FBFs easy, this library uses a FSF that already aligns with all mature
-axis of movements (see :ref:`ff`).
-Specifically, the sensor axis **independent** of the foot are expected to point up (Z), to the tip of the shoe (X), and
+To make the transformation from the FSF to the FBFs easy, this library uses an FSF that already aligns with all mature
+axes of movements (see :ref:`ff`).
+Specifically, sensor axes **independent** of the foot are expected to point up (Z), to the tip of the shoe (X), and
 to the **left** (Y).
-The forward direction for rotations are determined by the right hand rule around these axis.
+The forward direction for rotations are determined by the right-hand-rule around these axes.
 
 .. note:: This means to use the provided functions for coordinate conversion in this library, you are expected to rotate
           your IMU data to fit this coordinate system.
-          This can not always be done precisely.
-          The required precision of alignment, will depend on the exact algorithms used and the final biomechanical
-          parameters required.
+          This cannot always be done precisely.
+          The required precision of alignment will depend on the exact algorithms used and the final biomechanical
+          parameters of interest.
           This is discussed further in the section about :ref:`alignment-algorithms`.
 
-To transform this FSF into the FBFs, only renaming and axis flips are required (see table :ref:`foot-transform`).
-The axis of the FBFs are denoted by *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to
+To transform FSF into FBFs, only renaming and axis flips are required (see table :ref:`foot-transform`).
+FBFs' axes FBFs are denoted by *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to
 inferior).
 The order of naming directly indicates the positive direction of the respective axis.
 All rotations are named by the axes they occur around.
-Note, that the positive direction of rotation is not determined by the right hand rule.
-Rather, the forward directions for the axis and direction of rotation are directly taken from the recommendations given
+Note, that positive direction of rotation is not determined by the right-hand-rule.
+Rather, forward directions for axes and directions of rotation are directly taken from the recommendations given
 in [1]_ (see :ref:`ff`).
 
 .. _foot-transform:
