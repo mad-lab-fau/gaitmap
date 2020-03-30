@@ -40,3 +40,4 @@ Functions
    :template: function.rst
 
     utils.rotations.rotation_from_angle
+    utils.rotations.rotate_dataset

@@ -2,11 +2,13 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
-
-from typing import Union
+from typing import Union, Dict, Optional
 
 import numpy as np
+import pandas as pd
 from scipy.spatial.transform import Rotation
+
+from gaitmap.utils.consts import SF_GYR, SF_ACC
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
@@ -50,3 +52,69 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     angle = np.atleast_2d(angle)
     axis = np.atleast_2d(axis)
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
+
+
+def _rotate_sensor(data: pd.DataFrame, rotation: Optional[Rotation], inplace: bool = False) -> pd.DataFrame:
+    """Rotate the data of a single sensor with acc and gyro."""
+    # TODO: Put the default column names somewhere.
+    if inplace is False:
+        data = data.copy()
+    if rotation is None:
+        return data
+    data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
+    data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy())
+    return data
+
+
+def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Rotation]]) -> pd.DataFrame:
+    """Apply a rotation to acc and gyro data of a dataset.
+
+    TODO: Add example
+
+    Parameters
+    ----------
+    dataset
+        dataframe representing a single or multiple sensors.
+        In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
+        and the second level the axis names (all sensor frame axis must be present)
+    rotation
+        In case a single rotation object is passed, it will be applied to all sensors of the dataset.
+        If a dictionary of rotations is applied, the respective rotations will be matched to the sensors based on the
+        dict keys.
+        If no rotation is provided for a sensor, it will not be modified.
+
+    Returns
+    -------
+    rotated dataset
+        This will always be a copy. The original dataframe will not be modified.
+
+    """
+    multi_index = dataset.columns.nlevels > 1
+    if not multi_index and isinstance(rotation, dict):
+        raise ValueError(
+            "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
+            " passed."
+        )
+
+    # TODO: create helper that checks if valid dataset is passed
+    # TODO: Add warning if rotations are passed for sensors that don't exist
+    if not multi_index:
+        return _rotate_sensor(dataset, rotation, inplace=False)
+
+    rotation_dict = rotation
+    if not isinstance(rotation_dict, dict):
+        rotation_dict = {k: rotation for k in dataset.columns.get_level_values(level=0)}
+
+    original_cols = dataset.columns.copy()
+
+    # For some strange reason, we need to unstack and stack again to use apply here:
+    dataset = (
+        dataset.stack(level=0)
+        .groupby(level=1)
+        .apply(lambda x: _rotate_sensor(x, rotation_dict.get(x.name, None), inplace=False))
+        .unstack(level=1)
+        .swaplevel(axis=1)
+    )
+    # Restore original order
+    dataset = dataset[original_cols]
+    return dataset
