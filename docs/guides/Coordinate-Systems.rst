@@ -36,9 +36,13 @@ Foot Body Frame (FBF)
 Foot Frame Overview
 -------------------
 
-.. raw:: html
-  :file: ../images/gaitmap_foot_frame.html
+.. figure:: /images/gaitmap_foot_frame.svg
+    :alt: gaitmap foot frame
+    :figclass: align-center
 
+    The positive directions for the accelerometer (straight arrows) and the gyroscope (circular arrows) for the foot
+    sensor frame (left) and foot body frame (right).
+    `Click here for fullscreen version of image <../_images/gaitmap_foot_frame.svg>`_
 
 .. table:: Table showing the expected signal (positive or negative and in which axis) when a certain movement
            (displacement or rotation) of a foot happens for the sensor (FSF) and the body frame (FBF).
