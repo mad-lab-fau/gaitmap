@@ -77,9 +77,6 @@ autosummary_generate = True
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "templates"]
 
-# This is needed for the very hacky way we include svg images with linked files
-html_extra_path = ['images/additional_images']
-
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 default_role = "literal"
