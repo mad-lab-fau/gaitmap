@@ -22,3 +22,22 @@ Base classes
    :template: class_with_private.rst
 
     base.BaseAlgorithm
+
+
+:mod:`gaitmap.utils.rotations`: Helper to handle rotations
+==========================================================
+
+.. automodule:: gaitmap.utils.rotations
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    utils.rotations.rotation_from_angle
+    utils.rotations.rotate_dataset
