@@ -37,9 +37,9 @@ def healthy_example_stride_borders():
 
 @pytest.fixture()
 def healthy_example_mocap_data():
-    """3D Mocap information of of the foot synchronised with :ref:`healthy_example_imu_data`.
+    """3D Mocap information of the foot synchronised with :ref:`healthy_example_imu_data`.
 
-    The sampling rate is 100 Hz
+    The sampling rate is 100 Hz.
 
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
