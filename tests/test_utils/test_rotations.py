@@ -15,6 +15,7 @@ def cyclic_rotation():
 
 
 class TestRotationFromAngle:
+    """Test the function `rotation_from_angle`."""
     def test_single_angle(self):
         """Test single axis, single angle."""
         assert_almost_equal(rotation_from_angle(np.array([1, 0, 0]), np.pi).as_quat(), [1.0, 0, 0, 0])
@@ -42,10 +43,18 @@ class TestRotationFromAngle:
 
 
 class TestRotateDataset:
+    """Test the functions `rotate_dataset` and `_rotate_sensor`."""
+
     sample_sensor_data: pd.DataFrame
     sample_sensor_dataset: pd.DataFrame
 
     def _compare_cyclic(self, data, rotated_data, cycles=1):
+        """Quickly check if rotated data was rotated by a cyclic axis rotation.
+
+        This can be used in combination with to :func:`cyclic_rotation fixture`, to test if this rotation was correctly
+        applied to the data of a sensor.
+        See tests below for examples.
+        """
         # The cyclic rotation should be equivalent to just shifting columns
         shifted_acc_cols = SF_ACC[-cycles:] + SF_ACC[:-cycles]
         shifted_gyr_cols = SF_GYR[-cycles:] + SF_GYR[:-cycles]
@@ -55,6 +64,10 @@ class TestRotateDataset:
 
     @pytest.fixture(autouse=True)
     def _sample_sensor_data(self):
+        """Create some sample data.
+
+        This data is recreated before each test (using pytest.fixture).
+        """
         acc = [1.0, 2.0, 3.0]
         gyr = [4.0, 5.0, 6.0]
         all_data = np.repeat(np.array([*acc, *gyr])[None, :], 3, axis=0)
@@ -64,13 +77,14 @@ class TestRotateDataset:
         )
 
     def test_rotate_sensor(self, cyclic_rotation):
-        """Test if rotation is correctly applied to gyr and acc."""
+        """Test if rotation is correctly applied to gyr and acc of single sensor data."""
         rotated_data = _rotate_sensor(self.sample_sensor_data, cyclic_rotation)
 
         self._compare_cyclic(self.sample_sensor_data, rotated_data)
 
     @pytest.mark.parametrize("inplace,equal", ((None, False), (False, False), (True, True)))
     def test_rotate_sensor_inplace(self, inplace, equal, cyclic_rotation):
+        """Test if `rotate_sensor` correctly copies the data, if indicated by its arguments."""
         if inplace is None:
             # Test default
             rotated_data = _rotate_sensor(self.sample_sensor_data, cyclic_rotation)
@@ -83,17 +97,29 @@ class TestRotateDataset:
             assert rotated_data is not self.sample_sensor_data
 
     def test_rotate_dataset_single(self, cyclic_rotation):
+        """Rotate a single dataset with `rotate_dataset`.
+
+        This tests the input  option where no MultiIndex df is used.
+        """
         rotated_data = rotate_dataset(self.sample_sensor_data, cyclic_rotation)
 
         self._compare_cyclic(self.sample_sensor_data, rotated_data)
 
     def test_rotate_single_named_dataset(self, cyclic_rotation):
+        """Rotate a single dataset with a named sensor.
+
+        This tests MultiIndex input with a single sensor.
+        """
         test_data = self.sample_sensor_dataset[["s1"]]
         rotated_data = rotate_dataset(test_data, cyclic_rotation)
 
         self._compare_cyclic(test_data["s1"], rotated_data["s1"])
 
     def test_rotate_multiple_named_dataset(self, cyclic_rotation):
+        """Rotate multiple dataset with a named sensors.
+
+        This tests MultiIndex input with multiple sensor.
+        """
         test_data = self.sample_sensor_dataset
         rotated_data = rotate_dataset(test_data, cyclic_rotation)
 
@@ -101,13 +127,19 @@ class TestRotateDataset:
         self._compare_cyclic(test_data["s2"], rotated_data["s2"])
 
     def test_rotate_multiple_named_dataset_with_multiple_rotations(self, cyclic_rotation):
+        """Apply different rotations to each dataset."""
         test_data = self.sample_sensor_dataset
+        # Apply single cycle to "s1" and cycle twice to "s2"
         rotated_data = rotate_dataset(test_data, {"s1": cyclic_rotation, "s2": cyclic_rotation * cyclic_rotation})
 
         self._compare_cyclic(test_data["s1"], rotated_data["s1"])
         self._compare_cyclic(test_data["s2"], rotated_data["s2"], cycles=2)
 
     def test_only_rotate_some_sensors(self, cyclic_rotation):
+        """Only apply rotation to some sensors and not all.
+
+        This uses the dict input to only provide a rotation for s1 and not s2.
+        """
         test_data = self.sample_sensor_dataset
         rotated_data = rotate_dataset(test_data, {"s1": cyclic_rotation})
 
@@ -115,19 +147,53 @@ class TestRotateDataset:
         assert_frame_equal(test_data["s2"], rotated_data["s2"])
 
     def test_rotate_dataset_is_copy(self, cyclic_rotation):
+        """Test if the output is indeed a copy and the original dataset was not modified."""
+        org_data = self.sample_sensor_dataset.copy()
         rotated_data = rotate_dataset(self.sample_sensor_dataset, cyclic_rotation)
 
         assert rotated_data is not self.sample_sensor_dataset
+        # sample_sensor_dataset is unchanged
+        assert_frame_equal(org_data, self.sample_sensor_dataset)
 
     @pytest.mark.parametrize("ascending", (True, False))
-    def test_order_is_preserved(self, cyclic_rotation, ascending):
+    def test_order_is_preserved_multiple_datasets(self, cyclic_rotation, ascending):
+        """Test if the function preserves the order of columns, if they are not sorted in the beginning.
+
+        Different orders are simulated by sorting the columns once in ascending and once in decending order.
+        After the rations, the columns should still be in the same order, but the rotation is applied.
+
+        This tests the MultiIndex input.
+        """
         changed_sorted_data = self.sample_sensor_dataset.sort_index(ascending=ascending, axis=1)
         rotated_data = rotate_dataset(changed_sorted_data, cyclic_rotation)
 
         assert_frame_equal(changed_sorted_data.columns.to_frame(), rotated_data.columns.to_frame())
 
+        # Test rotation worked
+        self._compare_cyclic(changed_sorted_data["s1"], rotated_data["s1"])
+        self._compare_cyclic(changed_sorted_data["s2"], rotated_data["s2"])
+
+    @pytest.mark.parametrize("ascending", (True, False))
+    def test_order_is_preserved_single_sensor(self, cyclic_rotation, ascending):
+        """Test if the function preserves the order of columns, if they are not sorted in the beginning.
+
+        Different orders are simulated by sorting the columns once in ascending and once in decending order.
+        After the rations, the columns should still be in the same order, but the rotation is applied.
+
+        This version tests the non-MultiIndex input.
+        """
+        changed_sorted_data = self.sample_sensor_data.sort_index(ascending=ascending, axis=1)
+        rotated_data = rotate_dataset(changed_sorted_data, cyclic_rotation)
+
+        assert_frame_equal(changed_sorted_data.columns.to_frame(), rotated_data.columns.to_frame())
+
+        # Test rotation worked
+        self._compare_cyclic(changed_sorted_data, rotated_data)
+
     @pytest.mark.parametrize("inputs", ({"dataset": "single", "rotation": {}},))
     def test_invalid_inputs(self, inputs):
+        """Test input combinations that should lead to ValueErrors."""
+        # Select the dataset for test using strings, as you can not use self-parameters in the decorator.
         if inputs["dataset"] == "single":
             inputs["dataset"] = self.sample_sensor_data
 
