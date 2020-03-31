@@ -17,9 +17,9 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     Parameters
     ----------
     axis : array with shape (3,) or (n, 3)
-        normalized rotation axis
+        normalized rotation axis ([x, y ,z]) or array of roation axis
     angle : float or array with shape (n,)
-        rotation angle in rad
+        rotation angle or array of angeles in rad
 
     Returns
     -------
@@ -67,8 +67,6 @@ def _rotate_sensor(data: pd.DataFrame, rotation: Optional[Rotation], inplace: bo
 
 def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Rotation]]) -> pd.DataFrame:
     """Apply a rotation to acc and gyro data of a dataset.
-
-    TODO: Add example
 
     Parameters
     ----------
