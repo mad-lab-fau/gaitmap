@@ -16,6 +16,7 @@ def cyclic_rotation():
 
 class TestRotationFromAngle:
     """Test the function `rotation_from_angle`."""
+
     def test_single_angle(self):
         """Test single axis, single angle."""
         assert_almost_equal(rotation_from_angle(np.array([1, 0, 0]), np.pi).as_quat(), [1.0, 0, 0, 0])
