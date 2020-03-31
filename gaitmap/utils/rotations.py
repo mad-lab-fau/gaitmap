@@ -56,7 +56,6 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
 
 def _rotate_sensor(data: pd.DataFrame, rotation: Optional[Rotation], inplace: bool = False) -> pd.DataFrame:
     """Rotate the data of a single sensor with acc and gyro."""
-    # TODO: Put the default column names somewhere.
     if inplace is False:
         data = data.copy()
     if rotation is None:
