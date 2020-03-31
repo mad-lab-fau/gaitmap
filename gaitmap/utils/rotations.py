@@ -88,6 +88,21 @@ def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Ro
     rotated dataset
         This will always be a copy. The original dataframe will not be modified.
 
+    Examples
+    --------
+    This will apply the same rotation to the left and the right foot
+
+    >>> dataset = ...  # Dataset with a left and a right foot sensor
+    >>> rotate_dataset(dataset, rotation=rotation_from_angle(np.array([0, 0, 1]), np.pi))
+    <copy of dataset with all axis rotated>
+
+    This will apply different rotations to the left and the right foot
+
+    >>> dataset = ...  # Dataset with a left and a right foot sensor (sensors called "left" and "right")
+    >>> rotate_dataset(dataset, rotation={'left': rotation_from_angle(np.array([0, 0, 1]), np.pi),
+    ...     'right':rotation_from_angle(np.array([0, 0, 1]), np.pi / 2))
+    <copy of dataset with all axis rotated>
+
     """
     multi_index = dataset.columns.nlevels > 1
     if not multi_index and isinstance(rotation, dict):
