@@ -17,7 +17,7 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     Parameters
     ----------
     axis : array with shape (3,) or (n, 3)
-        normalized rotation axis ([x, y ,z]) or array of roation axis
+        normalized rotation axis ([x, y ,z]) or array of rotation axis
     angle : float or array with shape (n,)
         rotation angle or array of angeles in rad
 
