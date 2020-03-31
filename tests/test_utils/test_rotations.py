@@ -52,7 +52,7 @@ class TestRotateDataset:
     def _compare_cyclic(self, data, rotated_data, cycles=1):
         """Quickly check if rotated data was rotated by a cyclic axis rotation.
 
-        This can be used in combination with to :func:`cyclic_rotation fixture`, to test if this rotation was correctly
+        This can be used in combination with :func:`cyclic_rotation fixture`, to test if this rotation was correctly
         applied to the data of a sensor.
         See tests below for examples.
         """
@@ -119,7 +119,7 @@ class TestRotateDataset:
     def test_rotate_multiple_named_dataset(self, cyclic_rotation):
         """Rotate multiple dataset with a named sensors.
 
-        This tests MultiIndex input with multiple sensor.
+        This tests MultiIndex input with multiple sensors.
         """
         test_data = self.sample_sensor_dataset
         rotated_data = rotate_dataset(test_data, cyclic_rotation)
@@ -160,8 +160,8 @@ class TestRotateDataset:
     def test_order_is_preserved_multiple_datasets(self, cyclic_rotation, ascending):
         """Test if the function preserves the order of columns, if they are not sorted in the beginning.
 
-        Different orders are simulated by sorting the columns once in ascending and once in decending order.
-        After the rations, the columns should still be in the same order, but the rotation is applied.
+        Different orders are simulated by sorting the columns once in ascending and once in descending order.
+        After the rotations, the columns should still be in the same order, but the rotation is applied.
 
         This tests the MultiIndex input.
         """
@@ -178,8 +178,8 @@ class TestRotateDataset:
     def test_order_is_preserved_single_sensor(self, cyclic_rotation, ascending):
         """Test if the function preserves the order of columns, if they are not sorted in the beginning.
 
-        Different orders are simulated by sorting the columns once in ascending and once in decending order.
-        After the rations, the columns should still be in the same order, but the rotation is applied.
+        Different orders are simulated by sorting the columns once in ascending and once in descending order.
+        After the rotations, the columns should still be in the same order, but the rotation is applied.
 
         This version tests the non-MultiIndex input.
         """
