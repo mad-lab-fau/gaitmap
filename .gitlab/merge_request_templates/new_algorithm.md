@@ -46,14 +46,12 @@ is open, clearly explaining what needs to be done in the future.
 
 ### Tests
 
-- [ ] Unit tests for simple parameter handling and dummy inputs/outputs exist
+- [ ] Unit tests for simple parameter handling exist
+- [ ] Unit tests for all supported input and output types exist
 - [ ] Unit tests for obvious edge cases exist
 - [ ] Unit tests for specific math implementations exist
-- [ ] Unit tests for all supported input and output types exist
-- [ ] Integration tests for **important** parameter combinations on dummy data exist
 - [ ] Regression tests for common parameter combinations on actual data exist (should store the output)
-- [ ] (optional) Unit tests for **all** parameter combinations exist
-
+- [ ] (optional) Implementation tests for the connections with other algorithms exist
 
 ## For Reviewer
 
@@ -94,11 +92,9 @@ Once all issues are resolved:
 
 ### Tests
 
-- [ ] Unit tests for simple parameter handling and dummy inputs/outputs exist
+- [ ] Unit tests for simple parameter handling exist
+- [ ] Unit tests for all supported input and output types exist
 - [ ] Unit tests for obvious edge cases exist
 - [ ] Unit tests for specific math implementations exist
-- [ ] Unit tests for all supported input and output types exist
-- [ ] Integration tests for **important** parameter combinations on dummy data exist
 - [ ] Regression tests for common parameter combinations on actual data exist (should store the output)
-- [ ] (optional) Unit tests for **all** parameter combinations exist
- 
+- [ ] (optional) Implementation tests for the connections with other algorithms exist
