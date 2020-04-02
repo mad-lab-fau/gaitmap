@@ -303,3 +303,6 @@ poetry.lock
 
 # vscode (full)
 .vscode
+
+# jupyter notebooks (we do not use them)
+*.ipynb

@@ -41,3 +41,13 @@ def task_docs():
         return {"actions": [[HERE / "docs/make.bat", "html"]], "verbosity": 2}
     else:
         return {"actions": [["make", "-C", HERE / "docs", "html"]], "verbosity": 2}
+
+
+def task_register_ipykernel():
+    """Add a jupyter kernel with the gaitmap env to your local install."""
+
+    return {
+        "actions": [
+            ["python", "-m", "ipykernel", "install", "--user", "--name", "gaitmap", "--display-name", "gaitmap"]
+        ]
+    }
