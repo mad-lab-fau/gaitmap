@@ -93,3 +93,28 @@ poetry update --lock
 ``` 
 
 This will synchronise the lock file with the packages listed in `pyproject.toml` 
+
+## Configure your IDE
+
+### Jupyter Lab/Notebooks
+
+While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
+prototype your scientific code.
+To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
+
+```
+# poetry isntall including root!
+poetry install
+poetry run doit register_ipykernel
+``` 
+
+After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
+
+Remember to use the autoreload extension to make sure that Jupyter reloads gaitmap, when ever you change something in 
+the library.
+Put this in your first cell of every Jupyter Notebook to activate it:
+
+```jupyter
+%load_ext autoreload  # Load the extension
+%autoreload 2  # Autoreload all modules
+```
