@@ -12,7 +12,13 @@ import numpy as np
 import pandas as pd
 from NilsPodLib.exceptions import LegacyWarning, CorruptedPackageWarning, CalibrationWarning, SynchronisationWarning
 from scipy.spatial.transform import Rotation
-from sensor_position_dataset_helper import get_imu_test, get_mocap_test, get_subject_folder, get_session_df
+from sensor_position_dataset_helper import (
+    get_imu_test,
+    get_mocap_test,
+    get_subject_folder,
+    get_session_df,
+    get_subject_mocap_folder,
+)
 
 warnings.simplefilter("ignore", (LegacyWarning, CorruptedPackageWarning, CalibrationWarning, SynchronisationWarning))
 
@@ -93,8 +99,8 @@ right_rot = (
     rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(-90))
     * rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90))
 ).inv()
-rotations = dict(left=left_rot, right=right_rot)
-test_df = test_df.rename(columns={"l_{}".format(sensor): "left", "r_{}".format(sensor): "right"})
+rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
+test_df = test_df.rename(columns={"l_{}".format(sensor): "left_sensor", "r_{}".format(sensor): "right_sensor"})
 test_df = (
     test_df.stack(level=0)
     .swaplevel()
@@ -102,6 +108,27 @@ test_df = (
     .apply(lambda x: rotate_sensor(x, rotations[x.name]))
     .unstack(level=0)
     .swaplevel(axis=1)
-    .sort_index(axis=1)
 )
+test_df.columns = test_df.columns.set_names(("sensor", "axis"))
 test_df.to_csv("./imu_sample.csv")
+
+# Example events
+test_events = test_borders = pd.read_csv(get_subject_mocap_folder(subject) / "{}_steps.csv".format(test), index_col=0)
+test_events = test_events.rename(columns={"hs": "ic", "to": "tc", "ms": "min_vel"})
+# convert to 204.8 Hz
+test_events[["ic", "tc", "min_vel"]] *= 204.8 / 100
+test_events[["ic", "tc", "min_vel"]] = test_events[["ic", "tc", "min_vel"]].round()
+# Convert stride list to ms to ms
+test_events["start"] = test_events["min_vel"]
+test_events["end"] = test_events["start"].groupby(level=0).shift(-1)
+test_events = test_events.drop("len", axis=1)
+test_events["pre_ic"] = test_events["ic"]
+test_events["ic"] = test_events["ic"].groupby(level=0).shift(-1)
+test_events = test_events[~test_events["end"].isna()]
+test_events["gsd_id"] = 1
+test_events = test_events.reset_index()
+test_events.index.name = "s_id"
+test_events = test_events.reset_index()
+test_events = test_events[["s_id", "foot", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+
+test_events.to_csv("./stride_events_sample.csv", index=False)
