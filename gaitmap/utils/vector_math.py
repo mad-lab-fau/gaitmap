@@ -1,5 +1,5 @@
 """A set of helper functions for find_shortest_rotation."""
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 from numpy.linalg import norm
@@ -30,7 +30,7 @@ def is_almost_parallel_or_antiprallel(
     atol : float
         The absolute tolerance parameter
 
-     Returns
+    Returns
     -------
     bool or array of bool values with len n
 
@@ -125,7 +125,7 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
          axis ([x, y ,z])
 
     Returns
-    --------
+    -------
         Returns the cross product of the two if they are not equal.
         Returns a random vector in the perpendicular plane if they are either parallel or antiparallel.
 
@@ -153,7 +153,7 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
         axis ([x, y ,z]) or array of axis
 
     Returns
-    --------
+    -------
         angle or array of angles between two vectors
 
     Examples
