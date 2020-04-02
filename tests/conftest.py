@@ -49,3 +49,27 @@ def healthy_example_mocap_data():
     # Get index in seconds
     data.index /= 100.0
     return data
+
+
+@pytest.fixture()
+def healthy_example_stride_events():
+    """Gait events extracted based on mocap data.
+
+    The gait events are extracted based on the mocap data. but are converted to fit the indices of
+    `healthy_example_imu_data`.
+
+    However, because the values are extracted from another system the `min_vel` might not fit perfectly onto the imu
+    data.
+
+    This fixture returns a dictionary of stridelists, where the key is the sensor name.
+    """
+    with open_text(example_data, "stride_events_sample.csv") as test_data:
+        data = pd.read_csv(test_data, header=0)
+
+    # Convert to dict with sensor name as key.
+    # Sensor name here is derived from the foot. In the real pipeline that would be provided to the algo.
+    data["sensor"] = data["foot"] + "_sensor"
+    data = data.set_index("sensor")
+    data = data.groupby(level=0)
+    data = {k: v.reset_index(drop=True) for k, v in data}
+    return data
