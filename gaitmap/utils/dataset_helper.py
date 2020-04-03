@@ -12,7 +12,7 @@ Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
-    """Check if column contain all required columns for the sensor frame."""
+    """Check if columns contain all required columns for the sensor frame."""
     if check_acc is True:
         if not all(v in columns for v in SF_ACC):
             return False
