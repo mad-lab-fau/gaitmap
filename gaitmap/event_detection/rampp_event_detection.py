@@ -83,24 +83,20 @@ class RamppEventDetection(BaseEventDetection):
         self.segmented_stride_list = segmented_stride_list
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region)
-        min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
+        # min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_wind_size
+            gyr, acc, self.segmented_stride_list, ic_search_region
         )
 
         return self
 
+    @staticmethod
     def _find_all_events(
-        self,
-        gyr: pd.DataFrame,
-        acc: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        ic_search_region: Tuple[float, float],
-        min_vel_search_wind_size: float,
+        gyr: pd.DataFrame, acc: pd.DataFrame, stride_list: pd.DataFrame, ic_search_region: Tuple[float, float],
     ):
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
@@ -108,7 +104,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_events = []
         fc_events = []
         min_vel_events = []
-        for idx , stride in stride_list.iterrows():
+        for idx, stride in stride_list.iterrows():
             print(idx)
             start = stride["start"]
             end = stride["stop"]
