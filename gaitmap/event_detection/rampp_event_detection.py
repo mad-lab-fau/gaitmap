@@ -83,7 +83,7 @@ class RamppEventDetection(BaseEventDetection):
         self.segmented_stride_list = segmented_stride_list
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region)
-        min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate)
+        min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
@@ -102,22 +102,23 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[float, float],
         min_vel_search_wind_size: float,
     ):
-        gyr = gyr.to_numpy()
         gyr_ml = gyr["gyr_ml"].to_numpy()
+        gyr = gyr.to_numpy()
         acc_pa = acc["acc_pa"].to_numpy()
         ic_events = []
         fc_events = []
         min_vel_events = []
-        for _, stride in stride_list.iterrows():
+        for idx , stride in stride_list.iterrows():
+            print(idx)
             start = stride["start"]
             end = stride["stop"]
             gyr_sec = gyr[start:end]
             gyr_ml_sec = gyr_ml[start:end]
             acc_sec = acc_pa[start:end]
-            gyr_grad = np.gradient(gyr_sec)
-            ic_events.append(start + self._detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-            fc_events.append(start + self._detect_tc(gyr_sec))
-            min_vel_events.append(start + self._detect_min_vel(gyr_sec, min_vel_search_wind_size))
+            gyr_grad = np.gradient(gyr_ml_sec)
+            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
+            fc_events.append(start + _detect_tc(gyr_sec))
+            # min_vel_events.append(start + self._detect_min_vel(gyr_sec, min_vel_search_wind_size))
 
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
 
