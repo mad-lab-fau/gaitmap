@@ -7,8 +7,16 @@ from typing import Union, Dict, Optional
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from numpy.linalg import norm
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.vector_math import (
+    find_random_orthogonal,
+    find_orthogonal,
+    find_unsigned_3d_angle,
+    normalize,
+    is_almost_parallel_or_antiprallel,
+)
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
@@ -130,3 +138,36 @@ def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Ro
     # Restore original order
     dataset = dataset[original_cols]
     return dataset
+
+
+def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
+    """Find a quaternion that rotates v1 into v2 via the shortest way.
+
+    Parameters
+    ----------
+    v1 : vector with shape (3,)
+        axis ([x, y ,z])
+    v2 : vector with shape (3,)
+        axis ([x, y ,z])
+
+    Returns
+    -------
+    rotation
+        Shortest rotation that rotates v1 into v2
+
+    Examples
+    --------
+
+    >>> goal = np.array([0, 0, 1])
+    >>> start = np.array([1, 0, 0])
+    >>> rot = find_shortest_rotation(start, goal)
+    >>> rotated = rot.apply(start)
+    >>> rotated
+    array([0., 0., 1.])
+
+    """
+    if (not np.isclose(norm(v1, axis=-1), 1)) or (not np.isclose(norm(v2, axis=-1), 1)):
+        raise ValueError("v1 and v2 must be normalized")
+    axis = find_orthogonal(v1, v2)
+    angle = find_unsigned_3d_angle(v1, v2)
+    return rotation_from_angle(axis, angle)
