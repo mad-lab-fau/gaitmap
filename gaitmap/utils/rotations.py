@@ -11,7 +11,6 @@ from numpy.linalg import norm
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.vector_math import (
-    find_random_orthogonal,
     find_orthogonal,
     find_unsigned_3d_angle,
     normalize,
@@ -157,7 +156,6 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
 
     Examples
     --------
-
     >>> goal = np.array([0, 0, 1])
     >>> start = np.array([1, 0, 0])
     >>> rot = find_shortest_rotation(start, goal)
