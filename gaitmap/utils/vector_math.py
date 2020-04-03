@@ -117,7 +117,7 @@ def find_random_orthogonal(v: np.ndarray) -> np.ndarray:
 
 
 def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
-    """Return an orthogonal vector to 2 vectors (see :func:`find_random_orthogonal`).
+    """Return an orthogonal vector to 2 vectors.
 
     Parameters
     ----------
@@ -129,7 +129,9 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     Returns
     -------
         Returns the cross product of the two if they are not equal.
+
         Returns a random vector in the perpendicular plane if they are either parallel or antiparallel.
+        (see :func:`find_random_orthogonal`
 
     Examples
     --------
