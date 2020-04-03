@@ -26,6 +26,7 @@ sphinx_bootstrap_theme = "^0.7.1"
 doit = "^0.32.0"
 ipykernel = "^5.2.0"
 IPython = "^7.13.0"
+ipympl = "^0.5.6"
 
 [tool.black]
 line-length = 120
@@ -43,6 +44,7 @@ exclude = '''
     | docs
     | build
     | dist
+    | \.virtual_documents
   )/
 )
 '''
