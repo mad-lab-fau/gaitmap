@@ -1,4 +1,3 @@
-"""The msDTW based stride segmentation algorithm by Barth et al 2013."""
 from typing import Optional, Sequence, List
 
 import numpy as np
@@ -8,21 +7,66 @@ from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.stride_segmentation.base_dtw import find_matches_find_peaks, find_matches_min_under_threshold
+from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
 
 
-class BarthDtw(BaseStrideSegmentation):
-    """Segment strides using a single stride template and Dynamic Time Warping.
+def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
+    """Find matches in the accumulated cost matrix using :func:`scipy.signal.find_peaks`.
 
-    BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
-    continuous data stream.
-    The method is not limited to a single sensor-axis or sensor, but can use any number of dimensions of the provided
-    input signal simultaneously.
-    For more details refer to the `Notes` section.
+    Parameters
+    ----------
+    acc_cost_mat
+        Accumulated cost matrix as derived from a DTW
+    max_cost
+        The max_cost is used as `height` value for the `find_peaks` function.
+    min_distance
+        The min distance in samples. This is used as the `distance` value for the `find_peaks` function.
+
+    Returns
+    -------
+    list_of_matches
+        A list of indices marking the end of a potential stride.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.utils.find_local_minima_with_distance: Details on the function call to `find_peaks`.
+    scipy.signal.find_peaks: The actual `find_peaks` method.
+
+    """
+    return find_local_minima_with_distance(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost, distance=min_distance)
+
+
+def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, **_) -> np.ndarray:
+    """Find matches in the accumulated cost matrix by searching for minima in sections enclosed by the `max_cost`.
+
+    Parameters
+    ----------
+    acc_cost_mat
+        Accumulated cost matrix as derived from a DTW
+    max_cost
+        The max_cost is used to cut the signal into enclosed segments.
+        More details at :py:func:`find_local_minima_below_threshold
+        <gaitmap.stride_segmentation.utils.find_local_minima_below_threshold>`.
+
+    Returns
+    -------
+    list_of_matches
+        A list of indices marking the end of a potential stride.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.utils.find_local_minima_below_threshold: Implementation details.
+
+    """
+    return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
+
+
+class BaseDtw(BaseStrideSegmentation):
+    """A basic implementation of subsequent dynamic time warping.
 
     Attributes
     ----------
-    strides_start_end_ : 2D array of shape (n_detected_strides x 2)
+    matches_start_end_ : 2D array of shape (n_detected_strides x 2)
         The start (column 1) and stop (column 2) of each detected stride.
     costs_ : List of length n_detected_strides
         The cost value associated with each stride.
@@ -35,10 +79,9 @@ class BarthDtw(BaseStrideSegmentation):
 
     Parameters
     ----------
-    template : (n x m) array representing a single stride, pd.DataFrame, or dictionary of pd.DataFrames
-        The template of length n used for matching. If the template has multiple dimensions m or multiple columns in,
-        case of the DataFrame inputs the respective columns are expected in the data as well.
-        See more info about this in the *Notes* and the *Example* section.
+    template : (n x m) array representing a single stride
+        The template of length n used for matching. If the template has multiple dimensions m, the first m dimensions of
+        the data are used to perform the matching.
     template_sampling_rate_hz
         Sampling rate used for the template. This information is used to resample the template to the sampling rate of
         the data if `resample_template` is `True`. If `resample_template` is `False` this information is ignored.
@@ -56,7 +99,7 @@ class BarthDtw(BaseStrideSegmentation):
     find_matches_method
         Select the method used to find stride candidates in the cost function.
 
-        - "original"
+        - "min_under_thres"
             Matches the original implementation in the paper [1].
             In this case :py:func:`.find_matches_original` will be used as method.
         - "find_peaks"
@@ -69,16 +112,6 @@ class BarthDtw(BaseStrideSegmentation):
         The data passed to the py:meth:`segment` method.
     sampling_rate_hz
         The sampling rate of the data
-
-    Notes
-    -----
-    TODO: Add additional details about the use of DTW for stride segmentation
-
-    .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
-       Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
-       activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
-       Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
-
     """
 
     template: Optional[np.ndarray]
@@ -86,7 +119,7 @@ class BarthDtw(BaseStrideSegmentation):
     max_cost: Optional[float]
     resample_template: bool
     min_stride_time_s: float
-    find_matches_method: Literal["original", "find_peaks"]
+    find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     acc_cost_mat_: np.ndarray
     paths_: Sequence[Sequence[tuple]]
@@ -98,8 +131,8 @@ class BarthDtw(BaseStrideSegmentation):
     _allowed_methods_map = {"original": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
 
     @property
-    def strides_start_end_(self) -> np.ndarray:
-        """Return start and end of each stride candidate."""
+    def matches_start_end_(self) -> np.ndarray:
+        """Return start and end of match."""
         return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
 
     @property
