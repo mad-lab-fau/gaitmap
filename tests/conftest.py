@@ -6,8 +6,7 @@ import pytest
 from tests import example_data
 
 
-@pytest.fixture()
-def healthy_example_imu_data():
+def get_healthy_example_imu_data():
     """Example IMU data from a healthy subject doing a 2x20m gait test.
 
     The sampling rate is 204.8 Hz
@@ -23,8 +22,10 @@ def healthy_example_imu_data():
     return data
 
 
-@pytest.fixture()
-def healthy_example_stride_borders():
+healthy_example_imu_data = pytest.fixture()(get_healthy_example_imu_data)
+
+
+def get_healthy_example_stride_borders():
     """Hand labeled stride borders for :ref:`healthy_example_imu_data`.
 
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
@@ -42,8 +43,10 @@ def healthy_example_stride_borders():
     return data
 
 
-@pytest.fixture()
-def healthy_example_mocap_data():
+healthy_example_stride_borders = pytest.fixture()(get_healthy_example_stride_borders)
+
+
+def get_healthy_example_mocap_data():
     """3D Mocap information of the foot synchronised with :ref:`healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
@@ -58,8 +61,10 @@ def healthy_example_mocap_data():
     return data
 
 
-@pytest.fixture()
-def healthy_example_stride_events():
+healthy_example_mocap_data = pytest.fixture()(get_healthy_example_mocap_data)
+
+
+def get_healthy_example_stride_events():
     """Gait events extracted based on mocap data.
 
     The gait events are extracted based on the mocap data. but are converted to fit the indices of
@@ -80,3 +85,6 @@ def healthy_example_stride_events():
     data = data.groupby(level=0)
     data = {k: v.reset_index(drop=True) for k, v in data}
     return data
+
+
+healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)
