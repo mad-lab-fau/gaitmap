@@ -12,6 +12,7 @@ pep8:
   disable:
     - E127
     - W391
+    - E203 # ignoring white space before colon :
 
 pep257:
   options:
@@ -40,3 +41,4 @@ pylint:
     - too-many-instance-attributes
     - abstract-method
     - invalid-unary-operand-type
+    - too-many-locals # ignore the use of more than 15 local variables
