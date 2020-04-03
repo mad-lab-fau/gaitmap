@@ -169,30 +169,30 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
 def get_gravity_rotation(
     gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0])
 ) -> Rotation:
-    """ Find the rotation matrix needed to align  z-axis with gravity.
+    """Find the rotation matrix needed to align  z-axis with gravity.
 
-        Parameters
-        ----------
-        v1 : vector with shape (3,)
-            axis ([x, y ,z])
-        v2 : vector with shape (3,)
-            axis ([x, y ,z])
+    Parameters
+    ----------
+    gravity_vector : vector with shape (3,)
+        axis ([x, y ,z])
+    expected_gravity : vector with shape (3,)
+        axis ([x, y ,z])
 
-        Returns
-        -------
-        rotation
-             rotation between given gravity vector and the expected gravity
+    Returns
+    -------
+    rotation
+        rotation between given gravity vector and the expected gravity
 
-        Examples
-        --------
-        >>> goal = np.array([0, 0, 1])
-        >>> start = np.array([1, 0, 0])
-        >>> rot = get_gravity_rotation(start)
-        >>> rotated = rot.apply(start)
-        >>> rotated
-        array([0., 0., 1.])
+    Examples
+    --------
+    >>> goal = np.array([0, 0, 1])
+    >>> start = np.array([1, 0, 0])
+    >>> rot = get_gravity_rotation(start)
+    >>> rotated = rot.apply(start)
+    >>> rotated
+    array([0., 0., 1.])
 
-        """
+    """
     gravity_vector = normalize(gravity_vector)
     expected_gravity = normalize(expected_gravity)
     return find_shortest_rotation(gravity_vector, expected_gravity)
