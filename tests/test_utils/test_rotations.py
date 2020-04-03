@@ -4,7 +4,13 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.utils.rotations import rotation_from_angle, _rotate_sensor, rotate_dataset, find_shortest_rotation
+from gaitmap.utils.rotations import (
+    rotation_from_angle,
+    _rotate_sensor,
+    rotate_dataset,
+    find_shortest_rotation,
+    get_gravity_rotation,
+)
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
 
@@ -217,3 +223,13 @@ class TestFindShortestRotation:
         """Test shortest rotation for invalid input (one of the vectors is not normalized)."""
         with pytest.raises(ValueError):
             find_shortest_rotation([2, 0, 0], [0, 1, 0])
+
+
+class TestGetGravityRotation:
+    """Test the function `get_gravity_rotation`."""
+
+    def test_gravity_rotation_simple(self):
+        """Test simple gravity rotation."""
+        rotation_quad = get_gravity_rotation(np.array([1, 0, 0]))
+        rotated_vector = rotation_quad.apply(np.array([1, 0, 0]))
+        assert_almost_equal(rotated_vector, np.array([0, 0, 1]))
