@@ -8,6 +8,7 @@ authors = ["Arne Küderle <arne.kuederle@fau.de>"]
 python = "^3.7"
 pandas = "^1.0.3"
 scipy = "^1.4.1"
+typing_extensions = "^3.7.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
