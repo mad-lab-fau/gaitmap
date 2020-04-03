@@ -43,7 +43,7 @@ Functions
     utils.rotations.rotate_dataset
 
 :mod:`gaitmap.utils.vector_math`: Helper functions for finding shortest rotation
-==========================================================
+================================================================================
 
 .. automodule:: gaitmap.utils.vector_math
     :no-members:
@@ -61,3 +61,4 @@ Functions
     utils.vector_math.normalize
     utils.vector_math.find_random_orthogonal
     utils.vector_math.find_orthogonal
+    utils.vector_math.find_unsigned_3d_angle

@@ -1,7 +1,7 @@
 import pytest
 from numpy.linalg import norm
 from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_almost_equal
-
+from sklearn import preprocessing
 from gaitmap.utils.vector_math import (
     find_random_orthogonal,
     find_orthogonal,
@@ -45,11 +45,21 @@ class TestNormalize:
 
     def test_normalize_1d_array(self):
         """Test 1D array."""
-        assert_array_equal(normalize(np.array([1, 0, 0])), np.array([1, 0, 0]))
+        assert_array_equal(normalize(np.array([2, 0, 0])), np.array([1, 0, 0]))
+        with pytest.raises(ValueError):
+            normalize(np.array([0, 0, 0]))
 
-    def test_normalize_2d_Array(self):
+    @pytest.mark.parametrize(
+        "v1, v2",
+        [
+            ([0, 2, 0], [0, 1, 0]),
+            ([2, 0, 0], [1, 0, 0]),
+            ([0.5, 0.5, 0], preprocessing.normalize(np.array([0.5, 0.5, 0]).reshape(1, -1))[0]),
+        ],
+    )
+    def test_normalize_2d_Array(self, v1, v2):
         """Test 2D array."""
-        assert_array_equal(normalize(np.array([[1, 0, 0], [0, 1, 0]])), np.array([[1, 0, 0], [0, 1, 0]]))
+        assert_array_equal(normalize(np.array(v1)), np.array(v2))
 
 
 class TestFindRandomOrthogonal:
@@ -77,7 +87,7 @@ class TestFindOrthogonal:
     """Test the function `find_orthogonal`."""
 
     @pytest.mark.parametrize(
-        "v2, v1",
+        "v1, v2",
         [
             ([1, 0, 0], [-1, 0, 0]),
             ([1, 0, 0], [0, 1, 0]),

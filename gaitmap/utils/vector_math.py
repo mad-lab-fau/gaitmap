@@ -39,9 +39,9 @@ def is_almost_parallel_or_antiprallel(
     two vectors each of shape (3,)
 
     >>> is_almost_parallel_or_antiprallel(np.array([0, 0, 1]), np.array([0, 0, 1]))
-    array([True])
+    True
     >>> is_almost_parallel_or_antiprallel(np.array([0, 0, 1]), np.array([0, 1, 0]))
-    array([False])
+    False
 
     array of vectors
 
@@ -59,7 +59,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    v : array with shape (3,) or (2, 3)
+    v : array with shape (3,) or (n, 3)
          vector or array of vectors
 
     Returns
@@ -70,16 +70,18 @@ def normalize(v: np.ndarray) -> np.ndarray:
     --------
     1D array
 
-    >>> normalize(np.array([0, 0, 1]))
+    >>> normalize(np.array([0, 0, 2]))
     array([0, 0, 1])
 
     2D array
 
-    >>> normalize(np.array([[1, 0, 0],[1, 0, 0]]))
-    array([[1, 0, 0],[1,0,0]])
+    >>> normalize(np.array([[2, 0, 0],[2, 0, 0]]))
+    array([[1, 0, 0],[1, 0, 0]])
 
     """
     v = np.array(v)
+    if not v.any():
+        raise ValueError("one element at least should have value other than 0")
     if len(v.shape) == 1:
         ax = 0
     else:
@@ -115,7 +117,7 @@ def find_random_orthogonal(v: np.ndarray) -> np.ndarray:
 
 
 def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
-    """Return an orthogonal vector to 2 vectors.
+    """Return an orthogonal vector to 2 vectors (see :func:`find_random_orthogonal`).
 
     Parameters
     ----------
@@ -131,7 +133,7 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
 
     Examples
     --------
-    >>> find__orthogonal(np.array([1, 0, 0]),np.array [-1, 0, 0]))
+    >>> find_orthogonal(np.array([1, 0, 0]),np.array([-1, 0, 0]))
     array([0, 0, -1])
 
     """
@@ -160,12 +162,12 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     --------
     two vectors: 1D
 
-    >>>find_unsigned_3d_angle(np.array([-1, 0, 0]), np.array([-1, 0, 0]))
-    array([0])
+    >>> find_unsigned_3d_angle(np.array([-1, 0, 0]), np.array([-1, 0, 0]))
+    0
 
     two vectors: 2D
 
-    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[[-1, 0, 0]]), np.array([[-1, 0, 0],[[-1, 0, 0]]))
+    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[-1, 0, 0]]), np.array([[-1, 0, 0],[-1, 0, 0]]))
     array([0,0])
 
     """
