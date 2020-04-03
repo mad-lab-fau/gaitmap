@@ -5,6 +5,9 @@ import numpy as np
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int) -> np.ndarray:
     """Create a sliding window view of an input array with given window length and overlap.
 
+    Last window will be nan padded if window_length and overlap option will not exactly match with input array length
+
+
     Parameters
     ----------
     arr : array with shape (n,) or (n, m)
@@ -19,16 +22,14 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int) -> np
 
     Returns
     -------
-    windowed view of input array as specified
+    windowed view of input array as specified, last window might be nan padded if necessary to match window size
 
     Examples
     --------
-    >>> #Sliding window of 4 samples and 50% overlap 1D array
     >>> data = np.arange(0,10)
-    >>> windowed_view = sliding_window_view(arr = data, window_length = 4, overlap = 2)
-    >>> #Sliding window of 7 samples and 2 sample overlap 3D array
-    >>> data = np.column_stack([np.arange(0, 10), np.arange(0, 10), np.arange(0, 10)])
-    >>> windowed_view = sliding_window_view(arr = data, window_length = 7, overlap = 2)
+    >>> windowed_view = sliding_window_view(arr = data, window_length = 5, overlap = 3)
+    >>> windowed_view
+    np.array([[0, 1, 2, 3, 4], [2, 3, 4, 5, 6], [4, 5, 6, 7, 8], [6, 7, 8, 9, np.nan]])
 
     """
     if overlap >= window_length:
