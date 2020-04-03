@@ -306,3 +306,4 @@ poetry.lock
 
 # jupyter notebooks (we do not use them)
 *.ipynb
+.virtual_documents
