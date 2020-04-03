@@ -1,18 +1,13 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Sequence, List
-
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple
 
 import numpy as np
 from numpy.linalg import norm
 
 import pandas as pd
 
-from slither.imu.utils.static_moment_detection import sliding_window_view
-
-
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.utils.consts import BF_COLS, BF_ACC, BF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -34,10 +29,11 @@ class RamppEventDetection(BaseEventDetection):
 
     Other Parameters
     ----------------
+    TODO add other parameters
 
     Notes
     -----
-    TODO: Add additional details about the use of DTW for stride segmentation
+    TODO: Add additional details about the algorithm for event detection
 
     [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
     sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on biomedical
@@ -65,22 +61,23 @@ class RamppEventDetection(BaseEventDetection):
     ) -> BaseType:
         """Find gait events in data within strides provided by segmented_stride_list.
 
-    Parameters
-    ----------
-    TODO parameters
-    data
-    sampling_rate_hz
-        The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
-        a number of samples and it will be used to resample the template if `resample_template` is `True`.
-    segmented_stride_list
+        Parameters
+        ----------
+        TODO parameters
+        data
+            raw data
+        sampling_rate_hz
+            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
+            a number of samples and it will be used to resample the template if `resample_template` is `True`.
+        segmented_stride_list
+            stride list from stride segmentation
 
-    Returns
-    -------
-        self
-            The class instance with all result attributes populated
+        Returns
+        -------
+            self
+                The class instance with all result attributes populated
 
-    """
-
+        """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         self.segmented_stride_list = segmented_stride_list
@@ -97,7 +94,6 @@ class RamppEventDetection(BaseEventDetection):
 
         return self
 
-    @staticmethod
     def _find_all_events(
         self,
         gyr: pd.DataFrame,
@@ -112,7 +108,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_events = []
         fc_events = []
         min_vel_events = []
-        for index, stride in stride_list.iterrows():
+        for _, stride in stride_list.iterrows():
             start = stride["start"]
             end = stride["stop"]
             gyr_sec = gyr[start:end]
@@ -163,7 +159,10 @@ class RamppEventDetection(BaseEventDetection):
 
     def _detect_min_vel(self, gyr: np.ndarray, window_size: int) -> int:
         energy = norm(gyr, axis=-1) ** 2
-        energy = sliding_window_view(energy, shape=(window_size,))
+        energy = self.sliding_window_view(energy, shape=(window_size,))
         min_vel_start = np.nanmin(energy)
         min_vel_center = min_vel_start + window_size // 2
         return min_vel_center
+
+    def _sliding_window_view(self, energy, shape):
+        pass
