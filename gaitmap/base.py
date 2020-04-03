@@ -159,10 +159,31 @@ class BaseEventDetection(BaseAlgorithm):
 
 
 class BaseOrientationEstimation(BaseAlgorithm):
-    from scipy.spatial.transform import Rotation
+    """Base class for all algorithms that estimate an orientation from measured sensor signals
 
-    orientation: Rotation
+    Methods
+    -------
+    estimate_orientation_sequence
+        Returns a series of estimated orientations based on passed initial orientation an sensor data
+
+    Parameters
+    ----------
+    initial_orientation: scipy.spatial.transform.Rotation
+        rotation at the beginning of the signal, for example calculated by #TODO: PUT A LINK TO UTILS/...
+
+    Attributes
+    ----------
+    estimated_orientations: scipy.spatial.transform.Rotation  #TODO WHAT IS PROPER REFERNCING OF SCIPY FOR DOCS?
+        sequence of rotations based on initial orientation and gyroscope data
+
+    """
+
+    from scipy.spatial.transform import Rotation
+    estimated_orientations: Rotation
 
     def estimate_orientation_sequence(self, initial_orientation: Rotation, sensor_data):
         # no return type since we'll keep data in this object
         raise NotImplementedError()
+
+    # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
+    # integration)
