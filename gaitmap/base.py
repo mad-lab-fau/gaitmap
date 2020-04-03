@@ -151,7 +151,6 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_method = "detect"
 
-    def detect(self: BaseType, data: pd.DataFrame, sampling_rate_hz: float, stride_list: pd.DataFrame, **kwargs) -> BaseType:
+    def detect(self: BaseType, data: pd.DataFrame, sampling_rate_hz: float, stride_list: pd.DataFrame) -> BaseType:
         """Find gait events in data within strides provided by stride_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
-
