@@ -121,42 +121,6 @@ class RamppEventDetection(BaseEventDetection):
 
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
 
-    def _detect_ic(
-        self, gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, search_window: Tuple[float, float],
-    ) -> int:
-
-        # Determine rough search region
-        search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
-
-        if search_region[1] - search_region[0] <= 0:
-            # The gyr argmax was not found in the first half of the step
-            return np.nan
-
-        # TODO: Redefine search region (does not work sometimes
-        # alternative:
-        # refined_search_region_start, refined_search_region_stop = search_region
-        refined_search_region_start = search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)])
-        refined_search_region_stop = refined_search_region_start + np.argmax(
-            gyr_ml_grad[refined_search_region_start : search_region[1]]
-        )
-
-        if refined_search_region_stop - refined_search_region_start <= 0:
-            return np.nan
-
-        # Find heel strike candidate in search region based on gyr
-        heel_strike_candidate = refined_search_region_start + np.argmin(
-            gyr_ml[refined_search_region_start:refined_search_region_stop]
-        )
-
-        # Acc search window
-        acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - search_window[0]])))
-        acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + search_window[1]])))
-
-        return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
-
-    def _detect_tc(self, gyr_ml: np.ndarray) -> int:
-        return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
-
     def _detect_min_vel(self, gyr: np.ndarray, window_size: int) -> int:
         energy = norm(gyr, axis=-1) ** 2
         energy = self.sliding_window_view(energy, shape=(window_size,))
@@ -166,3 +130,41 @@ class RamppEventDetection(BaseEventDetection):
 
     def _sliding_window_view(self, energy, shape):
         pass
+
+
+def _detect_ic(
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, search_window: Tuple[float, float],
+) -> int:
+
+    # Determine rough search region
+    search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
+
+    if search_region[1] - search_region[0] <= 0:
+        # The gyr argmax was not found in the first half of the step
+        return np.nan
+
+    # TODO: Redefine search region (does not work sometimes
+    # alternative:
+    # refined_search_region_start, refined_search_region_stop = search_region
+    refined_search_region_start = search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)])
+    refined_search_region_stop = refined_search_region_start + np.argmax(
+        gyr_ml_grad[refined_search_region_start : search_region[1]]
+    )
+
+    if refined_search_region_stop - refined_search_region_start <= 0:
+        return np.nan
+
+    # Find heel strike candidate in search region based on gyr
+    heel_strike_candidate = refined_search_region_start + np.argmin(
+        gyr_ml[refined_search_region_start:refined_search_region_stop]
+    )
+
+    # Acc search window
+    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - search_window[0]])))
+    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + search_window[1]])))
+
+    return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
+
+
+def _detect_tc(gyr_ml: np.ndarray) -> int:
+    return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
