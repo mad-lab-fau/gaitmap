@@ -7,27 +7,26 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int) -> np
 
     Parameters
     ----------
-    arr : np.ndarray
-        input data on which sliding window action should be performed, array with shape (1,) or (n, m) while windowing
-        will be performed along axis 0
+    arr : array with shape (n,) or (n, m)
+        array on which sliding window action should be performed. Windowing
+        will always be performed along axis 0.
 
     window_length : int
-        length of a desired window in samples
+        length of desired window
 
     overlap : int
-        length of desired overlap in samples
+        length of desired overlap
 
     Returns
     -------
-    np.ndarray : windowed view input array
+    windowed view of input array as specified
 
     Examples
     --------
-    Sliding window of 4 samples and 50% overlap 1D array
+    >>> #Sliding window of 4 samples and 50% overlap 1D array
     >>> data = np.arange(0,10)
     >>> windowed_view = sliding_window_view(arr = data, window_length = 4, overlap = 2)
-
-    Sliding window of 7 samples and 2 sample overlap 3D array
+    >>> #Sliding window of 7 samples and 2 sample overlap 3D array
     >>> data = np.column_stack([np.arange(0, 10), np.arange(0, 10), np.arange(0, 10)])
     >>> windowed_view = sliding_window_view(arr = data, window_length = 7, overlap = 2)
 
@@ -59,6 +58,6 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int) -> np
 
     # apply stride_tricks magic
     new_strides = np.concatenate((arr.strides, arr.strides), axis=0)
-    view = np.lib.stride_tricks.as_strided(arr, new_shape, new_strides)[0:: (window_length - overlap)]
+    view = np.lib.stride_tricks.as_strided(arr, new_shape, new_strides)[0 :: (window_length - overlap)]
 
     return np.squeeze(view)  # get rid of single-dimensional entries from the shape of an array.
