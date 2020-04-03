@@ -1,21 +1,22 @@
-"""Estimation of orientations by trapezoidal gyroscope integration"""
-from gaitmap.base import BaseOrientationEstimation
-from numpy import cumsum
-from scipy.spatial.transform import Rotation
-from gaitmap.utils.consts import SF_GYR, SF_ACC
+"""Estimation of orientations by trapezoidal gyroscope integration."""
 from pandas import DataFrame
+from scipy.spatial.transform import Rotation
+
+from gaitmap.base import BaseOrientationEstimation
 
 
 class GyroIntegration(BaseOrientationEstimation):
-    """Estimate orientation based on a given initial orientation. Subsequent orientations are estimated by
-    integration gyroscope data with respect to time using the trapezoidal rule.
+    """Estimate orientation based on a given initial orientation.
 
-
+    Subsequent orientations are estimated by integration gyroscope data with respect to time using the trapezoidal rule.
 
     Parameters
     ----------
     sensor_data : pandas.DataFrame
         contains gyroscope and acceleration data
+
+    Attributes
+    ----------
     estimated_orientations : scipy.spatial.transform.Rotation
         contains rotations based on initial rotation and trapezoidal gyroscope integration
 
@@ -28,6 +29,5 @@ class GyroIntegration(BaseOrientationEstimation):
         self.sensor_data = sensor_data  # .copy()?
 
     def estimate_orientation_sequence(self, initial_orientation: Rotation, sensor_data):
-        gyr = sensor_data[SF_GYR]
-        acc = sensor_data[SF_ACC]
-
+        pass
+        # gyr = sensor_data[SF_GYR]

@@ -2,6 +2,7 @@
 
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
+from scipy.spatial.transform import Rotation
 
 import pandas as pd
 
@@ -159,7 +160,7 @@ class BaseEventDetection(BaseAlgorithm):
 
 
 class BaseOrientationEstimation(BaseAlgorithm):
-    """Base class for all algorithms that estimate an orientation from measured sensor signals
+    """Base class for all algorithms that estimate an orientation from measured sensor signals.
 
     Methods
     -------
@@ -178,10 +179,19 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     """
 
-    from scipy.spatial.transform import Rotation
     estimated_orientations: Rotation
 
     def estimate_orientation_sequence(self, initial_orientation: Rotation, sensor_data):
+        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
+
+        Parameters
+        ----------
+        initial_orientation : Rotation
+            The orientation of sensor_data for the first sample of sensor_data
+        sensor_data : pandas.DataFrame
+            Contains at least gyroscope data, optionally also acceleration data of one or several sensors
+
+        """
         # no return type since we'll keep data in this object
         raise NotImplementedError()
 
