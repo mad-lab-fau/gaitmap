@@ -10,10 +10,7 @@ from scipy.spatial.transform import Rotation
 from numpy.linalg import norm
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
-from gaitmap.utils.vector_math import (
-    find_orthogonal,
-    find_unsigned_3d_angle
-)
+from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
