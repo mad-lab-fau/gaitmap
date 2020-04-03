@@ -1,6 +1,5 @@
 """Test the dataset helpers."""
-from collections import Callable
-from typing import List
+from typing import List, Callable
 import numpy as np
 import pandas as pd
 
@@ -97,4 +96,4 @@ class TestIsSingleSensorDataset:
 
     def test_invalid_frame_argument(self):
         with pytest.raises(ValueError):
-            is_single_sensor_dataset(pd.DataFrame(), frame='invalid_value')
+            is_single_sensor_dataset(pd.DataFrame(), frame="invalid_value")
