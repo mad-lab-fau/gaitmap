@@ -1,15 +1,16 @@
 import pytest
+import numpy as np
 from numpy.linalg import norm
 from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_almost_equal
 from sklearn import preprocessing
+
 from gaitmap.utils.vector_math import (
     find_random_orthogonal,
     find_orthogonal,
     find_unsigned_3d_angle,
     normalize,
-    is_almost_parallel_or_antiprallel,
+    is_almost_parallel_or_antiprallel
 )
-import numpy as np
 
 
 class TestIsAlmostParallelOrAntiprallel:
