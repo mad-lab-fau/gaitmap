@@ -156,3 +156,13 @@ class BaseEventDetection(BaseAlgorithm):
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
         """Find gait events in data within strides provided by stride_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseOrientationEstimation(BaseAlgorithm):
+    from scipy.spatial.transform import Rotation
+
+    orientation: Rotation
+
+    def estimate_orientation_sequence(self, initial_orientation: Rotation, sensor_data):
+        # no return type since we'll keep data in this object
+        raise NotImplementedError()
