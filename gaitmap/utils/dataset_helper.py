@@ -12,6 +12,7 @@ Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
+    """Check if column contain all required columns for the sensor frame."""
     if check_acc is True:
         if not all(v in columns for v in SF_ACC):
             return False
@@ -24,6 +25,7 @@ def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = T
 
 
 def _has_bf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
+    """Check if column contain all required columns for the body frame."""
     if check_acc is True:
         if not all(v in columns for v in BF_ACC):
             return False
@@ -38,8 +40,22 @@ def _has_bf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = T
 def is_single_sensor_dataset(
     dataset: Any, check_acc: bool = True, check_gyr: bool = True, frame: Literal["any", "body", "sensor"] = "any"
 ) -> bool:
-    """Check if an object is a valid dataset following all conventions."""
+    """Check if an object is a valid dataset following all conventions.
 
+    Parameters
+    ----------
+    dataset
+        Object that should be checked
+    check_acc
+        If the existence of the correct acc columns should be checked
+    check_gyr
+        If the existence of the correct gyr columns should be checked
+    frame
+        The frame the dataset is expected to be in.
+        This changes which columns are checked for.
+        In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
+
+    """
     if not isinstance(dataset, pd.DataFrame):
         return False
 
@@ -49,13 +65,11 @@ def is_single_sensor_dataset(
         return False
 
     if frame == "any":
-        return _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr) or _has_bf_cols(
-            columns, check_acc=check_acc, check_gyr=check_gyr
-        )
-    elif frame == "body":
+        is_sf = _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
+        is_bf = _has_bf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
+        return is_sf or is_bf
+    if frame == "body":
         return _has_bf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-    elif frame == "sensor":
+    if frame == "sensor":
         return _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-
-    else:
-        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
