@@ -17,9 +17,6 @@ def sliding_window_view(data: np.ndarray, window_length: int, window_overlap: in
     window_overlap : int
         length of desired overlap in samples
 
-    copy : bool
-        select if you want to get just the view or a copy of the data
-
     Returns
     -------
     np.ndarray : windowed view or windowed copy of input array
@@ -41,26 +38,27 @@ def sliding_window_view(data: np.ndarray, window_length: int, window_overlap: in
     if window_length < 2:
         raise ValueError("Invalid Input, window_length must be larger than 1!")
 
-    # check if we need to pad the data at its end to match window and overlap (handle different input dimensions)
+    # calculate length of necessary np.nan-padding to make sure windows and overlaps exactly fits data length
     n_windows = np.ceil((len(data) - window_length) / (window_length - window_overlap)).astype(int)
     pad_length = window_length + n_windows * (window_length - window_overlap) - len(data)
 
+    # had to handle 1D arrays separately
     if data.ndim == 1:
         pad = np.repeat(np.nan, pad_length)
         data = np.append(data, pad)
+
+        new_shape = (data.size - window_length + 1, window_length)
     else:
         pad = np.ones((pad_length, np.shape(data)[-1])) * np.nan
         data = np.append(data, pad, axis=0)
 
-    if data.ndim == 1:
-        new_shape = (data.size - window_length + 1, window_length)
-    else:
         shape = (window_length, data.shape[-1])
         n = np.array(data.shape)
         o = n - shape + 1  # output shape
         new_shape = np.concatenate((o, shape), axis=0)
 
+    # apply stride_tricks magic
     new_strides = np.concatenate((data.strides, data.strides), axis=0)
     view = np.lib.stride_tricks.as_strided(data, new_shape, new_strides)[0:: (window_length - window_overlap)]
 
-    return np.squeeze(view)  # get rid of unnecessary lists of lists [[a]] -> a
+    return np.squeeze(view)  # get rid of single-dimensional entries from the shape of an array.
