@@ -32,6 +32,13 @@ def healthy_example_stride_borders():
     with open_text(example_data, "stride_borders_sample.csv") as test_data:
         data = pd.read_csv(test_data, header=0)
 
+    # Convert to dict with sensor name as key.
+    # Sensor name here is derived from the foot. In the real pipeline that would be provided to the algo.
+    data["sensor"] = data["foot"] + "_sensor"
+    data = data.set_index("sensor")
+    data = data.groupby(level=0)
+    data = {k: v.reset_index(drop=True) for k, v in data}
+
     return data
 
 
