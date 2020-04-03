@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.utils.rotations import rotation_from_angle, _rotate_sensor, rotate_dataset
+from gaitmap.utils.rotations import rotation_from_angle, _rotate_sensor, rotate_dataset, find_shortest_rotation
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
 
@@ -200,3 +200,20 @@ class TestRotateDataset:
 
         with pytest.raises(ValueError):
             rotate_dataset(**inputs)
+
+
+class TestFindShortestRotation:
+    """Test the function `find_shortest_rotation`."""
+
+    def test_find_shortest_rotation(self):
+        """Test shortest rotation between two vectors."""
+        goal = np.array([0, 0, 1])
+        start = np.array([1, 0, 0])
+        rot = find_shortest_rotation(start, goal)
+        rotated = rot.apply(start)
+        assert_almost_equal(rotated, goal)
+
+    def test_find_shortest_rotation_unnormalized_vector(self):
+        """Test shortest rotation for invalid input (one of the vectors is not normalized)."""
+        with pytest.raises(ValueError):
+            find_shortest_rotation([2, 0, 0], [0, 1, 0])
