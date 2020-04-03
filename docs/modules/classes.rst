@@ -42,6 +42,7 @@ Functions
     utils.rotations.rotation_from_angle
     utils.rotations.rotate_dataset
     utils.rotations.find_shortest_rotation
+    utils.rotations.get_gravity_rotation
 
 :mod:`gaitmap.utils.vector_math`: Helper functions for finding shortest rotation
 ================================================================================

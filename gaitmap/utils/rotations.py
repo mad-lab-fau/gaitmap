@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 from numpy.linalg import norm
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
-from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle
+from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle, normalize
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
@@ -164,3 +164,35 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
     axis = find_orthogonal(v1, v2)
     angle = find_unsigned_3d_angle(v1, v2)
     return rotation_from_angle(axis, angle)
+
+
+def get_gravity_rotation(
+    gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0])
+) -> Rotation:
+    """Find the rotation matrix needed to align  z-axis with gravity.
+
+    Parameters
+    ----------
+    gravity_vector : vector with shape (3,)
+        axis ([x, y ,z])
+    expected_gravity : vector with shape (3,)
+        axis ([x, y ,z])
+
+    Returns
+    -------
+    rotation
+        rotation between given gravity vector and the expected gravity
+
+    Examples
+    --------
+    >>> goal = np.array([0, 0, 1])
+    >>> start = np.array([1, 0, 0])
+    >>> rot = get_gravity_rotation(start)
+    >>> rotated = rot.apply(start)
+    >>> rotated
+    array([0., 0., 1.])
+
+    """
+    gravity_vector = normalize(gravity_vector)
+    expected_gravity = normalize(expected_gravity)
+    return find_shortest_rotation(gravity_vector, expected_gravity)
