@@ -88,8 +88,13 @@ test_borders = (
     )
 )
 test_borders = test_borders.unstack(level=0).reset_index(level=-1, drop=True)
+test_borders = test_borders.rename({"stop": "end"})
+test_borders = test_borders.reset_index()
+test_borders.index.name = "s_id"
+test_borders = test_borders.reset_index()
+test_borders["gsd_id"] = 1
 
-test_borders.to_csv("./stride_borders_sample.csv")
+test_borders.to_csv("./stride_borders_sample.csv", index=False)
 
 # Rename columns and align with the expected orientation
 left_rot = (
