@@ -12,9 +12,7 @@ from numpy.linalg import norm
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.vector_math import (
     find_orthogonal,
-    find_unsigned_3d_angle,
-    normalize,
-    is_almost_parallel_or_antiprallel,
+    find_unsigned_3d_angle
 )
 
 
