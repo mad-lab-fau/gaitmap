@@ -36,7 +36,7 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
     Examples
     --------
     >>> data = np.arange(0,10)
-    >>> windowed_view = sliding_window_view(arr = data, window_length = 5, overlap = 3)
+    >>> windowed_view = sliding_window_view(arr = data, window_length = 5, overlap = 3, nan_padding = True)
     >>> windowed_view
     np.array([[0, 1, 2, 3, 4], [2, 3, 4, 5, 6], [4, 5, 6, 7, 8], [6, 7, 8, 9, np.nan]])
 
