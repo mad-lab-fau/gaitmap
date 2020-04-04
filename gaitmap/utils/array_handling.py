@@ -31,7 +31,8 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
 
     Returns
     -------
-    windowed view of input array as specified, last window might be nan padded if necessary to match window size
+    windowed view (or copy for nan_padding) of input array as specified, last window might be nan padded if necessary to
+    match window size
 
     Examples
     --------
