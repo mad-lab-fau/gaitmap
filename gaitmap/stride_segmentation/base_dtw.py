@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, List
+from typing import Optional, Sequence, List, Tuple
 
 import numpy as np
 from scipy.signal import resample
@@ -189,10 +189,13 @@ class BaseDtw(BaseStrideSegmentation):
                 "template."
             )
 
+        # Extract the parts of the data that is relevant for matching.
+        template_array, matching_data = self._extract_relevant_data_and_template(self.template.template, self.data)
+
         if self.resample_template is True and sampling_rate_hz != self.template.sampling_rate_hz:
-            template = self._interpolate_template(sampling_rate_hz)
+            template = self._interpolate_template(template_array, self.template.sampling_rate_hz, sampling_rate_hz)
         else:
-            template = self.template.template
+            template = template_array
 
         min_distance = None
         if self.min_stride_time_s not in (None, 0, 0.0):
@@ -206,7 +209,7 @@ class BaseDtw(BaseStrideSegmentation):
             )
 
         # Calculate cost matrix
-        self.acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(data))
+        self.acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
         matches = find_matches_method(
             acc_cost_mat=self.acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance
@@ -216,12 +219,35 @@ class BaseDtw(BaseStrideSegmentation):
 
         return self
 
-    def _interpolate_template(self, new_sampling_rate: float) -> np.ndarray:
+    @staticmethod
+    def _interpolate_template(
+        template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
+    ) -> np.ndarray:
         template = resample(
-            self.template.template,
-            int(self.template.template.shape[0] * new_sampling_rate / self.template_sampling_rate_hz),
+            template_array, int(template_array.shape[0] * new_sampling_rate / template_sampling_rate_hz),
         )
         return template
+
+    @staticmethod
+    def _extract_relevant_data_and_template(template, data) -> Tuple[np.ndarray, np.ndarray]:
+        """Get the relevant parts of the data based on the provided template and return template and data as array."""
+        data_is_numpy = isinstance(data, np.ndarray)
+        template_is_numpy = isinstance(template, np.ndarray)
+        if data_is_numpy and template_is_numpy:
+            data = np.squeeze(data)
+            template = np.squeeze(template)
+            if template.ndim == 1 and data.ndim == 1:
+                return template, data
+            if template.shape[1] > data.shape[1]:
+                raise ValueError(
+                    "The provided data has less columns than the used template. ({} < {})".format(
+                        data.shape[1], template.shape[1]
+                    )
+                )
+            return (
+                template,
+                data[:, : template.shape[1]],
+            )
 
     @staticmethod
     def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
