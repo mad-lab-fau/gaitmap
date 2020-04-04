@@ -1,3 +1,5 @@
+"""A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
+
 from typing import Optional, Sequence, List, Tuple
 
 import numpy as np
@@ -113,6 +115,7 @@ class BaseDtw(BaseStrideSegmentation):
         The data passed to the py:meth:`segment` method.
     sampling_rate_hz
         The sampling rate of the data
+
     """
 
     template: Optional[DtwTemplate]

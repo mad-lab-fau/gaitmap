@@ -1,10 +1,8 @@
+"""Dtw template base classes and helper."""
 from importlib.resources import open_text
-from pathlib import Path
 from typing import Optional, Union, List
 import numpy as np
 import pandas as pd
-
-from gaitmap.stride_segmentation import dtw_templates
 
 
 class DtwTemplate:
@@ -35,7 +33,7 @@ class DtwTemplate:
         if self._template is None and self.template_file_name is None:
             raise AttributeError("Neither a template array nor a template file is provided.")
         if self._template is None:
-            with open_text(dtw_templates, self.template_file_name) as test_data:
+            with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
                 self._template = pd.read_csv(test_data, header=0)
         template = self._template
 
