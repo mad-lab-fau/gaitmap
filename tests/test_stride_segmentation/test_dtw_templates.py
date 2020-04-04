@@ -11,8 +11,7 @@ class TestTemplateBaseClass:
         """Test very simple case where the template is directly stored in the class instance."""
         template = np.arange(10)
 
-        instance = DtwTemplate()
-        instance._template = template
+        instance = DtwTemplate(template=template)
 
         assert_array_equal(instance.template, template)
 
@@ -26,9 +25,7 @@ class TestTemplateBaseClass:
     def test_use_columns_array(self):
         template = np.stack((np.arange(10), np.arange(10, 20))).T
 
-        instance = DtwTemplate()
-        instance._template = template
-        instance.use_cols = [1]
+        instance = DtwTemplate(template=template, use_cols=[1])
 
         assert_array_equal(instance.template, template[:, 1])
 
@@ -36,21 +33,19 @@ class TestTemplateBaseClass:
         template = np.stack((np.arange(10), np.arange(10, 20))).T
         template = pd.DataFrame(template, columns=["col_1", "col_2"])
 
-        instance = DtwTemplate()
-        instance._template = template
-        instance.use_cols = ["col_1"]
+        instance = DtwTemplate(template=template, use_cols=["col_1"])
 
         assert_array_equal(instance.template, template[["col_1"]])
 
     def test_use_columns_wrong_dim(self):
         template = np.arange(10)
 
-        instance = DtwTemplate()
-        instance._template = template
-        instance.use_cols = [1]
+        instance = DtwTemplate(template=template, use_cols=[1])
 
         with pytest.raises(ValueError):
             _ = instance.template
+
+    # TODO: Test loading from file
 
 
 class TestCreateTemplate:
