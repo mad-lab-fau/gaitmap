@@ -66,7 +66,7 @@ Functions
     utils.vector_math.find_unsigned_3d_angle
 
 :mod:`gaitmap.utils.array_handling`: Helper to perform various array modifications
-==========================================================
+==================================================================================
 
 .. automodule:: gaitmap.utils.array_handling
     :no-members:
