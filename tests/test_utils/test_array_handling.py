@@ -30,6 +30,14 @@ class TestSlidingWindow:
         window_view = sliding_window_view(input_array, window_length=4, overlap=2, nan_padding=True)
         assert np.may_share_memory(input_array, window_view) == False
 
+    def test_nan_padding_of_type_nan(self):
+        """Test if output a copy of input data."""
+        input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        window_view = sliding_window_view(input_array, window_length=4, overlap=2, nan_padding=True)
+
+        import math
+        assert math.isnan(window_view[-1][-1])
+
     def test_sliding_window_1D_without_without_padding(self):
         """Test windowed view is correct for 1D array without need for nan padding."""
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
