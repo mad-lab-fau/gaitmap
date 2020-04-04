@@ -36,6 +36,7 @@ class TestSlidingWindow:
         window_view = sliding_window_view(input_array, window_length=4, overlap=2, nan_padding=True)
 
         import math
+
         assert math.isnan(window_view[-1][-1])
 
     def test_sliding_window_1D_without_without_padding(self):
