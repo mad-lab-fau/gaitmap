@@ -187,23 +187,27 @@ class BaseDtw(BaseStrideSegmentation):
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
-        if self.resample_template and not self.template.sampling_rate_hz:
+        self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, self.template)
+        return self
+
+    def _segment_single_dataset(self, dataset, template):
+        if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
                 "template."
             )
 
         # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(self.template.template, self.data)
+        template_array, matching_data = self._extract_relevant_data_and_template(template.template, dataset)
 
-        if self.resample_template is True and sampling_rate_hz != self.template.sampling_rate_hz:
-            template = self._interpolate_template(template_array, self.template.sampling_rate_hz, sampling_rate_hz)
+        if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
+            template = self._interpolate_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:
             template = template_array
 
         min_distance = None
         if self.min_stride_time_s not in (None, 0, 0.0):
-            min_distance = self.min_stride_time_s * sampling_rate_hz
+            min_distance = self.min_stride_time_s * self.sampling_rate_hz
         find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
         if not find_matches_method:
             raise ValueError(
@@ -213,15 +217,15 @@ class BaseDtw(BaseStrideSegmentation):
             )
 
         # Calculate cost matrix
-        self.acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+        acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
         matches = find_matches_method(
-            acc_cost_mat=self.acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance
+            acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance
         )
-        self.paths_ = self._find_multiple_paths(self.acc_cost_mat_, matches)
-        self.costs_ = np.sqrt(self.acc_cost_mat_[-1, :][matches])
+        paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
+        costs_ = np.sqrt(acc_cost_mat_[-1, :][matches])
 
-        return self
+        return acc_cost_mat_, paths_, costs_
 
     @staticmethod
     def _interpolate_template(
