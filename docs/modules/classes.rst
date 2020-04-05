@@ -15,13 +15,13 @@ This is the API Reference for gaitmap sorted by algorithm types.
 
 Base classes
 ------------
-.. currentmodule:: gaitmap
+.. currentmodule:: gaitmap.base
 
 .. autosummary::
    :toctree: generated/
    :template: class_with_private.rst
 
-    base.BaseAlgorithm
+    BaseAlgorithm
 
 
 :mod:`gaitmap.utils.rotations`: Helper to handle rotations
@@ -33,16 +33,16 @@ Base classes
 
 Functions
 ---------
-.. currentmodule:: gaitmap
+.. currentmodule:: gaitmap.utils.rotations
 
 .. autosummary::
    :toctree: generated/
    :template: function.rst
 
-    utils.rotations.rotation_from_angle
-    utils.rotations.rotate_dataset
-    utils.rotations.find_shortest_rotation
-    utils.rotations.get_gravity_rotation
+    rotation_from_angle
+    rotate_dataset
+    find_shortest_rotation
+    get_gravity_rotation
 
 :mod:`gaitmap.utils.vector_math`: Helper functions for finding shortest rotation
 ================================================================================
@@ -53,17 +53,17 @@ Functions
 
 Functions
 ---------
-.. currentmodule:: gaitmap
+.. currentmodule:: gaitmap.utils.vector_math
 
 .. autosummary::
    :toctree: generated/
    :template: function.rst
 
-    utils.vector_math.is_almost_parallel_or_antiprallel
-    utils.vector_math.normalize
-    utils.vector_math.find_random_orthogonal
-    utils.vector_math.find_orthogonal
-    utils.vector_math.find_unsigned_3d_angle
+    is_almost_parallel_or_antiprallel
+    normalize
+    find_random_orthogonal
+    find_orthogonal
+    find_unsigned_3d_angle
 
 :mod:`gaitmap.utils.array_handling`: Helper to perform various array modifications
 ==================================================================================
@@ -74,13 +74,13 @@ Functions
 
 Functions
 ---------
-.. currentmodule:: gaitmap
+.. currentmodule:: gaitmap.utils.array_handling
 
 .. autosummary::
    :toctree: generated/
    :template: function.rst
 
-    utils.array_handling.sliding_window_view
+    sliding_window_view
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
 ==========================================================================================
