@@ -98,6 +98,7 @@ Functions
    :template: function.rst
 
     is_single_sensor_dataset
+    is_multi_sensor_dataset
 
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================

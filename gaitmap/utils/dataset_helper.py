@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Any, List
+from typing import Union, Dict, List
 
 import pandas as pd
 from typing_extensions import Literal
@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC
 
 SingleSensorDataset = pd.DataFrame
-MultiSensorDataset = Dict[str, pd.DataFrame]
+MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
 Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
 
@@ -38,13 +38,16 @@ def _has_bf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = T
 
 
 def is_single_sensor_dataset(
-    dataset: Any, check_acc: bool = True, check_gyr: bool = True, frame: Literal["any", "body", "sensor"] = "any"
+    dataset: SingleSensorDataset,
+    check_acc: bool = True,
+    check_gyr: bool = True,
+    frame: Literal["any", "body", "sensor"] = "any",
 ) -> bool:
     """Check if an object is a valid dataset following all conventions.
 
     A valid single sensor dataset is:
 
-    - a pd.DataFrame
+    - a :class:`pandas.DataFrame`
     - has only a single level of column indices that correspond to the sensor (or feature) axis that are available.
 
     A valid single sensor dataset in the body frame additionally:
@@ -67,6 +70,12 @@ def is_single_sensor_dataset(
         The frame the dataset is expected to be in.
         This changes which columns are checked for.
         In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
+        If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
+        `check_gyro` to `False`.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
 
     """
     if not isinstance(dataset, pd.DataFrame):
@@ -86,3 +95,65 @@ def is_single_sensor_dataset(
     if frame == "sensor":
         return _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
     raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+
+
+def is_multi_sensor_dataset(
+    dataset: MultiSensorDataset,
+    check_acc: bool = True,
+    check_gyr: bool = True,
+    frame: Literal["any", "body", "sensor"] = "any",
+) -> bool:
+    """Check if an object is a valid multi-sensor dataset.
+
+    A valid multi sensor dataset is:
+
+    - is either a :class:`pandas.DataFrame` with 2 level multi-index as columns or a dictionary of single sensor
+      datasets (see :func:`is_single_sensor_dataset <gaitmap.utils.dataset_helper.is_single_sensor_dataset>`)
+
+    In case the dataset is a :class:`pandas.DataFrame` with two levels, the first level is expected to be the names
+    of the used sensors.
+    In both cases (dataframe or dict), `dataset[<sensor_name>]` is expected to return a valid single sensor
+    dataset.
+    On each of the these single-sensor datasets,
+    :func:`is_single_sensor_dataset <gaitmap.utils.dataset_helper.is_single_sensor_dataset>` is used with the same
+    parameters that are used to call this function.
+
+    Parameters
+    ----------
+    dataset
+        Object that should be checked
+    check_acc
+        If the existence of the correct acc columns should be checked
+    check_gyr
+        If the existence of the correct gyr columns should be checked
+    frame
+        The frame the dataset is expected to be in.
+        This changes which columns are checked for.
+        In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
+        If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
+        `check_gyro` to `False`.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
+
+    """
+    if not isinstance(dataset, (pd.DataFrame, dict)):
+        return False
+
+    if isinstance(dataset, pd.DataFrame):
+        # Check that it has multilevel columns
+        if (not isinstance(dataset.columns, pd.MultiIndex)) or (dataset.columns.nlevels != 2):
+            return False
+        keys = dataset.columns.get_level_values(0)
+    else:
+        # In case it is a dict
+        keys = dataset.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
+            return False
+    return True
