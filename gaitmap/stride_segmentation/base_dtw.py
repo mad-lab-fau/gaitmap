@@ -118,7 +118,7 @@ class BaseDtw(BaseStrideSegmentation):
     template
         The template used for matching.
         The required data type and shape depends on the use case.
-        For more details view the clas docstring.
+        For more details view the class docstring.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
@@ -127,7 +127,7 @@ class BaseDtw(BaseStrideSegmentation):
         Its usage depends on the exact `find_matches_method` used.
         Refer to the specific funtion to learn more about this.
     min_match_length
-        The minimal length of a sequence to be considered a match.
+        The minimal length of a sequence in samples to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
     find_matches_method
@@ -156,13 +156,12 @@ class BaseDtw(BaseStrideSegmentation):
     Other Parameters
     ----------------
     data
-        The data passed to the py:meth:`segment` method.
+        The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
 
     Notes
     -----
-
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
@@ -182,10 +181,10 @@ class BaseDtw(BaseStrideSegmentation):
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
 
-    data: Dataset
+    data: Union[np.ndarray, Dataset]
     sampling_rate_hz: float
 
-    _allowed_methods_map = {"original": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
+    _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
 
     @property
     def matches_start_end_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
@@ -205,7 +204,7 @@ class BaseDtw(BaseStrideSegmentation):
         self,
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
         resample_template: bool = True,
-        find_matches_method: Literal["original", "find_peaks"] = "original",
+        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
         min_match_length: Optional[float] = None,
     ):
@@ -215,7 +214,7 @@ class BaseDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **_) -> BaseType:
+    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.
 
         Parameters

@@ -1,17 +1,17 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
-from typing import Optional, Sequence, List
+from typing import Optional, Union, Dict
 
 import numpy as np
-from scipy.signal import resample
-from tslearn.metrics import subsequence_cost_matrix, subsequence_path
-from tslearn.utils import to_time_series
+import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.stride_segmentation.base_dtw import find_matches_find_peaks, find_matches_min_under_threshold
+from gaitmap.base import BaseType
+from gaitmap.stride_segmentation.base_dtw import BaseDtw
+from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate
+from gaitmap.utils.dataset_helper import Dataset
 
 
-class BarthDtw(BaseStrideSegmentation):
+class BarthDtw(BaseDtw):
     """Segment strides using a single stride template and Dynamic Time Warping.
 
     BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
@@ -20,53 +20,57 @@ class BarthDtw(BaseStrideSegmentation):
     input signal simultaneously.
     For more details refer to the `Notes` section.
 
-    Attributes
-    ----------
-    strides_start_end_ : 2D array of shape (n_detected_strides x 2)
-        The start (column 1) and stop (column 2) of each detected stride.
-    costs_ : List of length n_detected_strides
-        The cost value associated with each stride.
-    acc_cost_mat_ : array with the shapes (length_template x length_data)
-        The accumulated cost matrix of the DTW. The last row represents the cost function.
-    cost_function_ : 1D array with the same length as the data
-        The final cost function calculated as the square root of the last row of the accumulated cost matrix.
-    paths_
-        The full path through the cost matrix of each detected stride.
-
     Parameters
     ----------
-    template : (n x m) array representing a single stride, pd.DataFrame, or dictionary of pd.DataFrames
-        The template of length n used for matching. If the template has multiple dimensions m or multiple columns in,
-        case of the DataFrame inputs the respective columns are expected in the data as well.
-        See more info about this in the *Notes* and the *Example* section.
-    template_sampling_rate_hz
-        Sampling rate used for the template. This information is used to resample the template to the sampling rate of
-        the data if `resample_template` is `True`. If `resample_template` is `False` this information is ignored.
+    template
+        The template used for matching.
+        The required data type and shape depends on the use case.
+        For more details see :class:`BaseDtw <gaitmap.stride_segmentation.base_dtw.BaseDtw>`.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
-        This requires a valid value for `template_sampling_rate_hz`.
+        This requires a valid value for `template.sampling_rate_hz` value.
     max_cost
-        The maximal allowed cost to find potential stride candidates in the cost function.
+        The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
-        Refer to the `find_matches_method` to learn more about this.
+        Refer to the specific funtion to learn more about this.
     min_stride_time_s
         The minimal length of a sequence in seconds to be still considered a stride.
+        This is just a more convenient way to set `min_match_length`.
+        If both are provided `min_stride_time_s` is used and converted into samples based on the data sampling rate.
+    min_match_length
+        The minimal length of a sequence in samples to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
     find_matches_method
-        Select the method used to find stride candidates in the cost function.
+        Select the method used to find matches in the cost function.
 
-        - "original"
-            Matches the original implementation in the paper [1].
-            In this case :py:func:`.find_matches_original` will be used as method.
+        - "min_under_thres"
+            Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
+            In this case :py:func:`.find_matches_min_under_threshold` will be used as method.
         - "find_peaks"
             Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
             In this case :py:func:`.find_matches_find_peaks` will be used as method.
 
+    Attributes
+    ----------
+    stride_list_ : A stride list or dictionary with such values
+        The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
+        other algorithms.
+    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        The start (column 1) and stop (column 2) of each detected stride.
+    costs_ : List of length n_detected_strides or dictionary with such values
+        The cost value associated with each stride.
+    acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
+        The accumulated cost matrix of the DTW. The last row represents the cost function.
+    cost_function_ : 1D array with the same length as the data or dictionary with such values
+        The final cost function calculated as the square root of the last row of the accumulated cost matrix.
+    paths_ : list of arrays with length n_detected_strides or dictionary with such values
+        The full path through the cost matrix of each detected stride.
+
     Other Parameters
     ----------------
     data
-        The data passed to the py:meth:`segment` method.
+        The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
 
@@ -81,120 +85,34 @@ class BarthDtw(BaseStrideSegmentation):
 
     """
 
-    template: Optional[np.ndarray]
-    template_sampling_rate_hz: Optional[float]
-    max_cost: Optional[float]
-    resample_template: bool
-    min_stride_time_s: float
-    find_matches_method: Literal["original", "find_peaks"]
-
-    acc_cost_mat_: np.ndarray
-    paths_: Sequence[Sequence[tuple]]
-    costs_: Sequence[float]
-
-    data: np.ndarray
-    sampling_rate_hz: float
-
-    _allowed_methods_map = {"original": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
-
-    @property
-    def strides_start_end_(self) -> np.ndarray:
-        """Return start and end of each stride candidate."""
-        return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
-
-    @property
-    def cost_function_(self):
-        """Cost function extracted from the accumulated cost matrix."""
-        return np.sqrt(self.acc_cost_mat_[-1, :])
+    min_stride_time_s: Optional[float]
 
     def __init__(
         self,
-        template: Optional[np.ndarray] = None,
-        template_sampling_rate_hz: Optional[float] = None,
+        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
         resample_template: bool = True,
-        find_matches_method: Literal["original", "find_peaks"] = "original",
+        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
         min_stride_time_s: Optional[float] = 0.6,
+        min_match_length: Optional[float] = None,
     ):
-        self.template = template
-        self.template_sampling_rate_hz = template_sampling_rate_hz
-        self.max_cost = max_cost
         self.min_stride_time_s = min_stride_time_s
-        self.resample_template = resample_template
-        self.find_matches_method = find_matches_method
+        super().__init__(
+            template=template,
+            max_cost=max_cost,
+            min_match_length=min_match_length,
+            resample_template=resample_template,
+            find_matches_method=find_matches_method,
+        )
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **_) -> BaseType:
-        """Find stride candidates matching the provided template in the data.
-
-        Parameters
-        ----------
-        data : array (n x m), single sensor dataframe or multi sensor dataframe
-            The data array.
-            n needs to be larger than `n_template`.
-            m needs to be larger than `m_template`.
-            Only the `m_template` first columns will be used in the matching process.
-            For example if the template has 2 dimensions only `data[:, :2]` will be used.
-        sampling_rate_hz
-            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
-            a number of samples and it will be used to resample the template if `resample_template` is `True`.
-
-        Returns
-        -------
-            self
-                The class instance with all result attributes populated
-
-        """
-        # TODO: Test multidimensional matchings
-        self.data = data
-        self.sampling_rate_hz = sampling_rate_hz
-
-        # Validate and transform inputs
-        if self.template is None:
-            raise ValueError("A `template` must be specified.")
-
-        if self.resample_template and not self.template_sampling_rate_hz:
-            raise ValueError(
-                "To resample the template (`resample_template=True`), `template_sampling_rate_hz` must be specified."
-            )
-
-        if self.resample_template is True and sampling_rate_hz != self.template_sampling_rate_hz:
-            template = self._interpolate_template(sampling_rate_hz)
-        else:
-            template = self.template
-
-        min_distance = None
+    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
         if self.min_stride_time_s not in (None, 0, 0.0):
-            min_distance = self.min_stride_time_s * sampling_rate_hz
-        find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
-        if not find_matches_method:
-            raise ValueError(
-                'Invalid value for "find_matches_method". Must be one of {}'.format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
+            self.min_match_length = self.min_stride_time_s * sampling_rate_hz
+        return super().segment(data=data, sampling_rate_hz=sampling_rate_hz)
 
-        # Calculate cost matrix
-        self.acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(data))
-
-        matches = find_matches_method(
-            acc_cost_mat=self.acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance
-        )
-        self.paths_ = self._find_multiple_paths(self.acc_cost_mat_, matches)
-        self.costs_ = np.sqrt(self.acc_cost_mat_[-1, :][matches])
-
-        return self
-
-    def _interpolate_template(self, new_sampling_rate: float) -> np.ndarray:
-        template = resample(
-            self.template, int(self.template.shape[0] * new_sampling_rate / self.template_sampling_rate_hz)
-        )
-        return template
-
-    @staticmethod
-    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
-        paths = []
-        for start in start_points:
-            path = subsequence_path(acc_cost_mat, start)
-            path_array = np.array(path)
-            paths.append(path_array)
-        return paths
+    @property
+    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        start_ends = self.matches_start_end_
+        if isinstance(start_ends, dict):
+            return {k: pd.DataFrame(v, columns=["start", "end"]) for k, v in start_ends.items()}
+        return pd.DataFrame(start_ends, columns=["start", "end"])
