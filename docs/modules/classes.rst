@@ -81,3 +81,9 @@ Functions
    :template: function.rst
 
     utils.array_handling.sliding_window_view
+
+:mod:`gaitmap.utils.consts`: Global constants
+=============================================
+
+.. automodule:: gaitmap.utils.consts
+    :member-order: bysource
