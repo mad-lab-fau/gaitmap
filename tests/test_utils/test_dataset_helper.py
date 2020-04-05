@@ -6,7 +6,27 @@ import pandas as pd
 import pytest
 
 from gaitmap.utils.consts import SF_COLS, SF_GYR, SF_ACC, BF_COLS, BF_GYR, BF_ACC
-from gaitmap.utils.dataset_helper import _has_sf_cols, _has_bf_cols, is_single_sensor_dataset, is_multi_sensor_dataset
+from gaitmap.utils.dataset_helper import (
+    _has_sf_cols,
+    _has_bf_cols,
+    is_single_sensor_dataset,
+    is_multi_sensor_dataset,
+    get_multi_sensor_dataset_names,
+)
+
+
+def _create_test_multiindex():
+    return pd.MultiIndex.from_product([list("abc"), list("123")])
+
+
+@pytest.fixture(params=(("both", True, True), ("acc", True, False), ("gyr", False, True)))
+def combinations(request):
+    return request.param
+
+
+@pytest.fixture(params=("any", "body", "sensor"))
+def frame(request):
+    return request.param
 
 
 class TestColumnHelper:
@@ -43,20 +63,6 @@ class TestColumnHelper:
 
     def test_missing_gyr_columns(self):
         assert not self.method(self.gyr_cols[:-1], check_acc=False)
-
-
-def _create_test_multiindex():
-    return pd.MultiIndex.from_product([list("abc"), list("123")])
-
-
-@pytest.fixture(params=(("both", True, True), ("acc", True, False), ("gyr", False, True)))
-def combinations(request):
-    return request.param
-
-
-@pytest.fixture(params=("any", "body", "sensor"))
-def frame(request):
-    return request.param
 
 
 class TestIsSingleSensorDataset:
@@ -143,3 +149,9 @@ class TestIsMultiSensorDataset:
             is_multi_sensor_dataset(
                 pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()), frame="invalid_value"
             )
+
+
+class TestGetMultiSensorDatasetNames:
+    @pytest.mark.parametrize("obj", ({"a": [], "b": [], "c": []}, pd.DataFrame(columns=_create_test_multiindex())))
+    def test_names_simple(self, obj):
+        assert set(get_multi_sensor_dataset_names(obj)) == {"a", "b", "c"}

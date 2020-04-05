@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Sequence
 
 import pandas as pd
 from typing_extensions import Literal
@@ -141,14 +141,13 @@ def is_multi_sensor_dataset(
     if not isinstance(dataset, (pd.DataFrame, dict)):
         return False
 
-    if isinstance(dataset, pd.DataFrame):
+    if isinstance(dataset, pd.DataFrame) and (
+        (not isinstance(dataset.columns, pd.MultiIndex)) or (dataset.columns.nlevels != 2)
+    ):
         # Check that it has multilevel columns
-        if (not isinstance(dataset.columns, pd.MultiIndex)) or (dataset.columns.nlevels != 2):
-            return False
-        keys = dataset.columns.get_level_values(0)
-    else:
-        # In case it is a dict
-        keys = dataset.keys()
+        return False
+
+    keys = get_multi_sensor_dataset_names(dataset)
 
     if len(keys) == 0:
         return False
@@ -157,3 +156,23 @@ def is_multi_sensor_dataset(
         if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
             return False
     return True
+
+
+def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]:
+    """Get the list of sensor names from a multi-sensor dataset.
+
+    .. warning:
+        This will not check, if the input is actually a multi-sensor dataset
+
+    Notes
+    -----
+    The keys are not guaranteed to be ordered.
+
+    """
+    if isinstance(dataset, pd.DataFrame):
+        keys = list(set(dataset.columns.get_level_values(0)))
+    else:
+        # In case it is a dict
+        keys = dataset.keys()
+
+    return keys
