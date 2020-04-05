@@ -49,11 +49,11 @@ def is_single_sensor_dataset(
 
     A valid single sensor dataset in the body frame additionally:
 
-    - contains all columns listed in :obj:`gaitmap.utils.consts.SF_COLS`
+    - contains all columns listed in :obj:`SF_COLS <gaitmap.utils.consts.SF_COLS>`
 
     A valid single sensor dataset in the sensor frame additionally:
 
-    - contains all columns listed in :obj:`gaitmap.utils.consts.SB_COLS`
+    - contains all columns listed in :obj:`BF_COLS <gaitmap.utils.consts.BF_COLS>`
 
     Parameters
     ----------
