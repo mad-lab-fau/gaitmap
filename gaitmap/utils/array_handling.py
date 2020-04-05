@@ -75,22 +75,3 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
     view = np.squeeze(view)  # get rid of single-dimensional entries from the shape of an array.
 
     return view
-
-
-def l2_norm(arr: np.ndarray, axis: int = -1) -> np.ndarray:
-    """Calculate L2-Norm of array along a given axis.
-
-    Parameters
-    ----------
-    arr : array with shape (n,) or (n, m)
-        array on which l2-norm will be calculated
-
-    axis : int
-        axis along which calculation will be performed
-
-    Returns
-    -------
-    L2-norm of input array along given axis
-
-    """
-    return np.sum(arr ** 2, axis=axis) ** (1.0 / 2)
