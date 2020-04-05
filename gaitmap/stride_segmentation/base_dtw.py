@@ -3,6 +3,7 @@
 from typing import Optional, Sequence, List, Tuple
 
 import numpy as np
+import pandas as pd
 from scipy.signal import resample
 from tslearn.metrics import subsequence_cost_matrix, subsequence_path
 from tslearn.utils import to_time_series
@@ -11,6 +12,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
+from gaitmap.utils.dataset_helper import Dataset
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
@@ -128,7 +130,7 @@ class BaseDtw(BaseStrideSegmentation):
     paths_: Sequence[Sequence[tuple]]
     costs_: Sequence[float]
 
-    data: np.ndarray
+    data: Dataset
     sampling_rate_hz: float
 
     _allowed_methods_map = {"original": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
@@ -157,7 +159,7 @@ class BaseDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **_) -> BaseType:
+    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **_) -> BaseType:
         """Find stride candidates matching the provided template in the data.
 
         Parameters
@@ -178,7 +180,6 @@ class BaseDtw(BaseStrideSegmentation):
                 The class instance with all result attributes populated
 
         """
-        # TODO: Test multidimensional matchings
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
@@ -251,6 +252,21 @@ class BaseDtw(BaseStrideSegmentation):
                 template,
                 data[:, : template.shape[1]],
             )
+        data_is_df = isinstance(data, pd.DataFrame)
+        template_is_df = isinstance(template, pd.DataFrame)
+
+        if data_is_df and template_is_df:
+            try:
+                data = data[template.columns]
+            except KeyError:
+                raise KeyError(
+                    "Some columns of the template are not available in the data! Missing columns: {}".format(
+                        list(set(template.columns) - set(data.columns))
+                    )
+                )
+            return template.to_numpy(), data.to_numpy()
+        # TODO: Better error message
+        raise ValueError("Invalid combination of data and template")
 
     @staticmethod
     def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
