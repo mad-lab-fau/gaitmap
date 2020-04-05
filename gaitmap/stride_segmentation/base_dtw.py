@@ -156,7 +156,7 @@ class BaseDtw(BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: Optional[DtwTemplate] = None,
+        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["original", "find_peaks"] = "original",
         max_cost: Optional[float] = None,
@@ -201,15 +201,17 @@ class BaseDtw(BaseStrideSegmentation):
             # Single template single sensor: easy
             self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(data, template)
         elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
-            if is_single_sensor_dataset(template.template, check_gyr=False, check_acc=False):
+            if isinstance(template, dict):
+                # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
+                # Ignore the rest
+                results = dict()
+                for sensor, single_template in template.items():
+                    results[sensor] = self._segment_single_dataset(data[sensor], single_template)
+            elif is_single_sensor_dataset(template.template, check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
                 for sensor in get_multi_sensor_dataset_names(data):
                     results[sensor] = self._segment_single_dataset(data[sensor], template)
-            elif isinstance(template, dict):
-                # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
-                # Ignore the rest
-                results = dict()
             else:
                 # TODO: Test
                 raise ValueError(
@@ -305,6 +307,7 @@ class BaseDtw(BaseStrideSegmentation):
                 )
             return template.to_numpy(), data.to_numpy()
         # TODO: Better error message
+        # TODO: Test
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod

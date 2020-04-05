@@ -184,7 +184,7 @@ class TestMultiSensorInputs:
         elif request.param == "frame":
             self.data = pd.concat(data, axis=1)
 
-    def test_single_sensor_multi_sensors(self):
+    def test_single_template_multi_sensors(self):
         """In case a single template and multiple sensors are provided, the template is applied to all sensors."""
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
@@ -224,6 +224,56 @@ class TestMultiSensorInputs:
                 [4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
                 [5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 5.0, 5.0],
                 [9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 9.0, 9.0],
+            ],
+        )
+
+    def test_multi_template_multi_sensors(self):
+        """Test multiple templates with multiple sensors.
+
+        In case a multiple template and multiple sensors are provided, each template is applied to data with the same
+        name sensors.
+        """
+        template1 = [0, 1.0, 0]
+        template1 = pd.DataFrame(template1, columns=["col1"])
+        template1 = create_dtw_template(template1, sampling_rate_hz=100.0)
+        template2 = [0, 0, 1.0]
+        template2 = pd.DataFrame(template2, columns=["col1"])
+        template2 = create_dtw_template(template2, sampling_rate_hz=100.0)
+        dtw = BaseDtw(template={"sensor1": template1, "sensor2": template2}, max_cost=0.5, min_stride_time_s=None)
+
+        dtw = dtw.segment(data=self.data, sampling_rate_hz=100)
+
+        assert {"sensor1", "sensor2"} == set(dtw.paths_.keys())
+        assert {"sensor1", "sensor2"} == set(dtw.matches_start_end_.keys())
+        assert {"sensor1", "sensor2"} == set(dtw.costs_.keys())
+        assert {"sensor1", "sensor2"} == set(dtw.acc_cost_mat_.keys())
+        assert {"sensor1", "sensor2"} == set(dtw.cost_function_.keys())
+
+        # Test output for sensor 1
+        sensor = "sensor1"
+        np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 5), (1, 6), (2, 7)]])
+        assert dtw.costs_[sensor] == [0.0]
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7]])
+        np.testing.assert_array_equal(
+            dtw.acc_cost_mat_[sensor],
+            [
+                [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            ],
+        )
+
+        # Test output for sensor 2
+        sensor = "sensor2"
+        np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 2), (1, 2), (2, 3)]])
+        assert dtw.costs_[sensor] == [0.0]
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 3]])
+        np.testing.assert_array_equal(
+            dtw.acc_cost_mat_[sensor],
+            [
+                [4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                [8.0, 8.0, 0.0, 1.0, 0.0, 4.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0, 8.0],
+                [9.0, 9.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
             ],
         )
 
