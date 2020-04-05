@@ -42,6 +42,19 @@ def is_single_sensor_dataset(
 ) -> bool:
     """Check if an object is a valid dataset following all conventions.
 
+    A valid single sensor dataset is:
+
+    - a pd.DataFrame
+    - has only a single level of column indices that correspond to the sensor (or feature) axis that are available.
+
+    A valid single sensor dataset in the body frame additionally:
+
+    - contains all columns listed in :obj:`gaitmap.utils.consts.SF_COLS`
+
+    A valid single sensor dataset in the sensor frame additionally:
+
+    - contains all columns listed in :obj:`gaitmap.utils.consts.SB_COLS`
+
     Parameters
     ----------
     dataset

@@ -82,6 +82,23 @@ Functions
 
     utils.array_handling.sliding_window_view
 
+:mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
+==========================================================================================
+
+.. automodule:: gaitmap.utils.dataset_helper
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.utils.dataset_helper
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    is_single_sensor_dataset
+
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================
 
