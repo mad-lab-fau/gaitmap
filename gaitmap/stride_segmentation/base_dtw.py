@@ -74,47 +74,84 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
 class BaseDtw(BaseStrideSegmentation):
     """A basic implementation of subsequent dynamic time warping.
 
-    Attributes
-    ----------
-    matches_start_end_ : 2D array of shape (n_detected_strides x 2)
-        The start (column 1) and stop (column 2) of each detected stride.
-    costs_ : List of length n_detected_strides
-        The cost value associated with each stride.
-    acc_cost_mat_ : array with the shapes (length_template x length_data)
-        The accumulated cost matrix of the DTW. The last row represents the cost function.
-    cost_function_ : 1D array with the same length as the data
-        The final cost function calculated as the square root of the last row of the accumulated cost matrix.
-    paths_
-        The full path through the cost matrix of each detected stride.
+    This uses the DTW implementation of :func:`tslearn <tslearn.metrics.subsequence_cost_matrix>`.
+    This class offers a convenient wrapper around this by providing support for various datatypes to be used as inputs.
+    These cover three main usecases (for examples of all of these, see the **Examples** section):
+
+    A general purpose msDTW
+        If you require a msDTW with a class based interface independent of the context of stride segmentation (or even
+        this library) you can create a simple template from a (n x m) numpy array using
+        :func:`create_dtw_template <gaitmap.stride_segmentation.dtw_templates.templates.create_dtw_template>`.
+        This allows you to use just a simple numpy array as data input to the :meth:`segment` method.
+        The data must have at least n samples and m columns.
+        If it has more than m columns, the additional columns are ignored.
+    A simple way to segment multiple sensor with the same template
+        If you are using the basic datatypes of this library you can use this DTW implementation to easily apply a
+        template to selected columns of multiple sensors.
+        For this, the template is expected to be based on an `pd.DataFrame` wrapped in a
+        :class:`DtwTemplate <gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate>`.
+        The column names of this dataframe need to match the column names of the data the template should be applied to.
+        The data can be passed as single-sensor dataframe (the columns correspond to individual sensor axis) or a
+        multi-sensor dataset (either a dictionary of single-sensor dataframes or a dataframe with 2 level of column
+        labels, were the upper corresponds to the sensor name.
+        In case of the single-sensor-dataframe the matching and the output is identical to passing just numpy arrays.
+        In case of a multi-sensor input, the provided template is applied to each of the sensors individually.
+        All outputs are then dictionaries of the single-sensor outputs with the sensor name as key.
+        In both cases, if a dataset has columns that are not listed in the template, they are simply ignored.
+    A way to apply specific templates to specific columns
+        In some cases different templates are required for different sensors.
+        To do this, the template must be a dictionary of
+        :class:`DtwTemplate <gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate>` instances, were the key
+        corresponds to the sensor the template should be applied to.
+        Note, that only dataframe templates are supported and **not** simple numpy array templates.
+        The data input needs to be a multi-sensor dataset (see above for more information).
+        The templates are then applied only to data belonging to the sensor with the same name.
+        All sensors in the template dictionary must also be in the dataset.
+        However, the dataset can have additional sensors, which are simply ignored.
+        In this use case, the outputs are always dictionaries with the sensor name as key.
+
+    TODO: Add link to dataset doumentation in the future
+
 
     Parameters
     ----------
     template
         The template used for matching.
-        See more details in the :class:`DtwTemplates <gaitmap.stride_segmentation.dtw_templates.DtwTemplates>` docu.
-        If the template has its `sampling_rate_hz` attribute set, this information is used to resample the template to
-        the sampling rate of the data if `resample_template` is `True`. If `resample_template` is `False` this
-        information is ignored.
+        The required data type and shape depends on the use case.
+        For more details view the clas docstring.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
-        This requires a valid value for `template.sampling_rate_hz`.
+        This requires a valid value for `template.sampling_rate_hz` value.
     max_cost
-        The maximal allowed cost to find potential stride candidates in the cost function.
+        The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
-        Refer to the `find_matches_method` to learn more about this.
-    min_stride_time_s
-        The minimal length of a sequence in seconds to be still considered a stride.
+        Refer to the specific funtion to learn more about this.
+    min_match_length
+        The minimal length of a sequence to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
     find_matches_method
-        Select the method used to find stride candidates in the cost function.
+        Select the method used to find matches in the cost function.
 
         - "min_under_thres"
-            Matches the original implementation in the paper [1].
-            In this case :py:func:`.find_matches_original` will be used as method.
+            Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
+            In this case :py:func:`.find_matches_min_under_threshold` will be used as method.
         - "find_peaks"
             Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
             In this case :py:func:`.find_matches_find_peaks` will be used as method.
+
+    Attributes
+    ----------
+    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        The start (column 1) and stop (column 2) of each detected stride.
+    costs_ : List of length n_detected_strides or dictionary with such values
+        The cost value associated with each stride.
+    acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
+        The accumulated cost matrix of the DTW. The last row represents the cost function.
+    cost_function_ : 1D array with the same length as the data or dictionary with such values
+        The final cost function calculated as the square root of the last row of the accumulated cost matrix.
+    paths_ : list of arrays with length n_detected_strides or dictionary with such values
+        The full path through the cost matrix of each detected stride.
 
     Other Parameters
     ----------------
@@ -123,12 +160,22 @@ class BaseDtw(BaseStrideSegmentation):
     sampling_rate_hz
         The sampling rate of the data
 
+    Notes
+    -----
+
+    .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
+       Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
+       activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
+       Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
+
+    TODO: Add examples
+
     """
 
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
     resample_template: bool
-    min_stride_time_s: float
+    min_match_length: float
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -160,33 +207,30 @@ class BaseDtw(BaseStrideSegmentation):
         resample_template: bool = True,
         find_matches_method: Literal["original", "find_peaks"] = "original",
         max_cost: Optional[float] = None,
-        min_stride_time_s: Optional[float] = 0.6,
+        min_match_length: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
-        self.min_stride_time_s = min_stride_time_s
+        self.min_match_length = min_match_length
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
     def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **_) -> BaseType:
-        """Find stride candidates matching the provided template in the data.
+        """Find matches by warping the provided template to the data.
 
         Parameters
         ----------
-        data : array (n x m), single sensor dataframe or multi sensor dataframe
-            The data array.
-            n needs to be larger than `n_template`.
-            m needs to be larger than `m_template`.
-            Only the `m_template` first columns will be used in the matching process.
-            For example if the template has 2 dimensions only `data[:, :2]` will be used.
+        data : array, single-sensor dataframe, or multi-sensor dataset
+            The input data.
+            For details on the required datatypes review the class docstring.
         sampling_rate_hz
             The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
             a number of samples and it will be used to resample the template if `resample_template` is `True`.
 
         Returns
         -------
-            self
-                The class instance with all result attributes populated
+        self
+            The class instance with all result attributes populated
 
         """
         self.data = data
@@ -244,9 +288,8 @@ class BaseDtw(BaseStrideSegmentation):
         else:
             template = template_array
 
-        min_distance = None
-        if self.min_stride_time_s not in (None, 0, 0.0):
-            min_distance = self.min_stride_time_s * self.sampling_rate_hz
+        min_distance = self.min_match_length
+
         find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
         if not find_matches_method:
             raise ValueError(

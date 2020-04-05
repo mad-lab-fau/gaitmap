@@ -17,7 +17,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None,)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None,)
         data = np.array([0, 1.0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
@@ -28,7 +28,7 @@ class TestSimpleSegment:
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
     def _create_instance(self, request):
-        dtw = BaseDtw(template=self.template, max_cost=0.5, min_stride_time_s=None, find_matches_method=request.param,)
+        dtw = BaseDtw(template=self.template, max_cost=0.5, min_match_length=None, find_matches_method=request.param,)
         self.dtw = dtw
 
     def test_sdtw_simple_multi_match(self):
@@ -74,7 +74,7 @@ class TestMultiDimensionalArrayInputs:
     def test_pseudo_2d_inputs(self, template, data):
         template = create_dtw_template(template, sampling_rate_hz=100.0)
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None,)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None,)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
@@ -84,7 +84,7 @@ class TestMultiDimensionalArrayInputs:
         data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
         template = create_dtw_template(template, sampling_rate_hz=100.0)
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None,)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None,)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
@@ -107,7 +107,7 @@ class TestMultiDimensionalArrayInputs:
             template.columns = ["col" + str(i + 1) for i in range(m_cols)]
         template = create_dtw_template(template, sampling_rate_hz=100.0)
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
@@ -131,7 +131,7 @@ class TestMultiDimensionalArrayInputs:
             template.columns = ["col" + str(i + 1) for i in range(n_cols_template)]
         template = create_dtw_template(template, sampling_rate_hz=100.0)
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
@@ -144,7 +144,7 @@ class TestMultiDimensionalArrayInputs:
 
         data = np.repeat([2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]], n_cols_data, axis=0).T
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None)
 
         with pytest.raises(ValueError) as e:
             dtw.segment(data, sampling_rate_hz=100.0)
@@ -161,7 +161,7 @@ class TestMultiDimensionalArrayInputs:
         template = pd.DataFrame(template, columns=["col" + str(i + 1) for i in range(n_cols_template)])
         template = create_dtw_template(template, sampling_rate_hz=100.0)
 
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None)
 
         with pytest.raises(KeyError) as e:
             dtw.segment(data, sampling_rate_hz=100.0)
@@ -189,7 +189,7 @@ class TestMultiSensorInputs:
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
         template = create_dtw_template(template, sampling_rate_hz=100.0)
-        dtw = BaseDtw(template=template, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template=template, max_cost=0.5, min_match_length=None)
 
         dtw = dtw.segment(data=self.data, sampling_rate_hz=100)
 
@@ -239,7 +239,7 @@ class TestMultiSensorInputs:
         template2 = [0, 0, 1.0]
         template2 = pd.DataFrame(template2, columns=["col1"])
         template2 = create_dtw_template(template2, sampling_rate_hz=100.0)
-        dtw = BaseDtw(template={"sensor1": template1, "sensor2": template2}, max_cost=0.5, min_stride_time_s=None)
+        dtw = BaseDtw(template={"sensor1": template1, "sensor2": template2}, max_cost=0.5, min_match_length=None)
 
         dtw = dtw.segment(data=self.data, sampling_rate_hz=100)
 
