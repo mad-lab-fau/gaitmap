@@ -12,7 +12,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
-from gaitmap.utils.dataset_helper import Dataset, is_single_sensor_dataset
+from gaitmap.utils.dataset_helper import Dataset, is_single_sensor_dataset, is_multi_sensor_dataset
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
@@ -187,10 +187,27 @@ class BaseDtw(BaseStrideSegmentation):
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
+        template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
-            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, self.template)
+            # Single template single sensor: easy
+            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, template)
+        elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+            if is_single_sensor_dataset(template.template, check_gyr=False, check_acc=False):
+                # single template, multiple sensors: Apply template to all sensors
+                pass
+            elif isinstance(template, dict):
+                # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
+                # Ignore the rest
+                pass
+            else:
+                # TODO: Test
+                raise ValueError(
+                    "In case of a multi-sensor dataset input, the used template must either be of type "
+                    "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
+                )
         else:
             # TODO: Better error message
+            # TODO: Test
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
@@ -223,9 +240,7 @@ class BaseDtw(BaseStrideSegmentation):
         # Calculate cost matrix
         acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
-        matches = find_matches_method(
-            acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance
-        )
+        matches = find_matches_method(acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance)
         paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
         costs_ = np.sqrt(acc_cost_mat_[-1, :][matches])
 
