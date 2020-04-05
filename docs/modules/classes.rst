@@ -41,7 +41,9 @@ Classes
    :toctree: generated/
    :template: class.rst
 
+    BaseDtw
     BarthDtw
+    DtwTemplate
 
 Functions
 ---------
@@ -51,8 +53,9 @@ Functions
    :toctree: generated/
    :template: function.rst
 
-    find_matches_find_peaks
-    find_matches_original
+    create_dtw_template
+    base_dtw.find_matches_find_peaks
+    base_dtw.find_matches_min_under_threshold
 
 Utils
 -----

@@ -9,6 +9,8 @@ events.
 """
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
+from gaitmap.stride_segmentation.base_dtw import BaseDtw
+from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, create_dtw_template
 
 
-__all__ = ["BarthDtw"]
+__all__ = ["BarthDtw", "BaseDtw", "DtwTemplate", "create_dtw_template"]
