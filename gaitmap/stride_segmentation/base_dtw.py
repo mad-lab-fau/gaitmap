@@ -12,7 +12,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
-from gaitmap.utils.dataset_helper import Dataset
+from gaitmap.utils.dataset_helper import Dataset, is_single_sensor_dataset
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
@@ -187,7 +187,11 @@ class BaseDtw(BaseStrideSegmentation):
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
-        self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, self.template)
+        if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
+            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, self.template)
+        else:
+            # TODO: Better error message
+            raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
     def _segment_single_dataset(self, dataset, template):
