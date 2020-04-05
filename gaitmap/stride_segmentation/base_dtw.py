@@ -1,6 +1,6 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 
-from typing import Optional, Sequence, List, Tuple
+from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,12 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
-from gaitmap.utils.dataset_helper import Dataset, is_single_sensor_dataset, is_multi_sensor_dataset
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    is_single_sensor_dataset,
+    is_multi_sensor_dataset,
+    get_multi_sensor_dataset_names,
+)
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
@@ -126,9 +131,9 @@ class BaseDtw(BaseStrideSegmentation):
     min_stride_time_s: float
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
-    acc_cost_mat_: np.ndarray
-    paths_: Sequence[Sequence[tuple]]
-    costs_: Sequence[float]
+    acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
+    paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
+    costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
 
     data: Dataset
     sampling_rate_hz: float
@@ -136,13 +141,17 @@ class BaseDtw(BaseStrideSegmentation):
     _allowed_methods_map = {"original": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
 
     @property
-    def matches_start_end_(self) -> np.ndarray:
+    def matches_start_end_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         """Return start and end of match."""
+        if isinstance(self.paths_, dict):
+            return {s: np.array([[p[0][-1], p[-1][-1]] for p in path]) for s, path in self.paths_.items()}
         return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
 
     @property
     def cost_function_(self):
         """Cost function extracted from the accumulated cost matrix."""
+        if isinstance(self.acc_cost_mat_, dict):
+            return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in self.acc_cost_mat_.items()}
         return np.sqrt(self.acc_cost_mat_[-1, :])
 
     def __init__(
@@ -190,21 +199,28 @@ class BaseDtw(BaseStrideSegmentation):
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             # Single template single sensor: easy
-            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(self.data, template)
+            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(data, template)
         elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
             if is_single_sensor_dataset(template.template, check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
-                pass
+                results = dict()
+                for sensor in get_multi_sensor_dataset_names(data):
+                    results[sensor] = self._segment_single_dataset(data[sensor], template)
             elif isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
-                pass
+                results = dict()
             else:
                 # TODO: Test
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
+            self.acc_cost_mat_, self.paths_, self.costs_ = dict(), dict(), dict()
+            for sensor, r in results.items():
+                self.acc_cost_mat_[sensor] = r[0]
+                self.paths_[sensor] = r[1]
+                self.costs_[sensor] = r[2]
         else:
             # TODO: Better error message
             # TODO: Test
