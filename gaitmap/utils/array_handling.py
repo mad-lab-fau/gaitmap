@@ -5,12 +5,11 @@ import numpy as np
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_padding: bool = False) -> np.ndarray:
     """Create a sliding window view of an input array with given window length and overlap.
 
-    Warnings
-    ----------
-    This function will return by default a view onto your input array, modifying values in your result will directly
-    affect your input data which might lead to unexpected behaviour! If padding is disabled (default) last window
-    fraction of input may not be returned! However, if nan_padding is enabled, this will always return a copy instead
-    of a view of your input data, independent if padding was actually performed or not!
+    .. warning::
+        This function will return by default a view onto your input array, modifying values in your result will directly
+        affect your input data which might lead to unexpected behaviour! If padding is disabled (default) last window
+        fraction of input may not be returned! However, if nan_padding is enabled, this will always return a copy
+        instead of a view of your input data, independent if padding was actually performed or not!
 
     Parameters
     ----------
