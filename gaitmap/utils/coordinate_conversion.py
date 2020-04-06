@@ -17,11 +17,11 @@ def convert_left_foot(data: pd.DataFrame):
     Parameters
     ----------
     data
-        raw data
+        raw data frame containing acc and gyr data
 
     Returns
     -------
-        converted data
+        converted data frame
 
     See Also
     --------
@@ -54,11 +54,11 @@ def convert_right_foot(data: pd.DataFrame):
     Parameters
     ----------
     data
-        raw data
+        raw data frame containing acc and gyr data
 
     Returns
     -------
-        converted data
+        converted data frame
 
     See Also
     --------
@@ -96,12 +96,9 @@ def rotate(data: Dataset, left: Optional[List[str]] = None, right: Optional[List
         MultiSensorDataset
     left
         List of strings indicating sensor names which will be rotated using definition of left conversion
-        If True, all columns will be considered left sensors
-        If not specified, the sensor names will be searched for 'left'
     right
         List of strings indicating sensor names which will be rotated using definition of right conversion
-        If True, all columns will be considered left sensors
-        If not specified, the sensor names will be searched for 'right'
+
     Returns
     -------
         converted MultiSensorDataset
