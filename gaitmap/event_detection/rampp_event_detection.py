@@ -165,7 +165,7 @@ class RamppEventDetection(BaseEventDetection):
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
-        acc_pa = acc["acc_pa"].to_numpy()
+        acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
         ic_events = []
         fc_events = []
         min_vel_events = []
@@ -177,7 +177,7 @@ class RamppEventDetection(BaseEventDetection):
             acc_sec = acc_pa[start:end]
             gyr_grad = np.gradient(gyr_ml_sec)
             ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-            fc_events.append(start + _detect_tc(gyr_sec))
+            fc_events.append(start + _detect_tc(gyr_ml_sec))
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_wind_size))
 
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
