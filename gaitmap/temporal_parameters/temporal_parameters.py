@@ -1,3 +1,4 @@
+"""Calculate temporal parameters algorithm."""
 import pandas as pd
 
 from gaitmap.base import BaseType, BaseTemporalParameterCalculation
@@ -30,7 +31,6 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Array of stance time for each stride
 
     """
-
     parameters_: pd.DataFrame  # Results are stored here
 
     def __init__(self):
