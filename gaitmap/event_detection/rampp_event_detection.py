@@ -195,7 +195,7 @@ def _detect_min_vel(gyr: np.ndarray, window_size: int) -> float:
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, search_window: Tuple[float, float],
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float],
 ) -> float:
 
     # Determine rough search region
@@ -222,8 +222,8 @@ def _detect_ic(
     )
 
     # Acc search window
-    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - search_window[0]])))
-    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + search_window[1]])))
+    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
+    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
 
     return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
 
