@@ -101,4 +101,4 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
         raise ValueError("Input must be boolean array!")
 
     slices = np.ma.flatnotmasked_contiguous(np.ma.masked_equal(bool_array, 0))
-    return np.array([[s.start, s.end - 1] for s in slices])
+    return np.array([[s.start, s.stop - 1] for s in slices])
