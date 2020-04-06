@@ -6,7 +6,7 @@ from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
 
 
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
-    """ This class is responsible for calculating temporal parameters of strides.
+    """This class is responsible for calculating temporal parameters of strides.
 
     Parameters
     ----------
@@ -31,6 +31,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Array of stance time for each stride
 
     """
+
     parameters_: pd.DataFrame  # Results are stored here
 
     def __init__(self):
