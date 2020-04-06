@@ -24,11 +24,11 @@ def find_static_samples(
     overlap : int
         Length of desired overlap in units of samples
 
-    inactive_signal_th: float
+    inactive_signal_th : float
        Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric: str, optional
+    metric : str, optional
         Metric which will be calculated per window, one of the following strings
 
         'mean' (default)
@@ -42,7 +42,7 @@ def find_static_samples(
 
     Returns
     -------
-    Boolean array with length n to indicate static (=1) or non-static (=0) for each sample
+    Boolean array with length n to indicate static (=True) or non-static (=False) for each sample
 
     Examples
     --------
@@ -85,7 +85,7 @@ def find_static_samples(
         # perform logical or operation to combine all overlapping window results
         inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
 
-    return inactive_signal_bool_array
+    return inactive_signal_bool_array.astype(bool)
 
 
 def find_static_sequences(
