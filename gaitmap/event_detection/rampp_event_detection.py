@@ -98,6 +98,19 @@ class RamppEventDetection(BaseEventDetection):
         self
             The class instance with all result attributes populated
 
+        Examples
+        --------
+        Get gait events from single sensor signal
+
+        >>> event_detection = RamppEventDetection()
+        >>> event_detection.detect(data=data_left, sampling_rate_hz=204.8, segmented_stride_list=stride_list_left)
+        >>> event_detection.stride_events_
+            s_id   start     end      ic      tc  min_vel  pre_ic
+        0      0   519.0   710.0   651.0   584.0    519.0   498.0
+        1      1   710.0   935.0   839.0   802.0    710.0   651.0
+        2      2   935.0  1183.0  1089.0  1023.0    935.0   839.0
+        ...
+
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
@@ -124,8 +137,8 @@ class RamppEventDetection(BaseEventDetection):
         self.tc_ = self.tc_[1:]
         stride_event_dict = {
             "s_id": s_id,
-            "start": self.start,
-            "end": self.end,
+            "start": self.start_,
+            "end": self.end_,
             "ic": self.ic_,
             "tc": self.tc_,
             "min_vel": self.min_vel_,
