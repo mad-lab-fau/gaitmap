@@ -75,3 +75,30 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
     view = np.squeeze(view)  # get rid of single-dimensional entries from the shape of an array.
 
     return view
+
+
+def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
+    """Find regions in bool array and convert those to start-end indices.
+
+    Parameters
+    ----------
+    bool_array : array with shape (n,)
+        boolean array with either 0/1, 0.0/1.0 or True/False elements
+
+    Returns
+    -------
+    array of [start, end] indices with shape (n,2)
+
+    Examples
+    --------
+    >>> example_array = np.array([0,0,1,1,0,0,1,1,1])
+    >>> start_end_list = bool_array_to_start_end_array(example_array)
+    array([[2, 3],[6, 8]])
+
+    """
+    # check if input is actually a boolean array
+    if not np.array_equal(bool_array, bool_array.astype(bool)):
+        raise ValueError("Input must be boolean array!")
+
+    slices = np.ma.flatnotmasked_contiguous(np.ma.masked_equal(bool_array, 0))
+    return np.array([[s.start, s.stop - 1] for s in slices])

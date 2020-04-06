@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.utils.array_handling import sliding_window_view, bool_array_to_start_end_array
 
 
 class TestSlidingWindow:
@@ -173,3 +173,53 @@ class TestSlidingWindow:
         window_view = sliding_window_view(input_array, window_length=4, overlap=2)
 
         assert_array_equal(expected_output, window_view)
+
+
+class TestBoolArrayToStartEndArray:
+    """Test the function `sliding_window_view`."""
+
+    def test_simple_input(self):
+        input_array = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
+        output_array = bool_array_to_start_end_array(input_array)
+        expected_output = np.array([[2, 3], [6, 8]])
+        assert_array_equal(expected_output, output_array)
+
+    def test_invalid_inputs_overlap(self):
+        """Test if value error is raised correctly on invalid input array."""
+        with pytest.raises(ValueError, match=r".* boolean .*"):
+            input_array = np.array([0, 0, 2, 2, 0, 0, 2, 2, 2])
+            bool_array_to_start_end_array(input_array)
+
+    def test_zeros_array(self):
+        """Test zeros only input."""
+        input_array = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        output_array = bool_array_to_start_end_array(input_array)
+        assert output_array.size == 0
+
+    def test_ones_array(self):
+        """Test ones only input."""
+        input_array = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
+        output_array = bool_array_to_start_end_array(input_array)
+        expected_output = np.array([[0, 8]])
+        assert_array_equal(expected_output, output_array)
+
+    def test_edges_array(self):
+        """Test correct handling of edges."""
+        input_array = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1])
+        output_array = bool_array_to_start_end_array(input_array)
+        expected_output = np.array([[0, 2], [6, 8]])
+        assert_array_equal(expected_output, output_array)
+
+    def test_bool_value_array(self):
+        """Test correct handling of boolean values."""
+        input_array = np.array([True, True, True, False, False, False, True, True, True])
+        output_array = bool_array_to_start_end_array(input_array)
+        expected_output = np.array([[0, 2], [6, 8]])
+        assert_array_equal(expected_output, output_array)
+
+    def test_float_value_array(self):
+        """Test correct handling of float values."""
+        input_array = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
+        output_array = bool_array_to_start_end_array(input_array)
+        expected_output = np.array([[0, 2], [6, 8]])
+        assert_array_equal(expected_output, output_array)
