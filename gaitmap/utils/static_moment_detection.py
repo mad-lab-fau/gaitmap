@@ -10,7 +10,7 @@ def find_static_samples(
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
-        due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
+        Due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
         window might be discarded for analysis and will therefore always be considered as non-static!
 
     Parameters
@@ -19,30 +19,30 @@ def find_static_samples(
         3D signal on which static moment detection should be performed (e.g. 3D-acc or 3D-gyr data)
 
     window_length : int
-        length of desired window
+        Length of desired window in units of samples
 
     overlap : int
-        length of desired overlap
+        Length of desired overlap in units of samples
 
     inactive_signal_th: float
-       threshold to decide whether a window should be considered as active or inactive. Window will be tested on
+       Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
     metric: str, optional
-        metric which will be calculated per window, one of the following strings
+        Metric which will be calculated per window, one of the following strings
 
         'mean' (default)
-            calculates mean value per window
+            Calculates mean value per window
         'maximum'
-            calculates maximum value per window
+            Calculates maximum value per window
         'median'
-            calculates median value per window
+            Calculates median value per window
         'variance'
-            calculates variance value per window
+            Calculates variance value per window
 
     Returns
     -------
-    boolean array with length n to indicate static (=1) or non-static (=0) for each sample
+    Boolean array with length n to indicate static (=1) or non-static (=0) for each sample
 
     Examples
     --------
@@ -90,7 +90,7 @@ def find_static_sequences(
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
-        due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
+        Due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
         window might be discarded for analysis and will therefore always be considered as non-static!
 
     Parameters
@@ -99,30 +99,30 @@ def find_static_sequences(
         3D signal on which static moment detection should be performed (e.g. 3D-acc or 3D-gyr data)
 
     window_length : int
-        length of desired window
+        Length of desired window in units of samples
 
     overlap : int
-        length of desired overlap
+        Length of desired overlap in units of samples
 
     inactive_signal_th: float
-       threshold to decide whether a window should be considered as active or inactive. Window will be tested on
+       Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
     metric: str, optional
-        metric which will be calculated per window, one of the following strings
+        Metric which will be calculated per window, one of the following strings
 
         'mean' (default)
-            calculates mean value per window
+            Calculates mean value per window
         'maximum'
-            calculates maximum value per window
+            Calculates maximum value per window
         'median'
-            calculates median value per window
+            Calculates median value per window
         'variance'
-            calculates variance value per window
+            Calculates variance value per window
 
     Returns
     -------
-    list of [start, stop] labels indication static regions within the input signal
+    Array of [start, stop] labels indication static regions within the input signal
 
     Examples
     --------
