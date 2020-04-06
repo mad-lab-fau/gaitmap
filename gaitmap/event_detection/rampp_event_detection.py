@@ -57,6 +57,15 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region = ic_search_region
         self.min_vel_search_wind_size = min_vel_search_wind_size
 
+        self.s_id = None
+        self.start = None
+        self.end = None
+        self.ic_ = None
+        self.tc_ = None
+        self.min_vel_ = None
+        self.pre_ic_ = None
+        self.stride_events = None
+
     def detect(
         self: BaseType, data: pd.DataFrame, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame
     ) -> BaseType:
@@ -94,12 +103,16 @@ class RamppEventDetection(BaseEventDetection):
         )
 
         # output will have one stride less than segmented stride list
-        # self.s_id = np.arange(len(self.segmented_stride_list) - 1)
-        # self.end = self.min_vel_[1:]
-        # self.pre_ic_ = self.ic_[:-1]
-        # self.ic_ = self.ic_[1:]
-        # stride_event_dict = {"s_id": self.s_id, "start": self.s_id, "end": self.s_id, "ic": self.ic_, "tc": self.tc_}
-        # self.stride_events = pd.DataFrame(stride_event_dict)
+        self.s_id = np.arange(len(self.segmented_stride_list) - 1)
+        self.start = self.min_vel_[:-1]
+        self.end = self.min_vel_[1:]
+        self.min_vel_ = self.min_vel_[:-1]
+        self.pre_ic_ = self.ic_[:-1]
+        self.ic_ = self.ic_[1:]
+        self.tc_ = self.tc_[1:]
+        stride_event_dict = {"s_id": self.s_id, "start": self.start, "end": self.end, "ic": self.ic_, "tc": self.tc_,
+                             "min_vel": self.min_vel_, "pre_ic": self.pre_ic_}
+        self.stride_events = pd.DataFrame(stride_event_dict)
 
         return self
 
@@ -118,7 +131,6 @@ class RamppEventDetection(BaseEventDetection):
         fc_events = []
         min_vel_events = []
         for idx, stride in stride_list.iterrows():
-            print(idx)
             start = stride["start"]
             end = stride["stop"]
             gyr_sec = gyr[start:end]
