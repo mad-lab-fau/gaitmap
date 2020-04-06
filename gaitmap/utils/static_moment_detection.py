@@ -5,7 +5,7 @@ from gaitmap.utils import array_handling
 
 
 def find_static_samples(
-    signal: np.ndarray, window_length: int, overlap: int, inactive_signal_th: float, metric: str = "mean"
+    signal: np.ndarray, window_length: int, inactive_signal_th: float, metric: str = "mean", overlap: int = None
 ) -> np.ndarray:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
@@ -20,9 +20,6 @@ def find_static_samples(
 
     window_length : int
         Length of desired window in units of samples
-
-    overlap : int
-        Length of desired overlap in units of samples
 
     inactive_signal_th : float
        Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
@@ -39,6 +36,9 @@ def find_static_samples(
             Calculates median value per window
         'variance'
             Calculates variance value per window
+
+    overlap : int, optional
+        Length of desired overlap in units of samples. If None (default) overlap will be window_length - 1
 
     Returns
     -------
@@ -61,6 +61,10 @@ def find_static_samples(
 
     if metric not in metric_function:
         raise ValueError("Invalid metric passed! %s as metric is not supported." % metric)
+
+    # add default overlap value
+    if overlap is None:
+        overlap = window_length - 1
 
     # create the list of indices for sliding windows with overlap
     windowed_indices = array_handling.sliding_window_view(
@@ -89,7 +93,7 @@ def find_static_samples(
 
 
 def find_static_sequences(
-    signal: np.ndarray, window_length: int, overlap: int, inactive_signal_th: float, metric: str = "mean"
+    signal: np.ndarray, window_length: int, inactive_signal_th: float, metric: str = "mean", overlap: int = None
 ) -> np.ndarray:
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 
@@ -105,14 +109,11 @@ def find_static_sequences(
     window_length : int
         Length of desired window in units of samples
 
-    overlap : int
-        Length of desired overlap in units of samples
-
-    inactive_signal_th: float
+    inactive_signal_th : float
        Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric: str, optional
+    metric : str, optional
         Metric which will be calculated per window, one of the following strings
 
         'mean' (default)
@@ -123,6 +124,9 @@ def find_static_sequences(
             Calculates median value per window
         'variance'
             Calculates variance value per window
+
+    overlap : int, optional
+        Length of desired overlap in units of samples. If None (default) overlap will be window_length - 1
 
     Returns
     -------
@@ -137,8 +141,8 @@ def find_static_sequences(
     static_moment_bool_array = find_static_samples(
         signal=signal,
         window_length=window_length,
-        overlap=overlap,
         inactive_signal_th=inactive_signal_th,
         metric=metric,
+        overlap=overlap,
     )
     return array_handling.bool_array_to_start_end_array(static_moment_bool_array)
