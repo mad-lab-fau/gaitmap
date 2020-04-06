@@ -38,6 +38,14 @@ class TestTemplateBaseClass:
 
         assert_array_equal(instance.template, template[["col_1"]])
 
+    def test_use_scaling(self):
+        template = np.stack((np.arange(10), np.arange(10, 20))).T
+        template = pd.DataFrame(template, columns=["col_1", "col_2"])
+
+        instance = DtwTemplate(template=template, scaling=2, use_cols=["col_1"])
+
+        assert_array_equal(instance.template, 2 * template[["col_1"]])
+
     def test_use_columns_wrong_dim(self):
         template = np.arange(10)
 

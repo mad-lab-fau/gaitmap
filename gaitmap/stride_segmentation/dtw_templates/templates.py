@@ -1,6 +1,6 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -20,6 +20,8 @@ class DtwTemplate:
         If you want to use a template stored somewhere else, load it manually and then provide it as template.
     sampling_rate_hz
         The sampling rate that was used to record the template data
+    scaling
+        A multiplicative factor multiplied onto the template to adapt for another signal range
     use_cols
         The columns of the template that should actualle be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
@@ -35,6 +37,7 @@ class DtwTemplate:
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
     use_cols: Optional[List[Union[str, int]]]
+    scaling: Optional[float]
 
     _template: Optional[Union[np.ndarray, pd.DataFrame]]
 
@@ -43,11 +46,13 @@ class DtwTemplate:
         template: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
+        scaling: Optional[float] = 500,
         use_cols: Optional[List[Union[str, int]]] = None,
     ):
         self._template = template
         self.template_file_name = template_file_name
         self.sampling_rate_hz = sampling_rate_hz
+        self.scaling = scaling
         self.use_cols = use_cols
 
     @property
@@ -61,16 +66,16 @@ class DtwTemplate:
         if self._template is None:
             with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
                 self._template = pd.read_csv(test_data, header=0)
-        template = self._template
+        template = self._template * getattr(self, "scaling", 1)
 
         if getattr(self, "use_cols", None) is None:
             return template
-
+        use_cols = list(self.use_cols)
         if isinstance(template, np.ndarray):
             if template.ndim < 2:
                 raise ValueError("The stored template is only 1D, but a 2D array is required to use `use_cols`")
-            return np.squeeze(template[:, self.use_cols])
-        return template[self.use_cols]
+            return np.squeeze(template[:, use_cols])
+        return template[use_cols]
 
 
 class BarthOriginalTemplate(DtwTemplate):
@@ -79,17 +84,19 @@ class BarthOriginalTemplate(DtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(
-        self, use_cols: Optional[List[Union[str, int]]] = None,
-    ):
+    def __init__(self, scaling=500.0, use_cols: Optional[Tuple[Union[str, int]]] = None):
         super().__init__(
-            use_cols=use_cols, template_file_name=self.template_file_name, sampling_rate_hz=self.sampling_rate_hz
+            use_cols=use_cols,
+            template_file_name=self.template_file_name,
+            sampling_rate_hz=self.sampling_rate_hz,
+            scaling=scaling,
         )
 
 
 def create_dtw_template(
     template: Union[np.ndarray, pd.DataFrame],
-    sampling_rate_hz: Optional[float],
+    sampling_rate_hz: Optional[float] = None,
+    scaling: Optional[float] = None,
     use_cols: Optional[List[Union[str, int]]] = None,
 ) -> DtwTemplate:
     """Create a DtwTemplate from custom input data.
@@ -101,6 +108,8 @@ def create_dtw_template(
         If this should be a array or a dataframe might depend on your usecase.
     sampling_rate_hz
         The sampling rate that was used to record the template data
+    scaling
+        A multiplicative factor multiplied onto the template to adapt for another signal range
     use_cols
         The columns of the template that should actualle be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
@@ -113,6 +122,8 @@ def create_dtw_template(
     gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate: Template base class
 
     """
-    template_instance = DtwTemplate(template=template, sampling_rate_hz=sampling_rate_hz, use_cols=use_cols)
+    template_instance = DtwTemplate(
+        template=template, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols
+    )
 
     return template_instance
