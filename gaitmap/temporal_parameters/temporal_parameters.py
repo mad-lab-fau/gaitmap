@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 
 from gaitmap.base import BaseType, BaseTemporalParameterCalculation
-from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
 
 
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
@@ -12,11 +11,12 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     Parameters
     ----------
     stride_event_list
-            Gait events for each stride obtained from Rampp event detection
+            Gait events for each stride obtained from Rampp event detection.
     sampling_rate_hz
         The sampling rate of the data signal.
     parameters_
-        Data frame containing temporal parameters for each stride in case of single sensor or dictionary of data frames in multi sensor
+        Data frame containing temporal parameters for each stride in case of single sensor
+        or dictionary of data frames in multi sensors.
 
     Attributes
     ----------
@@ -36,7 +36,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     parameters_: dict  # Results are stored here
 
     def _calculate_single_sensor(self: BaseType, stride_event_list: pd.DataFrame, sampling_rate_hz: float) -> BaseType:
-        """Find temporal parameters in strides after segmentation and detecting events of each stride in case of dingle sensor.
+        """Find temporal parameters in strides after segmentation and detecting events of each stride
+        in case of single sensor.
 
         Parameters
         ----------
