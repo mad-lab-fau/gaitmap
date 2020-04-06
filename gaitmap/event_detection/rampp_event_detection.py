@@ -15,23 +15,43 @@ from gaitmap.utils.dataset_helper import Dataset
 class RamppEventDetection(BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics like peaks.
 
-    BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
-    continuous data stream.
-    The method is not limited to a single sensor-axis or sensor, but can use any number of dimensions of the provided
-    input signal simultaneously.
+    RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
+    features in the signals.
     For more details refer to the `Notes` section.
-
-    Attributes
-    ----------
-    TODO add attributes
 
     Parameters
     ----------
-    TODO add parameters
+    ic_search_region
+        The region to look for the initial in the acc_pa signal given a ic candidate
+    min_vel_search_wind_size
+        The size of the sliding window for finding the minimum gyroscope energy
+
+    Attributes
+    ----------
+    stride_events: A stride list or dictionary with such values
+        The result of the `detect` method holding all temporal gait events and start / end of all strides. Formatted
+        as pandas DataFrame
+    start_: 1D array or dictionary with such values
+        The array of start samples of all strides
+    end_: 1D array or dictionary with such values
+        The array of end samples of all strides
+    tc_: 1D array or dictionary with such values
+        The array of terminal contact samples of all strides
+    min_vel_: 1D array or dictionary with such values
+        The array of min_vel samples of all strides
+    ic_: 1D array or dictionary with such values
+        The array of initial contact samples of all strides
+    pre_ic_: 1D array or dictionary with such values
+        The array of pre-initial contact samples of all strides
 
     Other Parameters
     ----------------
-    TODO add other parameters
+    data
+        The data passed to the `segment` method.
+    sampling_rate_hz
+        The sampling rate of the data
+    segmented_stride_list
+        A list of strides provided by a stride segmentation method
 
     Notes
     -----
@@ -45,14 +65,12 @@ class RamppEventDetection(BaseEventDetection):
 
     ic_search_region: Tuple[float, float]
     min_vel_search_wind_size: float
-
+    start_: Optional[np.ndarray] = None
+    end_: Optional[np.ndarray] = None
     tc_: Optional[np.ndarray] = None
     min_vel_: Optional[np.ndarray] = None
     ic_: Optional[np.ndarray] = None
     pre_ic_: Optional[np.ndarray] = None
-    s_id: Optional[np.ndarray] = None
-    start: Optional[np.ndarray] = None
-    end: Optional[np.ndarray] = None
     stride_events: pd.DataFrame = None
 
     data: pd.DataFrame
@@ -70,19 +88,17 @@ class RamppEventDetection(BaseEventDetection):
 
         Parameters
         ----------
-        TODO parameters
         data
-            raw data
+            The data passed to the `segment` method.
         sampling_rate_hz
-            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
-            a number of samples and it will be used to resample the template if `resample_template` is `True`.
+            The sampling rate of the data
         segmented_stride_list
-            stride list from stride segmentation
+            A list of strides provided by a stride segmentation method
 
         Returns
         -------
-            self
-                The class instance with all result attributes populated
+        self
+            The class instance with all result attributes populated
 
         """
         self.data = data
@@ -100,15 +116,16 @@ class RamppEventDetection(BaseEventDetection):
         )
 
         # output will have one stride less than segmented stride list
-        self.s_id = np.arange(len(self.segmented_stride_list) - 1)
-        self.start = self.min_vel_[:-1]
-        self.end = self.min_vel_[1:]
+        s_id = np.arange(len(self.segmented_stride_list) - 1)
+
+        self.start_ = self.min_vel_[:-1]
+        self.end_ = self.min_vel_[1:]
         self.min_vel_ = self.min_vel_[:-1]
         self.pre_ic_ = self.ic_[:-1]
         self.ic_ = self.ic_[1:]
         self.tc_ = self.tc_[1:]
         stride_event_dict = {
-            "s_id": self.s_id,
+            "s_id": s_id,
             "start": self.start,
             "end": self.end,
             "ic": self.ic_,
