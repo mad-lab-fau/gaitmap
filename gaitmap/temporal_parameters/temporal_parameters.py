@@ -36,8 +36,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     parameters_: dict  # Results are stored here
 
     def _calculate_single_sensor(self: BaseType, stride_event_list: pd.DataFrame, sampling_rate_hz: float) -> BaseType:
-        """Find temporal parameters in strides after segmentation and detecting events of each stride
-        in case of single sensor.
+        """Find temporal parameters  of each stride in case of single sensor.
 
         Parameters
         ----------
@@ -90,7 +89,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         self.parameters_ = {}
         for sensor in stride_event_list:
-            self.parameters_[sensor] = self._calculate_single_sensor(self, stride_event_list[sensor], sampling_rate_hz)
+            self.parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
         return self
 
     def calculate(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
