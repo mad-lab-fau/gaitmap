@@ -1,4 +1,4 @@
-from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
+from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel
 from gaitmap.utils.consts import *
 
 import pytest
@@ -16,6 +16,12 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
             ed.detect(data, 204.8, healthy_example_stride_borders)
+
+    def test_min_vel_search_wind_size_dummy_data(self):
+        """Test if error is raised correctly if windows size matches the size of the input data"""
+        dummy_gyr = np.ones((100, 3))
+        with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_wind_size is too large*"):
+            _detect_min_vel(dummy_gyr, dummy_gyr.size)
 
     def test_valid_min_vel_search_wind_size(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if error is raised correctly on too large min_vel_search_wind_size"""
