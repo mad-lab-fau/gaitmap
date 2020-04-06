@@ -44,7 +44,7 @@ class GyroIntegration(BaseOrientationEstimation):
     def __init__(self, initial_orientation: Rotation):
         self.initial_orientation = initial_orientation
 
-    def estimate_orientation_sequence(self, sensor_data: pd.DataFrame, sampling_rate_hz: float):
+    def estimate(self, sensor_data: pd.DataFrame, sampling_rate_hz: float):
         """Use the initial rotation and the gyroscope signal to estimate rotations of second until last sample.
 
         Parameters
@@ -62,7 +62,7 @@ class GyroIntegration(BaseOrientationEstimation):
 
         Examples
         --------
-        >>> gyr_integrator.estimate_orientation_sequence(sensor_data, 204.8)
+        >>> gyr_integrator.estimate(sensor_data, 204.8)
         >>> orientations = gyr_integrator.estimated_orientations_
         >>> orientations[-1].as_quat()
         array([0., 1, 0., 0.])

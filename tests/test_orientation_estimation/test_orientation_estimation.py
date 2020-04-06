@@ -6,6 +6,8 @@ from scipy.spatial.transform import Rotation
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
 
+# TODO: @to08kece @Arne, add metatest once DTW is merged
+
 
 class TestGyroIntegration:
     @pytest.mark.parametrize(
@@ -45,6 +47,6 @@ class TestGyroIntegration:
             rot_init = Rotation([1, 0, 0, 0])
 
         gyr_integrator = GyroIntegration(rot_init)
-        gyr_integrator.estimate_orientation_sequence(sensor_data, fs)
+        gyr_integrator.estimate(sensor_data, fs)
         rot_final = gyr_integrator.estimated_orientations_[-1]
         np.testing.assert_array_almost_equal(rot_final.apply(vector_to_rotate), expected_result)

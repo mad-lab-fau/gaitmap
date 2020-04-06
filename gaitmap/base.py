@@ -165,7 +165,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     estimated_orientations: Rotation
 
-    def estimate_orientation_sequence(self, sensor_data, sampling_rate_hz):
+    def estimate(self, sensor_data, sampling_rate_hz):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
