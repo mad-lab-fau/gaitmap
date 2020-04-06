@@ -59,42 +59,66 @@ class GyroIntegration(BaseOrientationEstimation):
         sampling_rate_hz
             Sampling rate with which gyroscopic data was recorded.
 
+        Notes
+        -----
+        Currently the Rampp approach for Gyroscope Integration is hard coded. In future this might be adapted to be
+        more flexible and use Sabatini's approach or Complementary / Kalman filters.
+
         """
         # TODO: so far it is only possible to pass one sensor with columns being gyr_x...acc_z
         #  ==> adapt to multiple sensors
         self.sampling_rate_hz = sampling_rate_hz
         self.estimated_orientations_ = []
         self.estimated_orientations_.append(self.initial_orientation)
-        print('TEST: ', len(sensor_data))
-        for i_sample in range(1, len(sensor_data)+1):
+        print("TEST: ", len(sensor_data))
+        for i_sample in range(1, len(sensor_data) + 1):
             self.estimated_orientations_.append(
                 self._next_quaternion_rampp(
-                    self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample-1]
+                    self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample - 1]
                 )
             )
 
     def _next_quaternion_zrenner(self, previous_quaternion, gyr: pd.Series) -> Rotation:
-        # TODO: Check if gyroscope data is in degeree or rad
+        # TODO: check why this is not working properly and fix it
+        """Update a rotation quaternion based on previous/initial quaternion and gyroscope data Sabatini et al. [1].
+
+        Notes
+        -----
+        THIS HAS NOT BEEN TESTED YET AND SHOULD NOT BE USED!
+        [1] Sabatini, A. M. 2005. Quaternion-based strap-down integration method for applications of inertial sensing to
+        gait analysis. Medical & biological engineering & computing 43, 1, 94–101.
+
+        """
         x = 0
         y = 1
         z = 2
 
         diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [0, gyr[x], gyr[y], gyr[z]])
         diff_quaternion_gyro = self._exp(diff_quaternion_gyro)
-        di
         return Rotation(previous_quaternion * diff_quaternion_gyro)
 
     def _next_quaternion_rampp(self, previous_quaternion, gyr: pd.Series) -> Rotation:
+        """Update a rotation quaternion based on previous/initial quaternion and gyroscope data Rampp et al. [1].
+
+        Notes
+        -----
+        Rampp, A., Barth, J., Schülein, S., Gaßmann, K.-G., Klucken, J., and Eskofier, B. M. 2015. Inertial sensor-based
+        stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on bio-medical
+        engineering 62, 4, 1089–1097.
+
+        """
         x = 0
         y = 1
         z = 2
-        diff_quaternion_gyro = self.quaternion_multiply(previous_quaternion.as_quat(), np.multiply(1 / (2 *
-                                                        self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0]))
+        # order of gyroscope is different than in paper because scipy rotation uses this quaternion format
+        diff_quaternion_gyro = self.quaternion_multiply(
+            previous_quaternion.as_quat(), np.multiply(1 / (2 * self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0])
+        )
         new_quat = previous_quaternion.as_quat() + diff_quaternion_gyro
         new_quat /= np.linalg.norm(new_quat, 2)
         return Rotation(new_quat)
 
-    #@staticmethod
+    # @staticmethod
     def _exp(self, q: np.ndarray) -> np.ndarray:
         # TODO: move to utils
 
@@ -109,18 +133,17 @@ class GyroIntegration(BaseOrientationEstimation):
         return quaternion
 
     @staticmethod
-    def quaternion_multiply(quat0: list, quat1: list):
+    def _quaternion_multiply(quat0: list, quat1: list):
+        # TODO: move to utils
+        # from Hanson "Visualizing Quaternions"
         p0, p1, p2, p3 = quat0
         q0, q1, q2, q3 = quat1
-        w0, x0, y0, z0 = quat0
-        w1, x1, y1, z1 = quat1
-        result = np.array([p0*q0 - p1*q1 - p2*q2 - p3*q3,
-                             p1*q0 + p0*q1 + p2*q3 - p3*q2,
-                             p2*q0 + p0*q2 + p3*q1 - p1*q3,
-                             p3*q0 + p0*q3 + p1*q2 - p2*q1])
-
-       # result = np.array([-x0 * x1 - y1 * y0 - z1 * z0 + w1 * w0,
-       #                  x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-       #                  -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
-       #                  x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0], dtype=np.float64)
+        result = np.array(
+            [
+                p0 * q0 - p1 * q1 - p2 * q2 - p3 * q3,
+                p1 * q0 + p0 * q1 + p2 * q3 - p3 * q2,
+                p2 * q0 + p0 * q2 + p3 * q1 - p1 * q3,
+                p3 * q0 + p0 * q3 + p1 * q2 - p2 * q1,
+            ]
+        )
         return np.divide(result, np.linalg.norm(result, 2))
