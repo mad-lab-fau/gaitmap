@@ -126,7 +126,7 @@ def find_static_sequences(
 
     Returns
     -------
-    Array of [start, stop] labels indication static regions within the input signal
+    Array of [start, end] labels indication static regions within the input signal
 
     Examples
     --------
@@ -141,4 +141,4 @@ def find_static_sequences(
         inactive_signal_th=inactive_signal_th,
         metric=metric,
     )
-    return array_handling.bool_array_to_start_stop_array(static_moment_bool_array)
+    return array_handling.bool_array_to_start_end_array(static_moment_bool_array)

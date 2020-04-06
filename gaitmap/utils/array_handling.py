@@ -77,8 +77,8 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
     return view
 
 
-def bool_array_to_start_stop_array(bool_array: np.ndarray) -> np.ndarray:
-    """Find regions in bool array and convert those to start-stop indices.
+def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
+    """Find regions in bool array and convert those to start-end indices.
 
     Parameters
     ----------
@@ -87,12 +87,12 @@ def bool_array_to_start_stop_array(bool_array: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    array of [start, stop] indices with shape (n,2)
+    array of [start, end] indices with shape (n,2)
 
     Examples
     --------
     >>> example_array = np.array([0,0,1,1,0,0,1,1,1])
-    >>> start_stop_list = bool_array_to_start_stop_array(example_array)
+    >>> start_end_list = bool_array_to_start_end_array(example_array)
     array([[2, 3],[6, 8]])
 
     """
@@ -101,4 +101,4 @@ def bool_array_to_start_stop_array(bool_array: np.ndarray) -> np.ndarray:
         raise ValueError("Input must be boolean array!")
 
     slices = np.ma.flatnotmasked_contiguous(np.ma.masked_equal(bool_array, 0))
-    return np.array([[s.start, s.stop - 1] for s in slices])
+    return np.array([[s.start, s.end - 1] for s in slices])
