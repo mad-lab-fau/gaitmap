@@ -9,6 +9,7 @@ import pandas as pd
 from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.utils import dataset_helper
 from gaitmap.utils.dataset_helper import Dataset
 
 
@@ -22,9 +23,9 @@ class RamppEventDetection(BaseEventDetection):
     Parameters
     ----------
     ic_search_region
-        The region to look for the initial in the acc_pa signal given a ic candidate
+        The region to look for the initial in the acc_pa signal given a ic candidate in ms
     min_vel_search_wind_size
-        The size of the sliding window for finding the minimum gyroscope energy
+        The size of the sliding window for finding the minimum gyroscope energy in ms
 
     Attributes
     ----------
@@ -112,6 +113,11 @@ class RamppEventDetection(BaseEventDetection):
         ...
 
         """
+        if dataset_helper.is_multi_sensor_dataset(data):
+            raise NotImplementedError("Multisensor input is not supported yet")
+        elif not dataset_helper.is_single_sensor_dataset(data):
+            raise ValueError("Provided data set is not supported by gaitmap")
+
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         self.segmented_stride_list = segmented_stride_list
@@ -178,6 +184,8 @@ class RamppEventDetection(BaseEventDetection):
 
 def _detect_min_vel(gyr: np.ndarray, window_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
+    if window_size >= len(energy):
+        raise ValueError("The value chosen for min_vel_search_wind_size is too large. Should be 100 ms.")
     energy = sliding_window_view(energy, window_length=window_size, overlap=window_size - 1)
     # find window with lowest summed energy
     min_vel_start = np.argmin(np.sum(energy, axis=1))
