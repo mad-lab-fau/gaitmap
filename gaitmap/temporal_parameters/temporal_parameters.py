@@ -72,7 +72,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         return self
 
     def _calculate_multiple_sensor(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
-        """Find temporal parameters in strides after segmentation and detecting events of each stride in case of multiplee sensors.
+        """Find temporal parameters of each stride in case of multiple sensors.
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         self.parameters_ = {}
         for sensor in stride_event_list:
-            self.parameters_[sensor] = self._calculate_single_sensor(self, stride_event_list[sensor])
+            self.parameters_[sensor] = self._calculate_single_sensor(self, stride_event_list[sensor], sampling_rate_hz)
         return self
 
     def calculate(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
@@ -108,10 +108,10 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
                 The class instance with temporal parameters populated in parameters_
 
         """
-        if type(stride_event_list) == pd.DataFrame:  # this means single sensor
-            self.parameters_ = self._calculate_single_sensor(stride_event_list)
+        if isinstance(stride_event_list, pd.DataFrame):  # this means single sensor
+            self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
         else:
-            self.parameters_ = self._calculate_multiple_sensor(stride_event_list)
+            self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
         return self
 
 
