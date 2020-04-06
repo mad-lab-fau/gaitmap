@@ -110,8 +110,15 @@ class RamppEventDetection(BaseEventDetection):
         self.pre_ic_ = self.ic_[:-1]
         self.ic_ = self.ic_[1:]
         self.tc_ = self.tc_[1:]
-        stride_event_dict = {"s_id": self.s_id, "start": self.start, "end": self.end, "ic": self.ic_, "tc": self.tc_,
-                             "min_vel": self.min_vel_, "pre_ic": self.pre_ic_}
+        stride_event_dict = {
+            "s_id": self.s_id,
+            "start": self.start,
+            "end": self.end,
+            "ic": self.ic_,
+            "tc": self.tc_,
+            "min_vel": self.min_vel_,
+            "pre_ic": self.pre_ic_,
+        }
         self.stride_events = pd.DataFrame(stride_event_dict)
 
         return self
@@ -130,7 +137,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_events = []
         fc_events = []
         min_vel_events = []
-        for idx, stride in stride_list.iterrows():
+        for _, stride in stride_list.iterrows():
             start = stride["start"]
             end = stride["stop"]
             gyr_sec = gyr[start:end]
