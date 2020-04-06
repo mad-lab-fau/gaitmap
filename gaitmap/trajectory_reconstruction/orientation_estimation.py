@@ -1,10 +1,8 @@
 """Estimation of orientations by trapezoidal gyroscope integration."""
-import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation
-from gaitmap.utils import quaternions
 from gaitmap.utils.consts import SF_GYR
 
 
