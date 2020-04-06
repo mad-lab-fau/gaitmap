@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
+from pandas._testing import assert_frame_equal
 
-from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, create_dtw_template
+from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, create_dtw_template, BarthOriginalTemplate
 
 
 class TestTemplateBaseClass:
@@ -45,8 +46,20 @@ class TestTemplateBaseClass:
         with pytest.raises(ValueError):
             _ = instance.template
 
-    # TODO: Test loading from file
+    def test_load_from_file(self):
+        instance = DtwTemplate(template_file_name="barth_original_template.csv")
 
+        assert instance.template.shape == (200, 6)
+
+class TestBartTemplate:
+
+    def test_load(self):
+        instance = DtwTemplate(template_file_name="barth_original_template.csv")
+
+        barth_instance = BarthOriginalTemplate()
+
+        assert_frame_equal(barth_instance.template, instance.template)
+        assert barth_instance.sampling_rate_hz == 204.8
 
 class TestCreateTemplate:
     def test_create_template_simple(self):

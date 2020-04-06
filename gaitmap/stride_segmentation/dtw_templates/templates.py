@@ -73,6 +73,20 @@ class DtwTemplate:
         return template[self.use_cols]
 
 
+class BarthOriginalTemplate(DtwTemplate):
+    """Template used for stride segmentation by Barth et al."""
+
+    template_file_name = "barth_original_template.csv"
+    sampling_rate_hz = 204.8
+
+    def __init__(
+        self, use_cols: Optional[List[Union[str, int]]] = None,
+    ):
+        super().__init__(
+            use_cols=use_cols, template_file_name=self.template_file_name, sampling_rate_hz=self.sampling_rate_hz
+        )
+
+
 def create_dtw_template(
     template: Union[np.ndarray, pd.DataFrame],
     sampling_rate_hz: Optional[float],
