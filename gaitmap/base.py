@@ -180,3 +180,13 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
     # integration)
+
+
+class BaseTemporalParameterCalculation(BaseAlgorithm):
+    """Base class for temporal parameters calculation."""
+
+    _action_method = "calculate"
+
+    def calculate(self: BaseType, gait_events: BaseEventDetection, sampling_rate_hz: float) -> BaseType:
+        """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
+        raise NotImplementedError("Needs to be implemented by child class.")
