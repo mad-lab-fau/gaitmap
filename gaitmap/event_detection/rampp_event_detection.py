@@ -1,5 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from numpy.linalg import norm
@@ -9,6 +9,7 @@ import pandas as pd
 from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.utils.dataset_helper import Dataset
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -48,6 +49,11 @@ class RamppEventDetection(BaseEventDetection):
     tc_: Optional[np.ndarray] = None
     min_vel_: Optional[np.ndarray] = None
     ic_: Optional[np.ndarray] = None
+    pre_ic_: Optional[np.ndarray] = None
+    s_id: Optional[np.ndarray] = None
+    start: Optional[np.ndarray] = None
+    end: Optional[np.ndarray] = None
+    stride_events: pd.DataFrame = None
 
     data: pd.DataFrame
     sampling_rate_hz: float
@@ -57,17 +63,8 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region = ic_search_region
         self.min_vel_search_wind_size = min_vel_search_wind_size
 
-        self.s_id = None
-        self.start = None
-        self.end = None
-        self.ic_ = None
-        self.tc_ = None
-        self.min_vel_ = None
-        self.pre_ic_ = None
-        self.stride_events = None
-
     def detect(
-        self: BaseType, data: pd.DataFrame, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame
+        self: BaseType, data: Union[pd.DataFrame, Dataset], sampling_rate_hz: float, segmented_stride_list: pd.DataFrame
     ) -> BaseType:
         """Find gait events in data within strides provided by segmented_stride_list.
 
@@ -130,7 +127,7 @@ class RamppEventDetection(BaseEventDetection):
         stride_list: pd.DataFrame,
         ic_search_region: Tuple[float, float],
         min_vel_search_wind_size: float,
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
         acc_pa = acc["acc_pa"].to_numpy()
@@ -151,7 +148,7 @@ class RamppEventDetection(BaseEventDetection):
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
 
 
-def _detect_min_vel(gyr: np.ndarray, window_size: int) -> int:
+def _detect_min_vel(gyr: np.ndarray, window_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
     energy = sliding_window_view(energy, window_length=window_size, overlap=window_size - 1)
     # find window with lowest summed energy
@@ -163,7 +160,7 @@ def _detect_min_vel(gyr: np.ndarray, window_size: int) -> int:
 
 def _detect_ic(
     gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, search_window: Tuple[float, float],
-) -> int:
+) -> float:
 
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
@@ -195,5 +192,5 @@ def _detect_ic(
     return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
 
 
-def _detect_tc(gyr_ml: np.ndarray) -> int:
+def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
