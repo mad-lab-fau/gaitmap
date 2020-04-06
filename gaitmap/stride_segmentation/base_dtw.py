@@ -303,7 +303,7 @@ class BaseDtw(BaseStrideSegmentation):
         if len(matches) == 0:
             paths_ = []
             costs_ = []
-            matches_start_end_= []
+            matches_start_end_ = []
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
