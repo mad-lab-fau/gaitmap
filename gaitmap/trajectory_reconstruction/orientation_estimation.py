@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation
+from gaitmap.utils import quaternions
 from gaitmap.utils.consts import SF_GYR
 
 
@@ -94,7 +95,7 @@ class GyroIntegration(BaseOrientationEstimation):
         z = 2
 
         diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [0, gyr[x], gyr[y], gyr[z]])
-        diff_quaternion_gyro = self._exp(diff_quaternion_gyro)
+        diff_quaternion_gyro = quaternions.exp(diff_quaternion_gyro)
         return Rotation(previous_quaternion * diff_quaternion_gyro)
 
     def _next_quaternion_rampp(self, previous_quaternion, gyr: pd.Series) -> Rotation:
@@ -111,39 +112,9 @@ class GyroIntegration(BaseOrientationEstimation):
         y = 1
         z = 2
         # order of gyroscope is different than in paper because scipy rotation uses this quaternion format
-        diff_quaternion_gyro = self.quaternion_multiply(
+        diff_quaternion_gyro = quaternions.multiply(
             previous_quaternion.as_quat(), np.multiply(1 / (2 * self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0])
         )
         new_quat = previous_quaternion.as_quat() + diff_quaternion_gyro
         new_quat /= np.linalg.norm(new_quat, 2)
         return Rotation(new_quat)
-
-    # @staticmethod
-    def _exp(self, q: np.ndarray) -> np.ndarray:
-        # TODO: move to utils
-
-        quaternion = np.zeros(4)
-        multiplication_factor = np.exp(q[0])
-        squared_helper = np.sqrt(q[1] ** 2 + q[2] ** 2 + q[3] ** 2)
-        quaternion[0] = multiplication_factor * np.cos(squared_helper)
-        quaternion[1] = q[1] * multiplication_factor * np.sin(squared_helper) / squared_helper
-        quaternion[2] = q[2] * multiplication_factor * np.sin(squared_helper) / squared_helper
-        quaternion[3] = q[3] * multiplication_factor * np.sin(squared_helper) / squared_helper
-        quaternion = quaternion / np.linalg.norm(quaternion, 2)
-        return quaternion
-
-    @staticmethod
-    def _quaternion_multiply(quat0: list, quat1: list):
-        # TODO: move to utils
-        # from Hanson "Visualizing Quaternions"
-        p0, p1, p2, p3 = quat0
-        q0, q1, q2, q3 = quat1
-        result = np.array(
-            [
-                p0 * q0 - p1 * q1 - p2 * q2 - p3 * q3,
-                p1 * q0 + p0 * q1 + p2 * q3 - p3 * q2,
-                p2 * q0 + p0 * q2 + p3 * q1 - p1 * q3,
-                p3 * q0 + p0 * q3 + p1 * q2 - p2 * q1,
-            ]
-        )
-        return np.divide(result, np.linalg.norm(result, 2))
