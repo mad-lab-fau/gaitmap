@@ -301,8 +301,12 @@ class BaseDtw(BaseStrideSegmentation):
         acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
         matches = find_matches_method(acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance)
-        paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
-        costs_ = np.sqrt(acc_cost_mat_[-1, :][matches])
+        if len(matches) == 0:
+            paths_ = []
+            costs_ = []
+        else:
+            paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches])
 
         return acc_cost_mat_, paths_, costs_
 

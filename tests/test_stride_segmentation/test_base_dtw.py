@@ -1,3 +1,11 @@
+"""Test the basic DTW implementation.
+
+Notes
+-----
+- The min_match_length parameter is not really tested, as it gets passed down to a scipy function, which hopefully does
+the right thing.
+- The same is True for the threshold/max_cost
+"""
 from typing import Union, Dict
 
 import numpy as np
@@ -7,6 +15,7 @@ import pytest
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
+from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -95,6 +104,18 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+
+    def test_no_matches_found(self):
+        template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
+        data = pd.DataFrame(np.ones(10), columns=["col1"])
+        template = create_dtw_template(template, sampling_rate_hz=100.0)
+
+        dtw = self.init_dtw(template=template)
+        dtw = dtw.segment(data, sampling_rate_hz=100.0)
+
+        np.testing.assert_array_equal(dtw.matches_start_end_, [])
+        np.testing.assert_array_equal(dtw.paths_, [])
+        np.testing.assert_array_equal(dtw.costs_, [])
 
     @pytest.mark.parametrize("m_cols", (2, 3))
     @pytest.mark.parametrize("input_type", (np.array, pd.DataFrame))
@@ -234,6 +255,21 @@ class TestMultiSensorInputs(DtwTestBase):
             ],
         )
 
+    def test_no_matches_found_multiple(self):
+        template = [0, 1.0, 0]
+        template = pd.DataFrame(template, columns=["col1"])
+        template = create_dtw_template(template, sampling_rate_hz=100.0)
+        dtw = self.init_dtw(template=template)
+        data = self.data
+        for c in get_multi_sensor_dataset_names(data):
+            data[c][:] = np.ones(13)[:, None]
+        dtw = dtw.segment(data, sampling_rate_hz=100.0)
+
+        for s in ['sensor1', 'sensor2']:
+            np.testing.assert_array_equal(dtw.matches_start_end_[s], [])
+            np.testing.assert_array_equal(dtw.paths_[s], [])
+            np.testing.assert_array_equal(dtw.costs_[s], [])
+
     def test_multi_template_multi_sensors(self):
         """Test multiple templates with multiple sensors.
 
@@ -286,6 +322,3 @@ class TestMultiSensorInputs(DtwTestBase):
 
 
 # TODO; Test template interpolate
-# TODO; TEST min distance
-# TODO: Test max_cost
-# TODO: TEst no matches found edge case
