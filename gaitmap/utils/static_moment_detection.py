@@ -49,6 +49,10 @@ def find_static_samples(
     test_data = load_gyro_data(path)
     get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
 
+    See Also
+    --------
+    gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
+
     """
     # TODO: evaluate performance on large datasets
 
@@ -136,6 +140,10 @@ def find_static_sequences(
     --------
     gyro_data = load_gyro_data(path)
     static_regions = get_static_moment_labels(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5)
+
+    See Also
+    --------
+    gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
 
     """
     static_moment_bool_array = find_static_samples(
