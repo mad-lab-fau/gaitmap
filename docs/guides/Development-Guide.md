@@ -94,6 +94,14 @@ poetry update --lock
 
 This will synchronise the lock file with the packages listed in `pyproject.toml` 
 
+##### Problem with importing (from) the `tests` module (there might be som)
+There might be some other `tests` module overriding the import of the local (gaitmap) tests module.
+Use:
+```
+import sys
+sys.path.insert(0, ".")
+```
+
 ## Configure your IDE
 
 ### Jupyter Lab/Notebooks
