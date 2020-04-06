@@ -74,24 +74,7 @@ class GyroIntegration(BaseOrientationEstimation):
         self.estimated_orientations_ = []
         self.estimated_orientations_.append(self.initial_orientation)
         for i_sample in range(1, len(sensor_data) + 1):
-            self.estimated_orientations_.append(
-                self._next_quaternion(
-                    self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample - 1]
-                )
-            )
-
-    def _next_quaternion(self, previous_quaternion: Rotation, gyr: pd.Series) -> Rotation:
-        """Update a rotation quaternion based on previous/initial quaternion and gyroscope.
-
-        `scipy.spatial.transform.Rotation` does the update using norm of gyr as as angle and gyr as axis of rotation.
-
-        Parameters
-        ----------
-        previous_quaternion
-            The rotation that is to be updated
-
-        gyr
-            gyroscopic rate in radians
-
-        """
-        return previous_quaternion * Rotation.from_rotvec(gyr / self.sampling_rate_hz)
+            previous_quat = self.estimated_orientations_[i_sample - 1]
+            update_quat = Rotation.from_rotvec(sensor_data[SF_GYR].iloc[i_sample - 1] / self.sampling_rate_hz)
+            self.estimated_orientations_.append(previous_quat * update_quat)
+        return self
