@@ -40,7 +40,9 @@ class BarthDtw(BaseDtw):
     min_match_length
         The minimal length of a sequence in samples to be considered a match.
         Matches that result in shorter sequences, will be ignored.
-        At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
+        This exclusion is performed as a post-processing step after the matching.
+        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
+        matches directly.
     find_matches_method
         Select the method used to find matches in the cost function.
 

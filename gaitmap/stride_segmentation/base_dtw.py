@@ -128,7 +128,9 @@ class BaseDtw(BaseStrideSegmentation):
     min_match_length
         The minimal length of a sequence in samples to be considered a match.
         Matches that result in shorter sequences, will be ignored.
-        At the moment this is only used if "find_peaks" is selected as `find_matches_method`.
+        This exclusion is performed as a post-processing step after the matching.
+        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
+        matches directly.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -177,6 +179,7 @@ class BaseDtw(BaseStrideSegmentation):
     min_match_length: float
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
+    matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
@@ -185,13 +188,6 @@ class BaseDtw(BaseStrideSegmentation):
     sampling_rate_hz: float
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
-
-    @property
-    def matches_start_end_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
-        """Return start and end of match."""
-        if isinstance(self.paths_, dict):
-            return {s: np.array([[p[0][-1], p[-1][-1]] for p in path]) for s, path in self.paths_.items()}
-        return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
 
     @property
     def cost_function_(self):
@@ -242,7 +238,9 @@ class BaseDtw(BaseStrideSegmentation):
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             # Single template single sensor: easy
-            self.acc_cost_mat_, self.paths_, self.costs_ = self._segment_single_dataset(data, template)
+            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
+                data, template
+            )
         elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
@@ -261,11 +259,12 @@ class BaseDtw(BaseStrideSegmentation):
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
-            self.acc_cost_mat_, self.paths_, self.costs_ = dict(), dict(), dict()
+            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = dict(), dict(), dict(), dict()
             for sensor, r in results.items():
                 self.acc_cost_mat_[sensor] = r[0]
                 self.paths_[sensor] = r[1]
                 self.costs_[sensor] = r[2]
+                self.matches_start_end_[sensor] = r[3]
         else:
             # TODO: Better error message
             # TODO: Test
@@ -304,11 +303,21 @@ class BaseDtw(BaseStrideSegmentation):
         if len(matches) == 0:
             paths_ = []
             costs_ = []
+            matches_start_end_= []
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
-            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches])
+            matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
 
-        return acc_cost_mat_, paths_, costs_
+            # Remove matches that are shorter that min_match_length
+            if min_distance is None:
+                min_distance = -np.inf
+            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end_, axis=-1)) > min_distance)
+            valid_strides_idx = np.where(valid_strides)[0]
+            matches_start_end_ = matches_start_end_[valid_strides_idx]
+            paths_ = [paths_[i] for i in valid_strides_idx]
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches[valid_strides]])
+
+        return acc_cost_mat_, paths_, costs_, matches_start_end_
 
     @staticmethod
     def _interpolate_template(
