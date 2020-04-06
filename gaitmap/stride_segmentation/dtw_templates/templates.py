@@ -1,11 +1,37 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
 from typing import Optional, Union, List
+
 import numpy as np
 import pandas as pd
 
 
 class DtwTemplate:
+    """Wrap all required information about a dtw template.
+
+    Parameters
+    ----------
+    template
+        The actual data representing the template.
+        If this should be a array or a dataframe might depend on your usecase.
+    template_file_name
+        Alternative to providing a `template` you can provide the filename of any file stored in
+        `gaitmap/stride_segmentation/dtw_templates`.
+        If you want to use a template stored somewhere else, load it manually and then provide it as template.
+    sampling_rate_hz
+        The sampling rate that was used to record the template data
+    use_cols
+        The columns of the template that should actualle be used.
+        If the template is an array this must be a list of **int**s, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.base_dtw.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
+
+    """
+
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
     use_cols: Optional[List[Union[str, int]]]
@@ -52,6 +78,27 @@ def create_dtw_template(
     sampling_rate_hz: Optional[float],
     use_cols: Optional[List[Union[str, int]]] = None,
 ) -> DtwTemplate:
+    """Create a DtwTemplate from custom input data.
+
+    Parameters
+    ----------
+    template
+        The actual data representing the template.
+        If this should be a array or a dataframe might depend on your usecase.
+    sampling_rate_hz
+        The sampling rate that was used to record the template data
+    use_cols
+        The columns of the template that should actualle be used.
+        If the template is an array this must be a list of **int**s, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.base_dtw.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate: Template base class
+
+    """
     template_instance = DtwTemplate(template=template, sampling_rate_hz=sampling_rate_hz, use_cols=use_cols)
 
     return template_instance

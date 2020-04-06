@@ -5,6 +5,9 @@ Notes
 - The min_match_length parameter is not really tested, as it gets passed down to a scipy function, which hopefully does
 the right thing.
 - The same is True for the threshold/max_cost
+
+# TODO; Test template interpolate
+
 """
 from typing import Union, Dict
 
@@ -262,10 +265,13 @@ class TestMultiSensorInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         data = self.data
         for c in get_multi_sensor_dataset_names(data):
-            data[c][:] = np.ones(13)[:, None]
+            if isinstance(data, pd.DataFrame):
+                data.loc[:, c] = np.ones(13)[:, None]
+            else:
+                data[c][:] = np.ones(13)[:, None]
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        for s in ['sensor1', 'sensor2']:
+        for s in ["sensor1", "sensor2"]:
             np.testing.assert_array_equal(dtw.matches_start_end_[s], [])
             np.testing.assert_array_equal(dtw.paths_[s], [])
             np.testing.assert_array_equal(dtw.costs_[s], [])
@@ -319,6 +325,3 @@ class TestMultiSensorInputs(DtwTestBase):
                 [9.0, 9.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
             ],
         )
-
-
-# TODO; Test template interpolate
