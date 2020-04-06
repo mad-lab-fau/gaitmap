@@ -50,6 +50,8 @@ def find_static_samples(
     get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
 
     """
+    # TODO: evaluate performance on large datasets
+
     # test for correct input data shape
     if np.shape(signal)[-1] != 3:
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
@@ -66,21 +68,23 @@ def find_static_samples(
     )
 
     # allocate output array
-    inactive_signal_bool_array = np.repeat(0, len(signal))
+    inactive_signal_bool_array = np.zeros(len(signal))
+
+    # calculate norm of input signal (do this outside of loop to boost performance at cost of memory!)
+    signal_norm = np.apply_along_axis(np.linalg.norm, 1, signal)
 
     # iterate over sliding windows
     for indices in windowed_indices:
         # remove potential np.nan entries due to padding
         indices = indices[~np.isnan(indices)].astype(int)
 
-        # compute norm over multidimensional data (e.g. 3D)
-        arr_window_norm = np.apply_along_axis(np.linalg.norm, 1, signal[indices])
-
         # fill window with boolean of value comparison
-        bool_window = np.repeat(metric_function[metric](arr_window_norm) <= inactive_signal_th, len(indices))
+        is_static = metric_function[metric](signal_norm[indices]) <= inactive_signal_th
+        bool_window = np.repeat(is_static, len(indices))
 
         # perform logical or operation to combine all overlapping window results
         inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
+
     return inactive_signal_bool_array
 
 
