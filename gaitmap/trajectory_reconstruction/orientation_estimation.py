@@ -63,8 +63,9 @@ class GyroIntegration(BaseOrientationEstimation):
 
         Notes
         -----
-        Currently the Rampp approach for Gyroscope Integration is hard coded. In future this might be adapted to be
-        more flexible and use Sabatini's approach or Complementary / Kalman filters.
+        This function makes use of :func:`scipy.spatial.transform.Rotation.from_rotvec`, which updates a quaternion
+        by using norm of gyroscopic data as amplitude of rotation and the normalized vector of gyroscopic data for
+        axis of rotation.
 
         Examples
         --------
