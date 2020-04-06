@@ -118,3 +118,10 @@ Put this in your first cell of every Jupyter Notebook to activate it:
 %load_ext autoreload  # Load the extension
 %autoreload 2  # Autoreload all modules
 ```
+
+### Pycharm
+You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
+```jupyter
+%load_ext autoreload
+%autoreload 2
+```
