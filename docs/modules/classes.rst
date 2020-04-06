@@ -81,6 +81,7 @@ Functions
    :template: function.rst
 
     sliding_window_view
+    bool_array_to_start_stop_array
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
 ==========================================================================================
@@ -106,3 +107,21 @@ Functions
 
 .. automodule:: gaitmap.utils.consts
     :member-order: bysource
+
+:mod:`gaitmap.utils.static_moment_detection`: Helper to find static moments in sensor signals
+=============================================================================================
+
+.. automodule:: gaitmap.utils.static_moment_detection
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    utils.static_moment_detection.get_static_moments
+    utils.static_moment_detection.get_static_moment_labels
