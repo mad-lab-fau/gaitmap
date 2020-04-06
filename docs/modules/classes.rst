@@ -81,7 +81,7 @@ Functions
    :template: function.rst
 
     sliding_window_view
-    bool_array_to_start_stop_array
+    bool_array_to_start_end_array
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
 ==========================================================================================
