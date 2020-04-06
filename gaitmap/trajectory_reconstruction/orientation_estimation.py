@@ -62,12 +62,14 @@ class GyroIntegration(BaseOrientationEstimation):
         """
         # TODO: so far it is only possible to pass one sensor with columns being gyr_x...acc_z
         #  ==> adapt to multiple sensors
+        self.sampling_rate_hz = sampling_rate_hz
         self.estimated_orientations_ = []
         self.estimated_orientations_.append(self.initial_orientation)
-        for i_sample in range(1, len(sensor_data)):
+        print('TEST: ', len(sensor_data))
+        for i_sample in range(1, len(sensor_data)+1):
             self.estimated_orientations_.append(
                 self._next_quaternion(
-                    self.estimated_orientations_[i_sample - 1, :], sensor_data[SF_GYR].iloc[i_sample, :]
+                    self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample-1]
                 )
             )
 
@@ -79,11 +81,10 @@ class GyroIntegration(BaseOrientationEstimation):
 
         diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [0, gyr[x], gyr[y], gyr[z]])
         diff_quaternion_gyro = self._exp(diff_quaternion_gyro)
-
         return Rotation(previous_quaternion * diff_quaternion_gyro)
 
-    @staticmethod
-    def _exp(q):
+    #@staticmethod
+    def _exp(self, q: np.ndarray) -> np.ndarray:
         # TODO: move to utils
 
         quaternion = np.zeros(4)
@@ -94,5 +95,21 @@ class GyroIntegration(BaseOrientationEstimation):
         quaternion[2] = q[2] * multiplication_factor * np.sin(squared_helper) / squared_helper
         quaternion[3] = q[3] * multiplication_factor * np.sin(squared_helper) / squared_helper
         quaternion = quaternion / np.linalg.norm(quaternion, 2)
-
         return quaternion
+
+    @staticmethod
+    def quaternion_multiply(quat0: list, quat1: list):
+        p0, p1, p2, p3 = quat0
+        q0, q1, q2, q3 = quat1
+        w0, x0, y0, z0 = quat0
+        w1, x1, y1, z1 = quat1
+        result = np.ndarray([p0*q0 - p1*q1 - p2*q2 - p3*q3,
+                             p1*q0 + p0*q1 + p2*q3 - p3*q2,
+                             p2*q0 + p0*q2 + p3*q1 - p1*q3,
+                             p3*q0 + p0*q3 + p1*q2 - p2*q1])
+
+       # result = np.array([-x0 * x1 - y1 * y0 - z1 * z0 + w1 * w0,
+       #                  x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
+       #                  -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
+       #                  x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0], dtype=np.float64)
+        return np.divide(result, np.linalg.norm(result, 2))
