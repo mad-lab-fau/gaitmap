@@ -163,3 +163,18 @@ Functions
 
     utils.static_moment_detection.find_static_samples
     utils.static_moment_detection.find_static_sequences
+
+:mod:`gaitmap.trajectory_reconstruction.orientation_estimation`: Algorithms to estimate IMU sensor orientation given the sensor data
+====================================================================================================================================
+.. automodule:: gaitmap.trajectory_reconstruction.orientation_estimation
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.trajectory_reconstruction.orientation_estimation
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+   GyroIntegration

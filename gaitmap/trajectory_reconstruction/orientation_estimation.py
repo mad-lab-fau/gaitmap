@@ -1,4 +1,4 @@
-"""Estimation of orientations by trapezoidal gyroscope integration."""
+"""Estimation of orientations by gyroscope integration."""
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
@@ -9,8 +9,7 @@ from gaitmap.utils.consts import SF_GYR
 class GyroIntegration(BaseOrientationEstimation):
     """Estimate orientation based on a given initial orientation.
 
-    Subsequent orientations are estimated by integrating gyroscope data with respect to time. Calculations are performed
-    by Sabatini et al. [1].
+    Subsequent orientations are estimated by integrating gyroscope data with respect to time.
 
     Parameters
     ----------
@@ -30,12 +29,6 @@ class GyroIntegration(BaseOrientationEstimation):
         contains gyroscope and acceleration data
     sampling_rate_hz : float
         sampling rate of gyroscope data in Hz
-
-    Notes
-    -----
-    [1] Sabatini, A. M. (2005). Quaternion-based strap-down integration method for applications of inertial sensing to
-    gait analysis. Medical & biological engineering & computing 43 (1), 94–101. https://doi.org/10.1007/BF02345128
-    We perform the calulation a bit differently s.t. we don't need to caluclate e^(OMEGA) (eq. 3 by Sabatini)
 
     Examples
     --------
