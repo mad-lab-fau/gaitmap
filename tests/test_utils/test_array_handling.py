@@ -190,12 +190,11 @@ class TestBoolArrayToStartStopArray:
             input_array = np.array([0, 0, 2, 2, 0, 0, 2, 2, 2])
             bool_array_to_start_stop_array(input_array)
 
-    def test_zero_array(self):
+    def test_zeros_array(self):
         """Test False only input."""
         input_array = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
         output_array = bool_array_to_start_stop_array(input_array)
-        expected_output = np.array([[]])
-        assert_array_equal(expected_output, output_array)
+        assert output_array.size == 0
 
     def test_ones_array(self):
         """Test True only input."""
@@ -212,14 +211,14 @@ class TestBoolArrayToStartStopArray:
         assert_array_equal(expected_output, output_array)
 
     def test_bool_value_array(self):
-        """Test correct handling of edges."""
+        """Test correct handling of boolean values."""
         input_array = np.array([True, True, True, False, False, False, True, True, True])
         output_array = bool_array_to_start_stop_array(input_array)
         expected_output = np.array([[0, 2], [6, 8]])
         assert_array_equal(expected_output, output_array)
 
     def test_float_value_array(self):
-        """Test correct handling of edges."""
+        """Test correct handling of float values."""
         input_array = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
         output_array = bool_array_to_start_stop_array(input_array)
         expected_output = np.array([[0, 2], [6, 8]])
