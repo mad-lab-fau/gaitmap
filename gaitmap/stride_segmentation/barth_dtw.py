@@ -114,5 +114,11 @@ class BarthDtw(BaseDtw):
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
-            return {k: pd.DataFrame(v, columns=["start", "end"]) for k, v in start_ends.items()}
-        return pd.DataFrame(start_ends, columns=["start", "end"])
+            return {k: self._format_stride_list(v) for k, v in start_ends.items()}
+        return self._format_stride_list(start_ends)
+
+    @staticmethod
+    def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
+        if len(array) == 0:
+            array = None
+        return pd.DataFrame(array, columns=["start", "end"])
