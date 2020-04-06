@@ -71,50 +71,25 @@ class GyroIntegration(BaseOrientationEstimation):
         self.sampling_rate_hz = sampling_rate_hz
         self.estimated_orientations_ = []
         self.estimated_orientations_.append(self.initial_orientation)
-        print("TEST: ", len(sensor_data))
         for i_sample in range(1, len(sensor_data) + 1):
             self.estimated_orientations_.append(
-                self._next_quaternion_rampp(
+                self._next_quaternion(
                     self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample - 1]
                 )
             )
 
-    def _next_quaternion_zrenner(self, previous_quaternion, gyr: pd.Series) -> Rotation:
-        # TODO: check why this is not working properly and fix it
-        """Update a rotation quaternion based on previous/initial quaternion and gyroscope data Sabatini et al. [1].
+    def _next_quaternion(self, previous_quaternion: Rotation, gyr: pd.Series) -> Rotation:
+        """Update a rotation quaternion based on previous/initial quaternion and gyroscope.
 
-        Notes
-        -----
-        THIS HAS NOT BEEN TESTED YET AND SHOULD NOT BE USED!
-        [1] Sabatini, A. M. 2005. Quaternion-based strap-down integration method for applications of inertial sensing to
-        gait analysis. Medical & biological engineering & computing 43, 1, 94–101.
+        `scipy.spatial.transform.Rotation` does the update using norm of gyr as as angle and gyr as axis of rotation.
 
-        """
-        x = 0
-        y = 1
-        z = 2
+        Parameters
+        ----------
+        previous_quaternion
+            The rotation that is to be updated
 
-        diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [0, gyr[x], gyr[y], gyr[z]])
-        diff_quaternion_gyro = quaternions.exp(diff_quaternion_gyro)
-        return Rotation(previous_quaternion * diff_quaternion_gyro)
-
-    def _next_quaternion_rampp(self, previous_quaternion, gyr: pd.Series) -> Rotation:
-        """Update a rotation quaternion based on previous/initial quaternion and gyroscope data Rampp et al. [1].
-
-        Notes
-        -----
-        Rampp, A., Barth, J., Schülein, S., Gaßmann, K.-G., Klucken, J., and Eskofier, B. M. 2015. Inertial sensor-based
-        stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on bio-medical
-        engineering 62, 4, 1089–1097.
+        gyr
+            gyroscopic rate in radians
 
         """
-        x = 0
-        y = 1
-        z = 2
-        # order of gyroscope is different than in paper because scipy rotation uses this quaternion format
-        diff_quaternion_gyro = quaternions.multiply(
-            previous_quaternion.as_quat(), np.multiply(1 / (2 * self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0])
-        )
-        new_quat = previous_quaternion.as_quat() + diff_quaternion_gyro
-        new_quat /= np.linalg.norm(new_quat, 2)
-        return Rotation(new_quat)
+        return previous_quaternion * Rotation.from_rotvec(gyr / self.sampling_rate_hz)
