@@ -10,6 +10,17 @@ import numpy as np
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
 
+    def test_single_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
+
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left.columns = BF_COLS
+        stride_list_left = healthy_example_stride_borders["left_sensor"]
+
+        ed = RamppEventDetection()
+        ed.detect(data_left, 204.8, stride_list_left)
+
+        return None
+
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
