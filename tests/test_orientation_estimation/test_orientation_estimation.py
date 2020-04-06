@@ -19,7 +19,7 @@ class TestGyroIntegration:
         sensor_data[SF_ACC[1]] = [1] * fs
         sensor_data[SF_ACC[2]] = [0] * fs
 
-        gyr_integrator = GyroIntegration(Rotation([0, 1, 0, 0]))
+        gyr_integrator = GyroIntegration(Rotation([0, 0, 1, 0]))
         gyr_integrator.estimate_orientation_sequence(sensor_data, fs)
         print('\n')
         print('Result:')

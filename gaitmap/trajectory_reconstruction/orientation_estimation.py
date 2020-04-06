@@ -88,8 +88,8 @@ class GyroIntegration(BaseOrientationEstimation):
         x = 0
         y = 1
         z = 2
-        diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0])
-        # format quaternion anpassen
+        diff_quaternion_gyro = self.quaternion_multiply(previous_quaternion.as_quat(), np.multiply(1 / (2 *
+                                                        self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0]))
         new_quat = previous_quaternion.as_quat() + diff_quaternion_gyro
         new_quat /= np.linalg.norm(new_quat, 2)
         return Rotation(new_quat)
@@ -114,7 +114,7 @@ class GyroIntegration(BaseOrientationEstimation):
         q0, q1, q2, q3 = quat1
         w0, x0, y0, z0 = quat0
         w1, x1, y1, z1 = quat1
-        result = np.ndarray([p0*q0 - p1*q1 - p2*q2 - p3*q3,
+        result = np.array([p0*q0 - p1*q1 - p2*q2 - p3*q3,
                              p1*q0 + p0*q1 + p2*q3 - p3*q2,
                              p2*q0 + p0*q2 + p3*q1 - p1*q3,
                              p3*q0 + p0*q3 + p1*q2 - p2*q1])
