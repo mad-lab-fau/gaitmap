@@ -56,3 +56,10 @@ class TestAlgorithmMixin:
         actual_names = set(after_action_instance.get_other_params().keys())
 
         assert documented_names == actual_names
+
+    def test_action_method_returns_self(self, after_action_instance):
+        # call the action method a second time to test the output
+        parameters = after_action_instance.get_other_params()
+        results = getattr(after_action_instance, after_action_instance._action_method)(**parameters)
+
+        assert id(results) == id(after_action_instance)
