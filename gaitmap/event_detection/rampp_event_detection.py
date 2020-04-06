@@ -8,6 +8,7 @@ import pandas as pd
 
 from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.consts import BF_ACC, BF_GYR
+from gaitmap.utils.array_handling import sliding_window_view
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -83,20 +84,32 @@ class RamppEventDetection(BaseEventDetection):
         self.segmented_stride_list = segmented_stride_list
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region)
-        # min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
+        min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region
+            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_wind_size
         )
+
+        # output will have one stride less than segmented stride list
+        # self.s_id = np.arange(len(self.segmented_stride_list) - 1)
+        # self.end = self.min_vel_[1:]
+        # self.pre_ic_ = self.ic_[:-1]
+        # self.ic_ = self.ic_[1:]
+        # stride_event_dict = {"s_id": self.s_id, "start": self.s_id, "end": self.s_id, "ic": self.ic_, "tc": self.tc_}
+        # self.stride_events = pd.DataFrame(stride_event_dict)
 
         return self
 
     @staticmethod
     def _find_all_events(
-        gyr: pd.DataFrame, acc: pd.DataFrame, stride_list: pd.DataFrame, ic_search_region: Tuple[float, float],
+        gyr: pd.DataFrame,
+        acc: pd.DataFrame,
+        stride_list: pd.DataFrame,
+        ic_search_region: Tuple[float, float],
+        min_vel_search_wind_size: float,
     ):
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
@@ -114,19 +127,19 @@ class RamppEventDetection(BaseEventDetection):
             gyr_grad = np.gradient(gyr_ml_sec)
             ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
             fc_events.append(start + _detect_tc(gyr_sec))
-            # min_vel_events.append(start + self._detect_min_vel(gyr_sec, min_vel_search_wind_size))
+            min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_wind_size))
 
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
 
-    def _detect_min_vel(self, gyr: np.ndarray, window_size: int) -> int:
-        energy = norm(gyr, axis=-1) ** 2
-        energy = self.sliding_window_view(energy, shape=(window_size,))
-        min_vel_start = np.nanmin(energy)
-        min_vel_center = min_vel_start + window_size // 2
-        return min_vel_center
 
-    def _sliding_window_view(self, energy, shape):
-        pass
+def _detect_min_vel(gyr: np.ndarray, window_size: int) -> int:
+    energy = norm(gyr, axis=-1) ** 2
+    energy = sliding_window_view(energy, window_length=window_size, overlap=window_size - 1)
+    # find window with lowest summed energy
+    min_vel_start = np.argmin(np.sum(energy, axis=1))
+    # min_vel event = middle of this window
+    min_vel_center = min_vel_start + window_size // 2
+    return min_vel_center
 
 
 def _detect_ic(
