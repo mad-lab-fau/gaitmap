@@ -123,5 +123,5 @@ Functions
    :toctree: generated/
    :template: function.rst
 
-    utils.static_moment_detection.get_static_moments
-    utils.static_moment_detection.get_static_moment_labels
+    utils.static_moment_detection.find_static_samples
+    utils.static_moment_detection.find_static_sequences

@@ -4,10 +4,10 @@ import numpy as np
 from gaitmap.utils import array_handling
 
 
-def get_static_moments(
+def find_static_samples(
     signal: np.ndarray, window_length: int, overlap: int, inactive_signal_th: float, metric: str = "mean"
 ) -> np.ndarray:
-    """Search for static windows within given input signal, based on L2-norm thresholding.
+    """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
         due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
@@ -28,8 +28,16 @@ def get_static_moments(
        threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric: str
-        metric which will be calculated per window
+    metric: str, optional
+        metric which will be calculated per window, one of the following strings
+        'mean' (default)
+            calculates mean value per window
+        'maximum'
+            calculates maximum value per window
+        'median'
+            calculates median value per window
+        'variance'
+            calculates variance value per window
 
     Returns
     -------
@@ -37,13 +45,19 @@ def get_static_moments(
 
     Examples
     --------
-    gyro_data = load_gyro_data(path)
-    get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5)
+    test_data = load_gyro_data(path)
+    get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
 
     """
     # test for correct input data shape
     if np.shape(signal)[-1] != 3:
-        raise ValueError("Invalid sigal dimensions, signal must be of shape (n,3)")
+        raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
+
+    # supported metric functions
+    metric_function = {"maximum": np.max, "variance": np.var, "mean": np.mean, "median": np.median}
+
+    if metric not in metric_function:
+        raise ValueError("Invalid metric passed! %s as metric is not supported." % metric)
 
     # create the list of indices for sliding windows with overlap
     windowed_indices = array_handling.sliding_window_view(
@@ -62,20 +76,17 @@ def get_static_moments(
         arr_window_norm = np.apply_along_axis(np.linalg.norm, 1, signal[indices])
 
         # fill window with boolean of value comparison
-        if metric == "mean":
-            bool_window = np.repeat(np.mean(arr_window_norm) <= inactive_signal_th, window_length)
-        elif metric == "max":
-            bool_window = np.repeat(np.max(arr_window_norm) <= inactive_signal_th, window_length)
+        bool_window = np.repeat(metric_function[metric](arr_window_norm) <= inactive_signal_th, window_length)
 
         # perform logical or operation to combine all overlapping window results
         inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
     return inactive_signal_bool_array
 
 
-def get_static_moment_labels(
+def find_static_sequences(
     signal: np.ndarray, window_length: int, overlap: int, inactive_signal_th: float, metric: str = "mean"
 ) -> np.ndarray:
-    """Search for static windows within given input signal, based on L2-norm thresholding.
+    """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
         due to edge cases at the end of the input data where window size and overlap might not fit your data, the last
@@ -96,8 +107,16 @@ def get_static_moment_labels(
        threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric: str
-        metric which will be calculated per window
+    metric: str, optional
+        metric which will be calculated per window, one of the following strings
+        'mean' (default)
+            calculates mean value per window
+        'maximum'
+            calculates maximum value per window
+        'median'
+            calculates median value per window
+        'variance'
+            calculates variance value per window
 
     Returns
     -------
@@ -109,11 +128,11 @@ def get_static_moment_labels(
     static_regions = get_static_moment_labels(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5)
 
     """
-    static_moment_bool_array = get_static_moments(
+    static_moment_bool_array = find_static_samples(
         signal=signal,
         window_length=window_length,
         overlap=overlap,
         inactive_signal_th=inactive_signal_th,
         metric=metric,
     )
-    return array_handling.bool_array_to_start_stop_list(static_moment_bool_array)
+    return array_handling.bool_array_to_start_stop_array(static_moment_bool_array)

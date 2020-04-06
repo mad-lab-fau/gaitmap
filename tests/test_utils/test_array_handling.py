@@ -191,13 +191,13 @@ class TestBoolArrayToStartStopArray:
             bool_array_to_start_stop_array(input_array)
 
     def test_zeros_array(self):
-        """Test False only input."""
+        """Test zeros only input."""
         input_array = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])
         output_array = bool_array_to_start_stop_array(input_array)
         assert output_array.size == 0
 
     def test_ones_array(self):
-        """Test True only input."""
+        """Test ones only input."""
         input_array = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
         output_array = bool_array_to_start_stop_array(input_array)
         expected_output = np.array([[0, 8]])
