@@ -77,7 +77,7 @@ def find_static_samples(
         arr_window_norm = np.apply_along_axis(np.linalg.norm, 1, signal[indices])
 
         # fill window with boolean of value comparison
-        bool_window = np.repeat(metric_function[metric](arr_window_norm) <= inactive_signal_th, window_length)
+        bool_window = np.repeat(metric_function[metric](arr_window_norm) <= inactive_signal_th, len(indices))
 
         # perform logical or operation to combine all overlapping window results
         inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
