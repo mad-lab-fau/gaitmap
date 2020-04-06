@@ -100,16 +100,5 @@ def bool_array_to_start_stop_array(bool_array: np.ndarray) -> np.ndarray:
     if not np.array_equal(bool_array, bool_array.astype(bool)):
         raise ValueError("Input must be boolean array!")
 
-    bool_array = bool_array.astype(int)
-
-    # find rising edges
-    starts = np.where(np.diff(bool_array) > 0)[0] + 1
-    # find falling edges
-    stops = np.where(np.diff(bool_array) < 0)[0]
-    # handle edge cases aka check for very first and very last sample in bool_array
-    if bool_array[0] == 1:
-        starts = np.insert(starts, 0, 0)
-    if bool_array[-1] == 1:
-        stops = np.append(stops, len(bool_array) - 1)
-
-    return np.column_stack((starts, stops))
+    slices = np.ma.flatnotmasked_contiguous(np.ma.masked_equal(bool_array, 0))
+    return np.array([[s.start, s.stop - 1] for s in slices])
