@@ -68,12 +68,12 @@ class GyroIntegration(BaseOrientationEstimation):
         print('TEST: ', len(sensor_data))
         for i_sample in range(1, len(sensor_data)+1):
             self.estimated_orientations_.append(
-                self._next_quaternion(
+                self._next_quaternion_rampp(
                     self.estimated_orientations_[i_sample - 1], sensor_data[SF_GYR].iloc[i_sample-1]
                 )
             )
 
-    def _next_quaternion(self, previous_quaternion, gyr: pd.Series) -> Rotation:
+    def _next_quaternion_zrenner(self, previous_quaternion, gyr: pd.Series) -> Rotation:
         # TODO: Check if gyroscope data is in degeree or rad
         x = 0
         y = 1
@@ -81,7 +81,18 @@ class GyroIntegration(BaseOrientationEstimation):
 
         diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [0, gyr[x], gyr[y], gyr[z]])
         diff_quaternion_gyro = self._exp(diff_quaternion_gyro)
+        di
         return Rotation(previous_quaternion * diff_quaternion_gyro)
+
+    def _next_quaternion_rampp(self, previous_quaternion, gyr: pd.Series) -> Rotation:
+        x = 0
+        y = 1
+        z = 2
+        diff_quaternion_gyro = np.multiply(1 / (2 * self.sampling_rate_hz), [gyr[x], gyr[y], gyr[z], 0])
+        # format quaternion anpassen
+        new_quat = previous_quaternion.as_quat() + diff_quaternion_gyro
+        new_quat /= np.linalg.norm(new_quat, 2)
+        return Rotation(new_quat)
 
     #@staticmethod
     def _exp(self, q: np.ndarray) -> np.ndarray:
