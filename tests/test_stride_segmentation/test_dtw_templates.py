@@ -51,8 +51,8 @@ class TestTemplateBaseClass:
 
         assert instance.template.shape == (200, 6)
 
-class TestBartTemplate:
 
+class TestBartTemplate:
     def test_load(self):
         instance = DtwTemplate(template_file_name="barth_original_template.csv")
 
@@ -60,6 +60,7 @@ class TestBartTemplate:
 
         assert_frame_equal(barth_instance.template, instance.template)
         assert barth_instance.sampling_rate_hz == 204.8
+
 
 class TestCreateTemplate:
     def test_create_template_simple(self):
