@@ -46,8 +46,8 @@ def find_static_samples(
 
     Examples
     --------
-    test_data = load_gyro_data(path)
-    get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
+    >>> test_data = load_gyro_data(path)
+    >>> get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
 
     See Also
     --------
@@ -138,8 +138,8 @@ def find_static_sequences(
 
     Examples
     --------
-    gyro_data = load_gyro_data(path)
-    static_regions = get_static_moment_labels(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5)
+    >>> gyro_data = load_gyro_data(path)
+    >>> static_regions = get_static_moment_labels(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5)
 
     See Also
     --------
