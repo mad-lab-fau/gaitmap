@@ -44,6 +44,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     @staticmethod
     def calculate(self: BaseType, gait_events: RamppEventDetection, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters in in strides after segmentation and detecting events of each stride.
+
         Parameters
         ----------
         gait_events
@@ -73,14 +74,17 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         self.parameters_ = pd.DataFrame.from_dict(param)
         return self
 
-    def _calc_time_stamp(self, ic_event: float, sampling_rate_hz: float) -> float:
-        return ic_event / sampling_rate_hz
 
-    def _calc_stride_time(self, ic_event: float, pre_ic_event: float, sampling_rate_hz: float) -> float:
-        return (ic_event - pre_ic_event) / sampling_rate_hz
+def _calc_time_stamp(self, ic_event: float, sampling_rate_hz: float) -> float:
+    return ic_event / sampling_rate_hz
 
-    def _calc_swing_time(self, ic_event: float, tc_event: float, sampling_rate_hz: float) -> float:
-        return (ic_event - tc_event) / sampling_rate_hz
+
+def _calc_stride_time(self, ic_event: float, pre_ic_event: float, sampling_rate_hz: float) -> float:
+    return (ic_event - pre_ic_event) / sampling_rate_hz
+
+
+def _calc_swing_time(self, ic_event: float, tc_event: float, sampling_rate_hz: float) -> float:
+    return (ic_event - tc_event) / sampling_rate_hz
 
     def _calc_stance_time(self, stride_time: float, swing_time: float) -> float:
         return stride_time - swing_time
