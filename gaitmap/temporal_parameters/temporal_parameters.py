@@ -42,7 +42,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         pass
 
     @staticmethod
-    def calculate(self: BaseType, gait_events: RamppEventDetection, sampling_rate_hz: float) -> BaseType:
+    def calculate(gait_events: RamppEventDetection, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters in in strides after segmentation and detecting events of each stride.
 
         Parameters
@@ -86,5 +86,5 @@ def _calc_stride_time(self, ic_event: float, pre_ic_event: float, sampling_rate_
 def _calc_swing_time(self, ic_event: float, tc_event: float, sampling_rate_hz: float) -> float:
     return (ic_event - tc_event) / sampling_rate_hz
 
-    def _calc_stance_time(self, stride_time: float, swing_time: float) -> float:
-        return stride_time - swing_time
+def _calc_stance_time(self, stride_time: float, swing_time: float) -> float:
+    return stride_time - swing_time
