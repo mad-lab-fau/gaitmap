@@ -115,7 +115,8 @@ class RamppEventDetection(BaseEventDetection):
         """
         if dataset_helper.is_multi_sensor_dataset(data):
             raise NotImplementedError("Multisensor input is not supported yet")
-        elif not dataset_helper.is_single_sensor_dataset(data):
+
+        if not dataset_helper.is_single_sensor_dataset(data):
             raise ValueError("Provided data set is not supported by gaitmap")
 
         self.data = data
