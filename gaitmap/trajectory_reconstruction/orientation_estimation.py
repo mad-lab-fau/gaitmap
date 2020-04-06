@@ -21,8 +21,8 @@ class GyroIntegration(BaseOrientationEstimation):
     Attributes
     ----------
     estimated_orientations_
-        Contains rotations based on initial rotation and trapezoidal gyroscope integration. The first value of this
-        array is the initial rotation, passed to the __init__.
+        Contains rotations based on initial rotation and gyroscope integration. The first value of this array is the
+        initial rotation, passed to the __init__. All rotations are :class:`scipy.spatial.transform.Rotation` objects.
 
     Other Parameters
     ----------------
@@ -37,6 +37,10 @@ class GyroIntegration(BaseOrientationEstimation):
     gait analysis. Medical & biological engineering & computing 43 (1), 94–101. https://doi.org/10.1007/BF02345128
     We perform the calulation a bit differently s.t. we don't need to caluclate e^(OMEGA) (eq. 3 by Sabatini)
 
+    Examples
+    --------
+    >>> gyr_integrator = GyroIntegration(Rotation([0, 0, 1, 0]))
+
     """
 
     sensor_data: pd.DataFrame
@@ -45,7 +49,6 @@ class GyroIntegration(BaseOrientationEstimation):
     initial_orientation: Rotation
 
     def __init__(self, initial_orientation: Rotation):
-        # TODO: check: relevant if rotation is world->sensor or sensor->world? I don't think so
         self.initial_orientation = initial_orientation
 
     def estimate_orientation_sequence(self, sensor_data: pd.DataFrame, sampling_rate_hz: float):
@@ -63,8 +66,15 @@ class GyroIntegration(BaseOrientationEstimation):
         Currently the Rampp approach for Gyroscope Integration is hard coded. In future this might be adapted to be
         more flexible and use Sabatini's approach or Complementary / Kalman filters.
 
+        Examples
+        --------
+        >>> gyr_integrator.estimate_orientation_sequence(sensor_data, 204.8)
+        >>> orientations = gyr_integrator.estimated_orientations_
+        >>> orientations[-1].as_quat()
+        array([0., 1, 0., 0.])
+
         """
-        # TODO: so far it is only possible to pass one sensor with columns being gyr_x...acc_z
+        # TODO: so far it is only possible to pass one sensor with columns being gyr_x...(and possilby others acc_z)
         #  ==> adapt to multiple sensors
         self.sampling_rate_hz = sampling_rate_hz
         self.estimated_orientations_ = []
