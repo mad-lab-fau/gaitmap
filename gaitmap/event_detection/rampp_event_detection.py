@@ -1,5 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 from numpy.linalg import norm
@@ -13,7 +13,7 @@ from gaitmap.utils.dataset_helper import Dataset
 
 
 class RamppEventDetection(BaseEventDetection):
-    """Find gait events in the IMU raw signal based on signal characteristics like peaks.
+    """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
     features in the signals.
@@ -28,7 +28,7 @@ class RamppEventDetection(BaseEventDetection):
 
     Attributes
     ----------
-    stride_events: A stride list or dictionary with such values
+    stride_events_: A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides. Formatted
         as pandas DataFrame
     start_: 1D array or dictionary with such values
@@ -47,7 +47,7 @@ class RamppEventDetection(BaseEventDetection):
     Other Parameters
     ----------------
     data
-        The data passed to the `segment` method.
+        The data passed to the `detect` method.
     sampling_rate_hz
         The sampling rate of the data
     segmented_stride_list
@@ -65,13 +65,13 @@ class RamppEventDetection(BaseEventDetection):
 
     ic_search_region: Tuple[float, float]
     min_vel_search_wind_size: float
-    start_: Optional[np.ndarray] = None
-    end_: Optional[np.ndarray] = None
-    tc_: Optional[np.ndarray] = None
-    min_vel_: Optional[np.ndarray] = None
-    ic_: Optional[np.ndarray] = None
-    pre_ic_: Optional[np.ndarray] = None
-    stride_events: pd.DataFrame = None
+    start_: Optional[np.ndarray]
+    end_: Optional[np.ndarray]
+    tc_: Optional[np.ndarray]
+    min_vel_: Optional[np.ndarray]
+    ic_: Optional[np.ndarray]
+    pre_ic_: Optional[np.ndarray]
+    stride_events_: pd.DataFrame
 
     data: pd.DataFrame
     sampling_rate_hz: float
@@ -81,15 +81,13 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region = ic_search_region
         self.min_vel_search_wind_size = min_vel_search_wind_size
 
-    def detect(
-        self: BaseType, data: Union[pd.DataFrame, Dataset], sampling_rate_hz: float, segmented_stride_list: pd.DataFrame
-    ) -> BaseType:
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
         """Find gait events in data within strides provided by segmented_stride_list.
 
         Parameters
         ----------
         data
-            The data passed to the `segment` method.
+            The data set holding the imu raw data method.
         sampling_rate_hz
             The sampling rate of the data
         segmented_stride_list
@@ -133,7 +131,7 @@ class RamppEventDetection(BaseEventDetection):
             "min_vel": self.min_vel_,
             "pre_ic": self.pre_ic_,
         }
-        self.stride_events = pd.DataFrame(stride_event_dict)
+        self.stride_events_ = pd.DataFrame(stride_event_dict)
 
         return self
 
