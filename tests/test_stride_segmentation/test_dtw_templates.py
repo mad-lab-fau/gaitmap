@@ -49,7 +49,7 @@ class TestTemplateBaseClass:
     def test_load_from_file(self):
         instance = DtwTemplate(template_file_name="barth_original_template.csv")
 
-        assert instance.template.shape == (200, 6)
+        assert instance.template.shape == (200, 3)
 
 
 class TestBartTemplate:
