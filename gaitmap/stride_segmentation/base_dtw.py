@@ -21,7 +21,7 @@ from gaitmap.utils.dataset_helper import (
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
-    """Find matches in the accumulated cost matrix using :func:`scipy.signal.find_peaks`.
+    """Find matches in the accumulated cost matrix using :func:`~scipy.signal.find_peaks`.
 
     Parameters
     ----------
@@ -55,8 +55,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
         Accumulated cost matrix as derived from a DTW
     max_cost
         The max_cost is used to cut the signal into enclosed segments.
-        More details at :py:func:`find_local_minima_below_threshold
-        <gaitmap.stride_segmentation.utils.find_local_minima_below_threshold>`.
+        More details at :func:`~gaitmap.stride_segmentation.utils.find_local_minima_below_threshold`.
 
     Returns
     -------
@@ -81,7 +80,7 @@ class BaseDtw(BaseStrideSegmentation):
     A general purpose msDTW
         If you require a msDTW with a class based interface independent of the context of stride segmentation (or even
         this library) you can create a simple template from a (n x m) numpy array using
-        :func:`create_dtw_template <gaitmap.stride_segmentation.dtw_templates.templates.create_dtw_template>`.
+        :func:`~gaitmap.stride_segmentation.create_dtw_template`.
         This allows you to use just a simple numpy array as data input to the :meth:`segment` method.
         The data must have at least n samples and m columns.
         If it has more than m columns, the additional columns are ignored.
@@ -89,7 +88,7 @@ class BaseDtw(BaseStrideSegmentation):
         If you are using the basic datatypes of this library you can use this DTW implementation to easily apply a
         template to selected columns of multiple sensors.
         For this, the template is expected to be based on an `pd.DataFrame` wrapped in a
-        :class:`DtwTemplate <gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate>`.
+        :class:`~gaitmap.stride_segmentation.DtwTemplate`.
         The column names of this dataframe need to match the column names of the data the template should be applied to.
         The data can be passed as single-sensor dataframe (the columns correspond to individual sensor axis) or a
         multi-sensor dataset (either a dictionary of single-sensor dataframes or a dataframe with 2 level of column
@@ -101,7 +100,7 @@ class BaseDtw(BaseStrideSegmentation):
     A way to apply specific templates to specific columns
         In some cases different templates are required for different sensors.
         To do this, the template must be a dictionary of
-        :class:`DtwTemplate <gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate>` instances, were the key
+        :class:`~gaitmap.stride_segmentation.DtwTemplate` instances, were the key
         corresponds to the sensor the template should be applied to.
         Note, that only dataframe templates are supported and **not** simple numpy array templates.
         The data input needs to be a multi-sensor dataset (see above for more information).
@@ -135,10 +134,11 @@ class BaseDtw(BaseStrideSegmentation):
 
         - "min_under_thres"
             Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
-            In this case :py:func:`.find_matches_min_under_threshold` will be used as method.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as method.
         - "find_peaks"
-            Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :py:func:`.find_matches_find_peaks` will be used as method.
+            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
+            method.
 
     Attributes
     ----------

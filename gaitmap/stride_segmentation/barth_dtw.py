@@ -25,7 +25,7 @@ class BarthDtw(BaseDtw):
     template
         The template used for matching.
         The required data type and shape depends on the use case.
-        For more details see :class:`BaseDtw <gaitmap.stride_segmentation.base_dtw.BaseDtw>`.
+        For more details see :class:`~gaitmap.stride_segmentation.BaseDtw`.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
@@ -46,10 +46,11 @@ class BarthDtw(BaseDtw):
 
         - "min_under_thres"
             Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
-            In this case :py:func:`.find_matches_min_under_threshold` will be used as method.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as method.
         - "find_peaks"
-            Uses :func:`scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :py:func:`.find_matches_find_peaks` will be used as method.
+            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
+            method.
 
     Attributes
     ----------

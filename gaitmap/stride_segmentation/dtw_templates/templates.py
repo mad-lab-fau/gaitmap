@@ -22,7 +22,7 @@ class DtwTemplate:
         The sampling rate that was used to record the template data
     use_cols
         The columns of the template that should actualle be used.
-        If the template is an array this must be a list of **int**s, if it is a dataframe, the content of `use_cols`
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
         must match a subset of these columns.
 
     See Also
@@ -103,7 +103,7 @@ def create_dtw_template(
         The sampling rate that was used to record the template data
     use_cols
         The columns of the template that should actualle be used.
-        If the template is an array this must be a list of **int**s, if it is a dataframe, the content of `use_cols`
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
         must match a subset of these columns.
 
     See Also
