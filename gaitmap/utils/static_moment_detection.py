@@ -30,6 +30,7 @@ def find_static_samples(
 
     metric: str, optional
         metric which will be calculated per window, one of the following strings
+
         'mean' (default)
             calculates mean value per window
         'maximum'
@@ -109,6 +110,7 @@ def find_static_sequences(
 
     metric: str, optional
         metric which will be calculated per window, one of the following strings
+
         'mean' (default)
             calculates mean value per window
         'maximum'
