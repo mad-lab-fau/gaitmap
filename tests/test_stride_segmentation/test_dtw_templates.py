@@ -66,8 +66,9 @@ class TestBartTemplate:
 
         barth_instance = BarthOriginalTemplate()
 
-        assert_frame_equal(barth_instance.template, instance.template)
+        assert_frame_equal(barth_instance.template, instance.template * 500)
         assert barth_instance.sampling_rate_hz == 204.8
+        assert barth_instance.scaling == 500.
 
 
 class TestCreateTemplate:

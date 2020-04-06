@@ -46,7 +46,7 @@ class DtwTemplate:
         template: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
-        scaling: Optional[float] = 500,
+        scaling: Optional[float] = None,
         use_cols: Optional[List[Union[str, int]]] = None,
     ):
         self._template = template
@@ -66,7 +66,8 @@ class DtwTemplate:
         if self._template is None:
             with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
                 self._template = pd.read_csv(test_data, header=0)
-        template = self._template * getattr(self, "scaling", 1)
+        scaling = getattr(self, "scaling", None) or 1
+        template = self._template * scaling
 
         if getattr(self, "use_cols", None) is None:
             return template
