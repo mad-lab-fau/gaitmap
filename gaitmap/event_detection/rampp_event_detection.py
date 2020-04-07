@@ -215,25 +215,25 @@ def _detect_ic(
 
     # TODO: Redefine search region (does not work sometimes
     # alternative:
-    # refined_search_region_start, refined_search_region_stop = search_region
+    # refined_search_region_start, refined_search_region_end = search_region
     refined_search_region_start = search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)])
-    refined_search_region_stop = refined_search_region_start + np.argmax(
+    refined_search_region_end = refined_search_region_start + np.argmax(
         gyr_ml_grad[refined_search_region_start : search_region[1]]
     )
 
-    if refined_search_region_stop - refined_search_region_start <= 0:
+    if refined_search_region_end - refined_search_region_start <= 0:
         return np.nan
 
     # Find heel strike candidate in search region based on gyr
     heel_strike_candidate = refined_search_region_start + np.argmin(
-        gyr_ml[refined_search_region_start:refined_search_region_stop]
+        gyr_ml[refined_search_region_start:refined_search_region_end]
     )
 
     # Acc search window
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region_ms[0]])))
-    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region_ms[1]])))
+    acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region_ms[1]])))
 
-    return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
+    return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end])
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
