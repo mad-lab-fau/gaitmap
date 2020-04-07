@@ -32,6 +32,11 @@ class TestConvertAxes:
         data_converted = convert_right_foot_to_fbf(self.data_right)
         assert_frame_equal(data_converted, self.data_right_expected)
 
+    def test_no_position_arguments(self):
+        with pytest.raises(ValueError, match=r"Invalid inputs: Neither left nor right sensor names specified."):
+            convert_to_fbf(self.data_df)
+
+
     def test_rotate_multisensor(self):
         data_converted = convert_to_fbf(self.data_df, left=["left_sensor"], right=["right_sensor"])
         assert_frame_equal(data_converted, self.data_df_expected)
