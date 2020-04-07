@@ -83,7 +83,4 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         integral_backward = integrate.cumtrapz(np.flipud(data[channels]), axis=0, initial=0) / self.sampling_rate_hz
         weights_vel = self._get_weight_matrix(pd.DataFrame(data[channels]))
 
-        return pd.DataFrame(
-            integral_forward * weights_vel + integral_backward * (1 - weights_vel),
-            index=data.index,
-        )
+        return pd.DataFrame(integral_forward * weights_vel + integral_backward * (1 - weights_vel), index=data.index)
