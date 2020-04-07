@@ -128,14 +128,14 @@ class RamppEventDetection(BaseEventDetection):
         self.sampling_rate_hz = sampling_rate_hz
         self.segmented_stride_list = segmented_stride_list
 
-        ic_search_region_ms = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+        ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         min_vel_search_win_size_ms = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         s_id, ic, tc, min_vel = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
+            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_win_size_ms
         )
 
         s_id = s_id[:-1]  # ignore the last s_id as the last segmented stride is not preserved by rampp
@@ -158,6 +158,7 @@ class RamppEventDetection(BaseEventDetection):
         }
 
         # find breaks in segmented strides and drop first strides of new sequences
+        # TODO shift this to cleanup function in the future
         stride_list_breaks = _find_breaks_in_stride_list(self.segmented_stride_list)
         stride_event_df = pd.DataFrame(stride_event_dict)
         stride_event_df = stride_event_df.drop(stride_event_df.index[stride_list_breaks])
@@ -177,7 +178,7 @@ class RamppEventDetection(BaseEventDetection):
         gyr: pd.DataFrame,
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
-        ic_search_region_ms: Tuple[float, float],
+        ic_search_region: Tuple[float, float],
         min_vel_search_win_size_ms: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
@@ -195,7 +196,7 @@ class RamppEventDetection(BaseEventDetection):
             gyr_ml_sec = gyr_ml[start:end]
             acc_sec = acc_pa[start:end]
             gyr_grad = np.gradient(gyr_ml_sec)
-            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region_ms))
+            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
             fc_events.append(start + _detect_tc(gyr_ml_sec))
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size_ms))
 
@@ -223,7 +224,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size_ms: int) -> float:
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region_ms: Tuple[float, float],
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float],
 ) -> float:
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
@@ -249,8 +250,8 @@ def _detect_ic(
     )
 
     # Acc search window
-    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region_ms[0]])))
-    acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region_ms[1]])))
+    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
+    acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
 
     return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end])
 
