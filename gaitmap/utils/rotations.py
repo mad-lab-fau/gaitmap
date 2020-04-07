@@ -5,11 +5,17 @@ All util functions use :class:`scipy.spatial.transform.Rotation` to represent ro
 from typing import Union, Dict, Optional
 
 import numpy as np
-import pandas as pd
 from scipy.spatial.transform import Rotation
 from numpy.linalg import norm
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.dataset_helper import (
+    get_multi_sensor_dataset_names,
+    is_single_sensor_dataset,
+    is_multi_sensor_dataset,
+    Dataset,
+    SingleSensorDataset,
+)
 from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle, normalize
 
 
@@ -56,7 +62,9 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
 
 
-def _rotate_sensor(data: pd.DataFrame, rotation: Optional[Rotation], inplace: bool = False) -> pd.DataFrame:
+def _rotate_sensor(
+    data: SingleSensorDataset, rotation: Optional[Rotation], inplace: bool = False
+) -> SingleSensorDataset:
     """Rotate the data of a single sensor with acc and gyro."""
     if inplace is False:
         data = data.copy()
@@ -67,7 +75,7 @@ def _rotate_sensor(data: pd.DataFrame, rotation: Optional[Rotation], inplace: bo
     return data
 
 
-def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Rotation]]) -> pd.DataFrame:
+def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotation]]) -> Dataset:
     """Apply a rotation to acc and gyro data of a dataset.
 
     Parameters
@@ -103,26 +111,31 @@ def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Ro
     <copy of dataset with all axis rotated>
 
     """
-    multi_index = dataset.columns.nlevels > 1
-    if not multi_index and isinstance(rotation, dict):
-        raise ValueError(
-            "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
-            " passed."
-        )
-
-    # TODO: create helper that checks if valid dataset is passed
-    # TODO: Add warning if rotations are passed for sensors that don't exist
-    if not multi_index:
+    if is_single_sensor_dataset(dataset):
+        if isinstance(rotation, dict):
+            raise ValueError(
+                "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
+                " passed."
+            )
         return _rotate_sensor(dataset, rotation, inplace=False)
 
+    if not is_multi_sensor_dataset(dataset):
+        raise ValueError("The data input format is not supported gaitmap")
     rotation_dict = rotation
     if not isinstance(rotation_dict, dict):
-        rotation_dict = {k: rotation for k in dataset.columns.get_level_values(level=0)}
+        rotation_dict = {k: rotation for k in get_multi_sensor_dataset_names(dataset)}
+
+    # TODO: Maybe refactor to be able to handle both types of input the same
+    if isinstance(dataset, dict):
+        rotated_dataset = {**dataset}
+        for key in rotation_dict.keys():
+            rotated_dataset[key] = _rotate_sensor(dataset[key], rotation_dict[key], inplace=False)
+        return rotated_dataset
 
     original_cols = dataset.columns.copy()
 
     # For some strange reason, we need to unstack and stack again to use apply here:
-    dataset = (
+    rotated_dataset = (
         dataset.stack(level=0)
         .groupby(level=1)
         .apply(lambda x: _rotate_sensor(x, rotation_dict.get(x.name, None), inplace=False))
@@ -130,8 +143,8 @@ def rotate_dataset(dataset: pd.DataFrame, rotation: Union[Rotation, Dict[str, Ro
         .swaplevel(axis=1)
     )
     # Restore original order
-    dataset = dataset[original_cols]
-    return dataset
+    rotated_dataset = rotated_dataset[original_cols]
+    return rotated_dataset
 
 
 def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
