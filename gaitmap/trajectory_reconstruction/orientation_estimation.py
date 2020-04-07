@@ -26,6 +26,10 @@ class GyroIntegration(BaseOrientationEstimation):
     estimated_orientations_
         Contains the resulting orientations (represented as a :class:`~scipy.spatial.transform.Rotation` object).
         This has the same length than the passed input data (i.e. the initial orientation is not included)
+    estimated_orientations_with_initial_
+        Same as `estimated_orientations_` but contains the initial orientation as the first index.
+        Therefore, it contains one more sample than the input data.
+
 
     Other Parameters
     ----------------
@@ -43,6 +47,7 @@ class GyroIntegration(BaseOrientationEstimation):
     initial_orientation: Rotation
 
     estimated_orientations_: Rotation
+    estimated_orientations_with_initial_: Rotation
 
     data: SingleSensorDataset
     sampling_rate_hz: float
@@ -90,6 +95,7 @@ class GyroIntegration(BaseOrientationEstimation):
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
         out = accumulate([self.initial_orientation, *single_step_rotations], operator.mul)
         # Exclude initial orientation
-        out_as_rot = Rotation([o.as_quat() for o in out][1:])
-        self.estimated_orientations_ = out_as_rot
+        out_as_rot = Rotation([o.as_quat() for o in out])
+        self.estimated_orientations_ = out_as_rot[1:]
+        self.estimated_orientations_with_initial_ = out_as_rot
         return self
