@@ -165,18 +165,17 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     estimated_orientations: Rotation
 
-    def estimate(self, sensor_data, sampling_rate_hz):
+    def estimate(self, data, sampling_rate_hz):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
         ----------
-        sensor_data : pandas.DataFrame
+        data : pandas.DataFrame
             Contains at least gyroscope data, optionally also acceleration data of one or several sensors.
         sampling_rate_hz : float
             Data with which gyroscope data was sampled in Hz.
 
         """
-        # no return type since we'll keep data in this object
         raise NotImplementedError()
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope

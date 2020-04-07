@@ -40,7 +40,7 @@ class TestGyroIntegration:
             else:
                 sensor_data[i_axis] = [0] * fs
 
-         # create initial "spatial quaternion" that describes a vector along z-axis
+        # create initial "spatial quaternion" that describes a vector along z-axis
         if axis_to_rotate == 0 or axis_to_rotate == 1:
             rot_init = Rotation([0, 0, 1, 0])
         else:
