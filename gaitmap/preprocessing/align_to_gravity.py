@@ -13,7 +13,7 @@ def align_dataset(
     metric: Optional[str] = "maximum",
     gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0]),
 ) -> pd.DataFrame:
-    """Align dataset to gravity, so that each sensor z-axis will be parallel to gravity.
+    """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
 
     Mean accelerometer vector will be extracted form static windows which will be classified by a sliding window
     with (window_length -1) overlap and a thresholding of the gyro signal norm. This will be performed for each sensor
@@ -47,6 +47,7 @@ def align_dataset(
 
     gravity : np.ndarray, optional
         vector with shape (3,), axis ([x, y ,z])
+        Expected measured signal on accelerometer if only gravity would be present.
 
     Returns
     -------
@@ -64,7 +65,7 @@ def align_dataset(
     See Also
     --------
     gaitmap.utils.static_moment_detection.find_static_sequences: Details on the used static moment detection function
-    for this method.
+        for this method.
 
     """
     multi_index = dataset.columns.nlevels > 1
@@ -90,14 +91,15 @@ def _get_static_acc_vector(
     # find static windows within the gyro data
     static_windows = find_static_sequences(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
 
-    # generate indices where data can be considered static
-    static_indices = np.concatenate([np.arange(start, end + 1) for start, end in static_windows])
-
-    if static_indices.size == 0:
+    # raise exception if no static windows could be found with given user settings
+    if static_windows.size == 0:
         raise ValueError(
             "No static windows could be found to extract sensor offset orientation. Please check your input data or try"
-            "to adapt parameters like window_length, threshold or used metric."
+            " to adapt parameters like window_length, static_signal_th or used metric."
         )
+
+    # generate indices where data can be considered static
+    static_indices = np.concatenate([np.arange(start, end + 1) for start, end in static_windows])
 
     # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
     return np.mean(data[SF_ACC].to_numpy()[static_indices], axis=0)
