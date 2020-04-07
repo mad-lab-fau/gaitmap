@@ -11,6 +11,8 @@ from gaitmap.preprocessing.align_to_gravity import align_dataset
 class TestAlignToGravity:
     """Test the function `align_to_gravity`."""
 
+    # TODO: add regression test on real dataset
+
     @pytest.fixture(autouse=True)
     def _sample_sensor_data(self):
         """Create some sample data.
