@@ -7,7 +7,7 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
-from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate
+from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.dataset_helper import Dataset
 
 
@@ -92,10 +92,10 @@ class BarthDtw(BaseDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
+        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = None,
+        max_cost: Optional[float] = 2000,
         min_stride_time_s: Optional[float] = 0.6,
         min_match_length: Optional[float] = None,
     ):

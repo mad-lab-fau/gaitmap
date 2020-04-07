@@ -1,10 +1,11 @@
 import numpy as np
+import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-import pandas as pd
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
+from gaitmap.utils.coordinate_conversion import convert_to_fbf
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_stride_segmentation.test_base_dtw import (
     TestSimpleSegment,
@@ -24,6 +25,17 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         data = np.array([0, 1.0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
+
+
+class TestRegressionOnRealData:
+    def test_real_data_both_feed(self, healthy_example_imu_data):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        dtw = BarthDtw()  # Test with default paras
+        dtw.segment(data, sampling_rate_hz=204.8)
+
+        # For now only evaluate that the number of strides is correct
+        assert len(dtw.stride_list_["left_sensor"]) == 28
+        assert len(dtw.stride_list_["right_sensor"]) == 28
 
 
 class DtwTestBaseBarth:
