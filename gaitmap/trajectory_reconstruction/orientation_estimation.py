@@ -86,7 +86,7 @@ class GyroIntegration(BaseOrientationEstimation):
         if dataset_helper.is_multi_sensor_dataset(data):
             raise NotImplementedError("Multisensor input is not supported yet")
 
-        if not dataset_helper.is_single_sensor_dataset(data):
+        if not dataset_helper.is_single_sensor_dataset(data, frame="sensor"):
             raise ValueError("Provided data set is not supported by gaitmap")
 
         self.sampling_rate_hz = sampling_rate_hz
