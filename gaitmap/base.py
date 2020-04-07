@@ -3,6 +3,10 @@
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
+import pandas as pd
+
+from gaitmap.utils.dataset_helper import Dataset
+
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
@@ -142,3 +146,13 @@ class BaseAlgorithm:
         """
         attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
         return attrs
+
+
+class BaseEventDetection(BaseAlgorithm):
+    """Base class for all event detection algorithms."""
+
+    _action_method = "detect"
+
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
+        """Find gait events in data within strides provided by stride_list."""
+        raise NotImplementedError("Needs to be implemented by child class.")
