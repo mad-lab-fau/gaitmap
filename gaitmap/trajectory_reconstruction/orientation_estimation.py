@@ -91,4 +91,5 @@ class GyroIntegration(BaseOrientationEstimation):
         out = accumulate([self.initial_orientation, *single_step_rotations], operator.mul)
         out_as_rot = Rotation([o.as_quat() for o in out])
         self.estimated_orientations_ = out_as_rot
+        # TODO: Should the initial and/or the final orientation be included in the orientation array?
         return self
