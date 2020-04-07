@@ -1,8 +1,16 @@
 """Calculate temporal parameters algorithm."""
-import numpy as np
+from typing import Union, Dict
+
 import pandas as pd
 
 from gaitmap.base import BaseType, BaseTemporalParameterCalculation
+from gaitmap.utils.dataset_helper import (
+    StrideList,
+    MultiSensorStrideList,
+    SingleSensorStrideList,
+    is_single_sensor_stride_list,
+    is_multi_sensor_stride_list,
+)
 
 
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
@@ -14,29 +22,19 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             Gait events for each stride obtained from Rampp event detection.
     sampling_rate_hz
         The sampling rate of the data signal.
+
+    Attributes
+    ----------
     parameters_
         Data frame containing temporal parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
 
-    Attributes
-    ----------
-    stride_id_
-        Array of stride ids that will be needed further for combining other parameters
-    time_stamp_
-        Array of time stamps of each stride that could be useful for home monitoring
-    stride_time_
-        Array of stride time for each stride
-    swing_time_
-       Array of swing time for each stride
-    stance_time_
-        Array of stance time for each stride
-
     """
 
-    parameters_: dict  # Results are stored here
+    parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     @staticmethod
-    def _calculate_single_sensor(stride_event_list: pd.DataFrame, sampling_rate_hz: float) -> pd.DataFrame:
+    def _calculate_single_sensor(stride_event_list: SingleSensorStrideList, sampling_rate_hz: float) -> pd.DataFrame:
         """Find temporal parameters  of each stride in case of single sensor.
 
         Parameters
@@ -48,15 +46,10 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         Returns
         -------
-            parameters_
-                Data frame containing temporal parameters of single sensor
+        parameters_
+            Data frame containing temporal parameters of single sensor
 
         """
-        stride_id_ = np.ndarray
-        time_stamp_ = np.ndarray
-        stride_time_ = np.ndarray
-        swing_time_ = np.ndarray
-        stance_time_ = np.ndarray
         stride_id_ = stride_event_list["s_id"]
         time_stamp_ = _calc_time_stamp_(stride_event_list["ic"], sampling_rate_hz)
         stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
@@ -72,7 +65,9 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         parameters_ = pd.DataFrame(stride_parameter_dict)
         return parameters_
 
-    def _calculate_multiple_sensor(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> dict:
+    def _calculate_multiple_sensor(
+        self: BaseType, stride_event_list: MultiSensorStrideList, sampling_rate_hz: float
+    ) -> Dict[str, pd.DataFrame]:
         """Find temporal parameters of each stride in case of multiple sensors.
 
         Parameters
@@ -84,8 +79,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         Returns
         -------
-            parameters_
-                Dictionary of temporal parameters for each sensor
+        parameters_
+            Dictionary of temporal parameters for each sensor
 
         """
         parameters_ = {}
@@ -93,7 +88,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
         return parameters_
 
-    def calculate(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
+    def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of all strides after segmentation and detecting events for all sensors.
 
         Parameters
@@ -105,14 +100,16 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         Returns
         -------
-            self
-                The class instance with temporal parameters populated in parameters_
+        self
+            The class instance with temporal parameters populated in parameters_
 
         """
-        if isinstance(stride_event_list, pd.DataFrame):  # this means single sensor
+        if is_single_sensor_stride_list(stride_event_list, stride_type="min_vel"):  # this means single sensor
             self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
-        else:
+        elif is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel"):
             self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
+        else:
+            raise ValueError("Stride list datatype is not supported.")
         return self
 
 

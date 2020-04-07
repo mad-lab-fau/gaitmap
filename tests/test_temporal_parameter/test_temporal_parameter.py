@@ -7,21 +7,25 @@ import pandas as pd
 
 @pytest.fixture
 def single_stride_list():
-    stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic"])
+    stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0]
     stride_events_list["ic"] = [500.0]
     stride_events_list["tc"] = [400.0]
     stride_events_list["pre_ic"] = [300.0]
+    stride_events_list["start"] = [350]
+    stride_events_list["min_vel"] = stride_events_list["start"]
     return stride_events_list
 
 
 @pytest.fixture
 def multiple_stride_list():
-    stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic"])
+    stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0, 1, 2]
     stride_events_list["ic"] = [500.0, 700.0, 1000.0]
     stride_events_list["tc"] = [400.0, 600.0, 800.0]
     stride_events_list["pre_ic"] = [300.0, 500.0, 700.0]
+    stride_events_list["start"] = [350, 550, 750]
+    stride_events_list["min_vel"] = stride_events_list["start"]
     return stride_events_list
 
 
