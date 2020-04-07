@@ -60,6 +60,34 @@ Classes
    GyroIntegration
 
 
+:mod:`gaitmap.temporal_parameters`: Algorithm to calculate temporal parameters
+==============================================================================
+
+.. automodule:: gaitmap.temporal_parameters
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.temporal_parameters
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    TemporalParameterCalculation
+
+Functions
+---------
+.. currentmodule:: gaitmap.temporal_parameters
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    TemporalParameterCalculation.calculate
+
+
 :mod:`gaitmap.utils.rotations`: Helper to handle rotations
 ==========================================================
 
