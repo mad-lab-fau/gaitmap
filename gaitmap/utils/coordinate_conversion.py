@@ -9,11 +9,11 @@ from typing import Optional, List
 import pandas as pd
 
 from gaitmap.utils.consts import SF_COLS, BF_COLS
-from gaitmap.utils.dataset_helper import Dataset, is_multi_sensor_dataset
+from gaitmap.utils.dataset_helper import is_multi_sensor_dataset, SingleSensorDataset, MultiSensorDataset
 
 
-def convert_left_foot_to_bf(data: pd.DataFrame):
-    """Convert the axes from the sensor frame to the body frame for the left foot for one SingleSensorDataset.
+def convert_left_foot_to_fbf(data: SingleSensorDataset):
+    """Convert the axes from the left foot sensor frame to the foot body frame (FBF).
 
     Parameters
     ----------
@@ -22,11 +22,11 @@ def convert_left_foot_to_bf(data: pd.DataFrame):
 
     Returns
     -------
-        converted data frame
+    converted data frame
 
     See Also
     --------
-    gaitmap.utils.coordinate_conversion.convert_right_foot_foot: conversion of right foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
 
     """
     # Definition of the conversion of all axes for the left foot
@@ -49,8 +49,8 @@ def convert_left_foot_to_bf(data: pd.DataFrame):
     return result
 
 
-def convert_right_foot_to_bf(data: pd.DataFrame):
-    """Convert the axes from the sensor frame to the body frame for the right footfor one SingleSensorDataset.
+def convert_right_foot_to_fbf(data: SingleSensorDataset):
+    """Convert the axes from the right foot sensor frame to the foot body frame (FBF).
 
     Parameters
     ----------
@@ -59,11 +59,11 @@ def convert_right_foot_to_bf(data: pd.DataFrame):
 
     Returns
     -------
-        converted data frame
+    converted data frame
 
     See Also
     --------
-    gaitmap.utils.coordinate_conversion.convert_left_foot_foot: conversion of left foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
 
     """
     # Definition of the conversion of all axes for the right foot
@@ -86,7 +86,7 @@ def convert_right_foot_to_bf(data: pd.DataFrame):
     return result
 
 
-def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
+def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
     """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
     Parameters
@@ -100,9 +100,15 @@ def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Option
 
     Returns
     -------
-        converted MultiSensorDataset
+    converted MultiSensorDataset
+
+    See Also
+    --------
+    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
 
     """
+    # TODO: Support also single sensor Dataframe here?
     if not is_multi_sensor_dataset(data):
         raise TypeError("No MultiSensorDataset supplied.")
 
@@ -112,11 +118,11 @@ def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Option
     # Add results to a new dictionary with sensor names as keys
     if left is not None:
         for ls in left:
-            result[ls] = convert_left_foot_to_bf(data[ls])
+            result[ls] = convert_left_foot_to_fbf(data[ls])
 
     if right is not None:
         for rs in right:
-            result[rs] = convert_right_foot_to_bf(data[rs])
+            result[rs] = convert_right_foot_to_fbf(data[rs])
 
     if result:
         # If original data is not synchronized (dictionary), return as dictionary
