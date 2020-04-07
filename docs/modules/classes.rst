@@ -120,6 +120,25 @@ Functions
     is_multi_sensor_dataset
     get_multi_sensor_dataset_names
 
+:mod:`gaitmap.utils.coordinate_conversion`: Convert axes from sensor frame to body frame
+========================================================================================
+
+.. automodule:: gaitmap.utils.coordinate_conversion
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.utils.coordinate_conversion
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    convert_left_foot_to_fbf
+    convert_right_foot_to_fbf
+    convert_to_fbf
+
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================
 
