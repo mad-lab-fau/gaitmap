@@ -256,3 +256,17 @@ Functions
     utils.static_moment_detection.find_static_sequences
 
 
+:mod:`gaitmap.trajectory_reconstruction.position`: Algorithms to estimate IMU sensor position given the sensor data
+===================================================================================================================
+.. automodule:: gaitmap.trajectory_reconstruction.position
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.trajectory_reconstruction.position
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+   ForwardBackwardIntegration
