@@ -180,6 +180,7 @@ class RamppEventDetection(BaseEventDetection):
             fc_events.append(start + _detect_tc(gyr_ml_sec))
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
 
+        # TODO add validation / consistency check of the gait events
         return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
 
 
@@ -198,7 +199,6 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
 def _detect_ic(
     gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region_ms: Tuple[float, float],
 ) -> float:
-
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
 
