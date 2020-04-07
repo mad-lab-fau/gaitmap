@@ -129,6 +129,8 @@ class RamppEventDetection(BaseEventDetection):
         self.segmented_stride_list = segmented_stride_list
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+        if all(v == 0 for v in ic_search_region):
+            raise ValueError("The values chosen for ic_search_region_ms are too close to zero.")
         min_vel_search_win_size_ms = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
