@@ -210,3 +210,21 @@ Functions
 
     utils.static_moment_detection.find_static_samples
     utils.static_moment_detection.find_static_sequences
+
+:mod:`gaitmap.preprocessing.align_to_gravity`: Helper to align datasets to gravity
+==================================================================================
+
+.. automodule:: gaitmap.preprocessing.align_to_gravity
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    preprocessing.align_to_gravity.align_dataset
+

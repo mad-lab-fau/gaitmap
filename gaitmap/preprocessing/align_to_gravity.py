@@ -13,7 +13,7 @@ def align_dataset(
     metric: Optional[str] = "maximum",
     gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0]),
 ) -> pd.DataFrame:
-    """Align dataset to gravity, so that each sensor "Z-Axis" will be parallel to gravity.
+    """Align dataset to gravity, so that each sensor z-axis will be parallel to gravity.
 
     Mean accelerometer vector will be extracted form static windows which will be classified by a sliding window
     with (window_length -1) overlap and a thresholding of the gyro signal norm. This will be performed for each sensor
@@ -21,7 +21,7 @@ def align_dataset(
 
     Parameters
     ----------
-    dataset
+    dataset : pd.DataFrame
         dataframe representing a single or multiple sensors.
         In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
         and the second level the axis names (all sensor frame axis must be present)
@@ -73,7 +73,7 @@ def align_dataset(
 
     # build dict with static acc vectors for each sensor in dataset
     acc_vector = {
-        name: get_static_acc_vector(dataset[name], window_length, static_signal_th, metric)
+        name: _get_static_acc_vector(dataset[name], window_length, static_signal_th, metric)
         for name in dataset.columns.levels[0]
     }
 
@@ -83,52 +83,10 @@ def align_dataset(
     return rotations.rotate_dataset(dataset, rotation)
 
 
-def get_static_acc_vector(
+def _get_static_acc_vector(
     data: pd.DataFrame, window_length: int, static_signal_th: float, metric: str = "maximum"
 ) -> np.ndarray:
-    """Extract the mean accelerometer vector describing the static position of the sensor.
-
-    Mean accelerometer vector will be extracted form static windows which will be classified by a sliding window
-    with window_length -1 overlap and a thresholding of the gyro signal norm.
-
-    Parameters
-    ----------
-    data
-        dataframe representing a single sensors.
-
-    window_length : int
-        Length of desired window in units of samples.
-
-    static_signal_th : float
-       Threshold to decide whether a window should be considered as static or active. Window will be classified on
-       <= threshold on gyro norm
-
-    metric : str, optional
-        Metric which will be calculated per window, one of the following strings
-
-        'maximum' (default)
-            Calculates maximum value per window
-        'mean'
-            Calculates mean value per window
-        'median'
-            Calculates median value per window
-        'variance'
-            Calculates variance value per window
-
-    Returns
-    -------
-    mean static accelerometer vector with shape (3,), axis ([x, y ,z])
-
-    Examples
-    --------
-    >>> tbd
-
-    See Also
-    --------
-    gaitmap.utils.static_moment_detection.find_static_sequences: Details on the used static moment detection function
-    for this method.
-
-    """
+    """Extract the mean accelerometer vector describing the static position of the sensor."""
     # find static windows within the gyro data
     static_windows = find_static_sequences(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
 
@@ -154,7 +112,7 @@ def _align_sensor(
 ) -> pd.DataFrame:
     """Align the data of a single sensor dataframe with acc and gyro to gravity."""
     # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
-    acc_vector = get_static_acc_vector(data, window_length, static_signal_th, metric)
+    acc_vector = _get_static_acc_vector(data, window_length, static_signal_th, metric)
 
     # get rotation to gravity
     r = rotations.get_gravity_rotation(acc_vector, gravity)
