@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 from gaitmap.base import BaseOrientationEstimation
 from gaitmap.utils import dataset_helper
 from gaitmap.utils.consts import SF_GYR
+from gaitmap.utils.dataset_helper import SingleSensorDataset
 
 
 class GyroIntegration(BaseOrientationEstimation):
@@ -36,17 +37,18 @@ class GyroIntegration(BaseOrientationEstimation):
     >>> gyr_integrator = GyroIntegration(Rotation([0, 0, 1, 0]))
 
     """
-
-    data: pd.DataFrame
-    estimated_orientations_: list
-    sampling_rate_hz: float
     initial_orientation: Rotation
+
+    estimated_orientations_: Rotation
+
+    data: SingleSensorDataset
+    sampling_rate_hz: float
 
     def __init__(self, initial_orientation: Rotation):
         self.initial_orientation = initial_orientation
 
-    def estimate(self, data: pd.DataFrame, sampling_rate_hz: float):
-        """Use the initial rotation and the gyroscope signal to estimate rotations of second until last sample.
+    def estimate(self, data: SingleSensorDataset, sampling_rate_hz: float):
+        """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
         ----------
@@ -57,12 +59,13 @@ class GyroIntegration(BaseOrientationEstimation):
 
         Notes
         -----
-        This function makes use of :func:`scipy.spatial.transform.Rotation.from_rotvec`, which updates a quaternion
-        by using norm of gyroscopic data as amplitude of rotation and the normalized vector of gyroscopic data for
-        axis of rotation.
+        This function makes use of `from_rotvec` of :func:`~scipy.spatial.transform.Rotation`, to turn the gyro signal
+        of each sample into a differential quaternion.
+        This means that the rotation between two samples is assumed to be constant around one axis.
 
         Examples
         --------
+        >>> gyr_integrator = GyroIntegration()
         >>> gyr_integrator.estimate(data, 204.8)
         >>> orientations = gyr_integrator.estimated_orientations_
         >>> orientations[-1].as_quat()

@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 
 import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset
+from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -163,9 +163,9 @@ class BaseEventDetection(BaseAlgorithm):
 class BaseOrientationEstimation(BaseAlgorithm):
     """Base class for all algorithms that estimate an orientation from measured sensor signals."""
 
-    estimated_orientations: Rotation
+    estimated_orientations_: Rotation
 
-    def estimate(self, data, sampling_rate_hz):
+    def estimate(self, data: SingleSensorDataset, sampling_rate_hz: float):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
