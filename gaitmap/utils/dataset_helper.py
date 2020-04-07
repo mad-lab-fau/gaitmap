@@ -1,6 +1,7 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
 from typing import Union, Dict, List, Sequence
 
+import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
@@ -9,6 +10,10 @@ from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
 Dataset = Union[SingleSensorDataset, MultiSensorDataset]
+
+SingleSensorStridelist = pd.DataFrame
+MultiSensorStridelist = Dict[str, pd.DataFrame]
+StrideList = Union[SingleSensorDataset, MultiSensorStridelist]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
@@ -154,6 +159,61 @@ def is_multi_sensor_dataset(
 
     for k in keys:
         if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
+            return False
+    return True
+
+
+def is_single_sensor_stride_list(
+    stride_list: SingleSensorStridelist, stride_type: Literal["any", "min_vel"] = "any"
+) -> bool:
+    if not isinstance(stride_list, pd.DataFrame):
+        return False
+
+    columns = stride_list.columns
+
+    if isinstance(columns, pd.MultiIndex):
+        return False
+
+    # Check minimal columns exist
+    minimal_columns = ["s_id", "start", "end", "gsd_id"]
+    if not all(v in columns for v in minimal_columns):
+        return False
+
+    if stride_type == "any":
+        return True
+
+    # Depending of the stridetype check additional conditions
+    additional_columns = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
+    start_event = {"min_vel": "min_vel"}
+
+    if stride_type not in additional_columns:
+        raise ValueError('The argument `stride_type` must be one of ["any", "min_vel"]')
+
+    if not all(v in columns for v in additional_columns[stride_type]):
+        return False
+
+    # Check that the start time corresponds to the correct event
+    if len(stride_list) == 0:
+        return True
+    if not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy()):
+        return False
+    return True
+
+
+def is_multi_sensor_stride_list(
+    stride_list: MultiSensorStridelist, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
+) -> bool:
+
+    if not isinstance(stride_list, dict):
+        return False
+
+    keys = stride_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_stride_list(stride_list[k], stride_type=stride_type):
             return False
     return True
 
