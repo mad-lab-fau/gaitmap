@@ -243,3 +243,16 @@ def _detect_ic(
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
+
+
+def _find_sequences_in_stride_list(stride_list: pd.DataFrame) -> list:
+    tmp = stride_list["start"].iloc[1:].to_numpy() - stride_list["end"].iloc[:-1].to_numpy()
+    breaks = np.where(tmp != 0)[0]
+    breaks = np.append(breaks, stride_list.shape[0] - 1)
+    sequences = []
+    start = 0
+    for b in breaks:
+        sequences.append([start, b])
+        start = b + 1
+
+    return sequences
