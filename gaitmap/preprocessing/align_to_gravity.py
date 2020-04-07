@@ -4,6 +4,7 @@ import pandas as pd
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.static_moment_detection import find_static_sequences
 from gaitmap.utils import rotations
+import gaitmap.utils.dataset_helper as dataset_helper
 
 
 def align_dataset(
@@ -47,7 +48,9 @@ def align_dataset(
 
     gravity : np.ndarray, optional
         vector with shape (3,), axis ([x, y ,z])
-        Expected measured signal on accelerometer if only gravity would be present.
+        Expected measured signal on accelerometer if only gravity would be present. For sensor z-axis pointing in
+        opposite direction as the gravitation force (here e.g. z-axis pointing upwards while gravitational force is
+        pointing downwards.
 
     Returns
     -------
@@ -68,8 +71,12 @@ def align_dataset(
         for this method.
 
     """
-    multi_index = dataset.columns.nlevels > 1
-    if not multi_index:
+    if not (dataset_helper.is_single_sensor_dataset(dataset) or dataset_helper.is_multi_sensor_dataset(dataset)):
+        raise ValueError(
+            "Invalid dataset type!"
+        )
+
+    if dataset_helper.is_single_sensor_dataset(dataset):
         return _align_sensor(dataset, window_length, static_signal_th, metric, gravity)
 
     # build dict with static acc vectors for each sensor in dataset
