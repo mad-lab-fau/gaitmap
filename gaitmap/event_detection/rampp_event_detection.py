@@ -23,7 +23,11 @@ class RamppEventDetection(BaseEventDetection):
     Parameters
     ----------
     ic_search_region_ms
-        The region to look for the initial in the acc_pa signal given a ic candidate in ms
+        The region to look for the initial contact in the acc_pa signal in ms given an ic candidate. According to [1]_,
+        for the ic the algorithm first looks for a local minimum in the gyr_ml signal after the swing phase. The actual
+        ic is then determined in the acc_pa signal in the ic_search_region_ms around that gyr_ml minimum.
+        ic_search_region_ms[0] describes the start and ic_search_region_ms[1] the end of the region to check around the
+        gyr_ml minimum.
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms
 
@@ -188,7 +192,9 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size_ms: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
     if min_vel_search_win_size_ms >= len(energy):
         raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
-    energy = sliding_window_view(energy, window_length=min_vel_search_win_size_ms, overlap=min_vel_search_win_size_ms - 1)
+    energy = sliding_window_view(
+        energy, window_length=min_vel_search_win_size_ms, overlap=min_vel_search_win_size_ms - 1
+    )
     # find window with lowest summed energy
     min_vel_start = np.argmin(np.sum(energy, axis=1))
     # min_vel event = middle of this window
