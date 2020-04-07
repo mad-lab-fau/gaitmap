@@ -134,17 +134,39 @@ class RamppEventDetection(BaseEventDetection):
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
-        s_id, self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
-        )
+        sequences = _find_sequences_in_stride_list(self.segmented_stride_list)
 
-        s_id = s_id[:-1]  # ignore the last s_id as the last segmented stride is not preserved by rampp
-        self.start_ = self.min_vel_[:-1]
-        self.end_ = self.min_vel_[1:]
-        self.min_vel_ = self.min_vel_[:-1]
-        self.pre_ic_ = self.ic_[:-1]
-        self.ic_ = self.ic_[1:]
-        self.tc_ = self.tc_[1:]
+        s_id = []
+        self.start_ = []
+        self.end_ = []
+        self.min_vel_ = []
+        self.pre_ic_ = []
+        self.ic_ = []
+        self.tc_ = []
+        self.min_vel_ = []
+
+        for s in sequences:
+            sequence_stride_list = self.segmented_stride_list.iloc[s[0] : s[1] + 1]
+            s_id_seq, ic, tc, min_vel = self._find_all_events_in_sequence(
+                gyr, acc, sequence_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
+            )
+            s_id.append(s_id_seq[:-1])  # ignore the last s_id as the last segmented stride is not preserved by rampp
+            self.start_.append(min_vel[:-1])
+            self.end_.append(min_vel[1:])
+            self.ic_.append(ic[1:])
+            self.tc_.append(tc[1:])
+            self.min_vel_.append(min_vel[:-1])
+            self.pre_ic_.append(ic[:-1])
+
+        # flatten the list of arrays
+        s_id = np.concatenate(s_id).ravel()
+        self.start_ = np.concatenate(self.start_).ravel()
+        self.end_ = np.concatenate(self.end_).ravel()
+        self.ic_ = np.concatenate(self.ic_).ravel()
+        self.tc_ = np.concatenate(self.tc_).ravel()
+        self.min_vel_ = np.concatenate(self.min_vel_).ravel()
+        self.pre_ic_ = np.concatenate(self.pre_ic_).ravel()
+
         stride_event_dict = {
             "s_id": s_id,
             "start": self.start_,
@@ -158,8 +180,10 @@ class RamppEventDetection(BaseEventDetection):
 
         return self
 
+    def _detect_in_sequences(self):
+
     @staticmethod
-    def _find_all_events(
+    def _find_all_events_in_sequence(
         gyr: pd.DataFrame,
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
