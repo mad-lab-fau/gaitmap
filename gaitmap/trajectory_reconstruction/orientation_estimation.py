@@ -1,5 +1,7 @@
 """Estimation of orientations by gyroscope integration."""
-import pandas as pd
+import operator
+from itertools import accumulate
+
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation
@@ -37,6 +39,7 @@ class GyroIntegration(BaseOrientationEstimation):
     >>> gyr_integrator = GyroIntegration(Rotation([0, 0, 1, 0]))
 
     """
+
     initial_orientation: Rotation
 
     estimated_orientations_: Rotation
@@ -82,10 +85,10 @@ class GyroIntegration(BaseOrientationEstimation):
             raise ValueError("Provided data set is not supported by gaitmap")
 
         self.sampling_rate_hz = sampling_rate_hz
-        self.estimated_orientations_ = []
-        self.estimated_orientations_.append(self.initial_orientation)
-        for i_sample in range(1, len(data) + 1):
-            previous_quat = self.estimated_orientations_[i_sample - 1]
-            update_quat = Rotation.from_rotvec(data[SF_GYR].iloc[i_sample - 1] / self.sampling_rate_hz)
-            self.estimated_orientations_.append(previous_quat * update_quat)
+        gyro_data = data[SF_GYR].to_numpy()
+        single_step_rotations = Rotation.from_rotvec(gyro_data / sampling_rate_hz)
+        # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
+        out = accumulate([self.initial_orientation, *single_step_rotations], operator.mul)
+        out_as_rot = Rotation([o.as_quat() for o in out])
+        self.estimated_orientations_ = out_as_rot
         return self
