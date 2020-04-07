@@ -134,56 +134,46 @@ class RamppEventDetection(BaseEventDetection):
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
-        sequences = _find_sequences_in_stride_list(self.segmented_stride_list)
+        s_id, ic, tc, min_vel = self._find_all_events(
+            gyr, acc, self.segmented_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
+        )
 
-        s_id = []
-        self.start_ = []
-        self.end_ = []
-        self.min_vel_ = []
-        self.pre_ic_ = []
-        self.ic_ = []
-        self.tc_ = []
-        self.min_vel_ = []
-
-        for s in sequences:
-            sequence_stride_list = self.segmented_stride_list.iloc[s[0] : s[1] + 1]
-            s_id_seq, ic, tc, min_vel = self._find_all_events_in_sequence(
-                gyr, acc, sequence_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
-            )
-            s_id.append(s_id_seq[:-1])  # ignore the last s_id as the last segmented stride is not preserved by rampp
-            self.start_.append(min_vel[:-1])
-            self.end_.append(min_vel[1:])
-            self.ic_.append(ic[1:])
-            self.tc_.append(tc[1:])
-            self.min_vel_.append(min_vel[:-1])
-            self.pre_ic_.append(ic[:-1])
-
-        # flatten the list of arrays
-        s_id = np.concatenate(s_id).ravel()
-        self.start_ = np.concatenate(self.start_).ravel()
-        self.end_ = np.concatenate(self.end_).ravel()
-        self.ic_ = np.concatenate(self.ic_).ravel()
-        self.tc_ = np.concatenate(self.tc_).ravel()
-        self.min_vel_ = np.concatenate(self.min_vel_).ravel()
-        self.pre_ic_ = np.concatenate(self.pre_ic_).ravel()
-
+        s_id = s_id[:-1]  # ignore the last s_id as the last segmented stride is not preserved by rampp
+        start = min_vel[:-1]
+        end = min_vel[1:]
+        min_vel = min_vel[:-1]
+        pre_ic = ic[:-1]
+        ic = ic[1:]
+        tc = tc[1:]
         stride_event_dict = {
             "s_id": s_id,
-            "start": self.start_,
-            "end": self.end_,
-            "ic": self.ic_,
-            "tc": self.tc_,
-            "min_vel": self.min_vel_,
-            "pre_ic": self.pre_ic_,
+            "seg_start": self.segmented_stride_list["start"].iloc[:-1],
+            "seg_end": self.segmented_stride_list["end"].iloc[:-1],
+            "start": start,
+            "end": end,
+            "ic": ic,
+            "tc": tc,
+            "min_vel": min_vel,
+            "pre_ic": pre_ic,
         }
-        self.stride_events_ = pd.DataFrame(stride_event_dict)
+
+        # find breaks in segmented strides and drop first strides of new sequences
+        stride_list_breaks = _find_breaks_in_stride_list(self.segmented_stride_list)
+        stride_event_df = pd.DataFrame(stride_event_dict)
+        stride_event_df = stride_event_df.drop(stride_event_df.index[stride_list_breaks])
+
+        self.stride_events_ = stride_event_df.drop(["seg_start", "seg_end"], axis=1)
+        self.start_ = self.stride_events_["start"]
+        self.end_ = self.stride_events_["end"]
+        self.min_vel_ = self.stride_events_["min_vel"]
+        self.pre_ic_ = self.stride_events_["pre_ic"]
+        self.ic_ = self.stride_events_["ic"]
+        self.tc_ = self.stride_events_["tc"]
 
         return self
 
-    def _detect_in_sequences(self):
-
     @staticmethod
-    def _find_all_events_in_sequence(
+    def _find_all_events(
         gyr: pd.DataFrame,
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
@@ -269,14 +259,7 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
 
 
-def _find_sequences_in_stride_list(stride_list: pd.DataFrame) -> list:
+def _find_breaks_in_stride_list(stride_list: pd.DataFrame) -> list:
     tmp = stride_list["start"].iloc[1:].to_numpy() - stride_list["end"].iloc[:-1].to_numpy()
-    breaks = np.where(tmp != 0)[0]
-    breaks = np.append(breaks, stride_list.shape[0] - 1)
-    sequences = []
-    start = 0
-    for b in breaks:
-        sequences.append([start, b])
-        start = b + 1
-
-    return sequences
+    breaks = np.where(tmp != 0)[0] + 1
+    return list(breaks)
