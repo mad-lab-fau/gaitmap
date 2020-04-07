@@ -17,7 +17,7 @@ class RamppEventDetection(BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
-    features in the signals.
+    features in the signals as described in Rampp et al. (2014) [1]_.
     For more details refer to the `Notes` section.
 
     Parameters
@@ -58,7 +58,7 @@ class RamppEventDetection(BaseEventDetection):
     -----
     TODO: Add additional details about the algorithm for event detection
 
-    [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
+    ..[1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
     sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on biomedical
     engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
 
