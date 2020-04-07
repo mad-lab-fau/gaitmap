@@ -8,6 +8,7 @@ from gaitmap.utils import rotations
 from gaitmap.utils.dataset_helper import (
     is_single_sensor_dataset,
     is_multi_sensor_dataset,
+    get_multi_sensor_dataset_names,
     Dataset,
 )
 
@@ -21,7 +22,7 @@ def align_dataset(
 ) -> Dataset:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
 
-    Mean accelerometer vector will be extracted form static windows which will be classified by a sliding window
+    Median accelerometer vector will be extracted form static windows which will be classified by a sliding window
     with (window_length -1) overlap and a thresholding of the gyro signal norm. This will be performed for each sensor
     in the dataset individually.
 
@@ -80,23 +81,21 @@ def align_dataset(
         raise ValueError("Invalid dataset type!")
 
     if is_single_sensor_dataset(dataset):
-        return _align_sensor(dataset, window_length, static_signal_th, metric, gravity)
-
-    # TODO: Maybe refactor to be able to handle both types of input the same
-    if isinstance(dataset, dict):
-        aligned_dataset = {**dataset}
-        for key in aligned_dataset.keys():
-            aligned_dataset[key] = _align_sensor(dataset[key], window_length, static_signal_th, metric, gravity)
-        return aligned_dataset
-
-    # build dict with static acc vectors for each sensor in dataset
-    acc_vector = {
-        name: _get_static_acc_vector(dataset[name], window_length, static_signal_th, metric)
-        for name in dataset.columns.levels[0]
-    }
-
-    # build rotation dict for each dataset from acc dict and gravity
-    rotation = {name: rotations.get_gravity_rotation(acc_vector[name], gravity) for name in dataset.columns.levels[0]}
+        # get static acc vector
+        acc_vector = _get_static_acc_vector(dataset, window_length, static_signal_th, metric)
+        # get rotation to gravity
+        rotation = rotations.get_gravity_rotation(acc_vector, gravity)
+    else:
+        # build dict with static acc vectors for each sensor in dataset
+        acc_vector = {
+            name: _get_static_acc_vector(dataset[name], window_length, static_signal_th, metric)
+            for name in get_multi_sensor_dataset_names(dataset)
+        }
+        # build rotation dict for each dataset from acc dict and gravity
+        rotation = {
+            name: rotations.get_gravity_rotation(acc_vector[name], gravity)
+            for name in get_multi_sensor_dataset_names(dataset)
+        }
 
     return rotations.rotate_dataset(dataset, rotation)
 
@@ -119,22 +118,4 @@ def _get_static_acc_vector(
     static_indices = np.concatenate([np.arange(start, end + 1) for start, end in static_windows])
 
     # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
-    return np.mean(data[SF_ACC].to_numpy()[static_indices], axis=0)
-
-
-def _align_sensor(
-    data: pd.DataFrame,
-    window_length: int,
-    static_signal_th: float,
-    metric: Optional[str] = "maximum",
-    gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0]),
-) -> pd.DataFrame:
-    """Align the data of a single sensor dataframe with acc and gyro to gravity."""
-    # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
-    acc_vector = _get_static_acc_vector(data, window_length, static_signal_th, metric)
-
-    # get rotation to gravity
-    r = rotations.get_gravity_rotation(acc_vector, gravity)
-
-    # apply rotation to data
-    return rotations.rotate_dataset(data, r)
+    return np.median(data[SF_ACC].to_numpy()[static_indices], axis=0)
