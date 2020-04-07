@@ -176,7 +176,7 @@ class RamppEventDetection(BaseEventDetection):
         min_vel_events = []
         for _, stride in stride_list.iterrows():
             start = stride["start"]
-            end = stride["stop"]
+            end = stride["end"]
             gyr_sec = gyr[start:end]
             gyr_ml_sec = gyr_ml[start:end]
             acc_sec = acc_pa[start:end]
