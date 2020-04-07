@@ -22,7 +22,7 @@ class RamppEventDetection(BaseEventDetection):
 
     Parameters
     ----------
-    ic_search_region
+    ic_search_region_ms
         The region to look for the initial in the acc_pa signal given a ic candidate in ms
     min_vel_search_wind_size
         The size of the sliding window for finding the minimum gyroscope energy in ms
@@ -64,7 +64,7 @@ class RamppEventDetection(BaseEventDetection):
 
     """
 
-    ic_search_region: Tuple[float, float]
+    ic_search_region_ms: Tuple[float, float]
     min_vel_search_wind_size: float
     start_: Optional[np.ndarray]
     end_: Optional[np.ndarray]
@@ -78,8 +78,8 @@ class RamppEventDetection(BaseEventDetection):
     sampling_rate_hz: float
     segmented_stride_list: pd.DataFrame
 
-    def __init__(self, ic_search_region: Tuple[float, float] = (80, 50), min_vel_search_wind_size: float = 100):
-        self.ic_search_region = ic_search_region
+    def __init__(self, ic_search_region_ms: Tuple[float, float] = (80, 50), min_vel_search_wind_size: float = 100):
+        self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_wind_size = min_vel_search_wind_size
 
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
@@ -123,14 +123,14 @@ class RamppEventDetection(BaseEventDetection):
         self.sampling_rate_hz = sampling_rate_hz
         self.segmented_stride_list = segmented_stride_list
 
-        ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region)
+        ic_search_region_ms = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         min_vel_search_wind_size = int(self.min_vel_search_wind_size / 1000 * self.sampling_rate_hz)
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_wind_size
+            gyr, acc, self.segmented_stride_list, ic_search_region_ms, min_vel_search_wind_size
         )
 
         # output will have one stride less than segmented stride list
@@ -160,7 +160,7 @@ class RamppEventDetection(BaseEventDetection):
         gyr: pd.DataFrame,
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
-        ic_search_region: Tuple[float, float],
+        ic_search_region_ms: Tuple[float, float],
         min_vel_search_wind_size: float,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
@@ -176,7 +176,7 @@ class RamppEventDetection(BaseEventDetection):
             gyr_ml_sec = gyr_ml[start:end]
             acc_sec = acc_pa[start:end]
             gyr_grad = np.gradient(gyr_ml_sec)
-            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
+            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region_ms))
             fc_events.append(start + _detect_tc(gyr_ml_sec))
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_wind_size))
 
@@ -196,7 +196,7 @@ def _detect_min_vel(gyr: np.ndarray, window_size: int) -> float:
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float],
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region_ms: Tuple[float, float],
 ) -> float:
 
     # Determine rough search region
@@ -223,8 +223,8 @@ def _detect_ic(
     )
 
     # Acc search window
-    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
-    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
+    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region_ms[0]])))
+    acc_search_region_stop = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region_ms[1]])))
 
     return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_stop])
 
