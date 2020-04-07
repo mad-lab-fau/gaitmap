@@ -42,3 +42,5 @@ pylint:
     - abstract-method
     - invalid-unary-operand-type
     - too-many-locals # ignore the use of more than 15 local variables
+    - invalid-unary-operand-type
+

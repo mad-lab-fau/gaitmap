@@ -3,9 +3,11 @@
 import inspect
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
+from scipy.spatial.transform import Rotation
+
 import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset
+from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -156,3 +158,25 @@ class BaseEventDetection(BaseAlgorithm):
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
         """Find gait events in data within strides provided by stride_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseOrientationEstimation(BaseAlgorithm):
+    """Base class for all algorithms that estimate an orientation from measured sensor signals."""
+
+    estimated_orientations_: Rotation
+
+    def estimate(self, data: SingleSensorDataset, sampling_rate_hz: float):
+        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            Contains at least gyroscope data, optionally also acceleration data of one or several sensors.
+        sampling_rate_hz : float
+            Data with which gyroscope data was sampled in Hz.
+
+        """
+        raise NotImplementedError()
+
+    # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
+    # integration)
