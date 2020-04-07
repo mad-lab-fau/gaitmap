@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from gaitmap.utils.consts import SF_GYR, SF_ACC, SF_COLS
+from gaitmap.utils.consts import SF_ACC, SF_COLS
 from numpy.testing import assert_almost_equal
 
 import gaitmap.utils.rotations as rotations
 from gaitmap.preprocessing.align_to_gravity import align_dataset
+
+from gaitmap.utils.dataset_helper import MultiSensorDataset
 
 
 class TestAlignToGravity:
@@ -13,19 +15,24 @@ class TestAlignToGravity:
 
     # TODO: add regression test on real dataset
 
-    @pytest.fixture(autouse=True)
-    def _sample_sensor_data(self):
+    sample_sensor_data: pd.DataFrame
+    sample_sensor_dataset: MultiSensorDataset
+
+    @pytest.fixture(autouse=True, params=("dict", "frame"))
+    def _sample_sensor_data(self, request):
         """Create some sample data.
 
         This data is recreated before each test (using pytest.fixture).
         """
         acc = [0.0, 0.0, 1.0]
-        gyr = [0.13, 0.11, 0.12]
+        gyr = [0.11, 0.12, 0.13]
         all_data = np.repeat(np.array([*acc, *gyr])[None, :], 5, axis=0)
         self.sample_sensor_data = pd.DataFrame(all_data, columns=SF_COLS)
-        self.sample_sensor_dataset = pd.concat(
-            [self.sample_sensor_data, self.sample_sensor_data], keys=["s1", "s2"], axis=1
-        )
+        dataset = {"s1": self.sample_sensor_data, "s2": self.sample_sensor_data}
+        if request.param == "dict":
+            self.sample_sensor_dataset = dataset
+        elif request.param == "frame":
+            self.sample_sensor_dataset = pd.concat(dataset, axis=1)
 
     def test_no_static_moments_in_dataset(self):
         """Test if value error is raised correctly if no static window can be found on dataset with given user

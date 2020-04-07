@@ -4,16 +4,21 @@ import pandas as pd
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.static_moment_detection import find_static_sequences
 from gaitmap.utils import rotations
-import gaitmap.utils.dataset_helper as dataset_helper
+
+from gaitmap.utils.dataset_helper import (
+    is_single_sensor_dataset,
+    is_multi_sensor_dataset,
+    Dataset,
+)
 
 
 def align_dataset(
-    dataset: pd.DataFrame,
+    dataset: Dataset,
     window_length: int,
     static_signal_th: float,
     metric: Optional[str] = "maximum",
     gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0]),
-) -> pd.DataFrame:
+) -> Dataset:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
 
     Mean accelerometer vector will be extracted form static windows which will be classified by a sliding window
@@ -22,7 +27,7 @@ def align_dataset(
 
     Parameters
     ----------
-    dataset : pd.DataFrame
+    dataset : gaitmap.utils.dataset_helper.Dataset
         dataframe representing a single or multiple sensors.
         In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
         and the second level the axis names (all sensor frame axis must be present)
@@ -71,13 +76,18 @@ def align_dataset(
         for this method.
 
     """
-    if not (dataset_helper.is_single_sensor_dataset(dataset) or dataset_helper.is_multi_sensor_dataset(dataset)):
-        raise ValueError(
-            "Invalid dataset type!"
-        )
+    if not (is_single_sensor_dataset(dataset) or is_multi_sensor_dataset(dataset)):
+        raise ValueError("Invalid dataset type!")
 
-    if dataset_helper.is_single_sensor_dataset(dataset):
+    if is_single_sensor_dataset(dataset):
         return _align_sensor(dataset, window_length, static_signal_th, metric, gravity)
+
+    # TODO: Maybe refactor to be able to handle both types of input the same
+    if isinstance(dataset, dict):
+        aligned_dataset = {**dataset}
+        for key in aligned_dataset.keys():
+            aligned_dataset[key] = _align_sensor(dataset[key], window_length, static_signal_th, metric, gravity)
+        return aligned_dataset
 
     # build dict with static acc vectors for each sensor in dataset
     acc_vector = {
