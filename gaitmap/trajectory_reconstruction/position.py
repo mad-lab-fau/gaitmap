@@ -48,21 +48,22 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         if not dataset_helper.is_single_sensor_dataset(data):
             raise ValueError("Provided data set is not supported by gaitmap")
 
-        # TODO: is this way of using vel_axis_names OK?
-        self.velocity_ = pd.DataFrame(index=ForwardBackwardIntegration.vel_axis_names)
+        # TODO: is this way of using vel_axis_names OK or should it be ForwardBackwardIntegration.vel...?
+        self.position_ = pd.DataFrame(columns=self.pos_axis_names, index=data.index)
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO: make it possible to set initial value of integral from outside?
-        integral_forward = integrate.cumtrapz(data[SF_ACC], axis=0, initial=0) / self.sampling_rate_hz
-        integral_backward = integrate.cumtrapz(np.flipud(data[SF_ACC]), axis=0, initial=0) / self.sampling_rate_hz
-        weights_vel = self._get_weight_matrix(data[SF_ACC])
-
-        self.velocity_ = pd.DataFrame(
-            integral_forward * weights_vel + integral_backward * (1 - weights_vel),
-            columns=ForwardBackwardIntegration.vel_axis_names,
-            index=data.index,
+        self.velocity_ = self._forward_backward_integration(data, SF_ACC)
+        self.velocity_.columns = self.vel_axis_names
+        self.position_[self.pos_axis_names[2]] = self._forward_backward_integration(
+            self.velocity_, self.vel_axis_names[2]
         )
-
+        self.position_[self.pos_axis_names[1]] = (
+            integrate.cumtrapz(self.velocity_[self.vel_axis_names[1]], axis=0, initial=0) / self.sampling_rate_hz
+        )
+        self.position_[self.pos_axis_names[0]] = (
+            integrate.cumtrapz(self.velocity_[self.vel_axis_names[1]], axis=0, initial=0) / self.sampling_rate_hz
+        )
+        self.position_.columns = self.pos_axis_names
         # TODO: implement integration of velocity to obtain position
         return self
 
@@ -75,3 +76,14 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         weights = (s - s[0]) / (s[-1] - s[0])
 
         return np.tile(weights, n_axes).reshape(n_samples, n_axes)
+
+    def _forward_backward_integration(self, data, channels):
+        # TODO: make it possible to set initial value of integral from outside?
+        integral_forward = integrate.cumtrapz(data[channels], axis=0, initial=0) / self.sampling_rate_hz
+        integral_backward = integrate.cumtrapz(np.flipud(data[channels]), axis=0, initial=0) / self.sampling_rate_hz
+        weights_vel = self._get_weight_matrix(pd.DataFrame(data[channels]))
+
+        return pd.DataFrame(
+            integral_forward * weights_vel + integral_backward * (1 - weights_vel),
+            index=data.index,
+        )
