@@ -204,28 +204,24 @@ def is_single_sensor_stride_list(
     if isinstance(columns, pd.MultiIndex):
         return False
 
-    # Check minimal columns exist
-    minimal_columns = ["s_id", "start", "end", "gsd_id"]
-    if not all(v in columns for v in minimal_columns):
-        return False
-
-    if stride_type == "any":
-        return True
-
     # Depending of the stridetype check additional conditions
     additional_columns = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
     start_event = {"min_vel": "min_vel"}
 
-    if stride_type not in additional_columns:
+    # Check columns exist
+    if stride_type != "any" and stride_type not in additional_columns:
         raise ValueError('The argument `stride_type` must be one of ["any", "min_vel"]')
-
-    if not all(v in columns for v in additional_columns[stride_type]):
+    minimal_columns = ["s_id", "start", "end", "gsd_id"]
+    all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
+    if not all(v in columns for v in all_columns):
         return False
 
     # Check that the start time corresponds to the correct event
-    if len(stride_list) == 0:
-        return True
-    if not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy()):
+    if (
+        start_event.get(stride_type, False)
+        and len(stride_list) > 0
+        and not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy())
+    ):
         return False
     return True
 
