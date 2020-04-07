@@ -131,12 +131,8 @@ def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, r
             raise KeyError("data contains no key " + rs)
         result[rs] = convert_right_foot_to_fbf(data[rs])
 
-    if result:
-        # If original data is not synchronized (dictionary), return as dictionary
-        if isinstance(data, dict):
-            return result
-        # For synchronized sensors, return as MultiIndex dataframe
-        if result:
-            return pd.concat(result, axis=1)
-
-    return None
+    # If original data is not synchronized (dictionary), return as dictionary
+    if isinstance(data, dict):
+        return result
+    # For synchronized sensors, return as MultiIndex dataframe
+    return pd.concat(result, axis=1)
