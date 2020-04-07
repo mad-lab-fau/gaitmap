@@ -1,5 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
 from numpy.linalg import norm
@@ -70,15 +70,16 @@ class RamppEventDetection(BaseEventDetection):
 
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
-    start_: Optional[np.ndarray]
-    end_: Optional[np.ndarray]
-    tc_: Optional[np.ndarray]
-    min_vel_: Optional[np.ndarray]
-    ic_: Optional[np.ndarray]
-    pre_ic_: Optional[np.ndarray]
-    stride_events_: pd.DataFrame
 
-    data: pd.DataFrame
+    start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    tc_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    min_vel_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    pre_ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    stride_events_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+
+    data: Dataset
     sampling_rate_hz: float
     segmented_stride_list: pd.DataFrame
 
@@ -165,7 +166,7 @@ class RamppEventDetection(BaseEventDetection):
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
         ic_search_region_ms: Tuple[float, float],
-        min_vel_search_win_size_ms: float,
+        min_vel_search_win_size_ms: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
