@@ -5,7 +5,6 @@ All util functions use :class:`scipy.spatial.transform.Rotation` to represent ro
 from typing import Union, Dict, Optional
 
 import numpy as np
-import pandas as pd
 from scipy.spatial.transform import Rotation
 from numpy.linalg import norm
 
