@@ -44,4 +44,8 @@ class TestConvertAxes:
         data_converted = convert_to_bf(self.data_df, right=["right_sensor"])
         assert_frame_equal(data_converted["right_sensor"], self.data_right_expected)
 
+    def test_rotate_multisensor_dict(self):
+        data_converted = convert_to_bf(self.data_dict, left=["left_sensor"], right=["right_sensor"])
 
+        for sensor in self.data_dict_expected:
+            assert_frame_equal(data_converted[sensor], self.data_dict_expected[sensor])
