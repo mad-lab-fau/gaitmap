@@ -88,7 +88,7 @@ test_borders = (
     )
 )
 test_borders = test_borders.unstack(level=0).reset_index(level=-1, drop=True)
-test_borders = test_borders.rename({"stop": "end"})
+test_borders = test_borders.rename({"stop": "end"}, axis=1)
 test_borders = test_borders.reset_index()
 test_borders.index.name = "s_id"
 test_borders = test_borders.reset_index()

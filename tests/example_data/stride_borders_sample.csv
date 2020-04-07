@@ -1,4 +1,4 @@
-s_id,foot,start,stop,gsd_id
+s_id,foot,start,end,gsd_id
 0,left,364,584,1
 1,left,584,802,1
 2,left,802,1023,1
