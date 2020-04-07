@@ -22,6 +22,7 @@ Base classes
    :template: class_with_private.rst
 
     BaseAlgorithm
+    BaseEventDetection
 
 
 :mod:`gaitmap.event_detection`: Algorithms to find temporal gait events
