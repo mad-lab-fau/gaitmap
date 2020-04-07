@@ -41,16 +41,6 @@ Classes
 
     RamppEventDetection
 
-Functions
----------
-.. currentmodule:: gaitmap.event_detection
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-    RamppEventDetection.detect
-
 
 :mod:`gaitmap.utils.rotations`: Helper to handle rotations
 ==========================================================
