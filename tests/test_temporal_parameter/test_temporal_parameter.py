@@ -1,4 +1,4 @@
-from gaitmap.temporal_parameters.temporal_parameters import TemporalParameterCalculation
+from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 
 import pytest
 from pandas.testing import assert_frame_equal
