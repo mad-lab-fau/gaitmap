@@ -137,6 +137,8 @@ Functions
     is_single_sensor_dataset
     is_multi_sensor_dataset
     get_multi_sensor_dataset_names
+    is_single_sensor_stride_list
+    is_multi_sensor_stride_list
 
 :mod:`gaitmap.utils.coordinate_conversion`: Convert axes from sensor frame to body frame
 ========================================================================================

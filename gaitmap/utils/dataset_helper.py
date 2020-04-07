@@ -166,6 +166,36 @@ def is_multi_sensor_dataset(
 def is_single_sensor_stride_list(
     stride_list: SingleSensorStridelist, stride_type: Literal["any", "min_vel"] = "any"
 ) -> bool:
+    """Check if an input is a single-sensor stride list.
+
+    A valid stride list:
+    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end", "gsd_id"]`
+    - has only a single level column index
+
+    Depending on the type of stride list, further requirements need to be fulfilled:
+
+    min_vel
+        A min-vel stride list describes a stride list that defines a stride from one midstance (`min_vel`) to the next.
+        This type of stride list can be performed for ZUPT based trajectory estimation.
+        It is expected to additionally have the following columns describing relevant stride events: `["pre_ic", "ic",
+        "min_vel", "tc"]`.
+        See :mod:`~gaitmap.event_detection` for details.
+        For this type of stride list it is further tested, that the "start" column is actual identical to the "min_vel"
+        column.
+
+    Parameters
+    ----------
+    stride_list
+        The object that should be tested
+    stride_type
+        The expected stride type of this object.
+        If this is "any" only the generally required columns are checked.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
+
+    """
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
@@ -203,7 +233,26 @@ def is_single_sensor_stride_list(
 def is_multi_sensor_stride_list(
     stride_list: MultiSensorStridelist, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:
+    """Check if an input is a multi-sensor stride list.
 
+    A valid multi-sensor stride list is dictionary of single-sensor stride lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    stride_list
+        The object that should be tested
+    stride_type
+        The expected stride type of this object.
+        If this is "any" only the generally required columns are checked.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_stride_list: Check for multi-sensor stride lists
+
+    """
     if not isinstance(stride_list, dict):
         return False
 
