@@ -40,6 +40,16 @@ class ForwardBackwardIntegration(BasePositionEstimation):
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
 
+    Examples
+    --------
+    >>> spatial = ForwardBackwardIntegration(0.5, 0.08)
+    >>> spatial.estimate(data, 204.8)
+    >>> spatial.velocity_.iloc[-1]
+    vel_x   -1.175808e-15
+    vel_y   -1.175836e-15
+    vel_z   -1.175865e-15
+    Name: 1999, dtype: float64
+
     """
 
     sampling_rate_hz: float
