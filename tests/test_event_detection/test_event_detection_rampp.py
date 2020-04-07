@@ -1,4 +1,8 @@
-from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel
+from gaitmap.event_detection.rampp_event_detection import (
+    RamppEventDetection,
+    _detect_min_vel,
+    _find_breaks_in_stride_list,
+)
 from gaitmap.utils.consts import *
 from gaitmap.utils import coordinate_conversion
 
@@ -21,6 +25,7 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS
         stride_list_left = healthy_example_stride_borders["left_sensor"]
+        stride_list_left = stride_list_left.iloc[[0, 1, 2, 4, 5, 6]]
 
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
@@ -69,5 +74,8 @@ class TestEventDetectionRampp:
         stride_list_left["s_id"] = np.random.randint(1000, size=(stride_list_left["s_id"].size, 1))
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
+        # find breaks in segmented strides and drop first strides of new sequences
+        stride_list_breaks = _find_breaks_in_stride_list(stride_list_left)
+        stride_list_left = stride_list_left.drop(stride_list_left.index[stride_list_breaks])
         # the s_ids of the event detection and the stride list should be identical (except for the last entry)
         assert_array_equal(np.array(ed.stride_events_["s_id"]), np.array(stride_list_left["s_id"])[:-1])
