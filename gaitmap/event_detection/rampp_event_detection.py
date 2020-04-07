@@ -134,13 +134,11 @@ class RamppEventDetection(BaseEventDetection):
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
-        self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
+        s_id, self.ic_, self.tc_, self.min_vel_ = self._find_all_events(
             gyr, acc, self.segmented_stride_list, ic_search_region_ms, min_vel_search_win_size_ms
         )
 
-        # output will have one stride less than segmented stride list
-        s_id = np.arange(len(self.segmented_stride_list) - 1)
-
+        s_id = s_id[:-1]  # ignore the last s_id as the last segmented stride is not preserved by rampp
         self.start_ = self.min_vel_[:-1]
         self.end_ = self.min_vel_[1:]
         self.min_vel_ = self.min_vel_[:-1]
@@ -167,14 +165,16 @@ class RamppEventDetection(BaseEventDetection):
         stride_list: pd.DataFrame,
         ic_search_region_ms: Tuple[float, float],
         min_vel_search_win_size_ms: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
         acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
+        s_id = []
         ic_events = []
         fc_events = []
         min_vel_events = []
         for _, stride in stride_list.iterrows():
+            s_id.append(stride["s_id"])
             start = stride["start"]
             end = stride["end"]
             gyr_sec = gyr[start:end]
@@ -186,7 +186,12 @@ class RamppEventDetection(BaseEventDetection):
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size_ms))
 
         # TODO add validation / consistency check of the gait events
-        return np.array(ic_events, dtype=float), np.array(fc_events, dtype=float), np.array(min_vel_events, dtype=float)
+        return (
+            np.array(s_id, dtype=int),
+            np.array(ic_events, dtype=float),
+            np.array(fc_events, dtype=float),
+            np.array(min_vel_events, dtype=float),
+        )
 
 
 def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size_ms: int) -> float:

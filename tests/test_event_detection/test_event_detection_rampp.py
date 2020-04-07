@@ -1,5 +1,6 @@
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel
 from gaitmap.utils.consts import *
+from gaitmap.utils import coordinate_conversion
 
 import pytest
 import pandas as pd
@@ -58,3 +59,15 @@ class TestEventDetectionRampp:
         ed.detect(data_left, 204.8, stride_list_left)
         # per default stride_events_ has 7 columns
         assert_array_equal(np.array(ed.stride_events_.shape), np.array((0, 7)))
+
+    def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test if the s_id from the stride list is correctly transferred to the output of event detection"""
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
+        stride_list_left = healthy_example_stride_borders["left_sensor"]
+        # switch s_ids in stride list to random numbers
+        stride_list_left["s_id"] = np.random.randint(1000, size=(stride_list_left["s_id"].size, 1))
+        ed = RamppEventDetection()
+        ed.detect(data_left, 204.8, stride_list_left)
+        # the s_ids of the event detection and the stride list should be identical (except for the last entry)
+        assert_array_equal(np.array(ed.stride_events_["s_id"]), np.array(stride_list_left["s_id"])[:-1])
