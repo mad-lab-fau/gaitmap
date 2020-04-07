@@ -6,6 +6,7 @@ from typing import Callable, Dict, TypeVar, Type, Any, List
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, StrideList
 
