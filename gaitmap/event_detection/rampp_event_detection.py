@@ -62,9 +62,9 @@ class RamppEventDetection(BaseEventDetection):
     -----
     TODO: Add additional details about the algorithm for event detection
 
-    ..[1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
-    sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on biomedical
-    engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
+    .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
+       sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
+       biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
 
     """
 
