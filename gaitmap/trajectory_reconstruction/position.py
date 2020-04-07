@@ -49,6 +49,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             index=data.index,
         )
 
+        # TODO: implement integration of velocity to obtain position
+        return self
+
     def _get_weight_matrix(self, data_to_integrate):
         x = np.linspace(0, 1, len(data_to_integrate))
         s = 1 / (1 + np.exp(-(x - self.x0)))
