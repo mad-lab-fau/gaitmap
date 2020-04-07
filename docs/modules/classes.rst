@@ -26,6 +26,24 @@ Base classes
     BaseOrientationEstimation
 
 
+:mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
+=================================================================
+
+.. automodule:: gaitmap.preprocessing
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.preprocessing
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   align_dataset_to_gravity
+
+
 :mod:`gaitmap.event_detection`: Algorithms to find temporal gait events
 ========================================================================
 
@@ -211,20 +229,4 @@ Functions
     utils.static_moment_detection.find_static_samples
     utils.static_moment_detection.find_static_sequences
 
-:mod:`gaitmap.preprocessing.align_to_gravity`: Helper to align datasets to gravity
-==================================================================================
-
-.. automodule:: gaitmap.preprocessing.align_to_gravity
-    :no-members:
-    :no-inherited-members:
-
-Functions
----------
-.. currentmodule:: gaitmap
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-    preprocessing.align_to_gravity.align_dataset
 

@@ -1,3 +1,4 @@
+"""Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
 import numpy as np
 import pandas as pd
 
@@ -12,7 +13,7 @@ from gaitmap.utils.dataset_helper import (
 from gaitmap.utils.static_moment_detection import find_static_sequences
 
 
-def align_dataset(
+def align_dataset_to_gravity(
     dataset: Dataset,
     window_length: int,
     static_signal_th: float,
@@ -66,7 +67,7 @@ def align_dataset(
     >>> # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
     ... # axis (acc_x, ..., gyr_z)
     >>> dataset_df = ...
-    >>> align_dataset(dataset_df, window_length = 100, static_signal_th = 1.5, metric = 'maximum',
+    >>> align_dataset_to_gravity(dataset_df, window_length = 100, static_signal_th = 1.5, metric = 'maximum',
     ... gravity = np.array([0.0, 0.0, 1.0])
     <copy of dataset with all axis aligned to gravity>
 

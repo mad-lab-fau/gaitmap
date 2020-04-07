@@ -5,7 +5,7 @@ from gaitmap.utils.consts import SF_ACC, SF_COLS
 from numpy.testing import assert_almost_equal
 
 import gaitmap.utils.rotations as rotations
-from gaitmap.preprocessing.align_to_gravity import align_dataset
+from gaitmap.preprocessing.sensor_alignment import align_dataset_to_gravity
 
 from gaitmap.utils.dataset_helper import MultiSensorDataset
 
@@ -38,7 +38,9 @@ class TestAlignToGravity:
         """Test if value error is raised correctly if no static window can be found on dataset with given user
         settings."""
         with pytest.raises(ValueError, match=r".*No static windows .*"):
-            align_dataset(self.sample_sensor_dataset, window_length=3, static_signal_th=0.0, metric="maximum")
+            align_dataset_to_gravity(
+                self.sample_sensor_dataset, window_length=3, static_signal_th=0.0, metric="maximum"
+            )
 
     def test_mulit_sensor_dataset_misaligned(self):
         """Test basic alignment using different 180 deg rotations on each dataset."""
@@ -50,7 +52,9 @@ class TestAlignToGravity:
         }
         miss_aligned_dataset = rotations.rotate_dataset(self.sample_sensor_dataset, rot)
 
-        aligned_dataset = align_dataset(miss_aligned_dataset, window_length=3, static_signal_th=1.0, gravity=gravity)
+        aligned_dataset = align_dataset_to_gravity(
+            miss_aligned_dataset, window_length=3, static_signal_th=1.0, gravity=gravity
+        )
 
         assert_almost_equal(aligned_dataset["s1"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
         assert_almost_equal(aligned_dataset["s2"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
@@ -63,6 +67,8 @@ class TestAlignToGravity:
             self.sample_sensor_data, rotations.rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(180))
         )
 
-        aligned_data = align_dataset(miss_aligned_data, window_length=3, static_signal_th=1.0, gravity=gravity)
+        aligned_data = align_dataset_to_gravity(
+            miss_aligned_data, window_length=3, static_signal_th=1.0, gravity=gravity
+        )
 
         assert_almost_equal(aligned_data[SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
