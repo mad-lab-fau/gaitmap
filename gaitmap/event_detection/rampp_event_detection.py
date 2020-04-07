@@ -88,7 +88,7 @@ class RamppEventDetection(BaseEventDetection):
         Parameters
         ----------
         data
-            The data set holding the imu raw data method.
+            The data set holding the imu raw data
         sampling_rate_hz
             The sampling rate of the data
         segmented_stride_list
