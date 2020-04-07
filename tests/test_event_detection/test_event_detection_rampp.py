@@ -14,7 +14,7 @@ class TestEventDetectionRampp:
 
     # TODO add tests for multiple sensors and checks for input data / stride lists
 
-    def test_single_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
