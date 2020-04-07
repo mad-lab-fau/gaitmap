@@ -30,7 +30,6 @@ class GyroIntegration(BaseOrientationEstimation):
         Same as `estimated_orientations_` but contains the initial orientation as the first index.
         Therefore, it contains one more sample than the input data.
 
-
     Other Parameters
     ----------------
     sensor_data
@@ -40,7 +39,11 @@ class GyroIntegration(BaseOrientationEstimation):
 
     Examples
     --------
-    >>> gyr_integrator = GyroIntegration(Rotation([0, 0, 1, 0]))
+    >>> gyr_integrator = GyroIntegration()
+    >>> gyr_integrator.estimate(data, 204.8)
+    >>> orientations = gyr_integrator.estimated_orientations_
+    >>> orientations[-1].as_quat()
+    array([0., 1, 0., 0.])
 
     """
 
@@ -70,14 +73,6 @@ class GyroIntegration(BaseOrientationEstimation):
         This function makes use of `from_rotvec` of :func:`~scipy.spatial.transform.Rotation`, to turn the gyro signal
         of each sample into a differential quaternion.
         This means that the rotation between two samples is assumed to be constant around one axis.
-
-        Examples
-        --------
-        >>> gyr_integrator = GyroIntegration()
-        >>> gyr_integrator.estimate(data, 204.8)
-        >>> orientations = gyr_integrator.estimated_orientations_
-        >>> orientations[-1].as_quat()
-        array([0., 1, 0., 0.])
 
         """
         # TODO: so far it is only possible to pass one sensor with columns being gyr_x...(and possilby others acc_z)
