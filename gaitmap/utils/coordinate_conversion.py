@@ -1,6 +1,5 @@
 """A set of helper functions for the conversion of accelerometer and gyroscope data from the sensor to the body frame.
 
-
 Definitions can be found in
 http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Coordinate-Systems.html.
 """
