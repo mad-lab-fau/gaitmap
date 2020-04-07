@@ -11,9 +11,9 @@ SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
 Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
-SingleSensorStridelist = pd.DataFrame
-MultiSensorStridelist = Dict[str, pd.DataFrame]
-StrideList = Union[SingleSensorDataset, MultiSensorStridelist]
+SingleSensorStrideList = pd.DataFrame
+MultiSensorStrideList = Dict[str, pd.DataFrame]
+StrideList = Union[SingleSensorDataset, MultiSensorStrideList]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
@@ -164,7 +164,7 @@ def is_multi_sensor_dataset(
 
 
 def is_single_sensor_stride_list(
-    stride_list: SingleSensorStridelist, stride_type: Literal["any", "min_vel"] = "any"
+    stride_list: SingleSensorStrideList, stride_type: Literal["any", "min_vel"] = "any"
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
@@ -227,7 +227,7 @@ def is_single_sensor_stride_list(
 
 
 def is_multi_sensor_stride_list(
-    stride_list: MultiSensorStridelist, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
+    stride_list: MultiSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
 
