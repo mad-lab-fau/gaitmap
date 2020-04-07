@@ -119,17 +119,17 @@ def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, r
 
     # Loop through defined sensors
     # Add results to a new dictionary with sensor names as keys
-    if left is not None:
-        for ls in left:
-            if ls not in data:
-                raise KeyError("data contains no key " + ls)
-            result[ls] = convert_left_foot_to_fbf(data[ls])
+    left = left or []
+    for ls in left:
+        if ls not in data:
+            raise KeyError("data contains no key " + ls)
+        result[ls] = convert_left_foot_to_fbf(data[ls])
 
-    if right is not None:
-        for rs in right:
-            if rs not in data:
-                raise KeyError("data contains no key " + rs)
-            result[rs] = convert_right_foot_to_fbf(data[rs])
+    right = right or []
+    for rs in right:
+        if rs not in data:
+            raise KeyError("data contains no key " + rs)
+        result[rs] = convert_right_foot_to_fbf(data[rs])
 
     if result:
         # If original data is not synchronized (dictionary), return as dictionary
