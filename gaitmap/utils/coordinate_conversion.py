@@ -112,6 +112,9 @@ def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, r
     if not is_multi_sensor_dataset(data):
         raise TypeError("No MultiSensorDataset supplied.")
 
+    if left is None and right is None:
+        raise ValueError("Invalid inputs: Neither left nor right sensor names specified.")
+
     result = dict()
 
     # Loop through defined sensors
