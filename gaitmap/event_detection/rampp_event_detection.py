@@ -161,8 +161,8 @@ class RamppEventDetection(BaseEventDetection):
 
         # find breaks in segmented strides and drop first strides of new sequences
         # TODO shift this to cleanup function in the future
-        stride_list_breaks = _find_breaks_in_stride_list(self.segmented_stride_list)
         stride_event_df = pd.DataFrame(stride_event_dict)
+        stride_list_breaks = _find_breaks_in_stride_list(stride_event_df)
         stride_event_df = stride_event_df.drop(stride_event_df.index[stride_list_breaks])
 
         self.stride_events_ = stride_event_df.drop(["seg_start", "seg_end"], axis=1)
@@ -262,7 +262,7 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
 
 
-def _find_breaks_in_stride_list(stride_list: pd.DataFrame) -> list:
-    tmp = stride_list["start"].iloc[1:].to_numpy() - stride_list["end"].iloc[:-1].to_numpy()
+def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
+    tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
     breaks = np.where(tmp != 0)[0] + 1
     return list(breaks)
