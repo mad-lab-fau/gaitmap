@@ -14,16 +14,36 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     For drift removal, backward integration is used for velocity estimation, because we assume zero velocity at the
     beginning and end of a signal. For position, drift removal via backward integration is only used for the vertical
-    axis (=z-axis or superior-inferior-axis, see :ref:`ff`.
+    axis (=z-axis or superior-inferior-axis, see :ref:`ff`, because we assume beginning and end of the motion are in
+    one plane. Implementation based on the paper by Hannink et al. [1]
+
+    Parameters
+    ----------
+    turning_point
+        The point at which the sigmoid weighting function has a value of 0.5 and therefore forward and backward
+        integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0)
+
+    steepness
+        Steepness of the sigmoid function to weight forward and backward integral.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the `estimate` method.
+    sampling_rate_hz
+        The sampling rate of the data.
+
+    Notes
+    -----
+    TODO: add support for multiple sensors and adapt tests accordingly
+    .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
+       Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
+       https://doi.org/10.3390/s17091940
+
     """
 
-    # TODO: add support for multiple sensors and adapt tests accordingly
     sampling_rate_hz: float
-    # TODO: add support for body frame axes (medical axes), e.g. using
-    #  velocity.columns.map({'acc_ml':'vel_ml',...})
-
-    # TODO: the next two lines don't need to be in "self", right? Put them somewhere else? consts?
-
+    # TODO: @Reviewwer: the next two lines don't need to be in "self", right? Put them somewhere else? consts?
     vel_axis_names = [i_axis.replace("acc", "vel") for i_axis in SF_ACC]
     pos_axis_names = [i_axis.replace("acc", "vel") for i_axis in SF_ACC]
 
@@ -37,11 +57,14 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     x0 = 0.6  # TODO: make this optional
 
     def __init__(self, turning_point, steepness):
-        # TODO: specify what x0 means
+        # if turning_point < 0 or turning_point > 1.0:
+        if not (0.0 <= turning_point <= 1.0):
+            raise ValueError("Turning point must be in the rage of 0.0 to 1.0")
         self.turning_point = turning_point
         self.steepness = steepness
 
     def estimate(self, data, sampling_rate_hz):
+        """Estimate velocity and position based on acceleration data."""
         if dataset_helper.is_multi_sensor_dataset(data):
             raise NotImplementedError("Multisensor input is not supported yet")
 
