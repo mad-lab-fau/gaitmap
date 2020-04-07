@@ -65,7 +65,6 @@ def convert_right_foot_to_bf(data: pd.DataFrame):
     gaitmap.utils.coordinate_conversion.convert_left_foot_foot: conversion of left foot SingleSensorDataset
 
     """
-
     # Definition of the conversion of all axes for the right foot
     # TODO: Put into consts.py
     conversion_right = {
@@ -87,11 +86,10 @@ def convert_right_foot_to_bf(data: pd.DataFrame):
 
 
 def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
-    """ Converts the axes from the sensor frame to the body frame for one MultiSensorDataset.
+    """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
     Parameters
     ----------
-
     data
         MultiSensorDataset
     left
@@ -102,8 +100,8 @@ def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Option
     Returns
     -------
         converted MultiSensorDataset
-    """
 
+    """
     if not is_multi_sensor_dataset(data):
         raise TypeError("No MultiSensorDataset supplied.")
 
@@ -124,8 +122,7 @@ def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Option
         if isinstance(data, dict):
             return result
         # For synchronized sensors, return as MultiIndex dataframe
-        else:
-            if result:
-                return pd.concat(result, axis=1)
+        if result:
+            return pd.concat(result, axis=1)
 
     return None
