@@ -68,8 +68,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             "swing_time": swing_time_,
             "stance_time": stance_time_,
         }
-        self.parameters_ = pd.DataFrame(stride_parameter_dict)
-        return self
+        parameters_ = pd.DataFrame(stride_parameter_dict)
+        return parameters_
 
     def _calculate_multiple_sensor(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of each stride in case of multiple sensors.
@@ -87,10 +87,10 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
                 The class instance with temporal parameters populated in parameters_
 
         """
-        self.parameters_ = {}
+        parameters_ = {}
         for sensor in stride_event_list:
-            self.parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
-        return self
+            parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
+        return parameters_
 
     def calculate(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of all strides after segmentation and detecting events for all sensors.
