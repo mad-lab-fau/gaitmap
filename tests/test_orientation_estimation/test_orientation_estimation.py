@@ -50,7 +50,7 @@ class TestGyroIntegration:
         gyr_integrator.estimate(sensor_data, fs)
         rot_final = gyr_integrator.estimated_orientations_[-1]
         np.testing.assert_array_almost_equal(rot_final.apply(vector_to_rotate), expected_result)
-        assert len(gyr_integrator.estimated_orientations_) == fs + 1
+        assert len(gyr_integrator.estimated_orientations_) == fs
 
     def test_single_sensor_input(self, healthy_example_imu_data):
         """Dummy test to see if the algorithm is generally working on the example data"""

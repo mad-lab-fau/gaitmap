@@ -24,8 +24,8 @@ class GyroIntegration(BaseOrientationEstimation):
     Attributes
     ----------
     estimated_orientations_
-        Contains rotations based on initial rotation and gyroscope integration. The first value of this array is the
-        initial rotation, passed to the __init__. All rotations are :class:`scipy.spatial.transform.Rotation` objects.
+        Contains the resulting orientations (represented as a :class:`~scipy.spatial.transform.Rotation` object).
+        This has the same length than the passed input data (i.e. the initial orientation is not included)
 
     Other Parameters
     ----------------
@@ -89,7 +89,7 @@ class GyroIntegration(BaseOrientationEstimation):
         single_step_rotations = Rotation.from_rotvec(gyro_data / sampling_rate_hz)
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
         out = accumulate([self.initial_orientation, *single_step_rotations], operator.mul)
-        out_as_rot = Rotation([o.as_quat() for o in out])
+        # Exclude initial orientation
+        out_as_rot = Rotation([o.as_quat() for o in out][1:])
         self.estimated_orientations_ = out_as_rot
-        # TODO: Should the initial and/or the final orientation be included in the orientation array?
         return self
