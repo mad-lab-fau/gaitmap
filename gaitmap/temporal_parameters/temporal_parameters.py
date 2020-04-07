@@ -35,7 +35,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     parameters_: dict  # Results are stored here
 
-    def _calculate_single_sensor(self: BaseType, stride_event_list: pd.DataFrame, sampling_rate_hz: float) -> BaseType:
+    @staticmethod
+    def _calculate_single_sensor(stride_event_list: pd.DataFrame, sampling_rate_hz: float) -> pd.DataFrame:
         """Find temporal parameters  of each stride in case of single sensor.
 
         Parameters
@@ -47,8 +48,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         Returns
         -------
-            self
-                The class instance with temporal parameters populated in parameters_
+            parameters_
+                Data frame containing temporal parameters of single sensor
 
         """
         stride_id_ = np.ndarray
@@ -71,7 +72,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         parameters_ = pd.DataFrame(stride_parameter_dict)
         return parameters_
 
-    def _calculate_multiple_sensor(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> BaseType:
+    def _calculate_multiple_sensor(self: BaseType, stride_event_list: dict, sampling_rate_hz: float) -> dict:
         """Find temporal parameters of each stride in case of multiple sensors.
 
         Parameters
@@ -83,8 +84,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         Returns
         -------
-            self
-                The class instance with temporal parameters populated in parameters_
+            parameters_
+                Dictionary of temporal parameters for each sensor
 
         """
         parameters_ = {}
