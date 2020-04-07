@@ -1,7 +1,10 @@
 import numpy as np
+import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
-from scipy.spatial.transform import Rotation
+from gaitmap.utils.consts import SF_GYR, SF_ACC, SF_COLS
+from numpy.testing import assert_almost_equal
+
+import gaitmap.utils.rotations as rotations
 from gaitmap.preprocessing.align_to_gravity import align_dataset
 
 
@@ -14,15 +17,43 @@ class TestAlignToGravity:
 
         This data is recreated before each test (using pytest.fixture).
         """
-        acc = [1.0, 2.0, 3.0]
-        gyr = [4.0, 5.0, 6.0]
-        all_data = np.repeat(np.array([*acc, *gyr])[None, :], 3, axis=0)
+        acc = [0.0, 0.0, 1.0]
+        gyr = [0.13, 0.11, 0.12]
+        all_data = np.repeat(np.array([*acc, *gyr])[None, :], 5, axis=0)
         self.sample_sensor_data = pd.DataFrame(all_data, columns=SF_COLS)
         self.sample_sensor_dataset = pd.concat(
-            [self.sample_sensor_data, self.sample_sensor_data + 0.5], keys=["s1", "s2"], axis=1
+            [self.sample_sensor_data, self.sample_sensor_data], keys=["s1", "s2"], axis=1
         )
 
-    def test_align_to_gravity(self):
-        """Test some basic functionality."""
-        test_data = np.array([1, 2, 3])
-        assert True
+    def test_no_static_moments_in_dataset(self):
+        """Test if value error is raised correctly if no static window can be found on dataset with given user
+        settings."""
+        with pytest.raises(ValueError, match=r".*No static windows .*"):
+            align_dataset(self.sample_sensor_dataset, window_length=3, static_signal_th=0.0, metric="maximum")
+
+    def test_mulit_sensor_dataset_misaligned(self):
+        """Test basic alignment using different 180 deg rotations on each dataset."""
+        gravity = np.array([0.0, 0.0, 1.0])
+
+        rot = {
+            "s1": rotations.rotation_from_angle(np.array([0, 1, 0]), np.deg2rad(180)),
+            "s2": rotations.rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(180)),
+        }
+        miss_aligned_dataset = rotations.rotate_dataset(self.sample_sensor_dataset, rot)
+
+        aligned_dataset = align_dataset(miss_aligned_dataset, window_length=3, static_signal_th=1.0, gravity=gravity)
+
+        assert_almost_equal(aligned_dataset["s1"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
+        assert_almost_equal(aligned_dataset["s2"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
+
+    def test_single_sensor_dataset_misaligned(self):
+        """Test basic alignment using different 180 deg rotations on single sensor."""
+        gravity = np.array([0.0, 0.0, 1.0])
+
+        miss_aligned_data = rotations.rotate_dataset(
+            self.sample_sensor_data, rotations.rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(180))
+        )
+
+        aligned_data = align_dataset(miss_aligned_data, window_length=3, static_signal_th=1.0, gravity=gravity)
+
+        assert_almost_equal(aligned_data[SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
