@@ -1,24 +1,23 @@
-from typing import Optional
 import numpy as np
 import pandas as pd
-from gaitmap.utils.consts import SF_GYR, SF_ACC
-from gaitmap.utils.static_moment_detection import find_static_sequences
-from gaitmap.utils import rotations
 
+from gaitmap.utils import rotations
+from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.dataset_helper import (
     is_single_sensor_dataset,
     is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
     Dataset,
 )
+from gaitmap.utils.static_moment_detection import find_static_sequences
 
 
 def align_dataset(
     dataset: Dataset,
     window_length: int,
     static_signal_th: float,
-    metric: Optional[str] = "maximum",
-    gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0]),
+    metric: str = "maximum",
+    gravity: np.ndarray = np.array([0.0, 0.0, 1.0]),
 ) -> Dataset:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
 
@@ -52,11 +51,10 @@ def align_dataset(
         'variance'
             Calculates variance value per window
 
-    gravity : np.ndarray, optional
-        vector with shape (3,), axis ([x, y ,z])
-        Expected measured signal on accelerometer if only gravity would be present. For sensor z-axis pointing in
-        opposite direction as the gravitation force (here e.g. z-axis pointing upwards while gravitational force is
-        pointing downwards.
+    gravity : vector with shape (3,), axis ([x, y ,z]), optional
+        Expected direction of gravity during rest after the rotation.
+        For example if this is `[0, 0, 1]` the sensor will measure +g on the z-axis after rotation (z-axis pointing
+        upwards)
 
     Returns
     -------
@@ -65,9 +63,10 @@ def align_dataset(
 
     Examples
     --------
-    >>> dataset_df = ...  # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
-    ... axis (acc_x, ..., gyr_z)
-    >>> align_dataset(sensor_data_df, window_length = 100, static_signal_th = 1.5, metric = 'maximum',
+    >>> # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
+    ... # axis (acc_x, ..., gyr_z)
+    >>> dataset_df = ...
+    >>> align_dataset(dataset_df, window_length = 100, static_signal_th = 1.5, metric = 'maximum',
     ... gravity = np.array([0.0, 0.0, 1.0])
     <copy of dataset with all axis aligned to gravity>
 
