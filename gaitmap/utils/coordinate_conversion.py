@@ -1,18 +1,18 @@
-"""A set of helper functions for the conversion of accelerometer
-and gyroscope data from the sensor to the body frame
-Definitions can be found in http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Coordinate-Systems.html"""
+"""A set of helper functions for the conversion of accelerometer and gyroscope data from the sensor to the body frame Definitions can be found in http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Coordinate-Systems.html."""
+
+from typing import Optional, List
 
 import pandas as pd
+
 from gaitmap.utils.consts import SF_COLS, BF_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_multi_sensor_dataset
 )
-from typing import Optional, List
 
 
-def convert_left_foot(data: pd.DataFrame):
-    """ Converts the axes from the sensor frame to the body frame for the left foot for one SingleSensorDataset.
+def convert_left_foot_to_bf(data: pd.DataFrame):
+    """Convert the axes from the sensor frame to the body frame for the left foot for one SingleSensorDataset.
 
     Parameters
     ----------
@@ -26,8 +26,8 @@ def convert_left_foot(data: pd.DataFrame):
     See Also
     --------
     gaitmap.utils.coordinate_conversion.convert_right_foot_foot: conversion of right foot SingleSensorDataset
-    """
 
+    """
     # Definition of the conversion of all axes for the left foot
     # TODO: Put into consts.py
     conversion_left = {
@@ -48,8 +48,8 @@ def convert_left_foot(data: pd.DataFrame):
     return result
 
 
-def convert_right_foot(data: pd.DataFrame):
-    """ Converts the axes from the sensor frame to the body frame for the right footfor one SingleSensorDataset.
+def convert_right_foot_to_bf(data: pd.DataFrame):
+    """Convert the axes from the sensor frame to the body frame for the right footfor one SingleSensorDataset.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def convert_right_foot(data: pd.DataFrame):
     return result
 
 
-def rotate(data: Dataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
+def convert_to_bf(data: Dataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
     """ Converts the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
     Parameters
@@ -106,26 +106,26 @@ def rotate(data: Dataset, left: Optional[List[str]] = None, right: Optional[List
 
     if not is_multi_sensor_dataset(data):
         raise TypeError("No MultiSensorDataset supplied.")
-    else:
-        result = dict()
 
-        # Loop through defined sensors
-        # Add results to a new dictionary with sensor names as keys
-        if left is not None:
-            for ls in left:
-                result[ls] = convert_left_foot(data[ls])
+    result = dict()
 
-        if right is not None:
-            for rs in right:
-                result[rs] = convert_right_foot(data[rs])
+    # Loop through defined sensors
+    # Add results to a new dictionary with sensor names as keys
+    if left is not None:
+        for ls in left:
+            result[ls] = convert_left_foot_to_bf(data[ls])
 
-        if result:
-            # If original data is not synchronized (dictionary), return as dictionary
-            if isinstance(data, dict):
-                return result
-            # For synchronized sensors, return as MultiIndex dataframe
-            else:
-                if result:
-                    return pd.concat(result, axis=1)
+    if right is not None:
+        for rs in right:
+            result[rs] = convert_right_foot_to_bf(data[rs])
+
+    if result:
+        # If original data is not synchronized (dictionary), return as dictionary
+        if isinstance(data, dict):
+            return result
+        # For synchronized sensors, return as MultiIndex dataframe
         else:
-            return None
+            if result:
+                return pd.concat(result, axis=1)
+
+    return None
