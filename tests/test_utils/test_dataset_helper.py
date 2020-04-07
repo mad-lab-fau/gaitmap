@@ -166,7 +166,16 @@ class TestGetMultiSensorDatasetNames:
 
 class TestIsSingleSensorStrideList:
     @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+        "value",
+        (
+            list(range(6)),
+            "test",
+            np.arange(6),
+            {},
+            pd.DataFrame(),
+            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()),
+        ),
     )
     def test_wrong_datatype(self, value):
         assert not is_single_sensor_stride_list(value)
