@@ -1,13 +1,14 @@
 """Estimation of velocity and position relative to first sample of passed data."""
+from typing import Optional
+
 import numpy as np
-import numpy.matlib
 import pandas as pd
 from scipy import integrate
-from typing import Optional
 
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
 from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
+from gaitmap.utils.dataset_helper import Dataset
 
 
 class ForwardBackwardIntegration(BasePositionEstimation):
@@ -62,19 +63,22 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     """
 
-    sampling_rate_hz: float
-    steepness: float
-    turning_point: float
+    steepness: Optional[float]
+    turning_point: Optional[float]
+
     velocity_: pd.DataFrame
     position_: pd.DataFrame
+
+    sampling_rate_hz: float
+    data: Dataset
 
     def __init__(self, turning_point: Optional[float] = 0.5, steepness: Optional[float] = 0.08):
         self.turning_point = turning_point
         self.steepness = steepness
 
-    def estimate(self, data, sampling_rate_hz):
+    def estimate(self, data: Dataset, sampling_rate_hz: float):
         """Estimate velocity and position based on acceleration data."""
-        if not (0.0 <= self.turning_point <= 1.0):
+        if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError(
                 "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
                 "of 0.0 to 1.0"
@@ -85,6 +89,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
         if not dataset_helper.is_single_sensor_dataset(data):
             raise ValueError("Provided data set is not supported by gaitmap")
+
+        self.sampling_rate_hz = sampling_rate_hz
+        self.data = data
 
         self.position_ = pd.DataFrame(columns=SF_POS, index=data.index)
         self.sampling_rate_hz = sampling_rate_hz
