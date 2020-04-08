@@ -75,8 +75,10 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     def estimate(self, data, sampling_rate_hz):
         """Estimate velocity and position based on acceleration data."""
         if not (0.0 <= self.turning_point <= 1.0):
-            raise ValueError("Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
-                             "of 0.0 to 1.0")
+            raise ValueError(
+                "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
+                "of 0.0 to 1.0"
+            )
 
         if dataset_helper.is_multi_sensor_dataset(data):
             raise NotImplementedError("Multisensor input is not supported yet")
@@ -89,14 +91,12 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
         self.velocity_ = self._forward_backward_integration(data, SF_ACC)
         self.velocity_.columns = SF_VEL
-        self.position_[SF_POS[2]] = self._forward_backward_integration(
-            self.velocity_, self.SF_VEL[2]
-        )
+        self.position_[SF_POS[2]] = self._forward_backward_integration(self.velocity_, SF_VEL[2])
         self.position_[SF_POS[1]] = (
-            integrate.cumtrapz(self.velocity_[self.SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz
+            integrate.cumtrapz(self.velocity_[SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz
         )
         self.position_[SF_POS[0]] = (
-            integrate.cumtrapz(self.velocity_[self.SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz
+            integrate.cumtrapz(self.velocity_[SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz
         )
         self.position_.columns = SF_POS
         # TODO: implement integration of velocity to obtain position

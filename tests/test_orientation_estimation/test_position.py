@@ -71,10 +71,11 @@ class TestForwardBackwardIntegration:
             position.estimate(data, 204.8)
 
     @pytest.mark.parametrize("turning_point", (-0.1, 1.1))
-    def test_bad_turning_point(self, turning_point: float):
+    def test_bad_turning_point(self, turning_point: float, healthy_example_imu_data):
         """Test if error is raised correctly on invalid input variable range"""
         with pytest.raises(ValueError, match=r"Turning point must be in the rage of 0.0 to 1.0"):
             position = ForwardBackwardIntegration(turning_point, 0.08)
+            position.estimate(healthy_example_imu_data, 204.8)
 
     def get_dummy_data(self, style: str):
         dummy = np.linspace(0, 1, 1000)
