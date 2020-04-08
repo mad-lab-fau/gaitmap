@@ -25,6 +25,7 @@ Base classes
     BaseStrideSegmentation
     BaseEventDetection
     BaseOrientationEstimation
+    BasePositionEstimation
 
 :mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
 ========================================================================
@@ -108,6 +109,22 @@ Classes
    :template: class.rst
 
    GyroIntegration
+
+
+:mod:`gaitmap.trajectory_reconstruction.position`: Algorithms to estimate IMU sensor position given the sensor data
+===================================================================================================================
+.. automodule:: gaitmap.trajectory_reconstruction.position
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.trajectory_reconstruction.position
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+   ForwardBackwardIntegration
 
 
 :mod:`gaitmap.parameters`: Algorithm to calculate biomechanical parameters
@@ -254,19 +271,3 @@ Functions
 
     utils.static_moment_detection.find_static_samples
     utils.static_moment_detection.find_static_sequences
-
-
-:mod:`gaitmap.trajectory_reconstruction.position`: Algorithms to estimate IMU sensor position given the sensor data
-===================================================================================================================
-.. automodule:: gaitmap.trajectory_reconstruction.position
-    :no-members:
-    :no-inherited-members:
-
-Classes
--------
-.. currentmodule:: gaitmap.trajectory_reconstruction.position
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   ForwardBackwardIntegration
