@@ -143,8 +143,21 @@ class RamppEventDetection(BaseEventDetection):
             raise ValueError("The values chosen for ic_search_region_ms are too close to zero.")
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
+        (
+            self.stride_events_,
+            self.start_,
+            self.end_,
+            self.min_vel_,
+            self.pre_ic_,
+            self.ic_,
+            self.tc_,
+        ) = self._detect_single_dataset(data, ic_search_region, min_vel_search_win_size)
 
+        return self
 
+    def _detect_single_dataset(
+        self, data: pd.DataFrame, ic_search_region: Tuple[int, int], min_vel_search_win_size: int
+    ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
@@ -183,22 +196,22 @@ class RamppEventDetection(BaseEventDetection):
 
         # find breaks in continuous gait sequence and drop the last (segmented) stride of each sequence
         stride_list_breaks = _find_breaks_in_stride_list(tmp_stride_event_df)
-        self.stride_events_ = tmp_stride_event_df.drop(tmp_stride_event_df.index[stride_list_breaks])
+        stride_events_ = tmp_stride_event_df.drop(tmp_stride_event_df.index[stride_list_breaks])
 
         # drop cols that are not needed anymore
-        self.stride_events_ = self.stride_events_.drop(["seg_start", "seg_end"], axis=1)
+        stride_events_ = stride_events_.drop(["seg_start", "seg_end"], axis=1)
         # re-sort columns
-        self.stride_events_ = self.stride_events_[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+        stride_events_ = stride_events_[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
         # extract single events as arrays
-        self.start_ = self.stride_events_["start"].to_numpy()
-        self.end_ = self.stride_events_["end"].to_numpy()
-        self.min_vel_ = self.stride_events_["min_vel"].to_numpy()
-        self.pre_ic_ = self.stride_events_["pre_ic"].to_numpy()
-        self.ic_ = self.stride_events_["ic"].to_numpy()
-        self.tc_ = self.stride_events_["tc"].to_numpy()
+        start_ = stride_events_["start"].to_numpy()
+        end_ = stride_events_["end"].to_numpy()
+        min_vel_ = stride_events_["min_vel"].to_numpy()
+        pre_ic_ = stride_events_["pre_ic"].to_numpy()
+        ic_ = stride_events_["ic"].to_numpy()
+        tc_ = stride_events_["tc"].to_numpy()
 
-        return self
+        return stride_events_, start_, end_, min_vel_, pre_ic_, ic_, tc_
 
     @staticmethod
     def _find_all_events(
@@ -240,9 +253,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
     if min_vel_search_win_size >= len(energy):
         raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
-    energy = sliding_window_view(
-        energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1
-    )
+    energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
     # find window with lowest summed energy
     min_vel_start = np.argmin(np.sum(energy, axis=1))
     # min_vel event = middle of this window
