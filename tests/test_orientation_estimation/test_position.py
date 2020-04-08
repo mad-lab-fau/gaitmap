@@ -77,6 +77,7 @@ class TestForwardBackwardIntegration:
             position = ForwardBackwardIntegration(turning_point, 0.08)
             position.estimate(healthy_example_imu_data, 204.8)
 
+    @staticmethod
     def get_dummy_data(self, style: str):
         dummy = np.linspace(0, 1, 1000)
         if style == "point-symmetrical":
