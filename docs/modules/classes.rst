@@ -59,8 +59,8 @@ Functions
     base_dtw.find_matches_min_under_threshold
 
 
-:mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
-=================================================================
+:mod:`gaitmap.preprocessing`: Helper to align and prepare datasets
+==================================================================
 
 .. automodule:: gaitmap.preprocessing
     :no-members:
