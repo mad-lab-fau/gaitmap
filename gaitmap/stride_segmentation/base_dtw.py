@@ -169,7 +169,19 @@ class BaseDtw(BaseStrideSegmentation):
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
        Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
 
-    TODO: Add examples
+    Examples
+    --------
+    Running a simple matching using arrays as input:
+
+    >>> from gaitmap.stride_segmentation import create_dtw_template
+    >>> template_data = np.array([1, 2, 1])
+    >>> data = np.array([0, 0, 1, 2, 1, 0, 1, 2, 1, 0])
+    >>> template = create_dtw_template(template_data)
+    >>> dtw = BaseDtw(template=template, max_cost=1, resample_template=False)
+    >>> dtw = dtw.segment(data, sampling_rate_hz=1)  # Sampling rate is not important for this example
+    >>> dtw.matches_start_end_
+    array([[2, 4],
+           [6, 8]])
 
     """
 
