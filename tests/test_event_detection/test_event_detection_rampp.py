@@ -20,7 +20,7 @@ class TestEventDetectionRampp:
     # TODO add tests for multiple sensors and checks for input data / stride lists
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on single sensor example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
@@ -28,6 +28,18 @@ class TestEventDetectionRampp:
 
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
+
+        return None
+
+    def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Dummy test to see if the algorithm is generally working on the example data"""
+        # TODO add assert statement / regression test to check against previous result
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+
+        ed = RamppEventDetection()
+        ed.detect(data, 204.8, healthy_example_stride_borders)
 
         return None
 
@@ -82,6 +94,15 @@ class TestEventDetectionRampp:
 
     def test_single_data_multi_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test correct error for combination of single sensor data set and multi sensor stride list"""
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
+        stride_list_left = healthy_example_stride_borders
+        ed = RamppEventDetection()
+        with pytest.raises(ValueError):
+            ed.detect(data_left, 204.8, stride_list_left)
+
+    def test_multi_data_single_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test correct error for combination of multi sensor data set and single sensor stride list"""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders

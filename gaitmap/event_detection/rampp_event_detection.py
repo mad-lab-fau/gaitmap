@@ -118,12 +118,6 @@ class RamppEventDetection(BaseEventDetection):
         ...
 
         """
-        if dataset_helper.is_multi_sensor_dataset(data):
-            raise NotImplementedError("Multisensor input is not supported yet")
-
-        if not dataset_helper.is_single_sensor_dataset(data):
-            raise ValueError("Provided data set is not supported by gaitmap")
-
         if dataset_helper.is_single_sensor_dataset(data) and not dataset_helper.is_single_sensor_stride_list(
             segmented_stride_list
         ):
@@ -143,34 +137,61 @@ class RamppEventDetection(BaseEventDetection):
             raise ValueError("The values chosen for ic_search_region_ms are too close to zero.")
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
-        (
-            self.stride_events_,
-            self.start_,
-            self.end_,
-            self.min_vel_,
-            self.pre_ic_,
-            self.ic_,
-            self.tc_,
-        ) = self._detect_single_dataset(data, ic_search_region, min_vel_search_win_size)
+        if dataset_helper.is_single_sensor_dataset(data):
+            (
+                self.stride_events_,
+                self.start_,
+                self.end_,
+                self.min_vel_,
+                self.pre_ic_,
+                self.ic_,
+                self.tc_,
+            ) = self._detect_single_dataset(data, segmented_stride_list, ic_search_region, min_vel_search_win_size)
+        elif dataset_helper.is_multi_sensor_dataset(data):
+            self.stride_events_ = dict()
+            self.start_ = dict()
+            self.end_ = dict()
+            self.min_vel_ = dict()
+            self.pre_ic_ = dict()
+            self.ic_ = dict()
+            self.tc_ = dict()
+            for sensor in dataset_helper.get_multi_sensor_dataset_names(data):
+                (
+                    self.stride_events_[sensor],
+                    self.start_[sensor],
+                    self.end_[sensor],
+                    self.min_vel_[sensor],
+                    self.pre_ic_[sensor],
+                    self.ic_[sensor],
+                    self.tc_[sensor],
+                ) = self._detect_single_dataset(
+                    data[sensor], segmented_stride_list[sensor], ic_search_region, min_vel_search_win_size
+                )
+        else:
+            raise ValueError("Provided data set is not supported by gaitmap")
 
         return self
 
     def _detect_single_dataset(
-        self, data: pd.DataFrame, ic_search_region: Tuple[int, int], min_vel_search_win_size: int
+        self,
+        data: pd.DataFrame,
+        segmented_stride_list: pd.DataFrame,
+        ic_search_region: Tuple[int, int],
+        min_vel_search_win_size: int,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         # find events in all segments
         s_id, ic, tc, min_vel = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_win_size
+            gyr, acc, segmented_stride_list, ic_search_region, min_vel_search_win_size
         )
 
         # build first dict / df based on segment start and end
         tmp_stride_event_dict = {
             "s_id": s_id,
-            "seg_start": self.segmented_stride_list["start"],
-            "seg_end": self.segmented_stride_list["end"],
+            "seg_start": segmented_stride_list["start"],
+            "seg_end": segmented_stride_list["end"],
             "ic": ic,
             "tc": tc,
             "min_vel": min_vel,
