@@ -3,10 +3,11 @@ import numpy as np
 import numpy.matlib
 import pandas as pd
 from scipy import integrate
+from typing import Optional
 
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
-from gaitmap.utils.consts import SF_ACC
+from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
 
 
 class ForwardBackwardIntegration(BasePositionEstimation):
@@ -16,6 +17,15 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     beginning and end of a signal. For position, drift removal via backward integration is only used for the vertical
     axis (=z-axis or superior-inferior-axis, see :ref:`ff`, because we assume beginning and end of the motion are in
     one plane. Implementation based on the paper by Hannink et al. [1]
+
+    Attributes
+    ----------
+    velocity_
+        The velocity estimated by direct-and-reverse / forward-backward integration.
+    position_
+        The position estimated by forward integration in the ground plane and by direct-and-reverse /
+        forward-backward integration for the vertical axis.
+
 
     Parameters
     ----------
@@ -53,50 +63,42 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     """
 
     sampling_rate_hz: float
-    # TODO: @Reviewwer: the next two lines don't need to be in "self", right? Put them somewhere else? consts?
-    vel_axis_names = [i_axis.replace("acc", "vel") for i_axis in SF_ACC]
-    pos_axis_names = [i_axis.replace("acc", "vel") for i_axis in SF_ACC]
-
-    velocity_: pd.DataFrame
-    position_: pd.DataFrame
     steepness: float
     turning_point: float
+    velocity_: pd.DataFrame
+    position_: pd.DataFrame
 
-    # TODO: this was taken from Julius' Benchmarking paper, adapt to default value but make it possible to pass a
-    #  different x0 to estimate
-    x0 = 0.6  # TODO: make this optional
-
-    def __init__(self, turning_point, steepness):
-        # if turning_point < 0 or turning_point > 1.0:
-        if not (0.0 <= turning_point <= 1.0):
-            raise ValueError("Turning point must be in the rage of 0.0 to 1.0")
+    def __init__(self, turning_point: Optional[float] = 0.5, steepness: Optional[float] = 0.08):
         self.turning_point = turning_point
         self.steepness = steepness
 
     def estimate(self, data, sampling_rate_hz):
         """Estimate velocity and position based on acceleration data."""
+        if not (0.0 <= self.turning_point <= 1.0):
+            raise ValueError("Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
+                             "of 0.0 to 1.0")
+
         if dataset_helper.is_multi_sensor_dataset(data):
             raise NotImplementedError("Multisensor input is not supported yet")
 
         if not dataset_helper.is_single_sensor_dataset(data):
             raise ValueError("Provided data set is not supported by gaitmap")
 
-        # TODO: is this way of using vel_axis_names OK or should it be ForwardBackwardIntegration.vel...?
-        self.position_ = pd.DataFrame(columns=self.pos_axis_names, index=data.index)
+        self.position_ = pd.DataFrame(columns=SF_POS, index=data.index)
         self.sampling_rate_hz = sampling_rate_hz
 
         self.velocity_ = self._forward_backward_integration(data, SF_ACC)
-        self.velocity_.columns = self.vel_axis_names
-        self.position_[self.pos_axis_names[2]] = self._forward_backward_integration(
-            self.velocity_, self.vel_axis_names[2]
+        self.velocity_.columns = SF_VEL
+        self.position_[SF_POS[2]] = self._forward_backward_integration(
+            self.velocity_, self.SF_VEL[2]
         )
-        self.position_[self.pos_axis_names[1]] = (
-            integrate.cumtrapz(self.velocity_[self.vel_axis_names[1]], axis=0, initial=0) / self.sampling_rate_hz
+        self.position_[SF_POS[1]] = (
+            integrate.cumtrapz(self.velocity_[self.SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz
         )
-        self.position_[self.pos_axis_names[0]] = (
-            integrate.cumtrapz(self.velocity_[self.vel_axis_names[1]], axis=0, initial=0) / self.sampling_rate_hz
+        self.position_[SF_POS[0]] = (
+            integrate.cumtrapz(self.velocity_[self.SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz
         )
-        self.position_.columns = self.pos_axis_names
+        self.position_.columns = SF_POS
         # TODO: implement integration of velocity to obtain position
         return self
 
