@@ -136,42 +136,55 @@ class RamppEventDetection(BaseEventDetection):
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
+        # find events in all segments
         s_id, ic, tc, min_vel = self._find_all_events(
             gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_win_size_ms
         )
 
-        s_id = s_id[:-1]  # ignore the last s_id as the last segmented stride is not preserved by rampp
-        start = min_vel[:-1]
-        end = min_vel[1:]
-        min_vel = min_vel[:-1]
-        pre_ic = ic[:-1]
-        ic = ic[1:]
-        tc = tc[1:]
-        stride_event_dict = {
+        # build first dict / df based on segment start and end
+        tmp_stride_event_dict = {
             "s_id": s_id,
-            "seg_start": self.segmented_stride_list["start"].iloc[:-1],
-            "seg_end": self.segmented_stride_list["end"].iloc[:-1],
-            "start": start,
-            "end": end,
+            "seg_start": self.segmented_stride_list["start"],
+            "seg_end": self.segmented_stride_list["end"],
             "ic": ic,
             "tc": tc,
             "min_vel": min_vel,
-            "pre_ic": pre_ic,
         }
+        tmp_stride_event_df = pd.DataFrame(tmp_stride_event_dict)
 
-        # find breaks in segmented strides and drop first strides of new sequences
-        # TODO shift this to cleanup function in the future
-        stride_event_df = pd.DataFrame(stride_event_dict)
-        stride_list_breaks = _find_breaks_in_stride_list(stride_event_df)
-        stride_event_df = stride_event_df.drop(stride_event_df.index[stride_list_breaks])
+        # check for consistency, remove inconsistent lines
+        tmp_stride_event_df = _enforce_consistency(tmp_stride_event_df)
 
-        self.stride_events_ = stride_event_df.drop(["seg_start", "seg_end"], axis=1)
-        self.start_ = self.stride_events_["start"]
-        self.end_ = self.stride_events_["end"]
-        self.min_vel_ = self.stride_events_["min_vel"]
-        self.pre_ic_ = self.stride_events_["pre_ic"]
-        self.ic_ = self.stride_events_["ic"]
-        self.tc_ = self.stride_events_["tc"]
+        # now add start and end according to min_vel:
+        # start of each stride is the min_vel in a segmented stride
+        tmp_stride_event_df["start"] = tmp_stride_event_df["min_vel"]
+        # end of each stride is the min_vel in the subsequent segmented stride
+        tmp_stride_event_df["end"] = tmp_stride_event_df["min_vel"].shift(-1)
+        # pre-ic of each stride is the ic in the current segmented stride
+        tmp_stride_event_df["pre_ic"] = tmp_stride_event_df["ic"]
+        # ic of each stride is the ic in the subsequent segmented stride
+        tmp_stride_event_df["ic"] = tmp_stride_event_df["ic"].shift(-1)
+        # tc of each stride is the tc in the subsequent segmented stride
+        tmp_stride_event_df["tc"] = tmp_stride_event_df["tc"].shift(-1)
+        # drop remaining nans (last list will get some by shift(-1) operation above
+        tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
+
+        # find breaks in continuous gait sequence and drop the last (segmented) stride of each sequence
+        stride_list_breaks = _find_breaks_in_stride_list(tmp_stride_event_df)
+        self.stride_events_ = tmp_stride_event_df.drop(tmp_stride_event_df.index[stride_list_breaks])
+
+        # drop cols that are not needed anymore
+        self.stride_events_ = self.stride_events_.drop(["seg_start", "seg_end"], axis=1)
+        # re-sort columns
+        self.stride_events_ = self.stride_events_[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+
+        # extract single events as arrays
+        self.start_ = self.stride_events_["start"].to_numpy()
+        self.end_ = self.stride_events_["end"].to_numpy()
+        self.min_vel_ = self.stride_events_["min_vel"].to_numpy()
+        self.pre_ic_ = self.stride_events_["pre_ic"].to_numpy()
+        self.ic_ = self.stride_events_["ic"].to_numpy()
+        self.tc_ = self.stride_events_["tc"].to_numpy()
 
         return self
 
@@ -264,5 +277,25 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
 
 def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
     tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
-    breaks = np.where(tmp != 0)[0] + 1
+    breaks = np.where(tmp != 0)[0]
     return list(breaks)
+
+
+def _enforce_consistency(tmp_stride_event_df):
+    # correct order in segmented strides should be tc - ic - men_vel
+    # check difference ic - tc > 0
+    tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic"] - tmp_stride_event_df["tc"]
+    tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic_tc_diff"].where(tmp_stride_event_df["ic_tc_diff"] > 0)
+
+    # check difference min_vel - ic > 0
+    tmp_stride_event_df["min_vel_ic_diff"] = tmp_stride_event_df["min_vel"] - tmp_stride_event_df["ic"]
+    tmp_stride_event_df["min_vel_ic_diff"] = tmp_stride_event_df["min_vel_ic_diff"].where(
+        tmp_stride_event_df["min_vel_ic_diff"] > 0
+    )
+
+    # drop any nans that have occured through calculation of differences or by non detected events
+    tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
+
+    tmp_stride_event_df = tmp_stride_event_df.drop(["ic_tc_diff", "min_vel_ic_diff"], axis=1)
+
+    return tmp_stride_event_df
