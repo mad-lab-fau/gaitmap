@@ -155,11 +155,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
 
 def _calc_stride_length(position: np.ndarray) -> float:
-    position_end = position[len(position)-1]
+    position_end = position[len(position) - 1]
     return norm([position_end[0], position_end[2]])
 
 
 def _calc_gait_velocity(stride_length: float, stride_time: float) -> float:
-    return stride_length/stride_time
+    return stride_length / stride_time
 
 
