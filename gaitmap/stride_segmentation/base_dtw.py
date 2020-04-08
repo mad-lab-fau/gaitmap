@@ -125,8 +125,8 @@ class BaseDtw(BaseStrideSegmentation):
         The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
         Refer to the specific funtion to learn more about this.
-    min_match_length
-        The minimal length of a sequence in samples to be considered a match.
+    min_match_length_s
+        The minimal length of a sequence in seconds to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         This exclusion is performed as a post-processing step after the matching.
         If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
@@ -188,7 +188,7 @@ class BaseDtw(BaseStrideSegmentation):
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
     resample_template: bool
-    min_match_length: Optional[int]
+    min_match_length_s: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -214,11 +214,11 @@ class BaseDtw(BaseStrideSegmentation):
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[int] = None,
-        min_match_length: Optional[int] = None,
+        min_match_length_s: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
-        self.min_match_length = min_match_length
+        self.min_match_length_s = min_match_length_s
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
@@ -298,7 +298,9 @@ class BaseDtw(BaseStrideSegmentation):
         else:
             template = template_array
 
-        min_distance = self.min_match_length
+        min_distance = self.min_match_length_s
+        if min_distance not in (None, 0, 0.0):
+            min_distance *= self.sampling_rate_hz
 
         find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
         if not find_matches_method:

@@ -36,13 +36,8 @@ class BarthDtw(BaseDtw):
         Its usage depends on the exact `find_matches_method` used.
         Refer to the specific function to learn more about this.
         The default value should work well with healthy gait (with the default template).
-    min_stride_time_s
+    min_match_length_s
         The minimal length of a sequence in seconds to be still considered a stride.
-        This is just a more convenient way to set `min_match_length`.
-        If both are provided `min_stride_time_s` is used and converted into samples based on the data sampling rate.
-    min_match_length
-        The minimal length of a sequence in samples to be considered a match.
-        Matches that result in shorter sequences, will be ignored.
         This exclusion is performed as a post-processing step after the matching.
         If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
         matches directly.
@@ -91,29 +86,24 @@ class BarthDtw(BaseDtw):
 
     """
 
-    min_stride_time_s: Optional[float]
-
     def __init__(
         self,
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000,
-        min_stride_time_s: Optional[float] = 0.6,
-        min_match_length: Optional[int] = None,
+        min_match_length_s: Optional[float] = 0.6,
     ):
-        self.min_stride_time_s = min_stride_time_s
         super().__init__(
             template=template,
             max_cost=max_cost,
-            min_match_length=min_match_length,
+            min_match_length_s=min_match_length_s,
             resample_template=resample_template,
             find_matches_method=find_matches_method,
         )
 
     def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
-        if self.min_stride_time_s not in (None, 0, 0.0):
-            self.min_match_length = self.min_stride_time_s * sampling_rate_hz
+
         return super().segment(data=data, sampling_rate_hz=sampling_rate_hz)
 
     @property
