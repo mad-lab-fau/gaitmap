@@ -1,20 +1,33 @@
+import numpy as np
+import pandas as pd
+import pytest
+from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
+from gaitmap.base import BaseType
 from gaitmap.event_detection.rampp_event_detection import (
     RamppEventDetection,
     _detect_min_vel,
     _find_breaks_in_stride_list,
 )
-from gaitmap.utils.consts import *
 from gaitmap.utils import coordinate_conversion, dataset_helper
+from gaitmap.utils.consts import BF_COLS
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
-import pytest
-import pandas as pd
-from numpy.testing import assert_array_equal
-import numpy as np
 
-# TODO add meta tests
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = RamppEventDetection
+    __test__ = True
 
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left.columns = BF_COLS
+        # only use the first entry of the stride list
+        stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
+        ed = RamppEventDetection()
+        ed.detect(data_left, 204.8, stride_list_left)
+        return ed
 
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
