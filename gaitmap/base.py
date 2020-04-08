@@ -1,11 +1,12 @@
 """Base class for all algorithms."""
 
 import inspect
+import types
 from typing import Callable, Dict, TypeVar, Type, Any, List
 
-from scipy.spatial.transform import Rotation
-
+import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, StrideList
 
@@ -146,8 +147,23 @@ class BaseAlgorithm:
             This usually indicates that the action method was not called yet.
 
         """
-        attrs = {v: getattr(self, v) for v in vars(self) if v.endswith("_") and not v.startswith("__")}
+        all_attributes = dir(self)
+        attrs = {
+            v: getattr(self, v)
+            for v in all_attributes
+            if v.endswith("_") and not v.startswith("__") and not isinstance(getattr(self, v), types.MethodType)
+        }
         return attrs
+
+
+class BaseStrideSegmentation(BaseAlgorithm):
+    """Base class for all stride segmentation algorithms."""
+
+    _action_method = "segment"
+
+    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **kwargs) -> BaseType:
+        """Find stride candidates in data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
 
 
 class BaseEventDetection(BaseAlgorithm):

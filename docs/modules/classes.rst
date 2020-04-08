@@ -22,8 +22,40 @@ Base classes
    :template: class_with_private.rst
 
     BaseAlgorithm
+    BaseStrideSegmentation
     BaseEventDetection
     BaseOrientationEstimation
+
+:mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
+========================================================================
+
+.. automodule:: gaitmap.stride_segmentation
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.stride_segmentation
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    BaseDtw
+    BarthDtw
+    DtwTemplate
+
+Functions
+---------
+.. currentmodule:: gaitmap.stride_segmentation
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    create_dtw_template
+    base_dtw.find_matches_find_peaks
+    base_dtw.find_matches_min_under_threshold
 
 
 :mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
@@ -154,6 +186,10 @@ Functions
 
     sliding_window_view
     bool_array_to_start_end_array
+    find_local_minima_below_threshold
+    find_local_minima_with_distance
+    split_array_at_nan
+
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
 ==========================================================================================
