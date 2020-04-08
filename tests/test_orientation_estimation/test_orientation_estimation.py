@@ -60,7 +60,7 @@ class TestGyroIntegration:
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
         stride_events_left = healthy_example_stride_events["left_sensor"]
-        gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
+        gyr_int = GyroIntegration()
         gyr_int.estimate(data_left, stride_events_left, 204.8)
 
         return None
