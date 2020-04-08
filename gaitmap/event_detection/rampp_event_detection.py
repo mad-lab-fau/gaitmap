@@ -179,7 +179,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """detect gait events for a single sensor data set and put into correct output stride list"""
+        """Detect gait events for a single sensor data set and put into correct output stride list."""
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
@@ -243,7 +243,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[float, float],
         min_vel_search_win_size: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """find events in provided data by looping over single strides"""
+        """Find events in provided data by looping over single strides."""
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
         acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
@@ -321,17 +321,20 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
 
 
 def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
-    """find breaks in the segmented stride list by checking where the end of one stride does not match the start of
-    the subsequent stride"""
+    """Find breaks in the segmented stride list.
+
+    Find the breaks by checking where the end of one stride does not match the start of the subsequent stride.
+    """
     tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
     breaks = np.where(tmp != 0)[0]
     return list(breaks)
 
 
 def _enforce_consistency(tmp_stride_event_df):
-    """exclude those strides where the gait events do not match the expected order
-    correct order in segmented strides should be tc - ic - men_vel """
+    """Exclude those strides where the gait events do not match the expected order.
 
+    Correct order in segmented strides should be tc - ic - men_vel.
+    """
     # check difference ic - tc > 0
     tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic"] - tmp_stride_event_df["tc"]
     tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic_tc_diff"].where(tmp_stride_event_df["ic_tc_diff"] > 0)
