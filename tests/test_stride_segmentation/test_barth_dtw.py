@@ -78,7 +78,7 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         expected_stride_list = pd.DataFrame(columns=["start", "end"])
         expected_stride_list["start"] = [5, 18]
         expected_stride_list["end"] = [7, 20]
-        assert_frame_equal(dtw.stride_list_, expected_stride_list)
+        assert_frame_equal(dtw.stride_list_.astype(np.int64), expected_stride_list.astype(np.int64))
 
     def test_stride_list_multi_d(self):
         """Test that the output of the stride list is correct."""
@@ -94,8 +94,14 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         dtw = self.init_dtw(template=template)
 
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
-        assert_frame_equal(dtw.stride_list_["sensor1"], pd.DataFrame([[5, 7]], columns=["start", "end"]))
-        assert_frame_equal(dtw.stride_list_["sensor2"], pd.DataFrame([[2, 4]], columns=["start", "end"]))
+        assert_frame_equal(
+            dtw.stride_list_["sensor1"].astype(np.int64),
+            pd.DataFrame([[5, 7]], columns=["start", "end"]).astype(np.int64),
+        )
+        assert_frame_equal(
+            dtw.stride_list_["sensor2"].astype(np.int64),
+            pd.DataFrame([[2, 4]], columns=["start", "end"]).astype(np.int64),
+        )
 
 
 # Add all the tests of base dtw, as they should pass here as well
