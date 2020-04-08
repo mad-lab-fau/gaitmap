@@ -3,8 +3,21 @@ import pandas as pd
 import pytest
 import scipy
 
+from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.position import ForwardBackwardIntegration
-from gaitmap.utils.consts import SF_ACC, SF_COLS
+from gaitmap.utils.consts import SF_COLS
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = ForwardBackwardIntegration
+    __test__ = True
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> BaseType:
+        position = ForwardBackwardIntegration()
+        position.estimate(healthy_example_imu_data['left_sensor'].iloc[:10], sampling_rate_hz=1)
+        return position
 
 
 class TestForwardBackwardIntegration:
