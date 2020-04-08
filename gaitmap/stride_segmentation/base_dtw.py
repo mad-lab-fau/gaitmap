@@ -190,7 +190,6 @@ class BaseDtw(BaseStrideSegmentation):
     resample_template: bool
     min_match_length_s: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
-    snap_to_min_window_ms: Optional[float]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -216,14 +215,12 @@ class BaseDtw(BaseStrideSegmentation):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
         min_match_length_s: Optional[float] = None,
-        snap_to_min_window_ms: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
         self.min_match_length_s = min_match_length_s
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
-        self.snap_to_min_window_ms = snap_to_min_window_ms
 
     def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.

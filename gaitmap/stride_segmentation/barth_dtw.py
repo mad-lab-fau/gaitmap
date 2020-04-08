@@ -86,14 +86,18 @@ class BarthDtw(BaseDtw):
 
     """
 
+    snap_to_min_window_ms: Optional[float]
+
     def __init__(
         self,
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 2000.,
+        max_cost: Optional[float] = 2000.0,
         min_match_length_s: Optional[float] = 0.6,
+        snap_to_min_window_ms: Optional[float] = None,
     ):
+        self.snap_to_min_window_ms = snap_to_min_window_ms
         super().__init__(
             template=template,
             max_cost=max_cost,
