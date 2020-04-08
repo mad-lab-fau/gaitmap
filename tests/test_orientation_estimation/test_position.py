@@ -16,7 +16,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data) -> BaseType:
         position = ForwardBackwardIntegration()
-        position.estimate(healthy_example_imu_data['left_sensor'].iloc[:10], sampling_rate_hz=1)
+        position.estimate(healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1)
         return position
 
 
