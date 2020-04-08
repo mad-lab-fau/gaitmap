@@ -188,7 +188,7 @@ class BaseDtw(BaseStrideSegmentation):
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
     resample_template: bool
-    min_match_length: int
+    min_match_length: Optional[int]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -214,7 +214,7 @@ class BaseDtw(BaseStrideSegmentation):
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[int] = None,
-        min_match_length: Optional[float] = None,
+        min_match_length: Optional[int] = None,
     ):
         self.template = template
         self.max_cost = max_cost
