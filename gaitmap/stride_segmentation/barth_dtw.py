@@ -1,5 +1,5 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
+from gaitmap.utils.array_handling import find_minima_in_radius
 from gaitmap.utils.dataset_helper import Dataset
 
 
@@ -87,6 +88,7 @@ class BarthDtw(BaseDtw):
     """
 
     snap_to_min_window_ms: Optional[float]
+    snap_to_min_axis: Optional[str]
 
     def __init__(
         self,
@@ -95,9 +97,11 @@ class BarthDtw(BaseDtw):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000.0,
         min_match_length_s: Optional[float] = 0.6,
-        snap_to_min_window_ms: Optional[float] = None,
+        snap_to_min_window_ms: Optional[float] = 100,
+        snap_to_min_axis: Optional[str] = "gyr_ml",
     ):
         self.snap_to_min_window_ms = snap_to_min_window_ms
+        self.snap_to_min_axis = snap_to_min_axis
         super().__init__(
             template=template,
             max_cost=max_cost,
@@ -105,10 +109,6 @@ class BarthDtw(BaseDtw):
             resample_template=resample_template,
             find_matches_method=find_matches_method,
         )
-
-    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
-
-        return super().segment(data=data, sampling_rate_hz=sampling_rate_hz)
 
     @property
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
@@ -123,3 +123,17 @@ class BarthDtw(BaseDtw):
         if len(array) == 0:
             array = None
         return pd.DataFrame(array, columns=["start", "end"])
+
+    def _postprocess_matches(self, data, matches_start_end: np.ndarray, paths: List) -> Tuple[np.ndarray, List]:
+        matches_start_end, paths = super()._postprocess_matches(
+            data=data, matches_start_end=matches_start_end, paths=paths
+        )
+        # Apply snap to minimum
+        if self.snap_to_min_window_ms:
+            # Find the closest minimum for each start and stop value
+            matches_start_end = find_minima_in_radius(
+                data[self.snap_to_min_axis].to_numpy(),
+                matches_start_end.flatten(),
+                int(self.snap_to_min_window_ms * self.sampling_rate_hz / 1000),
+            ).reshape(matches_start_end.shape)
+        return matches_start_end, paths
