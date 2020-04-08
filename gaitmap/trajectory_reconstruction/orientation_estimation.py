@@ -4,7 +4,7 @@ from itertools import accumulate
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from typing import Union, Dict
+from typing import Union, Dict, Tuple
 
 from gaitmap.base import BaseOrientationEstimation
 from gaitmap.utils import dataset_helper
@@ -83,19 +83,16 @@ class GyroIntegration(BaseOrientationEstimation):
         self.sampling_rate_hz = sampling_rate_hz
 
         if is_single_sensor_dataset(self.data):
-            self
             self.estimated_orientations_, self.estimated_orientations_with_initial_ = self._estimate_single_sensor(
                 self.data
             )
         elif is_multi_sensor_dataset(self.data):
-            (self.estimated_orientations_, self.estimated_orientations_with_initial_,) = self._estimate_multi_sensor(
-                data
-            )
+            self.estimated_orientations_, self.estimated_orientations_with_initial_ = self._estimate_multi_sensor(data)
         else:
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
-    def _estimate_single_sensor(self, data) -> Rotation:
+    def _estimate_single_sensor(self, data) -> Tuple[Rotation, Rotation]:
         gyro_data = data[SF_GYR].to_numpy()
         single_step_rotations = Rotation.from_rotvec(gyro_data / self.sampling_rate_hz)
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
@@ -103,22 +100,14 @@ class GyroIntegration(BaseOrientationEstimation):
         out_as_rot = Rotation([o.as_quat() for o in out])
         return out_as_rot[1:], out_as_rot
 
-    def _estimate_multi_sensor(self, data: MultiSensorDataset) -> Rotation:
-        if isinstance(data, dict):
-            for i_sensor in data:
-                (
-                    self.estimated_orientations_[i_sensor],
-                    self.estimated_orientations_with_initial_[i_sensor],
-                ) = self._estimate_single_sensor(self.data[i_sensor])
-        elif isinstance(data, pd.DataFrame):
-            sensors = get_multi_sensor_dataset_names(data)
-            self._estimated_orientations_ = {k: 0 for k in sensors}
-            self._estimated_orientations_with_initial_ = {k: 0 for k in sensors}
-            for i_sensor in sensors:
-                (
-                    self.estimated_orientations_[i_sensor],
-                    self.estimated_orientations_with_initial_[i_sensor],
-                ) = self._estimate_single_sensor(self.data.xs(i_sensor, level=0, axis=1))
-        else:
-            raise ValueError("Given format of multisensor not supported. See `utils.dataset_helper` for supported "
-                             "types")
+    def _estimate_multi_sensor(self, data: MultiSensorDataset) -> Tuple[Dict[str, Rotation], Dict[str, Rotation]]:
+        estimated_orientations_ = dict()
+        estimated_orientations_with_initial_ = dict()
+        for sensor in get_multi_sensor_dataset_names(data):
+            ori, with_initial = self._estimate_single_sensor(data[sensor])
+            estimated_orientations_[sensor] = ori
+            estimated_orientations_with_initial_[sensor] = with_initial
+        return estimated_orientations_, estimated_orientations_with_initial_
+        # else:
+        #     raise ValueError("Given format of multisensor not supported. See `utils.dataset_helper` for supported "
+        #                      "types")
