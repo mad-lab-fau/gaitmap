@@ -57,22 +57,6 @@ Functions
     base_dtw.find_matches_find_peaks
     base_dtw.find_matches_min_under_threshold
 
-Utils
------
-.. automodule:: gaitmap.stride_segmentation.utils
-    :no-members:
-    :no-inherited-members:
-
-.. currentmodule:: gaitmap.stride_segmentation.utils
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-    find_local_minima_below_threshold
-    find_local_minima_with_distance
-    split_array_at_nan
-
 
 :mod:`gaitmap.preprocessing`: Helper to align an prepare datasets
 =================================================================
@@ -202,6 +186,10 @@ Functions
 
     sliding_window_view
     bool_array_to_start_end_array
+    find_local_minima_below_threshold
+    find_local_minima_with_distance
+    split_array_at_nan
+
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
 ==========================================================================================

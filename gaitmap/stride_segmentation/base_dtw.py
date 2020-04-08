@@ -11,7 +11,7 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
-from gaitmap.stride_segmentation.utils import find_local_minima_with_distance, find_local_minima_below_threshold
+from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_single_sensor_dataset,
