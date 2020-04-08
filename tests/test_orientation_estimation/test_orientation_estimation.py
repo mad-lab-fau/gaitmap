@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_COLS, SF_GYR
+from gaitmap.utils.consts import SF_COLS, SF_GYR, SF_ACC
 from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
 
 # TODO: @to08kece @Arne, add metatest once DTW is merged
@@ -32,26 +32,22 @@ class TestGyroIntegration:
         """
         sensor_data = pd.DataFrame(columns=SF_COLS)
         fs = 100
-
+        # start at 5 because GyroIntegration._calculate_initial_orientation uses start-4:start+4 samples
+        start_sample = 5
         # 180 degree rotation around i_axis
         for i_axis in SF_GYR:
             if i_axis == SF_GYR[axis_to_rotate]:
-                sensor_data[i_axis] = [np.pi] * fs
+                sensor_data[i_axis] = [np.pi] * (fs + start_sample)
             else:
-                sensor_data[i_axis] = [0] * fs
+                sensor_data[i_axis] = [0] * (fs + start_sample)
 
-        # create initial "spatial quaternion" that describes a vector along z-axis
-        if axis_to_rotate == 0 or axis_to_rotate == 1:
-            rot_init = Rotation([0, 0, 1, 0])
-        else:
-            rot_init = Rotation([1, 0, 0, 0])
+        sensor_data[SF_ACC] = [0, 0, 1]
 
-        gyr_integrator = GyroIntegration(rot_init)
-        gyr_integrator.estimate(sensor_data, fs)
-        rot_final = gyr_integrator.estimated_orientations_[-1]
-        np.testing.assert_array_almost_equal(rot_final.apply(vector_to_rotate), expected_result)
-        rot_final = gyr_integrator.estimated_orientations_with_initial_[-1]
-        np.testing.assert_array_almost_equal(rot_final.apply(vector_to_rotate), expected_result)
+        gyr_integrator = GyroIntegration()
+        event_list = pd.DataFrame(data=[[0, start_sample, start_sample + fs]], columns=["s_id", "start", "end"])
+        gyr_integrator.estimate(sensor_data, event_list, fs)
+        rot_final = gyr_integrator.estimated_orientations_.iloc[-1]
+        np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
         assert len(gyr_integrator.estimated_orientations_) == fs
         assert len(gyr_integrator.estimated_orientations_with_initial_) == fs + 1
 
@@ -65,18 +61,18 @@ class TestGyroIntegration:
 
         return None
 
-    def test_multiple_sensor_input(self, healthy_example_imu_data, get_healthy_example_stride_borders):
+    def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data = healthy_example_imu_data
-        gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
-        gyr_int.estimate(data, get_healthy_example_stride_borders, 204.8)
+        gyr_int = GyroIntegration()
+        gyr_int.estimate(data, healthy_example_stride_events, 204.8)
 
         return None
 
-    def test_valid_input_data(self):
+    def test_valid_input_data(self, healthy_example_imu_data):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
-        gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
+        gyr_int = GyroIntegration()
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
-            gyr_int.estimate(data, 204.8)
+            gyr_int.estimate(data, healthy_example_imu_data, 204.8)

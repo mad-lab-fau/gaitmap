@@ -2,12 +2,12 @@
 
 import inspect
 import types
-from typing import Callable, Dict, TypeVar, Type, Any, List
+from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 
 import numpy as np
-from scipy.spatial.transform import Rotation
+import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, StrideList
+from gaitmap.utils.dataset_helper import Dataset, StrideList
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -178,17 +178,18 @@ class BaseEventDetection(BaseAlgorithm):
 class BaseOrientationEstimation(BaseAlgorithm):
     """Base class for all algorithms that estimate an orientation from measured sensor signals."""
 
-    estimated_orientations_: Rotation
+    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    estimated_orientations_with_initial_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
-    def estimate(self, data: Dataset, stride_list: StrideList, sampling_rate_hz: float):
+    def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
         ----------
         data
             Dataset for one or multiple sensors.
-        stride_list
-            List of strides for one or multiple sensors.
+        stride_event_list
+            List of stride events for one or multiple sensors.
         sampling_rate_hz
             Data with which gyroscope data was sampled in Hz.
 
