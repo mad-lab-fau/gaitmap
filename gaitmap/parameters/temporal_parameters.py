@@ -16,22 +16,26 @@ from gaitmap.utils.dataset_helper import (
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     """This class is responsible for calculating temporal parameters of strides.
 
-    Parameters
-    ----------
-    stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
-    sampling_rate_hz
-        The sampling rate of the data signal.
-
     Attributes
     ----------
     parameters_
         Data frame containing temporal parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
 
+    Other Parameters
+    ----------------
+    stride_event_list
+            Gait events for each stride obtained from Rampp event detection.
+    sampling_rate_hz
+        The sampling rate of the data signal.
+
+
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+
+    sampling_rate_hz: float
+    stride_event_list: StrideList
 
     @staticmethod
     def _calculate_single_sensor(stride_event_list: SingleSensorStrideList, sampling_rate_hz: float) -> pd.DataFrame:
@@ -104,6 +108,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             The class instance with temporal parameters populated in parameters_
 
         """
+        self.sampling_rate_hz = sampling_rate_hz
+        self.stride_event_list = stride_event_list
         if is_single_sensor_stride_list(stride_event_list, stride_type="min_vel"):  # this means single sensor
             self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
         elif is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel"):
