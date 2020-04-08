@@ -27,6 +27,25 @@ Base classes
     BaseOrientationEstimation
     BasePositionEstimation
 
+
+:mod:`gaitmap.preprocessing`: Helper to align and prepare datasets
+==================================================================
+
+.. automodule:: gaitmap.preprocessing
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.preprocessing
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+   align_dataset_to_gravity
+
+
 :mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
 ========================================================================
 
@@ -57,24 +76,6 @@ Functions
     create_dtw_template
     base_dtw.find_matches_find_peaks
     base_dtw.find_matches_min_under_threshold
-
-
-:mod:`gaitmap.preprocessing`: Helper to align and prepare datasets
-==================================================================
-
-.. automodule:: gaitmap.preprocessing
-    :no-members:
-    :no-inherited-members:
-
-Functions
----------
-.. currentmodule:: gaitmap.preprocessing
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-   align_dataset_to_gravity
 
 
 :mod:`gaitmap.event_detection`: Algorithms to find temporal gait events
@@ -165,6 +166,7 @@ Functions
     find_shortest_rotation
     get_gravity_rotation
 
+
 :mod:`gaitmap.utils.vector_math`: Helper functions for finding shortest rotation
 ================================================================================
 
@@ -185,6 +187,7 @@ Functions
     find_random_orthogonal
     find_orthogonal
     find_unsigned_3d_angle
+
 
 :mod:`gaitmap.utils.array_handling`: Helper to perform various array modifications
 ==================================================================================
@@ -229,6 +232,7 @@ Functions
     is_single_sensor_stride_list
     is_multi_sensor_stride_list
 
+
 :mod:`gaitmap.utils.coordinate_conversion`: Convert axes from sensor frame to body frame
 ========================================================================================
 
@@ -248,11 +252,13 @@ Functions
     convert_right_foot_to_fbf
     convert_to_fbf
 
+
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================
 
 .. automodule:: gaitmap.utils.consts
     :member-order: bysource
+
 
 :mod:`gaitmap.utils.static_moment_detection`: Helper to find static moments in sensor signals
 =============================================================================================

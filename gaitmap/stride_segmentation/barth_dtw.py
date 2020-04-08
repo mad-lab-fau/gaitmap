@@ -98,6 +98,7 @@ class BarthDtw(BaseDtw):
         raw data.
         If you are using a template that does not assume this, this post-processing step might lead to unexpected
         results and you should deactivate it in such a case by setting `snap_to_min_win_ms` to `None`.
+
     TODO: Add additional details about the use of DTW for stride segmentation
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
