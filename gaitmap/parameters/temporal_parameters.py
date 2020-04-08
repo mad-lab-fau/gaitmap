@@ -126,20 +126,20 @@ def _calc_time_stamp_(ic_event: float, sampling_rate_hz: float) -> float:
 def calc_stride_time(ic_event: float, pre_ic_event: float, sampling_rate_hz: float) -> float:
     """Find stride time.
 
-            Parameters
-            ----------
-            ic_event
-                Initial contact event from event detection
-            pre_ic_event
-                Previous Initial contact event from event detection
-            sampling_rate_hz
-                The sampling rate of the data signal.
+    Parameters
+    ----------
+    ic_event
+        Initial contact event from event detection
+    pre_ic_event
+        Previous Initial contact event from event detection
+    sampling_rate_hz
+        The sampling rate of the data signal.
 
-            Returns
-            -------
-                Stride time
+    Returns
+    -------
+        Stride time
 
-            """
+    """
     return (ic_event - pre_ic_event) / sampling_rate_hz
 
 

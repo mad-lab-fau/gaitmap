@@ -161,5 +161,3 @@ def _calc_stride_length(position: np.ndarray) -> float:
 
 def _calc_gait_velocity(stride_length: float, stride_time: float) -> float:
     return stride_length / stride_time
-
-
