@@ -53,7 +53,66 @@ poetry update
 Running `poetry install` will only install packages that are not yet installed. `poetry update` will also check, if 
 newer versions of already installed packages exist.
 
-### Trouble Shooting
+## Configure your IDE
+
+### Jupyter Lab/Notebooks
+
+While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
+prototype your scientific code.
+To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
+
+```
+# poetry isntall including root!
+poetry install
+poetry run doit register_ipykernel
+``` 
+
+After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
+
+Remember to use the autoreload extension to make sure that Jupyter reloads gaitmap, when ever you change something in 
+the library.
+Put this in your first cell of every Jupyter Notebook to activate it:
+
+```python
+%load_ext autoreload  # Load the extension
+%autoreload 2  # Autoreload all modules
+```
+
+### Pycharm
+
+You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to
+settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
+```python
+%load_ext autoreload
+%autoreload 2
+```
+
+## Testing and Test data
+
+While all automated test should go in the test folder, it might be helpful; to cereate some external test script form 
+to time.
+For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
+dependencies installed (see [IDE Config](#Configure-your-IDE)).
+Test data is available under `test/example_data` and you can import it directly using the `get_...` helper functions in 
+conftest:
+
+```python
+from tests.conftest import get_healthy_example_imu_data
+
+data = get_healthy_example_imu_data()
+```
+
+If you can not import the tests folder, add the path to the gaitmap project folder (`gaitmap/`, **not** the package 
+folder `gaitmap/gaitmap`) to your path at the top of your file:
+
+```
+import sys
+sys.path.insert(0, "<path to the gaitmap project folder>")
+```
+
+The path can be relative to your current working directory.
+
+## Trouble Shooting
 
 ##### `poetry not found` when using `zsh` as shell
 
@@ -93,43 +152,3 @@ poetry update --lock
 ``` 
 
 This will synchronise the lock file with the packages listed in `pyproject.toml` 
-
-##### Problem with importing (from) the `tests` module
-There might be some other `tests` module overriding the import of the local (gaitmap) tests module.
-Use:
-```
-import sys
-sys.path.insert(0, ".")
-```
-
-## Configure your IDE
-
-### Jupyter Lab/Notebooks
-
-While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
-prototype your scientific code.
-To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
-
-```
-# poetry isntall including root!
-poetry install
-poetry run doit register_ipykernel
-``` 
-
-After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
-
-Remember to use the autoreload extension to make sure that Jupyter reloads gaitmap, when ever you change something in 
-the library.
-Put this in your first cell of every Jupyter Notebook to activate it:
-
-```jupyter
-%load_ext autoreload  # Load the extension
-%autoreload 2  # Autoreload all modules
-```
-
-### Pycharm
-You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
-```jupyter
-%load_ext autoreload
-%autoreload 2
-```
