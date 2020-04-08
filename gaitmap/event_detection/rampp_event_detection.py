@@ -141,14 +141,16 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         if all(v == 0 for v in ic_search_region):
             raise ValueError("The values chosen for ic_search_region_ms are too close to zero.")
-        min_vel_search_win_size_ms = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
+        min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
+
+
 
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         # find events in all segments
         s_id, ic, tc, min_vel = self._find_all_events(
-            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_win_size_ms
+            gyr, acc, self.segmented_stride_list, ic_search_region, min_vel_search_win_size
         )
 
         # build first dict / df based on segment start and end
@@ -204,7 +206,7 @@ class RamppEventDetection(BaseEventDetection):
         acc: pd.DataFrame,
         stride_list: pd.DataFrame,
         ic_search_region: Tuple[float, float],
-        min_vel_search_win_size_ms: int,
+        min_vel_search_win_size: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
@@ -223,7 +225,7 @@ class RamppEventDetection(BaseEventDetection):
             gyr_grad = np.gradient(gyr_ml_sec)
             ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
             fc_events.append(start + _detect_tc(gyr_ml_sec))
-            min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size_ms))
+            min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
 
         # TODO add validation / consistency check of the gait events
         return (
@@ -234,17 +236,17 @@ class RamppEventDetection(BaseEventDetection):
         )
 
 
-def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size_ms: int) -> float:
+def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
-    if min_vel_search_win_size_ms >= len(energy):
+    if min_vel_search_win_size >= len(energy):
         raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
     energy = sliding_window_view(
-        energy, window_length=min_vel_search_win_size_ms, overlap=min_vel_search_win_size_ms - 1
+        energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1
     )
     # find window with lowest summed energy
     min_vel_start = np.argmin(np.sum(energy, axis=1))
     # min_vel event = middle of this window
-    min_vel_center = min_vel_start + min_vel_search_win_size_ms // 2
+    min_vel_center = min_vel_start + min_vel_search_win_size // 2
     return min_vel_center
 
 
