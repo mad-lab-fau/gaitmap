@@ -268,6 +268,7 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
     _action_method = "calculate"
 
     def calculate(self: BaseType, stride_event_list: StrideList, positions: PositionList,
-                  orientations: OrienationList) -> BaseType:
+                  orientations: OrienationList,
+                  sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")

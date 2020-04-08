@@ -311,7 +311,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
         return False
 
     columns = position_list.columns
-    expected_columns = ["s_id", "position",  "velocity"]
+    expected_columns = ["s_id", "position", "velocity"]
     if not all(v in columns for v in expected_columns):
         return False
     return True
@@ -380,7 +380,7 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
 
     A valid multi-sensor stride list is dictionary of single-sensor Orientation lists.
 
-    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` for each of the contained stride
+    Function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` for each of the contained stride
     lists.
 
     Parameters
@@ -405,5 +405,3 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
         if not is_single_sensor_orientation_list(orientation_list[k]):
             return False
     return True
-
-
