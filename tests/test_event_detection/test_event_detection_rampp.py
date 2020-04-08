@@ -23,7 +23,7 @@ class TestEventDetectionRampp:
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
-        data_left.columns = BF_COLS
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         stride_list_left = stride_list_left.iloc[[0, 1, 2, 4, 5, 6]]
 
@@ -48,7 +48,7 @@ class TestEventDetectionRampp:
     def test_valid_min_vel_search_win_size_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if error is raised correctly on too large min_vel_search_win_size_ms"""
         data_left = healthy_example_imu_data["left_sensor"]
-        data_left.columns = BF_COLS
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = RamppEventDetection(min_vel_search_win_size_ms=5000)
         with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
@@ -57,7 +57,7 @@ class TestEventDetectionRampp:
     def test_input_stride_list_size_one(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if gait event detection also works with stride list of length 1"""
         data_left = healthy_example_imu_data["left_sensor"]
-        data_left.columns = BF_COLS
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = RamppEventDetection()
@@ -75,6 +75,7 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
         # find breaks in segmented strides and drop first strides of new sequences
+        stride_list_left.rename(columns={"start": "seg_start", "end": "seg_end"}, inplace=True)
         stride_list_breaks = _find_breaks_in_stride_list(stride_list_left)
         stride_list_left = stride_list_left.drop(stride_list_left.index[stride_list_breaks])
         # the s_ids of the event detection and the stride list should be identical (except for the last entry)
