@@ -55,21 +55,22 @@ class TestGyroIntegration:
         assert len(gyr_integrator.estimated_orientations_) == fs
         assert len(gyr_integrator.estimated_orientations_with_initial_) == fs + 1
 
-    def test_single_sensor_input(self, healthy_example_imu_data):
+    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
+        stride_events_left = healthy_example_stride_events["left_sensor"]
         gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
-        gyr_int.estimate(data_left, 204.8)
+        gyr_int.estimate(data_left, stride_events_left, 204.8)
 
         return None
 
-    def test_multiple_sensor_input(self, healthy_example_imu_data):
+    def test_multiple_sensor_input(self, healthy_example_imu_data, get_healthy_example_stride_borders):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data = healthy_example_imu_data
         gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
-        gyr_int.estimate(data, 204.8)
+        gyr_int.estimate(data, get_healthy_example_stride_borders, 204.8)
 
         return None
 

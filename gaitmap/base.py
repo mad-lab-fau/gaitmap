@@ -180,14 +180,16 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     estimated_orientations_: Rotation
 
-    def estimate(self, data: SingleSensorDataset, sampling_rate_hz: float):
+    def estimate(self, data: Dataset, stride_list: StrideList, sampling_rate_hz: float):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
         ----------
-        data : pandas.DataFrame
-            Contains at least gyroscope data, optionally also acceleration data of one or several sensors.
-        sampling_rate_hz : float
+        data
+            Dataset for one or multiple sensors.
+        stride_list
+            List of strides for one or multiple sensors.
+        sampling_rate_hz
             Data with which gyroscope data was sampled in Hz.
 
         """

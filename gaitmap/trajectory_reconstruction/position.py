@@ -8,7 +8,7 @@ from scipy import integrate
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
 from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
-from gaitmap.utils.dataset_helper import Dataset
+from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, MultiSensorDataset
 
 
 class ForwardBackwardIntegration(BasePositionEstimation):
@@ -106,7 +106,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             integrate.cumtrapz(self.velocity_[SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz
         )
         self.position_.columns = SF_POS
-        # TODO: implement integration of velocity to obtain position
         return self
 
     def _get_weight_matrix(self, data_to_integrate: pd.DataFrame):
@@ -126,3 +125,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         weights_vel = self._get_weight_matrix(pd.DataFrame(data[channels]))
 
         return pd.DataFrame(integral_forward * weights_vel + integral_backward * (1 - weights_vel), index=data.index)
+
+    def _estimate_single_sensor(self, data: SingleSensorDataset):
+        pass
+
+    def _estimate_multi_sensor(self, data: MultiSensorDataset):
+        pass
