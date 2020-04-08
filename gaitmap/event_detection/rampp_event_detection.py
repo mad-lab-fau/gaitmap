@@ -109,7 +109,7 @@ class RamppEventDetection(BaseEventDetection):
         Get gait events from single sensor signal
 
         >>> event_detection = RamppEventDetection()
-        >>> event_detection.detect(data=data_left, sampling_rate_hz=204.8, segmented_stride_list=stride_list_left)
+        >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
         >>> event_detection.stride_events_
             s_id   start     end      ic      tc  min_vel  pre_ic
         0      0   519.0   710.0   651.0   584.0    519.0   498.0
@@ -179,6 +179,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """detect gait events for a single sensor data set and put into correct output stride list"""
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
@@ -242,6 +243,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[float, float],
         min_vel_search_win_size: int,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """find events in provided data by looping over single strides"""
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
         acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
@@ -261,7 +263,6 @@ class RamppEventDetection(BaseEventDetection):
             fc_events.append(start + _detect_tc(gyr_ml_sec))
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
 
-        # TODO add validation / consistency check of the gait events
         return (
             np.array(s_id, dtype=int),
             np.array(ic_events, dtype=float),
@@ -320,13 +321,17 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
 
 
 def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
+    """find breaks in the segmented stride list by checking where the end of one stride does not match the start of
+    the subsequent stride"""
     tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
     breaks = np.where(tmp != 0)[0]
     return list(breaks)
 
 
 def _enforce_consistency(tmp_stride_event_df):
-    # correct order in segmented strides should be tc - ic - men_vel
+    """exclude those strides where the gait events do not match the expected order
+    correct order in segmented strides should be tc - ic - men_vel """
+
     # check difference ic - tc > 0
     tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic"] - tmp_stride_event_df["tc"]
     tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic_tc_diff"].where(tmp_stride_event_df["ic_tc_diff"] > 0)
