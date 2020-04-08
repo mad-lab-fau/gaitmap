@@ -190,6 +190,7 @@ class BaseDtw(BaseStrideSegmentation):
     resample_template: bool
     min_match_length_s: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
+    snap_to_min_window_ms: Optional[float]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -213,14 +214,16 @@ class BaseDtw(BaseStrideSegmentation):
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[int] = None,
+        max_cost: Optional[float] = None,
         min_match_length_s: Optional[float] = None,
+        snap_to_min_window_ms: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
         self.min_match_length_s = min_match_length_s
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
+        self.snap_to_min_window_ms = snap_to_min_window_ms
 
     def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.
@@ -298,9 +301,9 @@ class BaseDtw(BaseStrideSegmentation):
         else:
             template = template_array
 
-        min_distance = self.min_match_length_s
-        if min_distance not in (None, 0, 0.0):
-            min_distance *= self.sampling_rate_hz
+        min_sequence_length = self.min_match_length_s
+        if min_sequence_length not in (None, 0, 0.0):
+            min_sequence_length *= self.sampling_rate_hz
 
         find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
         if not find_matches_method:
@@ -313,7 +316,9 @@ class BaseDtw(BaseStrideSegmentation):
         # Calculate cost matrix
         acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
-        matches = find_matches_method(acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_distance)
+        matches = find_matches_method(
+            acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=min_sequence_length
+        )
         if len(matches) == 0:
             paths_ = []
             costs_ = []
@@ -322,16 +327,25 @@ class BaseDtw(BaseStrideSegmentation):
             paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
 
-            # Remove matches that are shorter that min_match_length
-            if min_distance is None:
-                min_distance = -np.inf
-            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end_, axis=-1)) > min_distance)
+            valid_strides = self._postprocess_matches(matches_start_end_, min_sequence_length)
             valid_strides_idx = np.where(valid_strides)[0]
             matches_start_end_ = matches_start_end_[valid_strides_idx]
             paths_ = [paths_[i] for i in valid_strides_idx]
             costs_ = np.sqrt(acc_cost_mat_[-1, :][matches[valid_strides]])
 
         return acc_cost_mat_, paths_, costs_, matches_start_end_
+
+    def _postprocess_matches(self, matches_start_end: np.ndarray, min_sequence_length: float) -> np.ndarray:
+        """Remove invalid strides and apply snap to min.
+
+        Returns:
+            A bool map of the valid strides
+        """
+        # Remove matches that are shorter that min_match_length
+        if min_sequence_length is None:
+            min_sequence_length = -np.inf
+        valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) > min_sequence_length)
+        return valid_strides
 
     @staticmethod
     def _resample_template(

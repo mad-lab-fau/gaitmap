@@ -91,7 +91,7 @@ class BarthDtw(BaseDtw):
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 2000,
+        max_cost: Optional[float] = 2000.,
         min_match_length_s: Optional[float] = 0.6,
     ):
         super().__init__(
