@@ -5,11 +5,9 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.array_handling import find_minima_in_radius
-from gaitmap.utils.dataset_helper import Dataset
 
 
 class BarthDtw(BaseDtw):
@@ -109,7 +107,7 @@ class BarthDtw(BaseDtw):
 
     """
 
-    snap_to_min_window_ms: Optional[float]
+    snap_to_min_win_ms: Optional[float]
     snap_to_min_axis: Optional[str]
 
     def __init__(
@@ -119,10 +117,10 @@ class BarthDtw(BaseDtw):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000.0,
         min_match_length_s: Optional[float] = 0.6,
-        snap_to_min_window_ms: Optional[float] = 100,
+        snap_to_min_win_ms: Optional[float] = 100,
         snap_to_min_axis: Optional[str] = "gyr_ml",
     ):
-        self.snap_to_min_window_ms = snap_to_min_window_ms
+        self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
         super().__init__(
             template=template,
@@ -151,11 +149,11 @@ class BarthDtw(BaseDtw):
             data=data, matches_start_end=matches_start_end, paths=paths
         )
         # Apply snap to minimum
-        if self.snap_to_min_window_ms:
+        if self.snap_to_min_win_ms:
             # Find the closest minimum for each start and stop value
             matches_start_end = find_minima_in_radius(
                 data[self.snap_to_min_axis].to_numpy(),
                 matches_start_end.flatten(),
-                int(self.snap_to_min_window_ms * self.sampling_rate_hz / 1000) // 2,
+                int(self.snap_to_min_win_ms * self.sampling_rate_hz / 1000) // 2,
             ).reshape(matches_start_end.shape)
         return matches_start_end, paths

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
@@ -38,11 +39,30 @@ class TestRegressionOnRealData:
         assert len(dtw.stride_list_["left_sensor"]) == 28
         assert len(dtw.stride_list_["right_sensor"]) == 28
 
+    def test_snapping_on_off(self, healthy_example_imu_data):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        # off
+        dtw = BarthDtw(snap_to_min_win_ms=None)
+        dtw.segment(data, sampling_rate_hz=204.8)
+        out_without_snapping = dtw.matches_start_end_["left_sensor"]
+
+        assert dtw.stride_list_["left_sensor"]["start"][0] == 364
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 574
+        assert_array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
+
+        # on
+        dtw = BarthDtw()  # Test with default paras
+        dtw.segment(data, sampling_rate_hz=204.8)
+        assert dtw.stride_list_["left_sensor"]["start"][0] == 364
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 584
+        assert not np.array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
+        assert_array_equal(dtw.matches_start_end_original_["left_sensor"], out_without_snapping)
+
 
 class DtwTestBaseBarth:
     def init_dtw(self, template, **kwargs):
         defaults = dict(
-            max_cost=0.5, min_match_length_s=None, find_matches_method="min_under_thres"
+            max_cost=0.5, min_match_length_s=None, find_matches_method="min_under_thres", snap_to_min_win_ms=None
         )
         kwargs = {**defaults, **kwargs}
         return BarthDtw(template=template, **kwargs)
@@ -76,6 +96,7 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(dtw.stride_list_["sensor1"], pd.DataFrame([[5, 7]], columns=["start", "end"]))
         assert_frame_equal(dtw.stride_list_["sensor2"], pd.DataFrame([[2, 4]], columns=["start", "end"]))
+
 
 # Add all the tests of base dtw, as they should pass here as well
 

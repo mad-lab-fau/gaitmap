@@ -154,7 +154,7 @@ class BaseDtw(BaseStrideSegmentation):
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
-    matches_start_end_original : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+    matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if no postprocessing is applied to change the values of start and the end of
         the matches.
         This base implementation of the DTW does not do this, but potential subclasses might modify the matches list
@@ -344,11 +344,12 @@ class BaseDtw(BaseStrideSegmentation):
             costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
         return acc_cost_mat_, paths_, costs_, matches_start_end_
 
-    def _postprocess_matches(self, data, matches_start_end: np.ndarray, paths: List) -> Tuple[np.ndarray, List]:
-        """Remove invalid strides and apply snap to min.
+    def _postprocess_matches(
+        self, data, matches_start_end: np.ndarray, paths: List  # noqa: unused-argument
+    ) -> Tuple[np.ndarray, List]:
+        """Apply postprocessing.
 
-        Returns:
-            A bool map of the valid strides
+        This can be overwritten by subclasses to filter and modify the matches further.
         """
         # Remove matches that are shorter that min_match_length
         min_sequence_length = self._min_sequence_length
