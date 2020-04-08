@@ -56,7 +56,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         stride_id_ = stride_event_list["s_id"]
         time_stamp_ = _calc_time_stamp_(stride_event_list["ic"], sampling_rate_hz)
-        stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
+        stride_time_ = calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
         swing_time_ = _calc_swing_time(stride_event_list["ic"], stride_event_list["tc"], sampling_rate_hz)
         stance_time_ = [stride_time - swing_time for stride_time, swing_time in zip(stride_time_, swing_time_)]
         stride_parameter_dict = {
@@ -123,7 +123,7 @@ def _calc_time_stamp_(ic_event: float, sampling_rate_hz: float) -> float:
     return ic_event / sampling_rate_hz
 
 
-def _calc_stride_time(ic_event: float, pre_ic_event: float, sampling_rate_hz: float) -> float:
+def calc_stride_time(ic_event: float, pre_ic_event: float, sampling_rate_hz: float) -> float:
     return (ic_event - pre_ic_event) / sampling_rate_hz
 
 

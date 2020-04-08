@@ -15,6 +15,14 @@ SingleSensorStrideList = pd.DataFrame
 MultiSensorStrideList = Dict[str, pd.DataFrame]
 StrideList = Union[SingleSensorDataset, MultiSensorStrideList]
 
+SingleSensorPositionList = pd.DataFrame
+MultiSensorPositionList = Dict[str, pd.DataFrame]
+PositionList = Union[SingleSensorPositionList, SingleSensorPositionList]
+
+SingleSensorOrientationList = pd.DataFrame
+MultiSensorOrientationList = Dict[str, pd.DataFrame]
+OrienationList = Union[SingleSensorDataset, MultiSensorStrideList]
+
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
     """Check if columns contain all required columns for the sensor frame."""
@@ -281,3 +289,121 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
         keys = dataset.keys()
 
     return keys
+
+
+def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> bool:
+    """Check if an input is a single-sensor position list.
+
+    A valid position list:
+    - is a pandas Dataframe with at least the following columns: `["s_id", "position", "velocity"]`
+
+    Parameters
+    ----------
+    position_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_position_list: Check for multi-sensor position lists
+
+    """
+    if not isinstance(position_list, pd.DataFrame):
+        return False
+
+    columns = position_list.columns
+    expected_columns = ["s_id", "position",  "velocity"]
+    if not all(v in columns for v in expected_columns):
+        return False
+    return True
+
+
+def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> bool:
+    """Check if an input is a multi-sensor position list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor position lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_position_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    position_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_position_list: Check for multi-sensor position lists
+
+    """
+    if not isinstance(position_list, dict):
+        return False
+
+    keys = position_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_position_list(position_list[k]):
+            return False
+    return True
+
+
+def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationList) -> bool:
+    """Check if an input is a single-sensor orientation list.
+
+    A valid orientation list:
+    - is a pandas Dataframe with at least the following columns: `["s_id", "orientation"]`
+
+    Parameters
+    ----------
+    orientation_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_orientation_list: Check for multi-sensor orientation lists
+
+    """
+    if not isinstance(orientation_list, pd.DataFrame):
+        return False
+
+    columns = orientation_list.columns
+    expected_columns = ["s_id", "orientation"]
+    if not all(v in columns for v in expected_columns):
+        return False
+    return True
+
+
+def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationList) -> bool:
+    """Check if an input is a multi-sensor orientation list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor Orientation lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    orientation_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_orientation_list: Check for multi-sensor orientation lists
+
+    """
+    if not isinstance(orientation_list, dict):
+        return False
+
+    keys = orientation_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_orientation_list(orientation_list[k]):
+            return False
+    return True
+
+
