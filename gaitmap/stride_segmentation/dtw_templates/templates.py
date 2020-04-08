@@ -1,6 +1,6 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ class DtwTemplate:
 
     Parameters
     ----------
-    template
+    data
         The actual data representing the template.
         If this should be a array or a dataframe might depend on your usecase.
     template_file_name
@@ -41,35 +41,35 @@ class DtwTemplate:
     use_cols: Optional[Tuple[Union[str, int]]]
     scaling: Optional[float]
 
-    _template: Optional[Union[np.ndarray, pd.DataFrame]]
+    _data: Optional[Union[np.ndarray, pd.DataFrame]]
 
     def __init__(
         self,
-        template: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
         scaling: Optional[float] = None,
         use_cols: Optional[Tuple[Union[str, int]]] = None,
     ):
-        self._template = template
+        self._data = data
         self.template_file_name = template_file_name
         self.sampling_rate_hz = sampling_rate_hz
         self.scaling = scaling
         self.use_cols = use_cols
 
     @property
-    def template(self) -> Union[np.ndarray, pd.DataFrame]:
+    def data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
 
         If no dataset is registered yet, it will be read from the file path if provided.
         """
-        if self._template is None and self.template_file_name is None:
+        if self._data is None and self.template_file_name is None:
             raise AttributeError("Neither a template array nor a template file is provided.")
-        if self._template is None:
+        if self._data is None:
             with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
-                self._template = pd.read_csv(test_data, header=0)
+                self._data = pd.read_csv(test_data, header=0)
         scaling = getattr(self, "scaling", None) or 1
-        template = self._template * scaling
+        template = self._data * scaling
 
         if getattr(self, "use_cols", None) is None:
             return template
@@ -145,7 +145,7 @@ def create_dtw_template(
 
     """
     template_instance = DtwTemplate(
-        template=template, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols
+        data=template, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols
     )
 
     return template_instance

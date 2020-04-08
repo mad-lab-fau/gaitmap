@@ -260,7 +260,7 @@ class BaseDtw(BaseStrideSegmentation):
                 results = dict()
                 for sensor, single_template in template.items():
                     results[sensor] = self._segment_single_dataset(data[sensor], single_template)
-            elif is_single_sensor_dataset(template.template, check_gyr=False, check_acc=False):
+            elif is_single_sensor_dataset(template.data, check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
                 for sensor in get_multi_sensor_dataset_names(data):
@@ -291,7 +291,7 @@ class BaseDtw(BaseStrideSegmentation):
             )
 
         # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(template.template, dataset)
+        template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
 
         if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
             template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
