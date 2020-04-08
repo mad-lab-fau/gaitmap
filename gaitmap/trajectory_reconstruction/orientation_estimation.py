@@ -1,13 +1,11 @@
 """Estimation of orientations by gyroscope integration."""
 import operator
 from itertools import accumulate
-
-import pandas as pd
-from scipy.spatial.transform import Rotation
 from typing import Union, Dict, Tuple
 
+from scipy.spatial.transform import Rotation
+
 from gaitmap.base import BaseOrientationEstimation
-from gaitmap.utils import dataset_helper
 from gaitmap.utils.consts import SF_GYR
 from gaitmap.utils.dataset_helper import SingleSensorDataset, MultiSensorDataset, get_multi_sensor_dataset_names
 from gaitmap.utils.dataset_helper import is_single_sensor_dataset, is_multi_sensor_dataset
@@ -102,12 +100,9 @@ class GyroIntegration(BaseOrientationEstimation):
 
     def _estimate_multi_sensor(self, data: MultiSensorDataset) -> Tuple[Dict[str, Rotation], Dict[str, Rotation]]:
         estimated_orientations_ = dict()
-        estimated_orientations_with_initial_ = dict()
+        estimated_ori_with_initial_ = dict()
         for sensor in get_multi_sensor_dataset_names(data):
             ori, with_initial = self._estimate_single_sensor(data[sensor])
             estimated_orientations_[sensor] = ori
-            estimated_orientations_with_initial_[sensor] = with_initial
-        return estimated_orientations_, estimated_orientations_with_initial_
-        # else:
-        #     raise ValueError("Given format of multisensor not supported. See `utils.dataset_helper` for supported "
-        #                      "types")
+            estimated_ori_with_initial_[sensor] = with_initial
+        return estimated_orientations_, estimated_ori_with_initial_
