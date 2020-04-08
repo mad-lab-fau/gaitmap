@@ -7,6 +7,7 @@ from gaitmap.utils.array_handling import (
     bool_array_to_start_end_array,
     split_array_at_nan,
     find_local_minima_below_threshold,
+    find_minima_in_radius,
 )
 
 
@@ -263,3 +264,44 @@ class TestLocalMinimaBelowThreshold:
         out = find_local_minima_below_threshold(np.array(data), threshold)
 
         np.testing.assert_array_equal(out, results)
+
+
+class TestFindMinRadius:
+    def test_simple(self):
+        data = np.array([0, 0, 0, -1, 0, 0, 0])  # min at 3
+        radius = 1
+        indices = np.array([2, 3, 4])  # All should find the minima
+        out = find_minima_in_radius(data, indices, radius)
+        assert_array_equal(out, [3, 3, 3])
+
+    def test_multiple_matches(self):
+        data = np.array([0, 0, 0, -1, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0])  # min at 3, 10
+        radius = 2
+        indices = np.arange(2, len(data) - 2)
+        out = find_minima_in_radius(data, indices, radius)
+        # 2 - 5 should see the first minimum, 6, 7 see no minimum, 8-11 see second minimum
+        assert_array_equal(out, [3, 3, 3, 3, 4, 5, 10, 10, 10, 10])
+
+    def test_edge_case_end(self):
+        data = np.array([0, 0, 0, 0, 0, -1, 0])  # min at 5
+        radius = 2
+        indices = np.array([4, 5])  # 5 overlap with end
+        out = find_minima_in_radius(data, indices, radius)
+        assert_array_equal(out, [5, 5])
+
+    def test_edge_case_start(self):
+        data = np.array([0, -1, 0, 0, 0, 0, 0])  # min at 1
+        radius = 2
+        indices = np.array([1, 2])  # 1 overlap with start
+        out = find_minima_in_radius(data, indices, radius)
+        assert_array_equal(out, [1, 1])
+
+    def test_full_dummy(self):
+        """As there is no minimum, every index should return the start of the window."""
+        length = 10
+        data = np.zeros(10)
+        indices = np.arange(10)
+        radius = 2
+        out = find_minima_in_radius(data, indices, radius)
+        assert_array_equal(out[radius:], indices[radius:] - radius)
+        assert_array_equal(out[:radius], np.zeros(radius))

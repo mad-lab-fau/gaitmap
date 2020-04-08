@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
@@ -21,7 +22,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length=None, min_stride_time_s=None)
+        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)
         data = np.array([0, 1.0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
@@ -38,11 +39,30 @@ class TestRegressionOnRealData:
         assert len(dtw.stride_list_["left_sensor"]) == 28
         assert len(dtw.stride_list_["right_sensor"]) == 28
 
+    def test_snapping_on_off(self, healthy_example_imu_data):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        # off
+        dtw = BarthDtw(snap_to_min_win_ms=None)
+        dtw.segment(data, sampling_rate_hz=204.8)
+        out_without_snapping = dtw.matches_start_end_["left_sensor"]
+
+        assert dtw.stride_list_["left_sensor"]["start"][0] == 364
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 574
+        assert_array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
+
+        # on
+        dtw = BarthDtw()  # Test with default paras
+        dtw.segment(data, sampling_rate_hz=204.8)
+        assert dtw.stride_list_["left_sensor"]["start"][0] == 364
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 584
+        assert not np.array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
+        assert_array_equal(dtw.matches_start_end_original_["left_sensor"], out_without_snapping)
+
 
 class DtwTestBaseBarth:
     def init_dtw(self, template, **kwargs):
         defaults = dict(
-            max_cost=0.5, min_match_length=None, min_stride_time_s=None, find_matches_method="min_under_thres"
+            max_cost=0.5, min_match_length_s=None, find_matches_method="min_under_thres", snap_to_min_win_ms=None
         )
         kwargs = {**defaults, **kwargs}
         return BarthDtw(template=template, **kwargs)
@@ -76,30 +96,6 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(dtw.stride_list_["sensor1"], pd.DataFrame([[5, 7]], columns=["start", "end"]))
         assert_frame_equal(dtw.stride_list_["sensor2"], pd.DataFrame([[2, 4]], columns=["start", "end"]))
-
-    @pytest.mark.parametrize("min_stride_time_s", (None, 0.5))
-    @pytest.mark.parametrize("min_match_length", (None, 4))
-    @pytest.mark.parametrize("sampling_rate_hz", (100, 50))
-    def test_min_stride_time(self, min_stride_time_s, min_match_length, sampling_rate_hz):
-        """Test that min_stride_time is correctly converted into `min_match_length`.
-
-        min_stride_time will always overwrite min_match_length
-        """
-        sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.init_dtw(template, min_stride_time_s=min_stride_time_s, min_match_length=min_match_length)
-
-        # It will only converted during the segment:
-        assert dtw.min_stride_time_s == min_stride_time_s
-        assert dtw.min_match_length == min_match_length
-
-        dtw.segment(np.array(sequence), sampling_rate_hz=sampling_rate_hz)
-        if min_stride_time_s:
-            assert dtw.min_stride_time_s == min_stride_time_s
-            assert dtw.min_match_length == min_stride_time_s * sampling_rate_hz
-        else:
-            assert dtw.min_stride_time_s == min_stride_time_s
-            assert dtw.min_match_length == min_match_length
 
 
 # Add all the tests of base dtw, as they should pass here as well
