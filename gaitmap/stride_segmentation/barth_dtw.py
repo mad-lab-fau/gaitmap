@@ -52,12 +52,22 @@ class BarthDtw(BaseDtw):
             Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
+    snap_to_min_win_ms
+        The size of the window in ms used to search local minima during the post processing of the stride borders.
+        If this is set to None, this postprocessing step is skipped.
+        Refer to the Notes section for more details.
+    snap_to_min_axis
+        The axis of the data used to search for minima during the processing of the stride borders.
+        The axis label must match one of the axis label in the data.
+        Refer to the Notes section for more details.
 
     Attributes
     ----------
     stride_list_ : A stride list or dictionary with such values
         The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
         other algorithms.
+        If `snap_to_min_window_ms` is not `None`, the start and end value might not match to the output of `paths_`.
+        Refer to `matches_start_end_original_` for the unmodified start and end values.
     matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         The start (column 1) and end (column 2) of each detected stride.
     costs_ : List of length n_detected_strides or dictionary with such values
@@ -68,6 +78,9 @@ class BarthDtw(BaseDtw):
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
+    matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        Identical to `matches_start_end_` if `snap_to_min_window_ms` is equal to `None`.
+        Otherwise, it return the start and end values before the sanpping is applied.
 
     Other Parameters
     ----------------
@@ -78,6 +91,15 @@ class BarthDtw(BaseDtw):
 
     Notes
     -----
+    Post Processing
+        This algorithm uses an optional post-processing step that "snaps" the stride borders to the closest local
+        minimum in the raw data.
+        This helps to align the end of one stride with the start of the next stride (which is a requirement for certain
+        event detection algorithms) and resolve small overlaps between neighboring strides.
+        However, this assumes that the start and the end of each match is marked by a clear minima in one axis of the
+        raw data.
+        If you are using a template that does not assume this, this post-processing step might lead to unexpected
+        results and you should deactivate it in such a case by setting `snap_to_min_win_ms` to `None`.
     TODO: Add additional details about the use of DTW for stride segmentation
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
@@ -134,6 +156,6 @@ class BarthDtw(BaseDtw):
             matches_start_end = find_minima_in_radius(
                 data[self.snap_to_min_axis].to_numpy(),
                 matches_start_end.flatten(),
-                int(self.snap_to_min_window_ms * self.sampling_rate_hz / 1000),
+                int(self.snap_to_min_window_ms * self.sampling_rate_hz / 1000) // 2,
             ).reshape(matches_start_end.shape)
         return matches_start_end, paths

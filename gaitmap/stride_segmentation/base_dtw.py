@@ -154,6 +154,12 @@ class BaseDtw(BaseStrideSegmentation):
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
+    matches_start_end_original : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        Identical to `matches_start_end_` if no postprocessing is applied to change the values of start and the end of
+        the matches.
+        This base implementation of the DTW does not do this, but potential subclasses might modify the matches list
+        during postprocessing.
+        This does **not** preserve matches that were removed during postprocessing.
 
     Other Parameters
     ----------------
@@ -208,6 +214,16 @@ class BaseDtw(BaseStrideSegmentation):
         if isinstance(self.acc_cost_mat_, dict):
             return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in self.acc_cost_mat_.items()}
         return np.sqrt(self.acc_cost_mat_[-1, :])
+
+    @property
+    def matches_start_end_original_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
+        """Return the starts and end directly from the paths.
+
+        This will not be effected by potential changes of the postprocessing.
+        """
+        if isinstance(self.acc_cost_mat_, dict):
+            return {s: np.array([[p[0][-1], p[-1][-1]] for p in path]) for s, path in self.paths_.items()}
+        return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
 
     def __init__(
         self,
@@ -336,12 +352,11 @@ class BaseDtw(BaseStrideSegmentation):
         """
         # Remove matches that are shorter that min_match_length
         min_sequence_length = self._min_sequence_length
-        if min_sequence_length is None:
-            min_sequence_length = -np.inf
-        valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) > min_sequence_length)
-        valid_strides_idx = np.where(valid_strides)[0]
-        matches_start_end = matches_start_end[valid_strides_idx]
-        paths = [paths[i] for i in valid_strides_idx]
+        if min_sequence_length is not None:
+            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) > min_sequence_length)
+            valid_strides_idx = np.where(valid_strides)[0]
+            matches_start_end = matches_start_end[valid_strides_idx]
+            paths = [paths[i] for i in valid_strides_idx]
         return matches_start_end, paths
 
     @staticmethod
