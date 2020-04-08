@@ -141,7 +141,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         """
         if is_single_sensor_stride_list(stride_event_list, stride_type="min_vel") and \
                 is_single_sensor_position_list(positions) and \
-                is_single_sensor_orientation_list(orientations): # this means single sensor
+                is_single_sensor_orientation_list(orientations):
             self.parameters_ = self._calculate_single_sensor(stride_event_list, positions,
                                                              orientations, sampling_rate_hz)
         elif is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel") and \
