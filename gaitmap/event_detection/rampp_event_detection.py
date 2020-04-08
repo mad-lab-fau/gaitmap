@@ -124,6 +124,16 @@ class RamppEventDetection(BaseEventDetection):
         if not dataset_helper.is_single_sensor_dataset(data):
             raise ValueError("Provided data set is not supported by gaitmap")
 
+        if dataset_helper.is_single_sensor_dataset(data) and not dataset_helper.is_single_sensor_stride_list(
+            segmented_stride_list
+        ):
+            raise ValueError("Provided stride list does not fit to provided single sensor data set")
+
+        if dataset_helper.is_multi_sensor_dataset(data) and not dataset_helper.is_multi_sensor_stride_list(
+            segmented_stride_list
+        ):
+            raise ValueError("Provided stride list does not fit to provided multi sensor data set")
+
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         self.segmented_stride_list = segmented_stride_list

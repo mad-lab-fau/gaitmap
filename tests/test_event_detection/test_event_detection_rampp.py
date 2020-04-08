@@ -25,7 +25,6 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
-        stride_list_left = stride_list_left.iloc[[0, 1, 2, 4, 5, 6]]
 
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
@@ -80,3 +79,12 @@ class TestEventDetectionRampp:
         stride_list_left = stride_list_left.drop(stride_list_left.index[stride_list_breaks])
         # the s_ids of the event detection and the stride list should be identical (except for the last entry)
         assert_array_equal(np.array(ed.stride_events_["s_id"]), np.array(stride_list_left["s_id"])[:-1])
+
+    def test_single_data_multi_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test correct error for combination of single sensor data set and multi sensor stride list"""
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
+        stride_list_left = healthy_example_stride_borders
+        ed = RamppEventDetection()
+        with pytest.raises(ValueError):
+            ed.detect(data_left, 204.8, stride_list_left)
