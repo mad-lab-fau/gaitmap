@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from datetime import datetime
 from importlib import import_module
 from inspect import getsourcelines
 
@@ -25,8 +26,15 @@ URL = "https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/blob
 
 
 project = "gaitmap"
-copyright = "2020, Arne Küderle"
-author = "Arne Küderle"
+copyright = "2020 - {}, MaD-Lab FAU, Digital Health and Gait-Analysis Group".format(datetime.now().year)
+author = (
+    "Arne Küderle <arne.kuederle@fau.de>, "
+    "Martin Ullrich <martin.ullrich@fau.de>, "
+    "Nils Roth <nils.roth@fau.de>, "
+    "Malte Ollenschläger <Malte.Ollenschlaeger@fau.de>, "
+    "Alzhraa Ahmed <alzhraa.ahmed@fau.de>, "
+    "Felix Kluge <felix.kluge@fau.de>"
+)
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.0"
@@ -102,6 +110,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # -- Options for extensions --------------------------------------------------
 # Linkcode
 
+
 def get_nested_attr(obj, attr):
     attrs = attr.split(".", 1)
     new_obj = getattr(obj, attrs[0])
@@ -128,15 +137,15 @@ def linkcode_resolve(domain, info):
         return "{}/{}.py#L{}".format(URL, filename, code_line)
     return "{}/{}.py".format(URL, filename)
 
+
 # Intersphinx
 
 # intersphinx configuration
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/{.major}'.format(
-        sys.version_info), None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'tslearn': ('https://tslearn.readthedocs.io/en/latest/', None),
+    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "tslearn": ("https://tslearn.readthedocs.io/en/latest/", None),
 }
