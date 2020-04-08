@@ -157,3 +157,38 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
         # If None just pass it like it is to find_peaks
         threshold *= -1
     return find_peaks(-data, height=threshold, **kwargs)[0]
+
+
+def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
+    """Return the index of the global minima of data in the given radius around each index in indices.
+
+    Parameters
+    ----------
+    data : 1D array
+        Data used to find the minima
+    indices : 1D array of ints
+        Around each index the minima is searched in the region defined by radius
+    radius
+        The number of samples to the left and the right that are considered for the search.
+        The final search window has the length 2 * radius + 1
+    Returns
+    -------
+    list_of_minima_indices
+        Array of the position of each identified minima
+
+    """
+    # Search region is twice the radius centered around each index
+    data = data.astype(float)
+    d = 2 * radius + 1
+    start_padding = 0
+    if len(data) - np.max(indices) <= radius:
+        data = np.pad(data, (0, radius), constant_values=np.nan)
+    if np.min(indices) < radius:
+        start_padding = radius
+        data = np.pad(data, (start_padding, 0), constant_values=np.nan)
+    strides = sliding_window_view(data, window_length=d, overlap=d-1)
+    # select all windows around indices
+    windows = strides[indices.astype(int) - radius + start_padding, :]
+
+    # TODO handle cases were index is to close to start
+    return np.nanargmin(windows, axis=1) + indices - radius
