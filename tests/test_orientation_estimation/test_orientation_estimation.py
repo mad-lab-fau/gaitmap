@@ -69,8 +69,7 @@ class TestGyroIntegration:
         # TODO add assert statement / regression test to check against previous result
         data = healthy_example_imu_data
         gyr_int = GyroIntegration(Rotation([0, 0, 0, 1]))
-        with pytest.raises(NotImplementedError, match=r"Multisensor input is not supported yet"):
-            gyr_int.estimate(data, 204.8)
+        gyr_int.estimate(data, 204.8)
 
         return None
 
