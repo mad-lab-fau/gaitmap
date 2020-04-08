@@ -145,7 +145,7 @@ class BaseDtw(BaseStrideSegmentation):
     Attributes
     ----------
     matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        The start (column 1) and stop (column 2) of each detected stride.
+        The start (column 1) and end (column 2) of each detected stride.
     costs_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
@@ -176,7 +176,7 @@ class BaseDtw(BaseStrideSegmentation):
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
     resample_template: bool
-    min_match_length: float
+    min_match_length: int
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -201,7 +201,7 @@ class BaseDtw(BaseStrideSegmentation):
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = None,
+        max_cost: Optional[int] = None,
         min_match_length: Optional[float] = None,
     ):
         self.template = template
@@ -282,7 +282,7 @@ class BaseDtw(BaseStrideSegmentation):
         template_array, matching_data = self._extract_relevant_data_and_template(template.template, dataset)
 
         if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
-            template = self._interpolate_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
+            template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:
             template = template_array
 
@@ -320,7 +320,7 @@ class BaseDtw(BaseStrideSegmentation):
         return acc_cost_mat_, paths_, costs_, matches_start_end_
 
     @staticmethod
-    def _interpolate_template(
+    def _resample_template(
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
     ) -> np.ndarray:
         template = resample(

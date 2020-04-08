@@ -26,13 +26,16 @@ class BarthDtw(BaseDtw):
         The template used for matching.
         The required data type and shape depends on the use case.
         For more details see :class:`~gaitmap.stride_segmentation.BaseDtw`.
+        By default, the :class:`~gaitmap.stride_segmentation.dtw_templates.templates.BarthOriginalTemplate` is used
+        with default settings.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
     max_cost
         The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
-        Refer to the specific funtion to learn more about this.
+        Refer to the specific function to learn more about this.
+        The default value should work well with healthy gait (with the default template).
     min_stride_time_s
         The minimal length of a sequence in seconds to be still considered a stride.
         This is just a more convenient way to set `min_match_length`.
@@ -60,7 +63,7 @@ class BarthDtw(BaseDtw):
         The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
         other algorithms.
     matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        The start (column 1) and stop (column 2) of each detected stride.
+        The start (column 1) and end (column 2) of each detected stride.
     costs_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
@@ -97,7 +100,7 @@ class BarthDtw(BaseDtw):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000,
         min_stride_time_s: Optional[float] = 0.6,
-        min_match_length: Optional[float] = None,
+        min_match_length: Optional[int] = None,
     ):
         self.min_stride_time_s = min_stride_time_s
         super().__init__(

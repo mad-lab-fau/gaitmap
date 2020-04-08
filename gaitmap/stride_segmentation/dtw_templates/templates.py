@@ -21,9 +21,11 @@ class DtwTemplate:
     sampling_rate_hz
         The sampling rate that was used to record the template data
     scaling
-        A multiplicative factor multiplied onto the template to adapt for another signal range
+        A multiplicative factor multiplied onto the template to adapt for another signal range.
+        Usually the scaled template should have the same value range as the data signal.
+        A large scale difference between data and template will result in mismatches.
     use_cols
-        The columns of the template that should actualle be used.
+        The columns of the template that should actually be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
         must match a subset of these columns.
 
@@ -36,7 +38,7 @@ class DtwTemplate:
 
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
-    use_cols: Optional[List[Union[str, int]]]
+    use_cols: Optional[Tuple[Union[str, int]]]
     scaling: Optional[float]
 
     _template: Optional[Union[np.ndarray, pd.DataFrame]]
@@ -47,7 +49,7 @@ class DtwTemplate:
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
         scaling: Optional[float] = None,
-        use_cols: Optional[List[Union[str, int]]] = None,
+        use_cols: Optional[Tuple[Union[str, int]]] = None,
     ):
         self._template = template
         self.template_file_name = template_file_name
@@ -59,7 +61,7 @@ class DtwTemplate:
     def template(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
 
-        If not dataset is registered yet, it will be read from the file path if provided.
+        If no dataset is registered yet, it will be read from the file path if provided.
         """
         if self._template is None and self.template_file_name is None:
             raise AttributeError("Neither a template array nor a template file is provided.")
@@ -80,7 +82,26 @@ class DtwTemplate:
 
 
 class BarthOriginalTemplate(DtwTemplate):
-    """Template used for stride segmentation by Barth et al."""
+    """Template used for stride segmentation by Barth et al.
+
+    Parameters
+    ----------
+    scaling
+        A multiplicative factor multiplied onto the template to adapt for another signal range.
+        For this template the default value is 500, which loosly scales the template to match a signal that has a
+        a max-gyro peak of approx. 500 deg/s in `gyr_ml` during the swing phase.
+    use_cols
+        The columns of the template that should actually be used.
+        The default (all gyro axis) should work well, but will not match turning stride.
+        Note, that this template only consists of gyro data (i.e. you can only select one of
+        :obj:`~gaitmap.utils.consts.BF_GYR`)
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate: Base class for templates
+    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
+
+    """
 
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
@@ -98,7 +119,7 @@ def create_dtw_template(
     template: Union[np.ndarray, pd.DataFrame],
     sampling_rate_hz: Optional[float] = None,
     scaling: Optional[float] = None,
-    use_cols: Optional[List[Union[str, int]]] = None,
+    use_cols: Optional[Tuple[Union[str, int]]] = None,
 ) -> DtwTemplate:
     """Create a DtwTemplate from custom input data.
 

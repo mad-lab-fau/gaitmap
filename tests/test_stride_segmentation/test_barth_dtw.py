@@ -28,6 +28,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestRegressionOnRealData:
+    # TODO: More real regression test needed
     def test_real_data_both_feed(self, healthy_example_imu_data):
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         dtw = BarthDtw()  # Test with default paras
@@ -52,7 +53,7 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         """Test that the output of the stride list is correct."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0,)
+        dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
 
         expected_stride_list = pd.DataFrame(columns=["start", "end"])
         expected_stride_list["start"] = [5, 18]
