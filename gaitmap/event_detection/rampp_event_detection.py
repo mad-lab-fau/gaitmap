@@ -192,13 +192,13 @@ class RamppEventDetection(BaseEventDetection):
         gyr = data[BF_GYR]
 
         # find events in all segments
-        s_id, ic, tc, min_vel = self._find_all_events(
+        ic, tc, min_vel = self._find_all_events(
             gyr, acc, segmented_stride_list, ic_search_region, min_vel_search_win_size
         )
 
         # build first dict / df based on segment start and end
         tmp_stride_event_dict = {
-            "s_id": s_id,
+            "s_id": segmented_stride_list["s_id"],
             "seg_start": segmented_stride_list["start"],
             "seg_end": segmented_stride_list["end"],
             "ic": ic,
@@ -250,17 +250,15 @@ class RamppEventDetection(BaseEventDetection):
         stride_list: pd.DataFrame,
         ic_search_region: Tuple[float, float],
         min_vel_search_win_size: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Find events in provided data by looping over single strides."""
         gyr_ml = gyr["gyr_ml"].to_numpy()
         gyr = gyr.to_numpy()
         acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
-        s_id = []
         ic_events = []
         fc_events = []
         min_vel_events = []
         for _, stride in stride_list.iterrows():
-            s_id.append(stride["s_id"])
             start = stride["start"]
             end = stride["end"]
             gyr_sec = gyr[start:end]
@@ -272,7 +270,6 @@ class RamppEventDetection(BaseEventDetection):
             min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
 
         return (
-            np.array(s_id, dtype=int),
             np.array(ic_events, dtype=float),
             np.array(fc_events, dtype=float),
             np.array(min_vel_events, dtype=float),
