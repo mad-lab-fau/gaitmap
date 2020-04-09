@@ -134,7 +134,9 @@ class RamppEventDetection(BaseEventDetection):
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         if all(v == 0 for v in ic_search_region):
-            raise ValueError("The values chosen for ic_search_region_ms are too close to zero.")
+            raise ValueError(
+                "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
+            )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         if dataset_helper.is_single_sensor_dataset(data):
