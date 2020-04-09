@@ -178,7 +178,7 @@ class BaseEventDetection(BaseAlgorithm):
 class BaseOrientationEstimation(BaseAlgorithm):
     """Base class for all algorithms that estimate an orientation from measured sensor signals."""
 
-    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    # estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
     estimated_orientations_with_initial_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
@@ -195,6 +195,15 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
         """
         raise NotImplementedError()
+
+    @property
+    def estimated_orientations_(self):
+        """Return the estimated orientations without initial orientation.
+
+        This way, the number of rotations is equal to the number samples in passed data and therefore it can be used for
+        coordinate transform of the data set.
+        """
+        return self.estimated_orientations_with_initial_.drop(index=(0,))
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
     # integration)

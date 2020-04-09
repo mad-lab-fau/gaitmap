@@ -55,7 +55,6 @@ class GyroIntegration(BaseOrientationEstimation):
 
     # initial_orientation: Union[Rotation, Dict[str, Rotation]]
 
-    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
     estimated_orientations_with_initial_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     data: Dataset
@@ -92,13 +91,9 @@ class GyroIntegration(BaseOrientationEstimation):
         self.event_list = stride_event_list
 
         if is_single_sensor_dataset(self.data):
-            self.estimated_orientations_, self.estimated_orientations_with_initial_ = self._estimate_single_sensor(
-                self.data, self.event_list
-            )
+            self.estimated_orientations_with_initial_ = self._estimate_single_sensor(self.data, self.event_list)
         elif is_multi_sensor_dataset(self.data):
-            self.estimated_orientations_, self.estimated_orientations_with_initial_ = self._estimate_multi_sensor(
-                data, stride_event_list
-            )
+            self.estimated_orientations_with_initial_ = self._estimate_multi_sensor(data, stride_event_list)
         else:
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
@@ -106,7 +101,6 @@ class GyroIntegration(BaseOrientationEstimation):
     def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> Tuple[Rotation, Rotation]:
         # TODO: put cols into consts?
         cols = ["s_id", "qx", "qy", "qz", "qw"]
-        rotations_without_initial = pd.DataFrame(columns=cols)
         rotations = pd.DataFrame(columns=cols)
         for i_s_id, i_stride in event_list.iterrows():
             # TODO: check it this loop can be simplified
@@ -115,9 +109,8 @@ class GyroIntegration(BaseOrientationEstimation):
             i_rotations = self._estimate_stride(data, i_start, i_end)
             i_rotations_pd = pd.DataFrame(i_rotations.as_quat(), columns=cols[1:])
             i_rotations_pd["s_id"] = i_s_id
-            rotations_without_initial = rotations_without_initial.append(i_rotations_pd.iloc[1:])
             rotations = rotations.append(i_rotations_pd)
-        return rotations_without_initial.set_index("s_id", append=True), rotations.set_index("s_id", append=True)
+        return rotations.set_index("s_id", append=True)
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
         initial_orientation = self._calculate_initial_orientation(data, start)
@@ -131,19 +124,17 @@ class GyroIntegration(BaseOrientationEstimation):
     def _estimate_multi_sensor(
         self, data: MultiSensorDataset, event_list: StrideList
     ) -> Tuple[Dict[str, Rotation], Dict[str, Rotation]]:
-        estimated_orientations_ = dict()
-        estimated_ori_with_initial_ = dict()
-        for sensor in get_multi_sensor_dataset_names(data):
-            ori, with_initial = self._estimate_single_sensor(data[sensor], event_list[sensor])
-            estimated_orientations_[sensor] = ori
-            estimated_ori_with_initial_[sensor] = with_initial
-        return estimated_orientations_, estimated_ori_with_initial_
+        orientations = dict()
+        for i_sensor in get_multi_sensor_dataset_names(data):
+            ori = self._estimate_single_sensor(data[i_sensor], event_list[i_sensor])
+            orientations[i_sensor] = ori
+        return orientations
 
     @staticmethod
     def _calculate_initial_orientation(data: SingleSensorDataset, start):
         # TODO: adapt window size
-        acc = np.mean(data[SF_ACC].iloc[start - 4 : start + 4])
+        acc = (data[SF_ACC].iloc[start - 4 : start + 4]).median()
         # TODO: put to consts
-        gravity = np.array([0, 0, 1])
         acc_normalized = acc / np.linalg.norm(acc.values, 2)
-        return get_gravity_rotation(acc_normalized, gravity)
+        # get_gravity_rotation assumes [0, 0, 1] as gravity
+        return get_gravity_rotation(acc_normalized)
