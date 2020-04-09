@@ -67,7 +67,6 @@ class TestEventDetectionRampp:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        sensor_names = dataset_helper.get_multi_sensor_dataset_names(data)
         ed_df = RamppEventDetection()
         ed_df.detect(data, 204.8, healthy_example_stride_borders)
 
@@ -81,8 +80,8 @@ class TestEventDetectionRampp:
         ed_dict = RamppEventDetection()
         ed_dict.detect(data_dict, 204.8, stride_list_dict)
 
-        for sensor, dict_key in zip(sensor_names, dict_keys):
-            assert_frame_equal(ed_df.stride_events_[sensor], ed_dict.stride_events_[dict_key])
+        assert_frame_equal(ed_df.stride_events_["left_sensor"], ed_dict.stride_events_["l"])
+        assert_frame_equal(ed_df.stride_events_["right_sensor"], ed_dict.stride_events_["r"])
 
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
