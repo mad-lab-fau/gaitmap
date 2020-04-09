@@ -65,6 +65,15 @@ class TestEventDetectionRampp:
         with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
             ed.detect(data_left, 204.8, stride_list_left)
 
+    def test_valid_ic_search_region_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test if error is raised correctly on too small ic_search_region_ms"""
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
+        stride_list_left = healthy_example_stride_borders["left_sensor"]
+        ed = RamppEventDetection(ic_search_region_ms=(1, 1))
+        with pytest.raises(ValueError):
+            ed.detect(data_left, 204.8, stride_list_left)
+
     def test_input_stride_list_size_one(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if gait event detection also works with stride list of length 1"""
         data_left = healthy_example_imu_data["left_sensor"]
