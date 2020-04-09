@@ -1,3 +1,5 @@
+from pandas._testing import assert_frame_equal
+
 from gaitmap.event_detection.rampp_event_detection import (
     RamppEventDetection,
     _detect_min_vel,
@@ -16,8 +18,6 @@ import numpy as np
 
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
-
-    # TODO add tests for multiple sensors and checks for input data / stride lists
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Dummy test to see if the algorithm is generally working on single sensor example data"""
@@ -48,6 +48,7 @@ class TestEventDetectionRampp:
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
+
         dict_keys = ["l", "r"]
         data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
         stride_list_dict = {
@@ -59,6 +60,29 @@ class TestEventDetectionRampp:
         ed.detect(data_dict, 204.8, stride_list_dict)
 
         assert list(dataset_helper.get_multi_sensor_dataset_names(ed.stride_events_)) == dict_keys
+
+    def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test if output is similar for input dicts or regular multisensor data sets"""
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+
+        sensor_names = dataset_helper.get_multi_sensor_dataset_names(data)
+        ed_df = RamppEventDetection()
+        ed_df.detect(data, 204.8, healthy_example_stride_borders)
+
+        dict_keys = ["l", "r"]
+        data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
+        stride_list_dict = {
+            dict_keys[0]: healthy_example_stride_borders["left_sensor"],
+            dict_keys[1]: healthy_example_stride_borders["right_sensor"],
+        }
+
+        ed_dict = RamppEventDetection()
+        ed_dict.detect(data_dict, 204.8, stride_list_dict)
+
+        for sensor, dict_key in zip(sensor_names, dict_keys):
+            assert_frame_equal(ed_df.stride_events_[sensor], ed_dict.stride_events_[dict_key])
 
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
