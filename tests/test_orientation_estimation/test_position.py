@@ -37,7 +37,7 @@ class TestForwardBackwardIntegration:
         position.estimate(dummy_data, sampling_frequency_hz)
 
         # is the result nearly equal to zero?
-        np.testing.assert_array_almost_equal([0, 0, 0], position.velocity_.iloc[-1])
+        np.testing.assert_array_almost_equal([0, 0, 0], position.estimated_velocity_.iloc[-1])
 
         # is the result nearly the same as forward integration?
         np.testing.assert_array_almost_equal([0, 0, 0, 0, 0, 0], scipy.integrate.cumtrapz(dummy_data, axis=0)[-1])
@@ -57,29 +57,29 @@ class TestForwardBackwardIntegration:
         position = ForwardBackwardIntegration(turning_point, steepness)
         position.estimate(data, sampling_frequency_hz)
         # TODO: use different test data, where just vertical will be zero
-        final_position = position.position_.iloc[-1]
+        final_position = position.estimated_position_.iloc[-1]
         np.testing.assert_almost_equal(final_position[2], 0)
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
-        position = ForwardBackwardIntegration(0.5, 0.08)
+        position = ForwardBackwardIntegration()
         position.estimate(data_left, 204.8)
         return None
 
-    def test_estimate_multiple_sensors_input(self, healthy_example_imu_data):
+    def test_estimate_multi_sensors_input(self, healthy_example_imu_data):
         # TODO: change as soon as multi-sensor is implemented
         """Test if error is raised correctly on invalid input data type"""
         data = healthy_example_imu_data
-        position = ForwardBackwardIntegration(0.5, 0.08)
-        with pytest.raises(NotImplementedError, match=r"Multisensor input is not supported yet"):
-            position.estimate(data, 204.8)
+        position = ForwardBackwardIntegration()
+        position.estimate(data, 204.8)
+        return None
 
     def test_estimate_valid_input_data(self):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
-        position = ForwardBackwardIntegration(0.5, 0.08)
+        position = ForwardBackwardIntegration(0.6, 0.08)
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
             position.estimate(data, 204.8)
 

@@ -7,7 +7,7 @@ from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 import numpy as np
 import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset, StrideList
+from gaitmap.utils.dataset_helper import Dataset, StrideList, is_multi_sensor_dataset, is_single_sensor_dataset
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -197,13 +197,21 @@ class BaseOrientationEstimation(BaseAlgorithm):
         raise NotImplementedError()
 
     @property
-    def estimated_orientations_(self):
+    def estimated_orientations_without_initial(self):
         """Return the estimated orientations without initial orientation.
 
         This way, the number of rotations is equal to the number samples in passed data and therefore it can be used for
         coordinate transform of the data set.
         """
-        return self.estimated_orientations_with_initial_.drop(index=(0,))
+        if is_multi_sensor_dataset(self.data):
+            # TODO: as soon as we have decided on the format in !29
+            pass
+        elif is_single_sensor_dataset(self.data):
+            # TODO: adapt as soon as we have decided on the format in !29
+            return self.estimated_orientations_with_initial_.drop(index=(0,))
+        else:
+            return None
+
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
     # integration)

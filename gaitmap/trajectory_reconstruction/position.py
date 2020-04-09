@@ -1,5 +1,5 @@
 """Estimation of velocity and position relative to first sample of passed data."""
-from typing import Optional
+from typing import Optional, Union, Dict
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,12 @@ from scipy import integrate
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
 from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
-from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, MultiSensorDataset
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    SingleSensorDataset,
+    MultiSensorDataset,
+    get_multi_sensor_dataset_names,
+)
 
 
 class ForwardBackwardIntegration(BasePositionEstimation):
@@ -21,9 +26,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     Attributes
     ----------
-    velocity_
+    estimated_velocity_
         The velocity estimated by direct-and-reverse / forward-backward integration.
-    position_
+    estimated_position_
         The position estimated by forward integration in the ground plane and by direct-and-reverse /
         forward-backward integration for the vertical axis.
 
@@ -66,8 +71,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     steepness: Optional[float]
     turning_point: Optional[float]
 
-    velocity_: pd.DataFrame
-    position_: pd.DataFrame
+    estimated_position_ = Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    estimated_velocity_ = Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     sampling_rate_hz: float
     data: Dataset
@@ -83,51 +88,61 @@ class ForwardBackwardIntegration(BasePositionEstimation):
                 "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
                 "of 0.0 to 1.0"
             )
-
-        if dataset_helper.is_multi_sensor_dataset(data):
-            raise NotImplementedError("Multisensor input is not supported yet")
-
-        if not dataset_helper.is_single_sensor_dataset(data):
-            raise ValueError("Provided data set is not supported by gaitmap")
-
         self.sampling_rate_hz = sampling_rate_hz
         self.data = data
 
-        self.position_ = pd.DataFrame(columns=SF_POS, index=data.index)
-        self.sampling_rate_hz = sampling_rate_hz
-
-        self.velocity_ = self._forward_backward_integration(data, SF_ACC)
-        self.velocity_.columns = SF_VEL
-        self.position_[SF_POS[2]] = self._forward_backward_integration(self.velocity_, SF_VEL[2])
-        self.position_[SF_POS[1]] = (
-            integrate.cumtrapz(self.velocity_[SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz
-        )
-        self.position_[SF_POS[0]] = (
-            integrate.cumtrapz(self.velocity_[SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz
-        )
-        self.position_.columns = SF_POS
+        if dataset_helper.is_single_sensor_dataset(data):
+            self.estimated_position_, self.estimated_velocity_ = self._estimate_single_sensor(data)
+        elif dataset_helper.is_multi_sensor_dataset(data):
+            self._estimate_multi_sensor()
+        else:
+            raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
+    def _estimate_single_sensor(self, data: SingleSensorDataset):
+        estimated_velocity_ = pd.DataFrame(
+            self._forward_backward_integration(data, SF_ACC), index=data.index, columns=SF_VEL
+        )
+        estimated_position_ = pd.DataFrame(
+            index=SF_POS,
+            columns=data.index,
+            data=[
+                integrate.cumtrapz(estimated_velocity_[SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz,
+                integrate.cumtrapz(estimated_velocity_[SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz,
+                self._forward_backward_integration(estimated_velocity_, SF_VEL[2]),
+            ],
+        ).transpose()
+        return estimated_position_, estimated_velocity_
+
     def _get_weight_matrix(self, data_to_integrate: pd.DataFrame):
+        # TODO: move to utils?
+        # TODO: support other weighting functions
         n_samples = data_to_integrate.shape[0]
         n_axes = data_to_integrate.shape[1]
 
         x = np.linspace(0, 1, n_samples)
         s = 1 / (1 + np.exp(-(x - self.turning_point) / self.steepness))
         weights = (s - s[0]) / (s[-1] - s[0])
+        if n_axes > 1:
+            return np.tile(weights, n_axes).reshape(n_samples, n_axes)
+        else:
+            return weights
 
-        return np.tile(weights, n_axes).reshape(n_samples, n_axes)
-
-    def _forward_backward_integration(self, data, channels):
+    def _forward_backward_integration(self, data: SingleSensorDataset, channels):
         # TODO: make it possible to set initial value of integral from outside?
+        # TODO: move to utils?
+        # TODO: different steepness and turning point for velocity and position?
         integral_forward = integrate.cumtrapz(data[channels], axis=0, initial=0) / self.sampling_rate_hz
         integral_backward = integrate.cumtrapz(np.flipud(data[channels]), axis=0, initial=0) / self.sampling_rate_hz
-        weights_vel = self._get_weight_matrix(pd.DataFrame(data[channels]))
+        weights = self._get_weight_matrix(pd.DataFrame(data[channels]))
 
-        return pd.DataFrame(integral_forward * weights_vel + integral_backward * (1 - weights_vel), index=data.index)
+        return integral_forward * (1 - weights) + (integral_backward[::-1]) * weights
 
-    def _estimate_single_sensor(self, data: SingleSensorDataset):
-        pass
-
-    def _estimate_multi_sensor(self, data: MultiSensorDataset):
-        pass
+    def _estimate_multi_sensor(self):
+        self.estimated_position_ = dict()
+        self.estimated_velocity_ = dict()
+        for i_sensor in get_multi_sensor_dataset_names(self.data):
+            self.estimated_position_[i_sensor], self.estimated_velocity_[i_sensor] = self._estimate_single_sensor(
+                self.data[i_sensor]
+            )
+        return self
