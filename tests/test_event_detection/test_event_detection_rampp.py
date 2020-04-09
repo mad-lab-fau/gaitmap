@@ -4,7 +4,7 @@ from gaitmap.event_detection.rampp_event_detection import (
     _find_breaks_in_stride_list,
 )
 from gaitmap.utils.consts import *
-from gaitmap.utils import coordinate_conversion
+from gaitmap.utils import coordinate_conversion, dataset_helper
 
 import pytest
 import pandas as pd
@@ -42,6 +42,22 @@ class TestEventDetectionRampp:
         ed.detect(data, 204.8, healthy_example_stride_borders)
 
         return None
+
+    def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test to see if the algorithm is generally working on the example data when provided as dict"""
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+        dict_keys = ["l", "r"]
+        data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
+        stride_list_dict = {dict_keys[0]: healthy_example_stride_borders["left_sensor"],
+                            dict_keys[1]: healthy_example_stride_borders[
+            "right_sensor"]}
+
+        ed = RamppEventDetection()
+        ed.detect(data_dict, 204.8, stride_list_dict)
+
+        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.stride_events_)) == dict_keys
 
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
