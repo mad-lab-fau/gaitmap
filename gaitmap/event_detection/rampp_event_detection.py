@@ -27,27 +27,31 @@ class RamppEventDetection(BaseEventDetection):
         for the ic the algorithm first looks for a local minimum in the gyr_ml signal after the swing phase. The actual
         ic is then determined in the acc_pa signal in the ic_search_region_ms around that gyr_ml minimum.
         ic_search_region_ms[0] describes the start and ic_search_region_ms[1] the end of the region to check around the
-        gyr_ml minimum.
+        gyr_ml minimum. The values of ic_search_region_ms must be greater or equal than the length of one sample.
     min_vel_search_win_size_ms
-        The size of the sliding window for finding the minimum gyroscope energy in ms
+        The size of the sliding window for finding the minimum gyroscope energy in ms.
 
     Attributes
     ----------
-    stride_events_: A stride list or dictionary with such values
+    stride_events_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides. Formatted
-        as pandas DataFrame
-    start_: 1D array or dictionary with such values
-        The array of start samples of all strides
-    end_: 1D array or dictionary with such values
-        The array of end samples of all strides
-    tc_: 1D array or dictionary with such values
-        The array of terminal contact samples of all strides
-    min_vel_: 1D array or dictionary with such values
-        The array of min_vel samples of all strides
-    ic_: 1D array or dictionary with such values
-        The array of initial contact samples of all strides
-    pre_ic_: 1D array or dictionary with such values
-        The array of pre-initial contact samples of all strides
+        as pandas DataFrame. The stride borders for the stride_events_ are aligned with the min_vel samples. Hence,
+        the start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds
+        to the min_vel sample of the subsequent stride.
+    start_ : 1D array or dictionary with such values
+        The array of start samples of all strides. Start samples of each stride correspond to the min_vel sample of
+        the same stride.
+    end_ : 1D array or dictionary with such values
+        The array of end samples of all strides. End samples of each stride correspond to the min_vel sample of the
+        subsequent stride.
+    tc_ : 1D array or dictionary with such values
+        The array of terminal contact samples of all strides.
+    min_vel_ : 1D array or dictionary with such values
+        The array of min_vel samples of all strides.
+    ic_ : 1D array or dictionary with such values
+        The array of initial contact samples of all strides.
+    pre_ic_ : 1D array or dictionary with such values
+        The array of pre-initial contact samples of all strides.
 
     Other Parameters
     ----------------
@@ -56,7 +60,9 @@ class RamppEventDetection(BaseEventDetection):
     sampling_rate_hz
         The sampling rate of the data
     segmented_stride_list
-        A list of strides provided by a stride segmentation method
+        A list of strides provided by a stride segmentation method. The stride list is expected to have no gaps
+        between subsequent strides. That means for subsequent strides the end sample of one stride should be the
+        start sample of the next stride.
 
     Notes
     -----
