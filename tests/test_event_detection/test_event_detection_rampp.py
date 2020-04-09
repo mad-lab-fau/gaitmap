@@ -50,9 +50,10 @@ class TestEventDetectionRampp:
         )
         dict_keys = ["l", "r"]
         data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
-        stride_list_dict = {dict_keys[0]: healthy_example_stride_borders["left_sensor"],
-                            dict_keys[1]: healthy_example_stride_borders[
-            "right_sensor"]}
+        stride_list_dict = {
+            dict_keys[0]: healthy_example_stride_borders["left_sensor"],
+            dict_keys[1]: healthy_example_stride_borders["right_sensor"],
+        }
 
         ed = RamppEventDetection()
         ed.detect(data_dict, 204.8, stride_list_dict)
