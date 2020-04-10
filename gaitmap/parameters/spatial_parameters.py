@@ -6,7 +6,7 @@ import math
 import numpy as np
 from numpy.linalg import norm
 
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation
 
 import pandas as pd
 
@@ -52,10 +52,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     Notes
     -----
-    .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., & Eskofier, B. M. (2015, August). Inertial
-     sensor based and shoe size independent gait analysis including heel and toe clearance estimation. In
-     2015 37th Annual International Conference of the IEEE Engineering in
-     Medicine and Biology Society (EMBC) (pp. 5424-5427). IEEE.
+    .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J.,
+     & Eskofier, B. M. (2015, August). Inertial sensor based and shoe size independent gait analysis including heel and
+      toe clearance estimation. In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and
+        Biology Society (EMBC) (pp. 5424-5427). IEEE.
 
     """
 
@@ -87,6 +87,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             Data frame containing spatial parameters of single sensor
          for row in position.iteritems():
             stride_length_.append(_calc_stride_length(row[1]))
+
         """
         stride_id_ = stride_event_list["s_id"]
         position = positions.groupby("s_id")["position"].apply(list)
@@ -245,7 +246,7 @@ def _calc_tc_angle(angle_course: np.array, tc_relative: int) -> float:
 
 def _calc_turning_angle(orientation: np.ndarray) -> float:
     orientation_turn = vector_math.inner_product(orientation[0], vector_math.inverse(orientation[len(orientation) - 1]))
-    return np.rad2deg(R.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
+    return np.rad2deg(Rotation.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
 
 
 def _calc_arc_length(position: np.ndarray) -> float:
@@ -259,5 +260,5 @@ def _compute_sagittal_angle_course(orientation: np.ndarray) -> np.array:
     angle_course = []
     for row in orientation:
         orientation_ms = vector_math.inner_product(row, orientation[0])
-        angle_course.append(R.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
+        angle_course.append(Rotation.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
     return angle_course

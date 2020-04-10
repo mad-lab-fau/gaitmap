@@ -19,7 +19,8 @@ def inverse(v: np.array) -> np.array:
 
     Parameters
     ----------
-    v : vector with shape (4,)
+    v
+        vector with shape (4,)
 
     Returns
     -------
@@ -40,8 +41,10 @@ def inner_product(v1: np.array, v2: np.array) -> np.array:
 
     Parameters
     ----------
-    v1 : vector with shape (4,)
-    v2 : vector with shape (4,)
+    v1
+        vector with shape (4,)
+    v2
+        vector with shape (4,)
 
     Returns
     -------
