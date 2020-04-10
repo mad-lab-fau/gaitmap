@@ -26,6 +26,8 @@ Base classes
     BaseEventDetection
     BaseOrientationEstimation
     BasePositionEstimation
+    BaseTemporalParameterCalculation
+    BaseSpatialParameterCalculation
 
 
 :mod:`gaitmap.preprocessing`: Helper to align and prepare datasets
@@ -144,6 +146,7 @@ Classes
    :template: class.rst
 
     TemporalParameterCalculation
+    SpatialParameterCalculation
 
 
 :mod:`gaitmap.utils.rotations`: Helper to handle rotations
@@ -187,6 +190,8 @@ Functions
     find_random_orthogonal
     find_orthogonal
     find_unsigned_3d_angle
+    inner_product
+    inverse
 
 
 :mod:`gaitmap.utils.array_handling`: Helper to perform various array modifications

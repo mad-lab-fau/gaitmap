@@ -9,6 +9,8 @@ from gaitmap.utils.vector_math import (
     find_unsigned_3d_angle,
     normalize,
     is_almost_parallel_or_antiparallel,
+    inverse,
+    inner_product,
 )
 
 
@@ -137,3 +139,19 @@ class TestFindUnsigned3dAngle:
         output = find_unsigned_3d_angle(v1, v2)
         assert len(output) == 4
         assert_array_almost_equal(output, 4 * [np.pi / 2])
+
+
+class TestInverse:
+    """Test the function `inverse`."""
+
+    def test_inverse(self):
+        """Test inverse of quaternion."""
+        assert_array_equal(inverse(np.array([0, 1, 0, 0])), np.array([0, -1, 0, 0]))
+
+
+class TestInnerProduct:
+    """Test the function `inner_product`."""
+
+    def test_inner_product(self):
+        """Test product of two quaternion."""
+        assert_array_equal(inner_product(np.array([0, 1, 0, 0]), np.array([1, 0, 0, 0])), np.array([0, 1, 0, 0]))
