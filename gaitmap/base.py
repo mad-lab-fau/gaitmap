@@ -212,7 +212,6 @@ class BaseOrientationEstimation(BaseAlgorithm):
         else:
             return None
 
-
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
     # integration)
 
@@ -232,6 +231,6 @@ class BasePositionEstimation(BaseAlgorithm):
 
     _action_method = "estimate"
 
-    def estimate(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: Dataset, event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Estimate position relative to first sample by using sensor data."""
         raise NotImplementedError("Needs to be implemented by child class.")
