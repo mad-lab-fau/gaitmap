@@ -14,10 +14,10 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     __test__ = True
 
     @pytest.fixture()
-    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
+    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = ForwardBackwardIntegration()
         position.estimate(
-            healthy_example_imu_data["left_sensor"], healthy_example_stride_borders["left_sensor"], sampling_rate_hz=1,
+            healthy_example_imu_data["left_sensor"], healthy_example_stride_events["left_sensor"], sampling_rate_hz=1,
         )
         return position
 
@@ -147,10 +147,10 @@ class TestForwardBackwardIntegration:
     def _get_dummy_event_list(self, dummy_data):
         return pd.DataFrame(data=[[0, self.start_sample, len(dummy_data)]], columns=["s_id", "start", "end"])
 
-    def test_regression_position(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_regression_position(self, healthy_example_imu_data, healthy_example_stride_events):
         """Just to see intermediate results so we know if we are on the right way"""
         data = healthy_example_imu_data
-        stride_borders = healthy_example_stride_borders
+        stride_borders = healthy_example_stride_events
         position = ForwardBackwardIntegration()
         position.estimate(data, stride_borders, 204.8)
         pos = position.estimated_position_
@@ -159,4 +159,3 @@ class TestForwardBackwardIntegration:
             sl = pos["left_sensor"].xs(int(i_stride), level="s_id").iloc[-1]
             sls.append(np.sqrt(np.square(sl).sum()))
         return
-
