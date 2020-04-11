@@ -47,6 +47,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     data
         The data passed to the `estimate` method. This class does NOT take care for transforming sensor data from sensor
         frame to world coordinates. This should be performed before, e.g. using # TODO: Reference
+    event_list
+        This list is used to set the start and end of each integration period.
     sampling_rate_hz
         The sampling rate of the data.
 

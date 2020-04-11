@@ -179,7 +179,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
     """Base class for all algorithms that estimate an orientation from measured sensor signals."""
 
     # estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
-    estimated_orientations_with_initial_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
@@ -197,6 +197,32 @@ class BaseOrientationEstimation(BaseAlgorithm):
         raise NotImplementedError()
 
     @property
+    def estimated_orientations_without_final(self):
+        """Return the estimated orientations without initial orientation.
+
+        This way, the number of rotations is equal to the number samples in passed data and therefore it can be used for
+        coordinate transform of the data set.
+        """
+
+        def remove_final_for_sensor(data):
+            data_without_final = pd.DataFrame(columns=self.data.columns)
+            for i_stride in data.index.get_level_values(level="s_id").unique():
+                stride_data = self.data.xs(i_stride, axis=0, level="s_id")[:-1]
+                pd.append(data_without_final, stride_data)
+            return data_without_final
+
+        if is_multi_sensor_dataset(self.data):
+            ori_without_final = dict()
+            for i_sensor, i_data in self.data.items():
+                ori_without_final[i_sensor] = remove_final_for_sensor(i_data)
+        elif is_single_sensor_dataset(self.data):
+            ori_without_final = remove_final_for_sensor(self.estimated_orientations_)
+        else:
+            raise ValueError("Provided data set is not supported by gaitmap")
+
+        return ori_without_final
+
+    @property
     def estimated_orientations_without_initial(self):
         """Return the estimated orientations without initial orientation.
 
@@ -204,13 +230,14 @@ class BaseOrientationEstimation(BaseAlgorithm):
         coordinate transform of the data set.
         """
         if is_multi_sensor_dataset(self.data):
-            # TODO: as soon as we have decided on the format in !29
-            pass
+            ori_without_initial = dict()
+            for i_sensor, i_data in self.data.items():
+                ori_without_initial[i_sensor] = self.estimated_orientations_[i_data].drop(index=(0,))
         elif is_single_sensor_dataset(self.data):
-            # TODO: adapt as soon as we have decided on the format in !29
-            return self.estimated_orientations_with_initial_.drop(index=(0,))
+            ori_without_initial = self.estimated_orientations_.drop(index=(0,))
         else:
-            return None
+            raise ValueError("Provided data set is not supported by gaitmap")
+        return ori_without_initial
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
     # integration)
