@@ -217,8 +217,6 @@ class BaseOrientationEstimation(BaseAlgorithm):
                 ori_without_final[i_sensor] = remove_final_for_sensor(i_data)
         elif is_single_sensor_dataset(self.data):
             ori_without_final = remove_final_for_sensor(self.estimated_orientations_)
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
 
         return ori_without_final
 
@@ -235,8 +233,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
                 ori_without_initial[i_sensor] = self.estimated_orientations_[i_data].drop(index=(0,))
         elif is_single_sensor_dataset(self.data):
             ori_without_initial = self.estimated_orientations_.drop(index=(0,))
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
+
         return ori_without_initial
 
     # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope

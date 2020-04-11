@@ -146,3 +146,17 @@ class TestForwardBackwardIntegration:
 
     def _get_dummy_event_list(self, dummy_data):
         return pd.DataFrame(data=[[0, self.start_sample, len(dummy_data)]], columns=["s_id", "start", "end"])
+
+    def test_regression_position(self, healthy_example_imu_data, healthy_example_stride_borders):
+        """Just to see intermediate results so we know if we are on the right way"""
+        data = healthy_example_imu_data
+        stride_borders = healthy_example_stride_borders
+        position = ForwardBackwardIntegration()
+        position.estimate(data, stride_borders, 204.8)
+        pos = position.estimated_position_
+        sls = []
+        for i_stride in pos["left_sensor"].index.get_level_values(level="s_id").unique():
+            sl = pos["left_sensor"].xs(int(i_stride), level="s_id").iloc[-1]
+            sls.append(np.sqrt(np.square(sl).sum()))
+        return
+

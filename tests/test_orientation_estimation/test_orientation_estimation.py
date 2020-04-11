@@ -46,10 +46,11 @@ class TestGyroIntegration:
         gyr_integrator = GyroIntegration()
         event_list = pd.DataFrame(data=[[0, start_sample, start_sample + fs]], columns=["s_id", "start", "end"])
         gyr_integrator.estimate(sensor_data, event_list, fs)
-        rot_final = gyr_integrator.estimated_orientations_with_initial_.iloc[-1]
+        rot_final = gyr_integrator.estimated_orientations_.iloc[-1]
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
-        assert len(gyr_integrator.estimated_orientations_with_initial_) == fs + 1
-      #  assert len(gyr_integrator.estimated_orientations_) == fs
+        assert len(gyr_integrator.estimated_orientations_) == fs + 1
+
+    #  assert len(gyr_integrator.estimated_orientations_) == fs
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""

@@ -162,7 +162,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         self.estimated_position_ = dict()
         self.estimated_velocity_ = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            self.estimated_position_[i_sensor], self.estimated_velocity_[i_sensor] = self._estimate_single_sensor(
+            self.estimated_velocity_[i_sensor], self.estimated_position_[i_sensor] = self._estimate_single_sensor(
                 self.data[i_sensor], self.event_list[i_sensor]
             )
         return self
