@@ -227,7 +227,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
         def remove_final_for_sensor(orientations):
             ori_without_final_sensor = pd.DataFrame(columns=orientations.columns)
             for i_stride in orientations.index.get_level_values(level="s_id").unique():
-                stride_oris = self.estimated_orientations_.xs(i_stride, axis=0, level="s_id")[:-1]
+                stride_oris = orientations.xs(i_stride, axis=0, level="s_id")[:-1]
                 ori_without_final_sensor = pd.append(ori_without_final_sensor, stride_oris)
             return ori_without_final_sensor
 
