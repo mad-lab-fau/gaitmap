@@ -22,7 +22,7 @@ from gaitmap.utils.rotations import get_gravity_rotation
 class GyroIntegration(BaseOrientationEstimation):
     """Estimate orientation based on a given initial orientation.
 
-    Initial orientation is calculated by aligning acceleration data of the first sample of every stride with gravity.
+    Initial orientation is calculated by aligning acceleration data of the first samples of every stride with gravity.
     Subsequent orientations are estimated by integrating gyroscope data with respect to time.
 
     Attributes
@@ -33,40 +33,47 @@ class GyroIntegration(BaseOrientationEstimation):
         to have minimal velocity.
         The subsequent orientations are obtained from integrating all `len(self.data)` gyroscope samples and therefore
         this attribute contains `len(self.data) + 1` orientations
-    estimated_orientations_without_initial_
-        Contains `estimated_orientations_` but for each stride, the INITIAL rotation is REMOVED to make it the same
-        length as `len(self.data)`.
-    estimated_orientations_without_final
-        Contains `estimated_orientations_` but for each stride, the FINAL rotation is REMOVED to make it the same
-        length as `len(self.data)`
+
+    Parameters
+    ----------
+    align_window_width
+        This is the width of the window that will be used to align the beginning of the signal of each stride with
+        gravity. To do so, half the window size before and half the window size after the start of the stride will
+        be used to obtain the median value of acceleration data in this phase.
+        Note, that +-`np.floor(align_window_size/2)` around the start sample will be used for this.
+
     Other Parameters
     ----------------
     sensor_data
         contains gyroscope and acceleration data
-    sampling_rate_hz : float
+    stride_event_list
+        A Stride list that will be used to separate `self.data` for integration. For each stride, one sequence of
+        orientations will be obtained, all of them result in a Multiindex Pandas Dataframe.
+    sampling_rate_hz
         sampling rate of gyroscope data in Hz
 
     Examples
     --------
     # single sensor
-    >>> gyr_integrator = GyroIntegration()
-    >>> gyr_integrator.estimate(data, 204.8)
-    >>> orientations = gyr_integrator.estimated_orientations_
-    >>> orientations[-1].as_quat()
-    array([0., 1, 0., 0.])
-
+    >>> data = healthy_example_imu_data["left_sensor"]
+    >>> stride_event_list = healthy_example_stride_event_list["left_sensor"]
+    >>> gyr_int = GyroIntegration(align_window_width=8)
+    >>> gyr_int.estimate(data, stride_events, 204.8)
+    >>> gyr_int.estimated_orientations_without_final_["left_sensor"].iloc[0]
+    qx    0.119273
+    qy   -0.041121
+    qz    0.000000
+    qw    0.992010
+    Name: (0, 0), dtype: float64
     """
 
-    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
-
+    align_window_width: int
     data: Dataset
-    sampling_rate_hz: float
     event_list = StrideList
+    sampling_rate_hz: float
 
-    def __init__(self):
-        # Originally we planned to write a wrapper, which calls this class for every stride, and thus we would have
-        # needed the initial orientation here. For now, we calculate the initial orientation in this class here.
-        # self.initial_orientation = initial_orientation
+    def __init__(self, align_window_width):
+        self.align_window_width = align_window_width
         pass
 
     def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
@@ -86,6 +93,7 @@ class GyroIntegration(BaseOrientationEstimation):
         This function makes use of `from_rotvec` of :func:`~scipy.spatial.transform.Rotation`, to turn the gyro signal
         of each sample into a differential quaternion.
         This means that the rotation between two samples is assumed to be constant around one axis.
+        The initial orientation is obtained by aligning acceleration data in the beginning of the signal with gravity.
 
         """
         self.data = data
@@ -130,10 +138,9 @@ class GyroIntegration(BaseOrientationEstimation):
             orientations[i_sensor] = ori
         return orientations
 
-    @staticmethod
-    def _calculate_initial_orientation(data: SingleSensorDataset, start):
-        # TODO: adapt window size
-        acc = (data[SF_ACC].iloc[start - 4 : start + 4]).median()
+    def _calculate_initial_orientation(self, data: SingleSensorDataset, start):
+        half_window = int(np.floor(self.align_window_width / 2))
+        acc = (data[SF_ACC].iloc[start - half_window : start + half_window]).median()
         acc_normalized = acc / np.linalg.norm(acc.values, 2)
         # get_gravity_rotation assumes [0, 0, 1] as gravity
         return get_gravity_rotation(acc_normalized)

@@ -33,7 +33,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         The position estimated by forward integration in the ground plane and by direct-and-reverse /
         forward-backward integration for the vertical axis.
 
-
     Parameters
     ----------
     turning_point
@@ -61,13 +60,16 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     Examples
     --------
-    >>> spatial = ForwardBackwardIntegration(0.5, 0.08)
-    >>> spatial.estimate(data, 204.8)
-    >>> spatial.velocity_.iloc[-1]
-    vel_x   -1.175808e-15
-    vel_y   -1.175836e-15
-    vel_z   -1.175865e-15
-    Name: 1999, dtype: float64
+    #single sensor
+    >>> data_left = healthy_example_imu_data["left_sensor"]
+    >>> events_left = healthy_example_stride_borders["left_sensor"]
+    >>> integrator = ForwardBackwardIntegration()
+    >>> integrator.estimate(data_left, events_left, 204.8)
+    >>> integrator.estimated_velocity_.iloc[-1]
+    vel_x   -0.000019
+    vel_y    0.000447
+    vel_z    0.000000
+    Name: (34.619140625, 27.0), dtype: float64
 
     """
 
