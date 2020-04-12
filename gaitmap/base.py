@@ -43,19 +43,6 @@ class BaseAlgorithm:
         """
         return getattr(self, self._action_method)
 
-    def __getattr__(self, item):
-        """Add helpful info for certain missing attributes."""
-        if item.endswith("_") and not item.startswith("__") and not self._action_is_applied:
-            raise AttributeError(
-                "`{}` appears to be a result. This means you need to call `{}` before accessing it.".format(
-                    item, self._action_method
-                )
-            )
-        super_getter = getattr(super(BaseAlgorithm, self), "__getattr__", None)
-        if super_getter:
-            return super_getter(item)  # pylint: disable=not-callable
-        raise AttributeError(item)
-
     @classmethod
     def _get_param_names(cls) -> List[str]:
         """Get parameter names for the estimator.
@@ -191,6 +178,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
         length as `len(self.data)`
 
     """
+
     # TODO: when implementing a different algorithm, check if initial orientation can be obtained in the same way as
     #       for GyroIntegration. If so, check if that can become part of this base class.
 
