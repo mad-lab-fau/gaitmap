@@ -7,8 +7,13 @@ from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 import numpy as np
 import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset, StrideList, is_multi_sensor_dataset, is_single_sensor_dataset, \
-    get_multi_sensor_dataset_names
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    StrideList,
+    is_multi_sensor_dataset,
+    is_single_sensor_dataset,
+    get_multi_sensor_dataset_names,
+)
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 

@@ -1,7 +1,7 @@
 """Estimation of orientations by gyroscope integration."""
 import operator
 from itertools import accumulate
-from typing import Union, Dict, Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -65,6 +65,7 @@ class GyroIntegration(BaseOrientationEstimation):
     qz    0.000000
     qw    0.992010
     Name: (0, 0), dtype: float64
+
     """
 
     align_window_width: int
@@ -74,7 +75,6 @@ class GyroIntegration(BaseOrientationEstimation):
 
     def __init__(self, align_window_width):
         self.align_window_width = align_window_width
-        pass
 
     def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
