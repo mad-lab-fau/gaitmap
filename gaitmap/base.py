@@ -219,13 +219,9 @@ class BaseOrientationEstimation(BaseAlgorithm):
         """
 
         def remove_final_for_sensor(orientations):
-            ori_without_final_sensor = pd.DataFrame(columns=orientations.columns)
-            for i_stride in orientations.index.get_level_values(level="s_id").unique():
-                stride_oris = orientations.xs(i_stride, axis=0, level="s_id")[:-1]
-                stride_oris["s_id"] = i_stride
-                ori_without_final_sensor = ori_without_final_sensor.append(stride_oris)
-            ori_without_final_sensor.index.rename("sample", inplace=True)
-            ori_without_final_sensor.set_index("s_id", append=True, inplace=True)
+            ori_without_final_sensor = pd.DataFrame()
+            for _, i_oris in orientations.groupby(axis=0, level="s_id"):
+                ori_without_final_sensor = ori_without_final_sensor.append(i_oris[:-1])
             return ori_without_final_sensor
 
         if is_multi_sensor_dataset(self.data):
