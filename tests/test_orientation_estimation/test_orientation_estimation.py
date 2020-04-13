@@ -43,7 +43,7 @@ class TestGyroIntegration:
 
         sensor_data[SF_ACC] = [0, 0, 1]
 
-        gyr_integrator = GyroIntegration()
+        gyr_integrator = GyroIntegration(align_window_width=8)
         event_list = pd.DataFrame(data=[[0, start_sample, start_sample + fs]], columns=["s_id", "start", "end"])
         gyr_integrator.estimate(sensor_data, event_list, fs)
         rot_final = gyr_integrator.estimated_orientations_.iloc[-1]
@@ -57,7 +57,7 @@ class TestGyroIntegration:
         # TODO add assert statement / regression test to check against previous result
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
         gyr_int.estimated_orientations_without_final_
-        #gyr_int.estimated_orientations_without_initial_
+        # gyr_int.estimated_orientations_without_initial_
         return None
 
     def test_orientations_without_initial(self, healthy_example_imu_data, healthy_example_stride_events):
@@ -68,7 +68,7 @@ class TestGyroIntegration:
         deleted_idx_initial = r.index.difference(r_wo_initial.index)
         deleted_idx_sample_initial = deleted_idx_initial.get_level_values(level="sample")
 
-        assert len(r_wo_initial), len(r)-1
+        assert len(r_wo_initial), len(r) - 1
         assert len(deleted_idx_sample_initial.unique()) == 1
         assert deleted_idx_sample_initial.unique()[0] == 0
         for i_stride, i_stride_data in r_wo_initial.groupby(level="s_id"):
@@ -79,11 +79,11 @@ class TestGyroIntegration:
         r = gyr_int.estimated_orientations_
         r_wo_final = gyr_int.estimated_orientations_without_final_
 
-        assert len(r_wo_final), len(r)-1
+        assert len(r_wo_final), len(r) - 1
         for i_stride, i_stride_data in r_wo_final.groupby(level="s_id"):
             old_final = r.xs(i_stride, level="s_id",).index.get_level_values(level="sample")[-1]
             new_final = r_wo_final.index.get_level_values(level="sample")[-1]
-            assert new_final, old_final-1
+            assert new_final, old_final - 1
 
     def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -98,7 +98,7 @@ class TestGyroIntegration:
     def test_valid_input_data(self, healthy_example_imu_data):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
-        gyr_int = GyroIntegration()
+        gyr_int = GyroIntegration(align_window_width=8)
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
             gyr_int.estimate(data, healthy_example_imu_data, 204.8)
 

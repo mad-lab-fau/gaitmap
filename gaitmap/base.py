@@ -7,7 +7,8 @@ from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 import numpy as np
 import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset, StrideList, is_multi_sensor_dataset, is_single_sensor_dataset
+from gaitmap.utils.dataset_helper import Dataset, StrideList, is_multi_sensor_dataset, is_single_sensor_dataset, \
+    get_multi_sensor_dataset_names
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -239,8 +240,8 @@ class BaseOrientationEstimation(BaseAlgorithm):
         """
         if is_multi_sensor_dataset(self.data):
             ori_without_initial = dict()
-            for i_sensor, i_data in self.data.items():
-                ori_without_initial[i_sensor] = self.estimated_orientations_[i_data].drop(
+            for i_sensor in get_multi_sensor_dataset_names(self.data):
+                ori_without_initial[i_sensor] = self.estimated_orientations_[i_sensor].drop(
                     axis=0, level="sample", index=0
                 )
         elif is_single_sensor_dataset(self.data):
