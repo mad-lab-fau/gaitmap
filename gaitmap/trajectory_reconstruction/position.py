@@ -37,7 +37,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     ----------
     turning_point
         The point at which the sigmoid weighting function has a value of 0.5 and therefore forward and backward
-        integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0)
+        integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0).
     steepness
         Steepness of the sigmoid function to weight forward and backward integral.
 
@@ -76,8 +76,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     steepness: Optional[float]
     turning_point: Optional[float]
 
-    estimated_position_ = Union[pd.DataFrame, Dict[str, pd.DataFrame]]
-    estimated_velocity_ = Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    estimated_position_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    estimated_velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     sampling_rate_hz: float
     data: Dataset
