@@ -118,6 +118,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             i_pos["s_id"] = i_s_id
             velocity = velocity.append(i_vel)
             position = position.append(i_pos)
+        # TODO: extract next 2-3 lines to dataset_helper together with the correspoing lines in orientatin_estimation?
+        velocity.index.rename("sample", inplace=True)
+        position.index.rename("sample", inplace=True)
         return velocity.set_index("s_id", append=True), position.set_index("s_id", append=True)
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> np.ndarray:
