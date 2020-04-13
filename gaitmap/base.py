@@ -237,9 +237,11 @@ class BaseOrientationEstimation(BaseAlgorithm):
         if is_multi_sensor_dataset(self.data):
             ori_without_initial = dict()
             for i_sensor, i_data in self.data.items():
-                ori_without_initial[i_sensor] = self.estimated_orientations_[i_data].drop(index=(0,))
+                ori_without_initial[i_sensor] = self.estimated_orientations_[i_data].drop(
+                    axis=0, level="sample", index=0
+                )
         elif is_single_sensor_dataset(self.data):
-            ori_without_initial = self.estimated_orientations_.drop(index=(0,))
+            ori_without_initial = self.estimated_orientations_.drop(axis=0, level="sample", index=0)
         return ori_without_initial
 
 
