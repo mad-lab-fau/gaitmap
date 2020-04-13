@@ -55,13 +55,27 @@ class TestGyroIntegration:
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
-        data_left = healthy_example_imu_data["left_sensor"]
-        stride_events_left = healthy_example_stride_events["left_sensor"]
-        gyr_int = GyroIntegration(align_window_width=8)
-        gyr_int.estimate(data_left, stride_events_left, 204.8)
+        gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
         gyr_int.estimated_orientations_without_final_
         #gyr_int.estimated_orientations_without_initial_
         return None
+
+    def test_orientations_without_initial(self, healthy_example_imu_data, healthy_example_stride_events):
+        gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
+        r = gyr_int.estimated_orientations_
+        r_wo_final = gyr_int.estimated_orientations_without_final_
+        r_wo_initial = gyr_int.estimated_orientations_without_initial_
+        assert len(r_wo_final), len(r)-1
+        assert len(r_wo_final), len(r_wo_initial)
+
+        deleted_idx_sample_initial = r.index.difference(r_wo_initial.index).get_level_values(level="sample")
+        assert len(deleted_idx_sample_initial.unique()) == 1
+        assert deleted_idx_sample_initial.unique()[0] == 0
+
+        with pytest.raises(KeyError):
+            r_wo_initial.xs(0, axis=0, level="sample")
+        #with pytest.raises(KeyError):
+            #pass
 
     def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -79,3 +93,10 @@ class TestGyroIntegration:
         gyr_int = GyroIntegration()
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
             gyr_int.estimate(data, healthy_example_imu_data, 204.8)
+
+    def estimate_one_sensor(self, healthy_example_imu_data, healthy_example_stride_events) -> GyroIntegration:
+        data_left = healthy_example_imu_data["left_sensor"]
+        stride_events_left = healthy_example_stride_events["left_sensor"]
+        gyr_int = GyroIntegration(align_window_width=8)
+        gyr_int.estimate(data_left, stride_events_left, 204.8)
+        return gyr_int
