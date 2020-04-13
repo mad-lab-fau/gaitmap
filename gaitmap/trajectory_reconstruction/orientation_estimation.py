@@ -14,6 +14,8 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     Dataset,
     StrideList,
+    is_single_sensor_stride_list,
+    is_multi_sensor_stride_list,
 )
 from gaitmap.utils.dataset_helper import is_single_sensor_dataset, is_multi_sensor_dataset
 from gaitmap.utils.rotations import get_gravity_rotation
@@ -100,6 +102,11 @@ class GyroIntegration(BaseOrientationEstimation):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         self.event_list = stride_event_list
+
+        if not is_single_sensor_stride_list(
+            stride_event_list, stride_type="min_vel"
+        ) and not is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel"):
+            raise ValueError("Provided stride event list is not supported by gaitmap")
 
         if is_single_sensor_dataset(self.data):
             self.estimated_orientations_ = self._estimate_single_sensor(self.data, self.event_list)

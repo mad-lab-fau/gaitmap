@@ -44,7 +44,10 @@ class TestGyroIntegration:
         sensor_data[SF_ACC] = [0, 0, 1]
 
         gyr_integrator = GyroIntegration(align_window_width=8)
-        event_list = pd.DataFrame(data=[[0, start_sample, start_sample + fs]], columns=["s_id", "start", "end"])
+        event_list = pd.DataFrame(
+            data=[[0, start_sample, start_sample + fs, 0, 0, start_sample, 0]],
+            columns=["s_id", "start", "end", "pre_ic", "ic", "min_vel", "tc"],
+        )
         gyr_integrator.estimate(sensor_data, event_list, fs)
         rot_final = gyr_integrator.estimated_orientations_.iloc[-1]
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
@@ -95,12 +98,22 @@ class TestGyroIntegration:
         gyr_int.estimated_orientations_without_initial_
         return None
 
-    def test_valid_input_data(self, healthy_example_imu_data):
+    def test_valid_input_data(self, healthy_example_imu_data, healthy_example_stride_events):
         """Test if error is raised correctly on invalid input data type"""
-        data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
+        data = healthy_example_imu_data
+        stride_list = healthy_example_stride_events
+        fake_data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
+        fake_stride_list = {
+            "a": pd.DataFrame(data=[[0, 1, 2]], columns=["stride", "begin", "stop"]),
+            "b": pd.DataFrame(data=[[0, 1, 2]], columns=["stride", "begin", "stop"]),
+        }
+
         gyr_int = GyroIntegration(align_window_width=8)
+
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
-            gyr_int.estimate(data, healthy_example_imu_data, 204.8)
+            gyr_int.estimate(fake_data, stride_list, 204.8)
+        with pytest.raises(ValueError, match=r"Provided stride event list is not supported by gaitmap"):
+            gyr_int.estimate(data, fake_stride_list, 204.8)
 
     def estimate_one_sensor(self, healthy_example_imu_data, healthy_example_stride_events) -> GyroIntegration:
         data_left = healthy_example_imu_data["left_sensor"]
