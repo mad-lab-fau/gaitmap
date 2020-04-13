@@ -63,19 +63,27 @@ class TestGyroIntegration:
     def test_orientations_without_initial(self, healthy_example_imu_data, healthy_example_stride_events):
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
         r = gyr_int.estimated_orientations_
-        r_wo_final = gyr_int.estimated_orientations_without_final_
         r_wo_initial = gyr_int.estimated_orientations_without_initial_
-        assert len(r_wo_final), len(r)-1
-        assert len(r_wo_final), len(r_wo_initial)
 
-        deleted_idx_sample_initial = r.index.difference(r_wo_initial.index).get_level_values(level="sample")
+        deleted_idx_initial = r.index.difference(r_wo_initial.index)
+        deleted_idx_sample_initial = deleted_idx_initial.get_level_values(level="sample")
+
+        assert len(r_wo_initial), len(r)-1
         assert len(deleted_idx_sample_initial.unique()) == 1
         assert deleted_idx_sample_initial.unique()[0] == 0
+        for i_stride, i_stride_data in r_wo_initial.groupby(level="s_id"):
+            i_stride_data.index.get_level_values(level="sample")[0] == 1
 
-        with pytest.raises(KeyError):
-            r_wo_initial.xs(0, axis=0, level="sample")
-        #with pytest.raises(KeyError):
-            #pass
+    def test_orientations_without_final(self, healthy_example_imu_data, healthy_example_stride_events):
+        gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
+        r = gyr_int.estimated_orientations_
+        r_wo_final = gyr_int.estimated_orientations_without_final_
+
+        assert len(r_wo_final), len(r)-1
+        for i_stride, i_stride_data in r_wo_final.groupby(level="s_id"):
+            old_final = r.xs(i_stride, level="s_id",).index.get_level_values(level="sample")[-1]
+            new_final = r_wo_final.index.get_level_values(level="sample")[-1]
+            assert new_final, old_final-1
 
     def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
