@@ -18,12 +18,12 @@ from gaitmap.utils.dataset_helper import (
 
 
 class ForwardBackwardIntegration(BasePositionEstimation):
-    """Use forward integration of acceleration to estimate velocity and position.
+    """Use forward(-backward) integration of acc to estimate velocity and position.
 
-    For drift removal, backward integration is used for velocity estimation, because we assume zero velocity at the
-    beginning and end of a signal. For position, drift removal via backward integration is only used for the vertical
-    axis (=z-axis or superior-inferior-axis, see :ref:`ff`, because we assume beginning and end of the motion are in
-    one plane. Implementation based on the paper by Hannink et al. [1]
+    For drift removal, a direct-and-reverse (DRI) or forward-backward integration is used for velocity estimation,
+    because we assume zero velocity at the beginning and end of a signal. For position, drift removal via DRI
+    is only used for the vertical axis (=z-axis or superior-inferior-axis, see :ref:`ff`), because we assume
+    beginning and end of the motion are in one plane. Implementation based on the paper by Hannink et al. [1]_.
 
     Attributes
     ----------
@@ -53,7 +53,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     Notes
     -----
-    TODO: add support for multiple sensors and adapt tests accordingly
     .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
@@ -61,6 +60,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     Examples
     --------
     #single sensor
+
     >>> data_left = healthy_example_imu_data["left_sensor"]
     >>> events_left = healthy_example_stride_borders["left_sensor"]
     >>> integrator = ForwardBackwardIntegration()

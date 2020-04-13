@@ -1,4 +1,4 @@
-"""Estimation of orientations by gyroscope integration."""
+"""Estimation of orientations by using inertial sensor data."""
 import operator
 from itertools import accumulate
 from typing import Dict, Tuple
@@ -20,7 +20,7 @@ from gaitmap.utils.rotations import get_gravity_rotation
 
 
 class GyroIntegration(BaseOrientationEstimation):
-    """Estimate orientation based on a given initial orientation.
+    """Estimate orientation based on initial orientation from acc and subsequent orientation from gyr data.
 
     Initial orientation is calculated by aligning acceleration data of the first samples of every stride with gravity.
     Subsequent orientations are estimated by integrating gyroscope data with respect to time.
@@ -55,6 +55,7 @@ class GyroIntegration(BaseOrientationEstimation):
     Examples
     --------
     # single sensor
+
     >>> data = healthy_example_imu_data["left_sensor"]
     >>> stride_event_list = healthy_example_stride_event_list["left_sensor"]
     >>> gyr_int = GyroIntegration(align_window_width=8)
