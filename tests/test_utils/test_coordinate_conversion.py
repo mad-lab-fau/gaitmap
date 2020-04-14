@@ -33,7 +33,7 @@ class TestConvertAxes:
         assert_frame_equal(data_converted, self.data_right_expected)
 
     def test_no_position_arguments(self):
-        with pytest.raises(ValueError, match=r"Invalid inputs: Neither left nor right sensor names specified."):
+        with pytest.raises(ValueError):
             convert_to_fbf(self.data_df)
 
     def test_wrong_key_arguments(self):
@@ -49,13 +49,23 @@ class TestConvertAxes:
     def test_rotate_multisensor_left(self):
         data_converted = convert_to_fbf(self.data_df, left=["left_sensor"])
         assert_frame_equal(data_converted["left_sensor"], self.data_left_expected)
+        assert_frame_equal(data_converted["right_sensor"], self.data_df["right_sensor"])
 
     def test_rotate_multisensor_right(self):
         data_converted = convert_to_fbf(self.data_df, right=["right_sensor"])
         assert_frame_equal(data_converted["right_sensor"], self.data_right_expected)
+        assert_frame_equal(data_converted["left_sensor"], self.data_df["left_sensor"])
 
     def test_rotate_multisensor_dict(self):
         data_converted = convert_to_fbf(self.data_dict, left=["left_sensor"], right=["right_sensor"])
 
         for sensor in self.data_dict_expected:
             assert_frame_equal(data_converted[sensor], self.data_dict_expected[sensor])
+
+    def test_like_argument(self):
+        data_converted = convert_to_fbf(self.data_df, right_like="right_", left_like="left_")
+        assert_frame_equal(data_converted["right_sensor"], self.data_right_expected)
+
+    def test_like_argument_error(self):
+        with pytest.raises(ValueError):
+            convert_to_fbf(self.data_df, right=["right_sensor"], right_like="right_")

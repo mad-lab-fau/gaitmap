@@ -9,7 +9,12 @@ from typing import Optional, List
 import pandas as pd
 
 from gaitmap.utils.consts import SF_COLS, BF_COLS
-from gaitmap.utils.dataset_helper import is_multi_sensor_dataset, SingleSensorDataset, MultiSensorDataset
+from gaitmap.utils.dataset_helper import (
+    is_multi_sensor_dataset,
+    SingleSensorDataset,
+    MultiSensorDataset,
+    get_multi_sensor_dataset_names,
+)
 
 
 def convert_left_foot_to_fbf(data: SingleSensorDataset):
@@ -86,7 +91,13 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
     return result
 
 
-def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, right: Optional[List[str]] = None):
+def convert_to_fbf(
+    data: MultiSensorDataset,
+    left: Optional[List[str]] = None,
+    right: Optional[List[str]] = None,
+    right_like: str = None,
+    left_like: str = None,
+):
     """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
     Parameters
@@ -94,9 +105,18 @@ def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, r
     data
         MultiSensorDataset
     left
-        List of strings indicating sensor names which will be rotated using definition of left conversion
+        List of strings indicating sensor names which will be rotated using definition of left conversion.
+        This option can not be used in combination with `left_like`.
     right
         List of strings indicating sensor names which will be rotated using definition of right conversion
+        This option can not be used in combination with `right_like`.
+    left_like
+        Consider all sensors containing this string in the name as left foot sensors.
+        This option can not be used in combination with `left`.
+    right_like
+        Consider all sensors containing this string in the name as right foot sensors.
+        This option can not be used in combination with `right`.
+
 
     Returns
     -------
@@ -112,27 +132,38 @@ def convert_to_fbf(data: MultiSensorDataset, left: Optional[List[str]] = None, r
     if not is_multi_sensor_dataset(data):
         raise TypeError("No MultiSensorDataset supplied.")
 
-    if left is None and right is None:
-        raise ValueError("Invalid inputs: Neither left nor right sensor names specified.")
+    if (left and left_like) or (right and right_like) or not any((left, left_like, right, right_like)):
+        raise ValueError(
+            "You need to either supply a list of names via the `left` or `right` arguments, or a single string for the "
+            "`left_like` or `right_like` arguments, but not both!"
+        )
 
-    result = dict()
+    # if not left and not right:
+    #     raise ValueError("No sensors specified for rotation.")
+    left_foot = _handle_foot(left, left_like, data, rot_func=convert_left_foot_to_fbf)
+    right_foot = _handle_foot(right, right_like, data, rot_func=convert_right_foot_to_fbf)
 
-    # Loop through defined sensors
-    # Add results to a new dictionary with sensor names as keys
-    left = left or []
-    for ls in left:
-        if ls not in data:
-            raise KeyError("data contains no key " + ls)
-        result[ls] = convert_left_foot_to_fbf(data[ls])
-
-    right = right or []
-    for rs in right:
-        if rs not in data:
-            raise KeyError("data contains no key " + rs)
-        result[rs] = convert_right_foot_to_fbf(data[rs])
+    sensor_names = get_multi_sensor_dataset_names(data)
+    result = {k: data[k] for k in sensor_names}
+    result = {**result, **left_foot, **right_foot}
 
     # If original data is not synchronized (dictionary), return as dictionary
     if isinstance(data, dict):
         return result
     # For synchronized sensors, return as MultiIndex dataframe
-    return pd.concat(result, axis=1)
+    df = pd.concat(result, axis=1)
+    # restore original order
+    return df[sensor_names]
+
+
+def _handle_foot(foot, foot_like, data, rot_func):
+    result = dict()
+    if foot_like:
+        foot = [sensor for sensor in get_multi_sensor_dataset_names(data) if foot_like in sensor]
+
+    foot = foot or []
+    for s in foot:
+        if s not in data:
+            raise KeyError("Dataset contains no sensor with name " + s)
+        result[s] = rot_func(data[s])
+    return result

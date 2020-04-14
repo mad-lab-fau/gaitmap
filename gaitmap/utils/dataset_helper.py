@@ -275,7 +275,7 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
 
     """
     if isinstance(dataset, pd.DataFrame):
-        keys = list(set(dataset.columns.get_level_values(0)))
+        keys = dataset.columns.unique(level=0)
     else:
         # In case it is a dict
         keys = dataset.keys()
