@@ -2,15 +2,14 @@
 from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
+import pandas as pd
 from numpy.linalg import norm
 
-import pandas as pd
-
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils import dataset_helper
-from gaitmap.utils.dataset_helper import Dataset
+from gaitmap.utils.consts import BF_ACC, BF_GYR
+from gaitmap.utils.dataset_helper import is_multi_sensor_dataset, is_single_sensor_dataset, \
+    is_single_sensor_stride_list, is_multi_sensor_stride_list, StrideList, Dataset
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -93,7 +92,7 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: StrideList) -> BaseType:
         """Find gait events in data within strides provided by segmented_stride_list.
 
         Parameters
@@ -124,12 +123,12 @@ class RamppEventDetection(BaseEventDetection):
         ...
 
         """
-        if dataset_helper.is_single_sensor_dataset(data) and not dataset_helper.is_single_sensor_stride_list(
+        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(
             segmented_stride_list
         ):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")
 
-        if dataset_helper.is_multi_sensor_dataset(data) and not dataset_helper.is_multi_sensor_stride_list(
+        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(
             segmented_stride_list
         ):
             raise ValueError("Provided stride list does not fit to provided multi sensor data set")
@@ -145,7 +144,7 @@ class RamppEventDetection(BaseEventDetection):
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
-        if dataset_helper.is_single_sensor_dataset(data):
+        if is_single_sensor_dataset(data):
             (
                 self.stride_events_,
                 self.start_,
@@ -155,7 +154,7 @@ class RamppEventDetection(BaseEventDetection):
                 self.ic_,
                 self.tc_,
             ) = self._detect_single_dataset(data, segmented_stride_list, ic_search_region, min_vel_search_win_size)
-        elif dataset_helper.is_multi_sensor_dataset(data):
+        elif is_multi_sensor_dataset(data):
             self.stride_events_ = dict()
             self.start_ = dict()
             self.end_ = dict()
@@ -163,7 +162,7 @@ class RamppEventDetection(BaseEventDetection):
             self.pre_ic_ = dict()
             self.ic_ = dict()
             self.tc_ = dict()
-            for sensor in dataset_helper.get_multi_sensor_dataset_names(data):
+            for sensor in get_multi_sensor_dataset_names(data):
                 (
                     self.stride_events_[sensor],
                     self.start_[sensor],
