@@ -11,7 +11,7 @@ gaitmap Docu Overview
    :caption: Content:
 
    Readme <README.md>
-   guides/Contribution-Guide.md
+   guides/Project-Structure.md
    guides/Development-Guide.md
    guides/Coordinate-Systems.rst
 
