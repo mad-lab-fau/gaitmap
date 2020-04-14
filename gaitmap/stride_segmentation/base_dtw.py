@@ -397,9 +397,10 @@ class BaseDtw(BaseStrideSegmentation):
                 data = data[template.columns]
             except KeyError:
                 raise KeyError(
-                    "Some columns of the template are not available in the data! Missing columns: {}".format(
-                        list(set(template.columns) - set(data.columns))
-                    )
+                    "Some columns of the template are not available in the data! This might happen because you "
+                    "provided the data in the wrong coordinate frame (Sensor vs. Body)."
+                    "Review the general documentation for more information."
+                    "\n\nMissing columns: {}".format(list(set(template.columns) - set(data.columns)))
                 )
             return template.to_numpy(), data.to_numpy()
         # TODO: Better error message
