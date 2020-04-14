@@ -83,7 +83,7 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
 
-        expected_stride_list = pd.DataFrame(columns=["start", "end"])
+        expected_stride_list = pd.DataFrame(columns=["s_id", "start", "end"])
         expected_stride_list["start"] = [5, 18]
         expected_stride_list["end"] = [7, 20]
         expected_stride_list["s_id"] = [0, 1]
@@ -105,11 +105,11 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(
             dtw.stride_list_["sensor1"].astype(np.int64),
-            pd.DataFrame([[5, 7, 0]], columns=["start", "end", "s_id"]).astype(np.int64),
+            pd.DataFrame([[0, 5, 7]], columns=["s_id", "start", "end"]).astype(np.int64),
         )
         assert_frame_equal(
             dtw.stride_list_["sensor2"].astype(np.int64),
-            pd.DataFrame([[2, 4, 0]], columns=["start", "end", "s_id"]).astype(np.int64),
+            pd.DataFrame([[0, 2, 4]], columns=["s_id", "start", "end"]).astype(np.int64),
         )
 
     def test_stride_list_passes_test_func(self):

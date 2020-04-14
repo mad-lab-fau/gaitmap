@@ -146,7 +146,7 @@ class BarthDtw(BaseDtw):
         as_df = pd.DataFrame(array, columns=["start", "end"])
         # Add the s_id
         as_df["s_id"] = as_df.index
-        return as_df
+        return as_df[["s_id", "start", "end"]]
 
     def _postprocess_matches(self, data, matches_start_end: np.ndarray, paths: List) -> Tuple[np.ndarray, List]:
         matches_start_end, paths = super()._postprocess_matches(
