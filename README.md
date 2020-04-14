@@ -28,7 +28,7 @@ poetry install --no-root
 
 In case you encounter any error and need more detailed instruction visit the 
 [Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Development-Guide.html) and the 
-[Contribution Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Contribution-Guide.html).
+[Project Structure Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Project-Structure.html).
 
 ### Testing, linting, etc.
 

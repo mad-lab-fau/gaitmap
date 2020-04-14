@@ -4,7 +4,7 @@ This document contains information for developers that need further in-depth inf
 and learn about programing methods used in development of this project.
 
 If you are looking for a higher level overview over the guiding ideas and structure of this project, please visit the
-[contribution guide](Contribution-Guide.md).
+[Project Structure document](Project-Structure.md).
 
 ## Project Setup and Poetry
 
