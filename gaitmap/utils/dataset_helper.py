@@ -169,7 +169,7 @@ def is_single_sensor_stride_list(
     """Check if an input is a single-sensor stride list.
 
     A valid stride list:
-    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end", "gsd_id"]`
+    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
     - has only a single level column index
 
     Depending on the type of stride list, further requirements need to be fulfilled:
@@ -211,7 +211,7 @@ def is_single_sensor_stride_list(
     # Check columns exist
     if stride_type != "any" and stride_type not in additional_columns:
         raise ValueError('The argument `stride_type` must be one of ["any", "min_vel"]')
-    minimal_columns = ["s_id", "start", "end", "gsd_id"]
+    minimal_columns = ["s_id", "start", "end"]
     all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
     if not all(v in columns for v in all_columns):
         return False
