@@ -3,7 +3,7 @@
 Definitions can be found in
 http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Coordinate-Systems.html.
 """
-
+import warnings
 from typing import Optional, List
 
 import pandas as pd
@@ -130,7 +130,7 @@ def convert_to_fbf(
     """
     # TODO: Support also single sensor Dataframe here?
     if not is_multi_sensor_dataset(data):
-        raise TypeError("No MultiSensorDataset supplied.")
+        raise ValueError("No MultiSensorDataset supplied.")
 
     if (left and left_like) or (right and right_like) or not any((left, left_like, right, right_like)):
         raise ValueError(
@@ -138,8 +138,6 @@ def convert_to_fbf(
             "`left_like` or `right_like` arguments, but not both!"
         )
 
-    # if not left and not right:
-    #     raise ValueError("No sensors specified for rotation.")
     left_foot = _handle_foot(left, left_like, data, rot_func=convert_left_foot_to_fbf)
     right_foot = _handle_foot(right, right_like, data, rot_func=convert_right_foot_to_fbf)
 
@@ -160,7 +158,12 @@ def _handle_foot(foot, foot_like, data, rot_func):
     result = dict()
     if foot_like:
         foot = [sensor for sensor in get_multi_sensor_dataset_names(data) if foot_like in sensor]
-
+        if not foot:
+            warnings.warn(
+                "The substring {} is not contained in any sensor name. Available sensor names are: {}".format(
+                    foot_like, get_multi_sensor_dataset_names(data)
+                )
+            )
     foot = foot or []
     for s in foot:
         if s not in data:

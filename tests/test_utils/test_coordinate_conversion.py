@@ -69,3 +69,15 @@ class TestConvertAxes:
     def test_like_argument_error(self):
         with pytest.raises(ValueError):
             convert_to_fbf(self.data_df, right=["right_sensor"], right_like="right_")
+
+    def test_does_not_match_warning(self):
+        with pytest.warns(UserWarning) as w:
+            convert_to_fbf(self.data_df, right_like="not_in_any_name_")
+
+        assert "not_in_any_name_" in w[0].message.args[0]
+
+    def test_only_multisensor_dataset_supported(self):
+        with pytest.raises(ValueError) as e:
+            convert_to_fbf(self.data_df["left_sensor"])
+
+        assert "MultiSensorDataset" in str(e)
