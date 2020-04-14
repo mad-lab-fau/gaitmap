@@ -112,6 +112,72 @@ sys.path.insert(0, "<path to the gaitmap project folder>")
 
 The path can be relative to your current working directory.
 
+## Git Workflow
+
+As multiple people are expected to work on the project at the same time, we need a proper git workflow to prevent issues.
+
+### Branching structure
+
+For the initial development phase, we will use `master` + feature branchs. This is explained 
+[here](https://guides.github.com/introduction/flow/index.html)
+
+Remember, Feature branchs...:
+
+- should be short-lived
+- should be dedicated to a single feature
+- should be worked on by a single person
+- must be merged via a Merge Request and not manually
+- must be reviewed before merging
+- must pass the pipeline checks before merging
+- should be rebased onto master if possible (remember only rebase if you are the only person working on this branch!)
+- should be pushed soon and often to allow everyone to see what you are working on
+- should be associated with a merge request, which is used for discussions and code review.
+- that are not ready to review, should have a merge request prefixed with `WIP: `
+- should also close issues that they solve, once they are merged
+
+Workflow
+
+```bash
+# Create a new branch
+git checkout master
+git pull origin master
+git checkout -b new-branch-name
+git push origin new-branch-name
+# Go to Gitlab and create a new Merge Request with WIP prefix
+
+# Do your work
+git push origin new-branch-name
+
+# In case there are important changes in master, rebase
+git fetch origin master
+git rebase origin/master
+# resolve potential conflicts
+git push origin new-branch-name --force-with-lease
+
+# If rebase is not feasible, merge
+git fetch origin master
+git merge origin/master
+# resolve potential conflicts
+git push origin new-branch-name
+
+# Once branch is merged, delete it locally, start a new branch
+git checkout master
+git branch -D new-branch-name
+
+# Start at top!
+```
+
+### General Git Tips
+
+- Communicate with your Co-developers
+- Commit often
+- Commit in logical chunks
+- Don't commit temp files
+- Write at least somewhat [proper messages](https://chris.beams.io/posts/git-commit/)
+   - Use the imperative mood in the subject line
+   - Use the body to explain what and why vs. how
+   - ...more see link above
+
 ## Trouble Shooting
 
 ##### `poetry not found` when using `zsh` as shell

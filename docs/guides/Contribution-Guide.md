@@ -1,9 +1,11 @@
-# Contribution Guide
+# Scope and Code Structure of the Project
 
 To ensure that the project is easy to use, easy to maintain, and easy to expand in the future, all developers should
 adhere to the guidelines outlined below.
 Further the developers should familiarize themselves with aim and the scope of the project to make better decision when
 it comes to including new functionality.
+If you are new developer and need to familiarize yourself and need help with setting up your development environment to
+work on this project, have a look at the [Development Guide](Development-Guide.md).
 
 **Everything that follows are recommendations.**
 
@@ -117,115 +119,141 @@ Additions to the guide:
   For type validation, we should trust that Python provides the correct error message once an invalid step is performed.
 - All classes should inherent from a BaseClass specific to their type that implements common functionality and enforces 
   the interface. Remember to call respective `super` methods when required.
+  The resulting class structure should look like this:
+```
+BaseAlgorithm -> Basic setting of parameters
+|
+Base<AlgorithmType> -> Basic interface to ensure all algos of the same type use the same input and outputs for their 
+|                      action methods
+|
+<TheActualAlgorithm>
+|
+<VariationsOfAlgorithm> -> A improved version of an algorithm, when it does not make sense to toggle the improvement 
+                           via an inputparameter on the algorithm
+```
 
 
 #### Example class structure
 
+Below you can find the simplified class structure of the `RamppEventDetection` algorithm.
+It should serve as an example on how further algorithms should be implemented and documented.
+Also review the actual implementation of the other algorithms for further inspiration and guidance.
+
 ```python
-from gaitmap.base import BaseType, BaseEventDetection
-from typing import Optional
 import numpy as np
+from gaitmap.base import BaseEventDetection, BaseType
+from typing import Optional, Tuple, Union, Dict
+from gaitmap.utils.dataset_helper import Dataset, is_multi_sensor_dataset, is_single_sensor_dataset
 
 
-class AuthorNameEventDetection(BaseEventDetection):
-    """ This is an example class.
+class RamppEventDetection(BaseEventDetection):
+    """Find gait events in the IMU raw signal based on signal characteristics.
 
-    And here you would explain the full functionality.
+    RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
+    features in the signals as described in Rampp et al. (2014) [1]_.
+    For more details refer to the `Notes` section.
 
     Parameters
     ----------
-    parameter_one
-        This is everything I know about parameter one
-    parameter_two
-        All the important stuff
-    window_length : float, should be larger 0 and uneven
-        Some info with extra type info
+    ic_search_region_ms
+        ...
+    min_vel_search_win_size_ms
+        ...
+
+    Attributes
+    ----------
+    stride_events_ : A stride list or dictionary with such values
+        ...
+    start_ : 1D array or dictionary with such values
+        ...
+    end_ : 1D array or dictionary with such values
+        ...
+    tc_ : 1D array or dictionary with such values
+        ...
+    min_vel_ : 1D array or dictionary with such values
+        ...
+    ic_ : 1D array or dictionary with such values
+        ...
+    pre_ic_ : 1D array or dictionary with such values
+        ...
 
     Other Parameters
     ----------------
     data
-        The data used for the action event
-
-    Attributes
-    ----------
-    hs_events_
-        The awesome output 1
-    to_events_
-        The awesome output 2
-    
-    Notes
-    -----
-    And here you would explain the algorithm in detail with references [1]
-
-    .. [1] Author something something, Awesome paper
-
-    Examples
-    --------
-    And of course some nice usage examples
-
-    >>> awesome_stuff = EventDetection(parameter_one=5)
+        ...
+    sampling_rate_hz
+        ...
+    segmented_stride_list
+        ...
 
     """
-    parameter_one: int
-    parameter_two: str
-    window_length: float
 
+    ic_search_region_ms: Tuple[float, float]
+    min_vel_search_win_size_ms: float
 
-    data: np.ndarray
+    start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    tc_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    min_vel_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    pre_ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
+    stride_events_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
-    hs_events_: np.ndarray
-    to_events_: np.ndarray
+    data: Dataset
+    sampling_rate_hz: float
+    segmented_stride_list: pd.DataFrame
 
-    def __init__(self, parameter_one: int = 1, parameter_two: Optional[str] = None, window_length: float = 4.):
-        self.parameter_one = parameter_one
-        self.parameter_two = parameter_two
-        self.window_length = window_length
-        super().__init__()
+    def __init__(self, ic_search_region_ms: Tuple[float, float] = (80, 50), min_vel_search_win_size_ms: float = 100):
+        # Just add the Parameters without any logic
+        self.ic_search_region_ms = ic_search_region_ms
+        self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: np.ndarray) -> BaseType:
-        """This is the actual action method.
-        
-        Parameters
-        ----------
-        data
-            Your awesome input data
-
-        Returns
-        -------
-        self
-        """
-        # Call super of base parent class
-        # This should take care of potential preprocessing required.
-        # In most cases this should call `_validate` implicit
-        super().detect(data=data)
-
-        self.data = data
-        # Do some calculations
-        self.hs_events_ = ...
-        self.to_events_ = ...
-
-        return self
-
-    def detect_hs(self: BaseType, data: np.ndarray) -> BaseType:
-        """Example of secondary action function.
-            
-        This allows users to have full control of what they 
-        wants to do.
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
+        """Find gait events in data within strides provided by segmented_stride_list.
 
         Parameters
         ----------
         data
-            Your awesome input data
+            The data set holding the imu raw data
+        sampling_rate_hz
+            The sampling rate of the data
+        segmented_stride_list
+            A list of strides provided by a stride segmentation method
 
         Returns
         -------
         self
+            The class instance with all result attributes populated
+
+        Examples
+        --------
+        Get gait events from single sensor signal
+
+        >>> event_detection = RamppEventDetection()
+        >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
+        >>> event_detection.stride_events_
+            s_id   start     end      ic      tc  min_vel  pre_ic
+        0      0   519.0   710.0   651.0   584.0    519.0   498.0
+        1      1   710.0   935.0   839.0   802.0    710.0   651.0
+        2      2   935.0  1183.0  1089.0  1023.0    935.0   839.0
+        ...
+
         """
-        # Call validate manually
-        self._validate()
+        # Set all "Other Parameters"
         self.data = data
-        # Do some calculations
-        self.hs_events_ = ...
+        self.sampling_rate_hz = sampling_rate_hz
+        self.segmented_stride_list = segmented_stride_list
+
+        # Potential validation of parameters should be performed here
+
+        if is_single_sensor_dataset(data):
+            # Handle single sensors
+            ...
+        elif is_multi_sensor_dataset(data):
+            # Handle multiple sensors
+            ...
+        else:
+            raise ValueError("Provided data set is not supported by gaitmap")
 
         return self
 ```
@@ -274,7 +302,6 @@ All private functions are expected to be documented in a way that other develope
 Additionally each module should have a docstring explaining its content.
 If a module contains only one class this can a single sentence/word (e.g. `"""Event detection based on ... ."""`).
 
-
 ### Typehints
 
 To provide a better developer experience the library should use
@@ -289,69 +316,3 @@ In case multiple functions from an external package are used, import this packag
 (e.g. `np` for numpy, `pd` for pandas, ...)
 
 For all package internal imports, use absolute imports.
-
-## Git Workflow
-
-As multiple people are expected to work on the project at the same time, we need a proper git workflow to prevent issues.
-
-### Branching structure
-
-For the initial development phase, we will use `master` + feature branchs. This is explained 
-[here](https://guides.github.com/introduction/flow/index.html)
-
-Remember, Feature branchs...:
-
-- should be short-lived
-- should be dedicated to a single feature
-- should be worked on by a single person
-- must be merged via a Merge Request and not manually
-- must be reviewed before merging
-- must pass the pipeline checks before merging
-- should be rebased onto master if possible (remember only rebase if you are the only person working on this branch!)
-- should be pushed soon and often to allow everyone to see what you are working on
-- should be associated with a merge request, which is used for discussions and code review.
-- that are not ready to review, should have a merge request prefixed with `WIP: `
-- should also close issues that they solve, once they are merged
-
-Workflow
-
-```bash
-# Create a new branch
-git checkout master
-git pull origin master
-git checkout -b new-branch-name
-git push origin new-branch-name
-# Go to Gitlab and create a new Merge Request with WIP prefix
-
-# Do your work
-git push origin new-branch-name
-
-# In case there are important changes in master, rebase
-git fetch origin master
-git rebase origin/master
-# resolve potential conflicts
-git push origin new-branch-name --force-with-lease
-
-# If rebase is not feasible, merge
-git fetch origin master
-git merge origin/master
-# resolve potential conflicts
-git push origin new-branch-name
-
-# Once branch is merged, delete it locally, start a new branch
-git checkout master
-git branch -D new-branch-name
-
-# Start at top!
-```
-
-### General Git Tips
-
-- Communicate with your Co-developers
-- Commit often
-- Commit in logical chunks
-- Don't commit temp files
-- Write at least somewhat [proper messages](https://chris.beams.io/posts/git-commit/)
-   - Use the imperative mood in the subject line
-   - Use the body to explain what and why vs. how
-   - ...more see link above
