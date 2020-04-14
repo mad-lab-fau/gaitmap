@@ -8,8 +8,15 @@ from numpy.linalg import norm
 from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
-from gaitmap.utils.dataset_helper import is_multi_sensor_dataset, is_single_sensor_dataset, \
-    is_single_sensor_stride_list, is_multi_sensor_stride_list, StrideList, Dataset
+from gaitmap.utils.dataset_helper import (
+    is_multi_sensor_dataset,
+    is_single_sensor_dataset,
+    is_single_sensor_stride_list,
+    is_multi_sensor_stride_list,
+    StrideList,
+    Dataset,
+    get_multi_sensor_dataset_names,
+)
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -123,14 +130,10 @@ class RamppEventDetection(BaseEventDetection):
         ...
 
         """
-        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(
-            segmented_stride_list
-        ):
+        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(segmented_stride_list):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")
 
-        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(
-            segmented_stride_list
-        ):
+        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(segmented_stride_list):
             raise ValueError("Provided stride list does not fit to provided multi sensor data set")
 
         self.data = data
