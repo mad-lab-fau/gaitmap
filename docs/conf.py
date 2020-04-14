@@ -18,6 +18,8 @@ from inspect import getsourcelines
 
 import sphinx_bootstrap_theme
 
+from gaitmap.base import BaseAlgorithm
+
 sys.path.insert(0, os.path.abspath(".."))
 
 URL = "https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/blob/master"
@@ -149,3 +151,13 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "tslearn": ("https://tslearn.readthedocs.io/en/latest/", None),
 }
+
+
+def skip_properties(app, what, name, obj, skip, options):
+    """This removes all properties from the documentation as they are expected to be documented in the docstring."""
+    if isinstance(obj, property):
+        return True
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip_properties)
