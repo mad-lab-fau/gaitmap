@@ -112,6 +112,41 @@ sys.path.insert(0, "<path to the gaitmap project folder>")
 
 The path can be relative to your current working directory.
 
+### Regression Tests
+
+To prevent unintentional changes to the data, this project makes use of regression tests.
+These tests store the output of a function and compare the output of the same function at a later time to the stored
+information.
+This helps to ensure that a change did not modify a function unintentionally.
+To make this easy, this library contains a small PyTest helper to perform regression tests.
+
+A simple regression test looks like this:
+
+```python
+import pandas as pd
+
+def test_regression(snapshot):
+    # Do my tests
+    result_dataframe = pd.DataFrame(...)
+    snapshot.assert_match(result_dataframe)
+```
+
+This test will store `result_dataframe` in a json file if the test is run for the first time.
+At a later time, the dataframe is loaded from this file to compare it.
+If the new `result_dataframe` is different from the file content the test fails.
+
+In case the test fails, the results need to be manually reviewed.
+If the changes were intentionally, the stored data can be updated by either deleting, the old file
+and rerunning the test, or by running ` pytest --snapshot-update`. Be careful, this will update all snapshots.
+
+The results of a snapshot test should be committed to the repo.
+Make reasonable decisions when it comes to the datasize of this data.
+
+For more information see `tests/_regression_utils.py` or
+`tests.test_stride_segmentation.test_barth_dtw.TestRegressionOnRealData.test_real_data_both_feed_regression` for an
+ example.
+
+
 ## Git Workflow
 
 As multiple people are expected to work on the project at the same time, we need a proper git workflow to prevent issues.
