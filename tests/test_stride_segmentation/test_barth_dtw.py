@@ -7,6 +7,7 @@ from pandas.testing import assert_frame_equal
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
+from gaitmap.utils.dataset_helper import is_single_sensor_stride_list, is_multi_sensor_stride_list
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_stride_segmentation.test_base_dtw import (
     TestSimpleSegment,
@@ -78,6 +79,7 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         expected_stride_list = pd.DataFrame(columns=["start", "end"])
         expected_stride_list["start"] = [5, 18]
         expected_stride_list["end"] = [7, 20]
+        expected_stride_list["s_id"] = [0, 1]
         assert_frame_equal(dtw.stride_list_.astype(np.int64), expected_stride_list.astype(np.int64))
 
     def test_stride_list_multi_d(self):
@@ -96,12 +98,34 @@ class TestBarthDewAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(
             dtw.stride_list_["sensor1"].astype(np.int64),
-            pd.DataFrame([[5, 7]], columns=["start", "end"]).astype(np.int64),
+            pd.DataFrame([[5, 7, 0]], columns=["start", "end", "s_id"]).astype(np.int64),
         )
         assert_frame_equal(
             dtw.stride_list_["sensor2"].astype(np.int64),
-            pd.DataFrame([[2, 4]], columns=["start", "end"]).astype(np.int64),
+            pd.DataFrame([[2, 4, 0]], columns=["start", "end", "s_id"]).astype(np.int64),
         )
+
+    def test_stride_list_passes_test_func(self):
+        sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
+
+        assert is_single_sensor_stride_list(dtw.stride_list_)
+
+    def test_stride_list_passes_test_func_multiple(self):
+        sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        sensor1 = pd.DataFrame(sensor1, columns=["col1"])
+        sensor2 = np.array([*np.ones(2) * 2, 0, 1.0, 0, *np.ones(8) * 2])
+        sensor2 = pd.DataFrame(sensor2, columns=["col1"])
+        data = {"sensor1": sensor1, "sensor2": sensor2}
+
+        template = [0, 1.0, 0]
+        template = pd.DataFrame(template, columns=["col1"])
+        template = create_dtw_template(template, sampling_rate_hz=100.0)
+        dtw = self.init_dtw(template=template)
+        dtw = dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert is_multi_sensor_stride_list(dtw.stride_list_)
 
 
 # Add all the tests of base dtw, as they should pass here as well

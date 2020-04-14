@@ -143,7 +143,10 @@ class BarthDtw(BaseDtw):
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
         if len(array) == 0:
             array = None
-        return pd.DataFrame(array, columns=["start", "end"])
+        as_df = pd.DataFrame(array, columns=["start", "end"])
+        # Add the s_id
+        as_df["s_id"] = as_df.index
+        return as_df
 
     def _postprocess_matches(self, data, matches_start_end: np.ndarray, paths: List) -> Tuple[np.ndarray, List]:
         matches_start_end, paths = super()._postprocess_matches(
