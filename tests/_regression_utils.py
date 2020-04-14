@@ -61,6 +61,8 @@ class PyTestSnapshotTest:
         self.snapshot_folder.mkdir(parents=True, exist_ok=True)
         if isinstance(value, pd.DataFrame):
             value.to_json(self.file_name, indent=4)
+        else:
+            raise ValueError("The dtype {} is not supported for snapshot testing".format(type(value)))
 
     def retrieve(self, dtype):
         if not self.file_name.is_file():
@@ -71,7 +73,7 @@ class PyTestSnapshotTest:
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(dtype))
 
-    def assert_match(self, value, name=""):
+    def assert_match(self, value, name="", **kwargs):
         self.curr_snapshot = name or self.curr_snapshot_number
         if self.update:
             self.store(value)
@@ -85,5 +87,5 @@ class PyTestSnapshotTest:
                 raise
             else:
                 if value_dtype == pd.DataFrame:
-                    assert_frame_equal(value, prev_snapshot)
+                    assert_frame_equal(value, prev_snapshot, **kwargs)
         self.curr_snapshot_number += 1

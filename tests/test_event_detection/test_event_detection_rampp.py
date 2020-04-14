@@ -19,21 +19,8 @@ import numpy as np
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
 
-    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Dummy test to see if the algorithm is generally working on single sensor example data"""
-        # TODO add assert statement / regression test to check against previous result
-        data_left = healthy_example_imu_data["left_sensor"]
-        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
-        stride_list_left = healthy_example_stride_borders["left_sensor"]
-
-        ed = RamppEventDetection()
-        ed.detect(data_left, 204.8, stride_list_left)
-
-        return None
-
-    def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
-        # TODO add assert statement / regression test to check against previous result
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -41,7 +28,8 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data, 204.8, healthy_example_stride_borders)
 
-        return None
+        snapshot.assert_match(ed.stride_events_["left_sensor"], "left", check_dtype=False)
+        snapshot.assert_match(ed.stride_events_["right_sensor"], "right", check_dtype=False)
 
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test to see if the algorithm is generally working on the example data when provided as dict"""
