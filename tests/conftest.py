@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from tests import example_data
+from tests._regression_utils import PyTestSnapshotTest
 
 
 def get_healthy_example_imu_data():
@@ -88,3 +89,16 @@ def get_healthy_example_stride_events():
 
 
 healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)
+
+
+@pytest.fixture
+def snapshot(request):
+    with PyTestSnapshotTest(request) as snapshot_test:
+        yield snapshot_test
+
+
+def pytest_addoption(parser):
+    group = parser.getgroup("snapshottest")
+    group.addoption(
+        "--snapshot-update", action="store_true", default=False, dest="snapshot_update", help="Update the snapshots."
+    )

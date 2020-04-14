@@ -30,7 +30,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestRegressionOnRealData:
-    # TODO: More real regression test needed
+    def test_real_data_both_feed_regression(self, healthy_example_imu_data, snapshot):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        dtw = BarthDtw()  # Test with default paras
+        dtw.segment(data, sampling_rate_hz=204.8)
+
+        snapshot.assert_match(dtw.stride_list_["left_sensor"], "left")
+        snapshot.assert_match(dtw.stride_list_["right_sensor"], "right")
+
     def test_real_data_both_feed(self, healthy_example_imu_data):
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         dtw = BarthDtw()  # Test with default paras
