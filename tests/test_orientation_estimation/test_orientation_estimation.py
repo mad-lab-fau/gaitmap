@@ -34,7 +34,7 @@ class TestGyroIntegration:
         fs = 100
         window_width = 8
         # start at window_with/2 because GyroIntegration._calculate_initial_orientation uses start+-half window size
-        start_sample = int(np.floor(window_width/2))
+        start_sample = int(np.floor(window_width / 2))
         # 180 degree rotation around i_axis
         sensor_data, event_list = self.get_dummy_data(start_sample, axis_to_rotate, fs)
 
@@ -61,6 +61,7 @@ class TestGyroIntegration:
             columns=["s_id", "start", "end", "pre_ic", "ic", "min_vel", "tc"],
         )
         return sensor_data, event_list
+
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
@@ -136,7 +137,7 @@ class TestGyroIntegration:
 
     def test_start_of_stride_equals_start_or_end_of_data(self):
         fs = 100
-        stride_start = [0, fs-1]
+        stride_start = [0, fs - 1]
         window_width = 8
         for i_start in stride_start:
             sensor_data, event_list = self.get_dummy_data(start_sample=i_start, axis_to_rotate=1, fs=fs)
