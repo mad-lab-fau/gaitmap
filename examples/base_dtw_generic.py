@@ -2,8 +2,8 @@ r"""
 BaseDtw simple segmentation
 ===========================
 
-This example illustrates how subsequent DTW implemented by the :class:`~gaitmap.stride_segmentation.base_dtw.BaseDtw`
-can be used to find multiple matches of a sequence in a longer sequence.
+This example illustrates how subsequent DTW implemented by the :class:`~gaitmap.stride_segmentation.BaseDtw` can be used
+to find multiple matches of a sequence in a longer sequence.
 This can be used to segment the larger signal into smaller pieces for further processing.
 
 *This example is adapted based on the sDTW example of tslearn*
