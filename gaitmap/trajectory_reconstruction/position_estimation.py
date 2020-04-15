@@ -59,8 +59,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     Examples
     --------
-    #  Note: single sensor
-
     >>> data_left = healthy_example_imu_data["left_sensor"]
     >>> events_left = healthy_example_stride_borders["left_sensor"]
     >>> integrator = ForwardBackwardIntegration()
@@ -71,10 +69,10 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     vel_z    0.000000
     Name: (34.619140625, 27.0), dtype: float64
 
-    #  Estimated: position / velocity looks like this, where `s_id` is the stride id.
+       Estimated: position / velocity looks like this, where `s_id` is the stride id.
 
     >>> integrator.estimated_position_
-                     pos_x     pos_y     pos_z
+                 pos_x     pos_y     pos_z
     s_id sample
     0    0       0.463356  0.542484  0.542484
          1       0.017705  0.037818  0.037818
@@ -83,9 +81,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
          4       0.026348  0.590486  0.590486
     1    0       0.284609  0.713550  0.713550
          1       0.595096  0.475286  0.475286
-    ...
+    ...          ...       ...       ...
 
-     #  Note: This is the case for a single sensor. For multiple sensors, it is a dictionary with keys being the sensor
+     Note: This is the case for a single sensor. For multiple sensors, it is a dictionary with keys being the sensor
      names in `self.data` and values being these kind of :py:class:`~pandas.DataFrame`:
 
     """

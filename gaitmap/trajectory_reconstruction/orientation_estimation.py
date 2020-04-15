@@ -43,7 +43,10 @@ class GyroIntegration(BaseOrientationEstimation):
         This is the width of the window that will be used to align the beginning of the signal of each stride with
         gravity. To do so, half the window size before and half the window size after the start of the stride will
         be used to obtain the median value of acceleration data in this phase.
-        Note, that +-`np.floor(align_window_size/2)` around the start sample will be used for this.
+        Note, that +-`np.floor(align_window_size/2)` around the start sample will be used for this. For the first
+        stride, start of the stride might coincide with the start of the signal. In that case the start of the window
+        would result in a negative index, thus the window to get the initial orientation will be reduced (from 0 to
+        `start+np.floor(align_window_size/2)`)
 
     Other Parameters
     ----------------
@@ -57,8 +60,6 @@ class GyroIntegration(BaseOrientationEstimation):
 
     Examples
     --------
-    # single sensor
-
     >>> data = healthy_example_imu_data["left_sensor"]
     >>> stride_event_list = healthy_example_stride_event_list["left_sensor"]
     >>> gyr_int = GyroIntegration(align_window_width=8)
@@ -69,6 +70,15 @@ class GyroIntegration(BaseOrientationEstimation):
     qz    0.000000
     qw    0.992010
     Name: (0, 0), dtype: float64
+    >>> gyr_int.estimated_orientations_without_final_["left_sensor"]
+                    qx        qy        qz        qw
+    s_id   sample
+    0      0        0.119273 -0.041121  0.000000  0.992010
+           1        0.123864 -0.027830 -0.017385  0.991756
+           2        0.131941 -0.013900 -0.034395  0.990563
+    1      0        0.144485 -0.000534 -0.050761  0.988204
+           1        0.162431  0.014014 -0.069777  0.984150
+    ...               ...       ...       ...       ...
 
     """
 

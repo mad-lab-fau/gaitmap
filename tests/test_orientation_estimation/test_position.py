@@ -4,7 +4,7 @@ import pytest
 import scipy
 
 from gaitmap.base import BaseType
-from gaitmap.trajectory_reconstruction.position import ForwardBackwardIntegration
+from gaitmap.trajectory_reconstruction.position_estimation import ForwardBackwardIntegration
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_VEL, SF_POS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 

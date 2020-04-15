@@ -67,7 +67,7 @@ class TestGyroIntegration:
         # TODO add assert statement / regression test to check against previous result
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
         gyr_int.estimated_orientations_without_final_
-        # gyr_int.estimated_orientations_without_initial_
+        gyr_int.estimated_orientations_without_initial_
         return None
 
     def test_orientations_without_initial(self, healthy_example_imu_data, healthy_example_stride_events):
