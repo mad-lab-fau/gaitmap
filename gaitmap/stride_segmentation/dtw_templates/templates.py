@@ -31,8 +31,8 @@ class DtwTemplate:
 
     See Also
     --------
-    gaitmap.stride_segmentation.base_dtw.BaseDtw: How to apply templates
-    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
 
     """
 
@@ -98,8 +98,8 @@ class BarthOriginalTemplate(DtwTemplate):
 
     See Also
     --------
-    gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate: Base class for templates
-    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.DtwTemplate: Base class for templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
 
     """
 
@@ -139,9 +139,9 @@ def create_dtw_template(
 
     See Also
     --------
-    gaitmap.stride_segmentation.base_dtw.BaseDtw: How to apply templates
-    gaitmap.stride_segmentation.barth_dtw.BarthDtw: How to apply templates for stride segmentation
-    gaitmap.stride_segmentation.dtw_templates.templates.DtwTemplate: Template base class
+    gaitmap.stride_segmentation.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.DtwTemplate: Template base class
 
     """
     template_instance = DtwTemplate(
