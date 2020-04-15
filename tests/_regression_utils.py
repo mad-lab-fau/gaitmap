@@ -5,10 +5,9 @@ Note that it can not be used in combination with this module!
 """
 import re
 from pathlib import Path
+
+import numpy as np
 import pandas as pd
-
-
-import pytest
 from pandas._testing import assert_frame_equal
 
 
@@ -42,8 +41,12 @@ class PyTestSnapshotTest:
         return self.module / "snapshot"
 
     @property
-    def file_name(self):
+    def file_name_json(self):
         return self.snapshot_folder / "{}.json".format(self.test_name)
+
+    @property
+    def file_name_csv(self):
+        return self.snapshot_folder / "{}.csv".format(self.test_name)
 
     @property
     def test_name(self):
@@ -60,16 +63,23 @@ class PyTestSnapshotTest:
     def store(self, value):
         self.snapshot_folder.mkdir(parents=True, exist_ok=True)
         if isinstance(value, pd.DataFrame):
-            value.to_json(self.file_name, indent=4)
+            value.to_json(self.file_name_json, indent=4)
+        elif isinstance(value, np.ndarray):
+            np.savetxt(self.file_name_csv, value, delimiter=",")
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(type(value)))
 
     def retrieve(self, dtype):
-        if not self.file_name.is_file():
-            raise SnapshotNotFound()
-
         if dtype == pd.DataFrame:
-            return pd.read_json(self.file_name)
+            filename = self.file_name_json
+            if not filename.is_file():
+                raise SnapshotNotFound()
+            return pd.read_json(filename)
+        elif dtype == np.ndarray:
+            filename = self.file_name_csv
+            if not filename.is_file():
+                raise SnapshotNotFound()
+            return np.genfromtxt(filename, delimiter=",")
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(dtype))
 
@@ -88,4 +98,9 @@ class PyTestSnapshotTest:
             else:
                 if value_dtype == pd.DataFrame:
                     assert_frame_equal(value, prev_snapshot, **kwargs)
+                elif value_dtype == np.ndarray:
+                    np.testing.assert_array_almost_equal(value, prev_snapshot, **kwargs)
+                else:
+                    raise ValueError("The dtype {} is not supported for snapshot testing".format(value_dtype))
+
         self.curr_snapshot_number += 1
