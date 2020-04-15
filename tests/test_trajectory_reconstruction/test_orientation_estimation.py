@@ -36,7 +36,7 @@ class TestGyroIntegration:
         # start at window_with/2 because GyroIntegration._calculate_initial_orientation uses start+-half window size
         start_sample = int(np.floor(window_width / 2))
         # 180 degree rotation around i_axis
-        sensor_data, event_list = self.get_dummy_data(start_sample, axis_to_rotate, fs)
+        sensor_data, event_list = self.get_dummy_data(start_sample, axis_to_rotate, fs, window_width=window_width)
 
         gyr_integrator = GyroIntegration(align_window_width=window_width)
         gyr_integrator.estimate(sensor_data, event_list, fs)
@@ -45,13 +45,13 @@ class TestGyroIntegration:
         assert len(gyr_integrator.estimated_orientations_) == fs + 1
 
     @staticmethod
-    def get_dummy_data(start_sample, axis_to_rotate, fs):
+    def get_dummy_data(start_sample, axis_to_rotate, fs, window_width=0):
         sensor_data = pd.DataFrame(columns=SF_COLS)
         for i_axis in SF_GYR:
             if i_axis == SF_GYR[axis_to_rotate]:
-                sensor_data[i_axis] = [np.pi] * (fs + start_sample)
+                sensor_data[i_axis] = [np.pi] * (fs + window_width)
             else:
-                sensor_data[i_axis] = [0] * (fs + start_sample)
+                sensor_data[i_axis] = [0] * (fs + window_width)
 
         sensor_data[SF_ACC] = [0, 0, 1]
         event_list = pd.DataFrame(
