@@ -192,7 +192,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
-    def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
+    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
 
         Parameters
@@ -212,7 +212,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
     #       `gaitmap.trajectory_reconstruction.orientation_estimation`.
 
     @property
-    def estimated_orientations_without_final_(self):
+    def estimated_orientations_without_final_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Return the estimated orientations without initial orientation.
 
         The number of rotations is equal to the number samples in passed data.
@@ -228,13 +228,13 @@ class BaseOrientationEstimation(BaseAlgorithm):
             ori_without_final = dict()
             for i_sensor, i_orientations in self.estimated_orientations_.items():
                 ori_without_final[i_sensor] = remove_final_for_sensor(i_orientations)
-        elif is_single_sensor_dataset(self.data):
-            ori_without_final = remove_final_for_sensor(self.estimated_orientations_)
-
-        return ori_without_final
+            return ori_without_final
+        if is_single_sensor_dataset(self.data):
+            return remove_final_for_sensor(self.estimated_orientations_)
+        raise ValueError("Unsuppported datatype.")
 
     @property
-    def estimated_orientations_without_initial_(self):
+    def estimated_orientations_without_initial_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Return the estimated orientations without initial orientation.
 
         The number of rotations is equal to the number samples in passed data.
@@ -245,9 +245,10 @@ class BaseOrientationEstimation(BaseAlgorithm):
                 ori_without_initial[i_sensor] = self.estimated_orientations_[i_sensor].drop(
                     axis=0, level="sample", index=0
                 )
+            return ori_without_initial
         elif is_single_sensor_dataset(self.data):
-            ori_without_initial = self.estimated_orientations_.drop(axis=0, level="sample", index=0)
-        return ori_without_initial
+            return self.estimated_orientations_.drop(axis=0, level="sample", index=0)
+        raise ValueError("Unsuppported datatype.")
 
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):

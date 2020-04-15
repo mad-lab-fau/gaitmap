@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationEstimation
+from gaitmap.base import BaseOrientationEstimation, BaseType
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
@@ -36,6 +36,12 @@ class GyroIntegration(BaseOrientationEstimation):
         to have minimal velocity.
         The subsequent orientations are obtained from integrating all `len(self.data)` gyroscope samples and therefore
         this attribute contains `len(self.data) + 1` orientations
+    estimated_orientations_without_initial_
+        Contains `estimated_orientations_` but for each stride, the INITIAL rotation is REMOVED to make it the same
+        length as `len(self.data)`.
+    estimated_orientations_without_final_
+        Contains `estimated_orientations_` but for each stride, the FINAL rotation is REMOVED to make it the same
+        length as `len(self.data)`
 
     Parameters
     ----------
@@ -83,14 +89,15 @@ class GyroIntegration(BaseOrientationEstimation):
     """
 
     align_window_width: int
+
     data: Dataset
-    event_list = StrideList
+    event_list: StrideList
     sampling_rate_hz: float
 
-    def __init__(self, align_window_width):
+    def __init__(self, align_window_width: int = 8):
         self.align_window_width = align_window_width
 
-    def estimate(self, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float):
+    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
@@ -127,7 +134,7 @@ class GyroIntegration(BaseOrientationEstimation):
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
-    def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> Tuple[Rotation, Rotation]:
+    def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> pd.DataFrame:
         cols = ["s_id", "qx", "qy", "qz", "qw"]
         rotations = pd.DataFrame(columns=cols)
         for i_s_id, i_stride in event_list.iterrows():
@@ -147,13 +154,13 @@ class GyroIntegration(BaseOrientationEstimation):
         out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
         return Rotation([o.as_quat() for o in out])
 
-    def _estimate_multi_sensor(self) -> Tuple[Dict[str, Rotation], Dict[str, Rotation]]:
+    def _estimate_multi_sensor(self) -> Dict[str, pd.DataFrame]:
         orientations = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
             orientations[i_sensor] = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
         return orientations
 
-    def _calculate_initial_orientation(self, data: SingleSensorDataset, start):
+    def _calculate_initial_orientation(self, data: SingleSensorDataset, start) -> Rotation:
         half_window = int(np.floor(self.align_window_width / 2))
         if start - half_window >= 0:
             start_sample = start - half_window
