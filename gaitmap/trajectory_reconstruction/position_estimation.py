@@ -1,5 +1,5 @@
 """Estimation of velocity and position relative to first sample of passed data."""
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -88,8 +88,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
 
     """
 
-    steepness: Optional[float]
-    turning_point: Optional[float]
+    steepness: float
+    turning_point: float
 
     estimated_position_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
     estimated_velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
@@ -98,12 +98,13 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     data: Dataset
     event_list: StrideList
 
-    def __init__(self, turning_point: Optional[float] = 0.5, steepness: Optional[float] = 0.08):
+    def __init__(self, turning_point: float = 0.5, steepness: float = 0.08):
         self.turning_point = turning_point
         self.steepness = steepness
 
     def estimate(self, data: Dataset, event_list: StrideList, sampling_rate_hz: float):
         """Estimate velocity and position based on acceleration data."""
+        # TODO: Make it clear/add check that this data is actual rotated data
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError(
                 "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
@@ -116,12 +117,14 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         if dataset_helper.is_single_sensor_dataset(data):
             self.estimated_velocity_, self.estimated_position_ = self._estimate_single_sensor(data, event_list)
         elif dataset_helper.is_multi_sensor_dataset(data):
-            self._estimate_multi_sensor()
+            self.estimated_velocity_, self.estimated_position_ = self._estimate_multi_sensor()
         else:
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
-    def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: SingleSensorStrideList):
+    def _estimate_single_sensor(
+        self, data: SingleSensorDataset, event_list: SingleSensorStrideList
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         velocity = {}
         position = {}
         for i_s_id, i_stride in event_list.iterrows():
@@ -130,55 +133,50 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             velocity[i_s_id] = i_vel
             position[i_s_id] = i_pos
         velocity = pd.concat(velocity)
-        velocity.index = velocity.index.rename(('s_id', 'sample'))
+        velocity.index = velocity.index.rename(("s_id", "sample"))
         position = pd.concat(position)
-        position.index = position.index.rename(('s_id', 'sample'))
+        position.index = position.index.rename(("s_id", "sample"))
         return velocity, position
 
-    def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> np.ndarray:
-        # why .to_numpy?
+    def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         acc_data = data[SF_ACC].iloc[start:end]
         estimated_velocity_ = pd.DataFrame(
-            self._forward_backward_integration(acc_data, SF_ACC), index=acc_data.index, columns=SF_VEL
+            self._forward_backward_integration(acc_data), index=acc_data.index, columns=SF_VEL
         )
+        # TODO: This uses the level walking assumption. We should make this configurable.
         estimated_position_ = pd.DataFrame(
-            index=SF_POS,
-            columns=acc_data.index,
-            data=[
-                integrate.cumtrapz(estimated_velocity_[SF_VEL[0]], axis=0, initial=0) / self.sampling_rate_hz,
-                integrate.cumtrapz(estimated_velocity_[SF_VEL[1]], axis=0, initial=0) / self.sampling_rate_hz,
-                self._forward_backward_integration(estimated_velocity_, SF_VEL[2]),
-            ],
-        ).transpose()
+            index=acc_data.index,
+            columns=SF_POS,
+            data=np.hstack(
+                (
+                    integrate.cumtrapz(estimated_velocity_[SF_VEL[:2]], axis=0, initial=0) / self.sampling_rate_hz,
+                    self._forward_backward_integration(estimated_velocity_[[SF_VEL[2]]]),
+                )
+            ),
+        )
         return estimated_velocity_, estimated_position_
 
-    def _get_weight_matrix(self, data_to_integrate: pd.DataFrame):
+    def _get_weight_matrix(self, n_samples: int) -> np.ndarray:
         # TODO: support other weighting functions
-        n_samples = data_to_integrate.shape[0]
-        n_axes = data_to_integrate.shape[1]
-
         x = np.linspace(0, 1, n_samples)
         s = 1 / (1 + np.exp(-(x - self.turning_point) / self.steepness))
         weights = (s - s[0]) / (s[-1] - s[0])
-        if n_axes > 1:
-            return np.tile(weights, n_axes).reshape(n_samples, n_axes)
         return weights
 
-    def _forward_backward_integration(self, data: SingleSensorDataset, channels):
+    def _forward_backward_integration(self, data: np.ndarray) -> np.ndarray:
         # TODO: make it possible to set initial value of integral from outside?
         # TODO: move to utils?
         # TODO: different steepness and turning point for velocity and position?
-        integral_forward = integrate.cumtrapz(data[channels], axis=0, initial=0) / self.sampling_rate_hz
-        integral_backward = integrate.cumtrapz(np.flipud(data[channels]), axis=0, initial=0) / self.sampling_rate_hz
-        weights = self._get_weight_matrix(pd.DataFrame(data[channels]))
+        integral_forward = integrate.cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
+        integral_backward = integrate.cumtrapz(data[::-1], axis=0, initial=0) / self.sampling_rate_hz
+        weights = self._get_weight_matrix(data.shape[0])
 
-        return integral_forward * (1 - weights) + (integral_backward[::-1]) * weights
+        return (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
 
-    def _estimate_multi_sensor(self):
-        self.estimated_position_ = dict()
-        self.estimated_velocity_ = dict()
+    def _estimate_multi_sensor(self) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
+        estimated_position_ = dict()
+        estimated_velocity_ = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            self.estimated_velocity_[i_sensor], self.estimated_position_[i_sensor] = self._estimate_single_sensor(
-                self.data[i_sensor], self.event_list[i_sensor]
-            )
-        return self
+            vel, pos = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
+            estimated_velocity_[i_sensor], estimated_position_[i_sensor] = vel, pos
+        return estimated_velocity_, estimated_position_

@@ -193,18 +193,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
     estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
-
-        Parameters
-        ----------
-        data
-            Dataset for one or multiple sensors.
-        stride_event_list
-            List of stride events for one or multiple sensors.
-        sampling_rate_hz
-            Data with which gyroscope data was sampled in Hz.
-
-        """
+        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation."""
         raise NotImplementedError()
 
     # TODO: In case a new algorithm is implemented and it turns out, that these algorithms for some reason do not need
@@ -251,16 +240,6 @@ class BaseOrientationEstimation(BaseAlgorithm):
         raise ValueError("Unsuppported datatype.")
 
 
-class BaseTemporalParameterCalculation(BaseAlgorithm):
-    """Base class for temporal parameters calculation."""
-
-    _action_method = "calculate"
-
-    def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
-        raise NotImplementedError("Needs to be implemented by child class.")
-
-
 class BasePositionEstimation(BaseAlgorithm):
     """Base class for all position reconstruction methods."""
 
@@ -268,4 +247,14 @@ class BasePositionEstimation(BaseAlgorithm):
 
     def estimate(self: BaseType, data: Dataset, event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Estimate position relative to first sample by using sensor data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseTemporalParameterCalculation(BaseAlgorithm):
+    """Base class for temporal parameters calculation."""
+
+    _action_method = "calculate"
+
+    def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+        """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
