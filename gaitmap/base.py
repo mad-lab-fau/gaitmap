@@ -235,7 +235,7 @@ class BaseOrientationEstimation(BaseAlgorithm):
                     axis=0, level="sample", index=0
                 )
             return ori_without_initial
-        elif is_single_sensor_dataset(self.data):
+        if is_single_sensor_dataset(self.data):
             return self.estimated_orientations_.drop(axis=0, level="sample", index=0)
         raise ValueError("Unsuppported datatype.")
 

@@ -1,8 +1,8 @@
 """Estimation of orientations by using inertial sensor data."""
 import operator
-from itertools import accumulate
-from typing import Dict, Tuple
 import warnings
+from itertools import accumulate
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -142,7 +142,7 @@ class GyroIntegration(BaseOrientationEstimation):
             i_rotations = self._estimate_stride(data, i_start, i_end)
             rotations[i_s_id] = pd.DataFrame(i_rotations.as_quat(), columns=cols)
         rotations = pd.concat(rotations)
-        rotations.index = rotations.index.rename(('s_id', 'sample'))
+        rotations.index = rotations.index.rename(("s_id", "sample"))
         return rotations
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:

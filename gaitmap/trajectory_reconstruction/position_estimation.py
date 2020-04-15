@@ -1,5 +1,5 @@
 """Estimation of velocity and position relative to first sample of passed data."""
-from typing import Optional, Union, Dict, Tuple
+from typing import Union, Dict, Tuple
 
 import numpy as np
 import pandas as pd
