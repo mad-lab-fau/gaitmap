@@ -3,11 +3,24 @@ import pandas as pd
 import pytest
 from scipy.spatial.transform import Rotation
 
+from gaitmap.base import BaseType
 from gaitmap.utils.consts import SF_COLS, SF_GYR, SF_ACC
 from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
-# TODO: @to08kece @Arne, add metatest once DTW is merged
 
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = GyroIntegration
+    __test__ = True
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
+        position = GyroIntegration()
+        position.estimate(
+            healthy_example_imu_data["left_sensor"], healthy_example_stride_events["left_sensor"].iloc[:2],
+            sampling_rate_hz=1,
+        )
+        return position
 
 class TestGyroIntegration:
     @pytest.mark.parametrize(

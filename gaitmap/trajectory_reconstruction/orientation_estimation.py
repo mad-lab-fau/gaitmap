@@ -56,7 +56,7 @@ class GyroIntegration(BaseOrientationEstimation):
 
     Other Parameters
     ----------------
-    sensor_data
+    data
         contains gyroscope and acceleration data
     stride_event_list
         A Stride list that will be used to separate `self.data` for integration. For each stride, one sequence of
@@ -91,7 +91,7 @@ class GyroIntegration(BaseOrientationEstimation):
     align_window_width: int
 
     data: Dataset
-    event_list: StrideList
+    stride_event_list: StrideList
     sampling_rate_hz: float
 
     def __init__(self, align_window_width: int = 8):
@@ -119,7 +119,7 @@ class GyroIntegration(BaseOrientationEstimation):
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
-        self.event_list = stride_event_list
+        self.stride_event_list = stride_event_list
 
         if not is_single_sensor_stride_list(
             stride_event_list, stride_type="min_vel"
@@ -127,7 +127,7 @@ class GyroIntegration(BaseOrientationEstimation):
             raise ValueError("Provided stride event list is not supported by gaitmap")
 
         if is_single_sensor_dataset(self.data):
-            self.estimated_orientations_ = self._estimate_single_sensor(self.data, self.event_list)
+            self.estimated_orientations_ = self._estimate_single_sensor(self.data, self.stride_event_list)
         elif is_multi_sensor_dataset(self.data):
             self.estimated_orientations_ = self._estimate_multi_sensor()
         else:
@@ -156,7 +156,7 @@ class GyroIntegration(BaseOrientationEstimation):
     def _estimate_multi_sensor(self) -> Dict[str, pd.DataFrame]:
         orientations = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            orientations[i_sensor] = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
+            orientations[i_sensor] = self._estimate_single_sensor(self.data[i_sensor], self.stride_event_list[i_sensor])
         return orientations
 
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start) -> Rotation:
