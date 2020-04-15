@@ -29,6 +29,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         ed.detect(data_left, 204.8, stride_list_left)
         return ed
 
+
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
 

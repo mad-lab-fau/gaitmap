@@ -8,7 +8,6 @@ import pandas as pd
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-
 @pytest.fixture
 def single_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
@@ -60,7 +59,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     __test__ = True
 
     @pytest.fixture()
-    def after_action_instance(self,  multiple_stride_list, temporal_parameters_multiple_strides) -> BaseType:
+    def after_action_instance(self, multiple_stride_list, temporal_parameters_multiple_strides) -> BaseType:
         stride_events_list = multiple_stride_list
         t = TemporalParameterCalculation()
         t.calculate(stride_events_list, 100)
