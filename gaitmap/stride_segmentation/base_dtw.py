@@ -354,7 +354,7 @@ class BaseDtw(BaseStrideSegmentation):
         # Remove matches that are shorter that min_match_length
         min_sequence_length = self._min_sequence_length
         if min_sequence_length is not None:
-            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) > min_sequence_length)
+            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) >= min_sequence_length)
             valid_strides_idx = np.where(valid_strides)[0]
             matches_start_end = matches_start_end[valid_strides_idx]
             paths = [paths[i] for i in valid_strides_idx]
