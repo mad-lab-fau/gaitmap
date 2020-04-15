@@ -17,10 +17,12 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = GyroIntegration()
         position.estimate(
-            healthy_example_imu_data["left_sensor"], healthy_example_stride_events["left_sensor"].iloc[:2],
+            healthy_example_imu_data["left_sensor"],
+            healthy_example_stride_events["left_sensor"].iloc[:2],
             sampling_rate_hz=1,
         )
         return position
+
 
 class TestGyroIntegration:
     @pytest.mark.parametrize(

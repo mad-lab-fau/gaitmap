@@ -63,7 +63,7 @@ class PyTestSnapshotTest:
     def store(self, value):
         self.snapshot_folder.mkdir(parents=True, exist_ok=True)
         if isinstance(value, pd.DataFrame):
-            value.to_json(self.file_name_json, indent=4, orient='table')
+            value.to_json(self.file_name_json, indent=4, orient="table")
         elif isinstance(value, np.ndarray):
             np.savetxt(self.file_name_csv, value, delimiter=",")
         else:
@@ -74,7 +74,7 @@ class PyTestSnapshotTest:
             filename = self.file_name_json
             if not filename.is_file():
                 raise SnapshotNotFound()
-            return pd.read_json(filename, orient='table')
+            return pd.read_json(filename, orient="table")
         elif dtype == np.ndarray:
             filename = self.file_name_csv
             if not filename.is_file():

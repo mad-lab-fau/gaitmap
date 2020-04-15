@@ -69,18 +69,18 @@ class TestForwardBackwardIntegration:
         final_position = position.estimated_position_.iloc[-1]
         np.testing.assert_almost_equal(final_position[2], 0)
 
-    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
         events_left = healthy_example_stride_borders["left_sensor"]
         position = ForwardBackwardIntegration()
         position.estimate(data_left, events_left, 204.8)
-        return None
+        snapshot.assert_match(position.estimated_position_.loc[:5], "pos")
+        snapshot.assert_match(position.estimated_velocity_.loc[:5], "vel")
 
     def test_single_sensor_output(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if the output format is as expected for a single sensor"""
-        # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
         events_left = healthy_example_stride_borders["left_sensor"]
         position = ForwardBackwardIntegration()
@@ -92,14 +92,14 @@ class TestForwardBackwardIntegration:
         pd.testing.assert_index_equal(vel.columns, pd.Index(SF_VEL))
         pd.testing.assert_index_equal(pos.columns, pd.Index(SF_POS))
 
-    def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_borders):
-        # TODO: change as soon as multi-sensor is implemented
-        """Test if error is raised correctly on invalid input data type"""
+    def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
         data = healthy_example_imu_data
         stride_borders = healthy_example_stride_borders
         position = ForwardBackwardIntegration()
         position.estimate(data, stride_borders, 204.8)
-        return None
+        # Only comparing the first stride of pos, to keep the snapshot size manageable
+        snapshot.assert_match(position.estimated_position_["left_sensor"].loc[0], "left")
+        snapshot.assert_match(position.estimated_position_["right_sensor"].loc[0], "right")
 
     def test_multi_sensor_output(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if the output format is as expected for multi sensor"""
