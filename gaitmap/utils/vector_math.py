@@ -14,7 +14,7 @@ def _row_wise_dot(v1, v2):
     return np.sum(v1 * v2, axis=ax)
 
 
-def is_almost_parallel_or_antiprallel(
+def is_almost_parallel_or_antiparallel(
     v1: np.ndarray, v2: np.ndarray, rtol: float = 1.0e-5, atol: float = 1.0e-8
 ) -> Union[bool, np.ndarray]:
     """Check if two vectors are either parallel or antiparallel.
@@ -38,14 +38,14 @@ def is_almost_parallel_or_antiprallel(
     --------
     two vectors each of shape (3,)
 
-    >>> is_almost_parallel_or_antiprallel(np.array([0, 0, 1]), np.array([0, 0, 1]))
+    >>> is_almost_parallel_or_antiparallel(np.array([0, 0, 1]), np.array([0, 0, 1]))
     True
-    >>> is_almost_parallel_or_antiprallel(np.array([0, 0, 1]), np.array([0, 1, 0]))
+    >>> is_almost_parallel_or_antiparallel(np.array([0, 0, 1]), np.array([0, 1, 0]))
     False
 
     array of vectors
 
-    >>> is_almost_parallel_or_antiprallel(np.array([[0, 0, 1],[0,1,0]]), np.array([[0, 0, 2],[1,0,0]]))
+    >>> is_almost_parallel_or_antiparallel(np.array([[0, 0, 1],[0,1,0]]), np.array([[0, 0, 2],[1,0,0]]))
     array([True,False])
 
     """
@@ -109,7 +109,7 @@ def find_random_orthogonal(v: np.ndarray) -> np.ndarray:
     array([0, 0, 1])
 
     """
-    if is_almost_parallel_or_antiprallel(v, np.array([1.0, 0, 0])):
+    if is_almost_parallel_or_antiparallel(v, np.array([1.0, 0, 0])):
         result = np.cross(v, [0, 1, 0])
     else:
         result = np.cross(v, [1, 0, 0])
@@ -141,7 +141,7 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     """
     if v1.ndim > 1 or v2.ndim > 1:
         raise ValueError("v1 and v2 need to be at max 1D (currently {}D and {}D".format(v1.ndim, v2.ndim))
-    if is_almost_parallel_or_antiprallel(v1, v2):
+    if is_almost_parallel_or_antiparallel(v1, v2):
         return find_random_orthogonal(v1)
     return normalize(np.cross(v1, v2))
 

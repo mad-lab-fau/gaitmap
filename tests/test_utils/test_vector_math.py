@@ -8,7 +8,7 @@ from gaitmap.utils.vector_math import (
     find_orthogonal,
     find_unsigned_3d_angle,
     normalize,
-    is_almost_parallel_or_antiprallel,
+    is_almost_parallel_or_antiparallel,
 )
 
 
@@ -30,14 +30,14 @@ class TestIsAlmostParallelOrAntiprallel:
     )
     def test_is_almost_parallel_or_antiprallel_single_vector(self, v1, v2, result):
         """Test single vectors if they parallel or antiprallel."""
-        assert is_almost_parallel_or_antiprallel(np.array(v1), np.array(v2)) == result
+        assert is_almost_parallel_or_antiparallel(np.array(v1), np.array(v2)) == result
 
     def test_is_almost_parallel_or_antiprallel_multiple_vector(self):
         """Test array of vectors."""
         v1 = np.repeat(np.array([1.0, 0, 0])[None, :], 4, axis=0)
         v2 = np.repeat(np.array([2.0, 0, 0])[None, :], 4, axis=0)
-        goal = np.repeat((True), 4, axis=0)
-        assert_array_equal(is_almost_parallel_or_antiprallel(v1, v2), goal)
+        goal = np.repeat(True, 4, axis=0)
+        assert_array_equal(is_almost_parallel_or_antiparallel(v1, v2), goal)
 
 
 class TestNormalize:

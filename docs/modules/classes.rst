@@ -182,7 +182,7 @@ Functions
    :toctree: generated/
    :template: function.rst
 
-    is_almost_parallel_or_antiprallel
+    is_almost_parallel_or_antiparallel
     normalize
     find_random_orthogonal
     find_orthogonal
