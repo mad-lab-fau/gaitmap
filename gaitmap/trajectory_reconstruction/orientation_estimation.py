@@ -94,8 +94,8 @@ class GyroIntegration(BaseOrientationEstimation):
 
         Notes
         -----
-        This function makes use of `from_rotvec` of :func:`~scipy.spatial.transform.Rotation`, to turn the gyro signal
-        of each sample into a differential quaternion.
+        This function makes use of :py:meth:`~scipy.spatial.transform.Rotation.from_rotvec` to turn the gyro signal of
+        each sample into a differential quaternion.
         This means that the rotation between two samples is assumed to be constant around one axis.
         The initial orientation is obtained by aligning acceleration data in the beginning of the signal with gravity.
 
@@ -138,14 +138,12 @@ class GyroIntegration(BaseOrientationEstimation):
         single_step_rotations = Rotation.from_rotvec(gyro_data / self.sampling_rate_hz)
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
         out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
-        out_as_rot = Rotation([o.as_quat() for o in out])
-        return out_as_rot
+        return Rotation([o.as_quat() for o in out])
 
     def _estimate_multi_sensor(self) -> Tuple[Dict[str, Rotation], Dict[str, Rotation]]:
         orientations = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            ori = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
-            orientations[i_sensor] = ori
+            orientations[i_sensor] = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
         return orientations
 
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start):
