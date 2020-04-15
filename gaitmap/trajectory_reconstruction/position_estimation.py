@@ -23,7 +23,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     For drift removal, a direct-and-reverse (DRI) or forward-backward integration is used for velocity estimation,
     because we assume zero velocity at the beginning and end of a signal. For position, drift removal via DRI
     is only used for the vertical axis (=z-axis or superior-inferior-axis, see :ref:`ff`), because we assume
-    beginning and end of the motion are in one plane. Implementation based on the paper by Hannink et al. [1]_.
+    beginning and end of the motion are in one plane (zero-level assumption). Implementation based on the paper by
+    Hannink et al. [1]_.
 
     Attributes
     ----------

@@ -60,13 +60,19 @@ class TestGyroIntegration:
         )
         return sensor_data, event_list
 
-    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
+    @staticmethod
+    def estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events) -> GyroIntegration:
+        data_left = healthy_example_imu_data["left_sensor"]
+        stride_events_left = healthy_example_stride_events["left_sensor"]
+        gyr_int = GyroIntegration(align_window_width=8)
+        gyr_int.estimate(data_left, stride_events_left, 204.8)
+        return gyr_int
+
+    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
-        # TODO add assert statement / regression test to check against previous result
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
-        gyr_int.estimated_orientations_without_final_
-        gyr_int.estimated_orientations_without_initial_
-        return None
+        # Only comparing the first couple of strides, to keep the snapshot size manageable
+        snapshot.assert_match(gyr_int.estimated_orientations_.loc[:5])
 
     def test_orientations_without_initial(self, healthy_example_imu_data, healthy_example_stride_events):
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
@@ -80,7 +86,7 @@ class TestGyroIntegration:
         assert len(deleted_idx_sample_initial.unique()) == 1
         assert deleted_idx_sample_initial.unique()[0] == 0
         for i_stride, i_stride_data in r_wo_initial.groupby(level="s_id"):
-            i_stride_data.index.get_level_values(level="sample")[0] == 1
+            assert i_stride_data.index.get_level_values(level="sample")[0] == 1
 
     def test_orientations_without_final(self, healthy_example_imu_data, healthy_example_stride_events):
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
@@ -93,15 +99,14 @@ class TestGyroIntegration:
             new_final = r_wo_final.index.get_level_values(level="sample")[-1]
             assert new_final, old_final - 1
 
-    def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events):
+    def test_multiple_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
-        # TODO add assert statement / regression test to check against previous result
         data = healthy_example_imu_data
         gyr_int = GyroIntegration(align_window_width=8)
         gyr_int.estimate(data, healthy_example_stride_events, 204.8)
-        gyr_int.estimated_orientations_without_final_
-        gyr_int.estimated_orientations_without_initial_
-        return None
+        # Only comparing the first stride, to keep the snapshot size manageable
+        snapshot.assert_match(gyr_int.estimated_orientations_["left_sensor"].loc[0], "left")
+        snapshot.assert_match(gyr_int.estimated_orientations_["right_sensor"].loc[0], "right")
 
     def test_valid_input_data(self, healthy_example_imu_data, healthy_example_stride_events):
         """Test if error is raised correctly on invalid input data type"""
@@ -133,22 +138,15 @@ class TestGyroIntegration:
             assert isinstance(i_result, dict)
             assert i_result.keys, healthy_example_imu_data.keys
 
-    def test_start_of_stride_equals_start_or_end_of_data(self):
+    @pytest.mark.parametrize("start", [0, 99])
+    def test_start_of_stride_equals_start_or_end_of_data(self, start):
+        # This just tests that no error is thrown
+        # TODO: Test that warning is raised
         fs = 100
-        stride_start = [0, fs - 1]
         window_width = 8
-        for i_start in stride_start:
-            sensor_data, event_list = self.get_dummy_data(start_sample=i_start, axis_to_rotate=1, fs=fs)
-            gyr_integrator = GyroIntegration(align_window_width=window_width)
+        sensor_data, event_list = self.get_dummy_data(start_sample=start, axis_to_rotate=1, fs=fs)
+        gyr_integrator = GyroIntegration(align_window_width=window_width)
+        with pytest.warns(UserWarning) as w:
             gyr_integrator.estimate(sensor_data, event_list, fs)
-            gyr_integrator.estimated_orientations_
-            gyr_integrator.estimated_orientations_without_initial_
-            gyr_integrator.estimated_orientations_without_final_
-        return None
 
-    def estimate_one_sensor(self, healthy_example_imu_data, healthy_example_stride_events) -> GyroIntegration:
-        data_left = healthy_example_imu_data["left_sensor"]
-        stride_events_left = healthy_example_stride_events["left_sensor"]
-        gyr_int = GyroIntegration(align_window_width=8)
-        gyr_int.estimate(data_left, stride_events_left, 204.8)
-        return gyr_int
+        assert "complete window length" in str(w[0])
