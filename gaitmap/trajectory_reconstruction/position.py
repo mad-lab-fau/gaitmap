@@ -45,7 +45,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     ----------------
     data
         The data passed to the `estimate` method. This class does NOT take care for transforming sensor data from sensor
-        frame to world coordinates. This should be performed before, e.g. using # TODO: Reference
+        frame to world coordinates, just calculates the necessary rotations that have to be applied.
     event_list
         This list is used to set the start and end of each integration period.
     sampling_rate_hz
@@ -127,15 +127,12 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         velocity = pd.DataFrame(columns=SF_VEL)
         position = pd.DataFrame(columns=SF_POS)
         for i_s_id, i_stride in event_list.iterrows():
-            # TODO: check it this loop can be simplified
-            # TODO: rework start and end to min_vel?
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_vel, i_pos = self._estimate_stride(data, i_start, i_end)
             i_vel["s_id"] = i_s_id
             i_pos["s_id"] = i_s_id
             velocity = velocity.append(i_vel)
             position = position.append(i_pos)
-        # TODO: extract next 2-3 lines to dataset_helper together with the correspoing lines in orientatin_estimation?
         velocity.index.rename("sample", inplace=True)
         position.index.rename("sample", inplace=True)
         return velocity.set_index("s_id", append=True), position.set_index("s_id", append=True)
@@ -158,7 +155,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         return estimated_velocity_, estimated_position_
 
     def _get_weight_matrix(self, data_to_integrate: pd.DataFrame):
-        # TODO: move to utils?
         # TODO: support other weighting functions
         n_samples = data_to_integrate.shape[0]
         n_axes = data_to_integrate.shape[1]

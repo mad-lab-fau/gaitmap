@@ -118,17 +118,14 @@ class GyroIntegration(BaseOrientationEstimation):
         return self
 
     def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> Tuple[Rotation, Rotation]:
-        # TODO: put cols into consts?
         cols = ["s_id", "qx", "qy", "qz", "qw"]
         rotations = pd.DataFrame(columns=cols)
         for i_s_id, i_stride in event_list.iterrows():
-            # TODO: rework start and end to min_vel?
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_rotations = self._estimate_stride(data, i_start, i_end)
             i_rotations_pd = pd.DataFrame(i_rotations.as_quat(), columns=cols[1:])
             i_rotations_pd["s_id"] = i_s_id
             rotations = rotations.append(i_rotations_pd)
-        # TODO: Compare index names with position and dataset_helper
         rotations.index.rename("sample", inplace=True)
         return rotations.set_index("s_id", append=True)
 
