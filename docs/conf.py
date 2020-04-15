@@ -75,12 +75,14 @@ else:
     mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/" "tex-chtml.js"
 
 autodoc_default_options = {"members": True, "inherited-members": True, "special_members": True}
+# autodoc_typehints = 'description'  # Does not work as expected. Maybe try at future date again
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+autosummary_generate_overwrite = True
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
