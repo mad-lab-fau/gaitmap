@@ -115,8 +115,7 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # Intersphinx
 
 # intersphinx configuration
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+intersphinx_module_mapping = {
     "numpy": ("https://docs.scipy.org/doc/numpy/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
     "matplotlib": ("https://matplotlib.org/", None),
@@ -124,18 +123,24 @@ intersphinx_mapping = {
     "tslearn": ("https://tslearn.readthedocs.io/en/latest/", None),
 }
 
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    **intersphinx_module_mapping,
+}
+
 # Sphinx Gallary
 sphinx_gallery_conf = {
-    'examples_dirs': ['../examples'],
-    'gallery_dirs': ['./auto_examples'],
-    'reference_url':  {"gaitmap": None, **{k: v[0] for k, v in intersphinx_mapping.items()}},
+    "examples_dirs": ["../examples"],
+    "gallery_dirs": ["./auto_examples"],
+    "reference_url": {"gaitmap": None, **{k: v[0] for k, v in intersphinx_module_mapping.items()}},
     # 'default_thumb_file': 'fig/logo.png',
-    'backreferences_dir': 'modules/generated/backreferences',
-    'doc_module': ('gaitmap',),
-'filename_pattern': '/',
+    "backreferences_dir": "modules/generated/backreferences",
+    "doc_module": ("gaitmap",),
+    "filename_pattern": "/",
 }
 
 # Linkcode
+
 
 def get_nested_attr(obj, attr):
     attrs = attr.split(".", 1)
@@ -162,9 +167,6 @@ def linkcode_resolve(domain, info):
     if code_line:
         return "{}/{}.py#L{}".format(URL, filename, code_line)
     return "{}/{}.py".format(URL, filename)
-
-
-
 
 
 def skip_properties(app, what, name, obj, skip, options):

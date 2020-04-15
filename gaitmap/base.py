@@ -2,12 +2,18 @@
 
 import inspect
 import types
-from typing import Callable, Dict, TypeVar, Type, Any, List
+from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 
 import numpy as np
-from scipy.spatial.transform import Rotation
+import pandas as pd
 
-from gaitmap.utils.dataset_helper import Dataset, SingleSensorDataset, StrideList
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    StrideList,
+    is_multi_sensor_dataset,
+    is_single_sensor_dataset,
+    get_multi_sensor_dataset_names,
+)
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
@@ -42,19 +48,6 @@ class BaseAlgorithm:
         This is intended to be used by wrappers, that do not know the Type of an algorithm
         """
         return getattr(self, self._action_method)
-
-    def __getattr__(self, item):
-        """Add helpful info for certain missing attributes."""
-        if item.endswith("_") and not item.startswith("__") and not self._action_is_applied:
-            raise AttributeError(
-                "`{}` appears to be a result. This means you need to call `{}` before accessing it.".format(
-                    item, self._action_method
-                )
-            )
-        super_getter = getattr(super(BaseAlgorithm, self), "__getattr__", None)
-        if super_getter:
-            return super_getter(item)  # pylint: disable=not-callable
-        raise AttributeError(item)
 
     @classmethod
     def _get_param_names(cls) -> List[str]:
@@ -176,25 +169,85 @@ class BaseEventDetection(BaseAlgorithm):
 
 
 class BaseOrientationEstimation(BaseAlgorithm):
-    """Base class for all algorithms that estimate an orientation from measured sensor signals."""
+    """Base class for all algorithms that estimate an orientation from measured sensor signals.
 
-    estimated_orientations_: Rotation
+    Attributes
+    ----------
+    estimated_orientations_
+        Holds one quaternion for the initial orientation and `len(data)` quaternions for the subsequent orientations
+        as obtained by calling `.estimate(...)` of the specific class.
+    estimated_orientations_without_initial_
+        Contains `estimated_orientations_` but for each stride, the INITIAL rotation is REMOVED to make it the same
+        length as `len(self.data)`.
+    estimated_orientations_without_final_
+        Contains `estimated_orientations_` but for each stride, the FINAL rotation is REMOVED to make it the same
+        length as `len(self.data)`
 
-    def estimate(self, data: SingleSensorDataset, sampling_rate_hz: float):
-        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation.
+    """
 
-        Parameters
-        ----------
-        data : pandas.DataFrame
-            Contains at least gyroscope data, optionally also acceleration data of one or several sensors.
-        sampling_rate_hz : float
-            Data with which gyroscope data was sampled in Hz.
+    # TODO: when implementing a different algorithm, check if initial orientation can be obtained in the same way as
+    #       for GyroIntegration. If so, check if that can become part of this base class.
 
-        """
+    _action_method = "estimate"
+
+    estimated_orientations_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+
+    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+        """Estimates orientation of the sensor for all samples in sensor data based on the given initial orientation."""
         raise NotImplementedError()
 
-    # I would like to leave out get/set_parameters since this is not necessary for all methods (e.g. gyroscope
-    # integration)
+    # TODO: In case a new algorithm is implemented and it turns out, that these algorithms for some reason do not need
+    #       the `without_final` and `without_initial` these two methods should be moved to
+    #       `gaitmap.trajectory_reconstruction.orientation_estimation`.
+
+    @property
+    def estimated_orientations_without_final_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return the estimated orientations without initial orientation.
+
+        The number of rotations is equal to the number samples in passed data.
+        """
+
+        def remove_final_for_sensor(orientations):
+            ori_without_final_sensor = pd.DataFrame()
+            for _, i_oris in orientations.groupby(axis=0, level="s_id"):
+                ori_without_final_sensor = ori_without_final_sensor.append(i_oris[:-1])
+            return ori_without_final_sensor
+
+        if is_multi_sensor_dataset(self.data):
+            ori_without_final = dict()
+            for i_sensor, i_orientations in self.estimated_orientations_.items():
+                ori_without_final[i_sensor] = remove_final_for_sensor(i_orientations)
+            return ori_without_final
+        if is_single_sensor_dataset(self.data):
+            return remove_final_for_sensor(self.estimated_orientations_)
+        raise ValueError("Unsuppported datatype.")
+
+    @property
+    def estimated_orientations_without_initial_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return the estimated orientations without initial orientation.
+
+        The number of rotations is equal to the number samples in passed data.
+        """
+        if is_multi_sensor_dataset(self.data):
+            ori_without_initial = dict()
+            for i_sensor in get_multi_sensor_dataset_names(self.data):
+                ori_without_initial[i_sensor] = self.estimated_orientations_[i_sensor].drop(
+                    axis=0, level="sample", index=0
+                )
+            return ori_without_initial
+        if is_single_sensor_dataset(self.data):
+            return self.estimated_orientations_.drop(axis=0, level="sample", index=0)
+        raise ValueError("Unsuppported datatype.")
+
+
+class BasePositionEstimation(BaseAlgorithm):
+    """Base class for all position reconstruction methods."""
+
+    _action_method = "estimate"
+
+    def estimate(self: BaseType, data: Dataset, event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+        """Estimate position relative to first sample by using sensor data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
 
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):
@@ -204,14 +257,4 @@ class BaseTemporalParameterCalculation(BaseAlgorithm):
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
-        raise NotImplementedError("Needs to be implemented by child class.")
-
-
-class BasePositionEstimation(BaseAlgorithm):
-    """Base class for all position reconstruction methods."""
-
-    _action_method = "estimate"
-
-    def estimate(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
-        """Estimate position relative to first sample by using sensor data."""
         raise NotImplementedError("Needs to be implemented by child class.")

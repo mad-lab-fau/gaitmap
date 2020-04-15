@@ -112,15 +112,15 @@ Classes
    GyroIntegration
 
 
-:mod:`gaitmap.trajectory_reconstruction.position`: Algorithms to estimate IMU sensor position given the sensor data
-===================================================================================================================
-.. automodule:: gaitmap.trajectory_reconstruction.position
+:mod:`gaitmap.trajectory_reconstruction.position_estimation`: Algorithms to estimate IMU sensor position given the sensor data
+==============================================================================================================================
+.. automodule:: gaitmap.trajectory_reconstruction.position_estimation
     :no-members:
     :no-inherited-members:
 
 Classes
 -------
-.. currentmodule:: gaitmap.trajectory_reconstruction.position
+.. currentmodule:: gaitmap.trajectory_reconstruction.position_estimation
 .. autosummary::
    :toctree: generated/
    :template: class.rst

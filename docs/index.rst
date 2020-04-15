@@ -17,14 +17,9 @@ gaitmap Docu Overview
 
 .. toctree::
    :maxdepth: 1
-   :caption: API Reference:
+   :caption: Code Reference:
 
    modules/classes.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples:
-
    auto_examples/index.rst
 
 Indices and tables
