@@ -44,8 +44,6 @@ class TestGyroIntegration:
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
         assert len(gyr_integrator.estimated_orientations_) == fs + 1
 
-    #  assert len(gyr_integrator.estimated_orientations_) == fs
-
     @staticmethod
     def get_dummy_data(start_sample, axis_to_rotate, fs):
         sensor_data = pd.DataFrame(columns=SF_COLS)

@@ -122,18 +122,18 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         return self
 
     def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: SingleSensorStrideList):
-        velocity = pd.DataFrame(columns=SF_VEL)
-        position = pd.DataFrame(columns=SF_POS)
+        velocity = {}
+        position = {}
         for i_s_id, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_vel, i_pos = self._estimate_stride(data, i_start, i_end)
-            i_vel["s_id"] = i_s_id
-            i_pos["s_id"] = i_s_id
-            velocity = velocity.append(i_vel)
-            position = position.append(i_pos)
-        velocity.index.rename("sample", inplace=True)
-        position.index.rename("sample", inplace=True)
-        return velocity.set_index("s_id", append=True), position.set_index("s_id", append=True)
+            velocity[i_s_id] = i_vel
+            position[i_s_id] = i_pos
+        velocity = pd.concat(velocity)
+        velocity.index = velocity.index.rename(('s_id', 'sample'))
+        position = pd.concat(position)
+        position.index = position.index.rename(('s_id', 'sample'))
+        return velocity, position
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> np.ndarray:
         # why .to_numpy?
