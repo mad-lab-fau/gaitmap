@@ -8,3 +8,5 @@
    {% block methods %}
    .. automethod:: __init__
    {% endblock %}
+
+.. include:: backreferences/{{module}}.{{objname}}.examples

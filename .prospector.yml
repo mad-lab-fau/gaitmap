@@ -5,6 +5,7 @@ ignore-paths:
   - docs
   - tests
   - dodo.py
+  - examples
 
 pep8:
   options:

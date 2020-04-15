@@ -55,7 +55,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     # "sphinx.ext.imgconverter",
-    # "sphinx_gallery.gen_gallery",
+    "sphinx_gallery.gen_gallery",
     "recommonmark",
 ]
 
@@ -112,8 +112,30 @@ html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 # html_static_path = ["_static"]
 
 # -- Options for extensions --------------------------------------------------
-# Linkcode
+# Intersphinx
 
+# intersphinx configuration
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "tslearn": ("https://tslearn.readthedocs.io/en/latest/", None),
+}
+
+# Sphinx Gallary
+sphinx_gallery_conf = {
+    'examples_dirs': ['../examples'],
+    'gallery_dirs': ['./auto_examples'],
+    'reference_url':  {"gaitmap": None, **{k: v[0] for k, v in intersphinx_mapping.items()}},
+    # 'default_thumb_file': 'fig/logo.png',
+    'backreferences_dir': 'modules/generated/backreferences',
+    'doc_module': ('gaitmap',),
+'filename_pattern': '/',
+}
+
+# Linkcode
 
 def get_nested_attr(obj, attr):
     attrs = attr.split(".", 1)
@@ -142,17 +164,7 @@ def linkcode_resolve(domain, info):
     return "{}/{}.py".format(URL, filename)
 
 
-# Intersphinx
 
-# intersphinx configuration
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
-    "matplotlib": ("https://matplotlib.org/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "tslearn": ("https://tslearn.readthedocs.io/en/latest/", None),
-}
 
 
 def skip_properties(app, what, name, obj, skip, options):
