@@ -1,8 +1,11 @@
+from gaitmap.base import BaseType
 from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 
 import pytest
 from pandas.testing import assert_frame_equal
 import pandas as pd
+
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
 @pytest.fixture
@@ -49,6 +52,18 @@ def temporal_parameters_single_stride():
     temporal_parameters["swing_time"] = [1.0]
     temporal_parameters["stance_time"] = [1.0]
     return temporal_parameters
+
+
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = TemporalParameterCalculation
+    __test__ = True
+
+    @pytest.fixture()
+    def after_action_instance(self, multiple_stride_list, temporal_parameters_multiple_strides) -> BaseType:
+        stride_events_list = multiple_stride_list
+        t = TemporalParameterCalculation()
+        t.calculate(stride_events_list, 100)
+        return t
 
 
 class TestTemporalParameterCalculation:
