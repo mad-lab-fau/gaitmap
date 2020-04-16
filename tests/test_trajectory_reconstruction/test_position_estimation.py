@@ -69,20 +69,20 @@ class TestForwardBackwardIntegration:
         final_position = position.estimated_position_.iloc[-1]
         np.testing.assert_almost_equal(final_position[2], 0)
 
-    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
+    def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
         # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
-        events_left = healthy_example_stride_borders["left_sensor"]
+        events_left = healthy_example_stride_events["left_sensor"]
         position = ForwardBackwardIntegration()
         position.estimate(data_left, events_left, 204.8)
         snapshot.assert_match(position.estimated_position_.loc[:5], "pos")
         snapshot.assert_match(position.estimated_velocity_.loc[:5], "vel")
 
-    def test_single_sensor_output(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_single_sensor_output(self, healthy_example_imu_data, healthy_example_stride_events):
         """Test if the output format is as expected for a single sensor"""
         data_left = healthy_example_imu_data["left_sensor"]
-        events_left = healthy_example_stride_borders["left_sensor"]
+        events_left = healthy_example_stride_events["left_sensor"]
         position = ForwardBackwardIntegration()
         position.estimate(data_left, events_left, 204.8)
         vel = position.estimated_velocity_
@@ -92,23 +92,23 @@ class TestForwardBackwardIntegration:
         pd.testing.assert_index_equal(vel.columns, pd.Index(SF_VEL))
         pd.testing.assert_index_equal(pos.columns, pd.Index(SF_POS))
 
-    def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
+    def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         data = healthy_example_imu_data
-        stride_borders = healthy_example_stride_borders
+        stride_events = healthy_example_stride_events
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_borders, 204.8)
+        position.estimate(data, stride_events, 204.8)
         # Only comparing the first stride of pos, to keep the snapshot size manageable
-        first_left = stride_borders["left_sensor"].iloc[0]["s_id"]
-        first_right = stride_borders["right_sensor"].iloc[0]["s_id"]
+        first_left = stride_events["left_sensor"].iloc[0]["s_id"]
+        first_right = stride_events["right_sensor"].iloc[0]["s_id"]
         snapshot.assert_match(position.estimated_position_["left_sensor"].loc[first_left], "left")
         snapshot.assert_match(position.estimated_position_["right_sensor"].loc[first_right], "right")
 
-    def test_multi_sensor_output(self, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_multi_sensor_output(self, healthy_example_imu_data, healthy_example_stride_events):
         """Test if the output format is as expected for multi sensor"""
         data = healthy_example_imu_data
-        stride_borders = healthy_example_stride_borders
+        stride_events = healthy_example_stride_events
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_borders, 204.8)
+        position.estimate(data, stride_events, 204.8)
         vel = position.estimated_velocity_
         pos = position.estimated_position_
         assert isinstance(vel, dict)
@@ -125,11 +125,11 @@ class TestForwardBackwardIntegration:
             position.estimate(data, events, 204.8)
 
     @pytest.mark.parametrize("turning_point", (-0.1, 1.1))
-    def test_bad_turning_point(self, turning_point: float, healthy_example_imu_data, healthy_example_stride_borders):
+    def test_bad_turning_point(self, turning_point: float, healthy_example_imu_data, healthy_example_stride_events):
         """Test if error is raised correctly on invalid input variable range"""
         with pytest.raises(ValueError, match=r"Turning point must be in the rage of 0.0 to 1.0"):
             position = ForwardBackwardIntegration(turning_point, 0.08)
-            position.estimate(healthy_example_imu_data, healthy_example_stride_borders, 204.8)
+            position.estimate(healthy_example_imu_data, healthy_example_stride_events, 204.8)
 
     def _get_dummy_data(self, length, style: str):
         dummy = np.linspace(0, 1, length)
@@ -154,9 +154,9 @@ class TestForwardBackwardIntegration:
     def test_regression_position(self, healthy_example_imu_data, healthy_example_stride_events):
         """Just to see intermediate results so we know if we are on the right way"""
         data = healthy_example_imu_data
-        stride_borders = healthy_example_stride_events
+        stride_events = healthy_example_stride_events
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_borders, 204.8)
+        position.estimate(data, stride_events, 204.8)
         pos = position.estimated_position_
         sls = []
         for i_stride in pos["left_sensor"].index.get_level_values(level="s_id").unique():
