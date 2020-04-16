@@ -128,11 +128,11 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         velocity = {}
         position = {}
-        for i_s_id, i_stride in event_list.iterrows():
+        for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_vel, i_pos = self._estimate_stride(data, i_start, i_end)
-            velocity[i_s_id] = i_vel
-            position[i_s_id] = i_pos
+            velocity[i_stride["s_id"]] = i_vel
+            position[i_stride["s_id"]] = i_pos
         velocity = pd.concat(velocity)
         velocity.index = velocity.index.rename(("s_id", "sample"))
         position = pd.concat(position)

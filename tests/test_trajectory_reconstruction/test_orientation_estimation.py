@@ -84,7 +84,7 @@ class TestGyroIntegration:
         return gyr_int
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Regression test to see if the algorithm is generally working on the example data"""
         gyr_int = self.estimate_one_sensor(healthy_example_imu_data, healthy_example_stride_events)
         # Only comparing the first couple of strides, to keep the snapshot size manageable
         snapshot.assert_match(gyr_int.estimated_orientations_.loc[:5])
@@ -120,8 +120,10 @@ class TestGyroIntegration:
         gyr_int = GyroIntegration(align_window_width=8)
         gyr_int.estimate(data, healthy_example_stride_events, 204.8)
         # Only comparing the first stride, to keep the snapshot size manageable
-        snapshot.assert_match(gyr_int.estimated_orientations_["left_sensor"].loc[0], "left")
-        snapshot.assert_match(gyr_int.estimated_orientations_["right_sensor"].loc[0], "right")
+        first_left = healthy_example_stride_events["left_sensor"].iloc[0]["s_id"]
+        first_right = healthy_example_stride_events["right_sensor"].iloc[0]["s_id"]
+        snapshot.assert_match(gyr_int.estimated_orientations_["left_sensor"].loc[first_left], "left")
+        snapshot.assert_match(gyr_int.estimated_orientations_["right_sensor"].loc[first_right], "right")
 
     def test_valid_input_data(self, healthy_example_imu_data, healthy_example_stride_events):
         """Test if error is raised correctly on invalid input data type"""
@@ -155,8 +157,6 @@ class TestGyroIntegration:
 
     @pytest.mark.parametrize("start", [0, 99])
     def test_start_of_stride_equals_start_or_end_of_data(self, start):
-        # This just tests that no error is thrown
-        # TODO: Test that warning is raised
         fs = 100
         window_width = 8
         sensor_data, event_list = self.get_dummy_data(start_sample=start, axis_to_rotate=1, fs=fs)
