@@ -165,7 +165,7 @@ test_events.to_csv("./stride_events_sample.csv", index=False)
 # Calculate orientation from mocap
 
 # Back to 100 Hz
-test_events[['start', 'end']] *= 100 / 204.8
+test_events[["start", "end"]] *= 100 / 204.8
 
 test_orientation = dict()
 test_position = dict()
