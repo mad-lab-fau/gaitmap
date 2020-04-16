@@ -91,6 +91,49 @@ def get_healthy_example_stride_events():
 healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)
 
 
+def get_healthy_example_orientation():
+    """Foot orientation calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+
+    The sampling rate is 100 Hz.
+
+    This data provides the orientation per stride in the default format.
+
+    This fixture returns a dictionary, where the key is the sensor name.
+    """
+    with open_text(example_data, "orientation_sample.csv") as test_data:
+        data = pd.read_csv(test_data, header=0, index_col=[0, 1, 2])
+
+    # Convert to dict with sensor name as key.
+    data = data.groupby(level=0)
+    data = {k: v.reset_index(drop=True, level=0) for k, v in data}
+    return data
+
+
+healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
+
+
+def get_healthy_example_position():
+    """Foot position calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+
+    The sampling rate is 100 Hz.
+
+    This data provides the position per stride in the default format.
+    The position is equivalent to the position of the heel marker.
+
+    This fixture returns a dictionary, where the key is the sensor name.
+    """
+    with open_text(example_data, "position_sample.csv") as test_data:
+        data = pd.read_csv(test_data, header=0, index_col=[0, 1, 2])
+
+    # Convert to dict with sensor name as key.
+    data = data.groupby(level=0)
+    data = {k: v.reset_index(drop=True, level=0) for k, v in data}
+    return data
+
+
+healthy_example_position = pytest.fixture()(get_healthy_example_position)
+
+
 @pytest.fixture
 def snapshot(request):
     with PyTestSnapshotTest(request) as snapshot_test:

@@ -3,6 +3,9 @@
 This script can be used to extract example data from the Frauenhofer dataset.
 The dataset (as well as the required Python Packages) can be found on the Mad Gitlab:
 https://mad-srv.informatik.uni-erlangen.de/MadLab/data/sensorpositoncomparison
+
+Note: this script is meant to be independent of the gaitmap library and hence has a couple functions copied and pasted
+here.
 """
 
 import warnings
@@ -54,6 +57,27 @@ def rotate_sensor(data: pd.DataFrame, rotation: Rotation, inplace=False) -> pd.D
     return data
 
 
+def find_plane_from_points(p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
+    """Get the normal vector of a plane defined by three points."""
+    v1 = p2 - p1
+    v2 = p3 - p1
+
+    return normalize(np.cross(v1, v2))
+
+
+def normalize(v: np.ndarray) -> np.ndarray:
+    """Simply normalize a vector.
+
+    If a 2D array is provided, each row is considered a vector, which is normalized independently.
+    """
+    v = np.array(v)
+    if len(v.shape) == 1:
+        ax = 0
+    else:
+        ax = 1
+    return (v.T / np.linalg.norm(v, axis=ax)).T
+
+
 sampling_rate = 204.8
 sampling_rate_mocap = 100
 subject = "5047"
@@ -68,7 +92,7 @@ test_df = test_df.reset_index(drop=True).drop("sync", axis=1)
 test_df = test_df[["r_" + sensor, "l_" + sensor]]
 
 test_mocap = get_mocap_test(subject, test)
-test_mocap = test_mocap[["L_TOE", "R_TOE", "L_FCC", "R_FCC"]]
+test_mocap = test_mocap[["L_TOE", "R_TOE", "L_FCC", "R_FCC", "R_FM5", "L_FM5"]]
 test_mocap.to_csv("./mocap_sample.csv")
 
 test_borders = pd.read_csv(get_subject_folder(subject) / "manual_stride_border.csv", index_col=0)
@@ -137,3 +161,33 @@ test_events = test_events.reset_index()
 test_events = test_events[["s_id", "foot", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
 test_events.to_csv("./stride_events_sample.csv", index=False)
+
+# Calculate orientation from mocap
+test_orientation = dict()
+test_position = dict()
+for sensor, short in [("left_sensor", "L"), ("right_sensor", "R")]:
+    normal_vectors = find_plane_from_points(
+        test_mocap[f"{short}_FCC"], test_mocap[f"{short}_TOE"], test_mocap[f"{short}_FM5"]
+    )
+    forward_vector = normalize((test_mocap[f"{short}_FCC"] - test_mocap[f"{short}_TOE"]).to_numpy())
+    sidewards = np.cross(normal_vectors, forward_vector, axis=1)
+    rot_mat = np.hstack([forward_vector, sidewards, normal_vectors]).reshape((-1, 3, 3))
+    ori = pd.DataFrame(Rotation.from_matrix(rot_mat).inv().as_quat(), columns=["q_x", "q_y", "q_z", "q_w"])
+    ori_per_stride = dict()
+    pos_per_stride = dict()
+    for _, s in test_events.iterrows():
+        ori_per_stride[s["s_id"]] = ori.iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
+        pos_per_stride[s["s_id"]] = test_mocap["L_FCC"].iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
+    ori_per_stride = pd.concat(ori_per_stride)
+    ori_per_stride.index = ori_per_stride.index.rename(("s_id", "sample"))
+    pos_per_stride = pd.concat(pos_per_stride)
+    pos_per_stride.index = pos_per_stride.index.rename(("s_id", "sample"))
+    pos_per_stride = pos_per_stride.add_prefix("pos_")
+
+    test_orientation[sensor] = ori_per_stride
+    test_position[sensor] = pos_per_stride
+
+test_orientation = pd.concat(test_orientation)
+test_position = pd.concat(test_position)
+test_orientation.to_csv("./orientation_sample.csv")
+test_position.to_csv("./position_sample.csv")
