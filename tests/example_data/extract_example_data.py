@@ -163,6 +163,10 @@ test_events = test_events[["s_id", "foot", "start", "end", "ic", "tc", "min_vel"
 test_events.to_csv("./stride_events_sample.csv", index=False)
 
 # Calculate orientation from mocap
+
+# Back to 100 Hz
+test_events[['start', 'end']] *= 100 / 204.8
+
 test_orientation = dict()
 test_position = dict()
 for sensor, short in [("left_sensor", "L"), ("right_sensor", "R")]:
@@ -177,7 +181,10 @@ for sensor, short in [("left_sensor", "L"), ("right_sensor", "R")]:
     pos_per_stride = dict()
     for _, s in test_events.iterrows():
         ori_per_stride[s["s_id"]] = ori.iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
-        pos_per_stride[s["s_id"]] = test_mocap["L_FCC"].iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
+        pos = test_mocap["L_FCC"].iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
+        pos = pos - pos.iloc[0]  # Make it relative for each stride
+        pos /= 1000  # from mm to m
+        pos_per_stride[s["s_id"]] = pos
     ori_per_stride = pd.concat(ori_per_stride)
     ori_per_stride.index = ori_per_stride.index.rename(("s_id", "sample"))
     pos_per_stride = pd.concat(pos_per_stride)
