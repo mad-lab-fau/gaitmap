@@ -42,6 +42,9 @@ class GyroIntegration(BaseOrientationEstimation):
     estimated_orientations_without_final_
         Contains `estimated_orientations_` but for each stride, the FINAL rotation is REMOVED to make it the same
         length as `len(self.data)`
+    rotated_data_
+        Uses `estimated_orientations_without_final_` to rotate `self.data` in for all strides given in
+        `self.stride_event_list`. # TODO: Write more about the output format
 
     Parameters
     ----------
