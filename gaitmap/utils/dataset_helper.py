@@ -307,6 +307,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     gaitmap.utils.dataset_helper.is_multi_sensor_position_list: Check for multi-sensor position lists
 
     """
+    # TODO: Test
     if not isinstance(position_list, pd.DataFrame):
         return False
 
@@ -335,6 +336,7 @@ def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> boo
     gaitmap.utils.dataset_helper.is_single_sensor_position_list: Check for multi-sensor position lists
 
     """
+    # TODO: Test
     if not isinstance(position_list, dict):
         return False
 
@@ -365,6 +367,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     gaitmap.utils.dataset_helper.is_multi_sensor_orientation_list: Check for multi-sensor orientation lists
 
     """
+    # TODO: Test
     if not isinstance(orientation_list, pd.DataFrame):
         return False
 
@@ -393,6 +396,7 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
     gaitmap.utils.dataset_helper.is_single_sensor_orientation_list: Check for multi-sensor orientation lists
 
     """
+    # TODO: Test
     if not isinstance(orientation_list, dict):
         return False
 
