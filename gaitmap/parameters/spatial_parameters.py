@@ -112,7 +112,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         else:
-            raise ValueError("THe provided combinations of input types is not supported.")
+            raise ValueError("The provided combinations of input types is not supported.")
         return self
 
     @staticmethod
@@ -141,7 +141,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             Data frame containing spatial parameters of single sensor
 
         """
-        positions = positions.set_index(('s_id', 'sample'))
+        positions = positions.set_index(("s_id", "sample"))
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
             stride_length_, calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
@@ -207,8 +207,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
-    stride_length = positions.groupby(level='s_id').nth([0, -1]).groupby(level='s_id').diff().dropna(axis=0)
-    stride_length = pd.Series(norm(stride_length[['pos_x', 'pos_y']], axis=1), index=stride_length.index)
+    stride_length = positions.groupby(level="s_id").nth([0, -1]).groupby(level="s_id").diff().dropna(axis=0)
+    stride_length = pd.Series(norm(stride_length[["pos_x", "pos_y"]], axis=1), index=stride_length.index)
     return stride_length
 
 
@@ -267,15 +267,10 @@ def _calc_turning_angle(
     return np.rad2deg(Rotation.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
 
 
-def _calc_arc_length(pos_x: np.array, pos_y: np.array, pos_z: np.array) -> float:
-    arc_length = 0
-    for index in pos_x[: len(pos_x) - 1]:
-        arc_length += norm(
-            np.array(
-                [pos_x[index + 1] - pos_x[index], pos_y[index + 1] - pos_y[index], pos_z[index + 1] - pos_z[index]]
-            )
-        )
-    return arc_length
+def _calc_arc_length(positions: pd.DataFrame) -> pd.Series:
+    diff_per_sample = positions.groupby(level="s_id").diff().dropna()
+    norm_per_sample = pd.Series(norm(diff_per_sample, axis=1), index=diff_per_sample.index)
+    return norm_per_sample.groupby(level="s_id").sum()
 
 
 def _compute_sagittal_angle_course(qx: np.array, qy: np.array, qz: np.array, qw: np.array) -> np.array:
