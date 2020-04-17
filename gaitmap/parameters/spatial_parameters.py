@@ -104,8 +104,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                 stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz
             ),
         )
-        angle_course_ = _compute_sagittal_angle_course(orientation_x[1], orientation_y[1],
-                                                       orientation_z[1], orientation_w[1])
+        angle_course_ = _compute_sagittal_angle_course(
+            orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1]
+        )
         ic_relative_ = stride_event_list["ic"] - stride_event_list["start"]
         tc_relative_ = stride_event_list["tc"] - stride_event_list["start"]
         ic_clearance_ = _calc_ic_clearance(pos_y[1], angle_course_, ic_relative_[1])
@@ -219,8 +220,7 @@ def _calc_gait_velocity(stride_length: float, stride_time: float) -> float:
     return stride_length / stride_time
 
 
-def _calc_ic_clearance(pos_y: np.array, angle_course: np.array,
-                       ic_relative: int) -> np.array:
+def _calc_ic_clearance(pos_y: np.array, angle_course: np.array, ic_relative: int) -> np.array:
     sensor_lift_ic = pos_y[int(ic_relative)]
     l_ic = sensor_lift_ic / math.sin(angle_course[int(ic_relative)])
     ic_clearance = []
@@ -252,30 +252,41 @@ def _calc_tc_angle(angle_course: np.array, tc_relative: int) -> float:
     return -np.rad2deg(angle_course[int(tc_relative)])
 
 
-def _calc_turning_angle(orientation_x: np.array, orientation_y: np.array,
-                        orientation_z: np.array, orientation_w: np.array) -> float:
-    orientation_turn = vector_math.inner_product(np.array([orientation_x[0], orientation_y[0],
-                                                          orientation_z[0], orientation_w[0]])
-                                                 , vector_math.inverse(np.array([orientation_x[len(orientation_x) - 1],
-                                                                                orientation_y[len(orientation_y) - 1],
-                                                                                orientation_z[len(orientation_z) - 1],
-                                                                                orientation_w[len(orientation_w) - 1]])
-                                                                       ))
+def _calc_turning_angle(
+    orientation_x: np.array, orientation_y: np.array, orientation_z: np.array, orientation_w: np.array
+) -> float:
+    orientation_turn = vector_math.inner_product(
+        np.array([orientation_x[0], orientation_y[0], orientation_z[0], orientation_w[0]]),
+        vector_math.inverse(
+            np.array(
+                [
+                    orientation_x[len(orientation_x) - 1],
+                    orientation_y[len(orientation_y) - 1],
+                    orientation_z[len(orientation_z) - 1],
+                    orientation_w[len(orientation_w) - 1],
+                ]
+            )
+        ),
+    )
     return np.rad2deg(Rotation.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
 
 
 def _calc_arc_length(pos_x: np.array, pos_y: np.array, pos_z: np.array) -> float:
     arc_length = 0
-    for index in pos_x[:len(pos_x) - 1]:
-        arc_length += norm(np.array([pos_x[index + 1] - pos_x[index], pos_y[index + 1] - pos_y[index],
-                                    pos_z[index + 1] - pos_z[index]]))
+    for index in pos_x[: len(pos_x) - 1]:
+        arc_length += norm(
+            np.array(
+                [pos_x[index + 1] - pos_x[index], pos_y[index + 1] - pos_y[index], pos_z[index + 1] - pos_z[index]]
+            )
+        )
     return arc_length
 
 
 def _compute_sagittal_angle_course(qx: np.array, qy: np.array, qz: np.array, qw: np.array) -> np.array:
     angle_course = []
     for i, _ in enumerate(qx):
-        orientation_ms = vector_math.inner_product(np.array([qx[i], qy[i], qz[i], qw[i]]),
-                                                   np.array([qx[0], qy[0], qz[0], qw[0]]))
+        orientation_ms = vector_math.inner_product(
+            np.array([qx[i], qy[i], qz[i], qw[i]]), np.array([qx[0], qy[0], qz[0], qw[0]])
+        )
         angle_course.append(Rotation.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
     return angle_course
