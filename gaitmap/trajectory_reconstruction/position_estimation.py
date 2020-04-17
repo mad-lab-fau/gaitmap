@@ -61,7 +61,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     Examples
     --------
     >>> data_left = healthy_example_imu_data["left_sensor"]
-    >>> events_left = healthy_example_stride_borders["left_sensor"]
+    >>> events_left = healthy_example_stride_events["left_sensor"]
     >>> integrator = ForwardBackwardIntegration()
     >>> integrator.estimate(data_left, events_left, 204.8)
     >>> integrator.estimated_velocity_.iloc[-1]
