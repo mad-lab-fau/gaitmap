@@ -225,7 +225,7 @@ def _calc_ic_clearance(pos_y: np.array, angle_course: np.array,
     l_ic = sensor_lift_ic / math.sin(angle_course[int(ic_relative)])
     ic_clearance = []
     sensor_clearance = pos_y
-    for i in range(len(pos_y)):
+    for i, _ in enumerate(pos_y):
         sgn = np.sign(angle_course[i])
         delta_ic = sgn * l_ic * math.sin(angle_course[i])
         ic_clearance.append(-sensor_clearance[i] + sgn * delta_ic)
@@ -237,7 +237,7 @@ def _calc_tc_clearance(pos_y: np.array, angle_course: np.array, tc_relative: int
     l_tc = sensor_lift_tc / math.sin(angle_course[int(tc_relative)])
     tc_clearance = []
     sensor_clearance = pos_y
-    for i in range(len(pos_y)):
+    for i, _ in enumerate(pos_y):
         sgn = np.sign(angle_course[i])
         delta_tc = sgn * l_tc * math.sin(angle_course[i])
         tc_clearance.append(-sensor_clearance[i] + sgn * delta_tc)
@@ -266,7 +266,7 @@ def _calc_turning_angle(orientation_x: np.array, orientation_y: np.array,
 
 def _calc_arc_length(pos_x: np.array, pos_y: np.array, pos_z: np.array) -> float:
     arc_length = 0
-    for index in range(len(pos_x) - 1):
+    for index in pos_x[:len(pos_x) - 1]:
         arc_length += norm(np.array([pos_x[index + 1] - pos_x[index], pos_y[index + 1] - pos_y[index],
                                     pos_z[index + 1] - pos_z[index]]))
     return arc_length
@@ -274,7 +274,7 @@ def _calc_arc_length(pos_x: np.array, pos_y: np.array, pos_z: np.array) -> float
 
 def _compute_sagittal_angle_course(qx: np.array, qy: np.array, qz: np.array, qw: np.array) -> np.array:
     angle_course = []
-    for i in range(len(qx)):
+    for i, _ in enumerate(qx):
         orientation_ms = vector_math.inner_product(np.array([qx[i], qy[i], qz[i], qw[i]]),
                                                    np.array([qx[0], qy[0], qz[0], qw[0]]))
         angle_course.append(Rotation.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
