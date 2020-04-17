@@ -165,3 +165,16 @@ class TestGyroIntegration:
             gyr_integrator.estimate(sensor_data, event_list, fs)
 
         assert "complete window length" in str(w[0])
+
+    def test_rotated_data(self):
+        fs = 100
+        window_width = 8
+        # start at window_with/2 because GyroIntegration._calculate_initial_orientation uses start+-half window size
+        start_sample = int(np.floor(window_width / 2))
+        axis_to_rotate = 0
+        vector_to_rotate = [0, 1, 0]
+        sensor_data, event_list = self.get_dummy_data(start_sample, axis_to_rotate, fs, window_width=window_width)
+        gyr_integrator = GyroIntegration(align_window_width=window_width)
+        gyr_integrator.estimate(sensor_data, event_list, fs)
+        x = gyr_integrator.rotated_data_
+        return
