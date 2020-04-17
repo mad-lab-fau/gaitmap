@@ -4,7 +4,7 @@ import pytest
 from pandas._testing import assert_series_equal
 
 from gaitmap.base import BaseType
-from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation, _calc_stride_length
+from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation, _calc_stride_length, _calc_gait_velocity
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -18,6 +18,13 @@ def single_sensor_stride_list():
     stride_events_list["start"] = [2, 4, 5]
     stride_events_list["min_vel"] = stride_events_list["start"]
     return stride_events_list
+
+
+@pytest.fixture()
+def single_sensor_stride_time():
+    out = pd.Series([2, 2, 2], index=[0, 1, 2])
+    out.index.name = "s_id"
+    return out
 
 
 @pytest.fixture
@@ -36,6 +43,11 @@ def single_sensor_stride_length():
     out = pd.Series([2, np.sqrt(8), 0], index=[0, 1, 2])
     out.index.name = "s_id"
     return out
+
+
+@pytest.fixture()
+def single_sensor_gait_speed(single_sensor_stride_length, single_sensor_stride_time):
+    return single_sensor_stride_length / single_sensor_stride_time
 
 
 @pytest.fixture
@@ -67,6 +79,11 @@ class TestIndividualParameter:
     def test_stride_length(self, single_sensor_position_list, single_sensor_stride_length):
         assert_series_equal(
             _calc_stride_length(single_sensor_position_list.set_index(["s_id", "sample"])), single_sensor_stride_length
+        )
+
+    def test_gait_speed(self, single_sensor_stride_length, single_sensor_stride_time, single_sensor_gait_speed):
+        assert_series_equal(
+            _calc_gait_velocity(single_sensor_stride_length, single_sensor_stride_time), single_sensor_gait_speed
         )
 
 
