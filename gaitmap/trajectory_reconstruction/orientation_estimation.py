@@ -67,7 +67,7 @@ class GyroIntegration(BaseOrientationEstimation):
     Examples
     --------
     >>> data = healthy_example_imu_data["left_sensor"]
-    >>> stride_event_list = healthy_example_stride_event_list["left_sensor"]
+    >>> stride_event_list = healthy_example_stride_events["left_sensor"]
     >>> gyr_int = GyroIntegration(align_window_width=8)
     >>> gyr_int.estimate(data, stride_events, 204.8)
     >>> gyr_int.estimated_orientations_without_final_["left_sensor"].iloc[0]
