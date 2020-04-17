@@ -1,9 +1,10 @@
-from gaitmap.base import BaseType
-from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
-
-import pytest
+import numpy as np
 import pandas as pd
+import pytest
+from pandas._testing import assert_series_equal
 
+from gaitmap.base import BaseType
+from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation, _calc_stride_length
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -24,10 +25,17 @@ def single_sensor_position_list():
     position_list = pd.DataFrame(columns=["s_id", "sample", "pos_x", "pos_y", "pos_z"])
     position_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     position_list["sample"] = [0, 1, 2, 0, 1, 2, 0, 1, 2]
-    position_list["pos_x"] = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-    position_list["pos_y"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    position_list["pos_z"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    position_list["pos_x"] = [1, 2, 3, 1, 2, 3, 1, 1, 1]
+    position_list["pos_y"] = [0, 0, 0, 0, 1, 2, 0, 0, 0]
+    position_list["pos_z"] = [0, 0, 0, 0, 0, 0, 1, 2, 3]
     return position_list
+
+
+@pytest.fixture()
+def single_sensor_stride_length():
+    out = pd.Series([2, np.sqrt(8), 0], index=[0, 1, 2])
+    out.index.name = "s_id"
+    return out
 
 
 @pytest.fixture
@@ -53,6 +61,13 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
         return t
+
+
+class TestIndividualParameter:
+    def test_stride_length(self, single_sensor_position_list, single_sensor_stride_length):
+        assert_series_equal(
+            _calc_stride_length(single_sensor_position_list.set_index(["s_id", "sample"])), single_sensor_stride_length
+        )
 
 
 class TestSpatialParameterCalculation:

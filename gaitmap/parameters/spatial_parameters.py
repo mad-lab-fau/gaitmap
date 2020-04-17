@@ -1,18 +1,15 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015."""
+import math
 from typing import Union, Dict
 
-import math
-
 import numpy as np
+import pandas as pd
 from numpy.linalg import norm
-
 from scipy.spatial.transform import Rotation
 
-import pandas as pd
-
-from gaitmap.utils import vector_math
-from gaitmap.parameters import temporal_parameters
 from gaitmap.base import BaseType, BaseSpatialParameterCalculation
+from gaitmap.parameters.temporal_parameters import calc_stride_time
+from gaitmap.utils import vector_math
 from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
@@ -142,34 +139,22 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         -------
         parameters_
             Data frame containing spatial parameters of single sensor
-         for row in position.iteritems():
-            stride_length_.append(_calc_stride_length(row[1]))
 
         """
-        stride_id_ = stride_event_list["s_id"]
-        pos_x = positions.groupby("s_id")["pos_x"].apply(list)
-        pos_y = positions.groupby("s_id")["pos_y"].apply(list)
-        pos_z = positions.groupby("s_id")["pos_z"].apply(list)
-        orientation_x = orientations.groupby("s_id")["qx"].apply(list)
-        orientation_y = orientations.groupby("s_id")["qy"].apply(list)
-        orientation_z = orientations.groupby("s_id")["qz"].apply(list)
-        orientation_w = orientations.groupby("s_id")["qw"].apply(list)
-        stride_length_ = _calc_stride_length(pos_x[1], pos_z[1])
+        positions = positions.set_index(('s_id', 'sample'))
+        stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
-            stride_length_,
-            temporal_parameters.calc_stride_time(
-                stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz
-            ),
+            stride_length_, calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
         )
         angle_course_ = _compute_sagittal_angle_course(
             orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1]
         )
-        ic_relative_ = stride_event_list["ic"] - stride_event_list["start"]
-        tc_relative_ = stride_event_list["tc"] - stride_event_list["start"]
-        ic_clearance_ = _calc_ic_clearance(pos_y[1], angle_course_, ic_relative_[1])
-        tc_clearance_ = _calc_tc_clearance(pos_y[1], angle_course_, tc_relative_[1])
-        ic_angle_ = _calc_ic_angle(angle_course_, ic_relative_[1])
-        tc_angle_ = _calc_tc_angle(angle_course_, tc_relative_[1])
+        ic_relative = stride_event_list["ic"] - stride_event_list["start"]
+        tc_relative = stride_event_list["tc"] - stride_event_list["start"]
+        ic_clearance_ = _calc_ic_clearance(pos_y[1], angle_course_, ic_relative[1])
+        tc_clearance_ = _calc_tc_clearance(pos_y[1], angle_course_, tc_relative[1])
+        ic_angle_ = _calc_ic_angle(angle_course_, ic_relative[1])
+        tc_angle_ = _calc_tc_angle(angle_course_, tc_relative[1])
         turning_angle_ = _calc_turning_angle(orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1])
         arc_length_ = _calc_arc_length(pos_x[1], pos_y[1], pos_z[1])
 
@@ -221,15 +206,13 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         return parameters_
 
 
+def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
+    stride_length = positions.groupby(level='s_id').nth([0, -1]).groupby(level='s_id').diff().dropna(axis=0)
+    stride_length = pd.Series(norm(stride_length[['pos_x', 'pos_y']], axis=1), index=stride_length.index)
+    return stride_length
 
 
-def _calc_stride_length(pos_x: np.array, pos_z: np.array) -> float:
-    position_end_x = pos_x[len(pos_x) - 1]
-    position_end_z = pos_z[len(pos_z) - 1]
-    return norm([position_end_x, position_end_z])
-
-
-def _calc_gait_velocity(stride_length: float, stride_time: float) -> float:
+def _calc_gait_velocity(stride_length: pd.Series, stride_time: pd.Series) -> pd.Series:
     return stride_length / stride_time
 
 
