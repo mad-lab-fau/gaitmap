@@ -35,31 +35,88 @@ from gaitmap.utils.dataset_helper import (
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     """This class is responsible for calculating spatial parameters of strides.
 
-    Parameters
-    ----------
-    stride_event_list
-        Gait events for each stride obtained from Rampp event detection.
-    position
-        position of the sensor at each time point as estimated by trajectory reconstruction.
-    orientation
-        orientation of the sensor at each time point as estimated by trajectory reconstruction.
-
     Attributes
     ----------
     parameters_
         Data frame containing spatial parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
 
+    Other Parameters
+    ----------------
+    stride_event_list
+        Gait events for each stride obtained from event detection.
+    positions
+        position of the sensor at each time point as estimated by trajectory reconstruction.
+    orientations
+        orientation of the sensor at each time point as estimated by trajectory reconstruction.
+    sampling_rate_hz
+        The sampling rate of the data signal.
+
     Notes
     -----
-    .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J.,
-     & Eskofier, B. M. (2015, August). Inertial sensor based and shoe size independent gait analysis including heel and
-      toe clearance estimation. In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and
-        Biology Society (EMBC) (pp. 5424-5427). IEEE.
+    .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
+       Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
+       In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)
+       (pp. 5424-5427). IEEE.
 
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+
+    stride_event_list: StrideList
+    positions: PositionList
+    orientations: OrientationList
+    sampling_rate_hz: float
+
+    def calculate(
+        self: BaseType,
+        stride_event_list: StrideList,
+        positions: PositionList,
+        orientations: OrientationList,
+        sampling_rate_hz: float,
+    ) -> BaseType:
+        """Find spatial parameters of all strides after segmentation and detecting events for all sensors.
+
+        Parameters
+        ----------
+        stride_event_list
+            Gait events for each stride obtained from event detection
+        positions
+            position of each sensor at each time point as estimated by trajectory reconstruction.
+        orientations
+            orientation of each sensor at each time point as estimated by trajectory reconstruction
+        sampling_rate_hz
+            The sampling rate of the data signal.
+
+        Returns
+        -------
+        self
+            The class instance with spatial parameters populated in parameters_
+
+        """
+        self.stride_event_list = stride_event_list
+        self.positions = positions
+        self.orientations = orientations
+        self.sampling_rate_hz = sampling_rate_hz
+        if (
+            is_single_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            and is_single_sensor_position_list(positions)
+            and is_single_sensor_orientation_list(orientations)
+        ):
+            self.parameters_ = self._calculate_single_sensor(
+                stride_event_list, positions, orientations, sampling_rate_hz
+            )
+        elif (
+            is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            and is_multi_sensor_position_list(positions)
+            and is_multi_sensor_orientation_list(orientations)
+        ):
+            self.parameters_ = self._calculate_multiple_sensor(
+                stride_event_list, positions, orientations, sampling_rate_hz
+            )
+        else:
+            raise ValueError("THe provided combinations of input types is not supported.")
+        return self
 
     @staticmethod
     def _calculate_single_sensor(
@@ -163,51 +220,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             )
         return parameters_
 
-    def calculate(
-        self: BaseType,
-        stride_event_list: StrideList,
-        positions: PositionList,
-        orientations: OrientationList,
-        sampling_rate_hz: float,
-    ) -> BaseType:
-        """Find spatial parameters of all strides after segmentation and detecting events for all sensors.
 
-        Parameters
-        ----------
-        stride_event_list
-            Gait events for each stride obtained from event detection
-        positions
-            position of each sensor at each time point as estimated by trajectory reconstruction.
-        orientations
-            orientation of each sensor at each time point as estimated by trajectory reconstruction
-        sampling_rate_hz
-            The sampling rate of the data signal.
-
-        Returns
-        -------
-        self
-            The class instance with spatial parameters populated in parameters_
-
-        """
-        if (
-            is_single_sensor_stride_list(stride_event_list, stride_type="min_vel")
-            and is_single_sensor_position_list(positions)
-            and is_single_sensor_orientation_list(orientations)
-        ):
-            self.parameters_ = self._calculate_single_sensor(
-                stride_event_list, positions, orientations, sampling_rate_hz
-            )
-        elif (
-            is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel")
-            and is_multi_sensor_position_list(positions)
-            and is_multi_sensor_orientation_list(orientations)
-        ):
-            self.parameters_ = self._calculate_multiple_sensor(
-                stride_event_list, positions, orientations, sampling_rate_hz
-            )
-        else:
-            raise ValueError("Stride list datatype is not supported.")
-        return self
 
 
 def _calc_stride_length(pos_x: np.array, pos_z: np.array) -> float:

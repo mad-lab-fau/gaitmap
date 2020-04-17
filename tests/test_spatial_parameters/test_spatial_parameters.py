@@ -1,7 +1,10 @@
+from gaitmap.base import BaseType
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 
 import pytest
 import pandas as pd
+
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
 @pytest.fixture
@@ -39,6 +42,19 @@ def single_sensor_orientation_list():
     return orientation_list
 
 
+class TestMetaFunctionality(TestAlgorithmMixin):
+    algorithm_class = SpatialParameterCalculation
+    __test__ = True
+
+    @pytest.fixture()
+    def after_action_instance(
+        self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
+    ) -> BaseType:
+        t = SpatialParameterCalculation()
+        t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
+        return t
+
+
 class TestSpatialParameterCalculation:
     """Test temporal parameters calculation."""
 
@@ -48,6 +64,7 @@ class TestSpatialParameterCalculation:
         """Test calculate spatial parameters for single sensor """
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
+        # TODO: Make into actual test
         return None
 
     def test_multiple_sensor(
@@ -59,3 +76,4 @@ class TestSpatialParameterCalculation:
         orientation_list = {"sensor1": single_sensor_orientation_list, "sensor2": single_sensor_orientation_list}
         t = SpatialParameterCalculation()
         t.calculate(stride_events_list, position_list, orientation_list, 100)
+        # TODO: make into actual test
