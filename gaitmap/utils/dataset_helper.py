@@ -17,11 +17,11 @@ StrideList = Union[SingleSensorDataset, MultiSensorStrideList]
 
 SingleSensorPositionList = pd.DataFrame
 MultiSensorPositionList = Dict[str, pd.DataFrame]
-PositionList = Union[SingleSensorPositionList, SingleSensorPositionList]
+PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
 SingleSensorOrientationList = pd.DataFrame
 MultiSensorOrientationList = Dict[str, pd.DataFrame]
-OrienationList = Union[SingleSensorDataset, MultiSensorStrideList]
+OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
@@ -295,7 +295,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     """Check if an input is a single-sensor position list.
 
     A valid position list:
-    - is a pandas Dataframe with at least the following columns: `["s_id", "position", "velocity"]`
+    - is a pandas Dataframe with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
 
     Parameters
     ----------
@@ -311,7 +311,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
         return False
 
     columns = position_list.columns
-    expected_columns = ["s_id", "position", "velocity"]
+    expected_columns = ["s_id", "sample", "pos_x", "pos_y", "pos_z"]
     if not all(v in columns for v in expected_columns):
         return False
     return True
@@ -353,7 +353,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     """Check if an input is a single-sensor orientation list.
 
     A valid orientation list:
-    - is a pandas Dataframe with at least the following columns: `["s_id", "orientation"]`
+    - is a pandas Dataframe with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
 
     Parameters
     ----------
@@ -369,7 +369,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
         return False
 
     columns = orientation_list.columns
-    expected_columns = ["s_id", "orientation"]
+    expected_columns = ["s_id", "sample", "qx", "qy", "qz", "qw"]
     if not all(v in columns for v in expected_columns):
         return False
     return True

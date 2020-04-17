@@ -14,7 +14,7 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     StrideList,
     PositionList,
-    OrienationList,
+    OrientationList,
 )
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
@@ -271,7 +271,7 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
         self: BaseType,
         stride_event_list: StrideList,
         positions: PositionList,
-        orientations: OrienationList,
+        orientations: OrientationList,
         sampling_rate_hz: float,
     ) -> BaseType:
         """Find temporal parameters in in strides after segmentation and detecting events of each stride."""

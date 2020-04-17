@@ -24,7 +24,7 @@ from gaitmap.utils.dataset_helper import (
     MultiSensorPositionList,
     is_single_sensor_position_list,
     is_multi_sensor_position_list,
-    OrienationList,
+    OrientationList,
     SingleSensorOrientationList,
     MultiSensorOrientationList,
     is_single_sensor_orientation_list,
@@ -90,24 +90,30 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         """
         stride_id_ = stride_event_list["s_id"]
-        position = positions.groupby("s_id")["position"].apply(list)
-        orientation = orientations.groupby("s_id")["orientation"].apply(list)
-        stride_length_ = _calc_stride_length(position[1])
+        pos_x = positions.groupby("s_id")["pos_x"].apply(list)
+        pos_y = positions.groupby("s_id")["pos_y"].apply(list)
+        pos_z = positions.groupby("s_id")["pos_z"].apply(list)
+        orientation_x = orientations.groupby("s_id")["qx"].apply(list)
+        orientation_y = orientations.groupby("s_id")["qy"].apply(list)
+        orientation_z = orientations.groupby("s_id")["qz"].apply(list)
+        orientation_w = orientations.groupby("s_id")["qw"].apply(list)
+        stride_length_ = _calc_stride_length(pos_x[1], pos_z[1])
         gait_velocity_ = _calc_gait_velocity(
             stride_length_,
             temporal_parameters.calc_stride_time(
                 stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz
             ),
         )
-        angle_course_ = _compute_sagittal_angle_course(orientation[1])
+        angle_course_ = _compute_sagittal_angle_course(orientation_x[1], orientation_y[1],
+                                                       orientation_z[1], orientation_w[1])
         ic_relative_ = stride_event_list["ic"] - stride_event_list["start"]
         tc_relative_ = stride_event_list["tc"] - stride_event_list["start"]
-        ic_clearance_ = _calc_ic_clearance(position[1], angle_course_, ic_relative_[1])
-        tc_clearance_ = _calc_tc_clearance(position[1], angle_course_, tc_relative_[1])
+        ic_clearance_ = _calc_ic_clearance(pos_y[1], angle_course_, ic_relative_[1])
+        tc_clearance_ = _calc_tc_clearance(pos_y[1], angle_course_, tc_relative_[1])
         ic_angle_ = _calc_ic_angle(angle_course_, ic_relative_[1])
         tc_angle_ = _calc_tc_angle(angle_course_, tc_relative_[1])
-        turning_angle_ = _calc_turning_angle(orientation[1])
-        arc_length_ = _calc_arc_length(position[1])
+        turning_angle_ = _calc_turning_angle(orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1])
+        arc_length_ = _calc_arc_length(pos_x[1], pos_y[1], pos_z[1])
 
         stride_parameter_dict = {
             "s_id": stride_id_,
@@ -160,7 +166,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self: BaseType,
         stride_event_list: StrideList,
         positions: PositionList,
-        orientations: OrienationList,
+        orientations: OrientationList,
         sampling_rate_hz: float,
     ) -> BaseType:
         """Find spatial parameters of all strides after segmentation and detecting events for all sensors.
@@ -203,33 +209,35 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         return self
 
 
-def _calc_stride_length(position: np.ndarray) -> float:
-    position_end = position[len(position) - 1]
-    return norm([position_end[0], position_end[2]])
+def _calc_stride_length(pos_x: np.array, pos_z: np.array) -> float:
+    position_end_x = pos_x[len(pos_x) - 1]
+    position_end_z = pos_z[len(pos_z) - 1]
+    return norm([position_end_x, position_end_z])
 
 
 def _calc_gait_velocity(stride_length: float, stride_time: float) -> float:
     return stride_length / stride_time
 
 
-def _calc_ic_clearance(position: np.ndarray, angle_course: np.array, ic_relative: int) -> np.array:
-    sensor_lift_ic = position[int(ic_relative)][1]
+def _calc_ic_clearance(pos_y: np.array, angle_course: np.array,
+                       ic_relative: int) -> np.array:
+    sensor_lift_ic = pos_y[int(ic_relative)]
     l_ic = sensor_lift_ic / math.sin(angle_course[int(ic_relative)])
     ic_clearance = []
-    sensor_clearance = [row[1] for row in position]
-    for i in range(len(position)):
+    sensor_clearance = pos_y
+    for i in range(len(pos_y)):
         sgn = np.sign(angle_course[i])
         delta_ic = sgn * l_ic * math.sin(angle_course[i])
         ic_clearance.append(-sensor_clearance[i] + sgn * delta_ic)
     return ic_clearance
 
 
-def _calc_tc_clearance(position: np.ndarray, angle_course: np.array, tc_relative: int) -> np.array:
-    sensor_lift_tc = position[int(tc_relative)][1]
+def _calc_tc_clearance(pos_y: np.array, angle_course: np.array, tc_relative: int) -> np.array:
+    sensor_lift_tc = pos_y[int(tc_relative)]
     l_tc = sensor_lift_tc / math.sin(angle_course[int(tc_relative)])
     tc_clearance = []
-    sensor_clearance = [row[1] for row in position]
-    for i in range(len(position)):
+    sensor_clearance = pos_y
+    for i in range(len(pos_y)):
         sgn = np.sign(angle_course[i])
         delta_tc = sgn * l_tc * math.sin(angle_course[i])
         tc_clearance.append(-sensor_clearance[i] + sgn * delta_tc)
@@ -244,21 +252,30 @@ def _calc_tc_angle(angle_course: np.array, tc_relative: int) -> float:
     return -np.rad2deg(angle_course[int(tc_relative)])
 
 
-def _calc_turning_angle(orientation: np.ndarray) -> float:
-    orientation_turn = vector_math.inner_product(orientation[0], vector_math.inverse(orientation[len(orientation) - 1]))
+def _calc_turning_angle(orientation_x: np.array, orientation_y: np.array,
+                        orientation_z: np.array, orientation_w: np.array) -> float:
+    orientation_turn = vector_math.inner_product(np.array([orientation_x[0], orientation_y[0],
+                                                          orientation_z[0], orientation_w[0]])
+                                                 , vector_math.inverse(np.array([orientation_x[len(orientation_x) - 1],
+                                                                                orientation_y[len(orientation_y) - 1],
+                                                                                orientation_z[len(orientation_z) - 1],
+                                                                                orientation_w[len(orientation_w) - 1]])
+                                                                       ))
     return np.rad2deg(Rotation.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
 
 
-def _calc_arc_length(position: np.ndarray) -> float:
+def _calc_arc_length(pos_x: np.array, pos_y: np.array, pos_z: np.array) -> float:
     arc_length = 0
-    for index in range(len(position) - 1):
-        arc_length += norm(np.array(position[index + 1]) - np.array(position[index]))
+    for index in range(len(pos_x) - 1):
+        arc_length += norm(np.array([pos_x[index + 1] - pos_x[index], pos_y[index + 1] - pos_y[index],
+                                    pos_z[index + 1] - pos_z[index]]))
     return arc_length
 
 
-def _compute_sagittal_angle_course(orientation: np.ndarray) -> np.array:
+def _compute_sagittal_angle_course(qx: np.array, qy: np.array, qz: np.array, qw: np.array) -> np.array:
     angle_course = []
-    for row in orientation:
-        orientation_ms = vector_math.inner_product(row, orientation[0])
+    for i in range(len(qx)):
+        orientation_ms = vector_math.inner_product(np.array([qx[i], qy[i], qz[i], qw[i]]),
+                                                   np.array([qx[0], qy[0], qz[0], qw[0]]))
         angle_course.append(Rotation.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
     return angle_course

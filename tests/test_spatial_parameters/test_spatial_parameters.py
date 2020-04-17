@@ -18,48 +18,24 @@ def single_sensor_stride_list():
 
 @pytest.fixture
 def single_sensor_position_list():
-    position_list = pd.DataFrame(columns=["s_id", "position", "velocity"])
+    position_list = pd.DataFrame(columns=["s_id", "sample", "pos_x", "pos_y", "pos_z"])
     position_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
-    position_list["position"] = [
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-    ]
-    position_list["velocity"] = [
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-        [1, 0, 0],
-    ]
+    position_list["sample"] = [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    position_list["pos_x"] = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+    position_list["pos_y"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    position_list["pos_z"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     return position_list
 
 
 @pytest.fixture
 def single_sensor_orientation_list():
-    orientation_list = pd.DataFrame(columns=["s_id", "orientation"])
+    orientation_list = pd.DataFrame(columns=["s_id", "sample", "qx", "qy", "qz", "qw"])
     orientation_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
-    orientation_list["orientation"] = [
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 0, 0, 0],
-    ]
+    orientation_list["sample"] = [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    orientation_list["qx"] = [1, 1, 1, 1, 1, 1, 1, 1, 1]
+    orientation_list["qy"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    orientation_list["qz"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    orientation_list["qw"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     return orientation_list
 
 
