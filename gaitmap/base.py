@@ -253,24 +253,17 @@ class BaseOrientationEstimation(BaseAlgorithm):
             return self._rotate_single_sensor(
                 self.data, self.stride_event_list, self.estimated_orientations_without_final_
             )
-        elif is_multi_sensor_dataset(self.data):
-            rotated_data = dict()
-            for i_sensor in get_multi_sensor_dataset_names(self.data):
-                rotated_data[i_sensor] = self._rotate_single_sensor(
-                    self.data[i_sensor],
-                    self.stride_event_list[i_sensor],
-                    self.estimated_orientations_without_final_[i_sensor],
-                )
-            return rotated_data
-        else:
-            raise Warning("Dataset format not supported by gaitmap.")
+        from scipy.spatial.transform import Rotation
 
+        acc = self.data[SF_ACC]
+        Rotation(self.estimated_orientations_without_final_).apply(acc.to_numpy)
+        return
 
     def _rotate_single_sensor(
         self, data: SingleSensorDataset, event_list: SingleSensorStrideList, rotations: pd.DataFrame
     ) -> pd.DataFrame:
         rotated_sensor_data = pd.DataFrame()
-        for i_s_id in rotations.index.get_level_values(level="s_id").unique():
+        for i_s_id in self.estimated_orientations_.index.get_level_values(level="s_id"):
             rotated_stride_data = self._rotate_stride(data, event_list, rotations, i_s_id)
             rotated_sensor_data = rotated_sensor_data.append(rotated_stride_data)
         return rotated_sensor_data
@@ -278,9 +271,9 @@ class BaseOrientationEstimation(BaseAlgorithm):
     @staticmethod
     def _rotate_stride(data, event_list, rotations, s_id):
         events_stride = event_list[event_list["s_id"] == s_id]
-        acc = data[SF_ACC].iloc[int(events_stride["start"]) : int(events_stride["end"])]
+        acc = data[SF_ACC].iloc[events_stride["start"][0] : events_stride["end"][0]]
         acc_rot = Rotation(rotations.xs(s_id, level="s_id")).apply(acc.to_numpy())
-        acc_rot_pd = pd.DataFrame(acc_rot, columns=SF_ACC)
+        acc_rot_pd = pd.DataFrame(acc_rot, columns= SF_ACC)
         acc_rot_pd["s_id"] = s_id
         acc_rot_pd.set_index("s_id", append=True, inplace=True)
         return acc_rot_pd
