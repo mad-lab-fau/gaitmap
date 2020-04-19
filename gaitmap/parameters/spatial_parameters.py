@@ -27,7 +27,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
     is_multi_sensor_orientation_list,
 )
-from gaitmap.utils.rotations import find_angle_between_orientations
+from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
@@ -142,6 +142,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             Data frame containing spatial parameters of single sensor
 
         """
+        # TODO: Ensure that orientations and postion columns are in the right order
         positions = positions.set_index(("s_id", "sample"))
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
@@ -273,11 +274,20 @@ def _calc_arc_length(positions: pd.DataFrame) -> pd.Series:
     return norm_per_sample.groupby(level="s_id").sum()
 
 
-def _compute_sagittal_angle_course(qx: np.array, qy: np.array, qz: np.array, qw: np.array) -> np.array:
-    angle_course = []
-    for i, _ in enumerate(qx):
-        orientation_ms = vector_math.inner_product(
-            np.array([qx[i], qy[i], qz[i], qw[i]]), np.array([qx[0], qy[0], qz[0], qw[0]])
-        )
-        angle_course.append(Rotation.from_quat(orientation_ms).as_euler("zyx", degrees=True)[2])
-    return angle_course
+def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
+    """Find the angle between the "forward" vector and the ground.
+
+    At every point in time we expect the sensor local x axis to point to the tip of the shoe.
+    (It shouldn't matter if this is not perfectly true).
+    Therefore, to find the sole angle of the shoe, we calculate the global orientation of the local x-axis and
+    calculate its angle with the floor.
+
+    # TODO: Is this different from calculating the angle only in the sagittal plane?
+    # TODO: Linear dedrifting
+    """
+    forward = pd.DataFrame(
+        Rotation.from_quat(orientations.to_numpy()).apply([1, 0, 0]), columns=list("xyz"), index=orientations.index
+    )
+    floor_angle = 90 - np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1])))
+    floor_angle = pd.Series(floor_angle, index=forward.index)
+    return floor_angle

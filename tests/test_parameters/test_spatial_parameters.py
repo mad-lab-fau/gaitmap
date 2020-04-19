@@ -10,6 +10,7 @@ from gaitmap.parameters.spatial_parameters import (
     _calc_gait_velocity,
     _calc_arc_length,
     _calc_turning_angle,
+    _compute_sole_angle_course,
 )
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -92,6 +93,15 @@ def single_sensor_turning_angle():
     return out
 
 
+@pytest.fixture()
+def single_sensor_sole_angle_course():
+    index = [0, 0, 0, 1, 1, 1, 2, 2, 2]
+    sample = [0, 1, 2, 0, 1, 2, 0, 1, 2]
+    index = pd.MultiIndex.from_arrays([index, sample], names=['s_id', 'sample'])
+    angle = [0, -90., 0, 0, 0, 0, 0, 0, 0]
+    return pd.Series(angle, index=index)
+
+
 class TestMetaFunctionality(TestAlgorithmMixin):
     algorithm_class = SpatialParameterCalculation
     __test__ = True
@@ -119,6 +129,11 @@ class TestIndividualParameter:
 
     def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle):
         assert_series_equal(_calc_turning_angle(single_sensor_orientation_list_with_index), single_sensor_turning_angle)
+
+    def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course):
+        assert_series_equal(
+            _compute_sole_angle_course(single_sensor_orientation_list_with_index), single_sensor_sole_angle_course
+        )
 
 
 class TestSpatialParameterCalculation:

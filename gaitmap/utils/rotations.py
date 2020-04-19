@@ -323,12 +323,10 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     array([0,0])
 
     """
-    v1 = np.array(v1)
-    v1 = normalize(v1)
-    v2 = np.array(v2)
-    v2 = normalize(v2)
-    if len(v1.shape) == 1:
-        ax = 0
-    else:
-        ax = 1
-    return np.arccos(row_wise_dot(v1, v2) / (norm(v1, axis=ax) * norm(v2, axis=ax)))
+    v1_, v2_ = np.atleast_2d(v1, v2)
+    v1_ = normalize(v1_)
+    v2_ = normalize(v2_)
+    out = np.arccos(row_wise_dot(v1_, v2_) / (norm(v1_, axis=-1) * norm(v2_, axis=-1)))
+    if v1.ndim == 1:
+        return np.squeeze(out)
+    return out
