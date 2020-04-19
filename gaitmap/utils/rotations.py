@@ -17,7 +17,7 @@ from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
 )
-from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle, normalize, row_wise_dot
+from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
@@ -294,3 +294,41 @@ def find_angle_between_orientations(
     if rotvec.ndim == 1:
         return out[0]
     return out
+
+
+def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
+    """Find the angle (in rad) between two  3D vectors.
+
+    Parameters
+    ----------
+    v1 : vector with shape (3,)  or array of vectors
+        axis ([x, y ,z]) or array of axis
+    v2 : vector with shape (3,) or array of vectors
+        axis ([x, y ,z]) or array of axis
+
+    Returns
+    -------
+        angle or array of angles between two vectors
+
+    Examples
+    --------
+    two vectors: 1D
+
+    >>> find_unsigned_3d_angle(np.array([-1, 0, 0]), np.array([-1, 0, 0]))
+    0
+
+    two vectors: 2D
+
+    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[-1, 0, 0]]), np.array([[-1, 0, 0],[-1, 0, 0]]))
+    array([0,0])
+
+    """
+    v1 = np.array(v1)
+    v1 = normalize(v1)
+    v2 = np.array(v2)
+    v2 = normalize(v2)
+    if len(v1.shape) == 1:
+        ax = 0
+    else:
+        ax = 1
+    return np.arccos(row_wise_dot(v1, v2) / (norm(v1, axis=ax) * norm(v2, axis=ax)))

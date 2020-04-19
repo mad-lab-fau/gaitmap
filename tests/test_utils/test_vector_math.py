@@ -6,7 +6,6 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_
 from gaitmap.utils.vector_math import (
     find_random_orthogonal,
     find_orthogonal,
-    find_unsigned_3d_angle,
     normalize,
     is_almost_parallel_or_antiparallel,
     inverse,
@@ -111,34 +110,6 @@ class TestFindOrthogonal:
         v2 = np.array(4 * [[0, 1, 0]])
         with pytest.raises(ValueError):
             find_orthogonal(v1, v2)
-
-
-class TestFindUnsigned3dAngle:
-    """Test the function `find_unsigned_3d_angle`."""
-
-    @pytest.mark.parametrize(
-        "v1, v2, result",
-        [
-            ([1, 0, 0], [0, 1, 0], np.pi / 2),
-            ([2, 0, 0], [0, 2, 0], np.pi / 2),
-            ([1, 0, 0], [1, 0, 0], 0),
-            ([-1, 0, 0], [-1, 0, 0], 0),
-            ([1, 0, 0], [-1, 0, 0], np.pi),
-        ],
-    )
-    def test_find_unsigned_3d_angle(self, v1, v2, result):
-        """Test  `find_unsigned_3d_angle` between two 1D vector."""
-        v1 = np.array(v1)
-        v2 = np.array(v2)
-        assert_almost_equal(find_unsigned_3d_angle(v1, v2), result)
-
-    def test_find_3d_angle_array(self):
-        """Test  `find_unsigned_3d_angle` between two 2D vector."""
-        v1 = np.array(4 * [[1, 0, 0]])
-        v2 = np.array(4 * [[0, 1, 0]])
-        output = find_unsigned_3d_angle(v1, v2)
-        assert len(output) == 4
-        assert_array_almost_equal(output, 4 * [np.pi / 2])
 
 
 class TestInverse:

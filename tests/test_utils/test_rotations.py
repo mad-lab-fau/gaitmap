@@ -14,6 +14,7 @@ from gaitmap.utils.rotations import (
     get_gravity_rotation,
     find_rotation_around_axis,
     find_angle_between_orientations,
+    find_unsigned_3d_angle,
 )
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
@@ -371,3 +372,31 @@ class TestFindAngleBetweenOrientations:
         axis = np.repeat([[0, 0, 1]], 5, axis=0)
         out = [-np.pi / 2] * 5
         assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
+
+
+class TestFindUnsigned3dAngle:
+    """Test the function `find_unsigned_3d_angle`."""
+
+    @pytest.mark.parametrize(
+        "v1, v2, result",
+        [
+            ([1, 0, 0], [0, 1, 0], np.pi / 2),
+            ([2, 0, 0], [0, 2, 0], np.pi / 2),
+            ([1, 0, 0], [1, 0, 0], 0),
+            ([-1, 0, 0], [-1, 0, 0], 0),
+            ([1, 0, 0], [-1, 0, 0], np.pi),
+        ],
+    )
+    def test_find_unsigned_3d_angle(self, v1, v2, result):
+        """Test  `find_unsigned_3d_angle` between two 1D vector."""
+        v1 = np.array(v1)
+        v2 = np.array(v2)
+        assert_almost_equal(find_unsigned_3d_angle(v1, v2), result)
+
+    def test_find_3d_angle_array(self):
+        """Test  `find_unsigned_3d_angle` between two 2D vector."""
+        v1 = np.array(4 * [[1, 0, 0]])
+        v2 = np.array(4 * [[0, 1, 0]])
+        output = find_unsigned_3d_angle(v1, v2)
+        assert len(output) == 4
+        assert_array_almost_equal(output, 4 * [np.pi / 2])
