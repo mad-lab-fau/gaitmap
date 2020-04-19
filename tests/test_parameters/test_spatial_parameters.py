@@ -9,6 +9,7 @@ from gaitmap.parameters.spatial_parameters import (
     _calc_stride_length,
     _calc_gait_velocity,
     _calc_arc_length,
+    _calc_turning_angle,
 )
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -72,11 +73,23 @@ def single_sensor_orientation_list():
     orientation_list = pd.DataFrame(columns=["s_id", "sample", "qx", "qy", "qz", "qw"])
     orientation_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     orientation_list["sample"] = [0, 1, 2, 0, 1, 2, 0, 1, 2]
-    orientation_list["qx"] = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-    orientation_list["qy"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    orientation_list["qz"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    orientation_list["qw"] = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    orientation_list["qx"] = [0, 0, 0, 0, np.sqrt(2), 0, 0, 0, 0]
+    orientation_list["qy"] = [0, np.sqrt(2), 0, 0, 0, 0, 0, 0, 0]
+    orientation_list["qz"] = [0, 0, 0, 0, 0, np.sqrt(2), 0, np.sqrt(2), np.sqrt(2)]
+    orientation_list["qw"] = [1, np.sqrt(2), 1, 1, np.sqrt(2), np.sqrt(2), 1, np.sqrt(2), -np.sqrt(2)]
     return orientation_list
+
+
+@pytest.fixture()
+def single_sensor_orientation_list_with_index(single_sensor_orientation_list):
+    return single_sensor_orientation_list.set_index(["s_id", "sample"])
+
+
+@pytest.fixture()
+def single_sensor_turning_angle():
+    out = pd.Series([0.0, 90, -90], index=[0, 1, 2])
+    out.index.name = "s_id"
+    return out
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -103,6 +116,9 @@ class TestIndividualParameter:
 
     def test_arc_length(self, single_sensor_position_list_with_index, single_sensor_arc_length):
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
+
+    def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle):
+        assert_series_equal(_calc_turning_angle(single_sensor_orientation_list_with_index), single_sensor_turning_angle)
 
 
 class TestSpatialParameterCalculation:

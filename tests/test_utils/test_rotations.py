@@ -320,10 +320,10 @@ class TestFindAngleBetweenOrientations:
                 np.pi / 2,
             ),
             (
-                    Rotation.from_quat([0, 0, 0, 1]),
-                    Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
-                    [0, 1, 0],
-                    -np.pi / 2,
+                Rotation.from_quat([0, 0, 0, 1]),
+                Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
+                [0, 1, 0],
+                -np.pi / 2,
             ),
             (
                 Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
@@ -348,26 +348,26 @@ class TestFindAngleBetweenOrientations:
         rot = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
         ref = Rotation.identity()
         axis = [0, 0, 1]
-        out = [np.pi/2] * 5
+        out = [np.pi / 2] * 5
         assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
 
     def test_single_input_multi_ref_single_axis(self):
         ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
         rot = Rotation.identity()
         axis = [0, 0, 1]
-        out = [-np.pi/2] * 5
+        out = [-np.pi / 2] * 5
         assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
 
     def test_multi_input_multi_ref_single_axis(self):
         ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
         rot = Rotation.identity(num=5)
         axis = [0, 0, 1]
-        out = [-np.pi/2] * 5
+        out = [-np.pi / 2] * 5
         assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
 
     def test_multi_all(self):
         ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
         rot = Rotation.identity(num=5)
         axis = np.repeat([[0, 0, 1]], 5, axis=0)
-        out = [-np.pi/2] * 5
+        out = [-np.pi / 2] * 5
         assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)

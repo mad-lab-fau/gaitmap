@@ -27,6 +27,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
     is_multi_sensor_orientation_list,
 )
+from gaitmap.utils.rotations import find_angle_between_orientations
 
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
@@ -146,6 +147,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         gait_velocity_ = _calc_gait_velocity(
             stride_length_, calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
         )
+        arc_length_ = _calc_arc_length(positions)
+        turning_angle_ = _calc_turning_angle(orientations)
+
         angle_course_ = _compute_sagittal_angle_course(
             orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1]
         )
@@ -156,7 +160,6 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         ic_angle_ = _calc_ic_angle(angle_course_, ic_relative[1])
         tc_angle_ = _calc_tc_angle(angle_course_, tc_relative[1])
         turning_angle_ = _calc_turning_angle(orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1])
-        arc_length_ = _calc_arc_length(pos_x[1], pos_y[1], pos_z[1])
 
         stride_parameter_dict = {
             "s_id": stride_id_,
@@ -207,7 +210,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
-    stride_length = positions.groupby(level="s_id").nth([0, -1]).groupby(level="s_id").diff().dropna(axis=0)
+    start = positions.groupby(level="s_id").first()
+    end = positions.groupby(level="s_id").last()
+    stride_length = end - start
     stride_length = pd.Series(norm(stride_length[["pos_x", "pos_y"]], axis=1), index=stride_length.index)
     return stride_length
 
@@ -248,23 +253,18 @@ def _calc_tc_angle(angle_course: np.array, tc_relative: int) -> float:
     return -np.rad2deg(angle_course[int(tc_relative)])
 
 
-def _calc_turning_angle(
-    orientation_x: np.array, orientation_y: np.array, orientation_z: np.array, orientation_w: np.array
-) -> float:
-    orientation_turn = vector_math.inner_product(
-        np.array([orientation_x[0], orientation_y[0], orientation_z[0], orientation_w[0]]),
-        vector_math.inverse(
-            np.array(
-                [
-                    orientation_x[len(orientation_x) - 1],
-                    orientation_y[len(orientation_y) - 1],
-                    orientation_z[len(orientation_z) - 1],
-                    orientation_w[len(orientation_w) - 1],
-                ]
-            )
-        ),
+def _calc_turning_angle(orientations) -> pd.Series:
+    start = orientations.groupby(level="s_id").first()
+    end = orientations.groupby(level="s_id").last()
+    angles = pd.Series(
+        np.rad2deg(
+            find_angle_between_orientations(
+                Rotation.from_quat(end.to_numpy()), Rotation.from_quat(start.to_numpy()), [0, 0, 1]
+            ),
+            index=start.index,
+        )
     )
-    return np.rad2deg(Rotation.from_quat(orientation_turn).as_euler("zyx", degrees=True)[1])
+    return angles
 
 
 def _calc_arc_length(positions: pd.DataFrame) -> pd.Series:
