@@ -5,13 +5,13 @@ import numpy as np
 from numpy.linalg import norm
 
 
-def _row_wise_dot(v1, v2):
+def row_wise_dot(v1, v2, squeeze=False):
     """Calculate row wise dot product of two vectors."""
-    if len(v1.shape) == 1:
-        ax = 0
-    else:
-        ax = 1
-    return np.sum(v1 * v2, axis=ax)
+    v1, v2 = np.atleast_2d(v1, v2)
+    out = np.sum(v1 * v2, axis=-1)
+    if squeeze:
+        return np.squeeze(out)
+    return out
 
 
 def inverse(v: np.array) -> np.array:
@@ -101,7 +101,7 @@ def is_almost_parallel_or_antiparallel(
     array([True,False])
 
     """
-    return np.isclose(np.abs(_row_wise_dot(normalize(v1), normalize(v2))), 1, rtol=rtol, atol=atol)
+    return np.isclose(np.abs(row_wise_dot(normalize(v1), normalize(v2))), 1, rtol=rtol, atol=atol)
 
 
 def normalize(v: np.ndarray) -> np.ndarray:
@@ -233,4 +233,4 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
         ax = 0
     else:
         ax = 1
-    return np.arccos(_row_wise_dot(v1, v2) / (norm(v1, axis=ax) * norm(v2, axis=ax)))
+    return np.arccos(row_wise_dot(v1, v2) / (norm(v1, axis=ax) * norm(v2, axis=ax)))
