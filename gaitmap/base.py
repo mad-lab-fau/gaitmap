@@ -269,14 +269,31 @@ class BasePositionEstimation(BaseAlgorithm):
         raise NotImplementedError("Needs to be implemented by child class.")
 
     @staticmethod
-    def rotate_stride(acc: pd.DataFrame, rots: pd.DataFrame) -> pd.DataFrame:
-        if len(acc) != len(rots):
+    def rotate_stride(acc: pd.DataFrame, rotations: pd.DataFrame) -> pd.DataFrame:
+        """Rotate acceleration data of a stride (e.g. form inertial sensor frame to world frame.
+
+        Parameters
+        ----------
+        acc
+            Acceleration data with `gaitmap.utils.consts.SF_ACC` axes
+        rotations
+            Rotations in the order of qx, qy, qz, qw as for example obtained by
+            `gaitmap.trajectory_reconsruction.orientation_estimation.GyroIntegration`
+
+        Returns
+        -------
+        acc_out
+            `acc` rotated by `rotations`, index and columns are equal to `acc`.
+
+        """
+        if len(acc) != len(rotations):
             raise ValueError("The number of rotations must fit the number of samples in acceleration data!")
         acc_out = []
         for i_row, i_acc in acc.reset_index(drop=True).iterrows():
-            rotated_data = Rotation(rots.iloc[i_row]).apply(i_acc.values)
+            rotated_data = Rotation(rotations.iloc[i_row]).apply(i_acc.values)
             acc_out.append(rotated_data)
         return pd.DataFrame(acc_out, columns=SF_ACC, index=acc.index)
+
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):
     """Base class for temporal parameters calculation."""

@@ -1,5 +1,5 @@
 """Estimation of velocity and position relative to first sample of passed data."""
-from typing import Union, Dict, Tuple, Optional
+from typing import Union, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,8 @@ from gaitmap.utils.dataset_helper import (
 
 class ForwardBackwardIntegration(BasePositionEstimation):
     """Use forward(-backward) integration of acc to estimate velocity and position.
+
+    Before integrating acceleration data, it is transformed using the passed rotations.
 
     For drift removal, a direct-and-reverse (DRI) or forward-backward integration is used for velocity estimation,
     because we assume zero velocity at the beginning and end of a signal. For position, drift removal via DRI
@@ -52,7 +54,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     rotations
         Rotations that will be used to rotate acceleration data before estimating the position (i.e. transforming
         from inertial sensor frame to fixed world frame). Rotations may be obtained from
-        `gaitmap.trajectory_reconstruction.orientation_estimation`.
+        `gaitmap.trajectory_reconstruction.orientation_estimation`. Either use `estimated_rotations_without_initial_` or
+        or `estimated_orientations_without_final`.
     sampling_rate_hz
         The sampling rate of the data.
 
