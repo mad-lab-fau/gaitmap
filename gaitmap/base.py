@@ -6,16 +6,12 @@ from typing import Callable, Dict, TypeVar, Type, Any, List, Union
 
 import numpy as np
 import pandas as pd
-from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_ACC
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
     get_multi_sensor_dataset_names,
-    SingleSensorDataset,
-    SingleSensorStrideList,
     StrideList,
     PositionList,
     OrientationList,
@@ -191,7 +187,6 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
     """
 
-    # TODO: Should stride_event_list be part of base class because it is used here in `rotate_data`
     # TODO: when implementing a different algorithm, check if initial orientation can be obtained in the same way as
     #       for GyroIntegration. If so, check if that can become part of this base class.
 
@@ -245,38 +240,6 @@ class BaseOrientationEstimation(BaseAlgorithm):
         if is_single_sensor_dataset(self.data):
             return self.estimated_orientations_.drop(axis=0, level="sample", index=0)
         raise ValueError("Unsuppported datatype.")
-
-    @property
-    def rotated_data_(self) -> Dataset:
-        """Rotate self.data by using estimated_rotations_"""
-        if is_single_sensor_dataset(self.data):
-            return self._rotate_single_sensor(
-                self.data, self.stride_event_list, self.estimated_orientations_without_final_
-            )
-        from scipy.spatial.transform import Rotation
-
-        acc = self.data[SF_ACC]
-        Rotation(self.estimated_orientations_without_final_).apply(acc.to_numpy)
-        return
-
-    def _rotate_single_sensor(
-        self, data: SingleSensorDataset, event_list: SingleSensorStrideList, rotations: pd.DataFrame
-    ) -> pd.DataFrame:
-        rotated_sensor_data = pd.DataFrame()
-        for i_s_id in self.estimated_orientations_.index.get_level_values(level="s_id"):
-            rotated_stride_data = self._rotate_stride(data, event_list, rotations, i_s_id)
-            rotated_sensor_data = rotated_sensor_data.append(rotated_stride_data)
-        return rotated_sensor_data
-
-    @staticmethod
-    def _rotate_stride(data, event_list, rotations, s_id):
-        events_stride = event_list[event_list["s_id"] == s_id]
-        acc = data[SF_ACC].iloc[events_stride["start"][0] : events_stride["end"][0]]
-        acc_rot = Rotation(rotations.xs(s_id, level="s_id")).apply(acc.to_numpy())
-        acc_rot_pd = pd.DataFrame(acc_rot, columns= SF_ACC)
-        acc_rot_pd["s_id"] = s_id
-        acc_rot_pd.set_index("s_id", append=True, inplace=True)
-        return acc_rot_pd
 
 
 class BasePositionEstimation(BaseAlgorithm):
