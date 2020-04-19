@@ -4,6 +4,7 @@ import pytest
 import scipy
 
 from gaitmap.base import BaseType
+from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
 from gaitmap.trajectory_reconstruction.position_estimation import ForwardBackwardIntegration
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_VEL, SF_POS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -75,7 +76,10 @@ class TestForwardBackwardIntegration:
         data_left = healthy_example_imu_data["left_sensor"]
         events_left = healthy_example_stride_events["left_sensor"]
         position = ForwardBackwardIntegration()
-        position.estimate(data_left, events_left, 204.8)
+        # TODO: Maybe the next two lines should be fixtures to not run into problmes when GyroIntegration is not
+        #  working?
+        rots = self.get_rotations(data_left, events_left, 204.8)
+        position.estimate(data_left, events_left, rots, 204.8)
         snapshot.assert_match(position.estimated_position_.loc[:5], "pos")
         snapshot.assert_match(position.estimated_velocity_.loc[:5], "vel")
 
@@ -155,11 +159,20 @@ class TestForwardBackwardIntegration:
         """Just to see intermediate results so we know if we are on the right way"""
         data = healthy_example_imu_data
         stride_events = healthy_example_stride_events
+        rots = self.get_rotations(data, stride_events, 204.8)
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_events, 204.8)
+        position.estimate(data, stride_events, rots, 204.8)
         pos = position.estimated_position_
         sls = []
         for i_stride in pos["left_sensor"].index.get_level_values(level="s_id").unique():
             sl = pos["left_sensor"].xs(int(i_stride), level="s_id").iloc[-1]
             sls.append(np.sqrt(np.square(sl).sum()))
         return
+
+    @staticmethod
+    def get_rotations(data, events, fs):
+        gyr_integrator = GyroIntegration(align_window_width=8)
+        gyr_integrator.estimate(data, events, fs)
+        return gyr_integrator.estimated_orientations_without_final_
+
+    # TODO: Add test for .rotate_stride

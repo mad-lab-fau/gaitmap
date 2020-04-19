@@ -103,16 +103,17 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     data: Dataset
     event_list: StrideList
 
-    def __init__(self, turning_point: float = 0.5, steepness: float = 0.08):
+    def __init__(self, turning_point: float = 0.5, steepness: float = 0.08, subtract_gravity: bool = True):
         self.turning_point = turning_point
         self.steepness = steepness
+        self.subtract_gravity = subtract_gravity
 
     def estimate(
         self,
         data: Dataset,
         event_list: StrideList,
+        rotations: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
         sampling_rate_hz: float,
-        rotations: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]] = None
     ):
         """Estimate velocity and position based on acceleration data."""
         # TODO: Make it clear/add check that this data is actual rotated data
@@ -127,26 +128,23 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         self.rotations = rotations
 
         if dataset_helper.is_single_sensor_dataset(data):
-            if not rotations:
-                self.rotations = pd.DataFrame()
-            self.estimated_velocity_, self.estimated_position_ = self._estimate_single_sensor(data, event_list,
-                                                                                              rotations)
+            self.estimated_velocity_, self.estimated_position_ = self._estimate_single_sensor(
+                data, event_list, rotations
+            )
         elif dataset_helper.is_multi_sensor_dataset(data):
-            if not rotations:
-                self.rotations = pd.DataFrame(columns=get_multi_sensor_dataset_names(data))
             self.estimated_velocity_, self.estimated_position_ = self._estimate_multi_sensor()
         else:
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
     def _estimate_single_sensor(
-        self, data: SingleSensorDataset, event_list: SingleSensorStrideList
+        self, data: SingleSensorDataset, event_list: SingleSensorStrideList, rotations: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         velocity = {}
         position = {}
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
-            i_vel, i_pos = self._estimate_stride(data, i_start, i_end, )
+            i_vel, i_pos = self._estimate_stride(data, i_start, i_end, rotations.xs(i_stride["s_id"], level="s_id"))
             velocity[i_stride["s_id"]] = i_vel
             position[i_stride["s_id"]] = i_pos
         velocity = pd.concat(velocity)
@@ -155,8 +153,13 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         position.index = position.index.rename(("s_id", "sample"))
         return velocity, position
 
-    def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], self.rotations)
+    def _estimate_stride(
+        self, data: SingleSensorDataset, start: int, end: int, rotations
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], rotations)
+        if self.subtract_gravity:
+            # TODO Gravity to consts or dataset_helper?
+            acc_data = acc_data - [0, 0, 9.81]
         estimated_velocity_ = pd.DataFrame(
             self._forward_backward_integration(acc_data), index=acc_data.index, columns=SF_VEL
         )
@@ -194,7 +197,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         estimated_position_ = dict()
         estimated_velocity_ = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            vel, pos = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor], self.rotations[
-                i_sensor])
+            vel, pos = self._estimate_single_sensor(
+                self.data[i_sensor], self.event_list[i_sensor], self.rotations[i_sensor]
+            )
             estimated_velocity_[i_sensor], estimated_position_[i_sensor] = vel, pos
         return estimated_velocity_, estimated_position_

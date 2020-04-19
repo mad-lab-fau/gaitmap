@@ -2,11 +2,13 @@
 
 import inspect
 import types
-from typing import Callable, Dict, TypeVar, Type, Any, List, Union
+from typing import Callable, Dict, TypeVar, Type, Any, List, Union, Optional
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation
 
+from gaitmap.utils.consts import SF_ACC
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_multi_sensor_dataset,
@@ -243,14 +245,38 @@ class BaseOrientationEstimation(BaseAlgorithm):
 
 
 class BasePositionEstimation(BaseAlgorithm):
-    """Base class for all position reconstruction methods."""
+    """Base class for all position reconstruction methods.
+
+    Other Parameters
+    ----------------
+    rotations
+        Rotations that will be used to rotate acceleration data before estimating the position. Rotations may be
+        obtained from `gaitmap.trajectory_reconstruction.orientation_estimation`.
+
+    """
 
     _action_method = "estimate"
+    rotations: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
-    def estimate(self: BaseType, data: Dataset, event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def estimate(
+        self: BaseType,
+        data: Dataset,
+        event_list: StrideList,
+        rotations: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
+        sampling_rate_hz: float,
+    ) -> BaseType:
         """Estimate position relative to first sample by using sensor data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
+    @staticmethod
+    def rotate_stride(acc: pd.DataFrame, rots: pd.DataFrame) -> pd.DataFrame:
+        if len(acc) != len(rots):
+            raise ValueError("The number of rotations must fit the number of samples in acceleration data!")
+        acc_out = []
+        for i_row, i_acc in acc.reset_index(drop=True).iterrows():
+            rotated_data = Rotation(rots.iloc[i_row]).apply(i_acc.values)
+            acc_out.append(rotated_data)
+        return pd.DataFrame(acc_out, columns=SF_ACC, index=acc.index)
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):
     """Base class for temporal parameters calculation."""
