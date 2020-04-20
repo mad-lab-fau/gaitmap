@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 import pytest
+from pandas._testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_COLS, SF_GYR, SF_ACC, BF_COLS, BF_GYR, BF_ACC
 from gaitmap.utils.dataset_helper import (
@@ -14,6 +15,7 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    set_correct_index,
 )
 
 
@@ -257,3 +259,51 @@ class TestIsMultiSensorStrideList:
 
         with pytest.raises(ValueError):
             is_multi_sensor_stride_list(valid, stride_type="invalid_value")
+
+
+class TestSetCorrectIndex:
+    def test_no_change_needed(self):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        assert_frame_equal(df, set_correct_index(df, index_names))
+
+    @pytest.mark.parametrize("level", (0, 1, [0, 1]))
+    def test_cols_to_index(self, level):
+        """Test what happens if one or multiple of the expected index cols are normal cols."""
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        reset_df = df.reset_index(level=level)
+
+        out = set_correct_index(reset_df, index_names)
+
+        assert out.index.names == index_names
+        # Nothing was changed besides setting the index
+        assert_frame_equal(df, out)
+
+    def test_col_does_not_exist(self):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        with pytest.raises(KeyError):
+            set_correct_index(df, ["does_not_exist", *index_names])
+
+    @pytest.mark.parametrize("drop_additional", (True, False))
+    def test_additional_index_col(self, drop_additional):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        expected = ["t1", "c"]
+        out = set_correct_index(df, expected, drop_false_index_cols=drop_additional)
+
+        assert out.index.names == expected
+        assert ("t2" in out.columns) is not drop_additional

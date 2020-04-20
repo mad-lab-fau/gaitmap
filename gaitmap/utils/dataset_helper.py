@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List, Sequence
+from typing import Union, Dict, List, Sequence, Iterable
 
 import numpy as np
 import pandas as pd
@@ -295,7 +295,9 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     """Check if an input is a single-sensor position list.
 
     A valid position list:
-    - is a pandas Dataframe with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
+    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+      `["pos_x", "pos_y", "pos_z"]`
 
     Parameters
     ----------
@@ -311,8 +313,12 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     if not isinstance(position_list, pd.DataFrame):
         return False
 
+    try:
+        position_list = set_correct_index(position_list, ["s_id", "sample"])
+    except KeyError:
+        return False
     columns = position_list.columns
-    expected_columns = ["s_id", "sample", "pos_x", "pos_y", "pos_z"]
+    expected_columns = ["pos_x", "pos_y", "pos_z"]
     if not all(v in columns for v in expected_columns):
         return False
     return True
@@ -355,7 +361,9 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     """Check if an input is a single-sensor orientation list.
 
     A valid orientation list:
-    - is a pandas Dataframe with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
+    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+      `["qx", "qy", "qz", "qw"]`
 
     Parameters
     ----------
@@ -370,9 +378,12 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     # TODO: Test
     if not isinstance(orientation_list, pd.DataFrame):
         return False
-
+    try:
+        orientation_list = set_correct_index(orientation_list, ["s_id", "sample"])
+    except KeyError:
+        return False
     columns = orientation_list.columns
-    expected_columns = ["s_id", "sample", "qx", "qy", "qz", "qw"]
+    expected_columns = ["qx", "qy", "qz", "qw"]
     if not all(v in columns for v in expected_columns):
         return False
     return True
@@ -409,3 +420,17 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
         if not is_single_sensor_orientation_list(orientation_list[k]):
             return False
     return True
+
+
+def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_cols: bool = True) -> pd.DataFrame:
+    if list(index_cols) == df.index.names:
+        return df
+    # Find index cols that should not be there
+    wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]
+    df_just_right_index = df.reset_index(level=wrong_index, drop=drop_false_index_cols)
+
+    drop = False
+    if len(wrong_index) == len(df.index.names):
+        # In case all cols got dropped, a new range index was generated, which we need to remove again
+        drop = True
+    return df_just_right_index.reset_index(drop=drop).set_index(index_cols)
