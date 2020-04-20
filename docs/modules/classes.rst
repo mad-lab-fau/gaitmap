@@ -253,13 +253,6 @@ Functions
     convert_to_fbf
 
 
-:mod:`gaitmap.utils.consts`: Global constants
-=============================================
-
-.. automodule:: gaitmap.utils.consts
-    :member-order: bysource
-
-
 :mod:`gaitmap.utils.static_moment_detection`: Helper to find static moments in sensor signals
 =============================================================================================
 
@@ -269,14 +262,21 @@ Functions
 
 Functions
 ---------
-.. currentmodule:: gaitmap
+.. currentmodule:: gaitmap.utils.static_moment_detection
 
 .. autosummary::
    :toctree: generated/
    :template: function.rst
 
-    utils.static_moment_detection.find_static_samples
-    utils.static_moment_detection.find_static_sequences
+    find_static_samples
+    find_static_sequences
+
+
+:mod:`gaitmap.utils.consts`: Global constants
+=============================================
+
+.. automodule:: gaitmap.utils.consts
+    :member-order: bysource
 
 
 :mod:`gaitmap.example_data`: Helper to load some example data
