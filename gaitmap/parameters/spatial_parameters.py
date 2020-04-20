@@ -24,7 +24,8 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorOrientationList,
     MultiSensorOrientationList,
     is_single_sensor_orientation_list,
-    is_multi_sensor_orientation_list, set_correct_index,
+    is_multi_sensor_orientation_list,
+    set_correct_index,
 )
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
@@ -120,7 +121,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Returns
         -------
         self
-            The class instance with spatial parameters populated in parameters_
+            The class instance with spatial parameters populated in `self.parameters_`
 
         """
         self.stride_event_list = stride_event_list
@@ -171,6 +172,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         -------
         parameters_
             Data frame containing spatial parameters of single sensor
+        sole_angle_course_
+            The sole angle in the sagttial plane for each stride
 
         """
         positions = set_correct_index(positions, ["s_id", "sample"])[SF_POS]
@@ -225,6 +228,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         -------
         parameters_
             Data frame containing spatial parameters of single sensor
+        sole_angle_course_
+            The sole angle in the sagttial plane for each stride
 
         """
         parameters_ = {}

@@ -50,7 +50,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Returns
         -------
         self
-            The class instance with temporal parameters populated in parameters_
+            The class instance with temporal parameters populated in `self.parameters_`
 
         """
         self.sampling_rate_hz = sampling_rate_hz

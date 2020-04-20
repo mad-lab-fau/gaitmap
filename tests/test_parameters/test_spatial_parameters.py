@@ -128,8 +128,11 @@ class TestIndividualParameter:
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
 
     def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle):
-        assert_series_equal(_calc_turning_angle(single_sensor_orientation_list_with_index),
-                            single_sensor_turning_angle, check_exact=False)
+        assert_series_equal(
+            _calc_turning_angle(single_sensor_orientation_list_with_index),
+            single_sensor_turning_angle,
+            check_exact=False,
+        )
 
     def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course):
         assert_series_equal(

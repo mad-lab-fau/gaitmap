@@ -1,4 +1,8 @@
-"""A set of helper functions for find_shortest_rotation."""
+"""A set of helper functions to handle common vector operations.
+
+Wherever possible, these functions are designed to handle multiple vectors at the same time to perform efficient
+computations.
+"""
 from typing import Union
 
 import numpy as np
@@ -12,58 +16,6 @@ def row_wise_dot(v1, v2, squeeze=False):
     if squeeze:
         return np.squeeze(out)
     return out
-
-
-def inverse(v: np.array) -> np.array:
-    """Find inverse quaternion.
-
-    Parameters
-    ----------
-    v
-        vector with shape (4,)
-
-    Returns
-    -------
-    inverse of quaternion
-
-    Examples
-    --------
-     >>> inverse(np.array([0, 1, 0, 0])))
-    array([0, -1, 0, 0 ])
-
-    """
-    s = v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]
-    return np.array([v[0] / s, -v[1] / s, -v[2] / s, -v[3] / s])
-
-
-def inner_product(v1: np.array, v2: np.array) -> np.array:
-    """Find Product of two quaternions.
-
-    Parameters
-    ----------
-    v1
-        vector with shape (4,)
-    v2
-        vector with shape (4,)
-
-    Returns
-    -------
-    product of two quaternions
-
-    Examples
-    --------
-    >>> inner_product(np.array([0, 1, 0, 0]), np.array([1, 0, 0, 0]))
-    array([0, 1, 0, 0 ])
-
-    """
-    return np.array(
-        [
-            v1[0] * v2[0] - v1[1] * v2[1] - v1[2] * v2[2] - v1[3] * v2[3],
-            v1[0] * v2[1] + v1[1] * v2[0] + v1[2] * v2[3] - v1[3] * v2[2],
-            v1[0] * v2[2] - v1[1] * v2[3] + v1[2] * v2[0] + v1[3] * v2[1],
-            v1[0] * v2[3] + v1[1] * v2[2] - v1[2] * v2[1] + v1[3] * v2[0],
-        ]
-    )
 
 
 def is_almost_parallel_or_antiparallel(

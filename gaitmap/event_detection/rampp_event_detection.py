@@ -41,7 +41,7 @@ class RamppEventDetection(BaseEventDetection):
     ----------
     stride_events_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides. Formatted
-        as pandas DataFrame. The stride borders for the stride_events_ are aligned with the min_vel samples. Hence,
+        as pandas DataFrame. The stride borders for the stride_events are aligned with the min_vel samples. Hence,
         the start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds
         to the min_vel sample of the subsequent stride.
     start_ : 1D array or dictionary with such values

@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 from numpy.linalg import norm
 from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_almost_equal
 
@@ -8,8 +8,6 @@ from gaitmap.utils.vector_math import (
     find_orthogonal,
     normalize,
     is_almost_parallel_or_antiparallel,
-    inverse,
-    inner_product,
 )
 
 
@@ -110,19 +108,3 @@ class TestFindOrthogonal:
         v2 = np.array(4 * [[0, 1, 0]])
         with pytest.raises(ValueError):
             find_orthogonal(v1, v2)
-
-
-class TestInverse:
-    """Test the function `inverse`."""
-
-    def test_inverse(self):
-        """Test inverse of quaternion."""
-        assert_array_equal(inverse(np.array([0, 1, 0, 0])), np.array([0, -1, 0, 0]))
-
-
-class TestInnerProduct:
-    """Test the function `inner_product`."""
-
-    def test_inner_product(self):
-        """Test product of two quaternion."""
-        assert_array_equal(inner_product(np.array([0, 1, 0, 0]), np.array([1, 0, 0, 0])), np.array([0, 1, 0, 0]))

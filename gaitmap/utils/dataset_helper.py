@@ -177,6 +177,7 @@ def is_single_sensor_stride_list(
     """Check if an input is a single-sensor stride list.
 
     A valid stride list:
+
     - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
     - has only a single level column index
 
@@ -295,6 +296,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     """Check if an input is a single-sensor position list.
 
     A valid position list:
+
     - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
     - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
       `["pos_x", "pos_y", "pos_z"]`
@@ -361,6 +363,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     """Check if an input is a single-sensor orientation list.
 
     A valid orientation list:
+
     - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
     - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
       `["qx", "qy", "qz", "qw"]`
@@ -423,6 +426,19 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
 
 
 def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_cols: bool = True) -> pd.DataFrame:
+    """Set the correct columns as index, or leave them if they are already in the index.
+
+    Parameters
+    ----------
+    df
+        The dataframe
+    index_cols
+        A list of names that correspond to the names of the multiindex level names (in order)
+    drop_false_index_cols
+        If True columns that are set as index in df, but shouldn't will be deleted.
+        If False these columns will just be removed from the index and become regular df columns.
+
+    """
     if list(index_cols) == df.index.names:
         return df
     # Find index cols that should not be there

@@ -168,10 +168,13 @@ Functions
     rotate_dataset
     find_shortest_rotation
     get_gravity_rotation
+    find_unsigned_3d_angle
+    find_angle_between_orientations
+    find_rotation_around_axis
 
 
-:mod:`gaitmap.utils.vector_math`: Helper functions for finding shortest rotation
-================================================================================
+:mod:`gaitmap.utils.vector_math`: Helper functions to deal with mathematical Vectors
+====================================================================================
 
 .. automodule:: gaitmap.utils.vector_math
     :no-members:
@@ -189,9 +192,6 @@ Functions
     normalize
     find_random_orthogonal
     find_orthogonal
-    find_unsigned_3d_angle
-    inner_product
-    inverse
 
 
 :mod:`gaitmap.utils.array_handling`: Helper to perform various array modifications
@@ -236,6 +236,11 @@ Functions
     get_multi_sensor_dataset_names
     is_single_sensor_stride_list
     is_multi_sensor_stride_list
+    is_single_sensor_orientation_list
+    is_multi_sensor_orientation_list
+    is_single_sensor_position_list
+    is_multi_sensor_position_list
+    set_correct_index
 
 
 :mod:`gaitmap.utils.coordinate_conversion`: Convert axes from sensor frame to body frame
