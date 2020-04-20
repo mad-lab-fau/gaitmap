@@ -16,11 +16,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
+        rots = TestForwardBackwardIntegration.get_rotations(healthy_example_imu_data, healthy_example_stride_events,
+                                                            204.8)
         position = ForwardBackwardIntegration()
         position.estimate(
             healthy_example_imu_data["left_sensor"],
             healthy_example_stride_events["left_sensor"].iloc[:2],
-            sampling_rate_hz=1,
+            rots["left_sensor"],
+            sampling_rate_hz=204.8
         )
         return position
 

@@ -43,6 +43,9 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0).
     steepness
         Steepness of the sigmoid function to weight forward and backward integral.
+    subtract_gravity
+        Subtract gravity after transforming strides into world frame coordinates.
+        # TODO: link to gravity, when it has been exported to consts
 
     Other Parameters
     ----------------
