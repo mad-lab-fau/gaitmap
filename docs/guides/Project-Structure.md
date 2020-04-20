@@ -83,8 +83,9 @@ From the guide:
 - The `__init__` of each class should only be there to set parameters. No parameter validation or any functionality 
   should be performed here.
 - No actual data should be passed to the `__init__`. Think of it as configuring the algorithm.
-- Defaults for parameters should be provided in the `__init__`
-- The names of the class attributes should be identical with the names used in the `__init__`.
+- Defaults for **all** parameters should be provided in the `__init__`.
+- The names of the class attributes should be identical to the parameter names used in the `__init__`
+  (i.e. the init should contain statements like: `self.parameter_name = parameter_name`).
 - All parameters that are not directly depended on the input data, should be set in the `__init__` and not in the
   *action* method (see below).
   This also includes parameters that should be adapted based on the data, but can theoretically estimated without having
