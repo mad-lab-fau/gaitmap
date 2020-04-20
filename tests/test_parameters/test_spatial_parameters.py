@@ -97,8 +97,8 @@ def single_sensor_turning_angle():
 def single_sensor_sole_angle_course():
     index = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     sample = [0, 1, 2, 0, 1, 2, 0, 1, 2]
-    index = pd.MultiIndex.from_arrays([index, sample], names=['s_id', 'sample'])
-    angle = [0, -90., 0, 0, 0, 0, 0, 0, 0]
+    index = pd.MultiIndex.from_arrays([index, sample], names=["s_id", "sample"])
+    angle = [0, -90.0, 0, 0, 0, 0, 0, 0, 0]
     return pd.Series(angle, index=index)
 
 
@@ -139,14 +139,18 @@ class TestIndividualParameter:
 class TestSpatialParameterCalculation:
     """Test temporal parameters calculation."""
 
+    parameters = ["stride_length", "gait_velocity", "ic_angle", "tc_angle", "turning_angle", "arc_length"]
+
     def test_single_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
         """Test calculate spatial parameters for single sensor """
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
-        # TODO: Make into actual test
-        return None
+        # Test that all parameters are at least theoretically calculated
+        assert set(t.parameters_.columns) == set(self.parameters)
+        assert len(t.parameters_) == len(single_sensor_stride_list)
+        assert len(t.sole_angle_course_) == len(single_sensor_orientation_list)
 
     def test_multiple_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
@@ -157,4 +161,12 @@ class TestSpatialParameterCalculation:
         orientation_list = {"sensor1": single_sensor_orientation_list, "sensor2": single_sensor_orientation_list}
         t = SpatialParameterCalculation()
         t.calculate(stride_events_list, position_list, orientation_list, 100)
-        # TODO: make into actual test
+        assert isinstance(t.parameters_, dict)
+        assert set(t.parameters_.keys()) == {"sensor1", "sensor2"}
+        for sensor in t.parameters_.values():
+            assert set(sensor.columns) == set(self.parameters)
+            assert len(sensor) == len(single_sensor_stride_list)
+        assert isinstance(t.sole_angle_course_, dict)
+        assert set(t.sole_angle_course_.keys()) == {"sensor1", "sensor2"}
+        for sensor in t.sole_angle_course_.values():
+            assert len(sensor) == len(single_sensor_orientation_list)
