@@ -1,36 +1,51 @@
 """Provide some example data to be used in simple tests.
 
-The data is either taken from the local filesystem in case gaitlab was manually installed or downloaded from gitlab.
+The example data provides short sample data from foot mounted IMUs as well as calculated references from a camera based
+Motion capture system for 2x20m walk test of a healthy subject.
+
+The data is either taken from the local filesystem in case gaitlab was manually installed or you are asked to
+download the data manually.
 """
 
-from importlib.resources import open_text
 from pathlib import Path
 
 import pandas as pd
 
-import example_data
-
-LOCAL_EXAMPLE_PATH_FILE = Path(__file__).parent.parent / "example_data/"
+LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
+PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
+GITLAB_FOLDER_PATH = (
+    "https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap/-/raw/master/example_data/{}?inline=false"
+)
 
 
 def _is_manual_installed() -> bool:
-    return (LOCAL_EXAMPLE_PATH_FILE / "__init__.py").is_file()
+    return (LOCAL_EXAMPLE_PATH / "__init__.py").is_file()
 
 
-def get_data(filename: str) -> str:
+def _get_data(filename: str) -> str:
     if _is_manual_installed():
-        return LOCAL_EXAMPLE_PATH_FILE / filename
+        return LOCAL_EXAMPLE_PATH / filename
+    if (PC_EXAMPLE_PATH / filename).is_file():
+        return str(PC_EXAMPLE_PATH / filename)
+    gitlab_path = GITLAB_FOLDER_PATH.format(filename)
+    raise ValueError(
+        "The gaitlab Python package does not contain the example data to save space. "
+        'Please dowload the example folder manually from "{}" and place its content in the folder "{}". '
+        'If the folder does not exist create it. Note the "." in front of the folder name.'.format(
+            gitlab_path, PC_EXAMPLE_PATH
+        )
+    )
 
 
 def get_healthy_example_imu_data():
-    """Example IMU data from a healthy subject doing a 2x20m gait test.
+    """Get example IMU data from a healthy subject doing a 2x20m gait test.
 
     The sampling rate is 204.8 Hz
 
     For expected results see:
         - :ref:`healthy_example_stride_borders`
     """
-    test_data_path = get_data("imu_sample.csv")
+    test_data_path = _get_data("imu_sample.csv")
     data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)
 
     # Get index in seconds
@@ -39,11 +54,11 @@ def get_healthy_example_imu_data():
 
 
 def get_healthy_example_stride_borders():
-    """Hand labeled stride borders for :ref:`healthy_example_imu_data`.
+    """Get hand labeled stride borders for :ref:`healthy_example_imu_data`.
 
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
-    test_data_path = get_data("stride_borders_sample.csv")
+    test_data_path = _get_data("stride_borders_sample.csv")
     data = pd.read_csv(test_data_path, header=0)
 
     # Convert to dict with sensor name as key.
@@ -57,13 +72,13 @@ def get_healthy_example_stride_borders():
 
 
 def get_healthy_example_mocap_data():
-    """3D Mocap information of the foot synchronised with :ref:`healthy_example_imu_data`.
+    """Get 3D Mocap information of the foot synchronised with :ref:`healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
-    test_data_path = get_data("mocap_sample.csv")
+    test_data_path = _get_data("mocap_sample.csv")
     data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)
 
     # Get index in seconds
@@ -72,7 +87,7 @@ def get_healthy_example_mocap_data():
 
 
 def get_healthy_example_stride_events():
-    """Gait events extracted based on mocap data.
+    """Get gait events extracted based on mocap data.
 
     The gait events are extracted based on the mocap data. but are converted to fit the indices of
     `healthy_example_imu_data`.
@@ -82,7 +97,7 @@ def get_healthy_example_stride_events():
 
     This fixture returns a dictionary of stridelists, where the key is the sensor name.
     """
-    test_data_path = get_data("stride_events_sample.csv")
+    test_data_path = _get_data("stride_events_sample.csv")
     data = pd.read_csv(test_data_path, header=0)
 
     # Convert to dict with sensor name as key.
@@ -95,7 +110,7 @@ def get_healthy_example_stride_events():
 
 
 def get_healthy_example_orientation():
-    """Foot orientation calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+    """Get foot orientation calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
@@ -103,7 +118,7 @@ def get_healthy_example_orientation():
 
     This fixture returns a dictionary, where the key is the sensor name.
     """
-    test_data_path = get_data("orientation_sample.csv")
+    test_data_path = _get_data("orientation_sample.csv")
     data = pd.read_csv(test_data_path, header=0, index_col=[0, 1, 2])
 
     # Convert to dict with sensor name as key.
@@ -113,7 +128,7 @@ def get_healthy_example_orientation():
 
 
 def get_healthy_example_position():
-    """Foot position calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+    """Get foot position calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
@@ -122,7 +137,7 @@ def get_healthy_example_position():
 
     This fixture returns a dictionary, where the key is the sensor name.
     """
-    test_data_path = get_data("position_sample.csv")
+    test_data_path = _get_data("position_sample.csv")
     data = pd.read_csv(test_data_path, header=0, index_col=[0, 1, 2])
 
     # Convert to dict with sensor name as key.
