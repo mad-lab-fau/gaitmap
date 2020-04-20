@@ -176,7 +176,7 @@ for sensor, short in [("left_sensor", "L"), ("right_sensor", "R")]:
     forward_vector = normalize((test_mocap[f"{short}_FCC"] - test_mocap[f"{short}_TOE"]).to_numpy())
     sidewards = np.cross(normal_vectors, forward_vector, axis=1)
     rot_mat = np.hstack([forward_vector, sidewards, normal_vectors]).reshape((-1, 3, 3))
-    ori = pd.DataFrame(Rotation.from_matrix(rot_mat).inv().as_quat(), columns=["q_x", "q_y", "q_z", "q_w"])
+    ori = pd.DataFrame(Rotation.from_matrix(rot_mat).inv().as_quat(), columns=["qx", "qy", "qz", "qw"])
     ori_per_stride = dict()
     pos_per_stride = dict()
     for _, s in test_events.iterrows():

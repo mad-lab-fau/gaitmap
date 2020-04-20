@@ -170,3 +170,17 @@ class TestSpatialParameterCalculation:
         assert set(t.sole_angle_course_.keys()) == {"sensor1", "sensor2"}
         for sensor in t.sole_angle_course_.values():
             assert len(sensor) == len(single_sensor_orientation_list)
+
+class TestSpatialParameterRegression:
+    def test_regression_on_example_data(self, healthy_example_orientation, healthy_example_position,
+                                        healthy_example_stride_events, snapshot):
+        healthy_example_orientation = healthy_example_orientation['left_sensor']
+        healthy_example_position = healthy_example_position['left_sensor']
+        healthy_example_stride_events = healthy_example_stride_events['left_sensor']
+
+        # Convert stride list back to mocap samples:
+        healthy_example_stride_events[['start', 'end', 'tc', 'ic', 'min_vel']] *= 100 / 204.8
+        t = SpatialParameterCalculation()
+        t.calculate(healthy_example_stride_events, healthy_example_position, healthy_example_orientation, 100)
+        snapshot.assert_match(t.parameters_)
+
