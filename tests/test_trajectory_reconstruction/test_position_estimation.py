@@ -45,8 +45,12 @@ class TestForwardBackwardIntegration:
         # get dummy event list for one stride
         event_list = self._get_dummy_event_list(dummy_data)
 
+        # don't rotate data
+        rots = pd.DataFrame([[0, 0, 0, 0, 1]]*(len(dummy_data)-self.start_sample), columns=["s_id", "qx", "qy", "qz",
+                                                                                         "qw"])
+        rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
-        position.estimate(dummy_data, event_list, fs)
+        position.estimate(dummy_data, event_list, rots, fs)
 
         # is the result nearly equal to zero?
         np.testing.assert_array_almost_equal([0, 0, 0], position.estimated_velocity_.iloc[-1])
@@ -87,8 +91,9 @@ class TestForwardBackwardIntegration:
         """Test if the output format is as expected for a single sensor"""
         data_left = healthy_example_imu_data["left_sensor"]
         events_left = healthy_example_stride_events["left_sensor"]
+        rots = self.get_rotations(data_left, events_left, 204.8)
         position = ForwardBackwardIntegration()
-        position.estimate(data_left, events_left, 204.8)
+        position.estimate(data_left, events_left, rots, 204.8)
         vel = position.estimated_velocity_
         pos = position.estimated_position_
         assert isinstance(vel, pd.DataFrame)
@@ -99,8 +104,9 @@ class TestForwardBackwardIntegration:
     def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         data = healthy_example_imu_data
         stride_events = healthy_example_stride_events
+        rots = self.get_rotations(data, stride_events, 204.8)
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_events, 204.8)
+        position.estimate(data, stride_events, rots, 204.8)
         # Only comparing the first stride of pos, to keep the snapshot size manageable
         first_left = stride_events["left_sensor"].iloc[0]["s_id"]
         first_right = stride_events["right_sensor"].iloc[0]["s_id"]
@@ -111,8 +117,9 @@ class TestForwardBackwardIntegration:
         """Test if the output format is as expected for multi sensor"""
         data = healthy_example_imu_data
         stride_events = healthy_example_stride_events
+        rots = self.get_rotations(data, stride_events, 204.8)
         position = ForwardBackwardIntegration()
-        position.estimate(data, stride_events, 204.8)
+        position.estimate(data, stride_events, rots, 204.8)
         vel = position.estimated_velocity_
         pos = position.estimated_position_
         assert isinstance(vel, dict)
@@ -126,14 +133,17 @@ class TestForwardBackwardIntegration:
         events = []
         position = ForwardBackwardIntegration(0.6, 0.08)
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
-            position.estimate(data, events, 204.8)
+            position.estimate(data, events, [], 204.8)
 
     @pytest.mark.parametrize("turning_point", (-0.1, 1.1))
     def test_bad_turning_point(self, turning_point: float, healthy_example_imu_data, healthy_example_stride_events):
         """Test if error is raised correctly on invalid input variable range"""
+        data = healthy_example_imu_data
+        stride_events = healthy_example_stride_events
+        rots = self.get_rotations(data, stride_events, 204.8)
         with pytest.raises(ValueError, match=r"Turning point must be in the rage of 0.0 to 1.0"):
             position = ForwardBackwardIntegration(turning_point, 0.08)
-            position.estimate(healthy_example_imu_data, healthy_example_stride_events, 204.8)
+            position.estimate(data, stride_events, rots, 204.8)
 
     def _get_dummy_data(self, length, style: str):
         dummy = np.linspace(0, 1, length)
