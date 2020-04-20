@@ -46,8 +46,9 @@ class TestForwardBackwardIntegration:
         event_list = self._get_dummy_event_list(dummy_data)
 
         # don't rotate data
-        rots = pd.DataFrame([[0, 0, 0, 0, 1]]*(len(dummy_data)-self.start_sample), columns=["s_id", "qx", "qy", "qz",
-                                                                                         "qw"])
+        rots = pd.DataFrame(
+            [[0, 0, 0, 0, 1]] * (len(dummy_data) - self.start_sample), columns=["s_id", "qx", "qy", "qz", "qw"]
+        )
         rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
         position.estimate(dummy_data, event_list, rots, fs)
@@ -67,9 +68,12 @@ class TestForwardBackwardIntegration:
         events = self._get_dummy_event_list(data)
         np.linspace(0, 1, len(data))
         sampling_frequency_hz = 100
-
+        rots = pd.DataFrame(
+            [[0, 0, 0, 0, 1]] * (len(data) - self.start_sample), columns=["s_id", "qx", "qy", "qz", "qw"]
+        )
+        rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
-        position.estimate(data, events, sampling_frequency_hz)
+        position.estimate(data, events, rots, sampling_frequency_hz)
         # TODO: use different test data, where just vertical will be zero
         final_position = position.estimated_position_.iloc[-1]
         np.testing.assert_almost_equal(final_position[2], 0)
