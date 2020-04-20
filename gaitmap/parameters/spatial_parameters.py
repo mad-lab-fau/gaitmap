@@ -1,6 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015."""
-import math
-from typing import Union, Dict
+from typing import Union, Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType, BaseSpatialParameterCalculation
 from gaitmap.parameters.temporal_parameters import calc_stride_time
-from gaitmap.utils import vector_math
+from gaitmap.utils.consts import SF_POS
 from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
@@ -38,6 +37,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     parameters_
         Data frame containing spatial parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
+        It has the same structure as the provided stride list
+    sole_angle_course_
+        The sole angle of all strides over time.
+        It has the same structure as the provided position list.
+
 
     Other Parameters
     ----------------
@@ -52,6 +56,32 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     Notes
     -----
+    Stride Length
+        The stride length is calculated based on the pythagoras in the floor plane (x, y - plane)
+    Gait Velocity
+        The gait velocity is calculated by dividing the stride length by the stride time.
+        Note, that the stride time is calculated from `pre_ic` to `ic` if a `min_vel` type stride list is provided.
+        The stride is estimated based on the position at the `start` and the `end` of a stride.
+        This means these two measures are calculated from different time periods which might lead to errors in
+        certain edge cases.
+    Arc Length
+        The overall arc length is directly calculated from the position of the sensor by adding the absolute changes in
+        position at every time point.
+    Turning Angle
+        The turning angle is calculated as the difference in orientation of the forward direction between the first
+        and the last sample of each stride.
+        Only the rotation around the z-axis (upwards) is considered.
+        A turn to the left results in a positive and a turn to the right in a negative turning angle independent of
+        the foot.
+    IC/TC Angle and angle course
+        All angles are calculated as the angle between the forward direction ([1, 0, 0] from the sensor frame
+        transformed into the world frame, using the provided orientations) and the floor.
+        The angle is positive if the vector is pointing upwards (i.e. the toe is higher than the heel) and negative
+        if the angle is pointing downwards (i.e. the heel is higher than the toe), following the convetion in [1]_.
+        The sole angle is assumed to be 0 during midstance.
+        The IC and TC angles are simply the sole angles at the respective time points.
+
+
     .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
        Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
        In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)
@@ -60,6 +90,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    sole_angle_course_: PositionList
 
     stride_event_list: StrideList
     positions: PositionList
@@ -101,7 +132,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             and is_single_sensor_position_list(positions)
             and is_single_sensor_orientation_list(orientations)
         ):
-            self.parameters_ = self._calculate_single_sensor(
+            self.parameters_, self.sole_angle_course_ = self._calculate_single_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         elif (
@@ -109,7 +140,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             and is_multi_sensor_position_list(positions)
             and is_multi_sensor_orientation_list(orientations)
         ):
-            self.parameters_ = self._calculate_multiple_sensor(
+            self.parameters_, self.sole_angle_course_ = self._calculate_multiple_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         else:
@@ -122,8 +153,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         positions: SingleSensorPositionList,
         orientations: SingleSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> pd.DataFrame:
-        """Find spatial parameters  of each stride in case of single sensor.
+    ) -> Tuple[pd.DataFrame, pd.Series]:
+        """Find spatial parameters of each stride in case of single sensor.
 
         Parameters
         ----------
@@ -142,8 +173,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             Data frame containing spatial parameters of single sensor
 
         """
-        # TODO: Ensure that orientations and postion columns are in the right order
-        positions = positions.set_index(("s_id", "sample"))
+        positions = positions.set_index(["s_id", "sample"])[SF_POS]
+        orientations = orientations.set_index(["s_id", "sample"])[["qx", "qy", "qz", "qw"]]
+        stride_event_list = stride_event_list.set_index("s_id")
+
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
             stride_length_, calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
@@ -151,30 +184,22 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)
 
-        angle_course_ = _compute_sagittal_angle_course(
-            orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1]
-        )
-        ic_relative = stride_event_list["ic"] - stride_event_list["start"]
-        tc_relative = stride_event_list["tc"] - stride_event_list["start"]
-        ic_clearance_ = _calc_ic_clearance(pos_y[1], angle_course_, ic_relative[1])
-        tc_clearance_ = _calc_tc_clearance(pos_y[1], angle_course_, tc_relative[1])
-        ic_angle_ = _calc_ic_angle(angle_course_, ic_relative[1])
-        tc_angle_ = _calc_tc_angle(angle_course_, tc_relative[1])
-        turning_angle_ = _calc_turning_angle(orientation_x[1], orientation_y[1], orientation_z[1], orientation_w[1])
+        angle_course_ = _compute_sole_angle_course(orientations)
+        ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
+        tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype(int)
+        ic_angle_ = _get_angle_at_index(angle_course_, ic_relative)
+        tc_angle_ = _get_angle_at_index(angle_course_, tc_relative)
 
         stride_parameter_dict = {
-            "s_id": stride_id_,
             "stride_length": stride_length_,
             "gait_velocity": gait_velocity_,
-            "ic_clearance": ic_clearance_,
-            "tc_clearance": tc_clearance_,
             "ic_angle": ic_angle_,
             "tc_angle": tc_angle_,
             "turning_angle": turning_angle_,
             "arc_length": arc_length_,
         }
-        parameters_ = pd.DataFrame(stride_parameter_dict)
-        return parameters_
+        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
+        return parameters_, angle_course_
 
     def _calculate_multiple_sensor(
         self: BaseType,
@@ -182,7 +207,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         positions: MultiSensorPositionList,
         orientations: MultiSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.Series]]:
         """Find spatial parameters of each stride in case of multiple sensors.
 
         Parameters
@@ -203,11 +228,12 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         """
         parameters_ = {}
+        sole_angle_course_ = {}
         for sensor in stride_event_list:
-            parameters_[sensor] = self._calculate_single_sensor(
+            parameters_[sensor], sole_angle_course_[sensor] = self._calculate_single_sensor(
                 stride_event_list[sensor], positions[sensor], orientations[sensor], sampling_rate_hz
             )
-        return parameters_
+        return parameters_, sole_angle_course_
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
@@ -222,36 +248,9 @@ def _calc_gait_velocity(stride_length: pd.Series, stride_time: pd.Series) -> pd.
     return stride_length / stride_time
 
 
-def _calc_ic_clearance(pos_y: np.array, angle_course: np.array, ic_relative: int) -> np.array:
-    sensor_lift_ic = pos_y[int(ic_relative)]
-    l_ic = sensor_lift_ic / math.sin(angle_course[int(ic_relative)])
-    ic_clearance = []
-    sensor_clearance = pos_y
-    for i, _ in enumerate(pos_y):
-        sgn = np.sign(angle_course[i])
-        delta_ic = sgn * l_ic * math.sin(angle_course[i])
-        ic_clearance.append(-sensor_clearance[i] + sgn * delta_ic)
-    return ic_clearance
-
-
-def _calc_tc_clearance(pos_y: np.array, angle_course: np.array, tc_relative: int) -> np.array:
-    sensor_lift_tc = pos_y[int(tc_relative)]
-    l_tc = sensor_lift_tc / math.sin(angle_course[int(tc_relative)])
-    tc_clearance = []
-    sensor_clearance = pos_y
-    for i, _ in enumerate(pos_y):
-        sgn = np.sign(angle_course[i])
-        delta_tc = sgn * l_tc * math.sin(angle_course[i])
-        tc_clearance.append(-sensor_clearance[i] + sgn * delta_tc)
-    return tc_clearance
-
-
-def _calc_ic_angle(angle_course: np.array, ic_relative: int) -> float:
-    return -np.rad2deg(angle_course[int(ic_relative)])
-
-
-def _calc_tc_angle(angle_course: np.array, tc_relative: int) -> float:
-    return -np.rad2deg(angle_course[int(tc_relative)])
+def _get_angle_at_index(angle_course: np.array, index_per_stride: pd.Series) -> pd.Series:
+    indexer = pd.MultiIndex.from_frame(index_per_stride.reset_index())
+    return angle_course[indexer].reset_index(level=1, drop=True)
 
 
 def _calc_turning_angle(orientations) -> pd.Series:
@@ -261,9 +260,9 @@ def _calc_turning_angle(orientations) -> pd.Series:
         np.rad2deg(
             find_angle_between_orientations(
                 Rotation.from_quat(end.to_numpy()), Rotation.from_quat(start.to_numpy()), [0, 0, 1]
-            ),
-            index=start.index,
-        )
+            )
+        ),
+        index=start.index,
     )
     return angles
 
