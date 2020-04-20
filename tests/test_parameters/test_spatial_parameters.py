@@ -98,7 +98,7 @@ def single_sensor_sole_angle_course():
     index = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     sample = [0, 1, 2, 0, 1, 2, 0, 1, 2]
     index = pd.MultiIndex.from_arrays([index, sample], names=["s_id", "sample"])
-    angle = [0, -90.0, 0, 0, 0, 0, 0, 0, 0]
+    angle = [0, 90.0, 0, 0, 0, 0, 0, 0, 0]
     return pd.Series(angle, index=index)
 
 
@@ -128,7 +128,8 @@ class TestIndividualParameter:
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
 
     def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle):
-        assert_series_equal(_calc_turning_angle(single_sensor_orientation_list_with_index), single_sensor_turning_angle)
+        assert_series_equal(_calc_turning_angle(single_sensor_orientation_list_with_index),
+                            single_sensor_turning_angle, check_exact=False)
 
     def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course):
         assert_series_equal(
@@ -171,16 +172,17 @@ class TestSpatialParameterCalculation:
         for sensor in t.sole_angle_course_.values():
             assert len(sensor) == len(single_sensor_orientation_list)
 
+
 class TestSpatialParameterRegression:
-    def test_regression_on_example_data(self, healthy_example_orientation, healthy_example_position,
-                                        healthy_example_stride_events, snapshot):
-        healthy_example_orientation = healthy_example_orientation['left_sensor']
-        healthy_example_position = healthy_example_position['left_sensor']
-        healthy_example_stride_events = healthy_example_stride_events['left_sensor']
+    def test_regression_on_example_data(
+        self, healthy_example_orientation, healthy_example_position, healthy_example_stride_events, snapshot
+    ):
+        healthy_example_orientation = healthy_example_orientation["left_sensor"]
+        healthy_example_position = healthy_example_position["left_sensor"]
+        healthy_example_stride_events = healthy_example_stride_events["left_sensor"]
 
         # Convert stride list back to mocap samples:
-        healthy_example_stride_events[['start', 'end', 'tc', 'ic', 'min_vel']] *= 100 / 204.8
+        healthy_example_stride_events[["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
         t = SpatialParameterCalculation()
         t.calculate(healthy_example_stride_events, healthy_example_position, healthy_example_orientation, 100)
         snapshot.assert_match(t.parameters_)
-

@@ -24,7 +24,7 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorOrientationList,
     MultiSensorOrientationList,
     is_single_sensor_orientation_list,
-    is_multi_sensor_orientation_list,
+    is_multi_sensor_orientation_list, set_correct_index,
 )
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
@@ -173,9 +173,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             Data frame containing spatial parameters of single sensor
 
         """
-        positions = positions.set_index(["s_id", "sample"])[SF_POS]
-        orientations = orientations.set_index(["s_id", "sample"])[["qx", "qy", "qz", "qw"]]
-        stride_event_list = stride_event_list.set_index("s_id")
+        positions = set_correct_index(positions, ["s_id", "sample"])[SF_POS]
+        orientations = set_correct_index(orientations, ["s_id", "sample"])[["qx", "qy", "qz", "qw"]]
+        stride_event_list = set_correct_index(stride_event_list, ["s_id"])
 
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
@@ -287,6 +287,6 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     forward = pd.DataFrame(
         Rotation.from_quat(orientations.to_numpy()).apply([1, 0, 0]), columns=list("xyz"), index=orientations.index
     )
-    floor_angle = 90 - np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1])))
+    floor_angle = np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1]))) - 90
     floor_angle = pd.Series(floor_angle, index=forward.index)
     return floor_angle
