@@ -157,10 +157,10 @@ class BarthDtw(BaseDtw):
         return as_df[["s_id", "start", "end"]]
 
     def _postprocess_matches(
-        self, data, matches_start_end: np.ndarray, paths: List, acc_cost_mat: np.ndarray, to_keep: np.ndarray
+        self, data, matches_start_end: np.ndarray, paths: List, cost: np.ndarray, to_keep: np.ndarray
     ) -> Tuple[np.ndarray, List, np.ndarray]:
         matches_start_end, paths, to_keep = super()._postprocess_matches(
-            data=data, matches_start_end=matches_start_end, paths=paths, acc_cost_mat=acc_cost_mat, to_keep=to_keep
+            data=data, matches_start_end=matches_start_end, paths=paths, cost=cost, to_keep=to_keep
         )
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
@@ -174,15 +174,17 @@ class BarthDtw(BaseDtw):
         # Resolve strides that have the same start point
         # In case multiple strides have the same start point (after snapping) only take the one with lower cost
         if self.conflict_resolution:
+            # Only run calcs for strides that are not excluded already
             valid_indices = np.where(to_keep)[0]
-            cost = acc_cost_mat[-1, :]
-            starts = matches_start_end[valid_indices, 0].astype(float)
+            valid_matches_start_end = matches_start_end[valid_indices]
+            starts = valid_matches_start_end[:, 0].astype(float)
+            cost_per_valid_stride = cost[valid_indices]
             starts[~(np.diff(starts, prepend=np.inf) == 0)] = np.nan
             groups = np.ma.clump_unmasked(np.ma.masked_invalid(starts))
             for s in groups:
                 indices = np.arange(s.start - 1, s.stop)
-                keep = np.argmin(cost[matches_start_end[indices, 1]])
-                to_keep[indices] = False
-                to_keep[indices[keep]] = True
+                keep = np.argmin(cost_per_valid_stride[indices])
+                to_keep[valid_indices[indices]] = False
+                to_keep[valid_indices[indices[keep]]] = True
 
         return matches_start_end, paths, to_keep

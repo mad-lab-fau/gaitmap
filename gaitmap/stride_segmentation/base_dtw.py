@@ -340,15 +340,16 @@ class BaseDtw(BaseStrideSegmentation):
             costs_ = []
             matches_start_end_ = []
         else:
-            paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
+            paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
+            # Calculate cost before potential modifications are made to start and end
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
             to_keep = np.ones(len(matches_start_end_)).astype(bool)
             matches_start_end_, paths_, to_keep = self._postprocess_matches(
-                dataset, matches_start_end_, paths_, acc_cost_mat_, to_keep
+                dataset, matches_start_end_, paths_, costs_, to_keep
             )
             matches_start_end_ = matches_start_end_[to_keep]
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
-            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
             # TODO: Add warning in case there are still overlapping matches after the conflict resolution
         return acc_cost_mat_, paths_, costs_, matches_start_end_
 
@@ -357,7 +358,7 @@ class BaseDtw(BaseStrideSegmentation):
         data,  # noqa: unused-argument
         matches_start_end: np.ndarray,
         paths: List,
-        acc_cost_mat: np.ndarray,  # noqa: unused-argument
+        cost: np.ndarray,  # noqa: unused-argument
         to_keep: np.array,
     ) -> Tuple[np.ndarray, List, np.array]:
         """Apply postprocessing.
