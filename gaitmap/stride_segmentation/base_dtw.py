@@ -345,8 +345,8 @@ class BaseDtw(BaseStrideSegmentation):
             # Calculate cost before potential modifications are made to start and end
             costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
             to_keep = np.ones(len(matches_start_end_)).astype(bool)
-            matches_start_end_, paths_, to_keep = self._postprocess_matches(
-                dataset, matches_start_end_, paths_, costs_, to_keep
+            matches_start_end_, to_keep = self._postprocess_matches(
+                data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
             )
             matches_start_end_ = matches_start_end_[to_keep]
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
@@ -356,17 +356,42 @@ class BaseDtw(BaseStrideSegmentation):
     def _postprocess_matches(
         self,
         data,  # noqa: unused-argument
-        matches_start_end: np.ndarray,
-        paths: List,
+        paths: List,  # noqa: unused-argument
         cost: np.ndarray,  # noqa: unused-argument
+        matches_start_end: np.ndarray,
         to_keep: np.array,
-    ) -> Tuple[np.ndarray, List, np.array]:
+    ) -> Tuple[np.ndarray, np.array]:
         """Apply postprocessing.
 
         This can be overwritten by subclasses to filter and modify the matches further.
         Note, that no values from matches_start_stop or paths should be deleted (only modified).
         If a stride needs to be deleted, its index from the **original** matches_start_end list should be added to
         the `to_remove` boolmap should be updated.
+
+        Parameters
+        ----------
+        data
+            The actual raw data
+        paths
+            The identified paths through the cost matrix
+        cost
+            The overall cost of each match
+        matches_start_end
+            The start and end of each match.
+            This should either be modified or returned without modification.
+        to_keep
+            A boolmap indicating which strides should be kept.
+            This should either be modified or returned without modification.
+
+        Returns
+        -------
+        matches_start_end
+            A modified version of the start-end array.
+            No strides should be removed! Just modifications to the actual values
+        to_keep
+            A boolmap with the length of nstrides. It indicates if a stride should be kept (True) or removed later (
+            False)
+
         """
         # Remove matches that are shorter that min_match_length
         min_sequence_length = self._min_sequence_length
@@ -378,7 +403,7 @@ class BaseDtw(BaseStrideSegmentation):
                 np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) < min_sequence_length
             )
             to_keep[indices[invalid_strides]] = False
-        return matches_start_end, paths, to_keep
+        return matches_start_end, to_keep
 
     @staticmethod
     def _resample_template(

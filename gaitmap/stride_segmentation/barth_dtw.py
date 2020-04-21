@@ -157,9 +157,9 @@ class BarthDtw(BaseDtw):
         return as_df[["s_id", "start", "end"]]
 
     def _postprocess_matches(
-        self, data, matches_start_end: np.ndarray, paths: List, cost: np.ndarray, to_keep: np.ndarray
-    ) -> Tuple[np.ndarray, List, np.ndarray]:
-        matches_start_end, paths, to_keep = super()._postprocess_matches(
+        self, data, paths: List, cost: np.ndarray, matches_start_end: np.ndarray, to_keep: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        matches_start_end, to_keep = super()._postprocess_matches(
             data=data, matches_start_end=matches_start_end, paths=paths, cost=cost, to_keep=to_keep
         )
         # Apply snap to minimum
@@ -179,12 +179,16 @@ class BarthDtw(BaseDtw):
             valid_matches_start_end = matches_start_end[valid_indices]
             starts = valid_matches_start_end[:, 0].astype(float)
             cost_per_valid_stride = cost[valid_indices]
-            starts[~(np.diff(starts, prepend=np.inf) == 0)] = np.nan
+            # get groups of strides with the same start value
+            strides_with_same_start = np.diff(starts, prepend=np.inf) == 0
+            starts[~(strides_with_same_start)] = np.nan
             groups = np.ma.clump_unmasked(np.ma.masked_invalid(starts))
             for s in groups:
+                # For each group find the stride with the lowest original cost
                 indices = np.arange(s.start - 1, s.stop)
                 keep = np.argmin(cost_per_valid_stride[indices])
+                # Remove all strides except the one with the lowest cost.
                 to_keep[valid_indices[indices]] = False
                 to_keep[valid_indices[indices[keep]]] = True
 
-        return matches_start_end, paths, to_keep
+        return matches_start_end, to_keep
