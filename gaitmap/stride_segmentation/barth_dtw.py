@@ -124,9 +124,9 @@ class BarthDtw(BaseDtw):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000.0,
         min_match_length_s: Optional[float] = 0.6,
-        snap_to_min_win_ms: Optional[float] = 100,
+        snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
-        conflict_resolution: bool = True
+        conflict_resolution: bool = True,
     ):
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
