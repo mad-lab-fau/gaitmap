@@ -58,6 +58,11 @@ class BarthDtw(BaseDtw):
         The axis of the data used to search for minima during the processing of the stride borders.
         The axis label must match one of the axis label in the data.
         Refer to the Notes section for more details.
+    conflict_resolution
+        This enables a set of checks that handel cases where stride matches overlap with other strides.
+        The following steps will be performed:
+
+        - If multiple matches have the same start point, only the match with the lowest cost will be kept.
 
     Attributes
     ----------
@@ -110,6 +115,7 @@ class BarthDtw(BaseDtw):
 
     snap_to_min_win_ms: Optional[float]
     snap_to_min_axis: Optional[str]
+    conflict_resolution: bool
 
     def __init__(
         self,
@@ -120,9 +126,11 @@ class BarthDtw(BaseDtw):
         min_match_length_s: Optional[float] = 0.6,
         snap_to_min_win_ms: Optional[float] = 100,
         snap_to_min_axis: Optional[str] = "gyr_ml",
+        conflict_resolution: bool = True
     ):
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
+        self.conflict_resolution = conflict_resolution
         super().__init__(
             template=template,
             max_cost=max_cost,
@@ -148,9 +156,11 @@ class BarthDtw(BaseDtw):
         as_df["s_id"] = as_df.index
         return as_df[["s_id", "start", "end"]]
 
-    def _postprocess_matches(self, data, matches_start_end: np.ndarray, paths: List) -> Tuple[np.ndarray, List]:
-        matches_start_end, paths = super()._postprocess_matches(
-            data=data, matches_start_end=matches_start_end, paths=paths
+    def _postprocess_matches(
+        self, data, matches_start_end: np.ndarray, paths: List, acc_cost_mat: np.ndarray, to_keep: np.ndarray
+    ) -> Tuple[np.ndarray, List, np.ndarray]:
+        matches_start_end, paths, to_keep = super()._postprocess_matches(
+            data=data, matches_start_end=matches_start_end, paths=paths, acc_cost_mat=acc_cost_mat, to_keep=to_keep
         )
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
@@ -160,4 +170,19 @@ class BarthDtw(BaseDtw):
                 matches_start_end.flatten(),
                 int(self.snap_to_min_win_ms * self.sampling_rate_hz / 1000) // 2,
             ).reshape(matches_start_end.shape)
-        return matches_start_end, paths
+
+        # Resolve strides that have the same start point
+        # In case multiple strides have the same start point (after snapping) only take the one with lower cost
+        if self.conflict_resolution:
+            valid_indices = np.where(to_keep)[0]
+            cost = acc_cost_mat[-1, :]
+            starts = matches_start_end[valid_indices, 0].astype(float)
+            starts[~(np.diff(starts, prepend=np.inf) == 0)] = np.nan
+            groups = np.ma.clump_unmasked(np.ma.masked_invalid(starts))
+            for s in groups:
+                indices = np.arange(s.start - 1, s.stop)
+                keep = np.argmin(cost[matches_start_end[indices, 1]])
+                to_keep[indices] = False
+                to_keep[indices[keep]] = True
+
+        return matches_start_end, paths, to_keep

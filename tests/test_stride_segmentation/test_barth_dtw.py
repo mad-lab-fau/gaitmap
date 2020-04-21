@@ -66,6 +66,28 @@ class TestRegressionOnRealData:
         assert not np.array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
         assert_array_equal(dtw.matches_start_end_original_["left_sensor"], out_without_snapping)
 
+    def test_conflict_resolution_on_off(self, healthy_example_imu_data):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        # For both cases set the threshold so high that wrong matches will occure
+        max_cost = 2500
+        min_match_length_s = 0.1
+        # off
+        dtw = BarthDtw(max_cost=max_cost, conflict_resolution=False, min_match_length_s=min_match_length_s)
+        dtw.segment(data, sampling_rate_hz=204.8)
+        no_conflict_resolution = dtw.matches_start_end_["left_sensor"]
+
+        # Validate that there are no overlaps
+        assert np.any(np.diff(no_conflict_resolution.flatten()) < 0)
+
+        # on
+        dtw = BarthDtw(max_cost=max_cost, conflict_resolution=True, min_match_length_s=min_match_length_s)
+        dtw.segment(data, sampling_rate_hz=204.8)
+        conflict_resolution = dtw.matches_start_end_["left_sensor"]
+
+        # Validate that there are indeed overlaps
+        assert not np.any(np.diff(conflict_resolution.flatten()) < 0)
+        assert len(conflict_resolution) == 29
+
 
 class DtwTestBaseBarth:
     def init_dtw(self, template, **kwargs):
@@ -76,7 +98,7 @@ class DtwTestBaseBarth:
         return BarthDtw(template=template, **kwargs)
 
 
-class TestBarthDewAdditions(DtwTestBaseBarth):
+class TestBarthDtwAdditions(DtwTestBaseBarth):
     def test_stride_list(self):
         """Test that the output of the stride list is correct."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
