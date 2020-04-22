@@ -251,6 +251,9 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
         rotation_axis_equal_d * row_wise_dot(original_rot_axis, normalize(rotation_axis), squeeze=False)[:, None]
     )
     angle_component = np.atleast_2d(quaternions[:, -1]).T
+    if np.all(projection == 0):
+        # In case the rotation axis is orthogonal to the original rotation return identity rotation
+        angle_component = np.ones(shape=angle_component.shape)
     twist = Rotation.from_quat(np.squeeze(np.hstack((projection, angle_component))))
     return twist
 
@@ -335,3 +338,38 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     if v1.ndim == 1:
         return np.squeeze(out)
     return out
+
+
+def angle_diff(a: Union[float, np.ndarray], b: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    """Calculate the real distance bewteen two signed angle values.
+
+    This returns the shorter of the two possible angle differences on a unit circle.
+
+    Parameters
+    ----------
+    a
+        The first angle value in rad
+    b
+        The second angle value in rad
+
+    Examples
+    --------
+    >>> np.round(angle_diff(0, -np.pi / 2), 2)
+    1.57
+
+    >>> np.round(angle_diff(-np.pi / 2, 0), 2)
+    -1.57
+
+    >>> np.round(angle_diff(1.5 * np.pi, 0), 2)
+    -1.57
+
+    >>> angle_diff(-np.pi, +np.pi)
+    0.0
+
+    >>> np.round(angle_diff(np.array([-np.pi / 2, np.pi / 2]), np.array([0, 0])), 2)
+    array([-1.57,  1.57])
+
+    """
+    diff = a - b
+    diff = (diff + np.pi) % (2 * np.pi) - np.pi
+    return diff

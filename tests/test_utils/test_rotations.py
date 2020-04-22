@@ -15,6 +15,7 @@ from gaitmap.utils.rotations import (
     find_rotation_around_axis,
     find_angle_between_orientations,
     find_unsigned_3d_angle,
+    angle_diff,
 )
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
@@ -342,7 +343,7 @@ class TestFindAngleBetweenOrientations:
     )
     def test_simple_cases(self, ori1, ori2, axis, out):
         result = find_angle_between_orientations(ori1, ori2, axis)
-        assert_array_almost_equal(result, out)
+        assert_array_almost_equal(angle_diff(result, out), 0)
         assert isinstance(result, float)
 
     def test_multi_input_single_ref_single_axis(self):
@@ -400,3 +401,18 @@ class TestFindUnsigned3dAngle:
         output = find_unsigned_3d_angle(v1, v2)
         assert len(output) == 4
         assert_array_almost_equal(output, 4 * [np.pi / 2])
+
+
+class TestAngleDiff:
+    @pytest.mark.parametrize(
+        "a, b, out",
+        (
+            (-np.pi / 2, 0, -np.pi / 2),
+            (0, -np.pi / 2, np.pi / 2),
+            (-np.pi, np.pi, 0),
+            (1.5 * np.pi, 0, -np.pi / 2),
+            (np.array([-np.pi / 2, np.pi / 2]), np.array([0, 0]), np.array([-np.pi / 2, np.pi / 2])),
+        ),
+    )
+    def test_various_inputs(self, a, b, out):
+        assert_almost_equal(angle_diff(a, b), out)
