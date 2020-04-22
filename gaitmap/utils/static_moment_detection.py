@@ -61,6 +61,7 @@ def find_static_samples(
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
 
     # supported metric functions
+    # TODO: Shouldn't these be the nan variants of these functions?
     metric_function = {"maximum": np.max, "variance": np.var, "mean": np.mean, "median": np.median}
 
     if metric not in metric_function:
@@ -70,26 +71,29 @@ def find_static_samples(
     if overlap is None:
         overlap = window_length - 1
 
+    # allocate output array
+    inactive_signal_bool_array = np.zeros(len(signal))
+
+    # calculate norm of input signal (do this outside of loop to boost performance at cost of memory!)
+    signal_norm = np.linalg.norm(signal, axis=1)
+
+    mfunc = metric_function[metric]
+
+    # Create windowed view of norm
+    windowed_norm = array_handling.sliding_window_view(
+        signal_norm, window_length, overlap, nan_padding=False
+    )
+    is_static = np.broadcast_to(mfunc(windowed_norm, axis=1) <= inactive_signal_th, windowed_norm.shape[::-1]).T
+
     # create the list of indices for sliding windows with overlap
     windowed_indices = array_handling.sliding_window_view(
         np.arange(0, len(signal)), window_length, overlap, nan_padding=False
     )
 
-    # allocate output array
-    inactive_signal_bool_array = np.zeros(len(signal))
-
-    # calculate norm of input signal (do this outside of loop to boost performance at cost of memory!)
-    signal_norm = np.apply_along_axis(np.linalg.norm, 1, signal)
-
     # iterate over sliding windows
-    for indices in windowed_indices:
+    for indices, bool_window in zip(windowed_indices, is_static):
         # remove potential np.nan entries due to padding
         indices = indices[~np.isnan(indices)].astype(int)
-
-        # fill window with boolean of value comparison
-        is_static = metric_function[metric](signal_norm[indices]) <= inactive_signal_th
-        bool_window = np.repeat(is_static, len(indices))
-
         # perform logical or operation to combine all overlapping window results
         inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
 
