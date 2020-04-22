@@ -209,8 +209,9 @@ def get_gravity_rotation(
 def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, List]) -> Rotation:
     """Calculate the rotation component of rot around the given rotation axis.
 
-    This performs a swing-twist decomposition of the rotation quaternion.
+    This performs a swing-twist decomposition of the rotation quaternion [1]_.
     The returned rotation is the twist component of this decomposition.
+    This is equivalent to the rotation around the rotation axis.
 
     Parameters
     ----------
@@ -231,6 +232,10 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
     array([0.        , 0.        , 1.57079633])
     >>> find_rotation_around_axis(rot, [0, 1, 0]).as_rotvec()  # Extract part around y
     array([0.        , 0.78539816, 0.        ])
+
+    Notes
+    -----
+    .. [1] https://www.euclideanspace.com/maths/geometry/rotations/for/decomposition/
 
     """
     # Get the rotation axis from the initial quaternion
