@@ -201,7 +201,7 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
 
     This method iterates over the indices and adds the values to the array at the given indices using a logical or.
     """
-    for i in range(len(indices)):
+    for i in range(len(indices)):  # noqa: consider-using-enumerate
         index = indices[i]
         val = bool_values[i]
         index = index[~np.isnan(index)]
