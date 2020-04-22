@@ -157,6 +157,144 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
         assert is_multi_sensor_stride_list(dtw.stride_list_)
 
 
+class TestPostProcessing:
+    """The postprocessing can get quite complex. This tries to split it in a couple of unit tests.
+
+    Snapping is not tested here as it is well covered by the regression tests
+    """
+
+    def test_simple_stride_time(self):
+        example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
+        bad_strides = [2, 5, 9]
+        example_stride_list[bad_strides, 1] -= 0.5
+        to_keep = np.ones(len(example_stride_list)).astype(bool)
+
+        # Disable all other postprocessing
+        dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=False)
+        # Set min threshold to 0.6
+        dtw._min_sequence_length = 0.6
+
+        start_end, to_keep = dtw._postprocess_matches(
+            None, [], np.array([]), matches_start_end=example_stride_list, to_keep=to_keep
+        )
+
+        # Check that start-end is unmodified
+        assert_array_equal(example_stride_list, start_end)
+        # Check that 3 strides were identified for removal
+        assert np.sum(~to_keep) == 3
+        # Check that the correct 3 strides were identified
+        assert np.all(~to_keep[bad_strides])
+
+    def test_simple_double_start(self):
+        example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
+        cost = np.ones(len(example_stride_list))
+        # Introduce errors
+        example_stride_list[4, 0] = example_stride_list[3, 0]
+        cost[3] = 10
+        cost[4] = 5  # 4 should be selected
+        example_stride_list[8, 0] = example_stride_list[7, 0]
+        example_stride_list[9, 0] = example_stride_list[7, 0]
+        cost[7] = 5  # 7 should be selected
+        cost[8] = 10
+        cost[9] = 10
+        bad_strides = [3, 8, 9]
+        to_keep = np.ones(len(example_stride_list)).astype(bool)
+
+        # Disable all other postprocessing
+        dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True, min_match_length_s=None)
+        # Set threshold to None
+        dtw._min_sequence_length = None
+
+        start_end, to_keep = dtw._postprocess_matches(
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+        )
+
+        # Check that start-end is unmodified
+        assert_array_equal(example_stride_list, start_end)
+        # Check that 3 strides were identified for removal
+        assert np.sum(~to_keep) == 3
+        # Check that the correct 3 strides were identified
+        assert np.all(~to_keep[bad_strides])
+
+    def test_previous_removal_double_start(self):
+        example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
+        cost = np.ones(len(example_stride_list))
+        # Introduce errors
+        example_stride_list[4, 0] = example_stride_list[3, 0]
+        cost[3] = 10
+        cost[4] = 5  # 4 should be selected
+        example_stride_list[8, 0] = example_stride_list[7, 0]
+        example_stride_list[9, 0] = example_stride_list[7, 0]
+        cost[7] = 5  # 7 should be selected
+        cost[8] = 10
+        cost[9] = 2  # Has the lowest cost, but should be removed as it is a short stride
+        bad_strides = [3, 8, 9]
+        # introduce additional short strides
+        # 9 will already be removed because of short stride
+        short_strides = [1, 5, 9]
+        example_stride_list[short_strides, 1] = example_stride_list[short_strides, 0] + 0.5
+
+        bad_strides = set(bad_strides)
+        bad_strides.update(short_strides)
+        bad_strides = list(bad_strides)
+        to_keep = np.ones(len(example_stride_list)).astype(bool)
+
+        # Disable all other postprocessing
+        dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True)
+        # Set min threshold to 0.6
+        dtw._min_sequence_length = 0.6
+
+        start_end, to_keep = dtw._postprocess_matches(
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+        )
+
+        # Check that start-end is unmodified
+        assert_array_equal(example_stride_list, start_end)
+        # Check that 5 strides were identified for removal
+        assert np.sum(~to_keep) == 5
+        # Check that the correct 5 strides were identified
+        assert np.all(~to_keep[bad_strides])
+
+    def test_previous_removal_double_start_unsorted(self):
+        example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
+        cost = np.ones(len(example_stride_list))
+        # Introduce errors
+        example_stride_list[4, 0] = example_stride_list[3, 0]
+        cost[3] = 10
+        cost[4] = 5  # 4 should be selected
+        example_stride_list[8, 0] = example_stride_list[2, 0]
+        example_stride_list[9, 0] = example_stride_list[2, 0]
+        cost[2] = 5  # 2 should be selected event though the structure was unsorted
+        cost[8] = 10
+        cost[9] = 2  # Has the lowest cost, but should be removed as it is a short stride
+        bad_strides = [3, 8, 9]
+        # introduce additional short strides
+        # 9 will already be removed because of short stride
+        short_strides = [1, 5, 9]
+        example_stride_list[short_strides, 1] = example_stride_list[short_strides, 0] + 0.5
+
+        bad_strides = set(bad_strides)
+        bad_strides.update(short_strides)
+        bad_strides = list(bad_strides)
+        to_keep = np.ones(len(example_stride_list)).astype(bool)
+
+        # Disable all other postprocessing
+        dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True)
+        # Set min threshold to 0.6
+        dtw._min_sequence_length = 0.6
+
+        start_end, to_keep = dtw._postprocess_matches(
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+        )
+
+        # Check that start-end is unmodified
+        assert_array_equal(example_stride_list, start_end)
+        # Check that 5 strides were identified for removal
+        assert np.sum(~to_keep) == 5
+        # Check that the correct 5 strides were identified
+        assert np.all(~to_keep[bad_strides])
+
+
 # Add all the tests of base dtw, as they should pass here as well
 
 

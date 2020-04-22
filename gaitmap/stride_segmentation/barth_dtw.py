@@ -177,6 +177,11 @@ class BarthDtw(BaseDtw):
             # Only run calcs for strides that are not excluded already
             valid_indices = np.where(to_keep)[0]
             valid_matches_start_end = matches_start_end[valid_indices]
+            # Just to be sure sort based on the start value
+            sorted_indices = np.argsort(valid_matches_start_end[:, 0])
+            valid_indices = valid_indices[sorted_indices]
+            valid_matches_start_end = valid_matches_start_end[sorted_indices]
+
             starts = valid_matches_start_end[:, 0].astype(float)
             cost_per_valid_stride = cost[valid_indices]
             # get groups of strides with the same start value
