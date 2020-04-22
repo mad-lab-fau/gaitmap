@@ -145,7 +145,7 @@ class BaseDtw(BaseStrideSegmentation):
     Attributes
     ----------
     matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        The start (column 1) and end (column 2) of each detected stride.
+        The start (column 1) and end (column 2) of each detected match.
     costs_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
@@ -154,6 +154,8 @@ class BaseDtw(BaseStrideSegmentation):
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
+        Note that the start and end values of the path might not match the start and the end values in
+        `matches_start_end_`, if certain post processing steps are applied.
     matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if no postprocessing is applied to change the values of start and the end of
         the matches.
@@ -338,27 +340,70 @@ class BaseDtw(BaseStrideSegmentation):
             costs_ = []
             matches_start_end_ = []
         else:
-            paths_ = self._find_multiple_paths(acc_cost_mat_, matches)
+            paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
-            matches_start_end_, paths_ = self._postprocess_matches(dataset, matches_start_end_, paths_)
+            # Calculate cost before potential modifications are made to start and end
             costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
+            to_keep = np.ones(len(matches_start_end_)).astype(bool)
+            matches_start_end_, to_keep = self._postprocess_matches(
+                data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
+            )
+            matches_start_end_ = matches_start_end_[to_keep]
+            paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
+            # TODO: Add warning in case there are still overlapping matches after the conflict resolution
         return acc_cost_mat_, paths_, costs_, matches_start_end_
 
     def _postprocess_matches(
-        self, data, matches_start_end: np.ndarray, paths: List  # noqa: unused-argument
-    ) -> Tuple[np.ndarray, List]:
+        self,
+        data,  # noqa: unused-argument
+        paths: List,  # noqa: unused-argument
+        cost: np.ndarray,  # noqa: unused-argument
+        matches_start_end: np.ndarray,
+        to_keep: np.array,
+    ) -> Tuple[np.ndarray, np.array]:
         """Apply postprocessing.
 
         This can be overwritten by subclasses to filter and modify the matches further.
+        Note, that no values from matches_start_stop or paths should be deleted (only modified).
+        If a stride needs to be deleted, its index from the **original** matches_start_end list should be added to
+        the `to_remove` boolmap should be updated.
+
+        Parameters
+        ----------
+        data
+            The actual raw data
+        paths
+            The identified paths through the cost matrix
+        cost
+            The overall cost of each match
+        matches_start_end
+            The start and end of each match.
+            This should either be modified or returned without modification.
+        to_keep
+            A boolmap indicating which strides should be kept.
+            This should either be modified or returned without modification.
+
+        Returns
+        -------
+        matches_start_end
+            A modified version of the start-end array.
+            No strides should be removed! Just modifications to the actual values
+        to_keep
+            A boolmap with the length of nstrides. It indicates if a stride should be kept (True) or removed later (
+            False)
+
         """
         # Remove matches that are shorter that min_match_length
         min_sequence_length = self._min_sequence_length
         if min_sequence_length is not None:
-            valid_strides = np.squeeze(np.abs(np.diff(matches_start_end, axis=-1)) >= min_sequence_length)
-            valid_strides_idx = np.where(valid_strides)[0]
-            matches_start_end = matches_start_end[valid_strides_idx]
-            paths = [paths[i] for i in valid_strides_idx]
-        return matches_start_end, paths
+            # only select the once that are not already removed
+            indices = np.where(to_keep)[0]
+            matches_start_end_valid = matches_start_end[indices]
+            invalid_strides = (
+                np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) < min_sequence_length
+            )
+            to_keep[indices[invalid_strides]] = False
+        return matches_start_end, to_keep
 
     @staticmethod
     def _resample_template(

@@ -307,3 +307,6 @@ poetry.lock
 # jupyter notebooks (we do not use them)
 *.ipynb
 .virtual_documents
+
+# Just a folder for local tests
+_debug_test
