@@ -2,6 +2,7 @@
 from typing import List, Tuple, Optional
 
 import numpy as np
+from numba import njit
 from scipy.signal import find_peaks
 
 
@@ -192,3 +193,18 @@ def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
 
     # TODO handle cases were index is to close to start
     return np.nanargmin(windows, axis=1) + indices - radius
+
+
+@njit()
+def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) -> np.ndarray:
+    """Fill a preallocated array with bool_values.
+
+    This method iterates over the indices and adds the values to the array at the given indices using a logical or.
+    """
+    for i in range(len(indices)):
+        index = indices[i]
+        val = bool_values[i]
+        index = index[~np.isnan(index)]
+        # perform logical or operation to combine all overlapping window results
+        array[index] = np.logical_or(array[index], val)
+    return array

@@ -2,6 +2,7 @@
 import numpy as np
 
 from gaitmap.utils import array_handling
+from gaitmap.utils.array_handling import _bool_fill
 
 
 def find_static_samples(
@@ -80,9 +81,7 @@ def find_static_samples(
     mfunc = metric_function[metric]
 
     # Create windowed view of norm
-    windowed_norm = array_handling.sliding_window_view(
-        signal_norm, window_length, overlap, nan_padding=False
-    )
+    windowed_norm = array_handling.sliding_window_view(signal_norm, window_length, overlap, nan_padding=False)
     is_static = np.broadcast_to(mfunc(windowed_norm, axis=1) <= inactive_signal_th, windowed_norm.shape[::-1]).T
 
     # create the list of indices for sliding windows with overlap
@@ -91,11 +90,7 @@ def find_static_samples(
     )
 
     # iterate over sliding windows
-    for indices, bool_window in zip(windowed_indices, is_static):
-        # remove potential np.nan entries due to padding
-        indices = indices[~np.isnan(indices)].astype(int)
-        # perform logical or operation to combine all overlapping window results
-        inactive_signal_bool_array[indices] = np.logical_or(inactive_signal_bool_array[indices], bool_window)
+    inactive_signal_bool_array = _bool_fill(windowed_indices, is_static, inactive_signal_bool_array)
 
     return inactive_signal_bool_array.astype(bool)
 
