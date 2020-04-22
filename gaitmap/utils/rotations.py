@@ -5,8 +5,9 @@ All util functions use :class:`scipy.spatial.transform.Rotation` to represent ro
 from typing import Union, Dict, Optional
 
 import numpy as np
-from scipy.spatial.transform import Rotation
+import pandas as pd
 from numpy.linalg import norm
+from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.dataset_helper import (
@@ -125,25 +126,19 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     if not isinstance(rotation_dict, dict):
         rotation_dict = {k: rotation for k in get_multi_sensor_dataset_names(dataset)}
 
-    # TODO: Maybe refactor to be able to handle both types of input the same
     if isinstance(dataset, dict):
         rotated_dataset = {**dataset}
-        for key in rotation_dict.keys():
-            rotated_dataset[key] = _rotate_sensor(dataset[key], rotation_dict[key], inplace=False)
-        return rotated_dataset
+        original_cols = None
+    else:
+        rotated_dataset = dataset.copy()
+        original_cols = dataset.columns
+    for key in rotation_dict.keys():
+        test = _rotate_sensor(dataset[key], rotation_dict[key], inplace=False)
+        rotated_dataset[key] = test
 
-    original_cols = dataset.columns.copy()
-
-    # For some strange reason, we need to unstack and stack again to use apply here:
-    rotated_dataset = (
-        dataset.stack(level=0)
-        .groupby(level=1)
-        .apply(lambda x: _rotate_sensor(x, rotation_dict.get(x.name, None), inplace=False))
-        .unstack(level=1)
-        .swaplevel(axis=1)
-    )
-    # Restore original order
-    rotated_dataset = rotated_dataset[original_cols]
+    if isinstance(dataset, pd.DataFrame):
+        # Restore original order
+        rotated_dataset = rotated_dataset[original_cols]
     return rotated_dataset
 
 
