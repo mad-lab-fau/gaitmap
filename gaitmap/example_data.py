@@ -41,9 +41,6 @@ def get_healthy_example_imu_data():
     """Get example IMU data from a healthy subject doing a 2x20m gait test.
 
     The sampling rate is 204.8 Hz
-
-    For expected results see:
-        - :ref:`healthy_example_stride_borders`
     """
     test_data_path = _get_data("imu_sample.csv")
     data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)
@@ -54,7 +51,7 @@ def get_healthy_example_imu_data():
 
 
 def get_healthy_example_stride_borders():
-    """Get hand labeled stride borders for :ref:`healthy_example_imu_data`.
+    """Get hand labeled stride borders for :func:`get_healthy_example_imu_data`.
 
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
@@ -72,7 +69,7 @@ def get_healthy_example_stride_borders():
 
 
 def get_healthy_example_mocap_data():
-    """Get 3D Mocap information of the foot synchronised with :ref:`healthy_example_imu_data`.
+    """Get 3D Mocap information of the foot synchronised with :func:`get_healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
@@ -90,7 +87,7 @@ def get_healthy_example_stride_events():
     """Get gait events extracted based on mocap data.
 
     The gait events are extracted based on the mocap data. but are converted to fit the indices of
-    `healthy_example_imu_data`.
+    :func:`get_healthy_example_imu_data`.
 
     However, because the values are extracted from another system the `min_vel` might not fit perfectly onto the imu
     data.
@@ -110,7 +107,7 @@ def get_healthy_example_stride_events():
 
 
 def get_healthy_example_orientation():
-    """Get foot orientation calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+    """Get foot orientation calculated based on mocap data synchronised with :func:`get_healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
@@ -128,7 +125,7 @@ def get_healthy_example_orientation():
 
 
 def get_healthy_example_position():
-    """Get foot position calculated based on mocap data synchronised with :ref:`healthy_example_imu_data`.
+    """Get foot position calculated based on mocap data synchronised with :func:`get_healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
 
