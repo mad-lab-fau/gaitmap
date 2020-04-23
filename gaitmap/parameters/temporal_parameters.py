@@ -16,6 +16,8 @@ from gaitmap.utils.dataset_helper import (
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     """This class is responsible for calculating temporal parameters of strides.
 
+    For details on the individual parameters see the Notes section.
+
     Attributes
     ----------
     parameters_
@@ -82,7 +84,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         stride_id_ = stride_event_list["s_id"]
         time_stamp_ = _calc_time_stamp_(stride_event_list["ic"], sampling_rate_hz)
-        stride_time_ = calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
+        stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
         swing_time_ = _calc_swing_time(stride_event_list["ic"], stride_event_list["tc"], sampling_rate_hz)
         stance_time_ = [stride_time - swing_time for stride_time, swing_time in zip(stride_time_, swing_time_)]
         stride_parameter_dict = {
@@ -123,7 +125,7 @@ def _calc_time_stamp_(ic_event: float, sampling_rate_hz: float) -> float:
     return ic_event / sampling_rate_hz
 
 
-def calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rate_hz: float) -> pd.Series:
+def _calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rate_hz: float) -> pd.Series:
     """Find stride time.
 
     Parameters
@@ -138,7 +140,6 @@ def calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rate
     Returns
     -------
         Stride time
-
     """
     return (ic_event - pre_ic_event) / sampling_rate_hz
 

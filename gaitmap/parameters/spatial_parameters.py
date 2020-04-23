@@ -7,7 +7,7 @@ from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType, BaseSpatialParameterCalculation
-from gaitmap.parameters.temporal_parameters import calc_stride_time
+from gaitmap.parameters.temporal_parameters import _calc_stride_time
 from gaitmap.utils.consts import SF_POS
 from gaitmap.utils.dataset_helper import (
     StrideList,
@@ -182,7 +182,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
-            stride_length_, calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
+            stride_length_, _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
         )
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)
