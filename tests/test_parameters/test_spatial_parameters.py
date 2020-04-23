@@ -141,7 +141,7 @@ class TestIndividualParameter:
 
 
 class TestSpatialParameterCalculation:
-    """Test temporal parameters calculation."""
+    """Test spatial parameters calculation."""
 
     parameters = ["stride_length", "gait_velocity", "ic_angle", "tc_angle", "turning_angle", "arc_length"]
 
@@ -159,7 +159,7 @@ class TestSpatialParameterCalculation:
     def test_multiple_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
-        """Test calculate temporal parameters for single sensor and single stride"""
+        """Test calculate spatial parameters for single sensor and single stride"""
         stride_events_list = {"sensor1": single_sensor_stride_list, "sensor2": single_sensor_stride_list}
         position_list = {"sensor1": single_sensor_position_list, "sensor2": single_sensor_position_list}
         orientation_list = {"sensor1": single_sensor_orientation_list, "sensor2": single_sensor_orientation_list}
