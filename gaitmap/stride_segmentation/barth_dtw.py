@@ -159,9 +159,6 @@ class BarthDtw(BaseDtw):
     def _postprocess_matches(
         self, data, paths: List, cost: np.ndarray, matches_start_end: np.ndarray, to_keep: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        matches_start_end, to_keep = super()._postprocess_matches(
-            data=data, matches_start_end=matches_start_end, paths=paths, cost=cost, to_keep=to_keep
-        )
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
             # Find the closest minimum for each start and stop value
@@ -170,6 +167,12 @@ class BarthDtw(BaseDtw):
                 matches_start_end.flatten(),
                 int(self.snap_to_min_win_ms * self.sampling_rate_hz / 1000) // 2,
             ).reshape(matches_start_end.shape)
+
+        # Apply any postprocessing steps of the parent class.
+        # This is done after the snapping, as the snapping might modify the stride time.
+        matches_start_end, to_keep = super()._postprocess_matches(
+            data=data, matches_start_end=matches_start_end, paths=paths, cost=cost, to_keep=to_keep
+        )
 
         # Resolve strides that have the same start point
         # In case multiple strides have the same start point (after snapping) only take the one with lower cost
