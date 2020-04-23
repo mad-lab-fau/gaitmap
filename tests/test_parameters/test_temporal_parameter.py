@@ -34,9 +34,8 @@ def multiple_stride_list():
 
 @pytest.fixture
 def temporal_parameters_multiple_strides():
-    temporal_parameters = pd.DataFrame(columns=["stride_id", "time_stamp", "stride_time", "swing_time", "stance_time"])
+    temporal_parameters = pd.DataFrame(columns=["stride_id", "stride_time", "swing_time", "stance_time"])
     temporal_parameters["stride_id"] = [0, 1, 2]
-    temporal_parameters["time_stamp"] = [5.0, 7.0, 10.0]
     temporal_parameters["stride_time"] = [2.0, 2.0, 3.0]
     temporal_parameters["swing_time"] = [1.0, 1.0, 2.0]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
@@ -45,9 +44,8 @@ def temporal_parameters_multiple_strides():
 
 @pytest.fixture
 def temporal_parameters_single_stride():
-    temporal_parameters = pd.DataFrame(columns=["stride_id", "time_stamp", "stride_time", "swing_time", "stance_time"])
+    temporal_parameters = pd.DataFrame(columns=["stride_id", "stride_time", "swing_time", "stance_time"])
     temporal_parameters["stride_id"] = [0]
-    temporal_parameters["time_stamp"] = [5.0]
     temporal_parameters["stride_time"] = [2.0]
     temporal_parameters["swing_time"] = [1.0]
     temporal_parameters["stance_time"] = [1.0]
