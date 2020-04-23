@@ -31,6 +31,20 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     sampling_rate_hz
         The sampling rate of the data signal.
 
+    Notes
+    -----
+
+    stride_time [s]
+        The stride time is the duration of the stride calculated based on the ic events of the stride.
+        If a `min_vel`-stride list is used, the stride time is calculated by subtracting "pre_ic" from "ic".
+    swing_time [s]
+        The swing time is the time from the tc to the next ic.
+        For a `min_vel`-stride this is the time between "tc" and "ic"
+    stance_time [s]
+        The stance time is the time the foot is on the ground.
+        Hence, it is the time from a ic to the next tc.
+        For a `min_vel`-stride this is calculated as the time between "pre_ic" and "tc".
+
 
     """
 
