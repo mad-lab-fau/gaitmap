@@ -434,6 +434,11 @@ def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_c
         If True columns that are set as index in df, but shouldn't will be deleted.
         If False these columns will just be removed from the index and become regular df columns.
 
+    Returns
+    -------
+    df
+        A dataframe with the correct columns set as index
+
     """
     if list(index_cols) == df.index.names:
         return df
