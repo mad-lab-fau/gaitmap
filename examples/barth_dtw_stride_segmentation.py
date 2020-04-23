@@ -86,17 +86,17 @@ dtw.stride_list_["left_sensor"].head()
 # The third row shows the entire accumulated cost matrix and the path each stride takes through the cost matrix to
 # achieve minimal cost.
 #
-# Only the first couple of strides of the right foot are shown.
+# Only the first couple of strides of the left foot are shown.
 
-sensor = "right_sensor"
+sensor = "left_sensor"
 fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
 dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
-axs[0].set_ylabel('gyro [deg/s]')
+axs[0].set_ylabel("gyro [deg/s]")
 axs[1].plot(dtw.cost_function_[sensor])
-axs[1].set_ylabel('dtw cost [a.u.]')
-axs[1].axhline(dtw.max_cost, color='k', linestyle='--')
+axs[1].set_ylabel("dtw cost [a.u.]")
+axs[1].axhline(dtw.max_cost, color="k", linestyle="--")
 axs[2].imshow(dtw.acc_cost_mat_[sensor], aspect="auto")
-axs[2].set_ylabel('template position [#]')
+axs[2].set_ylabel("template position [#]")
 for p in dtw.paths_[sensor]:
     axs[2].plot(p.T[1], p.T[0])
 for s in dtw.matches_start_end_original_[sensor]:
@@ -105,6 +105,6 @@ for _, s in dtw.stride_list_[sensor][["start", "end"]].iterrows():
     axs[0].axvspan(*s, alpha=0.3, color="g")
 
 axs[0].set_xlim(300, 2000)
-axs[0].set_xlabel('time [#]')
+axs[0].set_xlabel("time [#]")
 fig.tight_layout()
 fig.show()
