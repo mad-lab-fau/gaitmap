@@ -44,6 +44,16 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Hence, it is the time from a ic to the next tc.
         For a `min_vel`-stride this is calculated as the time between "pre_ic" and "tc".
 
+    Examples
+    --------
+    This method requires the output of a event detection method as input.
+
+    >>> stride_list = ... #  from event detection
+    >>> p = TemporalParameterCalculation()
+    >>> p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
+    >>> p.parameters_
+    <Dataframe/dictionary with all the parameters>
+
     See Also
     --------
     gaitmap.parameters.SpatialParameterCalculation: Calculate spatial parameters
@@ -149,7 +159,8 @@ def _calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rat
 
     Returns
     -------
-        Stride time
+    Stride time
+
     """
     return (ic_event - pre_ic_event) / sampling_rate_hz
 

@@ -88,6 +88,20 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
        In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)
        (pp. 5424-5427). IEEE.
 
+    Examples
+    --------
+    This method requires the output of a event detection method and a full trajectory reconstruction
+    (orientation and position) as input.
+
+    >>> stride_list = ...  # from event detection
+    >>> positions = ...  # from position estimation
+    >>> orientations = ...  # from orientation estimation
+    >>> p = SpatialParameterCalculation()
+    >>> p = p.calculate(stride_event_list=stride_list, positions=positions, orientations=orientations,
+    ...                 sampling_rate_hz=204.8)
+    >>> p.parameters_
+    <Dataframe/dictionary with all the parameters>
+
     See Also
     --------
     gaitmap.parameters.TemporalParameterCalculation: Calculate temporal parameters
