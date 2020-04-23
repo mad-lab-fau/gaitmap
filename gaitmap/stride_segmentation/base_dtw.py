@@ -1,5 +1,5 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
-
+import warnings
 from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
@@ -312,8 +312,16 @@ class BaseDtw(BaseStrideSegmentation):
         # Extract the parts of the data that is relevant for matching.
         template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
 
-        if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
-            template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
+        if self.sampling_rate_hz != template.sampling_rate_hz:
+            if self.resample_template is True:
+                template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
+            elif template.sampling_rate_hz:
+                warnings.warn(
+                    "The data and template sampling rate are different ({} Hz vs. {} Hz), "
+                    "but `resample_template` is False. "
+                    "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
+                )
+                template = template_array
         else:
             template = template_array
 

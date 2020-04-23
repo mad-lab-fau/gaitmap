@@ -202,6 +202,27 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         assert str(["col3"]) in str(e)
 
+    def test_no_sampling_rate_for_resample(self):
+        template = create_dtw_template(np.ndarray([]))
+
+        dtw = self.init_dtw(template=template)
+        with pytest.raises(ValueError) as e:
+            dtw.segment(np.ndarray([]), sampling_rate_hz=100.0)
+
+        assert "sampling_rate_hz" in str(e)
+
+    def test_sampling_rate_mismatch_warning(self):
+        template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
+        data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
+        template = create_dtw_template(template, sampling_rate_hz=140.0)  # sampling rate different than data.
+
+        dtw = self.init_dtw(template=template, resample_template=False)
+        with pytest.warns(UserWarning) as w:
+            dtw.segment(data, sampling_rate_hz=100.0)
+
+        assert "140.0" in str(w[0])
+        assert "100.0" in str(w[0])
+
 
 class TestMultiSensorInputs(DtwTestBase):
     data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
