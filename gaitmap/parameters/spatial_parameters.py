@@ -88,6 +88,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
        In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)
        (pp. 5424-5427). IEEE.
 
+    See Also
+    --------
+    gaitmap.parameters.TemporalParameterCalculation: Calculate temporal parameters
+
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]

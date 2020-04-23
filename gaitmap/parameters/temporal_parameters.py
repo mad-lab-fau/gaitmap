@@ -33,7 +33,6 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     Notes
     -----
-
     stride_time [s]
         The stride time is the duration of the stride calculated based on the ic events of the stride.
         If a `min_vel`-stride list is used, the stride time is calculated by subtracting "pre_ic" from "ic".
@@ -45,6 +44,9 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Hence, it is the time from a ic to the next tc.
         For a `min_vel`-stride this is calculated as the time between "pre_ic" and "tc".
 
+    See Also
+    --------
+    gaitmap.parameters.SpatialParameterCalculation: Calculate spatial parameters
 
     """
 
