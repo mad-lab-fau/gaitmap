@@ -1,4 +1,4 @@
-.. _coordinate_systems
+.. _coordinate_systems:
 
 ===================
 Coordinate  Systems

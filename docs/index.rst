@@ -14,6 +14,7 @@ gaitmap Docu Overview
    guides/Project-Structure.md
    guides/Development-Guide.md
    guides/Coordinate-Systems.rst
+   guides/Gaitmap-Datatypes.rst
 
 .. toctree::
    :maxdepth: 1

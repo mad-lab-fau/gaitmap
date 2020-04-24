@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -205,6 +205,7 @@ def is_single_sensor_stride_list(
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
 
     """
+    # TODO: Add a check that the stride id is unique.
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
@@ -214,13 +215,13 @@ def is_single_sensor_stride_list(
         return False
 
     # Depending of the stridetype check additional conditions
-    additional_columns = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
+    additional_columns = SL_ADDITIONAL_COLS
     start_event = {"min_vel": "min_vel"}
 
     # Check columns exist
     if stride_type != "any" and stride_type not in additional_columns:
-        raise ValueError('The argument `stride_type` must be one of ["any", "min_vel"]')
-    minimal_columns = ["s_id", "start", "end"]
+        raise ValueError('The argument `stride_type` must be "any" or one of'.format(list(SL_ADDITIONAL_COLS.keys())))
+    minimal_columns = SL_COLS
     all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
     if not all(v in columns for v in all_columns):
         return False

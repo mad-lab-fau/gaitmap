@@ -10,16 +10,42 @@ the above mentioned containers - are defined and used throughout the library.
 The following explains these data-structures in details to ease to process of preparing your data for the use of gaitmap
 and help to understand the outputs.
 
+Units
+=====
+
+Before talking about data-types the physical units for all values stored in these data-types should be clear.
+The following table provides an overview over the commonly used values types and there units.
+
+.. table:: Common Units
+
+   =============  ======================
+   Value          Unit
+   =============  ======================
+   Acceleration   m/s^2
+   Rotation Rate  deg/s
+   Velocity       m/s
+   Distance       m
+   Time           s or # (see more below)
+   Sampling Rate  Hz
+   =============  ======================
+
+Further rules:
+
+- If a method requires a parameters in a given unit it append with a common short-hand name in this unit (e.g.
+  `windowsize_ms` would expect a value in milliseconds.
+- Time is either specified in seconds (s) for user facing durations (e.g. stride time), but time points in intermediate
+  results (e.g. biomechanical events) are typically specified in samples since the start of the measurement (#).
+
 Datasets
 ========
-
-Single-Sensor Datasets
-----------------------
 
 The term Dataset is used to describe the data-container that holds the raw IMU data.
 Six different versions of this container exist aimed at combination of different use cases.
 
-The base container structure is a `pd.DataFrame` with a preset name of columns (:mod:`~gaitmap.utils.consts.SF_COLS`),
+Single-Sensor Datasets
+----------------------
+
+The base container structure is a `pd.DataFrame` with a preset name of columns (:obj:`~gaitmap.utils.consts.SF_COLS`),
 which are defined in the `consts` module.
 The names (shown below) should be self explanatory.
 
@@ -38,7 +64,7 @@ True
 The above set of columns describe a dataset in the Sensor Frame.
 An additional version of the *SingleSensorDataset* exists in the Body Frame.
 Its definition is identical to dataset in the sensor frame, except different column names
-(:mod:`~gaitmap.utils.consts.BF_COLS`) are expected.
+(:obj:`~gaitmap.utils.consts.BF_COLS`) are expected.
 For the concept of Sensor and Body Frame and how to convert between these frames, refer to
 :ref:`Coordinate System Guide <coordinate_systems>`.
 
@@ -91,7 +117,7 @@ Like *SingleSensorDatasets*, *MultiSensorDatasets* can exist in the Body or the 
 However, all single datasets must be in the same frame.
 This can be checked using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
 
->>> from gaitmap.utils.dataset_helper import  is_multi_sensor_dataset
+>>> from gaitmap.utils.dataset_helper import is_multi_sensor_dataset
 >>> is_multi_sensor_dataset(multi_dataset, frame="sensor")
 True
 >>> is_multi_sensor_dataset(multi_dataset, frame="body")
@@ -102,6 +128,58 @@ This usually means that the method simply iterates over all sensors and provides
 The sensor names can be chosen arbitrarily.
 For the future, methods are planned that make active use of multiple sensors at the same time.
 These might handle multi-sensor input differently.
+
+Stride Lists
+============
+
+At some point during most gait analysis pipelines it is important to extract the start and end of each stride as well as
+relevant events within these strides.
+Such information is stored in a *StrideList*.
+
+A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least has the columns defined by
+:obj:`~gaitmap.utils.consts.SL_COLS`.
+The columns `s_id` should contain a unique identifier for each stride in the stride list.
+All other columns should provide values in samples since the start of the recording (not the start of the stride!)
+
+>>> from gaitmap.utils.consts import SL_COLS
+>>> SL_COLS
+['s_id', 'start', 'end']
+
+Depending of the type of stride list, more columns are expected.
+Required additional columns are documented in :obj:`~gaitmap.utils.consts.SL_ADDITIONAL_COLS`.
+
+>>> from gaitmap.utils.consts import SL_ADDITIONAL_COLS
+>>> SL_ADDITIONAL_COLS
+{'min_vel': ['pre_ic', 'ic', 'min_vel', 'tc']}
+
+At the moment only the `min_vel`- stride list is support besides the basic one.
+It is expected to hold all relevant gait events and the `start` and `stop` of each stride should conincide with the
+`min_vel` of the current and next stride respectively.
+For more details see :class:`~gaitmap.event_detection.RamppEventDetection`.
+
+The format of a stride list can be checked using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list`.
+
+>>> from gaitmap.utils.dataset_helper import is_single_sensor_stride_list
+>>> simple_stride_list = ...
+>>> is_single_sensor_stride_list(simple_stride_list, stride_type="any")
+True
+
+>>> min_vel_stride_list = ...
+>>> is_single_sensor_stride_list(simple_stride_list, stride_type="min_vel")
+True
+
+As for the dataset types, a multi-sensor of the *StrideList* exists, too.
+Because even two synchronised sensors can contain a different amount of strides, only a dictionary based version of the
+*MultiSensorStrideList* is supported.
+It consists of a dictionary with the sensor names as keys and valid *SingleSensorStrideLists* as values.
+Its format can be validated using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_stride_list`.
+
+>>> from gaitmap.utils.dataset_helper import is_multi_sensor_stride_list
+>>> multi_sensor_stride_list = {"sensor1": ..., "sensor2": ...}
+>>> is_multi_sensor_stride_list(multi_sensor_stride_list, stride_type="any")
+True
+
+
 
 
 
