@@ -300,7 +300,6 @@ def _detect_ic(
         # The gyr argmax was not found in the first half of the step
         return np.nan
 
-    # TODO: Redefine search region (does not work sometimes
     # alternative:
     # refined_search_region_start, refined_search_region_end = search_region
     refined_search_region_start = search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)])
