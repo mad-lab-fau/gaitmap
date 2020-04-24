@@ -1,4 +1,4 @@
-"""The event detection algorithm by Rampp et al. 2014."""
+"""The gait sequence detection algorithm by Rampp et al. 2020."""
 from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
@@ -19,7 +19,7 @@ from gaitmap.utils.dataset_helper import (
 )
 
 
-class RamppEventDetection(BaseEventDetection):
+class UllrichGaitSequenceDetection(BaseGaitDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
