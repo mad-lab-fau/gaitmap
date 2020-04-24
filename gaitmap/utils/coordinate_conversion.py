@@ -13,12 +13,14 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     SingleSensorDataset,
     MultiSensorDataset,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_dataset_names, is_single_sensor_dataset,
 )
 
 
 def convert_left_foot_to_fbf(data: SingleSensorDataset):
     """Convert the axes from the left foot sensor frame to the foot body frame (FBF).
+
+    This function assumes that your dataset is already aligned to the gaitmap FSF.
 
     Parameters
     ----------
@@ -32,8 +34,11 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
     See Also
     --------
     gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
+    if not is_single_sensor_dataset(data, frame="sensor"):
+        raise ValueError("No valid FSF SingleSensorDataset supplied.")
     # Definition of the conversion of all axes for the left foot
     # TODO: Put into consts.py
     conversion_left = {
@@ -57,6 +62,8 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
 def convert_right_foot_to_fbf(data: SingleSensorDataset):
     """Convert the axes from the right foot sensor frame to the foot body frame (FBF).
 
+    This function assumes that your dataset is already aligned to the gaitmap FSF.
+
     Parameters
     ----------
     data
@@ -69,8 +76,11 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
     See Also
     --------
     gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
+    if not is_single_sensor_dataset(data, frame="sensor"):
+        raise ValueError("No valid FSF SingleSensorDataset supplied.")
     # Definition of the conversion of all axes for the right foot
     # TODO: Put into consts.py
     conversion_right = {
@@ -100,6 +110,12 @@ def convert_to_fbf(
 ):
     """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
+    This function assumes that your dataset is already aligned to the gaitmap FSF.
+    Sensors that should not be transformed are kept untouched.
+    Note, that the column names of all transformed dataset is changed to the respective body frame names.
+
+    This function can handle multiple left and right sensors at the same time.
+
     Parameters
     ----------
     data
@@ -122,15 +138,23 @@ def convert_to_fbf(
     -------
     converted MultiSensorDataset
 
+    Examples
+    --------
+    These examples assume that your dataset has two sensors called `left_sensor` and `right_sensor`.
+    >>> dataset = ... # Dataset in FSF
+    >>> fbf_dataset = convert_to_fbf(dataset, left_like="left_", right_like="right_")
+
+    Alternativly, you can specify the full sensor names.
+    >>> fbf_dataset = convert_to_fbf(dataset, left=["left_sensor"], right_sensor=["right_sensor"])
+
     See Also
     --------
     gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
     gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
 
     """
-    # TODO: Support also single sensor Dataframe here?
-    if not is_multi_sensor_dataset(data):
-        raise ValueError("No MultiSensorDataset supplied.")
+    if not is_multi_sensor_dataset(data, frame="sensor"):
+        raise ValueError("No valid FSF MultiSensorDataset supplied.")
 
     if (left and left_like) or (right and right_like) or not any((left, left_like, right, right_like)):
         raise ValueError(

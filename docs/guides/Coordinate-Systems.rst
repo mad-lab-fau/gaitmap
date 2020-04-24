@@ -186,8 +186,15 @@ TODO: Add info about transforming the raw sensor frame into the FSF
 Transformation into the Foot Body Frame
 ---------------------------------------
 
-TODO: Add info about transforming the FSF into the FBF
+Once the data is properly aligned to the gaitmap-FSF, it is very easy to transform it into the respective BF.
+For this you can use the function :func:`~gaitmap.utils.coordinate_conversion.convert_to_fbf` if you have a multi-sensor
+dataset or :func:`~gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf` and
+:func:`~gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf` if you have a single-sensor dataset.
+Note that in both cases you need to specify which foot each sensor was attached to, as the transform from the FSF to FBF
+is different for each foot (see table :ref:`foot-transform`). For examples please refer directly to the documentation of
+these functions.
 
+.. note:: All coordinate transform functions create a full copy of your dataset.
 
 .. [1] Wu, G., Siegler, S., Allard, P., Kirtley, C., Leardini, A., Rosenbaum, D., … Stokes, I. (2002). ISB
        recommendation on definitions of joint coordinate system of various joints for the reporting of human joint
