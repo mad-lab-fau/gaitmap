@@ -270,15 +270,15 @@ class BasePositionEstimation(BaseAlgorithm):
 
     @staticmethod
     def rotate_stride(acc: pd.DataFrame, rotations: pd.DataFrame) -> pd.DataFrame:
-        """Rotate acceleration data of a stride (e.g. form inertial sensor frame to world frame.
+        """Rotate acceleration data of a stride (e.g. form inertial sensor frame to world frame).
 
         Parameters
         ----------
         acc
-            Acceleration data with `gaitmap.utils.consts.SF_ACC` axes
+            Acceleration data with axes names as `SF_ACC` in :mod:`gaitmap.utils.consts`
         rotations
-            Rotations in the order of qx, qy, qz, qw as for example obtained by
-            `gaitmap.trajectory_reconsruction.orientation_estimation.GyroIntegration`
+            Rotations in the order of qx, qy, qz, qw as obtained by using an object of a class of
+            :mod:`~gaitmap.trajectory_reconstruction.orientation_estimation`
 
         Returns
         -------

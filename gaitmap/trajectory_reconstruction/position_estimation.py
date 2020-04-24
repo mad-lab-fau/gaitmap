@@ -50,15 +50,18 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     Other Parameters
     ----------------
     data
-        The data passed to the `estimate` method. This class does NOT take care for transforming sensor data from sensor
+        The data passed to the :py:meth:`~.estimate` method. This class does NOT take care for transforming sensor
+        data
+        from sensor
         frame to world coordinates, just calculates the necessary rotations that have to be applied.
     event_list
         This list is used to set the start and end of each integration period.
     rotations
         Rotations that will be used to rotate acceleration data before estimating the position (i.e. transforming
         from inertial sensor frame to fixed world frame). Rotations may be obtained from
-        `gaitmap.trajectory_reconstruction.orientation_estimation`. Either use `estimated_rotations_without_initial_` or
-        or `estimated_orientations_without_final`.
+        :mod:`~gaitmap.trajectory_reconstruction.orientation_estimation`. Either use
+        `estimated_orientations_without_initial_` or `estimated_orientations_without_final_` of
+        :class:`gaitmap.base.BaseOrientationEstimation`.
     sampling_rate_hz
         The sampling rate of the data.
 
