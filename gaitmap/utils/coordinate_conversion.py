@@ -13,7 +13,8 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     SingleSensorDataset,
     MultiSensorDataset,
-    get_multi_sensor_dataset_names, is_single_sensor_dataset,
+    get_multi_sensor_dataset_names,
+    is_single_sensor_dataset,
 )
 
 
