@@ -73,7 +73,9 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 # ----------------------
 # The main output is the `stride_list_`, which contains the start and the end of all identified strides.
 # As we passed a dataset with two sensors, the output will a dictionary.
-dtw.stride_list_["left_sensor"].head()
+stride_list_left = dtw.stride_list_["left_sensor"]
+print("{} strides were detected.".format(len(stride_list_left)))
+stride_list_left.head()
 
 # %%
 # To get a better understanding of the results, we can plot additional information about the results.
