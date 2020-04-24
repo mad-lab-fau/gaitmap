@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List, Sequence
+from typing import Union, Dict, List, Sequence, Iterable
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,14 @@ Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 SingleSensorStrideList = pd.DataFrame
 MultiSensorStrideList = Dict[str, pd.DataFrame]
 StrideList = Union[SingleSensorDataset, MultiSensorStrideList]
+
+SingleSensorPositionList = pd.DataFrame
+MultiSensorPositionList = Dict[str, pd.DataFrame]
+PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
+
+SingleSensorOrientationList = pd.DataFrame
+MultiSensorOrientationList = Dict[str, pd.DataFrame]
+OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
 def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
@@ -169,6 +177,7 @@ def is_single_sensor_stride_list(
     """Check if an input is a single-sensor stride list.
 
     A valid stride list:
+
     - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
     - has only a single level column index
 
@@ -281,3 +290,159 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
         keys = dataset.keys()
 
     return keys
+
+
+def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> bool:
+    """Check if an input is a single-sensor position list.
+
+    A valid position list:
+
+    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+      `["pos_x", "pos_y", "pos_z"]`
+
+    Parameters
+    ----------
+    position_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_position_list: Check for multi-sensor position lists
+
+    """
+    if not isinstance(position_list, pd.DataFrame):
+        return False
+
+    try:
+        position_list = set_correct_index(position_list, ["s_id", "sample"])
+    except KeyError:
+        return False
+    columns = position_list.columns
+    expected_columns = ["pos_x", "pos_y", "pos_z"]
+    if not all(v in columns for v in expected_columns):
+        return False
+    return True
+
+
+def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> bool:
+    """Check if an input is a multi-sensor position list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor position lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_position_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    position_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_position_list: Check for multi-sensor position lists
+
+    """
+    if not isinstance(position_list, dict):
+        return False
+
+    keys = position_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_position_list(position_list[k]):
+            return False
+    return True
+
+
+def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationList) -> bool:
+    """Check if an input is a single-sensor orientation list.
+
+    A valid orientation list:
+
+    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+      `["qx", "qy", "qz", "qw"]`
+
+    Parameters
+    ----------
+    orientation_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_orientation_list: Check for multi-sensor orientation lists
+
+    """
+    if not isinstance(orientation_list, pd.DataFrame):
+        return False
+    try:
+        orientation_list = set_correct_index(orientation_list, ["s_id", "sample"])
+    except KeyError:
+        return False
+    columns = orientation_list.columns
+    expected_columns = ["qx", "qy", "qz", "qw"]
+    if not all(v in columns for v in expected_columns):
+        return False
+    return True
+
+
+def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationList) -> bool:
+    """Check if an input is a multi-sensor orientation list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor Orientation lists.
+
+    Function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    orientation_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_orientation_list: Check for multi-sensor orientation lists
+
+    """
+    if not isinstance(orientation_list, dict):
+        return False
+
+    keys = orientation_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_orientation_list(orientation_list[k]):
+            return False
+    return True
+
+
+def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_cols: bool = True) -> pd.DataFrame:
+    """Set the correct columns as index, or leave them if they are already in the index.
+
+    Parameters
+    ----------
+    df
+        The dataframe
+    index_cols
+        A list of names that correspond to the names of the multiindex level names (in order)
+    drop_false_index_cols
+        If True columns that are set as index in df, but shouldn't will be deleted.
+        If False these columns will just be removed from the index and become regular df columns.
+
+    """
+    if list(index_cols) == df.index.names:
+        return df
+    # Find index cols that should not be there
+    wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]
+    df_just_right_index = df.reset_index(level=wrong_index, drop=drop_false_index_cols)
+
+    drop = False
+    if len(wrong_index) == len(df.index.names):
+        # In case all cols got dropped, a new range index was generated, which we need to remove again
+        drop = True
+    return df_just_right_index.reset_index(drop=drop).set_index(index_cols)

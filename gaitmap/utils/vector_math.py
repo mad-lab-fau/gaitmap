@@ -1,17 +1,21 @@
-"""A set of helper functions for find_shortest_rotation."""
+"""A set of helper functions to handle common vector operations.
+
+Wherever possible, these functions are designed to handle multiple vectors at the same time to perform efficient
+computations.
+"""
 from typing import Union
 
 import numpy as np
 from numpy.linalg import norm
 
 
-def _row_wise_dot(v1, v2):
+def row_wise_dot(v1, v2, squeeze=False):
     """Calculate row wise dot product of two vectors."""
-    if len(v1.shape) == 1:
-        ax = 0
-    else:
-        ax = 1
-    return np.sum(v1 * v2, axis=ax)
+    v1, v2 = np.atleast_2d(v1, v2)
+    out = np.sum(v1 * v2, axis=-1)
+    if squeeze:
+        return np.squeeze(out)
+    return out
 
 
 def is_almost_parallel_or_antiparallel(
@@ -49,7 +53,7 @@ def is_almost_parallel_or_antiparallel(
     array([True,False])
 
     """
-    return np.isclose(np.abs(_row_wise_dot(normalize(v1), normalize(v2))), 1, rtol=rtol, atol=atol)
+    return np.isclose(np.abs(row_wise_dot(normalize(v1), normalize(v2))), 1, rtol=rtol, atol=atol)
 
 
 def normalize(v: np.ndarray) -> np.ndarray:
@@ -144,41 +148,3 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
     if is_almost_parallel_or_antiparallel(v1, v2):
         return find_random_orthogonal(v1)
     return normalize(np.cross(v1, v2))
-
-
-def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
-    """Find the angle (in rad) between two  3D vectors.
-
-    Parameters
-    ----------
-    v1 : vector with shape (3,)  or array of vectors
-        axis ([x, y ,z]) or array of axis
-    v2 : vector with shape (3,) or array of vectors
-        axis ([x, y ,z]) or array of axis
-
-    Returns
-    -------
-        angle or array of angles between two vectors
-
-    Examples
-    --------
-    two vectors: 1D
-
-    >>> find_unsigned_3d_angle(np.array([-1, 0, 0]), np.array([-1, 0, 0]))
-    0
-
-    two vectors: 2D
-
-    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[-1, 0, 0]]), np.array([[-1, 0, 0],[-1, 0, 0]]))
-    array([0,0])
-
-    """
-    v1 = np.array(v1)
-    v1 = normalize(v1)
-    v2 = np.array(v2)
-    v2 = normalize(v2)
-    if len(v1.shape) == 1:
-        ax = 0
-    else:
-        ax = 1
-    return np.arccos(_row_wise_dot(v1, v2) / (norm(v1, axis=ax) * norm(v2, axis=ax)))

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 import pytest
+from pandas._testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_COLS, SF_GYR, SF_ACC, BF_COLS, BF_GYR, BF_ACC
 from gaitmap.utils.dataset_helper import (
@@ -14,6 +15,11 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    set_correct_index,
+    is_single_sensor_position_list,
+    is_single_sensor_orientation_list,
+    is_multi_sensor_position_list,
+    is_multi_sensor_orientation_list,
 )
 
 
@@ -257,3 +263,189 @@ class TestIsMultiSensorStrideList:
 
         with pytest.raises(ValueError):
             is_multi_sensor_stride_list(valid, stride_type="invalid_value")
+
+
+class TestIsSingleSensorPositionList:
+    @pytest.mark.parametrize(
+        "value",
+        (
+            list(range(6)),
+            "test",
+            np.arange(6),
+            {},
+            pd.DataFrame(),
+            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame(columns=["sample", "pos_x", "pos_y", "pos_z"]),
+            pd.DataFrame(columns=["s_id", "sample", "pos_x", "pos_z"]),
+        ),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_single_sensor_position_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z"], []),
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z", "something_else"], []),
+            (["sample", "pos_x", "pos_y", "pos_z"], ["s_id"]),
+            (["pos_x", "pos_y", "pos_z"], ["s_id", "sample"]),
+            (["pos_x", "pos_y", "pos_z", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_position_list(df)
+
+
+class TestIsSingleSensorOrientationList:
+    @pytest.mark.parametrize(
+        "value",
+        (
+            list(range(6)),
+            "test",
+            np.arange(6),
+            {},
+            pd.DataFrame(),
+            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame(columns=["sample", "qx", "qy", "qz", "qw"]),
+            pd.DataFrame(columns=["s_id", "sample", "qx", "qz", "qw"]),
+        ),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_single_sensor_orientation_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "qx", "qy", "qz", "qw"], []),
+            (["s_id", "sample", "qx", "qy", "qz", "qw", "something_else"], []),
+            (["sample", "qx", "qy", "qz", "qw"], ["s_id"]),
+            (["qx", "qy", "qz", "qw"], ["s_id", "sample"]),
+            (["qx", "qy", "qz", "qw", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_orientation_list(df)
+
+
+class TestIsMultiSensorPositionList:
+    @pytest.mark.parametrize(
+        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_multi_sensor_position_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z"], []),
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z", "something_else"], []),
+            (["sample", "pos_x", "pos_y", "pos_z"], ["s_id"]),
+            (["pos_x", "pos_y", "pos_z"], ["s_id", "sample"]),
+            (["pos_x", "pos_y", "pos_z", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_multi_sensor_position_list({"s1": df})
+
+    def test_only_one_invalid(self):
+        valid_cols = ["s_id", "sample", "pos_x", "pos_y", "pos_z"]
+        invalid_cols = ["sample", "pos_x", "pos_y", "pos_z"]
+        valid = {"s1": pd.DataFrame(columns=valid_cols)}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+
+        assert is_multi_sensor_position_list(valid)
+        assert not is_multi_sensor_position_list(invalid)
+
+
+class TestIsMultiSensorOrientationList:
+    @pytest.mark.parametrize(
+        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_multi_sensor_orientation_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "qx", "qy", "qz", "qw"], []),
+            (["s_id", "sample", "qx", "qy", "qz", "qw", "something_else"], []),
+            (["sample", "qx", "qy", "qz", "qw"], ["s_id"]),
+            (["qx", "qy", "qz", "qw"], ["s_id", "sample"]),
+            (["qx", "qy", "qz", "qw", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_multi_sensor_orientation_list({"s1": df})
+
+    def test_only_one_invalid(self):
+        valid_cols = ["s_id", "sample", "qx", "qy", "qz", "qw"]
+        invalid_cols = ["sample", "qx", "qy", "qz", "qw"]
+        valid = {"s1": pd.DataFrame(columns=valid_cols)}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+
+        assert is_multi_sensor_orientation_list(valid)
+        assert not is_multi_sensor_orientation_list(invalid)
+
+
+class TestSetCorrectIndex:
+    def test_no_change_needed(self):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        assert_frame_equal(df, set_correct_index(df, index_names))
+
+    @pytest.mark.parametrize("level", (0, 1, [0, 1]))
+    def test_cols_to_index(self, level):
+        """Test what happens if one or multiple of the expected index cols are normal cols."""
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        reset_df = df.reset_index(level=level)
+
+        out = set_correct_index(reset_df, index_names)
+
+        assert out.index.names == index_names
+        # Nothing was changed besides setting the index
+        assert_frame_equal(df, out)
+
+    def test_col_does_not_exist(self):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        with pytest.raises(KeyError):
+            set_correct_index(df, ["does_not_exist", *index_names])
+
+    @pytest.mark.parametrize("drop_additional", (True, False))
+    def test_additional_index_col(self, drop_additional):
+        index_names = ["t1", "t2"]
+        test = _create_test_multiindex()
+        test = test.rename(index_names)
+        df = pd.DataFrame(range(9), index=test, columns=["c"])
+
+        expected = ["t1", "c"]
+        out = set_correct_index(df, expected, drop_false_index_cols=drop_additional)
+
+        assert out.index.names == expected
+        assert ("t2" in out.columns) is not drop_additional

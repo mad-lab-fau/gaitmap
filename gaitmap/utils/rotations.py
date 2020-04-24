@@ -2,7 +2,7 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
-from typing import Union, Dict, Optional
+from typing import Union, Dict, Optional, List
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,7 @@ from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
 )
-from gaitmap.utils.vector_math import find_orthogonal, find_unsigned_3d_angle, normalize
+from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 
 
 def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
@@ -204,3 +204,172 @@ def get_gravity_rotation(
     gravity_vector = normalize(gravity_vector)
     expected_gravity = normalize(expected_gravity)
     return find_shortest_rotation(gravity_vector, expected_gravity)
+
+
+def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, List]) -> Rotation:
+    """Calculate the rotation component of rot around the given rotation axis.
+
+    This performs a swing-twist decomposition of the rotation quaternion [1]_.
+    The returned rotation is the twist component of this decomposition.
+    This is equivalent to the rotation around the rotation axis.
+
+    Parameters
+    ----------
+    rot : single or multi rotation
+        The rotation
+    rotation_axis : (3,) or (n,3) vector
+        The axis around which the rotation component should be extracted.
+        In case a single rotation axis and multiple rotations are provided, the angle is extracted around the same
+        axis for all rotations.
+        In case n axis are provided for n rotations, the angle for each rotation is extracted around the respective
+        axis.
+
+    Examples
+    --------
+    >>> # Create composite rotation around y and z axis
+    >>> rot = Rotation.from_rotvec([0, 0, np.pi / 2]) * Rotation.from_rotvec([0, np.pi / 4, 0 ])
+    >>> find_rotation_around_axis(rot, [0, 0, 1]).as_rotvec()  # Extract part around z
+    array([0.        , 0.        , 1.57079633])
+    >>> find_rotation_around_axis(rot, [0, 1, 0]).as_rotvec()  # Extract part around y
+    array([0.        , 0.78539816, 0.        ])
+
+    Notes
+    -----
+    .. [1] https://www.euclideanspace.com/maths/geometry/rotations/for/decomposition/
+
+    """
+    # Get the rotation axis from the initial quaternion
+    rotation_axis = np.atleast_2d(rotation_axis)
+    quaternions = np.atleast_2d(rot.as_quat())
+    if rotation_axis.shape[0] != quaternions.shape[0]:
+        rotation_axis_equal_d = np.repeat(rotation_axis, quaternions.shape[0], axis=0)
+    else:
+        rotation_axis_equal_d = rotation_axis
+    original_rot_axis = quaternions[:, :3]
+    # Get projection of the axis onto the quaternion
+    projection = (
+        rotation_axis_equal_d * row_wise_dot(original_rot_axis, normalize(rotation_axis), squeeze=False)[:, None]
+    )
+    angle_component = np.atleast_2d(quaternions[:, -1]).T
+    if np.all(projection == 0):
+        # In case the rotation axis is orthogonal to the original rotation return identity rotation
+        angle_component = np.ones(shape=angle_component.shape)
+    twist = Rotation.from_quat(np.squeeze(np.hstack((projection, angle_component))))
+    return twist
+
+
+def find_angle_between_orientations(
+    ori: Rotation, ref: Rotation, rotation_axis: Optional[Union[np.ndarray, List]]
+) -> Union[float, np.ndarray]:
+    """Get the required rotation angle between two orientations.
+
+    This will return the angle around the rotation axis that transforms ori into ref in this dimension.
+
+    Parameters
+    ----------
+    ori : Single or rotation object with n rotations
+        The initial orientation
+    ref : Single or rotation object with n rotations
+        The reference orientation
+    rotation_axis : (3,) or (n, 3) vector
+        The axis of rotation around which the angle is calculated.
+        If None the shortest possible rotation angle between the two quaternions is returned.
+
+    Returns
+    -------
+    angle
+        The angle around the given axis in rad between -np.pi and np.pi.
+        The sign is defined by the right-hand-rule around the provided axis ond the order or ori and ref.
+        If no axis is provided, the angle will always be positive.
+
+    Notes
+    -----
+    This function works for multiple possible combinations of input-dimensions:
+
+    - ori: 1, ref: 1, rotation_axis: (3,) / (1,3) -> angle: float
+    - ori: n, ref: 1, rotation_axis: (3,) / (1,3) / (n,3) -> angle: (n,)
+    - ori: 1, ref: n, rotation_axis: (3,) / (1,3) / (n,3) -> angle: (n,)
+    - ori: n, ref: n, rotation_axis: (3,) / (1,3) / (n,3) -> angle: (n,)
+
+    """
+    ori_to_ref = ori * ref.inv()
+    if rotation_axis is not None:
+        ori_to_ref = find_rotation_around_axis(ori_to_ref, rotation_axis)
+    rotvec = ori_to_ref.as_rotvec()
+    if rotation_axis is None:
+        rotation_axis = rotvec
+    out = row_wise_dot(rotvec, normalize(rotation_axis))
+    if rotvec.ndim == 1:
+        return out[0]
+    return out
+
+
+def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
+    """Find the angle (in rad) between two  3D vectors.
+
+    Parameters
+    ----------
+    v1 : vector with shape (3,)  or array of vectors
+        axis ([x, y ,z]) or array of axis
+    v2 : vector with shape (3,) or array of vectors
+        axis ([x, y ,z]) or array of axis
+
+    Returns
+    -------
+        angle or array of angles between two vectors
+
+    Examples
+    --------
+    two vectors: 1D
+
+    >>> find_unsigned_3d_angle(np.array([-1, 0, 0]), np.array([-1, 0, 0]))
+    0
+
+    two vectors: 2D
+
+    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[-1, 0, 0]]), np.array([[-1, 0, 0],[-1, 0, 0]]))
+    array([0,0])
+
+    """
+    v1_, v2_ = np.atleast_2d(v1, v2)
+    v1_ = normalize(v1_)
+    v2_ = normalize(v2_)
+    out = np.arccos(row_wise_dot(v1_, v2_) / (norm(v1_, axis=-1) * norm(v2_, axis=-1)))
+    if v1.ndim == 1:
+        return np.squeeze(out)
+    return out
+
+
+def angle_diff(a: Union[float, np.ndarray], b: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    """Calculate the real distance bewteen two signed angle values.
+
+    This returns the shorter of the two possible angle differences on a unit circle.
+
+    Parameters
+    ----------
+    a
+        The first angle value in rad
+    b
+        The second angle value in rad
+
+    Examples
+    --------
+    >>> np.round(angle_diff(0, -np.pi / 2), 2)
+    1.57
+
+    >>> np.round(angle_diff(-np.pi / 2, 0), 2)
+    -1.57
+
+    >>> np.round(angle_diff(1.5 * np.pi, 0), 2)
+    -1.57
+
+    >>> angle_diff(-np.pi, +np.pi)
+    0.0
+
+    >>> np.round(angle_diff(np.array([-np.pi / 2, np.pi / 2]), np.array([0, 0])), 2)
+    array([-1.57,  1.57])
+
+    """
+    diff = a - b
+    diff = (diff + np.pi) % (2 * np.pi) - np.pi
+    return diff

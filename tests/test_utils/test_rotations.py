@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
+from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.dataset_helper import Dataset, MultiSensorDataset, get_multi_sensor_dataset_names
 from gaitmap.utils.rotations import (
@@ -11,6 +12,10 @@ from gaitmap.utils.rotations import (
     rotate_dataset,
     find_shortest_rotation,
     get_gravity_rotation,
+    find_rotation_around_axis,
+    find_angle_between_orientations,
+    find_unsigned_3d_angle,
+    angle_diff,
 )
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
@@ -259,3 +264,155 @@ class TestGetGravityRotation:
         rotation_quad = get_gravity_rotation(np.array([1, 0, 0]))
         rotated_vector = rotation_quad.apply(np.array([1, 0, 0]))
         assert_almost_equal(rotated_vector, np.array([0, 0, 1]))
+
+
+class TestFindRotationAroundAxis:
+    """Test the function find_rotation_around_axis."""
+
+    @pytest.mark.parametrize(
+        "rotation, axis, out",
+        (
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), [0, 0, 1], [0, 0, np.pi / 2]),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), [0, 1, 0], [0, 0, 0]),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), [1, 0, 0], [0, 0, 0]),
+            (
+                Rotation.from_rotvec([0, np.pi / 4, 0]) * Rotation.from_rotvec([0, 0, np.pi / 2]),
+                [0, 1, 0],
+                [0, np.pi / 4, 0],
+            ),
+            (
+                Rotation.from_rotvec([0, np.pi / 4, 0]) * Rotation.from_rotvec([0, 0, np.pi / 2]),
+                [0, 0, 1],
+                [0, 0, np.pi / 2],
+            ),
+        ),
+    )
+    def test_simple_cases(self, rotation, axis, out):
+        assert_array_almost_equal(find_rotation_around_axis(rotation, axis).as_rotvec(), out)
+
+    def test_multi_input_single_axis(self):
+        rot = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
+        axis = [0, 0, 1]
+        out = np.repeat([[0, 0, np.pi / 2]], 5, axis=0)
+        assert_array_almost_equal(find_rotation_around_axis(rot, axis).as_rotvec(), out)
+
+    def test_multi_input_multi_axis(self):
+        rot = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 3, axis=0))
+        axis = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
+        out = [[0, 0, np.pi / 2], [0, 0, 0], [0, 0, 0]]
+        assert_array_almost_equal(find_rotation_around_axis(rot, axis).as_rotvec(), out)
+
+
+class TestFindAngleBetweenOrientations:
+    """Test the function find_angle_between_orientations."""
+
+    @pytest.mark.parametrize(
+        "ori1, ori2, axis, out",
+        (
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 1], np.pi),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), None, np.pi),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [1, 0, 0], 0),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, np.pi / 2]), [0, 0, 1], 0),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, np.pi / 2, 0]), [1, 0, 0], np.pi / 2),
+            (Rotation.from_rotvec([0, np.pi / 2, 0]), Rotation.from_rotvec([0, 0, np.pi / 2]), [1, 0, 0], -np.pi / 2),
+            (
+                Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
+                Rotation.from_quat([0, 0, 0, 1]),
+                [0, 1, 0],
+                np.pi / 2,
+            ),
+            (
+                Rotation.from_quat([0, 0, 0, 1]),
+                Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
+                [0, 1, 0],
+                -np.pi / 2,
+            ),
+            (
+                Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
+                Rotation.from_quat([0, 0, 0, 1]),
+                [0, 0, 1],
+                np.pi,
+            ),
+            (
+                Rotation.from_rotvec([0, np.pi / 2, 0]) * Rotation.from_rotvec([0, 0, np.pi]),
+                Rotation.from_quat([0, 0, 0, 1]),
+                None,
+                np.pi,  # Yes, this really must be pi!
+            ),
+        ),
+    )
+    def test_simple_cases(self, ori1, ori2, axis, out):
+        result = find_angle_between_orientations(ori1, ori2, axis)
+        assert_array_almost_equal(angle_diff(result, out), 0)
+        assert isinstance(result, float)
+
+    def test_multi_input_single_ref_single_axis(self):
+        rot = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
+        ref = Rotation.identity()
+        axis = [0, 0, 1]
+        out = [np.pi / 2] * 5
+        assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
+
+    def test_single_input_multi_ref_single_axis(self):
+        ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
+        rot = Rotation.identity()
+        axis = [0, 0, 1]
+        out = [-np.pi / 2] * 5
+        assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
+
+    def test_multi_input_multi_ref_single_axis(self):
+        ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
+        rot = Rotation.identity(num=5)
+        axis = [0, 0, 1]
+        out = [-np.pi / 2] * 5
+        assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
+
+    def test_multi_all(self):
+        ref = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
+        rot = Rotation.identity(num=5)
+        axis = np.repeat([[0, 0, 1]], 5, axis=0)
+        out = [-np.pi / 2] * 5
+        assert_array_almost_equal(find_angle_between_orientations(rot, ref, axis), out)
+
+
+class TestFindUnsigned3dAngle:
+    """Test the function `find_unsigned_3d_angle`."""
+
+    @pytest.mark.parametrize(
+        "v1, v2, result",
+        [
+            ([1, 0, 0], [0, 1, 0], np.pi / 2),
+            ([2, 0, 0], [0, 2, 0], np.pi / 2),
+            ([1, 0, 0], [1, 0, 0], 0),
+            ([-1, 0, 0], [-1, 0, 0], 0),
+            ([1, 0, 0], [-1, 0, 0], np.pi),
+        ],
+    )
+    def test_find_unsigned_3d_angle(self, v1, v2, result):
+        """Test  `find_unsigned_3d_angle` between two 1D vector."""
+        v1 = np.array(v1)
+        v2 = np.array(v2)
+        assert_almost_equal(find_unsigned_3d_angle(v1, v2), result)
+
+    def test_find_3d_angle_array(self):
+        """Test  `find_unsigned_3d_angle` between two 2D vector."""
+        v1 = np.array(4 * [[1, 0, 0]])
+        v2 = np.array(4 * [[0, 1, 0]])
+        output = find_unsigned_3d_angle(v1, v2)
+        assert len(output) == 4
+        assert_array_almost_equal(output, 4 * [np.pi / 2])
+
+
+class TestAngleDiff:
+    @pytest.mark.parametrize(
+        "a, b, out",
+        (
+            (-np.pi / 2, 0, -np.pi / 2),
+            (0, -np.pi / 2, np.pi / 2),
+            (-np.pi, np.pi, 0),
+            (1.5 * np.pi, 0, -np.pi / 2),
+            (np.array([-np.pi / 2, np.pi / 2]), np.array([0, 0]), np.array([-np.pi / 2, np.pi / 2])),
+        ),
+    )
+    def test_various_inputs(self, a, b, out):
+        assert_almost_equal(angle_diff(a, b), out)

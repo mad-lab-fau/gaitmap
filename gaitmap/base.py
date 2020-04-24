@@ -9,10 +9,12 @@ import pandas as pd
 
 from gaitmap.utils.dataset_helper import (
     Dataset,
-    StrideList,
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
     get_multi_sensor_dataset_names,
+    StrideList,
+    PositionList,
+    OrientationList,
 )
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
@@ -256,5 +258,21 @@ class BaseTemporalParameterCalculation(BaseAlgorithm):
     _action_method = "calculate"
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Find temporal parameters in in strides after segmentation and detecting events of each stride."""
+        """Find temporal parameters in strides after segmentation and detecting events of each stride."""
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseSpatialParameterCalculation(BaseAlgorithm):
+    """Base class for spatial parameters calculation."""
+
+    _action_method = "calculate"
+
+    def calculate(
+        self: BaseType,
+        stride_event_list: StrideList,
+        positions: PositionList,
+        orientations: OrientationList,
+        sampling_rate_hz: float,
+    ) -> BaseType:
+        """Find spatial parameters in in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
