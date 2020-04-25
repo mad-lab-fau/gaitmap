@@ -1,4 +1,4 @@
-"""A set of util functions that help to manipulate arrays in any imaginable way."""
+"""A set of util functions to detect static regions in a IMU signal given certain constrains."""
 import numpy as np
 
 from gaitmap.utils import array_handling
