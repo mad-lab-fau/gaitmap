@@ -14,10 +14,12 @@ import os
 import sys
 from datetime import datetime
 from importlib import import_module
-from inspect import getsourcelines
+from inspect import getsourcelines, getsourcefile
+from pathlib import Path
 
 import sphinx_bootstrap_theme
 
+import gaitmap
 from gaitmap.base import BaseAlgorithm
 
 sys.path.insert(0, os.path.abspath(".."))
@@ -159,14 +161,19 @@ def linkcode_resolve(domain, info):
     module = import_module(info["module"])
     obj = get_nested_attr(module, info["fullname"])
     code_line = None
+    filename = ''
+    try:
+        filename = str(Path(getsourcefile(obj)).relative_to(Path(getsourcefile(gaitmap)).parent.parent))
+    except:
+        pass
     try:
         code_line = getsourcelines(obj)[-1]
     except:
         pass
-    filename = info["module"].replace(".", "/")
-    if code_line:
-        return "{}/{}.py#L{}".format(URL, filename, code_line)
-    return "{}/{}.py".format(URL, filename)
+    if filename:
+        if code_line:
+            return "{}/{}#L{}".format(URL, filename, code_line)
+        return "{}/{}".format(URL, filename)
 
 
 def skip_properties(app, what, name, obj, skip, options):
