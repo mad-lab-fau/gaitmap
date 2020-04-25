@@ -6,7 +6,7 @@ import scipy
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
 from gaitmap.trajectory_reconstruction.position_estimation import ForwardBackwardIntegration
-from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_VEL, SF_POS
+from gaitmap.utils.consts import SF_COLS, SF_VEL, SF_POS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -84,7 +84,6 @@ class TestForwardBackwardIntegration:
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
-        # TODO add assert statement / regression test to check against previous result
         data_left = healthy_example_imu_data["left_sensor"]
         events_left = healthy_example_stride_events["left_sensor"]
         position = ForwardBackwardIntegration()

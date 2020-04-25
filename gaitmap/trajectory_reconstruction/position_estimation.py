@@ -126,7 +126,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         sampling_rate_hz: float,
     ):
         """Estimate velocity and position based on acceleration data."""
-        # TODO: Make it clear/add check that this data is actual rotated data
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError(
                 "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
@@ -171,11 +170,10 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             # TODO Gravity to consts or dataset_helper?
             acc_data = acc_data - [0, 0, 9.81]
         estimated_velocity_ = pd.DataFrame(
-            self._forward_backward_integration(acc_data), index=acc_data.index, columns=SF_VEL
+            self._forward_backward_integration(acc_data), columns=SF_VEL
         )
         # TODO: This uses the level walking assumption. We should make this configurable.
         estimated_position_ = pd.DataFrame(
-            index=acc_data.index,
             columns=SF_POS,
             data=np.hstack(
                 (
