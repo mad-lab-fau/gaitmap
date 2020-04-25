@@ -292,7 +292,7 @@ class BasePositionEstimation(BaseAlgorithm):
         acc = acc[SF_ACC]
         # quaternion columns may have different orders
         # TODO: extract quaternion columns to consts?
-        rotations = rotations[['qx', 'qy', 'qz', 'qw']]
+        rotations = rotations[["qx", "qy", "qz", "qw"]]
 
         return pd.DataFrame(Rotation(rotations).apply(acc), columns=SF_ACC, index=acc.index)
 

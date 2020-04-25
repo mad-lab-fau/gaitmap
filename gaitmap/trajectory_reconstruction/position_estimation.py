@@ -58,10 +58,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         This list is used to set the start and end of each integration period.
     rotations
         Rotations that will be used to rotate acceleration data before estimating the position (i.e. transforming
-        from inertial sensor frame to fixed world frame). Rotations may be obtained from
-        :mod:`~gaitmap.trajectory_reconstruction.orientation_estimation`. Either use
-        `estimated_orientations_without_initial_` or `estimated_orientations_without_final_` of
-        :class:`gaitmap.base.BaseOrientationEstimation`.
+        from inertial sensor frame to fixed world frame). Rotations may be for example obtained from
+        `estimated_orientations_without_final_` of :class:`gaitmap.base.BaseOrientationEstimation`.
     sampling_rate_hz
         The sampling rate of the data.
 
