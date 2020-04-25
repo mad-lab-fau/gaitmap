@@ -288,11 +288,13 @@ class BasePositionEstimation(BaseAlgorithm):
         """
         if len(acc) != len(rotations):
             raise ValueError("The number of rotations must fit the number of samples in acceleration data!")
-        acc_out = []
-        for i_row, i_acc in acc.reset_index(drop=True).iterrows():
-            rotated_data = Rotation(rotations.iloc[i_row]).apply(i_acc.values)
-            acc_out.append(rotated_data)
-        return pd.DataFrame(acc_out, columns=SF_ACC, index=acc.index)
+        # acc columns may have different orders
+        acc = acc[SF_ACC]
+        # quaternion columns may have different orders
+        # TODO: extract quaternion columns to consts?
+        rotations = rotations[['qx', 'qy', 'qz', 'qw']]
+
+        return pd.DataFrame(Rotation(rotations).apply(acc), columns=SF_ACC, index=acc.index)
 
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):

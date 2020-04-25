@@ -192,5 +192,3 @@ class TestForwardBackwardIntegration:
         gyr_integrator = GyroIntegration(align_window_width=8)
         gyr_integrator.estimate(data, events, fs)
         return gyr_integrator.estimated_orientations_without_final_
-
-    # TODO: Add test for .rotate_stride
