@@ -25,7 +25,7 @@ The following table provides an overview over the commonly used values types and
    Rotation Rate  deg/s
    Velocity       m/s
    Distance       m
-   Time           s or # (see more below)
+   Time           s or # (see "Further Rules" below)
    Sampling Rate  Hz
    =============  ======================
 
