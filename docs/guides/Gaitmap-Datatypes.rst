@@ -136,9 +136,9 @@ At some point during most gait analysis pipelines it is important to extract the
 relevant events within these strides.
 Such information is stored in a *StrideList*.
 
-A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least has the columns defined by
+A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least have the columns defined by
 :obj:`~gaitmap.utils.consts.SL_COLS`.
-The columns `s_id` should contain a unique identifier for each stride in the stride list.
+The column `s_id` should contain a unique identifier for each stride in the stride list.
 All other columns should provide values in samples since the start of the recording (not the start of the stride!)
 
 >>> from gaitmap.utils.consts import SL_COLS
