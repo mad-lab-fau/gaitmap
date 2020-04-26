@@ -91,16 +91,28 @@ class BaseAlgorithm:
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters for this algorithm.
 
         Returns
         -------
         params
             Parameter names mapped to their values.
+        deep
+            Only relevant if object contains nested algorithm objects.
+            If this is the case and deep is True, the params of these nested objects are included in the output using a
+            prefix like `nested_object_name__` (Note the two "_" at the end)
 
         """
-        return {k: getattr(self, k) for k in self._get_param_names()}
+        out = dict()
+        for key in self._get_param_names():
+            value = getattr(self, key)
+            if deep and isinstance(value, BaseAlgorithm):
+                deep_items = value.get_params(deep=True).items()
+                out.update((key + '__' + k, val) for k, val in deep_items)
+            else:
+                out[key] = value
+        return out
 
     def set_params(self: BaseType, **params: Any) -> BaseType:
         """Set the parameters of this Algorithm."""

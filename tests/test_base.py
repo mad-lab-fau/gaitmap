@@ -136,3 +136,17 @@ def test_action_is_applied(example_test_class_after_action):
         pytest.skip("Invalid fixture for this test")
 
     assert instance._action_is_applied is True
+
+
+def test_nested_get_params():
+    nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
+    top_level_params = {"test1": "t1"}
+    test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
+
+    params = test_instance.get_params()
+
+    for k, v in nested_instance.get_params().items():
+        assert params["nested_class__" + k] == v
+
+    for k, v in top_level_params.items():
+        assert params[k] == v
