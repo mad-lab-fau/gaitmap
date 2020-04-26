@@ -29,7 +29,7 @@ from gaitmap.example_data import get_healthy_example_imu_data
 
 data = get_healthy_example_imu_data()
 sampling_rate_hz = 204.8
-print(data.columns)
+data.sort_index(axis=1).head(1)
 
 # %%
 # Selecting a template
@@ -41,14 +41,17 @@ print(data.columns)
 from gaitmap.stride_segmentation import BarthOriginalTemplate
 
 template = BarthOriginalTemplate()
-plt.plot(template.data)
+template.data.plot()
+plt.xlabel("Time [#]")
+plt.ylabel("gyro [deg/s]")
 plt.show()
 
 # %%
 # Preparing the data
 # ------------------
-# The template only makes use of the gyro information and expects the data to be in the gaitmap BF to be able to use
-# the same template for the left and the right foot.
+# The template only makes use of the gyro information.
+# Further, if you use this template in the DTW, your data is expected to be in the gaitmap BF to be able to use the
+# same template for the left and the right foot.
 # Therefore, we need to transform the our dataset into the body frame.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
