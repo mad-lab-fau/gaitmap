@@ -61,7 +61,7 @@ To check the compliance with this rule :func:`~gaitmap.utils.dataset_helper.is_s
 >>> is_single_sensor_dataset(dataset, frame="sensor")
 True
 
-The above set of columns describe a dataset in the Sensor Frame.
+The above set of columns describes a dataset in the Sensor Frame.
 An additional version of the *SingleSensorDataset* exists in the Body Frame.
 Its definition is identical to dataset in the sensor frame, except different column names
 (:obj:`~gaitmap.utils.consts.BF_COLS`) are expected.
@@ -97,11 +97,11 @@ sensor left_sensor                         right_sensor
 axis         acc_x     acc_y    ...        acc_x    acc_y     ...
 0.0       0.880811  2.762208    ...        0.311553 -2.398646 ...
 
-Second, for sensor data that is not synchronised gaitmap also support a dictionary based *MultiSensorDatasets*.
+Second, for sensor data that is not synchronised gaitmap also supports a dictionary based *MultiSensorDatasets*.
 Instead of a single dataframe with `MultiIndex` it consists of a dictionary with the sensor names as keys and valid
 *SingleSensorDatasets* as values.
 
-For both types simply indexing with the sensor name should returns a valid *SingleSensorDatasets*.
+For both types simply indexing with the sensor name should return a valid *SingleSensorDatasets*.
 
 >>> is_single_sensor_dataset(multi_dataset["left_sensor"])
 True
