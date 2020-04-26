@@ -102,9 +102,18 @@ class BaseAlgorithm:
         """
         return {k: getattr(self, k) for k in self._get_param_names()}
 
-    def set_params(self: BaseType, **params: Any) -> Type[BaseType]:
+    def set_params(self: BaseType, **params: Any) -> BaseType:
         """Set the parameters of this Algorithm."""
-        raise NotImplementedError("This will be implemented in the future")
+        valid_names = self._get_param_names()
+        for k, v in params.items():
+            if k not in valid_names:
+                raise ValueError(
+                    "`{}` is not a valid parameter name for {}. Choose one of {}".format(
+                        k, self.__class__.__name__, valid_names
+                    )
+                )
+            setattr(self, k, v)
+        return self
 
     def get_other_params(self) -> Dict[str, Any]:
         """Get all "Other Parameters" of the Algorithm.
