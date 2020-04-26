@@ -179,7 +179,70 @@ Its format can be validated using :func:`~gaitmap.utils.dataset_helper.is_multi_
 >>> is_multi_sensor_stride_list(multi_sensor_stride_list, stride_type="any")
 True
 
+Position and Orientation Lists
+==============================
 
+# TODO: Update to reflect proper world frame coordinates. Also change names of columns in the entire package.
 
+To calculate spatial parameters usually the orientation and the position of a sensor need to be estimated first.
+This can usually not be done over the entire duration of a recording, as this would result in a large drift error.
+Therefore, this estimation is rather just performed for shorter sections such as a single stride or a gait sequence.
+The structure of the position and orientation lists reflect these.
 
+Both, the *SingleSensorOrientationList* and the *SingleSensorPositionList* are `pd.DataFrames` with a
+:class:`~pandas.MultiIndex` index.
+The first level of this double index (`level=0`) is a unique identifier of the stride or gait sequence that is used as
+basis of the estimation.
+The difference between stride and gaitsequence level estimations is indicated based on the level name of the index,
+which is either `s_id` for strides, or `gs_id` for gait sequences.
+However, only stride based lists are properly supported at the moment.
+Note that the exact definition of a gait sequence depends on the algorithm that detected it.
+The second level of the index indicates the sample (starting from 0) within each integration period.
 
+>>> from gaitmap.example_data import get_healthy_example_orientation
+>>> get_healthy_example_orientation()['left_sensor']
+                   qx        qy        qz        qw
+s_id sample
+0    0      -0.077640 -0.025560 -0.080004 -0.993438
+     1      -0.077347 -0.025167 -0.080207 -0.993454
+...               ...       ...       ...       ...
+1    0     0.405476  0.132966  0.886753 -0.177700
+     1     0.442030  0.126231  0.868311 -0.186309
+...               ...       ...       ...       ...
+
+Alternatively to being part of the index, `s_id` and `sample` can also be regular columns.
+Methods that take Orientation and Postion lists as inputs can use :func:`~gaitmap.utils.dataset_helper.set_correct_index`
+to unify both formats.
+
+>>> from gaitmap.utils.dataset_helper import set_correct_index
+>>> orientation_list = ...
+>>> unified_format_orientation_list = set_correct_index(orientation_list, ["s_id", "sample"])
+
+Orientation and Position lists only differ based on their expected columns.
+Orientation lists are expected to have all columns specified in TODO: Add Constant and Position lists all columns
+specified in :obj:`~gaitmap.utils.consts.SF_POS`.
+
+# TODO: Add for Orientation
+>>> from gaitmap.utils.consts import SF_POS
+>>> SF_POS
+['pos_x', 'pos_y', 'pos_z']
+
+To validate the correctness of these data objectes, :func:`~gaitmap.utils.dataset_helper.is_single_sensor_position_list`
+and :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` can be used, respectively.
+These functions call `:func:`~gaitmap.utils.dataset_helper.set_correct_index` internally and hence, support both
+possible dataframe formats that are described above.
+
+>>> from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
+>>> orientation_list = ...
+>>> is_single_sensor_orientation_list(orientation_list)
+True
+
+Additionally, a multi-sensor version exists for both types of lists.
+They follow the dictionary structure introduced for the stride list.
+:func:`~gaitmap.utils.dataset_helper.is_multi_sensor_position_list` and
+:func:`~gaitmap.utils.dataset_helper.is_multi_sensor_orientation_list` can be used to validate these formats.
+
+>>> from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
+>>> multi_sensor_orientation_list = {"sensor1": ..., "sensor2": ...}
+>>> is_single_sensor_orientation_list(multi_sensor_orientation_list, stride_type="any")
+True
