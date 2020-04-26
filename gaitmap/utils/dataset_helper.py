@@ -220,7 +220,9 @@ def is_single_sensor_stride_list(
 
     # Check columns exist
     if stride_type != "any" and stride_type not in additional_columns:
-        raise ValueError('The argument `stride_type` must be "any" or one of'.format(list(SL_ADDITIONAL_COLS.keys())))
+        raise ValueError(
+            'The argument `stride_type` must be "any" or one of {}'.format(list(SL_ADDITIONAL_COLS.keys()))
+        )
     minimal_columns = SL_COLS
     all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
     if not all(v in columns for v in all_columns):
