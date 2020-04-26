@@ -35,7 +35,7 @@ print(data.columns)
 # Selecting a template
 # --------------------
 # This library ships with the template that was originally used by Barth et al.
-# It is generated based on manual segmented strides from healthy participants and PD patients.
+# It is generated based on manually segmented strides from healthy participants and PD patients.
 # This template is used by default by :class:`~gaitmap.stride_segmentation.BarthDtw`, but we will load it manually in
 # this example.
 from gaitmap.stride_segmentation import BarthOriginalTemplate
@@ -59,7 +59,7 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # Applying the DTW
 # ----------------
 # First we need to initialize the DTW.
-# In most cases it is sufficient to keep all parameters at default.]
+# In most cases it is sufficient to keep all parameters at default.
 # However, if you experience any issues you should start modifying the parameters, starting by `max_cost`,
 # as it has the highest influence on the result.
 from gaitmap.stride_segmentation import BarthDtw
@@ -72,7 +72,7 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 # Inspecting the results
 # ----------------------
 # The main output is the `stride_list_`, which contains the start and the end of all identified strides.
-# As we passed a dataset with two sensors, the output will a dictionary.
+# As we passed a dataset with two sensors, the output will be a dictionary.
 stride_list_left = dtw.stride_list_["left_sensor"]
 print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left.head()
@@ -81,10 +81,10 @@ stride_list_left.head()
 # To get a better understanding of the results, we can plot additional information about the results.
 # The top row shows the `gyr_ml` axis with the segmented strides plotted on top.
 # They are postprocessed to snap to the closed data minimum.
-# In the second row the cost function of the dtw is plotted.
-# Each minima marks a potential end of a stride.
-# The black dotted line indicated the used `max_cost` threshold to search for stride candidates.
-# The drawn boxes show the raw result of the the dtw without the snap-to-min postprocessing.
+# In the second row the cost function of the DTW is plotted.
+# Each minimum marks a potential end of a stride.
+# The black dotted line indicates the used `max_cost` threshold to search for stride candidates.
+# The drawn boxes show the raw result of the the DTW without the snap-to-min postprocessing.
 # The third row shows the entire accumulated cost matrix and the path each stride takes through the cost matrix to
 # achieve minimal cost.
 #
