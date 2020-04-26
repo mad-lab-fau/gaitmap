@@ -25,7 +25,7 @@ class BarthDtw(BaseDtw):
         The template used for matching.
         The required data type and shape depends on the use case.
         For more details see :class:`~gaitmap.stride_segmentation.BaseDtw`.
-        By default, the :class:`~gaitmap.stride_segmentation.dtw_templates.templates.BarthOriginalTemplate` is used
+        By default, the :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate` is used
         with default settings.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.

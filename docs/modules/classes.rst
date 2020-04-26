@@ -66,6 +66,7 @@ Classes
     BaseDtw
     BarthDtw
     DtwTemplate
+    BarthOriginalTemplate
 
 Functions
 ---------

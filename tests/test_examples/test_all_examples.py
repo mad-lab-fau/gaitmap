@@ -7,5 +7,12 @@ matplotlib.use("Agg")
 def test_base_dtw_generic(snapshot):
     from examples.base_dtw_generic import dtw
 
-    # assert len(dtw.matches_start_end_) == 5
+    assert len(dtw.matches_start_end_) == 5
     snapshot.assert_match(dtw.matches_start_end_)
+
+
+def test_barth_dtw_example(snapshot):
+    from examples.barth_dtw_stride_segmentation import dtw
+
+    assert len(dtw.matches_start_end_["left_sensor"]) == 28
+    snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
