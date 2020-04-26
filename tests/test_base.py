@@ -145,8 +145,28 @@ def test_nested_get_params():
 
     params = test_instance.get_params()
 
+    assert isinstance(params["nested_class"], nested_instance.__class__)
+
     for k, v in nested_instance.get_params().items():
         assert params["nested_class__" + k] == v
 
     for k, v in top_level_params.items():
         assert params[k] == v
+
+
+def test_nested_set_params():
+    nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
+    top_level_params = {"test1": "t1"}
+    test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
+    new_params_top_level = {"test1": "new_t1"}
+    new_params_nested = {"nested2": "new_n2"}
+    test_instance.set_params(**new_params_top_level, **{"nested_class__" + k: v for k, v in new_params_nested.items()})
+
+    params = test_instance.get_params()
+    params_nested = nested_instance.get_params()
+
+    for k, v in new_params_top_level.items():
+        assert params[k] == v
+    for k, v in new_params_nested.items():
+        assert params["nested_class__" + k] == v
+        assert params_nested[k] == v

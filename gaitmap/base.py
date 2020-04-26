@@ -2,7 +2,8 @@
 
 import inspect
 import types
-from typing import Callable, Dict, TypeVar, Type, Any, List, Union, Optional
+from collections import defaultdict
+from typing import Callable, Dict, TypeVar, Any, List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -104,27 +105,41 @@ class BaseAlgorithm:
             prefix like `nested_object_name__` (Note the two "_" at the end)
 
         """
+        # Basically copied from sklearn
         out = dict()
         for key in self._get_param_names():
             value = getattr(self, key)
             if deep and isinstance(value, BaseAlgorithm):
                 deep_items = value.get_params(deep=True).items()
-                out.update((key + '__' + k, val) for k, val in deep_items)
-            else:
-                out[key] = value
+                out.update((key + "__" + k, val) for k, val in deep_items)
+            out[key] = value
         return out
 
     def set_params(self: BaseType, **params: Any) -> BaseType:
-        """Set the parameters of this Algorithm."""
-        valid_names = self._get_param_names()
-        for k, v in params.items():
-            if k not in valid_names:
-                raise ValueError(
-                    "`{}` is not a valid parameter name for {}. Choose one of {}".format(
-                        k, self.__class__.__name__, valid_names
-                    )
-                )
-            setattr(self, k, v)
+        """Set the parameters of this Algorithm.
+
+        To set parameters of nested objects use `nested_object_name__para_name=`.
+        """
+        # Basically copied from sklearn
+        if not params:
+            # Simple optimization to gain speed (inspect is slow)
+            return self
+        valid_params = self.get_params(deep=True)
+
+        nested_params = defaultdict(dict)  # grouped by prefix
+        for key, value in params.items():
+            key, delim, sub_key = key.partition("__")
+            if key not in valid_params:
+                raise ValueError("`{}` is not a valid parameter name for {}.".format(key, self.__class__.__name__))
+
+            if delim:
+                nested_params[key][sub_key] = value
+            else:
+                setattr(self, key, value)
+                valid_params[key] = value
+
+        for key, sub_params in nested_params.items():
+            valid_params[key].set_params(**sub_params)
         return self
 
     def get_other_params(self) -> Dict[str, Any]:
