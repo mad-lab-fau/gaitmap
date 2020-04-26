@@ -31,8 +31,8 @@ The following table provides an overview over the commonly used values types and
 
 Further rules:
 
-- If a method requires a parameters in a given unit it append with a common short-hand name in this unit (e.g.
-  `windowsize_ms` would expect a value in milliseconds.
+- If a method requires a parameter in a given unit, append it with a common short-hand name in this unit (e.g.
+  `windowsize_ms` would expect a value in milliseconds).
 - Time is either specified in seconds (s) for user facing durations (e.g. stride time), but time points in intermediate
   results (e.g. biomechanical events) are typically specified in samples since the start of the measurement (#).
 
