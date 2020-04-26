@@ -64,7 +64,7 @@ class TestGyroIntegration:
         sensor_data = pd.DataFrame(columns=SF_COLS)
         for i_axis in SF_GYR:
             if i_axis == SF_GYR[axis_to_rotate]:
-                sensor_data[i_axis] = [np.pi] * (fs + window_width)
+                sensor_data[i_axis] = [180] * (fs + window_width)
             else:
                 sensor_data[i_axis] = [0] * (fs + window_width)
 
