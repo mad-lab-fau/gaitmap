@@ -301,7 +301,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     A valid position list:
 
     - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
-    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least the columns
       `["pos_x", "pos_y", "pos_z"]`
 
     Parameters

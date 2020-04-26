@@ -14,7 +14,7 @@ BF_ACC = ["acc_pa", "acc_ml", "acc_si"]
 #: The default names of all columns in the body frame
 BF_COLS = [*BF_ACC, *BF_GYR]
 
-#: The minimal required strides for a stride list
+#: The minimal required columns for a stride list
 SL_COLS = ["s_id", "start", "end"]
 #: Additional Columns of a stride list depending on its type
 SL_ADDITIONAL_COLS = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
