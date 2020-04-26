@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, SF_POS
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -322,7 +322,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     except KeyError:
         return False
     columns = position_list.columns
-    expected_columns = ["pos_x", "pos_y", "pos_z"]
+    expected_columns = SF_POS
     if not all(v in columns for v in expected_columns):
         return False
     return True
