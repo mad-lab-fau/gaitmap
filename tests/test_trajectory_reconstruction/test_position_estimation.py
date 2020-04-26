@@ -32,7 +32,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestForwardBackwardIntegration:
     # TODO implement tests for turning_point != 0.5?
     start_sample = 5
-    dummy_data_length = 1000
+    dummy_data_length = 200
 
     def test_estimate_velocity_dummy_data(self):
         # algorithm parameters
@@ -67,10 +67,9 @@ class TestForwardBackwardIntegration:
         # algorithm parameters
         turning_point = 0.5
         steepness = 0.08
-
-        data = self._get_dummy_data(self.dummy_data_length, "non-symmetrical")
+        acc = 2
+        data = self._get_dummy_data(self.dummy_data_length, "constant", acc_max=acc)
         events = self._get_dummy_event_list(data)
-        np.linspace(0, 1, len(data))
         sampling_frequency_hz = 100
         rots = pd.DataFrame(
             [[0, 0, 0, 0, 1]] * (len(data) - self.start_sample), columns=["s_id", "qx", "qy", "qz", "qw"]
@@ -80,7 +79,13 @@ class TestForwardBackwardIntegration:
         position.estimate(data, events, rots, sampling_frequency_hz)
         # TODO: use different test data, where just vertical will be zero
         final_position = position.estimated_position_.iloc[-1]
+        half_position = position.estimated_position_.iloc[int(np.floor(len(data)-self.start_sample)/2)]
         np.testing.assert_almost_equal(final_position[2], 0)
+        t_middle = len(data)/sampling_frequency_hz/2
+        # s = acc/2*t^2
+        # acc = const.
+        np.testing.assert_almost_equal(half_position[0], acc/2*t_middle*t_middle, decimal=1)
+        np.testing.assert_almost_equal(half_position[1], acc/2*t_middle*t_middle, decimal=1)
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -152,22 +157,24 @@ class TestForwardBackwardIntegration:
             position = ForwardBackwardIntegration(turning_point, 0.08)
             position.estimate(data, stride_events, rots, 204.8)
 
-    def _get_dummy_data(self, length, style: str):
-        dummy = np.linspace(0, 1, length)
+    def _get_dummy_data(self, length, style: str, acc_max=1):
+        dummy = np.linspace(0, acc_max, length)
         if style == "point-symmetrical":
             dummy_data = np.concatenate((dummy, -np.flip(dummy)))
             dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy) * 2).transpose(), columns=SF_COLS)
+        elif style == "non-symmetrical":
+            dummy_data = dummy
+            dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy)).transpose(), columns=SF_COLS)
+        elif style == "constant":
+            dummy_data = [acc_max] * length
+            dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy)).transpose(), columns=SF_COLS)
         else:
-            if style == "non-symmetrical":
-                dummy_data = dummy
-                dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy)).transpose(), columns=SF_COLS)
-            else:
-                dummy_pd = pd.DataFrame()
+            dummy_pd = pd.DataFrame()
         # we are faking a stride that begins at sample `start_sample` and thus we need the beginning of the
         #   point-symmetrical signal to that sample
         first_rows = dummy_pd.iloc[0 : self.start_sample]
         dummy_data = first_rows.append(dummy_pd, ignore_index=True)
-        return dummy_pd
+        return dummy_data
 
     def _get_dummy_event_list(self, dummy_data):
         return pd.DataFrame(data=[[0, self.start_sample, len(dummy_data)]], columns=["s_id", "start", "end"])
