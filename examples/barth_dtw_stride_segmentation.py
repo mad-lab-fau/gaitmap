@@ -84,7 +84,7 @@ stride_list_left.head()
 # In the second row the cost function of the DTW is plotted.
 # Each minimum marks a potential end of a stride.
 # The black dotted line indicates the used `max_cost` threshold to search for stride candidates.
-# The drawn boxes show the raw result of the the DTW without the snap-to-min postprocessing.
+# The drawn boxes show the raw result of the DTW without the snap-to-min postprocessing.
 # The third row shows the entire accumulated cost matrix and the path each stride takes through the cost matrix to
 # achieve minimal cost.
 #
