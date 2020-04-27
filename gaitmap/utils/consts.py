@@ -1,4 +1,5 @@
 """Common constants used in the library."""
+import numpy as np
 
 #: The default names of the Gyroscope columns in the sensor frame
 SF_GYR = ["gyr_x", "gyr_y", "gyr_z"]
@@ -27,4 +28,5 @@ GF_POS = ["pos_x", "pos_y", "pos_z"]
 GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
 
 #: The gravity vector in m/s^2 in the FSF
-GRAV_VEC = [0.0, 0.0, 9.81]
+GRAV_VEC = np.array([0.0, 0.0, 9.81])
+GRAV_VEC.flags.writeable = False

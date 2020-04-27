@@ -174,9 +174,7 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
     return rotation_from_angle(axis, angle)
 
 
-def get_gravity_rotation(
-    gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = GRAV_VEC
-) -> Rotation:
+def get_gravity_rotation(gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = GRAV_VEC) -> Rotation:
     """Find the rotation matrix needed to align  z-axis with gravity.
 
     Parameters

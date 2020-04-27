@@ -179,7 +179,7 @@ for sensor, short in [("left_sensor", "L"), ("right_sensor", "R")]:
     ori = pd.DataFrame(Rotation.from_matrix(rot_mat).inv().as_quat(), columns=["q_x", "q_y", "q_z", "q_w"])
     ori_per_stride = dict()
     pos_per_stride = dict()
-    for _, s in test_events[test_events['foot'] == sensor.split('_')[0]].iterrows():
+    for _, s in test_events[test_events["foot"] == sensor.split("_")[0]].iterrows():
         ori_per_stride[s["s_id"]] = ori.iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
         pos = test_mocap[short + "_FCC"].iloc[int(s["start"]) : int(s["end"])].reset_index(drop=True)
         pos = pos - pos.iloc[0]  # Make it relative for each stride
