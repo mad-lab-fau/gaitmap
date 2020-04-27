@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, SF_POS
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -205,6 +205,7 @@ def is_single_sensor_stride_list(
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
 
     """
+    # TODO: Add a check that the stride id is unique.
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
@@ -214,13 +215,15 @@ def is_single_sensor_stride_list(
         return False
 
     # Depending of the stridetype check additional conditions
-    additional_columns = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
+    additional_columns = SL_ADDITIONAL_COLS
     start_event = {"min_vel": "min_vel"}
 
     # Check columns exist
     if stride_type != "any" and stride_type not in additional_columns:
-        raise ValueError('The argument `stride_type` must be one of ["any", "min_vel"]')
-    minimal_columns = ["s_id", "start", "end"]
+        raise ValueError(
+            'The argument `stride_type` must be "any" or one of {}'.format(list(SL_ADDITIONAL_COLS.keys()))
+        )
+    minimal_columns = SL_COLS
     all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
     if not all(v in columns for v in all_columns):
         return False
@@ -298,7 +301,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     A valid position list:
 
     - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
-    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
+    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least the columns
       `["pos_x", "pos_y", "pos_z"]`
 
     Parameters
@@ -319,7 +322,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     except KeyError:
         return False
     columns = position_list.columns
-    expected_columns = ["pos_x", "pos_y", "pos_z"]
+    expected_columns = SF_POS
     if not all(v in columns for v in expected_columns):
         return False
     return True
