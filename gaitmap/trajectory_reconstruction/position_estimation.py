@@ -194,7 +194,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         # TODO: move to utils?
         # TODO: different steepness and turning point for velocity and position?
         integral_forward = integrate.cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
-        integral_backward = integrate.cumtrapz(data[::-1], axis=0, initial=0) / self.sampling_rate_hz
+        # for backward integration, we flip the signal
+        integral_backward = integrate.cumtrapz(-data[::-1], axis=0, initial=0) / self.sampling_rate_hz
         weights = self._get_weight_matrix(data.shape[0])
 
         return (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
