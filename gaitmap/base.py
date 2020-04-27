@@ -2,7 +2,8 @@
 
 import inspect
 import types
-from typing import Callable, Dict, TypeVar, Type, Any, List, Union, Optional
+from collections import defaultdict
+from typing import Callable, Dict, TypeVar, Any, List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -22,37 +23,7 @@ from gaitmap.utils.dataset_helper import (
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
-class BaseAlgorithm:
-    """Base class for all algorithms.
-
-    All type-specific algorithm classes should inherit from this class and need to
-
-    1. overwrite `_action_method` with the name of the actual action method of this class type
-    2. implement a stub for the action method
-
-    Attributes
-    ----------
-    _action_method
-        The name of the action method used by the Childclass
-
-    """
-
-    _action_method: str
-
-    @property
-    def _action_is_applied(self) -> bool:
-        """Check if the action method was already called/results were generated."""
-        if len(self.get_attributes()) == 0:
-            return False
-        return True
-
-    def _get_action_method(self) -> Callable:
-        """Get the action method as callable.
-
-        This is intended to be used by wrappers, that do not know the Type of an algorithm
-        """
-        return getattr(self, self._action_method)
-
+class _BaseSerializable:
     @classmethod
     def _get_param_names(cls) -> List[str]:
         """Get parameter names for the estimator.
@@ -91,20 +62,87 @@ class BaseAlgorithm:
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters for this algorithm.
 
         Returns
         -------
         params
             Parameter names mapped to their values.
+        deep
+            Only relevant if object contains nested algorithm objects.
+            If this is the case and deep is True, the params of these nested objects are included in the output using a
+            prefix like `nested_object_name__` (Note the two "_" at the end)
 
         """
-        return {k: getattr(self, k) for k in self._get_param_names()}
+        # Basically copied from sklearn
+        out = dict()
+        for key in self._get_param_names():
+            value = getattr(self, key)
+            if deep and isinstance(value, _BaseSerializable):
+                deep_items = value.get_params(deep=True).items()
+                out.update((key + "__" + k, val) for k, val in deep_items)
+            out[key] = value
+        return out
 
-    def set_params(self: BaseType, **params: Any) -> Type[BaseType]:
-        """Set the parameters of this Algorithm."""
-        raise NotImplementedError("This will be implemented in the future")
+    def set_params(self: BaseType, **params: Any) -> BaseType:
+        """Set the parameters of this Algorithm.
+
+        To set parameters of nested objects use `nested_object_name__para_name=`.
+        """
+        # Basically copied from sklearn
+        if not params:
+            # Simple optimization to gain speed (inspect is slow)
+            return self
+        valid_params = self.get_params(deep=True)
+
+        nested_params = defaultdict(dict)  # grouped by prefix
+        for key, value in params.items():
+            key, delim, sub_key = key.partition("__")
+            if key not in valid_params:
+                raise ValueError("`{}` is not a valid parameter name for {}.".format(key, self.__class__.__name__))
+
+            if delim:
+                nested_params[key][sub_key] = value
+            else:
+                setattr(self, key, value)
+                valid_params[key] = value
+
+        for key, sub_params in nested_params.items():
+            valid_params[key].set_params(**sub_params)
+        return self
+
+
+class BaseAlgorithm(_BaseSerializable):
+    """Base class for all algorithms.
+
+    All type-specific algorithm classes should inherit from this class and need to
+
+    1. overwrite `_action_method` with the name of the actual action method of this class type
+    2. implement a stub for the action method
+
+    Attributes
+    ----------
+    _action_method
+        The name of the action method used by the Childclass
+
+    """
+
+    _action_method: str
+
+    @property
+    def _action_is_applied(self) -> bool:
+        """Check if the action method was already called/results were generated."""
+        if len(self.get_attributes()) == 0:
+            return False
+        return True
+
+    def _get_action_method(self) -> Callable:
+        """Get the action method as callable.
+
+        This is intended to be used by wrappers, that do not know the Type of an algorithm
+        """
+        return getattr(self, self._action_method)
 
     def get_other_params(self) -> Dict[str, Any]:
         """Get all "Other Parameters" of the Algorithm.

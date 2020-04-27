@@ -63,3 +63,21 @@ class TestAlgorithmMixin:
         results = getattr(after_action_instance, after_action_instance._action_method)(**parameters)
 
         assert id(results) == id(after_action_instance)
+
+    def test_set_params_valid(self):
+        instance = self.algorithm_class()
+        valid_names = instance._get_param_names()
+        values = list(range(len(valid_names)))
+        instance.set_params(**dict(zip(valid_names, values)))
+
+        for k, v in zip(valid_names, values):
+            assert getattr(instance, k) == v, k
+
+    def test_set_params_invalid(self):
+        instance = self.algorithm_class()
+
+        with pytest.raises(ValueError) as e:
+            instance.set_params(an_invalid_name=1)
+
+        assert "an_invalid_name" in str(e)
+        assert self.algorithm_class.__name__ in str(e)
