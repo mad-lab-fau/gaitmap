@@ -23,37 +23,7 @@ from gaitmap.utils.dataset_helper import (
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
-class BaseAlgorithm:
-    """Base class for all algorithms.
-
-    All type-specific algorithm classes should inherit from this class and need to
-
-    1. overwrite `_action_method` with the name of the actual action method of this class type
-    2. implement a stub for the action method
-
-    Attributes
-    ----------
-    _action_method
-        The name of the action method used by the Childclass
-
-    """
-
-    _action_method: str
-
-    @property
-    def _action_is_applied(self) -> bool:
-        """Check if the action method was already called/results were generated."""
-        if len(self.get_attributes()) == 0:
-            return False
-        return True
-
-    def _get_action_method(self) -> Callable:
-        """Get the action method as callable.
-
-        This is intended to be used by wrappers, that do not know the Type of an algorithm
-        """
-        return getattr(self, self._action_method)
-
+class _BaseSerializable:
     @classmethod
     def _get_param_names(cls) -> List[str]:
         """Get parameter names for the estimator.
@@ -109,7 +79,7 @@ class BaseAlgorithm:
         out = dict()
         for key in self._get_param_names():
             value = getattr(self, key)
-            if deep and isinstance(value, BaseAlgorithm):
+            if deep and isinstance(value, _BaseSerializable):
                 deep_items = value.get_params(deep=True).items()
                 out.update((key + "__" + k, val) for k, val in deep_items)
             out[key] = value
@@ -141,6 +111,38 @@ class BaseAlgorithm:
         for key, sub_params in nested_params.items():
             valid_params[key].set_params(**sub_params)
         return self
+
+
+class BaseAlgorithm(_BaseSerializable):
+    """Base class for all algorithms.
+
+    All type-specific algorithm classes should inherit from this class and need to
+
+    1. overwrite `_action_method` with the name of the actual action method of this class type
+    2. implement a stub for the action method
+
+    Attributes
+    ----------
+    _action_method
+        The name of the action method used by the Childclass
+
+    """
+
+    _action_method: str
+
+    @property
+    def _action_is_applied(self) -> bool:
+        """Check if the action method was already called/results were generated."""
+        if len(self.get_attributes()) == 0:
+            return False
+        return True
+
+    def _get_action_method(self) -> Callable:
+        """Get the action method as callable.
+
+        This is intended to be used by wrappers, that do not know the Type of an algorithm
+        """
+        return getattr(self, self._action_method)
 
     def get_other_params(self) -> Dict[str, Any]:
         """Get all "Other Parameters" of the Algorithm.

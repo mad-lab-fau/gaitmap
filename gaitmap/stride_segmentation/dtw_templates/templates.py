@@ -5,8 +5,10 @@ from typing import Optional, Union, Tuple
 import numpy as np
 import pandas as pd
 
+from gaitmap.base import _BaseSerializable
 
-class DtwTemplate:
+
+class DtwTemplate(_BaseSerializable):
     """Wrap all required information about a dtw template.
 
     Parameters
