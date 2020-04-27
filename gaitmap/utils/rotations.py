@@ -9,7 +9,7 @@ import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     is_single_sensor_dataset,
@@ -175,7 +175,7 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
 
 
 def get_gravity_rotation(
-    gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = np.array([0.0, 0.0, 1.0])
+    gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = GRAV_VEC
 ) -> Rotation:
     """Find the rotation matrix needed to align  z-axis with gravity.
 

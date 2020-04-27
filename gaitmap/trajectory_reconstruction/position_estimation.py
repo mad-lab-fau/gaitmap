@@ -7,7 +7,7 @@ from scipy import integrate
 
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
-from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
+from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
@@ -168,7 +168,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], rotations)
         if self.subtract_gravity:
             # TODO Gravity to consts or dataset_helper?
-            acc = acc_data - [0, 0, 9.81]
+            acc = acc_data - GRAV_VEC
         else:
             acc = acc_data
         estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc), columns=SF_VEL)

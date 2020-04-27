@@ -23,3 +23,6 @@ SL_ADDITIONAL_COLS = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
 SF_VEL = ["vel_x", "vel_y", "vel_z"]
 #: The default names of the Position columns in the sensor frame
 SF_POS = ["pos_x", "pos_y", "pos_z"]
+
+#: The gravity vector in m/s^2 in the FSF
+GRAV_VEC = [0.0, 0.0, 9.81]
