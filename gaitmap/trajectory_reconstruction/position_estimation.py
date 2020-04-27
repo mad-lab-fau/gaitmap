@@ -45,7 +45,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         Steepness of the sigmoid function to weight forward and backward integral.
     subtract_gravity
         Subtract gravity after transforming strides into world frame coordinates.
-        # TODO: link to gravity, when it has been exported to consts
+        The value of gravity is given by :obj:`~gaitmap.utils.consts.GRAV_VEC`.
 
     Other Parameters
     ----------------
