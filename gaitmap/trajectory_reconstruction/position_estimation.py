@@ -167,7 +167,6 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], rotations)
         if self.subtract_gravity:
-            # TODO Gravity to consts or dataset_helper?
             acc = acc_data - GRAV_VEC
         else:
             acc = acc_data
