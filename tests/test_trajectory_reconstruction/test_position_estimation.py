@@ -79,13 +79,13 @@ class TestForwardBackwardIntegration:
         position.estimate(data, events, rots, sampling_frequency_hz)
         # TODO: use different test data, where just vertical will be zero
         final_position = position.estimated_position_.iloc[-1]
-        half_position = position.estimated_position_.iloc[int(np.floor(len(data)-self.start_sample)/2)]
+        half_position = position.estimated_position_.iloc[int(np.floor(len(data) - self.start_sample) / 2)]
         np.testing.assert_almost_equal(final_position[2], 0)
-        t_middle = (len(data)-self.start_sample)/sampling_frequency_hz/2
+        t_middle = (len(data) - self.start_sample) / sampling_frequency_hz / 2
         # s = acc/2*t^2
         # acc = const.
-        np.testing.assert_almost_equal(half_position[0], acc/2*t_middle*t_middle, decimal=1)
-        np.testing.assert_almost_equal(half_position[1], acc/2*t_middle*t_middle, decimal=1)
+        np.testing.assert_almost_equal(half_position[0], acc / 2 * t_middle * t_middle, decimal=1)
+        np.testing.assert_almost_equal(half_position[1], acc / 2 * t_middle * t_middle, decimal=1)
 
     def test_single_sensor_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -160,7 +160,7 @@ class TestForwardBackwardIntegration:
     def _get_dummy_data(self, length, style: str, acc_max=1):
         dummy = np.linspace(0, acc_max, length)
         if style == "point-symmetrical":
-            dummy = np.linspace(0, acc_max, int(length/2))
+            dummy = np.linspace(0, acc_max, int(length / 2))
             dummy_data = np.concatenate((dummy, -np.flip(dummy)))
         elif style == "point-symmetrical-const":
             dummy_data = np.concatenate(([acc_max] * int(length / 2), [-acc_max] * int(length / 2)))
@@ -169,8 +169,7 @@ class TestForwardBackwardIntegration:
         elif style == "constant":
             dummy_data = [acc_max] * length
 
-        dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy_data)).transpose(),
-                                columns=SF_COLS)
+        dummy_pd = pd.DataFrame(data=np.tile(dummy_data, 6).reshape(6, len(dummy_data)).transpose(), columns=SF_COLS)
         # we are faking a stride that begins at sample `start_sample` and thus we need the beginning of the
         #   point-symmetrical signal to that sample
         first_rows = dummy_pd.iloc[0 : self.start_sample]
