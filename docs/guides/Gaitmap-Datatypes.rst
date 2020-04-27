@@ -4,9 +4,10 @@ Common Datatypes in Gaitmap
 
 Gaitmap tries to stick to common data-containers - namely `np.arrays`, `pd.DataFrames`, `dict` - to store all in- and
 outputs of the used algorithm.
-However, to make it easy for users to handle complex problems (e.g. the analysis of multiple sensors at the same time)
-and to make it possible to perform some sanity checks that prevent common issues, a set of certain datatypes - based on
-the above mentioned containers - are defined and used throughout the library.
+However, based on the above mentioned containers, a set of certain data-types are defined and used throughout the
+library.
+This makes it easy for users to handle complex problems (e.g. the analysis of multiple sensors at the same time) and
+makes it possible to perform sanity checks that prevent common issues.
 The following explains these data-structures in details to ease to process of preparing your data for the use of gaitmap
 and help to understand the outputs.
 
@@ -114,7 +115,7 @@ independent of the format of the dataset:
 ["left_sensor", "right_sensor"]
 
 Like *SingleSensorDatasets*, *MultiSensorDatasets* can exist in the Body or the Sensor Frame.
-However, all single datasets must be in the same frame.
+However, all single-sensor datasets in a *MultiSensorDataset* must be in the same frame.
 This can be checked using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
 
 >>> from gaitmap.utils.dataset_helper import is_multi_sensor_dataset
@@ -153,8 +154,8 @@ Required additional columns are documented in :obj:`~gaitmap.utils.consts.SL_ADD
 {'min_vel': ['pre_ic', 'ic', 'min_vel', 'tc']}
 
 At the moment only the `min_vel`- stride list is support besides the basic one.
-It is expected to hold all relevant gait events and the `start` and `stop` of each stride should conincide with the
-`min_vel` of the current and next stride respectively.
+It is expected to hold all relevant gait events and the `start` and `end` of each stride should be identical with the
+`min_vel` value of the current and next stride respectively.
 For more details see :class:`~gaitmap.event_detection.RamppEventDetection`.
 
 The format of a stride list can be checked using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list`.
