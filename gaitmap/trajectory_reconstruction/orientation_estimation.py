@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation, BaseType
-from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
@@ -135,12 +135,11 @@ class GyroIntegration(BaseOrientationEstimation):
         return self
 
     def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> pd.DataFrame:
-        cols = ["qx", "qy", "qz", "qw"]
         rotations = dict()
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_rotations = self._estimate_stride(data, i_start, i_end)
-            rotations[i_stride["s_id"]] = pd.DataFrame(i_rotations.as_quat(), columns=cols)
+            rotations[i_stride["s_id"]] = pd.DataFrame(i_rotations.as_quat(), columns=GF_ORI)
         rotations = pd.concat(rotations)
         rotations.index = rotations.index.rename(("s_id", "sample"))
         return rotations
@@ -148,7 +147,7 @@ class GyroIntegration(BaseOrientationEstimation):
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
         initial_orientation = self._calculate_initial_orientation(data, start)
         gyro_data = data[SF_GYR].iloc[start:end].to_numpy()
-        single_step_rotations = Rotation.from_rotvec(gyro_data / self.sampling_rate_hz)
+        single_step_rotations = Rotation.from_rotvec(gyro_data * np.pi / 180 / self.sampling_rate_hz)
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
         out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
         return Rotation([o.as_quat() for o in out])

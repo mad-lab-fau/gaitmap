@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType, BaseSpatialParameterCalculation
 from gaitmap.parameters.temporal_parameters import _calc_stride_time
-from gaitmap.utils.consts import SF_POS
+from gaitmap.utils.consts import GF_POS, GF_ORI
 from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
@@ -194,8 +194,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             The sole angle in the sagttial plane for each stride
 
         """
-        positions = set_correct_index(positions, ["s_id", "sample"])[SF_POS]
-        orientations = set_correct_index(orientations, ["s_id", "sample"])[["qx", "qy", "qz", "qw"]]
+        positions = set_correct_index(positions, ["s_id", "sample"])[GF_POS]
+        orientations = set_correct_index(orientations, ["s_id", "sample"])[GF_ORI]
         stride_event_list = set_correct_index(stride_event_list, ["s_id"])
 
         stride_length_ = _calc_stride_length(positions)

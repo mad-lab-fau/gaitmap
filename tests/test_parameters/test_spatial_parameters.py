@@ -71,13 +71,13 @@ def single_sensor_gait_speed(single_sensor_stride_length, single_sensor_stride_t
 
 @pytest.fixture
 def single_sensor_orientation_list():
-    orientation_list = pd.DataFrame(columns=["s_id", "sample", "qx", "qy", "qz", "qw"])
+    orientation_list = pd.DataFrame(columns=["s_id", "sample", "q_x", "q_y", "q_z", "q_w"])
     orientation_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     orientation_list["sample"] = [0, 1, 2, 0, 1, 2, 0, 1, 2]
-    orientation_list["qx"] = [0, 0, 0, 0, np.sqrt(2), 0, 0, 0, 0]
-    orientation_list["qy"] = [0, np.sqrt(2), 0, 0, 0, 0, 0, 0, 0]
-    orientation_list["qz"] = [0, 0, 0, 0, 0, np.sqrt(2), 0, np.sqrt(2), np.sqrt(2)]
-    orientation_list["qw"] = [1, np.sqrt(2), 1, 1, np.sqrt(2), np.sqrt(2), 1, np.sqrt(2), -np.sqrt(2)]
+    orientation_list["q_x"] = [0, 0, 0, 0, np.sqrt(2), 0, 0, 0, 0]
+    orientation_list["q_y"] = [0, np.sqrt(2), 0, 0, 0, 0, 0, 0, 0]
+    orientation_list["q_z"] = [0, 0, 0, 0, 0, np.sqrt(2), 0, np.sqrt(2), np.sqrt(2)]
+    orientation_list["q_w"] = [1, np.sqrt(2), 1, 1, np.sqrt(2), np.sqrt(2), 1, np.sqrt(2), -np.sqrt(2)]
     return orientation_list
 
 

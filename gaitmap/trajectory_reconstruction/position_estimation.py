@@ -7,7 +7,7 @@ from scipy import integrate
 
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
-from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS
+from gaitmap.utils.consts import SF_ACC, GF_VEL, GF_POS, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
@@ -19,6 +19,8 @@ from gaitmap.utils.dataset_helper import (
 
 class ForwardBackwardIntegration(BasePositionEstimation):
     """Use forward(-backward) integration of acc to estimate velocity and position.
+
+    Before integrating acceleration data, it is transformed using the passed rotations.
 
     For drift removal, a direct-and-reverse (DRI) or forward-backward integration is used for velocity estimation,
     because we assume zero velocity at the beginning and end of a signal. For position, drift removal via DRI
@@ -41,14 +43,23 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0).
     steepness
         Steepness of the sigmoid function to weight forward and backward integral.
+    subtract_gravity
+        Subtract gravity after transforming strides into world frame coordinates.
+        The value of gravity is given by :obj:`~gaitmap.utils.consts.GRAV_VEC`.
 
     Other Parameters
     ----------------
     data
-        The data passed to the `estimate` method. This class does NOT take care for transforming sensor data from sensor
+        The data passed to the :py:meth:`~.estimate` method. This class does NOT take care for transforming sensor
+        data
+        from sensor
         frame to world coordinates, just calculates the necessary rotations that have to be applied.
     event_list
         This list is used to set the start and end of each integration period.
+    rotations
+        Rotations that will be used to rotate acceleration data before estimating the position (i.e. transforming
+        from inertial sensor frame to fixed world frame). Rotations may be for example obtained from
+        `estimated_orientations_without_final_` of :class:`gaitmap.base.BaseOrientationEstimation`.
     sampling_rate_hz
         The sampling rate of the data.
 
@@ -62,15 +73,18 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     --------
     >>> data_left = healthy_example_imu_data["left_sensor"]
     >>> events_left = healthy_example_stride_events["left_sensor"]
-    >>> integrator = ForwardBackwardIntegration()
-    >>> integrator.estimate(data_left, events_left, 204.8)
+    >>> integrator = ForwardBackwardIntegration(0.5, 0.08, True)
+
+     `rotations_left` can be obtained by using :mod:`~gaitmap.trajectory_reconstruction.orientation_estimation`
+
+    >>> integrator.estimate(data_left, events_left, rotations_left 204.8)
     >>> integrator.estimated_velocity_.iloc[-1]
     vel_x   -0.000019
     vel_y    0.000447
     vel_z    0.000000
     Name: (34.619140625, 27.0), dtype: float64
 
-       Estimated: position / velocity looks like this, where `s_id` is the stride id.
+    Estimated: position / velocity looks like this, where `s_id` is the stride id.
 
     >>> integrator.estimated_position_
                  pos_x     pos_y     pos_z
@@ -85,7 +99,7 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     ...          ...       ...       ...
 
      Note: This is the case for a single sensor. For multiple sensors, it is a dictionary with keys being the sensor
-     names in `self.data` and values being these kind of :py:class:`~pandas.DataFrame`:
+     names in `self.data` and values being these kind of :py:class:`~pandas.DataFrame`.
 
     """
 
@@ -99,13 +113,19 @@ class ForwardBackwardIntegration(BasePositionEstimation):
     data: Dataset
     event_list: StrideList
 
-    def __init__(self, turning_point: float = 0.5, steepness: float = 0.08):
+    def __init__(self, turning_point: float = 0.5, steepness: float = 0.08, subtract_gravity: bool = True):
         self.turning_point = turning_point
         self.steepness = steepness
+        self.subtract_gravity = subtract_gravity
 
-    def estimate(self, data: Dataset, event_list: StrideList, sampling_rate_hz: float):
+    def estimate(
+        self,
+        data: Dataset,
+        event_list: StrideList,
+        rotations: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
+        sampling_rate_hz: float,
+    ):
         """Estimate velocity and position based on acceleration data."""
-        # TODO: Make it clear/add check that this data is actual rotated data
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError(
                 "Bad ForwardBackwardIntegration initialization found. Turning point must be in the rage "
@@ -114,9 +134,12 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         self.sampling_rate_hz = sampling_rate_hz
         self.data = data
         self.event_list = event_list
+        self.rotations = rotations
 
         if dataset_helper.is_single_sensor_dataset(data):
-            self.estimated_velocity_, self.estimated_position_ = self._estimate_single_sensor(data, event_list)
+            self.estimated_velocity_, self.estimated_position_ = self._estimate_single_sensor(
+                data, event_list, rotations
+            )
         elif dataset_helper.is_multi_sensor_dataset(data):
             self.estimated_velocity_, self.estimated_position_ = self._estimate_multi_sensor()
         else:
@@ -124,13 +147,13 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         return self
 
     def _estimate_single_sensor(
-        self, data: SingleSensorDataset, event_list: SingleSensorStrideList
+        self, data: SingleSensorDataset, event_list: SingleSensorStrideList, rotations: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         velocity = {}
         position = {}
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
-            i_vel, i_pos = self._estimate_stride(data, i_start, i_end)
+            i_vel, i_pos = self._estimate_stride(data, i_start, i_end, rotations.xs(i_stride["s_id"], level="s_id"))
             velocity[i_stride["s_id"]] = i_vel
             position[i_stride["s_id"]] = i_pos
         velocity = pd.concat(velocity)
@@ -139,19 +162,22 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         position.index = position.index.rename(("s_id", "sample"))
         return velocity, position
 
-    def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        acc_data = data[SF_ACC].iloc[start:end]
-        estimated_velocity_ = pd.DataFrame(
-            self._forward_backward_integration(acc_data), index=acc_data.index, columns=SF_VEL
-        )
+    def _estimate_stride(
+        self, data: SingleSensorDataset, start: int, end: int, rotations
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], rotations)
+        if self.subtract_gravity:
+            acc = acc_data - GRAV_VEC
+        else:
+            acc = acc_data
+        estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc), columns=GF_VEL)
         # TODO: This uses the level walking assumption. We should make this configurable.
         estimated_position_ = pd.DataFrame(
-            index=acc_data.index,
-            columns=SF_POS,
+            columns=GF_POS,
             data=np.hstack(
                 (
-                    integrate.cumtrapz(estimated_velocity_[SF_VEL[:2]], axis=0, initial=0) / self.sampling_rate_hz,
-                    self._forward_backward_integration(estimated_velocity_[[SF_VEL[2]]]),
+                    integrate.cumtrapz(estimated_velocity_[GF_VEL[:2]], axis=0, initial=0) / self.sampling_rate_hz,
+                    self._forward_backward_integration(estimated_velocity_[[GF_VEL[2]]]),
                 )
             ),
         )
@@ -169,7 +195,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         # TODO: move to utils?
         # TODO: different steepness and turning point for velocity and position?
         integral_forward = integrate.cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
-        integral_backward = integrate.cumtrapz(data[::-1], axis=0, initial=0) / self.sampling_rate_hz
+        # for backward integration, we flip the signal
+        integral_backward = integrate.cumtrapz(-data[::-1], axis=0, initial=0) / self.sampling_rate_hz
         weights = self._get_weight_matrix(data.shape[0])
 
         return (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
@@ -178,6 +205,8 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         estimated_position_ = dict()
         estimated_velocity_ = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            vel, pos = self._estimate_single_sensor(self.data[i_sensor], self.event_list[i_sensor])
+            vel, pos = self._estimate_single_sensor(
+                self.data[i_sensor], self.event_list[i_sensor], self.rotations[i_sensor]
+            )
             estimated_velocity_[i_sensor], estimated_position_[i_sensor] = vel, pos
         return estimated_velocity_, estimated_position_

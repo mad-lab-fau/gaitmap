@@ -220,13 +220,17 @@ to unify both formats.
 >>> unified_format_orientation_list = set_correct_index(orientation_list, ["s_id", "sample"])
 
 Orientation and Position lists only differ based on their expected columns.
-Orientation lists are expected to have all columns specified in TODO: Add Constant and Position lists all columns
-specified in :obj:`~gaitmap.utils.consts.SF_POS`.
+Orientation lists are expected to have all columns specified in :obj:`~gaitmap.utils.consts.GF_ORI` and Position lists
+all columns specified in :obj:`~gaitmap.utils.consts.GF_POS`.
 
 # TODO: Add for Orientation
->>> from gaitmap.utils.consts import SF_POS
->>> SF_POS
+>>> from gaitmap.utils.consts import GF_POS
+>>> GF_POS
 ['pos_x', 'pos_y', 'pos_z']
+
+>>> from gaitmap.utils.consts import GF_ORI
+>>> GF_ORI
+['q_x', 'q_y', 'q_z', 'q_w']
 
 To validate the correctness of these data objectes, :func:`~gaitmap.utils.dataset_helper.is_single_sensor_position_list`
 and :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` can be used, respectively.
