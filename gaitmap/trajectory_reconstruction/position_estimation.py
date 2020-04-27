@@ -168,8 +168,10 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         acc_data = self.rotate_stride(data[SF_ACC].iloc[start:end], rotations)
         if self.subtract_gravity:
             # TODO Gravity to consts or dataset_helper?
-            acc_data_without_gravity = acc_data - [0, 0, 9.81]
-        estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc_data_without_gravity), columns=SF_VEL)
+            acc = acc_data - [0, 0, 9.81]
+        else:
+            acc = acc_data
+        estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc), columns=SF_VEL)
         # TODO: This uses the level walking assumption. We should make this configurable.
         estimated_position_ = pd.DataFrame(
             columns=SF_POS,
