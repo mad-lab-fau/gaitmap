@@ -148,7 +148,7 @@ class GyroIntegration(BaseOrientationEstimation):
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
         initial_orientation = self._calculate_initial_orientation(data, start)
         gyro_data = data[SF_GYR].iloc[start:end].to_numpy()
-        single_step_rotations = Rotation.from_rotvec(gyro_data / self.sampling_rate_hz)
+        single_step_rotations = Rotation.from_rotvec(gyro_data * np.pi / 180 / self.sampling_rate_hz)
         # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
         out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
         return Rotation([o.as_quat() for o in out])
