@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, SF_POS
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -121,14 +121,14 @@ def is_multi_sensor_dataset(
     A valid multi sensor dataset is:
 
     - is either a :class:`pandas.DataFrame` with 2 level multi-index as columns or a dictionary of single sensor
-      datasets (see :func:`is_single_sensor_dataset <gaitmap.utils.dataset_helper.is_single_sensor_dataset>`)
+      datasets (see :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset`)
 
     In case the dataset is a :class:`pandas.DataFrame` with two levels, the first level is expected to be the names
     of the used sensors.
     In both cases (dataframe or dict), `dataset[<sensor_name>]` is expected to return a valid single sensor
     dataset.
     On each of the these single-sensor datasets,
-    :func:`is_single_sensor_dataset <gaitmap.utils.dataset_helper.is_single_sensor_dataset>` is used with the same
+    :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` is used with the same
     parameters that are used to call this function.
 
     Parameters
@@ -322,7 +322,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     except KeyError:
         return False
     columns = position_list.columns
-    expected_columns = SF_POS
+    expected_columns = GF_POS
     if not all(v in columns for v in expected_columns):
         return False
     return True
@@ -365,9 +365,9 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
 
     A valid orientation list:
 
-    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "qx", "qy", "qz", "qw"]`
+    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "q_x", "q_y", "q_z", "q_w"]`
     - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least to columns
-      `["qx", "qy", "qz", "qw"]`
+      `["q_x", "q_y", "q_z", "q_w"]`, as listed in
 
     Parameters
     ----------
@@ -386,7 +386,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
     except KeyError:
         return False
     columns = orientation_list.columns
-    expected_columns = ["qx", "qy", "qz", "qw"]
+    expected_columns = GF_ORI
     if not all(v in columns for v in expected_columns):
         return False
     return True

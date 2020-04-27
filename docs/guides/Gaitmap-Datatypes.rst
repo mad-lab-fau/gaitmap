@@ -224,6 +224,34 @@ Orientation lists are expected to have all columns specified in TODO: Add Consta
 specified in :obj:`~gaitmap.utils.consts.SF_POS`.
 
 # TODO: Add for Orientation
+>>> from gaitmap.utils.consts import GF_POS
+>>> SF_POS
+['pos_x', 'pos_y', 'pos_z']
+
+To validate the correctness of these data objectes,
+
+# TODO: Add for Orientation
+>>> from gaitmap.utils.consts import GF_POS
+>>> SF_POS
+['pos_x', 'pos_y', 'pos_z']
+
+To validate the correctness of these data objectes,
+
+# TODO: Add for Orientation
+>>> from gaitmap.utils.consts import GF_POS
+>>> GF_POS
+['pos_x', 'pos_y', 'pos_z']
+
+To validate the correctness of these data objectes,
+
+# TODO: Add for Orientation
+>>> from gaitmap.utils.consts import GF_POS
+>>> GF_POS
+['pos_x', 'pos_y', 'pos_z']
+
+To validate the correctness of these data objectes,
+
+# TODO: Add for Orientation
 >>> from gaitmap.utils.consts import SF_POS
 >>> SF_POS
 ['pos_x', 'pos_y', 'pos_z']

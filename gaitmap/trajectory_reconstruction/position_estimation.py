@@ -7,7 +7,7 @@ from scipy import integrate
 
 from gaitmap.base import BasePositionEstimation
 from gaitmap.utils import dataset_helper
-from gaitmap.utils.consts import SF_ACC, SF_VEL, SF_POS, GRAV_VEC
+from gaitmap.utils.consts import SF_ACC, GF_VEL, GF_POS, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
@@ -171,14 +171,14 @@ class ForwardBackwardIntegration(BasePositionEstimation):
             acc = acc_data - GRAV_VEC
         else:
             acc = acc_data
-        estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc), columns=SF_VEL)
+        estimated_velocity_ = pd.DataFrame(self._forward_backward_integration(acc), columns=GF_VEL)
         # TODO: This uses the level walking assumption. We should make this configurable.
         estimated_position_ = pd.DataFrame(
-            columns=SF_POS,
+            columns=GF_POS,
             data=np.hstack(
                 (
-                    integrate.cumtrapz(estimated_velocity_[SF_VEL[:2]], axis=0, initial=0) / self.sampling_rate_hz,
-                    self._forward_backward_integration(estimated_velocity_[[SF_VEL[2]]]),
+                    integrate.cumtrapz(estimated_velocity_[GF_VEL[:2]], axis=0, initial=0) / self.sampling_rate_hz,
+                    self._forward_backward_integration(estimated_velocity_[[GF_VEL[2]]]),
                 )
             ),
         )

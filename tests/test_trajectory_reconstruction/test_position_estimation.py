@@ -6,7 +6,7 @@ import scipy
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.orientation_estimation import GyroIntegration
 from gaitmap.trajectory_reconstruction.position_estimation import ForwardBackwardIntegration
-from gaitmap.utils.consts import SF_COLS, SF_VEL, SF_POS
+from gaitmap.utils.consts import SF_COLS, GF_VEL, GF_POS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -51,7 +51,7 @@ class TestForwardBackwardIntegration:
 
         # don't rotate data
         rots = pd.DataFrame(
-            [[0, 0, 0, 0, 1]] * (len(dummy_data) - self.start_sample), columns=["s_id", "qx", "qy", "qz", "qw"]
+            [[0, 0, 0, 0, 1]] * (len(dummy_data) - self.start_sample), columns=["s_id", "q_x", "q_y", "q_z", "q_w"]
         )
         rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
@@ -72,7 +72,7 @@ class TestForwardBackwardIntegration:
         events = self._get_dummy_event_list(data)
         sampling_frequency_hz = 100
         rots = pd.DataFrame(
-            [[0, 0, 0, 0, 1]] * (len(data) - self.start_sample), columns=["s_id", "qx", "qy", "qz", "qw"]
+            [[0, 0, 0, 0, 1]] * (len(data) - self.start_sample), columns=["s_id", "q_x", "q_y", "q_z", "q_w"]
         )
         rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
@@ -110,8 +110,8 @@ class TestForwardBackwardIntegration:
         pos = position.estimated_position_
         assert isinstance(vel, pd.DataFrame)
         assert isinstance(pos, pd.DataFrame)
-        pd.testing.assert_index_equal(vel.columns, pd.Index(SF_VEL))
-        pd.testing.assert_index_equal(pos.columns, pd.Index(SF_POS))
+        pd.testing.assert_index_equal(vel.columns, pd.Index(GF_VEL))
+        pd.testing.assert_index_equal(pos.columns, pd.Index(GF_POS))
 
     def test_estimate_multi_sensors_input(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         data = healthy_example_imu_data

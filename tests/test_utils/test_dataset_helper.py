@@ -310,7 +310,7 @@ class TestIsSingleSensorOrientationList:
             {},
             pd.DataFrame(),
             pd.DataFrame(columns=[*range(3)]),
-            pd.DataFrame(columns=["sample", "qx", "qy", "qz", "qw"]),
+            pd.DataFrame(columns=["sample", "q_x", "q_y", "q_z", "q_w"]),
             pd.DataFrame(columns=["s_id", "sample", "qx", "qz", "qw"]),
         ),
     )
@@ -320,11 +320,11 @@ class TestIsSingleSensorOrientationList:
     @pytest.mark.parametrize(
         "cols, index",
         (
-            (["s_id", "sample", "qx", "qy", "qz", "qw"], []),
-            (["s_id", "sample", "qx", "qy", "qz", "qw", "something_else"], []),
-            (["sample", "qx", "qy", "qz", "qw"], ["s_id"]),
-            (["qx", "qy", "qz", "qw"], ["s_id", "sample"]),
-            (["qx", "qy", "qz", "qw", "something_else"], ["s_id", "sample"]),
+            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w"], []),
+            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w", "something_else"], []),
+            (["sample", "q_x", "q_y", "q_z", "q_w"], ["s_id"]),
+            (["q_x", "q_y", "q_z", "q_w"], ["s_id", "sample"]),
+            (["q_x", "q_y", "q_z", "q_w", "something_else"], ["s_id", "sample"]),
         ),
     )
     def test_valid_versions(self, cols, index):
@@ -379,11 +379,11 @@ class TestIsMultiSensorOrientationList:
     @pytest.mark.parametrize(
         "cols, index",
         (
-            (["s_id", "sample", "qx", "qy", "qz", "qw"], []),
-            (["s_id", "sample", "qx", "qy", "qz", "qw", "something_else"], []),
-            (["sample", "qx", "qy", "qz", "qw"], ["s_id"]),
-            (["qx", "qy", "qz", "qw"], ["s_id", "sample"]),
-            (["qx", "qy", "qz", "qw", "something_else"], ["s_id", "sample"]),
+            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w"], []),
+            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w", "something_else"], []),
+            (["sample", "q_x", "q_y", "q_z", "q_w"], ["s_id"]),
+            (["q_x", "q_y", "q_z", "q_w"], ["s_id", "sample"]),
+            (["q_x", "q_y", "q_z", "q_w", "something_else"], ["s_id", "sample"]),
         ),
     )
     def test_valid_versions(self, cols, index):
@@ -394,8 +394,8 @@ class TestIsMultiSensorOrientationList:
         assert is_multi_sensor_orientation_list({"s1": df})
 
     def test_only_one_invalid(self):
-        valid_cols = ["s_id", "sample", "qx", "qy", "qz", "qw"]
-        invalid_cols = ["sample", "qx", "qy", "qz", "qw"]
+        valid_cols = ["s_id", "sample", "q_x", "q_y", "q_z", "q_w"]
+        invalid_cols = ["sample", "q_x", "q_y", "q_z", "q_w"]
         valid = {"s1": pd.DataFrame(columns=valid_cols)}
         invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
 

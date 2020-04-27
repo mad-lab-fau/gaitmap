@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation, BaseType
-from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
@@ -135,12 +135,11 @@ class GyroIntegration(BaseOrientationEstimation):
         return self
 
     def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> pd.DataFrame:
-        cols = ["qx", "qy", "qz", "qw"]
         rotations = dict()
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_rotations = self._estimate_stride(data, i_start, i_end)
-            rotations[i_stride["s_id"]] = pd.DataFrame(i_rotations.as_quat(), columns=cols)
+            rotations[i_stride["s_id"]] = pd.DataFrame(i_rotations.as_quat(), columns=GF_ORI)
         rotations = pd.concat(rotations)
         rotations.index = rotations.index.rename(("s_id", "sample"))
         return rotations

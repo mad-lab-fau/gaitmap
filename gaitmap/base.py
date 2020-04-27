@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_ACC
+from gaitmap.utils.consts import SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_multi_sensor_dataset,
@@ -291,8 +291,7 @@ class BasePositionEstimation(BaseAlgorithm):
         # acc columns may have different orders
         acc = acc[SF_ACC]
         # quaternion columns may have different orders
-        # TODO: extract quaternion columns to consts?
-        rotations = rotations[["qx", "qy", "qz", "qw"]]
+        rotations = rotations[GF_ORI]
 
         return pd.DataFrame(Rotation(rotations).apply(acc), columns=SF_ACC, index=acc.index)
 

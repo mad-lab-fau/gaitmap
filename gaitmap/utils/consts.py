@@ -19,10 +19,12 @@ SL_COLS = ["s_id", "start", "end"]
 #: Additional Columns of a stride list depending on its type
 SL_ADDITIONAL_COLS = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
 
-#: The default names of the Velocity columns in the sensor frame
-SF_VEL = ["vel_x", "vel_y", "vel_z"]
-#: The default names of the Position columns in the sensor frame
-SF_POS = ["pos_x", "pos_y", "pos_z"]
+#: The default names of the Velocity columns in the global frame
+GF_VEL = ["vel_x", "vel_y", "vel_z"]
+#: The default names of the Position columns in the global frame
+GF_POS = ["pos_x", "pos_y", "pos_z"]
+#: The default names of the Orientation columns in the global frame
+GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
 
 #: The gravity vector in m/s^2 in the FSF
 GRAV_VEC = [0.0, 0.0, 9.81]
