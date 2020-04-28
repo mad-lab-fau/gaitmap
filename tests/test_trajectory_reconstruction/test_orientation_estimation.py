@@ -25,40 +25,6 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestGyroIntegration:
-    @pytest.mark.parametrize(
-        "axis_to_rotate, vector_to_rotate, expected_result",
-        ((0, [0, 0, 1], [0, 0, -1]), (1, [0, 0, 1], [0, 0, -1]), (2, [1, 0, 0], [-1, 0, 0])),
-    )
-    def test_180(self, axis_to_rotate: int, vector_to_rotate: list, expected_result: list):
-        """Rotate by 180 degree around one axis and check resulting rotation by transforming a 3D vector with start
-        and final rotation.
-
-        Parameters
-        ----------
-        axis_to_rotate
-            the axis around which should be rotated
-
-        vector_to_rotate
-            test vector that will be transformed using the initial orientation and the updated/final orientation
-
-        expected_result
-            the result that is to be expected
-
-        """
-
-        fs = 100
-        window_width = 8
-        # start at window_with/2 because GyroIntegration._calculate_initial_orientation uses start+-half window size
-        start_sample = int(np.floor(window_width / 2))
-        # 180 degree rotation around i_axis
-        sensor_data, event_list = self.get_dummy_data(start_sample, axis_to_rotate, fs, window_width=window_width)
-
-        gyr_integrator = GyroIntegration(align_window_width=window_width)
-        gyr_integrator.estimate(sensor_data, event_list, fs)
-        rot_final = gyr_integrator.estimated_orientations_.iloc[-1]
-        np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
-        assert len(gyr_integrator.estimated_orientations_) == fs + 1
-
     @staticmethod
     def get_dummy_data(start_sample, axis_to_rotate, fs, window_width=0):
         sensor_data = pd.DataFrame(columns=SF_COLS)

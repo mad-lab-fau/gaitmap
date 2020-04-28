@@ -1,7 +1,5 @@
 """Estimation of orientations by using inertial sensor data."""
-import operator
 import warnings
-from itertools import accumulate
 from typing import Dict
 
 import numpy as np
@@ -10,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethods
 from gaitmap.trajectory_reconstruction.orientation_methods.simple_gyro_integration import SimpleGyroIntegration
-from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_ORI
+from gaitmap.utils.consts import SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
@@ -102,7 +100,6 @@ class GyroIntegration(BaseOrientationEstimation):
     sampling_rate_hz: float
 
     def __init__(self, ori_method=SimpleGyroIntegration(), align_window_width: int = 8):
-        # TODO: Add default for ori method
         self.ori_method = ori_method
         self.align_window_width = align_window_width
 
@@ -177,6 +174,5 @@ class GyroIntegration(BaseOrientationEstimation):
             end_sample = len(data) - 1
             warnings.warn("Could not use complete window length for initializing orientation.")
         acc = (data[SF_ACC].iloc[start_sample:end_sample]).median()
-        acc_normalized = acc / np.linalg.norm(acc.values, 2)
         # get_gravity_rotation assumes [0, 0, 1] as gravity
-        return get_gravity_rotation(acc_normalized)
+        return get_gravity_rotation(acc)
