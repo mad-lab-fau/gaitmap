@@ -17,7 +17,7 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     StrideList,
     PositionList,
-    OrientationList,
+    OrientationList, SingleSensorDataset,
 )
 
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
@@ -221,6 +221,15 @@ class BaseEventDetection(BaseAlgorithm):
 
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: StrideList) -> BaseType:
         """Find gait events in data within strides provided by stride_list."""
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseOrientationMethods(BaseAlgorithm):
+
+    _action_method = "estimate"
+    orientations_: Rotation
+
+    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         raise NotImplementedError("Needs to be implemented by child class.")
 
 

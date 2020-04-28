@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationEstimation, BaseType
+from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethods
+from gaitmap.trajectory_reconstruction.orientation_methods.simple_gyro_integration import SimpleGyroIntegration
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
@@ -45,6 +46,11 @@ class GyroIntegration(BaseOrientationEstimation):
 
     Parameters
     ----------
+    ori_method
+        An instance of any available orientation method with the desired parameters set.
+        This method is called with the data of each stride to actually calculate the orientation.
+        Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
+        per-stride initial orientations based on the mid-stance assumption.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each stride with
         gravity. To do so, half the window size before and half the window size after the start of the stride will
@@ -89,12 +95,15 @@ class GyroIntegration(BaseOrientationEstimation):
     """
 
     align_window_width: int
+    ori_method: BaseOrientationMethods
 
     data: Dataset
     stride_event_list: StrideList
     sampling_rate_hz: float
 
-    def __init__(self, align_window_width: int = 8):
+    def __init__(self, ori_method=SimpleGyroIntegration(), align_window_width: int = 8):
+        # TODO: Add default for ori method
+        self.ori_method = ori_method
         self.align_window_width = align_window_width
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
@@ -146,11 +155,8 @@ class GyroIntegration(BaseOrientationEstimation):
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
         initial_orientation = self._calculate_initial_orientation(data, start)
-        gyro_data = data[SF_GYR].iloc[start:end].to_numpy()
-        single_step_rotations = Rotation.from_rotvec(gyro_data * np.pi / 180 / self.sampling_rate_hz)
-        # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
-        out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
-        return Rotation([o.as_quat() for o in out])
+        ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
+        return ori_method.estimate(data.iloc[start:end], sampling_rate_hz=self.sampling_rate_hz).orientations_
 
     def _estimate_multi_sensor(self) -> Dict[str, pd.DataFrame]:
         orientations = dict()
