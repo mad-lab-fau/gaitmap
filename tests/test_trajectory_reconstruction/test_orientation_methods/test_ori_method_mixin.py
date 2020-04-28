@@ -4,7 +4,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethods
-from gaitmap.utils.consts import SF_GYR
+from gaitmap.utils.consts import SF_GYR, SF_COLS
 
 
 class TestOrientationMethodMixin:
@@ -38,8 +38,8 @@ class TestOrientationMethodMixin:
 
         fs = 100
 
-        sensor_data = np.repeat(np.array(axis_to_rotate)[None, :], fs, axis=0) * np.rad2deg(np.pi)
-        sensor_data = pd.DataFrame(sensor_data, columns=SF_GYR)
+        sensor_data = np.repeat(np.array([0, 0, 0, *axis_to_rotate])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         gyr_integrator = self.init_algo_class()
 
         gyr_integrator.estimate(sensor_data, fs)
@@ -51,7 +51,7 @@ class TestOrientationMethodMixin:
     def test_idiot_update(self):
         test = self.init_algo_class()
         fs = 10
-        sensor_data = np.repeat(np.array([0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
-        sensor_data = pd.DataFrame(sensor_data, columns=SF_GYR)
+        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
         np.testing.assert_array_equal(test.orientations_[-1].as_quat(), test.initial_orientation.as_quat())

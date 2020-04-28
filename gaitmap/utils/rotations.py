@@ -257,7 +257,7 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
 
 
 def find_angle_between_orientations(
-    ori: Rotation, ref: Rotation, rotation_axis: Optional[Union[np.ndarray, List]]
+    ori: Rotation, ref: Rotation, rotation_axis: Optional[Union[np.ndarray, List]] = None
 ) -> Union[float, np.ndarray]:
     """Get the required rotation angle between two orientations.
 
