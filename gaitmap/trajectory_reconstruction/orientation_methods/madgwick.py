@@ -1,6 +1,6 @@
-"""Madgwick Cython Implimentation
+"""Madgwick Implimentation
 
-Direct adoption of the original Madgwick code into Cython.
+Direct adoption of the original Madgwick code into Numba.
 Original code can be found here: http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 The original code and all its direct modifications published under GNU-GPL.
 """
@@ -74,13 +74,12 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
     qdot = rate_of_change_from_gyro(gyro, q)
 
-    if np.any(acc != 0):
+    if np.any(acc != 0) and beta > 0.0:
         acc /= np.sqrt(np.sum(acc ** 2))
         ax, ay, az = acc
 
         # Note that we change the order of q components here as we use a different quaternion definition.
-        q0 = q[3]
-        q1, q2, q3 = q[:3]
+        q1, q2, q3, q0 = q
 
         # Auxiliary variables to avoid repeated arithmetic
         _2q0 = 2.0 * q0
