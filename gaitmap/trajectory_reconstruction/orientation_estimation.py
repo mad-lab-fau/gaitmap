@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethods
+from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethod
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
 from gaitmap.utils.consts import SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
@@ -95,7 +95,7 @@ class GyroIntegration(BaseOrientationEstimation):
     """
 
     align_window_width: int
-    ori_method: BaseOrientationMethods
+    ori_method: BaseOrientationMethod
 
     data: Dataset
     stride_event_list: StrideList

@@ -1,13 +1,13 @@
 import warnings
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationEstimation, BaseOrientationMethods, BaseType
-from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
-from gaitmap.utils.consts import GF_ORI, SF_ACC
+from gaitmap.base import BaseOrientationEstimation, BaseOrientationMethod, BaseType, BasePositionMethod
+from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration
+from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS, SF_GYR
 from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
@@ -76,15 +76,18 @@ class StrideLevelTrajectory(BaseOrientationEstimation):
     """
 
     align_window_width: int
-    ori_method: BaseOrientationMethods
-    pos_method: None
+    ori_method: BaseOrientationMethod
+    pos_method: BasePositionMethod
 
     data: Dataset
     stride_event_list: StrideList
     sampling_rate_hz: float
 
     def __init__(
-        self, ori_method: BaseOrientationMethods = SimpleGyroIntegration(), pos_method=None, align_window_width: int = 8
+        self,
+        ori_method: BaseOrientationMethod = SimpleGyroIntegration(),
+        pos_method: BasePositionMethod = ForwardBackwardIntegration(),
+        align_window_width: int = 8,
     ):
         self.ori_method = ori_method
         self.pos_method = pos_method
@@ -128,36 +131,54 @@ class StrideLevelTrajectory(BaseOrientationEstimation):
             raise ValueError("Provided data set is not supported by gaitmap")
         return self
 
-    def _estimate_single_sensor(self, data: SingleSensorDataset, event_list: StrideList) -> pd.DataFrame:
-        rotations = dict()
+    def _estimate_single_sensor(
+        self, data: SingleSensorDataset, event_list: StrideList
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        rotation = dict()
+        velocity = dict()
+        position = dict()
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
-            i_rotations = self._estimate_stride(data, i_start, i_end)
-            rotations[i_stride["s_id"]] = pd.DataFrame(i_rotations.as_quat(), columns=GF_ORI)
-        rotations = pd.concat(rotations)
-        rotations.index = rotations.index.rename(("s_id", "sample"))
-        return rotations
+            i_rotation, i_velocity, i_position = self._estimate_stride(data, i_start, i_end)
+            rotation[i_stride["s_id"]] = pd.DataFrame(i_rotation.as_quat(), columns=GF_ORI)
+            velocity[i_stride["s_id"]] = pd.DataFrame(i_velocity.as_quat(), columns=GF_VEL)
+            position[i_stride["s_id"]] = pd.DataFrame(i_position.as_quat(), columns=GF_POS)
+        rotation = pd.concat(rotation)
+        rotation.index = rotation.index.rename(("s_id", "sample"))
+        velocity = pd.concat(velocity)
+        velocity.index = velocity.index.rename(("s_id", "sample"))
+        position = pd.concat(position)
+        position.index = position.index.rename(("s_id", "sample"))
+        return rotation, velocity, position
 
-    def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
+    def _estimate_stride(
+        self, data: SingleSensorDataset, start: int, end: int
+    ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
         stride_data = data.iloc[start:end]
         initial_orientation = self._calculate_initial_orientation(data, start)
 
         # Apply the orientation method
         ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
-        orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_
+        orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_[:-1]
 
+        rotated_stride_data = self.rotate_data(stride_data, orientation)
         # Apply the Position method
-        if self.pos_method:
-            pos_method = self.pos_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz)
-            velocity = pos_method.velocity_
-            position = pos_method.position_
-        return orientation
+        pos_method = self.pos_method.estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
+        velocity = pos_method.velocity_
+        position = pos_method.position_
+        return orientation, velocity, position
 
-    def _estimate_multi_sensor(self) -> Dict[str, pd.DataFrame]:
-        orientations = dict()
+    def _estimate_multi_sensor(
+        self,
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
+        orientation = dict()
+        velocity = dict()
+        position = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            orientations[i_sensor] = self._estimate_single_sensor(self.data[i_sensor], self.stride_event_list[i_sensor])
-        return orientations
+            orientation[i_sensor], velocity[i_sensor], position[i_sensor] = self._estimate_single_sensor(
+                self.data[i_sensor], self.stride_event_list[i_sensor]
+            )
+        return orientation, velocity, position
 
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start) -> Rotation:
         half_window = int(np.floor(self.align_window_width / 2))
@@ -174,3 +195,31 @@ class StrideLevelTrajectory(BaseOrientationEstimation):
         acc = (data[SF_ACC].iloc[start_sample:end_sample]).median()
         # get_gravity_rotation assumes [0, 0, 1] as gravity
         return get_gravity_rotation(acc)
+
+    @staticmethod
+    def rotate_data(data: SingleSensorDataset, rotations: pd.DataFrame) -> pd.DataFrame:
+        """Rotate data eleration data of a stride (e.g. form inertial sensor frame to world frame).
+
+        Parameters
+        ----------
+        data
+            Acceleration data with axes names as `SF_ACC` in :mod:`gaitmap.utils.consts`
+        rotations
+            Rotations in the order of qx, qy, qz, qw as obtained by using an object of a class of
+            :mod:`~gaitmap.trajectory_reconstruction.orientation_estimation`
+
+        Returns
+        -------
+        rotated_data
+            `data` rotated by `rotations`
+
+        """
+        if len(data) != len(rotations):
+            raise ValueError("The number of rotations must fit the number of samples in the dataset!")
+
+        # quaternion columns may have different orders
+        rotations = rotations[GF_ORI]
+        # acc columns may have different orders
+        data[SF_ACC] = Rotation(rotations).apply(data[SF_ACC].to_numpy())
+        data[SF_GYR] = Rotation(rotations).apply(data[SF_GYR].to_numpy())
+        return data
