@@ -226,7 +226,7 @@ class BaseEventDetection(BaseAlgorithm):
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
-class BaseOrientationMethods(BaseAlgorithm):
+class BaseOrientationMethod(BaseAlgorithm):
     """Base class for the individual Orientation estimation methods that just work on simple data."""
 
     _action_method = "estimate"
@@ -239,6 +239,28 @@ class BaseOrientationMethods(BaseAlgorithm):
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor based on the input data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BasePositionMethod(BaseAlgorithm):
+    """Base class for the individual Position estimation methods that just work on simple data."""
+
+    _action_method = "estimate"
+    velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    position_: PositionList
+
+    @property
+    def position_list_(self) -> SingleSensorOrientationList:
+        """Alias for position_."""
+        return self.position_
+
+    def estimate(
+        self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float
+    ) -> BaseType:
+        """Estimate the position of the sensor based on the input data.
+
+        Note that the data is assumed to be in the world-frame (i.e. already rotated)
+        """
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
@@ -339,7 +361,7 @@ class BasePositionEstimation(BaseAlgorithm):
         raise NotImplementedError("Needs to be implemented by child class.")
 
     @staticmethod
-    def rotate_stride(acc: pd.DataFrame, rotations: pd.DataFrame) -> pd.DataFrame:
+    def rotate_acc(acc: pd.DataFrame, rotations: pd.DataFrame) -> pd.DataFrame:
         """Rotate acceleration data of a stride (e.g. form inertial sensor frame to world frame).
 
         Parameters
