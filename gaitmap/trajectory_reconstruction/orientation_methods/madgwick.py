@@ -1,6 +1,6 @@
-"""Madgwick Implimentation
+"""MadgwickAHRS Implimentation
 
-Direct adoption of the original Madgwick code into Numba.
+Direct adoption of the original MadgwickAHRS code into Numba.
 Original code can be found here: http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 The original code and all its direct modifications published under GNU-GPL.
 """
@@ -16,23 +16,23 @@ from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_d
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
-class Madgwick(BaseOrientationMethods):
+class MadgwickAHRS(BaseOrientationMethods):
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
 
-    orientations_: Rotation
+    orientation_: Rotation
 
     data: SingleSensorDataset
     sampling_rate_hz: float
 
-    def __init__(self, beta: float = 0.1, initial_orientation: Union[np.ndarray, Rotation] = Rotation.identity()):
+    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = Rotation.identity()):
         self.initial_orientation = initial_orientation
         self.beta = beta
 
     # TODO: Allow to continue the integration
     # TODO: Clarify the expected input unit!
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
-        """Estimate the orientation of the sensor by simple integration of the Gyro data.
+        """Estimate the orientation of the sensor.
 
         Parameters
         ----------
@@ -64,7 +64,7 @@ class Madgwick(BaseOrientationMethods):
             sampling_rate_hz=sampling_rate_hz,
             beta=self.beta,
         )
-        self.orientations_ = Rotation.from_quat(rots)
+        self.orientation_ = Rotation.from_quat(rots)
         return self
 
 
@@ -74,7 +74,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
     qdot = rate_of_change_from_gyro(gyro, q)
 
-    if np.any(acc != 0) and beta > 0.0:
+    if beta > 0.0 and not np.all(acc == 0.0):
         acc /= np.sqrt(np.sum(acc ** 2))
         ax, ay, az = acc
 

@@ -38,7 +38,7 @@ class SimpleGyroIntegration(BaseOrientationMethods):
 
     initial_orientation: Union[np.ndarray, Rotation]
 
-    orientations_: Rotation
+    orientation_: Rotation
 
     data: SingleSensorDataset
     sampling_rate_hz: float
@@ -76,7 +76,7 @@ class SimpleGyroIntegration(BaseOrientationMethods):
         rots = _simple_gyro_integration_series(
             gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
         )
-        self.orientations_ = Rotation.from_quat(rots)
+        self.orientation_ = Rotation.from_quat(rots)
 
         return self
 

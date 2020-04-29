@@ -230,12 +230,12 @@ class BaseOrientationMethods(BaseAlgorithm):
     """Base class for the individual Orientation estimation methods that just work on simple data."""
 
     _action_method = "estimate"
-    orientations_: Rotation
+    orientation_: Rotation
 
     @property
     def orientation_list_(self) -> SingleSensorOrientationList:
         """The orientations as pd.DataFrame"""
-        return pd.DataFrame(self.orientations_.as_quat(), columns=GF_ORI)
+        return pd.DataFrame(self.orientation_.as_quat(), columns=GF_ORI)
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor based on the input data."""

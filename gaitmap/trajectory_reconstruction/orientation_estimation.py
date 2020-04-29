@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethods
-from gaitmap.trajectory_reconstruction.orientation_methods.simple_gyro_integration import SimpleGyroIntegration
+from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
 from gaitmap.utils.consts import SF_ACC, GF_ORI
 from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,

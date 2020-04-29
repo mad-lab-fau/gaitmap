@@ -46,7 +46,7 @@ class TestOrientationMethodMixin:
         rot_final = gyr_integrator.orientation_list_.iloc[-1]
 
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
-        assert len(gyr_integrator.orientations_) == fs + 1
+        assert len(gyr_integrator.orientation_) == fs + 1
 
     def test_idiot_update(self):
         test = self.init_algo_class()
@@ -54,4 +54,4 @@ class TestOrientationMethodMixin:
         sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
-        np.testing.assert_array_equal(test.orientations_[-1].as_quat(), test.initial_orientation.as_quat())
+        np.testing.assert_array_equal(test.orientation_[-1].as_quat(), test.initial_orientation.as_quat())
