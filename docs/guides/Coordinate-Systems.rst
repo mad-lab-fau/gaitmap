@@ -33,6 +33,9 @@ Foot Body Frame (FBF)
       lateral acceleration = positive acceleration)
     * follows convention of directions from [1]_
 
+World/Global Frame (GF)
+    *
+
 .. _ff:
 
 Foot Frame Overview
@@ -174,6 +177,35 @@ in [1]_ (see :ref:`ff`).
    | gyr_si | -gyr_z | gyr_si | gyr_z  |
    +--------+--------+--------+--------+
 
+
+World/Global Frame
+------------------
+
+At this point, it is important to emphasize again that the sensor frame moves with the sensor and the alignment
+information for the SF provided above, of course only hold true while the test subject is in its default pose (e.g.
+flat foot phase for foot mounted IMUs).
+During movement the orientation of the sensor can not be easily described by terms like "forward" or "upwards".
+Hence, the SF is not suitable to calculate and express measures that require a fixed global frame.
+For example, to estimate the stride length, we need a clear definition of a forward direction over the entire duration
+of a stride.
+Therefore, we need a "global" fixed reference frame (GF) for the duration of our observation.
+The GF does not move or rotate if the sensor or the subject move.
+In case of external motion capture systems (e.g. camera based systems) always report their information in such a global
+reference frame.
+
+For inside-out systems, like body-attached IMUs, it is difficult to establish such a fixed coordinate system.
+Rather complicated algorithms must be used to project the local measurements of an IMU into a fixed global frame.
+During the gait pipeline, this step is performed by the *Trajectory Reconstruction*.
+The orientation, velocity, and position provided by these algorithm is always expressed in the GF.
+However, for the sake of simplicity, no additional prefix is used to indicate that in the column names.
+One just has to remember that all positions and orientations provided after the *Trajectory Reconstruction* are
+expressed in the global frame.
+
+Note that the orientation of this fixed global frame is usually determined by the orientation of the SF at the beginning
+of the observation period.
+Many algorithms consider a single stride as a observation period.
+This means that when comparing two strides the GFs do not necessarily line-up, as the GF for each stride is defined
+based on the orientation of the sensor at the beginning of the stride.
 
 Algorithmic Implementation
 ==========================
