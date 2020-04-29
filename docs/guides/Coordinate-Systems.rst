@@ -34,7 +34,10 @@ Foot Body Frame (FBF)
     * follows convention of directions from [1]_
 
 World/Global Frame (GF)
-    *
+    * All positions/velocity and orientations after the *Trajectory Reconstruction* are provided in the GF
+    * The global frame is fixed during an observation period
+    * The observation period depends on the algorithm used in the *Trajectory Reconstruction* and is usually either
+      a stride or a gait sequence level
 
 .. _ff:
 
