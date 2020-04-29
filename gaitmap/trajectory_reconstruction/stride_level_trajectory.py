@@ -1,4 +1,3 @@
-"""Estimation of orientations by using inertial sensor data."""
 import warnings
 from typing import Dict
 
@@ -6,43 +5,44 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationEstimation, BaseType, BaseOrientationMethods
+from gaitmap.base import BaseOrientationEstimation, BaseOrientationMethods, BaseType
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
-from gaitmap.utils.consts import SF_ACC, GF_ORI
+from gaitmap.utils.consts import GF_ORI, SF_ACC
 from gaitmap.utils.dataset_helper import (
-    SingleSensorDataset,
-    get_multi_sensor_dataset_names,
     Dataset,
     StrideList,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    is_single_sensor_dataset,
+    is_multi_sensor_dataset,
+    SingleSensorDataset,
+    get_multi_sensor_dataset_names,
 )
-from gaitmap.utils.dataset_helper import is_single_sensor_dataset, is_multi_sensor_dataset
 from gaitmap.utils.rotations import get_gravity_rotation
 
-# TODO: Delete in favor of stride_level trajectory
 
+class StrideLevelTrajectory(BaseOrientationEstimation):
+    """Estimate the trajectory over the duration of a stride by considering each stride individually.
 
-class GyroIntegration(BaseOrientationEstimation):
-    """Estimate orientation based on initial orientation from acc and subsequent orientation from gyr data.
-
-    Initial orientation is calculated by aligning acceleration data of the first samples of every stride with gravity.
-    Subsequent orientations are estimated by integrating gyroscope data with respect to time.
+    You can select a method for the orientation estimation and a method for the position estimation.
+    These methods will then be applied to each stride.
+    This class will calculate the initial orientation of each stride assuming that it starts at a region of minimal
+    movement (`min_vel`).
+    Further methods to dedrift the orientation or position will additionally assume that the stride also ends in a
+    static period.
 
     Attributes
     ----------
-    estimated_orientations_
+    orientation_
         The first orientation is obtained by aligning the acceleration data at the start of each stride with gravity.
         Therefore, +-`half_window_width` around each start of the stride are used as we assume the start of the stride
         to have minimal velocity.
         The subsequent orientations are obtained from integrating all `len(self.data)` gyroscope samples and therefore
         this attribute contains `len(self.data) + 1` orientations
-    estimated_orientations_without_initial_
-        Contains `estimated_orientations_` but for each stride, the INITIAL rotation is REMOVED to make it the same
-        length as `len(self.data)`.
-    estimated_orientations_without_final_
-        Contains `estimated_orientations_` but for each stride, the FINAL rotation is REMOVED to make it the same
-        length as `len(self.data)`
+    position_
+    velocity_
+
+
 
     Parameters
     ----------
@@ -51,6 +51,10 @@ class GyroIntegration(BaseOrientationEstimation):
         This method is called with the data of each stride to actually calculate the orientation.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
         per-stride initial orientations based on the mid-stance assumption.
+    pos_method
+        An instance of any available position method with the desired parameters set.
+        This method is called with the data of each stride to actually calculate the position.
+        Besides the raw data it is provided the orientations calculated by the `ori_method`.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each stride with
         gravity. To do so, half the window size before and half the window size after the start of the stride will
@@ -69,40 +73,22 @@ class GyroIntegration(BaseOrientationEstimation):
         orientations will be obtained, all of them result in a Multiindex Pandas Dataframe.
     sampling_rate_hz
         sampling rate of gyroscope data in Hz
-
-    Examples
-    --------
-    >>> data = healthy_example_imu_data["left_sensor"]
-    >>> stride_event_list = healthy_example_stride_events["left_sensor"]
-    >>> gyr_int = GyroIntegration(align_window_width=8)
-    >>> gyr_int.estimate(data, stride_events, 204.8)
-    >>> gyr_int.estimated_orientations_without_final_["left_sensor"].iloc[0]
-    qx    0.119273
-    qy   -0.041121
-    qz    0.000000
-    qw    0.992010
-    Name: (0, 0), dtype: float64
-    >>> gyr_int.estimated_orientations_without_final_["left_sensor"]
-                    qx        qy        qz        qw
-    s_id   sample
-    0      0        0.119273 -0.041121  0.000000  0.992010
-           1        0.123864 -0.027830 -0.017385  0.991756
-           2        0.131941 -0.013900 -0.034395  0.990563
-    1      0        0.144485 -0.000534 -0.050761  0.988204
-           1        0.162431  0.014014 -0.069777  0.984150
-    ...               ...       ...       ...       ...
-
     """
 
     align_window_width: int
     ori_method: BaseOrientationMethods
+    pos_method: None
 
     data: Dataset
     stride_event_list: StrideList
     sampling_rate_hz: float
 
-    def __init__(self, ori_method=SimpleGyroIntegration(), align_window_width: int = 8):
+    def __init__(
+        self, ori_method: BaseOrientationMethods = SimpleGyroIntegration(), pos_method=None, align_window_width: int = 8
+    ):
         self.ori_method = ori_method
+        self.pos_method = pos_method
+        # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
@@ -153,9 +139,19 @@ class GyroIntegration(BaseOrientationEstimation):
         return rotations
 
     def _estimate_stride(self, data: SingleSensorDataset, start: int, end: int) -> Rotation:
+        stride_data = data.iloc[start:end]
         initial_orientation = self._calculate_initial_orientation(data, start)
+
+        # Apply the orientation method
         ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
-        return ori_method.estimate(data.iloc[start:end], sampling_rate_hz=self.sampling_rate_hz).orientation_
+        orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_
+
+        # Apply the Position method
+        if self.pos_method:
+            pos_method = self.pos_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz)
+            velocity = pos_method.velocity_
+            position = pos_method.position_
+        return orientation
 
     def _estimate_multi_sensor(self) -> Dict[str, pd.DataFrame]:
         orientations = dict()
