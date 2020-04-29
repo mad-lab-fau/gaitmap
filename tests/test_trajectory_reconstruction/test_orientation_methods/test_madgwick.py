@@ -1,6 +1,6 @@
 import pytest
 
-from gaitmap.base import BaseType, BaseOrientationMethods
+from gaitmap.base import BaseType, BaseOrientationMethod
 from gaitmap.trajectory_reconstruction import MadgwickAHRS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_trajectory_reconstruction.test_orientation_methods.test_ori_method_mixin import (
@@ -24,5 +24,5 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestSimpleRotations(TestOrientationMethodMixin):
     __test__ = True
 
-    def init_algo_class(self) -> BaseOrientationMethods:
+    def init_algo_class(self) -> BaseOrientationMethod:
         return MadgwickAHRS()

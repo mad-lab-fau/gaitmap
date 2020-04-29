@@ -5,13 +5,13 @@ import numpy as np
 from numba import njit
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseType, BaseOrientationMethods
+from gaitmap.base import BaseType, BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR
 from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
-class SimpleGyroIntegration(BaseOrientationMethods):
+class SimpleGyroIntegration(BaseOrientationMethod):
     """Integrate Gyro values without any drift correction.
 
     Parameters

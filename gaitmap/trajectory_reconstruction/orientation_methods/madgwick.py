@@ -10,13 +10,13 @@ import numpy as np
 from numba import njit
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationMethods, BaseType
+from gaitmap.base import BaseOrientationMethod, BaseType
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
-class MadgwickAHRS(BaseOrientationMethods):
+class MadgwickAHRS(BaseOrientationMethod):
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
 

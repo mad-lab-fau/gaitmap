@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationMethods
+from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR, SF_COLS
 
 
@@ -12,7 +12,7 @@ class TestOrientationMethodMixin:
     algorithm_class = None
     __test__ = False
 
-    def init_algo_class(self) -> BaseOrientationMethods:
+    def init_algo_class(self) -> BaseOrientationMethod:
         raise NotImplementedError("Should be implemented by ChildClass")
 
     @pytest.mark.parametrize(
