@@ -53,16 +53,38 @@ poetry update
 Running `poetry install` will only install packages that are not yet installed. `poetry update` will also check, if 
 newer versions of already installed packages exist.
 
-## Configure your IDE
+## Tools we are using
 
-### Jupyter Lab/Notebooks
+We are using [doit](https://pydoit.org/contents.html) to help you run all the tools.
+See the [README](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/README.html) for details.
+Below we will provide further info about the tools that would be called by this commands.
+
+This library uses `pytest` for **testing**. Besides using the doit-command, you can also use an IDE integration
+available for most IDEs.
+For *PyCharm* you just need to set the default testrunner to `pytest`.
+
+To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
+autoformat our code.
+Black can also be integrated [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
+do not want to run it from the commandline.
+Because, it is so easy, we also use *black* to format the test-suite.
+
+For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
+*Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
+
+For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
+To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
+
+### Configure your IDE
+
+#### Jupyter Lab/Notebooks
 
 While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
 prototype your scientific code.
 To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
 
 ```
-# poetry isntall including root!
+# poetry install including root!
 poetry install
 poetry run doit register_ipykernel
 ``` 
@@ -78,7 +100,7 @@ Put this in your first cell of every Jupyter Notebook to activate it:
 %autoreload 2  # Autoreload all modules
 ```
 
-### Pycharm
+#### Pycharm
 
 You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to
 settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
@@ -89,8 +111,8 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 
 ## Testing and Test data
 
-While all automated test should go in the test folder, it might be helpful; to cereate some external test script form 
-to time.
+While all automated test should go in the test folder, it might be helpful to create some external test script form 
+time to time.
 For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
 dependencies installed (see [IDE Config](#Configure-your-IDE)).
 Test data is available under `test/example_data` and you can import it directly using the `get_...` helper functions in 
