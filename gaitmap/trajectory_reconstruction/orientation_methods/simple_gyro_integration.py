@@ -1,14 +1,14 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
-import operator
-from itertools import accumulate
 from typing import Union
 
 import numpy as np
+from numba import njit
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType, BaseOrientationMethods
 from gaitmap.utils.consts import SF_GYR
 from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
+from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
 class SimpleGyroIntegration(BaseOrientationMethods):
@@ -69,11 +69,28 @@ class SimpleGyroIntegration(BaseOrientationMethods):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
-        if isinstance(initial_orientation, np.ndarray):
-            initial_orientation = Rotation.from_quat(initial_orientation)
+        if isinstance(initial_orientation, Rotation):
+            initial_orientation = Rotation.as_quat(initial_orientation)
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
-        single_step_rotations = Rotation.from_rotvec(gyro_data / self.sampling_rate_hz)
-        # This is faster than np.cumprod. Custom quat rotation would be even faster, as we could skip the second loop
-        out = accumulate([initial_orientation, *single_step_rotations], operator.mul)
-        self.orientations_ = Rotation([o.as_quat() for o in out])
+
+        rots = _simple_gyro_integration_series(
+            gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
+        )
+        self.orientations_ = Rotation.from_quat(rots)
+
         return self
+
+
+@njit()
+def _simple_gyro_integration_series(gyro, initial_orientation, sampling_rate_hz):
+    out = np.empty((len(gyro) + 1, 4))
+    q = initial_orientation
+    out[0] = q
+    for i in range(len(gyro)):
+        qdot = rate_of_change_from_gyro(gyro[i], q)
+        # Integrate rate of change of quaternion to yield quaternion
+        q += qdot / sampling_rate_hz
+        q /= np.sqrt(np.sum(q ** 2))
+        out[i + 1] = q
+
+    return out
