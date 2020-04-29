@@ -184,15 +184,12 @@ class ForwardBackwardIntegration(BasePositionEstimation):
         return estimated_velocity_, estimated_position_
 
     def _get_weight_matrix(self, n_samples: int) -> np.ndarray:
-        # TODO: support other weighting functions
         x = np.linspace(0, 1, n_samples)
         s = 1 / (1 + np.exp(-(x - self.turning_point) / self.steepness))
         weights = (s - s[0]) / (s[-1] - s[0])
         return weights
 
     def _forward_backward_integration(self, data: np.ndarray) -> np.ndarray:
-        # TODO: make it possible to set initial value of integral from outside?
-        # TODO: move to utils?
         # TODO: different steepness and turning point for velocity and position?
         integral_forward = integrate.cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
         # for backward integration, we flip the signal

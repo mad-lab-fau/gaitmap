@@ -77,7 +77,6 @@ class TestForwardBackwardIntegration:
         rots.set_index("s_id", append=True, inplace=True)
         position = ForwardBackwardIntegration(turning_point, steepness)
         position.estimate(data, events, rots, sampling_frequency_hz)
-        # TODO: use different test data, where just vertical will be zero
         final_position = position.estimated_position_.iloc[-1]
         half_position = position.estimated_position_.iloc[int(np.floor(len(data) - self.start_sample) / 2)]
         np.testing.assert_almost_equal(final_position[2], 0)
