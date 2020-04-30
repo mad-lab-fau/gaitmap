@@ -22,10 +22,11 @@ class SimpleGyroIntegration(BaseOrientationMethod):
 
     Attributes
     ----------
-    orientations_
-        The final array of rotations **including** the initial orientation.
-    orientation_list_
-        The rotations as a *SingleSensorOrientationList*
+    orientation_
+        The rotations as a *SingleSensorOrientationList*, including the initial orientation.
+        This means the there are len(data) + 1 orientations.
+    orientation_object_
+        The orientations as a single scipy Rotation object
 
     Other Parameters
     ----------------
@@ -33,6 +34,11 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         The data passed to the estimate method
     sampling_rate_hz
         The sampling rate of this data
+
+    Notes
+    -----
+    This class uses *Numba* as a just-in-time-compiler to achive fast run times.
+    In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
     """
 
@@ -47,14 +53,14 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         self.initial_orientation = initial_orientation
 
     # TODO: Allow to continue the integration
-    # TODO: Clarify the expected input unit!
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.
 
         Parameters
         ----------
         data
-            Continous sensor data that includes at least a Gyro
+            Continuous sensor data that includes at least a Gyro.
+            The gyro data is expected to be in deg/s!
         sampling_rate_hz
             The sampling rate of the data in Hz
 
@@ -76,7 +82,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         rots = _simple_gyro_integration_series(
             gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
         )
-        self.orientation_rot_ = Rotation.from_quat(rots)
+        self.orientation_object_ = Rotation.from_quat(rots)
 
         return self
 

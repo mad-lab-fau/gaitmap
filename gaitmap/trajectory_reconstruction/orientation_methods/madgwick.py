@@ -17,6 +17,53 @@ from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
 class MadgwickAHRS(BaseOrientationMethod):
+    """The MadwickAHRS algorithm to estimate the orientation of an IMU.
+
+    This method applies a simple gyro integration with an additional correction step that tries to align the estimated
+    orientation of the z-axis with gravity direction estimated from the acceleration data.
+    This implementation is based on the paper [1]_.
+    An open source C-implementation of the algorithm can be found at [2]_.
+
+    Parameters
+    ----------
+    beta : flat between 0 and 1
+        This parameter controls how harsh the acceleration based correction is.
+        A high value performs large corrections and a small value small and gradual correction.
+        A high value should only be used if the sensor is moved slowly.
+        A value of 0 is identical to just the Gyro Integration.
+    initial_orientation
+        The initial orientation of the sensor that is assumed.
+        It is critical that this value is close to the actual orientation.
+        Otherwise, the estimated orientation will drift until the real orientation is found.
+        In some cases, the algorithm will not be able to converge if the initial orientation is too far of and the
+        orientation will slowly oscillate.
+
+    Attributes
+    ----------
+    orientation_
+        The rotations as a *SingleSensorOrientationList*, including the initial orientation.
+        This means the there are len(data) + 1 orientations.
+    orientation_object_
+        The orientations as a single scipy Rotation object
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the estimate method
+    sampling_rate_hz
+        The sampling rate of this data
+
+    Notes
+    -----
+    This class uses *Numba* as a just-in-time-compiler to achive fast run times.
+    In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
+
+    .. [1] Madgwick, S. O. H., Harrison, A. J. L., & Vaidyanathan, R. (2011).
+           Estimation of IMU and MARG orientation using a gradient descent algorithm. IEEE International Conference on
+           Rehabilitation Robotics, 1–7. https://doi.org/10.1109/ICORR.2011.5975346
+    .. [2] http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
+
+    """
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
 
@@ -30,14 +77,14 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.beta = beta
 
     # TODO: Allow to continue the integration
-    # TODO: Clarify the expected input unit!
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor.
 
         Parameters
         ----------
         data
-            Continous sensor data that includes at least a Gyro
+            Continuous sensor data including gyro and acc values.
+            The gyro data is expected to be in deg/s!
         sampling_rate_hz
             The sampling rate of the data in Hz
 
@@ -64,7 +111,7 @@ class MadgwickAHRS(BaseOrientationMethod):
             sampling_rate_hz=sampling_rate_hz,
             beta=self.beta,
         )
-        self.orientation_rot_ = Rotation.from_quat(rots)
+        self.orientation_object_ = Rotation.from_quat(rots)
         return self
 
 
