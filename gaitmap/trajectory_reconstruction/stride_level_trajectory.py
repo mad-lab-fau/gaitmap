@@ -158,7 +158,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     def _estimate_stride(
         self, data: SingleSensorDataset, start: int, end: int
     ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
-        stride_data = data.iloc[start:end]
+        stride_data = data.iloc[start:end].copy()
         initial_orientation = self._calculate_initial_orientation(data, start)
 
         # Apply the orientation method
