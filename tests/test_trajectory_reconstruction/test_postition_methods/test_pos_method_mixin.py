@@ -55,7 +55,7 @@ class TestPositionMethodNoGravityMixin:
         acc = np.array(acc)
         test_data = np.repeat(acc[None, :], n_steps, axis=0)
         test_data = np.vstack((test_data, -test_data, [0, 0, 0]))
-        # THis simulates forawrd and backwards walking
+        # This simulates forward and backwards walking
         test_data = np.vstack((test_data, -test_data))
         test_data = pd.DataFrame(test_data, columns=SF_ACC)
 
@@ -65,8 +65,8 @@ class TestPositionMethodNoGravityMixin:
         assert_array_almost_equal(test.position_.to_numpy()[-1], expected)
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], expected)
 
-        # Test quater point
-        # The +0.5 comes because of the trapezoide rule integration
+        # Test quarter point
+        # The +0.5 comes because of the trapezoid rule integration
         expected_vel = acc * (n_steps - 1) + 0.5 * acc
         expected_pos = 0.5 * acc * (n_steps-1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps], expected_vel)
