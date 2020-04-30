@@ -64,7 +64,7 @@ class MadgwickAHRS(BaseOrientationMethod):
             sampling_rate_hz=sampling_rate_hz,
             beta=self.beta,
         )
-        self.orientation_ = Rotation.from_quat(rots)
+        self.orientation_rot_ = Rotation.from_quat(rots)
         return self
 
 

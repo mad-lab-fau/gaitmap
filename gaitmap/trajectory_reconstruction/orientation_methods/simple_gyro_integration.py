@@ -76,7 +76,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         rots = _simple_gyro_integration_series(
             gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
         )
-        self.orientation_ = Rotation.from_quat(rots)
+        self.orientation_rot_ = Rotation.from_quat(rots)
 
         return self
 

@@ -230,12 +230,12 @@ class BaseOrientationMethod(BaseAlgorithm):
     """Base class for the individual Orientation estimation methods that just work on simple data."""
 
     _action_method = "estimate"
-    orientation_: Rotation
+    orientation_rot_: Rotation
 
     @property
-    def orientation_list_(self) -> SingleSensorOrientationList:
+    def orientation_(self) -> SingleSensorOrientationList:
         """The orientations as pd.DataFrame"""
-        return pd.DataFrame(self.orientation_.as_quat(), columns=GF_ORI)
+        return pd.DataFrame(self.orientation_rot_.as_quat(), columns=GF_ORI)
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor based on the input data."""
@@ -259,6 +259,16 @@ class BasePositionMethod(BaseAlgorithm):
 
         Note that the data is assumed to be in the world-frame (i.e. already rotated)
         """
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
+    _action_method = "estimate"
+
+    orientation_: OrientationList
+    position_: PositionList
+
+    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
