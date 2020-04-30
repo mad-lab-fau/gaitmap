@@ -175,9 +175,7 @@ class StrideLevelTrajectory(BaseOrientationEstimation):
         velocity = dict()
         position = dict()
         for i_sensor in get_multi_sensor_dataset_names(self.data):
-            out = self._estimate_single_sensor(
-                self.data[i_sensor], self.stride_event_list[i_sensor]
-            )
+            out = self._estimate_single_sensor(self.data[i_sensor], self.stride_event_list[i_sensor])
             orientation[i_sensor] = out[0]
             velocity[i_sensor] = out[1]
             position[i_sensor] = out[2]

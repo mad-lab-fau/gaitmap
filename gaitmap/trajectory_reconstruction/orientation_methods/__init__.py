@@ -2,4 +2,3 @@ from gaitmap.trajectory_reconstruction.orientation_methods.madgwick import Madgw
 from gaitmap.trajectory_reconstruction.orientation_methods.simple_gyro_integration import SimpleGyroIntegration
 
 __all__ = ["MadgwickAHRS", "SimpleGyroIntegration"]
-

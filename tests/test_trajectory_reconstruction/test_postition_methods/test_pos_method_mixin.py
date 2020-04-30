@@ -68,7 +68,6 @@ class TestPositionMethodNoGravityMixin:
         # Test quarter point
         # The +0.5 comes because of the trapezoid rule integration
         expected_vel = acc * (n_steps - 1) + 0.5 * acc
-        expected_pos = 0.5 * acc * (n_steps-1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
+        expected_pos = 0.5 * acc * (n_steps - 1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps], expected_pos)
-

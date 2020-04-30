@@ -18,6 +18,7 @@ from gaitmap.utils.dataset_helper import (
 
 # TODO: Delete in favor of stride_level trajectory
 
+
 class ForwardBackwardIntegration(BasePositionEstimation):
     """Use forward(-backward) integration of acc to estimate velocity and position.
 

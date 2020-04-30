@@ -3,7 +3,9 @@ import pytest
 from gaitmap.base import BaseType, BasePositionMethod
 from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
-from tests.test_trajectory_reconstruction.test_postition_methods.test_pos_method_mixin import TestPositionMethodNoGravityMixin
+from tests.test_trajectory_reconstruction.test_postition_methods.test_pos_method_mixin import (
+    TestPositionMethodNoGravityMixin,
+)
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):

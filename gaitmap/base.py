@@ -254,9 +254,7 @@ class BasePositionMethod(BaseAlgorithm):
         """Alias for position_."""
         return self.position_
 
-    def estimate(
-        self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float
-    ) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position of the sensor based on the input data.
 
         Note that the data is assumed to be in the world-frame (i.e. already rotated)
