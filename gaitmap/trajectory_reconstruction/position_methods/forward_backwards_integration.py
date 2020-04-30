@@ -66,7 +66,9 @@ class ForwardBackwardIntegration(BasePositionMethod):
         if self.gravity is not None:
             acc_data -= self.gravity
 
-        velocity = self._forward_backward_integration(acc_data)
+        # Add an implicit 0 to the beginning of the acc data
+        padded_acc = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
+        velocity = self._forward_backward_integration(padded_acc)
         position_xy = cumtrapz(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
         if self.level_assumption is True:
             position_z = self._forward_backward_integration(velocity[:, [2]])
@@ -90,6 +92,6 @@ class ForwardBackwardIntegration(BasePositionMethod):
         integral_forward = cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
         # for backward integration, we flip the signal and inverse the time by using a negative sampling rate.
         integral_backward = cumtrapz(data[::-1], axis=0, initial=0) / -self.sampling_rate_hz
-        weights = self._sigmoid_weight_function(data.shape[0])
-
-        return (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
+        weights = self._sigmoid_weight_function(integral_forward.shape[0])
+        combined = (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
+        return combined
