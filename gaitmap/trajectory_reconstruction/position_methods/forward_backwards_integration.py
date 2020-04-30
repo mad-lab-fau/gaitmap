@@ -6,7 +6,7 @@ from scipy.integrate import cumtrapz
 
 from gaitmap.base import BasePositionMethod, BaseType
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, GF_VEL, GF_POS
-from gaitmap.utils.dataset_helper import SingleSensorDataset
+from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
 
 
 class ForwardBackwardIntegration(BasePositionMethod):
@@ -57,6 +57,8 @@ class ForwardBackwardIntegration(BasePositionMethod):
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError("`turning_point` must be in the rage of 0.0 to 1.0")
+        if not is_single_sensor_dataset(data, check_gyr=False, frame="sensor"):
+            raise ValueError("Data is not a single sensor dataset.")
         self.sampling_rate_hz = sampling_rate_hz
         self.data = data
 
