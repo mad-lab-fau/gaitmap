@@ -25,6 +25,8 @@ class ForwardBackwardIntegration(BasePositionMethod):
 
     Implementation based on the paper by Hannink et al. [1]_.
 
+    TODO: Add info to docs about what to do to only use forward or only backwards.
+
     Notes
     -----
     .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
@@ -59,15 +61,15 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.data = data
 
         acc_data = data[SF_ACC].to_numpy()
-        if self.gravity:
+        if self.gravity is not None:
             acc_data -= self.gravity
 
         velocity = self._forward_backward_integration(acc_data)
         position_xy = cumtrapz(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
         if self.level_assumption is True:
-            position_z = self._forward_backward_integration(velocity[:, 2])
+            position_z = self._forward_backward_integration(velocity[:, [2]])
         else:
-            position_z = cumtrapz(velocity[:, 2], axis=0, initial=0) / self.sampling_rate_hz
+            position_z = cumtrapz(velocity[:, [2]], axis=0, initial=0) / self.sampling_rate_hz
         position = np.hstack((position_xy, position_z))
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
