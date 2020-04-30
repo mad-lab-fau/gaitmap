@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BasePositionMethod
@@ -22,7 +22,7 @@ class TestPositionMethodNoGravityMixin:
         idiot_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
         test = test.estimate(idiot_data, 1)
-        expected = np.zeros((10, 3))
+        expected = np.zeros((11, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_pos = pd.DataFrame(expected, columns=GF_POS)
 
@@ -45,26 +45,30 @@ class TestPositionMethodNoGravityMixin:
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
 
-    @pytest.mark.parametrize("acc", (
-            [0, 1, 0],
-            [1, 0, 0],
-            [0, 2, 0],
-            [1, 2, 0],
-    ))
-    def test_forward_all_axis_with_level_walk(self, acc):
+    @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3],))
+    def test_all_axis(self, acc):
         """Test against the physics equation."""
         test = self.init_algo_class()
 
-        n_steps = 2
+        n_steps = 10
 
         acc = np.array(acc)
         test_data = np.repeat(acc[None, :], n_steps, axis=0)
+        test_data = np.vstack((test_data, -test_data, [0, 0, 0]))
+        # THis simulates forawrd and backwards walking
         test_data = np.vstack((test_data, -test_data))
         test_data = pd.DataFrame(test_data, columns=SF_ACC)
 
         test.estimate(test_data, 1)
 
-        expected = acc * (n_steps - 1) * n_steps
+        expected = np.zeros(3)
+        assert_array_almost_equal(test.position_.to_numpy()[-1], expected)
+        assert_array_almost_equal(test.velocity_.to_numpy()[-1], expected)
 
-        assert_array_equal(test.position_.to_numpy()[-1], expected)
+        # Test quater point
+        # The +0.5 comes because of the trapezoide rule integration
+        expected_vel = acc * (n_steps - 1) + 0.5 * acc
+        expected_pos = 0.5 * acc * (n_steps-1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
+        assert_array_almost_equal(test.velocity_.to_numpy()[n_steps], expected_vel)
+        assert_array_almost_equal(test.position_.to_numpy()[n_steps], expected_pos)
 
