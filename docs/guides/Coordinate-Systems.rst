@@ -24,7 +24,7 @@ Foot Sensor Frame (FSF)
     * forms a right-handed coordinate system with axes called **X, Y, Z**
     * uses right-hand-rule around each axis for definition of positive direction of the Gyroscope 
     * defines axes' directions as up (Z), to the tip of the shoe (X), and
-      to the **left** (Y)
+      to the left (Y)
 
 Foot Body Frame (FBF)
     * consists of the 3 axes *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
