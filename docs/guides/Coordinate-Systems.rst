@@ -186,8 +186,8 @@ in [1]_ (see :ref:`ff`).
 World/Global Frame
 ------------------
 
-At this point, it is important to emphasize again that the sensor frame moves with the sensor and the alignment
-information for the SF provided above, of course only hold true while the test subject is in its default pose (e.g.
+At this point, it is important to emphasize again that the FSF/FBF moves with the sensor/foot. Therefore, the alignment
+information for the FSF/FBF provided above, of course only hold true while the test subject is in its default pose (e.g.
 flat foot phase for foot mounted IMUs).
 During movement the orientation of the sensor can not be easily described by terms like "forward" or "upwards".
 Hence, the SF is not suitable to calculate and express measures that require a fixed global frame.
