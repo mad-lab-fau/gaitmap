@@ -73,7 +73,7 @@ For everything *black* can not handle, we us *prospector* to handle all other **
 *Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
 
 For **documentation** we follow the [numpy doc-string guidelines](https://numpydoc.readthedocs.io/en/latest/format.html) and autobuild our API documentation using *Sphinx*.
-To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
+To make your life easier, you should also set your IDE tools to support the numpy docstring conventions.
 
 ### Configure your IDE
 
@@ -111,11 +111,11 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 
 ## Testing and Test data
 
-While all automated test should go in the test folder, it might be helpful to create some external test script form 
+While all automated tests should go in the test folder, it might be helpful to create some external test script form 
 time to time.
 For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
 dependencies installed (see [IDE Config](#Configure-your-IDE)).
-Test data is available under `test/example_data` and you can import it directly using the `get_...` helper functions in 
+Test data is available under `test\example_data` and you can import it directly using the `get_...` helper functions in 
 conftest:
 
 ```python
