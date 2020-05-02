@@ -65,14 +65,14 @@ For *PyCharm* you just need to set the default testrunner to `pytest`.
 
 To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
 autoformat our code.
-Black can also be integrated [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
+Black can also be integrated [into your editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
 do not want to run it from the commandline.
 Because, it is so easy, we also use *black* to format the test-suite.
 
 For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
 *Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
 
-For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
+For **documentation** we follow the [numpy doc-string guidelines](https://numpydoc.readthedocs.io/en/latest/format.html) and autobuild our API documentation using *Sphinx*.
 To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
 
 ### Configure your IDE
