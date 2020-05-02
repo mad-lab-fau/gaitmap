@@ -57,7 +57,7 @@ newer versions of already installed packages exist.
 
 We are using [doit](https://pydoit.org/contents.html) to help you run all the tools.
 See the [README](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/README.html) for details.
-Below we will provide further info about the tools that would be called by this commands.
+Here is some further info about the tools that would be called by these commands:
 
 This library uses `pytest` for **testing**. Besides using the doit-command, you can also use an IDE integration
 available for most IDEs.
