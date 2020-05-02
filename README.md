@@ -88,7 +88,7 @@ To execute `format`, `lint`, and `test` all together, run:
 ```bash
 poetry run doit
 # or if you want less output
-petry run doit -v 0
+poetry run doit -v 0
 ```
 
 Tou should run this as often as possible!
