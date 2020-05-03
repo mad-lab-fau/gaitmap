@@ -8,7 +8,6 @@ from gaitmap.utils.consts import SF_GYR, SF_COLS
 
 
 class TestOrientationMethodMixin:
-    # TODO: Add simple single stride regression test
     algorithm_class = None
     __test__ = False
 
@@ -55,3 +54,16 @@ class TestOrientationMethodMixin:
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
         np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation.as_quat())
+
+    def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
+        """Simple regression test with default parameters."""
+        test = self.init_algo_class()
+        fs = 204.8
+
+        strides = healthy_example_stride_events["left_sensor"]
+        start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
+        data = healthy_example_imu_data['left_sensor'].iloc[start:end]
+
+        test.estimate(data, fs)
+
+        snapshot.assert_match(test.orientation_, test.__class__.__name__)
