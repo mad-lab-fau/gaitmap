@@ -4,7 +4,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod
-from gaitmap.utils.consts import SF_GYR, SF_COLS
+from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
 
 
@@ -75,7 +75,7 @@ class TestOrientationMethodMixin:
 
         strides = healthy_example_stride_events["left_sensor"]
         start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
-        data = healthy_example_imu_data['left_sensor'].iloc[start:end]
+        data = healthy_example_imu_data["left_sensor"].iloc[start:end]
 
         test.estimate(data, fs)
 
