@@ -5,9 +5,12 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BasePositionMethod
+from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
 from gaitmap.utils.consts import SF_COLS, SF_ACC, GF_VEL, GF_POS
+
 # TODO: Add regression test on single stride
 from gaitmap.utils.dataset_helper import is_single_sensor_position_list
+from gaitmap.utils.rotations import rotate_dataset_series
 
 
 class TestPositionMethodNoGravityMixin:
@@ -25,14 +28,14 @@ class TestPositionMethodNoGravityMixin:
         test = test.estimate(idiot_data, 1)
         expected = np.zeros((11, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
-        expected_vel.index.name = 'sample'
+        expected_vel.index.name = "sample"
         expected_pos = pd.DataFrame(expected, columns=GF_POS)
-        expected_pos.index.name = 'sample'
+        expected_pos.index.name = "sample"
 
         assert_frame_equal(test.position_, expected_pos)
         assert_frame_equal(test.velocity_, expected_vel)
         assert_frame_equal(test.position_, expected_pos)
-        
+
     def test_output_formats(self):
         test = self.init_algo_class()
         sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
@@ -84,3 +87,18 @@ class TestPositionMethodNoGravityMixin:
         expected_pos = 0.5 * acc * (n_steps - 1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps], expected_pos)
+
+    def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
+        """Simple regression test with default parameters."""
+        test = self.init_algo_class()
+        fs = 204.8
+
+        strides = healthy_example_stride_events["left_sensor"]
+        start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
+        data = healthy_example_imu_data["left_sensor"].iloc[start:end]
+        orientation = SimpleGyroIntegration().estimate(data, fs).orientation_object_
+        data = rotate_dataset_series(data, orientation[:-1])
+
+        test.estimate(data, fs)
+
+        snapshot.assert_match(test.position_, test.__class__.__name__)
