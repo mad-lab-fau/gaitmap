@@ -9,6 +9,7 @@ from numba import njit
 @njit()
 def rate_of_change_from_gyro(gyro: np.ndarray, current_orientation: np.ndarray) -> np.ndarray:
     """Rate of change of quaternion from gyroscope"""
+    # TODO: Add test
     qx, qy, qz, qw = current_orientation
     qdot = np.empty(4)
     qdot[0] = qw * gyro[0] + qy * gyro[2] - qz * gyro[1]

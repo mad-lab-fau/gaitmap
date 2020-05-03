@@ -238,6 +238,8 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
     """
     # Get the rotation axis from the initial quaternion
     rotation_axis = np.atleast_2d(rotation_axis)
+    if np.any(np.all(rotation_axis == 0, axis=1)):
+        raise ValueError('All rotation axis must not be [0, 0, 0].')
     quaternions = np.atleast_2d(rot.as_quat())
     if rotation_axis.shape[0] != quaternions.shape[0]:
         rotation_axis_equal_d = np.repeat(rotation_axis, quaternions.shape[0], axis=0)
@@ -297,6 +299,8 @@ def find_angle_between_orientations(
     if rotation_axis is None:
         rotation_axis = rotvec
     out = row_wise_dot(rotvec, normalize(rotation_axis))
+    # In case any of the rotation axis, was still 0, the angle will be None indicating an angle of zero
+    out[np.isnan(out)] = 0.
     if rotvec.ndim == 1:
         return out[0]
     return out

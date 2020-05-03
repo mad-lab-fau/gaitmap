@@ -60,6 +60,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
     """Simply normalize a vector.
 
     If a 2D array is provided, each row is considered a vector, which is normalized independently.
+    In case an array has norm 0, np.nan is returned.
 
     Parameters
     ----------
@@ -84,8 +85,6 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
     """
     v = np.array(v)
-    if not v.any():
-        raise ValueError("one element at least should have value other than 0")
     if len(v.shape) == 1:
         ax = 0
     else:

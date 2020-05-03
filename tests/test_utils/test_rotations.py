@@ -346,6 +346,23 @@ class TestFindAngleBetweenOrientations:
         assert_array_almost_equal(angle_diff(result, out), 0)
         assert isinstance(result, float)
 
+    @pytest.mark.parametrize(
+        "ori1, ori2, axis, out",
+        (
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 0], 'error'),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, np.pi / 2]), None, 0),
+        ),
+    )
+    def test_zero_cases(self, ori1, ori2, axis, out):
+        if out == 'error':
+            with pytest.raises(ValueError):
+                find_angle_between_orientations(ori1, ori2, axis)
+        else:
+            result = find_angle_between_orientations(ori1, ori2, axis)
+
+            assert_array_almost_equal(angle_diff(result, out), 0)
+            assert isinstance(result, float)
+
     def test_multi_input_single_ref_single_axis(self):
         rot = Rotation.from_rotvec(np.repeat([[0, 0, np.pi / 2]], 5, axis=0))
         ref = Rotation.identity()

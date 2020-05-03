@@ -55,8 +55,7 @@ class TestNormalize:
 
     def test_normalize_all_zeros(self):
         """Test vector [0, 0, 0]."""
-        with pytest.raises(ValueError):
-            normalize(np.array([0, 0, 0]))
+        assert_array_almost_equal(normalize(np.array([0, 0, 0])), [np.nan, np.nan, np.nan])
 
 
 class TestFindRandomOrthogonal:
