@@ -311,6 +311,24 @@ class TestIsSingleSensorPositionList:
 
         assert is_single_sensor_position_list(df)
 
+    @pytest.mark.parametrize(
+        "cols, index, both",
+        (
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z"], [], True),
+            (["sample", "pos_x", "pos_y", "pos_z"], [], False),
+            (["pos_x", "pos_y", "pos_z"], ["s_id", "sample"], True),
+            (["pos_x", "pos_y", "pos_z"], ["sample"], False),
+        ),
+    )
+    def test_valid_versions_without_s_id(self, cols, index, both):
+
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_position_list(df) == both
+        assert is_single_sensor_position_list(df, s_id=False) is True
+
 
 class TestIsSingleSensorOrientationList:
     @pytest.mark.parametrize(

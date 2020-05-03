@@ -299,19 +299,24 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
     return keys
 
 
-def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> bool:
+def is_single_sensor_position_list(position_list: SingleSensorPositionList, s_id: bool = True) -> bool:
     """Check if an input is a single-sensor position list.
 
     A valid position list:
 
-    - is a pandas DataFrame with at least the following columns: `["s_id", "sample", "pos_x", "pos_y", "pos_z"]`
-    - or a pandas DataFrame with a 2-level MultiIndex with the names `["s_id", "sample"]` and at least the columns
-      `["pos_x", "pos_y", "pos_z"]`
+    - Is a pandas DataFrame with at least the following columns: `["sample", "pos_x", "pos_y", "pos_z"]`
+    - The additional column `["s_id"]` is expected for stride level orientation lists.
+    - The columns `sample` (and `s_id`) can also be part of the index instead
 
     Parameters
     ----------
     position_list
         The object that should be tested
+    s_id
+        If True the orientation list is expected to have a column (either regular or in the index) that is named `s_id`.
+        If False this check is not performed.
+        A orientation list without an `s_id` would be used to store orientation information without a clear association
+        to a stride.
 
     See Also
     --------
@@ -320,9 +325,11 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList) -> b
     """
     if not isinstance(position_list, pd.DataFrame):
         return False
-
+    index_cols = ["sample"]
+    if s_id is True:
+        index_cols.append("s_id")
     try:
-        position_list = set_correct_index(position_list, ["s_id", "sample"])
+        orientation_list = set_correct_index(position_list, index_cols)
     except KeyError:
         return False
     columns = position_list.columns
