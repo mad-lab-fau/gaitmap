@@ -3,18 +3,15 @@
 import inspect
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Union, Optional
+from typing import Callable, Dict, TypeVar, Any, List, Union
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_ACC, GF_ORI
+from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.dataset_helper import (
     Dataset,
-    is_multi_sensor_dataset,
-    is_single_sensor_dataset,
-    get_multi_sensor_dataset_names,
     StrideList,
     PositionList,
     OrientationList,

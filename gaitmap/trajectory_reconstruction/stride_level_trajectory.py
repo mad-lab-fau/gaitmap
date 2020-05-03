@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod, BaseType, BasePositionMethod, BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration
-from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS, SF_GYR
+from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
