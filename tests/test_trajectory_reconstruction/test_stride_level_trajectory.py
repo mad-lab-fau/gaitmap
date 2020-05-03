@@ -111,9 +111,7 @@ class TestIODataStructures:
                 assert len(instance.velocity_[sensor].loc[s["s_id"]]) == s["end"] - s["start"] + 1
 
             first_last_stride = test_stride_events[sensor].iloc[[0, -1]]["s_id"]
-            snapshot.assert_match(
-                instance.orientation_[sensor].loc[first_last_stride], "ori_{}".format(sensor)
-            )
+            snapshot.assert_match(instance.orientation_[sensor].loc[first_last_stride], "ori_{}".format(sensor))
             snapshot.assert_match(
                 instance.position_[sensor].loc[first_last_stride], "pos_{}".format(sensor),
             )
