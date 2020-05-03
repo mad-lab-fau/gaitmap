@@ -119,7 +119,9 @@ class ForwardBackwardIntegration(BasePositionMethod):
         position = np.hstack((position_xy, position_z))
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
+        self.velocity_.index.name = 'sample'
         self.position_ = pd.DataFrame(position, columns=GF_POS)
+        self.position_.index.name = 'sample'
 
         return self
 

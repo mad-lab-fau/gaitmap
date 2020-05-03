@@ -6,10 +6,11 @@ from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.consts import SF_COLS, SF_ACC, GF_VEL, GF_POS
+# TODO: Add regression test on single stride
+from gaitmap.utils.dataset_helper import is_single_sensor_position_list
 
 
 class TestPositionMethodNoGravityMixin:
-    # TODO: Add simple single stride regression test
     algorithm_class = None
     __test__ = False
 
@@ -24,11 +25,23 @@ class TestPositionMethodNoGravityMixin:
         test = test.estimate(idiot_data, 1)
         expected = np.zeros((11, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
+        expected_vel.index.name = 'sample'
         expected_pos = pd.DataFrame(expected, columns=GF_POS)
+        expected_pos.index.name = 'sample'
 
         assert_frame_equal(test.position_, expected_pos)
         assert_frame_equal(test.velocity_, expected_vel)
-        assert_frame_equal(test.position_list_, expected_pos)
+        assert_frame_equal(test.position_, expected_pos)
+        
+    def test_output_formats(self):
+        test = self.init_algo_class()
+        sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
+
+        test = test.estimate(sensor_data, 1)
+
+        assert is_single_sensor_position_list(test.position_, s_id=False)
+        assert len(test.position_) == len(sensor_data) + 1
+        assert len(test.velocity_) == len(sensor_data) + 1
 
     @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
     def test_symetric_velocity_integrations(self, acc):
