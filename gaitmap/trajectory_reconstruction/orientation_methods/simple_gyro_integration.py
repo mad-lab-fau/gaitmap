@@ -37,7 +37,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
 
     Notes
     -----
-    This class uses *Numba* as a just-in-time-compiler to achive fast run times.
+    This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
     """

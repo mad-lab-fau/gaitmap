@@ -55,7 +55,7 @@ class MadgwickAHRS(BaseOrientationMethod):
 
     Notes
     -----
-    This class uses *Numba* as a just-in-time-compiler to achive fast run times.
+    This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
     .. [1] Madgwick, S. O. H., Harrison, A. J. L., & Vaidyanathan, R. (2011).
