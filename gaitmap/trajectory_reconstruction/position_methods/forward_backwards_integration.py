@@ -35,7 +35,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
     level_assumption
         If True, it is assumed that the stride starts and ends at z=0 and dedrifting in that direction is applied
         accordingly.
-    gravity Optional (3,) array
+    gravity : Optional (3,) array
         The value of gravity that will be subtracted from each Acc sample before integration.
         If this is `None`, no gravity will be subtracted.
 

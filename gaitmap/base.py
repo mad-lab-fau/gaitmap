@@ -251,11 +251,6 @@ class BasePositionMethod(BaseAlgorithm):
     velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
     position_: PositionList
 
-    @property
-    def position_list_(self) -> SingleSensorOrientationList:
-        """Alias for position_."""
-        return self.position_
-
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position of the sensor based on the input data.
 
