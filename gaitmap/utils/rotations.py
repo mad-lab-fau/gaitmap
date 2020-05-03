@@ -111,6 +111,10 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     ...     'right':rotation_from_angle(np.array([0, 0, 1]), np.pi / 2))
     <copy of dataset with all axis rotated>
 
+    See Also
+    --------
+    gaitmap.utils.rotations.rotate_dataset_series: Apply a series of rotations to a dataset
+
     """
     if is_single_sensor_dataset(dataset):
         if isinstance(rotation, dict):
@@ -140,6 +144,38 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
         # Restore original order
         rotated_dataset = rotated_dataset[original_cols]
     return rotated_dataset
+
+
+def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> pd.DataFrame:
+    """Rotate data of a single sensor using a series of rotations.
+
+    This will apply a different rotation to each sample of the dataset.
+
+    Parameters
+    ----------
+    dataset
+        Data with axes names as `SF_COLS` in :mod:`~gaitmap.utils.consts`
+    rotations
+        Rotation object that contains as many rotations as there are datapoints
+
+    Returns
+    -------
+    rotated_data
+        `data` rotated by `rotations`
+
+    See Also
+    --------
+    gaitmap.utils.rotations.rotate_dataset: Apply a single rotation to the entire dataset
+
+    """
+    if not is_single_sensor_dataset(dataset):
+        raise ValueError("Invalid dataset format supplied.")
+    if len(dataset) != len(rotations):
+        raise ValueError("The number of rotations must fit the number of samples in the dataset!")
+
+    dataset[SF_ACC] = rotations.apply(dataset[SF_ACC].to_numpy())
+    dataset[SF_GYR] = rotations.apply(dataset[SF_GYR].to_numpy())
+    return dataset
 
 
 def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
@@ -239,7 +275,7 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
     # Get the rotation axis from the initial quaternion
     rotation_axis = np.atleast_2d(rotation_axis)
     if np.any(np.all(rotation_axis == 0, axis=1)):
-        raise ValueError('All rotation axis must not be [0, 0, 0].')
+        raise ValueError("All rotation axis must not be [0, 0, 0].")
     quaternions = np.atleast_2d(rot.as_quat())
     if rotation_axis.shape[0] != quaternions.shape[0]:
         rotation_axis_equal_d = np.repeat(rotation_axis, quaternions.shape[0], axis=0)
@@ -300,7 +336,7 @@ def find_angle_between_orientations(
         rotation_axis = rotvec
     out = row_wise_dot(rotvec, normalize(rotation_axis))
     # In case any of the rotation axis, was still 0, the angle will be None indicating an angle of zero
-    out[np.isnan(out)] = 0.
+    out[np.isnan(out)] = 0.0
     if rotvec.ndim == 1:
         return out[0]
     return out

@@ -16,6 +16,7 @@ from gaitmap.utils.rotations import (
     find_angle_between_orientations,
     find_unsigned_3d_angle,
     angle_diff,
+    rotate_dataset_series,
 )
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 
@@ -239,6 +240,36 @@ class TestRotateDataset:
         _compare_cyclic(changed_sorted_data, rotated_data)
 
 
+class TestRotateDatasetSeries:
+    def test_invalid_input(self):
+        with pytest.raises(ValueError) as e:
+            rotate_dataset_series("bla", Rotation.identity(3))
+
+        assert "dataset" in str(e)
+
+    def test_invalid_input_length(self):
+        data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
+        with pytest.raises(ValueError) as e:
+            rotate_dataset_series(data, Rotation.identity(11))
+
+        assert "number of rotations" in str(e)
+
+    def test_simple_series_rotation(self):
+        input_acc = [0, 0, 1]
+        input_gyro = [0, 1, 0]
+        data = np.array([[*input_acc, *input_gyro]] * 4)
+        data = pd.DataFrame(data, columns=SF_COLS)
+        rotations = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad([0, 90, 180, 270]))
+
+        out = rotate_dataset_series(data, rotations)
+
+        expected_acc = [[0, 0, 1], [0, -1, 0], [0, 0, -1], [0, 1, 0]]
+        expected_gyro = [[0, 1, 0], [0, 0, 1], [0, -1, 0], [0, 0, -1]]
+
+        assert_array_almost_equal(out[SF_ACC].to_numpy(), expected_acc)
+        assert_array_almost_equal(out[SF_GYR].to_numpy(), expected_gyro)
+
+
 class TestFindShortestRotation:
     """Test the function `find_shortest_rotation`."""
 
@@ -258,6 +289,8 @@ class TestFindShortestRotation:
 
 class TestGetGravityRotation:
     """Test the function `get_gravity_rotation`."""
+
+    # TODO: Does this need more complex tests?
 
     def test_gravity_rotation_simple(self):
         """Test simple gravity rotation."""
@@ -349,12 +382,12 @@ class TestFindAngleBetweenOrientations:
     @pytest.mark.parametrize(
         "ori1, ori2, axis, out",
         (
-            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 0], 'error'),
+            (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 0], "error"),
             (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, np.pi / 2]), None, 0),
         ),
     )
     def test_zero_cases(self, ori1, ori2, axis, out):
-        if out == 'error':
+        if out == "error":
             with pytest.raises(ValueError):
                 find_angle_between_orientations(ori1, ori2, axis)
         else:

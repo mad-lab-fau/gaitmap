@@ -18,7 +18,7 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
 )
-from gaitmap.utils.rotations import get_gravity_rotation
+from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 
 
 class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
@@ -162,7 +162,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
         orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_object_
 
-        rotated_stride_data = self.rotate_data(stride_data, orientation[:-1])
+        rotated_stride_data = rotate_dataset_series(stride_data, orientation[:-1])
         # Apply the Position method
         pos_method = self.pos_method.estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
         velocity = pos_method.velocity_
@@ -216,27 +216,3 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         acc = (data[SF_ACC].iloc[start_sample:end_sample]).median()
         # get_gravity_rotation assumes [0, 0, 1] as gravity
         return get_gravity_rotation(acc)
-
-    @staticmethod
-    def rotate_data(data: SingleSensorDataset, rotations: Rotation) -> pd.DataFrame:
-        """Rotate data of a stride (e.g. form inertial sensor frame to world frame).
-
-        Parameters
-        ----------
-        data
-            Data with axes names as `SF_COLS` in :mod:`~gaitmap.utils.consts`
-        rotations
-            Rotation object that contains as many rotations as there are datapoints
-
-        Returns
-        -------
-        rotated_data
-            `data` rotated by `rotations`
-
-        """
-        if len(data) != len(rotations):
-            raise ValueError("The number of rotations must fit the number of samples in the dataset!")
-
-        data[SF_ACC] = rotations.apply(data[SF_ACC].to_numpy())
-        data[SF_GYR] = rotations.apply(data[SF_GYR].to_numpy())
-        return data
