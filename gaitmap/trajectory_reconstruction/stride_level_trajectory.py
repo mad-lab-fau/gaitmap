@@ -156,7 +156,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         self, data: SingleSensorDataset, start: int, end: int
     ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
         stride_data = data.iloc[start:end].copy()
-        initial_orientation = self._calculate_initial_orientation(data, start)
+        initial_orientation = self.calculate_initial_orientation(data, start, self.align_window_width)
 
         # Apply the orientation method
         ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
@@ -182,8 +182,27 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
             position[i_sensor] = out[2]
         return orientation, velocity, position
 
-    def _calculate_initial_orientation(self, data: SingleSensorDataset, start) -> Rotation:
-        half_window = int(np.floor(self.align_window_width / 2))
+    @staticmethod
+    def calculate_initial_orientation(data: SingleSensorDataset, start: int, align_window_width: float) -> Rotation:
+        """Calculate the initial orientation for a section of data using a gravity alignment.
+
+        Parameters
+        ----------
+        data
+            The full data of a recording
+        start
+            The start value in samples of the section of interest in data
+        align_window_width
+            The size of the window around start that is considered for the alignment.
+            The window is centered around start.
+
+        Returns
+        -------
+        initial_orientation
+            The initial orientation, which would align the start of the data section with gravity.
+
+        """
+        half_window = int(np.floor(align_window_width / 2))
         if start - half_window >= 0:
             start_sample = start - half_window
         else:
