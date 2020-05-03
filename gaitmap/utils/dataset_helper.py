@@ -393,7 +393,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
         return False
     index_cols = ["sample"]
     if s_id is True:
-        index_cols.append('s_id')
+        index_cols.append("s_id")
     try:
         orientation_list = set_correct_index(orientation_list, index_cols)
     except KeyError:

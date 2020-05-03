@@ -28,19 +28,29 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     These methods will then be applied to each stride.
     This class will calculate the initial orientation of each stride assuming that it starts at a region of minimal
     movement (`min_vel`).
-    Further methods to dedrift the orientation or position will additionally assume that the stride also ends in a
+    Some methods to dedrift the orientation or position will additionally assume that the stride also ends in a
     static period.
+    Check the documentation of the individual ori and pos methods for details.
 
     Attributes
     ----------
     orientation_
+        Output of the selected orientation method applied per stride.
         The first orientation is obtained by aligning the acceleration data at the start of each stride with gravity.
         Therefore, +-`half_window_width` around each start of the stride are used as we assume the start of the stride
         to have minimal velocity.
-        The subsequent orientations are obtained from integrating all `len(self.data)` gyroscope samples and therefore
-        this attribute contains `len(self.data) + 1` orientations
+        This contains `len(data) + 1` orientations for each stride, as the initial orientation is included in the
+        output.
     position_
+        Output of the selected position method applied per stride.
+        The initial value of the postion is assumed to be [0, 0, 0].
+        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        output.
     velocity_
+        The velocity as provided by the selected position method applied per stride.
+        The initial value of the velocity is assumed to be [0, 0, 0].
+        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        output.
 
     Parameters
     ----------
@@ -71,6 +81,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         orientations will be obtained, all of them result in a Multiindex Pandas Dataframe.
     sampling_rate_hz
         sampling rate of gyroscope data in Hz
+
     """
 
     align_window_width: int
@@ -106,13 +117,6 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         sampling_rate_hz
             Sampling rate with which gyroscopic data was recorded.
 
-        Notes
-        -----
-        This function makes use of :py:meth:`~scipy.spatial.transform.Rotation.from_rotvec` to turn the gyro signal of
-        each sample into a differential quaternion.
-        This means that the rotation between two samples is assumed to be constant around one axis.
-        The initial orientation is obtained by aligning acceleration data in the beginning of the signal with gravity.
-
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
@@ -131,6 +135,19 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         else:
             raise ValueError("Provided data or stride list or combinatation of both is not supported by gaitmap")
         return self
+
+    def _estimate_multi_sensor(
+        self,
+    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
+        orientation = dict()
+        velocity = dict()
+        position = dict()
+        for i_sensor in get_multi_sensor_dataset_names(self.data):
+            out = self._estimate_single_sensor(self.data[i_sensor], self.stride_event_list[i_sensor])
+            orientation[i_sensor] = out[0]
+            velocity[i_sensor] = out[1]
+            position[i_sensor] = out[2]
+        return orientation, velocity, position
 
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, event_list: StrideList
@@ -167,19 +184,6 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         pos_method = self.pos_method.estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
         velocity = pos_method.velocity_
         position = pos_method.position_
-        return orientation, velocity, position
-
-    def _estimate_multi_sensor(
-        self,
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
-        orientation = dict()
-        velocity = dict()
-        position = dict()
-        for i_sensor in get_multi_sensor_dataset_names(self.data):
-            out = self._estimate_single_sensor(self.data[i_sensor], self.stride_event_list[i_sensor])
-            orientation[i_sensor] = out[0]
-            velocity[i_sensor] = out[1]
-            position[i_sensor] = out[2]
         return orientation, velocity, position
 
     @staticmethod

@@ -64,6 +64,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     .. [2] http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
     """
+
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
 

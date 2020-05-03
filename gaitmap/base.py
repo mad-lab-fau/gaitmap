@@ -235,8 +235,8 @@ class BaseOrientationMethod(BaseAlgorithm):
     @property
     def orientation_(self) -> SingleSensorOrientationList:
         """The orientations as pd.DataFrame"""
-        df =  pd.DataFrame(self.orientation_object_.as_quat(), columns=GF_ORI)
-        df.index.name = 'sample'
+        df = pd.DataFrame(self.orientation_object_.as_quat(), columns=GF_ORI)
+        df.index.name = "sample"
         return df
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:

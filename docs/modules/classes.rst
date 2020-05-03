@@ -99,36 +99,47 @@ Classes
     RamppEventDetection
 
 
-:mod:`gaitmap.trajectory_reconstruction.orientation_estimation`: Algorithms to estimate IMU sensor orientation given the sensor data
-====================================================================================================================================
-.. automodule:: gaitmap.trajectory_reconstruction.orientation_estimation
+:mod:`gaitmap.trajectory_reconstruction`: Algorithms to estimate IMU sensor orientation and position
+====================================================================================================
+.. automodule:: gaitmap.trajectory_reconstruction
     :no-members:
     :no-inherited-members:
 
-Classes
--------
-.. currentmodule:: gaitmap.trajectory_reconstruction.orientation_estimation
+TrajectoryWrapperClasses
+------------------------
+.. currentmodule:: gaitmap.trajectory_reconstruction
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-   GyroIntegration
+    StrideLevelTrajectory
 
-
-:mod:`gaitmap.trajectory_reconstruction.position_estimation`: Algorithms to estimate IMU sensor position given the sensor data
-==============================================================================================================================
-.. automodule:: gaitmap.trajectory_reconstruction.position_estimation
+Orientation Estimation Methods
+------------------------------
+.. automodule:: gaitmap.trajectory_reconstruction.orientation_methods
     :no-members:
     :no-inherited-members:
 
-Classes
--------
-.. currentmodule:: gaitmap.trajectory_reconstruction.position_estimation
+.. currentmodule:: gaitmap.trajectory_reconstruction
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-   ForwardBackwardIntegration
+    SimpleGyroIntegration
+    MadgwickAHRS
+
+Position Estimation Methods
+---------------------------
+.. automodule:: gaitmap.trajectory_reconstruction.position_methods
+    :no-members:
+    :no-inherited-members:
+
+.. currentmodule:: gaitmap.trajectory_reconstruction
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    ForwardBackwardIntegration
 
 
 :mod:`gaitmap.parameters`: Algorithm to calculate biomechanical parameters
