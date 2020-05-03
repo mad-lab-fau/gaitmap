@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR, SF_COLS
+from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
 
 
 class TestOrientationMethodMixin:
@@ -54,6 +55,18 @@ class TestOrientationMethodMixin:
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
         np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation.as_quat())
+
+    def test_output_formats(self):
+        test = self.init_algo_class()
+        fs = 10
+        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+        test.estimate(sensor_data, fs)
+
+        assert isinstance(test.orientation_object_, Rotation)
+        assert len(test.orientation_object_) == len(sensor_data) + 1
+        assert is_single_sensor_orientation_list(test.orientation_, s_id=False)
+        assert len(test.orientation_) == len(sensor_data) + 1
 
     def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         """Simple regression test with default parameters."""
