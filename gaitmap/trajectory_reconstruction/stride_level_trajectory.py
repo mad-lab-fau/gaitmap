@@ -122,6 +122,11 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
 
+        if not isinstance(self.ori_method, BaseOrientationMethod):
+            raise ValueError('The provided `ori_method` must be a child class of `BaseOrientationMethod`.')
+        if not isinstance(self.pos_method, BasePositionMethod):
+            raise ValueError('The provided `pos_method` must be a child class of `BasePositionMethod`.')
+
         if is_single_sensor_dataset(self.data) and is_single_sensor_stride_list(
             stride_event_list, stride_type="min_vel"
         ):
@@ -133,7 +138,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         ):
             self.orientation_, self.velocity_, self.position_ = self._estimate_multi_sensor()
         else:
-            raise ValueError("Provided data or stride list or combinatation of both is not supported by gaitmap")
+            raise ValueError("Provided data or stride list or combination of both is not supported by gaitmap.")
         return self
 
     def _estimate_multi_sensor(
