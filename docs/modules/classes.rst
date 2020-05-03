@@ -24,8 +24,9 @@ Base classes
     BaseAlgorithm
     BaseStrideSegmentation
     BaseEventDetection
-    BaseOrientationEstimation
-    BasePositionEstimation
+    BaseOrientationMethod
+    BasePositionMethod
+    BaseTrajectoryReconstructionWrapper
     BaseTemporalParameterCalculation
     BaseSpatialParameterCalculation
 
