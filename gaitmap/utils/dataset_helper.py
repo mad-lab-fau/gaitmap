@@ -329,7 +329,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList, s_id
     if s_id is True:
         index_cols.append("s_id")
     try:
-        orientation_list = set_correct_index(position_list, index_cols)
+        position_list = set_correct_index(position_list, index_cols)
     except KeyError:
         return False
     columns = position_list.columns
