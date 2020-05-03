@@ -1,3 +1,4 @@
+"""Wrapper to apply position and orientation estimation to each stride of a dataset."""
 import warnings
 from typing import Dict, Tuple, Union
 
@@ -6,7 +7,8 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod, BaseType, BasePositionMethod, BaseTrajectoryReconstructionWrapper
-from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration
+from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
+from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS
 from gaitmap.utils.dataset_helper import (
     Dataset,
@@ -123,9 +125,9 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         self.stride_event_list = stride_event_list
 
         if not isinstance(self.ori_method, BaseOrientationMethod):
-            raise ValueError('The provided `ori_method` must be a child class of `BaseOrientationMethod`.')
+            raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
         if not isinstance(self.pos_method, BasePositionMethod):
-            raise ValueError('The provided `pos_method` must be a child class of `BasePositionMethod`.')
+            raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
 
         if is_single_sensor_dataset(self.data) and is_single_sensor_stride_list(
             stride_event_list, stride_type="min_vel"

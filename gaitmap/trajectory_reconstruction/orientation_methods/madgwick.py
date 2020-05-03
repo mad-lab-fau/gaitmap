@@ -1,9 +1,4 @@
-"""MadgwickAHRS Implimentation
-
-Direct adoption of the original MadgwickAHRS code into Numba.
-Original code can be found here: http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
-The original code and all its direct modifications published under GNU-GPL.
-"""
+"""Implementation of the MadgwickAHRS."""
 from typing import Union
 
 import numpy as np
@@ -23,6 +18,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     orientation of the z-axis with gravity direction estimated from the acceleration data.
     This implementation is based on the paper [1]_.
     An open source C-implementation of the algorithm can be found at [2]_.
+    The original code is published under GNU-GPL.
 
     Parameters
     ----------
@@ -165,7 +161,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 def _madgwick_update_series(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
-    for i in range(len(gyro)):
+    for i in range(len(gyro)):  # noqa: consider-using-enumerate
         initial_orientation = _madgwick_update(
             gyro=gyro[i],
             acc=acc[i],

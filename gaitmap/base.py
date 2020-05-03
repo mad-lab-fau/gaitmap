@@ -231,7 +231,7 @@ class BaseOrientationMethod(BaseAlgorithm):
 
     @property
     def orientation_(self) -> SingleSensorOrientationList:
-        """The orientations as pd.DataFrame"""
+        """Orientations as pd.DataFrame."""
         df = pd.DataFrame(self.orientation_object_.as_quat(), columns=GF_ORI)
         df.index.name = "sample"
         return df
@@ -257,12 +257,15 @@ class BasePositionMethod(BaseAlgorithm):
 
 
 class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
+    """Base class for method that wrap position and orientation methods to be usable with default datatypes."""
+
     _action_method = "estimate"
 
     orientation_: OrientationList
     position_: PositionList
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+        """Estimate the combined orientation and position of the IMU."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 

@@ -1,3 +1,5 @@
+"""Estimate the IMU position with dedrifting using Forward-Backwards integration."""
+
 from typing import Optional
 
 import numpy as np
@@ -59,6 +61,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
     .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
+
     """
 
     steepness: float
@@ -119,9 +122,9 @@ class ForwardBackwardIntegration(BasePositionMethod):
         position = np.hstack((position_xy, position_z))
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
-        self.velocity_.index.name = 'sample'
+        self.velocity_.index.name = "sample"
         self.position_ = pd.DataFrame(position, columns=GF_POS)
-        self.position_.index.name = 'sample'
+        self.position_.index.name = "sample"
 
         return self
 
