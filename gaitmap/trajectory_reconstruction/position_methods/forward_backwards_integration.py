@@ -25,7 +25,34 @@ class ForwardBackwardIntegration(BasePositionMethod):
 
     Implementation based on the paper by Hannink et al. [1]_.
 
-    TODO: Add info to docs about what to do to only use forward or only backwards.
+    Parameters
+    ----------
+    turning_point
+        The point at which the sigmoid weighting function has a value of 0.5 and therefore forward and backward
+        integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0).
+    steepness
+        Steepness of the sigmoid function to weight forward and backward integral.
+    level_assumption
+        If True, it is assumed that the stride starts and ends at z=0 and dedrifting in that direction is applied
+        accordingly.
+    gravity Optional (3,) array
+        The value of gravity that will be subtracted from each Acc sample before integration.
+        If this is `None`, no gravity will be subtracted.
+
+    Attributes
+    ----------
+    velocity_
+        The velocity estimated by direct-and-reverse / forward-backward integration. See Examples for format hints.
+    position_
+        The position estimated by forward integration in the ground plane and by direct-and-reverse /
+        forward-backward integration for the vertical axis. See Examples for format hints.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the estimate method.
+    sampling_rate_hz
+        The sampling rate of the data.
 
     Notes
     -----
@@ -55,6 +82,21 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.gravity = gravity
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+        """Estimate the position of the sensor based on the provided global frame data.
+
+        Parameters
+        ----------
+        data
+            Continuous sensor data that includes at least a Acc with all values in the global world frame
+        sampling_rate_hz
+            The sampling rate of the data in Hz
+
+        Returns
+        -------
+        self
+            The class instance with all result attributes populated
+
+        """
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError("`turning_point` must be in the rage of 0.0 to 1.0")
         if not is_single_sensor_dataset(data, check_gyr=False, frame="sensor"):
