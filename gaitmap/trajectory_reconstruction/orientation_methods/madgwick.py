@@ -157,7 +157,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     return q
 
 
-@njit()
+@njit(cache=True)
 def _madgwick_update_series(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation

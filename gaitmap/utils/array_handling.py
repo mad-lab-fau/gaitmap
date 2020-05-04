@@ -193,7 +193,7 @@ def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
     return np.nanargmin(windows, axis=1) + indices - radius
 
 
-@njit()
+@njit(cache=True)
 def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) -> np.ndarray:
     """Fill a preallocated array with bool_values.
 

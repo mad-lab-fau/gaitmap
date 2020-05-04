@@ -87,7 +87,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         return self
 
 
-@njit()
+@njit(cache=True)
 def _simple_gyro_integration_series(gyro, initial_orientation, sampling_rate_hz):
     out = np.empty((len(gyro) + 1, 4))
     q = initial_orientation
