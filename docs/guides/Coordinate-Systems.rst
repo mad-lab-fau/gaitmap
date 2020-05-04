@@ -24,7 +24,7 @@ Foot Sensor Frame (FSF)
     * forms a right-handed coordinate system with axes called **X, Y, Z**
     * uses right-hand-rule around each axis for definition of positive direction of the Gyroscope 
     * defines axes' directions as up (Z), to the tip of the shoe (X), and
-      to the left (Y)
+      to the **left** (Y)
 
 Foot Body Frame (FBF)
     * consists of the 3 axes *ML* (medial to lateral), *PA* (posterior to anterior), and *SI* (superior to inferior)
@@ -34,7 +34,7 @@ Foot Body Frame (FBF)
     * follows convention of directions from [1]_
 
 World/Global Frame (GF)
-    * uses axes definitions either like FSF or FBF, but
+    * uses the same axes definitions as the FSF during the stance phase, but
     * is stationary, i.e. in contrast to FSF and FBF not moving
     * is used to describe all positions/velocity and orientations after the *Trajectory Reconstruction*
     * is fixed during an observation period
@@ -195,17 +195,18 @@ in [1]_ (see :ref:`ff`).
 World/Global Frame
 ------------------
 
-At this point, it is important to emphasize again that the FSF/FBF moves with the sensor/foot. Therefore, the alignment
+At this point, it is important to emphasize again that the SF/BF moves with the sensor/subject. Therefore, the alignment
 information for the FSF/FBF provided above, of course only hold true while the test subject is in its default pose (e.g.
 flat foot phase for foot mounted IMUs).
 During movement the orientation of the sensor can not be easily described by terms like "forward" or "upwards".
-Hence, the FSF/FBF is not suitable to calculate and express measures that require a fixed global frame.
+Hence, the SF is not suitable to calculate and express measures that require a fixed global frame.
+Additionally, the BF is unsuitable to talk about movements of the entire human, as this frame moves with the subject.
 For example, to estimate the stride length, we need a clear definition of a forward direction over the entire duration
-of a stride.
+of a stride and a reference point that does not move with the subject.
 Therefore, we need a "global" fixed reference frame (GF) for the duration of our observation.
 The GF does not move or rotate if the sensor or the subject move.
-In case of external motion capture systems (e.g. camera based systems) always report their information in such a global
-reference frame.
+For an example, motion capture systems (e.g. camera based systems) always report their information in such a global
+reference frame, because the measurement devices themself are fixed in a global frame.
 
 For inside-out systems, like body-attached IMUs, it is difficult to establish such a fixed coordinate system.
 Rather complicated algorithms must be used to project the local measurements of an IMU into a fixed global frame.
