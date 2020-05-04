@@ -100,9 +100,18 @@ The former describes everything from the view of the sensor (i.e. when the senso
 system is adjusted as well).
 The latter describes the sensors orientation and movement relative to a global reference frame set by global objects
 relevant for the performed measurement.
-If measuring human movement it makes sense to use the human body as the reference for our global frame.
+If measuring human movement we usually use two separate global frames: (1) A global frame that is relative to the space
+the human is moving in.
+This frame is important to describe global displacements and rotations of the human during movement.
+This "real global frame" is explained in more detail below.
+(2) A frame that uses the human body as the reference.
+This frame makes it easy to map the motion to anatomical movement directions.
 For example, the forward direction should point towards the anterior site of our human and upwards should be defined the
 superior direction.
+
+Body Frame
+----------
+
 If our sensor is rigidly attached to the trunk (or head) of a human a transformation from the sensor frame (SF) to the
 body frame (BF) can be achieved by a single rotation matrix describing the relative orientation from sensor to body.
 
