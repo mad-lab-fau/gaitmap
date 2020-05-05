@@ -113,3 +113,5 @@ axs[0].set_xlim(300, 2000)
 axs[0].set_xlabel("time [#]")
 fig.tight_layout()
 fig.show()
+
+# sphinx_gallery_thumbnail_number = 2
