@@ -11,6 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 from datetime import datetime
 from importlib import import_module
@@ -138,7 +139,7 @@ sphinx_gallery_conf = {
     # 'default_thumb_file': 'fig/logo.png',
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
-    "filename_pattern": "/",
+    "filename_pattern": re.escape(os.sep),
 }
 
 # Linkcode
