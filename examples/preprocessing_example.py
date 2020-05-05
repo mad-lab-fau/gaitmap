@@ -7,16 +7,16 @@ use of all gaitmap functions.
 """
 
 import matplotlib.pyplot as plt
-import numpy
+from gaitmap.utils.consts import *
 
-numpy.random.seed(0)
 
 # %%
 # Getting some example data
 # --------------------------
 #
 # For this we take some example data that contains the regular walking movement during a 2x20m walk test of a healthy
-# subject. The IMU signals are already rotated so that they align with the gaitmap SF coordinate system.
+# subject. The sensors were attached to the lateral side of each foot, which means, that the recorded sensor data must
+# be transformed to match the gaitmap coordinate system definitions.
 # The data contains information from two sensors - one from the right and one from the left foot.
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
 
@@ -30,32 +30,75 @@ example_dataset.sort_index(axis=1).head(1)
 # All gaitmap algorithms expect the sensor data to be properly calibrated to physical units. For accelerometer
 # units should be m/s^2 and for gyroscope deg/s.
 
+
+# %%
+# Rotate to Sensor Frame Definition
+# ---------------------------------
+# The sensor orientation / coordinate system during the data recording might not match the gaitmap coordinate system
+# definition. Therefore, we have to ensure, that the input data is close to the correct gaitmap definition (here
+# referred to the sensor-frame) to always start with a harmonised coordinate system definition, which all following
+# gaitmap function will rely on!
+# Note: This step is individual for each sensor position an might vary from dataset to dataset! The rough alignment
+# should be solvable most of the time by using only multiples of 90 deg rotations (provided that the sensor was at least
+# somewhat aligned to one of the foots axis during recording)!
+
+# Rename columns and align with the expected orientation
+import numpy as np
+from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
+
+# rotate left_sensor first by -90 deg around the x-axis, followed by a -90 deg rotation around the z-axis
+left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
+    np.array([0, 0, 1]), np.deg2rad(-90)
+)
+
+# rotate right_sensor first by +90 deg around the x-axis, followed by a +90 deg rotation around the z-axis
+right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_from_angle(
+    np.array([0, 0, 1]), np.deg2rad(90)
+)
+
+rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
+
+dataset_sf = rotate_dataset(example_dataset, rotations)
+
+# %%
+# Visualize one "left" and one "right" stride, and compare the individual sensor axis to the gaitmap coordinate system
+# guide. Axis order and axis sign should match gaitmap coordinate definitions. Note that for sensor-frame, signs will
+# differ for left and right foot!
+
+fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
+ax0.set_title("Left Foot Gyroscope")
+ax0.set_ylabel("gyr [deg/s]")
+ax0.plot(dataset_sf["left_sensor"][SF_GYR].to_numpy()[585:780, :])
+
+ax1.set_title("Right Foot Gyroscope")
+ax1.plot(dataset_sf["right_sensor"][SF_GYR].to_numpy()[475:678, :])
+plt.show()
+
+
 # %%
 # Align to Gravity
 # ----------------
-# To account for different sensor positions at the shoe and related different orientations of the sensor we will align
-# our sensor data with gravity, to have a harmonised coordinate system definition. Therefore, we will use a
-# static-moment-detection, to derive the absolute sensor orientation based on static accelerometer windows.
-# The sensor coordinate system will be rotated, such that all static accelerometer windows will be close to
-# acc = [0.0, 0.0, 9.81]. So we will rotate the sensor-coordinate system in a way that its z-axis will be aligned with
-# gravity.
+# Although we already rotated our initial data somewhat close to the gaitmap coordinate system we still need to make sure
+# that the z-axis is aligned with gravity (defined by [0,0,1]) as required by the gaitmap sensor-frame definition.
+# Therefore, we will use a static-moment-detection, to derive the absolute sensor orientation based on static
+# accelerometer windows and find the shortest rotation to gravity. The sensor coordinate system will be finally rotated,
+# such that all static accelerometer windows will be close to acc = [0.0, 0.0, 9.81].
 from gaitmap.preprocessing import sensor_alignment
-from gaitmap.utils.consts import *
 
-dataset_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(example_dataset, sampling_rate_hz)
+dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
 
 # %%
-# Vizualize the result
+# Vizualize the result of the gravity alignment
 
 fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
-ax0.set_title("Original Data")
+ax0.set_title("Data in sensor-frame but without gravity alignment!")
 ax0.set_ylabel("acc [m/s^2]")
-ax0.plot(example_dataset["left_sensor"][SF_ACC].to_numpy()[:700, :])
+ax0.plot(dataset_sf["left_sensor"][SF_ACC].to_numpy()[:700, :])
 ax0.axhline(0, c="k", ls="--", lw=0.5)
 ax0.axhline(9.81, c="k", ls="--", lw=0.5)
 
-ax1.set_title("Aligned to Gravity")
-ax1.plot(dataset_aligned_to_gravity["left_sensor"][SF_ACC].to_numpy()[:700, :])
+ax1.set_title("Data aligned to gravity")
+ax1.plot(dataset_sf_aligned_to_gravity["left_sensor"][SF_ACC].to_numpy()[:700, :])
 ax1.axhline(0, c="k", ls="--", lw=0.5)
 ax1.axhline(9.81, c="k", ls="--", lw=0.5)
 ax1.set_ylim([-50, 50])
@@ -64,10 +107,20 @@ plt.show()
 # %%
 # Troubleshooting
 # ---------------
-# The align_dataset_to_gravity function might fail to find static windows within your input signal and therefore also
-# fail to align your signal. In this case you might need to tweak the default parameters a bit:
-# * First you could try to increase the threshold: The threshold refers to the metric calculated over the given window
-# on the norm of the gyroscope. So given the metric "mean" this means, a window will be considered static if the mean
-# of the gyrocsope norm is lower than the given threshold within the window length.
-# * Second you could try to lower the window length: The shorter the window length, the higher the chance that there is
-# seqeunce of samples which will be below your set threshold.
+# The align_dataset_to_gravity function might fail to find static windows within your input signal and therefore might
+# also fail to align your signal. In this case you might need to tweak the default parameters a bit:
+#
+# * First you could try to **increase** the threshold: The threshold refers to the metric calculated over the given
+# window on the norm of the gyroscope. So given the default metric "median" this means, a window will be considered
+# static if the median of the gyroscope norm is lower than the given threshold within the window length.
+#
+# * Second you could try to **lower** the window length: The shorter the window length, the higher the chance that there
+# is sequence of samples which will be below your set threshold.
+from gaitmap.preprocessing import sensor_alignment
+
+# if alignment fails due to no static windows following the default definition, the user can try to adapt the function
+# parameters "window_length_sec", "static_signal_th" and "metric" to achieve a less strict static window definition
+
+dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(
+    dataset_sf, sampling_rate_hz, window_length_sec=0.5, static_signal_th=3.5, metric="median"
+)
