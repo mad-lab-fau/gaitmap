@@ -130,6 +130,9 @@ right_rot = (
 ).inv()
 rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
 test_df = test_df.rename(columns={"l_{}".format(sensor): "left_sensor", "r_{}".format(sensor): "right_sensor"})
+test_df.columns = test_df.columns.set_names(("sensor", "axis"))
+test_df.sort_index(axis=1).to_csv("./imu_sample_not_rotated.csv")
+
 test_df = (
     test_df.stack(level=0)
     .swaplevel()

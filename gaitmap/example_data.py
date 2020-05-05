@@ -50,6 +50,19 @@ def get_healthy_example_imu_data():
     return data
 
 
+def get_healthy_example_imu_data_not_rotated():
+    """Get example IMU data from a healthy subject doing a 2x20m gait test.
+
+    The sampling rate is 204.8 Hz
+    """
+    test_data_path = _get_data("imu_sample_not_rotated.csv")
+    data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)
+
+    # Get index in seconds
+    data.index /= 204.8
+    return data
+
+
 def get_healthy_example_stride_borders():
     """Get hand labeled stride borders for :func:`get_healthy_example_imu_data`.
 
