@@ -89,8 +89,9 @@ class RamppEventDetection(BaseEventDetection):
         gyr_ml signal is considered.
         Within this segment, `ic_` is found by searching for the minimum between the point of the steepest negative
         slope and the point of the steepest positive slope in the following signal.
-        After that the acc_pa signal is searched for a minimum in the area before and after the described minimum in
+        After that the acc_pa signal is searched for a maximum in the area before and after the described minimum in
         the gyr_ml signal.
+        In the original implementation of the paper, this was actually a minimum due to flipped sensor coordinate axes.
         The default search window is set to 80 ms before and 50 ms after the minimum.
         The search window borders can be adjusted via the `ic_search_region_ms` parameter.
 
