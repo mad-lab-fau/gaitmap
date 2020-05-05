@@ -62,8 +62,7 @@ def find_static_samples(
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
 
     # supported metric functions
-    # TODO: Shouldn't these be the nan variants of these functions?
-    metric_function = {"maximum": np.max, "variance": np.var, "mean": np.mean, "median": np.median}
+    metric_function = {"maximum": np.nanmax, "variance": np.nanvar, "mean": np.nanmean, "median": np.nanmedian}
 
     if metric not in metric_function:
         raise ValueError("Invalid metric passed! %s as metric is not supported." % metric)
