@@ -23,7 +23,7 @@ Once you installed poetry, run the following commands to initialize a virtual en
 dependencies:
 
 ```bash
-poetry install --no-root
+poetry install
 ```
 
 In case you encounter any error and need more detailed instruction visit the 

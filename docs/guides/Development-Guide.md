@@ -20,7 +20,7 @@ Once you installed poetry, run the following commands to initialize a virtual en
 dependencies:
 
 ```bash
-poetry install --no-root
+poetry install
 ```
 This will create a new folder called `.venv` inside your project dir.
 It contains the python interpreter and all site packages.
