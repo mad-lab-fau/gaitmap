@@ -84,7 +84,7 @@ def align_dataset_to_gravity(
     if not (is_single_sensor_dataset(dataset) or is_multi_sensor_dataset(dataset)):
         raise ValueError("Invalid dataset type!")
 
-    window_length = int(round(window_length_sec*sampling_rate_hz))
+    window_length = int(round(window_length_sec * sampling_rate_hz))
 
     if is_single_sensor_dataset(dataset):
         # get static acc vector
