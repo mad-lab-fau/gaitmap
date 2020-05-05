@@ -15,9 +15,10 @@ from gaitmap.utils.static_moment_detection import find_static_sequences
 
 def align_dataset_to_gravity(
     dataset: Dataset,
-    window_length: int,
-    static_signal_th: float,
-    metric: str = "maximum",
+    sampling_rate_hz: float,
+    window_length_sec: float = 0.7,
+    static_signal_th: float = 2.5,
+    metric: str = "median",
     gravity: np.ndarray = np.array([0.0, 0.0, 1.0]),
 ) -> Dataset:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
@@ -33,8 +34,11 @@ def align_dataset_to_gravity(
         In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
         and the second level the axis names (all sensor frame axis must be present)
 
-    window_length : int
-        Length of desired window in units of samples.
+    sampling_rate_hz: float
+        Samplingrate of input signal in units of hertz.
+
+    window_length_sec : float
+        Length of desired window in units of seconds.
 
     static_signal_th : float
        Threshold to decide whether a window should be considered as static or active. Window will be classified on
@@ -67,7 +71,7 @@ def align_dataset_to_gravity(
     >>> # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
     ... # axis (acc_x, ..., gyr_z)
     >>> dataset_df = ...
-    >>> align_dataset_to_gravity(dataset_df, window_length = 100, static_signal_th = 1.5, metric = 'maximum',
+    >>> align_dataset_to_gravity(dataset_df, window_length_sec = 0.7, static_signal_th = 2.0, metric = 'median',
     ... gravity = np.array([0.0, 0.0, 1.0])
     <copy of dataset with all axis aligned to gravity>
 
@@ -79,6 +83,8 @@ def align_dataset_to_gravity(
     """
     if not (is_single_sensor_dataset(dataset) or is_multi_sensor_dataset(dataset)):
         raise ValueError("Invalid dataset type!")
+
+    window_length = int(round(window_length_sec*sampling_rate_hz))
 
     if is_single_sensor_dataset(dataset):
         # get static acc vector
@@ -101,7 +107,7 @@ def align_dataset_to_gravity(
 
 
 def _get_static_acc_vector(
-    data: pd.DataFrame, window_length: int, static_signal_th: float, metric: str = "maximum"
+    data: pd.DataFrame, window_length: int, static_signal_th: float, metric: str = "median"
 ) -> np.ndarray:
     """Extract the mean accelerometer vector describing the static position of the sensor."""
     # find static windows within the gyro data
