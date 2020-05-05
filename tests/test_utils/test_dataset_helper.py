@@ -210,6 +210,7 @@ class TestIsSingleSensorStrideList:
         """Test that the column equals check for min_vel_strides work."""
         min_vel_cols = ["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"]
         stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list["s_id"] = start
         stride_list["start"] = start
         stride_list["min_vel"] = min_vel
 

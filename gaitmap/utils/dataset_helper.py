@@ -236,7 +236,7 @@ def is_single_sensor_stride_list(
         return False
 
     # Check that the stride ids are unique
-    if not stride_list['s_id'].nunique() == stride_list['s_id'].size:
+    if not stride_list["s_id"].nunique() == stride_list["s_id"].size:
         return False
 
     return True
