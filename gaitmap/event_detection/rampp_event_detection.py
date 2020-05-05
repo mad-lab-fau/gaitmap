@@ -72,16 +72,13 @@ class RamppEventDetection(BaseEventDetection):
 
     Notes
     -----
-    TODO: Add additional details about the algorithm for event detection
-
     Rampp et al. implemented the detection of three gait events from foot-mounted sensor data:
 
     terminal contact (`tc`), originally called toe-off (TO) in the paper [1]_:
         At `tc` the movement of the ankle joint changes from a plantar flexion to a dorsal extension in the sagittal
         plane.
-        This change results in a zero crossing of the gyr_ml signal (also see ... for the coordinate system)
-
-        TODO add link to image
+        This change results in a zero crossing of the gyr_ml signal.
+        Also refer to the :ref:`image below <fe>`.
 
     initial contact (`ic`), originally called heel strike (HS) in the paper [1]_:
         At `ic` the foot decelerates rapidly when the foot hits the ground.
@@ -94,16 +91,14 @@ class RamppEventDetection(BaseEventDetection):
         In the original implementation of the paper, this was actually a minimum due to flipped sensor coordinate axes.
         The default search window is set to 80 ms before and 50 ms after the minimum.
         The search window borders can be adjusted via the `ic_search_region_ms` parameter.
-
-        TODO hint to image
+        Also refer to the :ref:`image below <fe>`.
 
     minimal velocity (`min_vel_`), originally called mid stance (MS) in the paper [1]_:
         At `min_vel` the foot has the lowest velocity.
         It is defined to be the middle of the window with the lowest energy in all axes of the gyr signal.
         The default window size is set to 100 ms with 50 % overlap.
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
-
-        TODO link to image
+        Also refer to the :ref:`image below <fe>`.
 
     The :func:`~gaitmap.event_detection.RamppEventDetection.detect` provides a stride list `stride_events_` with
     the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
@@ -113,7 +108,12 @@ class RamppEventDetection(BaseEventDetection):
     Furthermore, the `stride_events_` list provides the `pre_ic` which is the ic event of the previous stride in the
     stride list.
 
-    Further information regarding the coordinate system can be fount :ref:`here<coordinate_systems>`.
+    Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>`.
+
+    The image below gives an overview about the events and where they occur in the signal.
+
+    .. _fe:
+    .. figure:: /images/event_detection.svg
 
     .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
        sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
@@ -161,7 +161,6 @@ class RamppEventDetection(BaseEventDetection):
         --------
         Get gait events from single sensor signal
 
-        # TODO check if this is still correct!
         >>> event_detection = RamppEventDetection()
         >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
         >>> event_detection.stride_events_
