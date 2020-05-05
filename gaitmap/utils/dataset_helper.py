@@ -205,7 +205,6 @@ def is_single_sensor_stride_list(
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
 
     """
-    # TODO: Add a check that the stride id is unique.
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
@@ -235,6 +234,11 @@ def is_single_sensor_stride_list(
         and not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy())
     ):
         return False
+
+    # Check that the stride ids are unique
+    if not stride_list['s_id'].nunique() == stride_list['s_id'].size:
+        return False
+
     return True
 
 
