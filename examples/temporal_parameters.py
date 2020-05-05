@@ -17,7 +17,9 @@ from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 stride_list = get_healthy_example_stride_events()
 
 # %%
-# Creating an object of TemporalParameterCalculation and using it for calculating the temporal parameters.
+# Creating TemporalParameterCalculation object
+# -------------------------------------------
+# We need this object for calculating the temporal parameters.
 
 p = TemporalParameterCalculation()
 p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)

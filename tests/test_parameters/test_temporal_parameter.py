@@ -137,9 +137,6 @@ class TestTemporalParameterCalculation:
 class TestTemporalParameterRegression:
     def test_regression_on_example_data(self, healthy_example_stride_events, snapshot):
         healthy_example_stride_events = healthy_example_stride_events["left_sensor"]
-
-        # Convert stride list back to mocap samples:
-        healthy_example_stride_events[["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
         t = TemporalParameterCalculation()
-        t.calculate(healthy_example_stride_events, 100)
+        t.calculate(healthy_example_stride_events, 204.8)
         snapshot.assert_match(t.parameters_)
