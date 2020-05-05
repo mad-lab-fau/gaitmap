@@ -397,3 +397,10 @@ class TestMultiSensorInputs(DtwTestBase):
                 [9.0, 9.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
             ],
         )
+
+class TestTemplateResampling(DtwTestBase):
+    def test_resample_length(self):
+        test_template = np.ones(100)
+        resampled_template = BaseDtw._resample_template(test_template, 100, 200)
+        assert len(resampled_template) == 200
+
