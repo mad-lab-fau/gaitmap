@@ -276,6 +276,13 @@ class BaseDtw(BaseStrideSegmentation):
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
+        if self.find_matches_method not in self._allowed_methods_map:
+            raise ValueError(
+                'Invalid value for "find_matches_method". Must be one of {}'.format(
+                    list(self._allowed_methods_map.keys())
+                )
+            )
+
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             # Single template single sensor: easy
@@ -307,8 +314,7 @@ class BaseDtw(BaseStrideSegmentation):
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
         else:
-            # TODO: Better error message
-            # TODO: Test
+            # TODO: Better error message -> This will be fixed globally
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
@@ -339,13 +345,7 @@ class BaseDtw(BaseStrideSegmentation):
         if self._min_sequence_length not in (None, 0, 0.0):
             self._min_sequence_length *= self.sampling_rate_hz
 
-        find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
-        if not find_matches_method:
-            raise ValueError(
-                'Invalid value for "find_matches_method". Must be one of {}'.format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
+        find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
         # Calculate cost matrix
         acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))

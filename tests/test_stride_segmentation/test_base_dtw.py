@@ -44,6 +44,55 @@ class DtwTestBase:
         return BaseDtw(template=template, **kwargs)
 
 
+class TestIO(DtwTestBase):
+    def test_no_template_provided(self):
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=None)
+            dtw.segment(None, None)
+
+        assert "`template` must be specified" in str(e)
+
+    @pytest.mark.parametrize('data', (pd.DataFrame, [], None))
+    def test_unsuitable_datatype(self, data):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "The type or shape of the provided dataset is not supported." in str(e)
+
+    def test_invalid_template_combination(self):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=pd.DataFrame(columns=['col1']), sampling_rate_hz=100)
+
+        assert "Invalid combination of data and template" in str(e)
+
+    def test_multi_sensor_dataset_without_proper_template(self):
+        # This template can not be used with multi sensor dataframes.
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        sensor1 = pd.DataFrame(sensor1, columns=["col1"])
+        sensor2 = np.array([*np.ones(2) * 2, 0, 1.0, 0, *np.ones(8) * 2])
+        sensor2 = pd.DataFrame(sensor2, columns=["col1"])
+        data = {"sensor1": sensor1, "sensor2": sensor2}
+
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "template must either be of type `Dict[str, DtwTemplate]`" in str(e)
+
+    def test_invalid_find_matches_method(self):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template, find_matches_method="invalid_name")
+            dtw.segment(data=np.array([]), sampling_rate_hz=100)
+
+        assert "find_matches_method" in str(e)
+
+
 class TestSimpleSegment(DtwTestBase):
     template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
 
