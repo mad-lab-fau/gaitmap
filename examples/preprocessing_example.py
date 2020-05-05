@@ -18,9 +18,9 @@ numpy.random.seed(0)
 # For this we take some example data that contains the regular walking movement during a 2x20m walk test of a healthy
 # subject. The IMU signals are already rotated so that they align with the gaitmap SF coordinate system.
 # The data contains information from two sensors - one from the right and one from the left foot.
-from gaitmap.example_data import get_healthy_example_imu_data
+from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
 
-example_dataset = get_healthy_example_imu_data()
+example_dataset = get_healthy_example_imu_data_not_rotated()
 sampling_rate_hz = 204.8
 example_dataset.sort_index(axis=1).head(1)
 
@@ -37,7 +37,8 @@ example_dataset.sort_index(axis=1).head(1)
 # our sensor data with gravity, to have a harmonised coordinate system definition. Therefore, we will use a
 # static-moment-detection, to derive the absolute sensor orientation based on static accelerometer windows.
 # The sensor coordinate system will be rotated, such that all static accelerometer windows will be close to
-# acc = [0.0, 0.0, 9.81]
+# acc = [0.0, 0.0, 9.81]. So we will rotate the sensor-coordinate system in a way that its z-axis will be aligned with
+# gravity.
 from gaitmap.preprocessing import sensor_alignment
 from gaitmap.utils.consts import *
 
