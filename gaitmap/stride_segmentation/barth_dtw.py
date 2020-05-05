@@ -103,8 +103,15 @@ class BarthDtw(BaseDtw):
         raw data.
         If you are using a template that does not assume this, this post-processing step might lead to unexpected
         results and you should deactivate it in such a case by setting `snap_to_min_win_ms` to `None`.
-
-    TODO: Add additional details about the use of DTW for stride segmentation
+    Template
+        The :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate` covers a gait signal starting from the minimum
+        in `gyr_ml` before a terminal contact until the same minimum of the next gait cycle.
+        It is advisable that any custom template starts and ends with a clear peak as well, as this improves the
+        matching performance in the border regions.
+    Initiation and Termination Strides
+        As initiation strides start and termination strides end with a flat resting period, it is usually hard to match
+        them with the same template as regular strides.
+        Depending on your `max_cost` parameter, such strides (and turning strides) might be included in the output.
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life

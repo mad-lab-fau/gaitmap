@@ -109,8 +109,7 @@ class BaseDtw(BaseStrideSegmentation):
         However, the dataset can have additional sensors, which are simply ignored.
         In this use case, the outputs are always dictionaries with the sensor name as key.
 
-    TODO: Add link to dataset doumentation in the future
-
+    To better understand the different datatypes have a look at the :ref:`Coordinate system guide <coordinate_systems>`.
 
     Parameters
     ----------
@@ -172,6 +171,17 @@ class BaseDtw(BaseStrideSegmentation):
 
     Notes
     -----
+    msDTW simple calculates the DTW distance of a template at every possible timepoint in the signal.
+    While the template is warped, it is advisable to use a template that has a similar length than the expected matches.
+    Using `resample_template` can help with that.
+    Further, the template should cover the same signal range than the original signal.
+    You can use the `scale` parameter of the :class:`~gaitmap.stride_segmentation.DtwTemplate` to adapt your template
+    to your data.
+
+    If you see unexpected matches or missing matches in your results, it is advisable to plot `acc_cost_mat_` and
+    `cost_function_`.
+    They can provide insight in the matching process.
+
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
