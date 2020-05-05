@@ -7,11 +7,19 @@ import pytest
 from gaitmap.base import BaseAlgorithm
 
 
+def _init_getter():
+    def _fake_init(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    return _fake_init
+
+
 def create_test_class(action_method_name, params=None, private_params=None, action_method=None, **_) -> BaseAlgorithm:
     params = params or {}
     private_params = private_params or {}
 
-    class_dict = {"_action_method": action_method_name, "__init__": lambda x: None}
+    class_dict = {"_action_method": action_method_name, "__init__": _init_getter()}
     user_set_params = {**params, **private_params}
     if action_method:
         class_dict = {**class_dict, action_method_name: action_method}
@@ -22,9 +30,7 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
     sig = sig.replace(parameters=(Parameter(k, Parameter.KEYWORD_ONLY) for k in params.keys()))
     test_class.__init__.__signature__ = sig
 
-    test_instance = test_class()
-    for k, v in user_set_params.items():
-        setattr(test_instance, k, v)
+    test_instance = test_class(**user_set_params)
 
     return test_instance
 
@@ -170,3 +176,21 @@ def test_nested_set_params():
     for k, v in new_params_nested.items():
         assert params["nested_class__" + k] == v
         assert params_nested[k] == v
+
+
+def test_nested_clone():
+    nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
+    top_level_params = {"test1": "t1"}
+    test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
+
+    cloned_instance = test_instance.clone()
+
+    # Check that the ids are different
+    assert test_instance is not cloned_instance
+    assert test_instance.nested_class is not cloned_instance.nested_class
+
+    params = test_instance._get_params_without_nested_class()
+    cloned_params = cloned_instance._get_params_without_nested_class()
+
+    for k, v in params.items():
+        assert cloned_params[k] == v

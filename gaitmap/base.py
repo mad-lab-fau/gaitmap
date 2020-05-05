@@ -62,6 +62,9 @@ class _BaseSerializable:
         # Extract and sort argument names excluding 'self'
         return sorted([p.name for p in parameters])
 
+    def _get_params_without_nested_class(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
+
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters for this algorithm.
 
@@ -111,6 +114,17 @@ class _BaseSerializable:
         for key, sub_params in nested_params.items():
             valid_params[key].set_params(**sub_params)
         return self
+
+    def clone(self: BaseType) -> BaseType:
+        """Create a new instance of the class with all parameters copied over.
+
+        This will create a new instance of the class itself and all nested gaitmap objects
+        """
+        cloned_dict = self.get_params(deep=False)
+        for k, v in cloned_dict.items():
+            if isinstance(v, _BaseSerializable):
+                cloned_dict[k] = v.clone()
+        return self.__class__(**cloned_dict)
 
 
 class BaseAlgorithm(_BaseSerializable):
