@@ -23,7 +23,7 @@ class RamppEventDetection(BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
-    features in the signals as described in Rampp et al. (2014) [1]_.
+    features in the foot-mounted sensor signals as described in Rampp et al. (2014) [1]_.
     For more details refer to the `Notes` section.
 
     Parameters
@@ -74,6 +74,46 @@ class RamppEventDetection(BaseEventDetection):
     -----
     TODO: Add additional details about the algorithm for event detection
 
+    Rampp et al. implemented the detection of three gait events from foot-mounted sensor data:
+
+    terminal contact (`tc_`), originally called toe-off (TO) in the paper [1]_:
+        At `tc_` the movement of the ankle joint changes from a plantar flexion to a dorsal extension in the sagittal
+        plane.
+        This change results in a zero crossing of the gyr_ml signal (also see ... for the coordinate system)
+
+        TODO add link to image
+
+    initial contact (`ic_`), originally called heel strike (HS) in the paper [1]_:
+        At `ic_` the foot decelerates rapidly when the foot hits the ground.
+        For the detection of `ic_` only the signal between the absolute maximum and the end of the first half of the
+        gyr_ml signal is considered.
+        Within this segment, `ic_` is found by searching for the minimum between the point of the steepest negative
+        slope and the point of the steepest positive slope in the following signal.
+        After that the acc_pa signal is searched for a minimum in the area before and after the described minimum in
+        the gyr_ml signal.
+        The default search window is set to 80 ms before and 50 ms after the minimum.
+        The search window borders can be adjusted via the `ic_search_region_ms` parameter.
+
+        TODO hint to image
+
+    minimal velocity (`min_vel_`), originally called mid stance (MS) in the paper [1]_:
+        At `min_vel_` the foot has the lowest velocity.
+        It is defined to be the middle of the window with the lowest energy in all aexes of the gyr signal.
+        The default window size is set to 100 ms with 50 % overlap.
+        The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
+
+        TODO link to image
+
+    The :func:`~gaitmap.event_detection.RamppEventDetection.detect` provides a stride list `stride_events_` with
+    the gait events mentioned above and additionally `start_` and `end_` of each stride, which are aligned to the
+    `min_vel_` samples.
+    The start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds to
+    the min_vel sample of the subsequent stride.
+    Furthermore, the `stride_events_` list provides the `pre_ic_` which is the ic event of the previous stride in the
+    stride list.
+
+    Further information regarding the coordinate system can be fount :ref:`here<coordinate_systems>`.
+
     .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
        sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
        biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
@@ -120,6 +160,7 @@ class RamppEventDetection(BaseEventDetection):
         --------
         Get gait events from single sensor signal
 
+        # TODO check if this is still correct!
         >>> event_detection = RamppEventDetection()
         >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
         >>> event_detection.stride_events_
