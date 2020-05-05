@@ -141,10 +141,12 @@ def convert_to_fbf(
     Examples
     --------
     These examples assume that your dataset has two sensors called `left_sensor` and `right_sensor`.
+
     >>> dataset = ... # Dataset in FSF
     >>> fbf_dataset = convert_to_fbf(dataset, left_like="left_", right_like="right_")
 
     Alternativly, you can specify the full sensor names.
+
     >>> fbf_dataset = convert_to_fbf(dataset, left=["left_sensor"], right_sensor=["right_sensor"])
 
     See Also
