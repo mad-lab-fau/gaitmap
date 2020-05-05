@@ -7,15 +7,13 @@ does
 the right thing.
 - The same is True for the threshold/max_cost
 
-# TODO: Test template interpolate
-# TODO: Test errors
-
 """
 from typing import Union, Dict
 
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.signal import square
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
@@ -52,7 +50,7 @@ class TestIO(DtwTestBase):
 
         assert "`template` must be specified" in str(e)
 
-    @pytest.mark.parametrize('data', (pd.DataFrame, [], None))
+    @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
     def test_unsuitable_datatype(self, data):
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
@@ -65,7 +63,7 @@ class TestIO(DtwTestBase):
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
             dtw = self.init_dtw(template=template)
-            dtw.segment(data=pd.DataFrame(columns=['col1']), sampling_rate_hz=100)
+            dtw.segment(data=pd.DataFrame(columns=["col1"]), sampling_rate_hz=100)
 
         assert "Invalid combination of data and template" in str(e)
 
@@ -398,9 +396,41 @@ class TestMultiSensorInputs(DtwTestBase):
             ],
         )
 
+
 class TestTemplateResampling(DtwTestBase):
     def test_resample_length(self):
         test_template = np.ones(100)
         resampled_template = BaseDtw._resample_template(test_template, 100, 200)
         assert len(resampled_template) == 200
 
+    def test_resample_real_example(self):
+        # Test that this works in general
+        template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
+
+        template = create_dtw_template(np.array(template), sampling_rate_hz=20)
+        dtw = self.init_dtw(template=template)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 2
+
+        # Test with template that is shorter, but resample it
+        short_template = [0, 2, 4, 2, 0]
+
+        template = create_dtw_template(np.array(short_template), sampling_rate_hz=20 * 5 / 9)
+        dtw = self.init_dtw(template=template)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 2
+
+        # Test with template that is shorter, but dont't resample it
+        short_template = [0, 2, 4, 2, 0]
+
+        template = create_dtw_template(np.array(short_template), sampling_rate_hz=20 * 5 / 9)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 0

@@ -4,7 +4,7 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
-from scipy.signal import resample
+from scipy.interpolate import interp1d
 from tslearn.metrics import subsequence_cost_matrix, subsequence_path
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
@@ -120,6 +120,8 @@ class BaseDtw(BaseStrideSegmentation):
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
+        The resampling is performed using linear interpolation.
+        Note, that this might lead to unexpected results in case of short template arrays.
     max_cost
         The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
@@ -302,7 +304,6 @@ class BaseDtw(BaseStrideSegmentation):
                 for sensor in get_multi_sensor_dataset_names(data):
                     results[sensor] = self._segment_single_dataset(data[sensor], template)
             else:
-                # TODO: Test
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
@@ -427,8 +428,9 @@ class BaseDtw(BaseStrideSegmentation):
     def _resample_template(
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
     ) -> np.ndarray:
-        template = resample(
-            template_array, int(template_array.shape[0] * new_sampling_rate / template_sampling_rate_hz),
+        len_template = template_array.shape[0]
+        template = interp1d(np.linspace(0, len_template, len_template), template_array)(
+            np.linspace(0, len_template, int(len_template * new_sampling_rate / template_sampling_rate_hz))
         )
         return template
 
@@ -467,7 +469,6 @@ class BaseDtw(BaseStrideSegmentation):
                 )
             return template.to_numpy(), data.to_numpy()
         # TODO: Better error message
-        # TODO: Test
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod
