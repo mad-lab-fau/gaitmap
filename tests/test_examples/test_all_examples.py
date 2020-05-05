@@ -48,3 +48,4 @@ def test_spatial_parameters(snapshot):
 
     snapshot.assert_match(p.parameters_["left_sensor"])
 
+

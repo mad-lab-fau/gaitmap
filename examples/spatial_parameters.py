@@ -36,12 +36,7 @@ orientations = get_healthy_example_orientation()
 # Orientation and position are sampled at 100 Hz while The stride list is aligned with the IMU samples (204.8).
 # Therefore, we need to convert the sampling rate for the stride list to be compatible with position and orientation.
 
-stride_list["left_sensor"]["start"] *= 100 / 204.8
-stride_list["left_sensor"]["end"] *= 100 / 204.8
-stride_list["left_sensor"]["ic"] *= 100 / 204.8
-stride_list["left_sensor"]["tc"] *= 100 / 204.8
-stride_list["left_sensor"]["min_vel"] *= 100 / 204.8
-stride_list["left_sensor"]["pre_ic"] *= 100 / 204.8
+stride_list["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
 
 # %%
 # Creating SpatialParameterCalculation object
@@ -49,7 +44,7 @@ stride_list["left_sensor"]["pre_ic"] *= 100 / 204.8
 # We need this object for calculating the spatial parameters.
 
 p = SpatialParameterCalculation()
-p = p = p.calculate(
+p = p.calculate(
     stride_event_list=stride_list["left_sensor"],
     positions=positions["left_sensor"],
     orientations=orientations["left_sensor"],
