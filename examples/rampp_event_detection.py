@@ -68,7 +68,7 @@ ed.detect(bf_data, sampling_rate_hz, stride_list)
 # stride list.
 # As we passed a dataset with two sensors, the output will be a dictionary.
 stride_events_left = ed.stride_events_["left_sensor"]
-print("Gait events for {} strides were detected.".format(len(stride_list_left)))
+print("Gait events for {} strides were detected.".format(len(stride_events_left)))
 stride_events_left.head()
 
 # %%
