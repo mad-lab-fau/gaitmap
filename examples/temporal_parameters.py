@@ -3,7 +3,7 @@ Temporal parameters calculation
 ===============================
 
 This example illustrates how temporal parameters can be calculated for each stride  by
-the :class:`~gaitmap.parameters.temporal_parameters.TemporalParameterCalculation`.
+the :class:`~gaitmap.parameters.TemporalParameterCalculation`.
 """
 
 # %%

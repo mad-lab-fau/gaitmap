@@ -31,7 +31,7 @@ from gaitmap.utils.rotations import find_angle_between_orientations, find_unsign
 
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
-    """This class is responsible for calculating spatial parameters of strides.
+    """This class is responsible for calculating spatial parameters of strides based on [1]_ and [2]_.
 
     Attributes
     ----------

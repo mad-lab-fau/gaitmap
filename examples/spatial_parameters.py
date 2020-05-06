@@ -3,7 +3,7 @@ Spatial parameters calculation
 ===============================
 
 This example illustrates illustrates how spatial parameters can be calculated for each stride  by
-the :class:`~gaitmap.parameters.spatial_parameters.SpatialParameterCalculation`.
+the :class:`~gaitmap.parameters.SpatialParameterCalculation`.
 The used implementation is based on the work of Kanzler et al [1]_ and Rampp et al [2]_.
 
 .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
@@ -28,7 +28,6 @@ from gaitmap.example_data import (
 )
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 
-sphinx_gallery_thumbnail_path = "_static/plus.png"
 stride_list = get_healthy_example_stride_events()
 positions = get_healthy_example_position()
 orientations = get_healthy_example_orientation()
