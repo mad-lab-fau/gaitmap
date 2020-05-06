@@ -55,7 +55,6 @@ def find_static_samples(
     gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
 
     """
-    # TODO: evaluate performance on large datasets
 
     # test for correct input data shape
     if np.shape(signal)[-1] != 3:
