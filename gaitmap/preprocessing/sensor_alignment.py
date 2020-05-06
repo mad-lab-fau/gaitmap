@@ -16,7 +16,7 @@ from gaitmap.utils.static_moment_detection import find_static_sequences
 def align_dataset_to_gravity(
     dataset: Dataset,
     sampling_rate_hz: float,
-    window_length_sec: float = 0.7,
+    window_length_s: float = 0.7,
     static_signal_th: float = 2.5,
     metric: str = "median",
     gravity: np.ndarray = np.array([0.0, 0.0, 1.0]),
@@ -37,7 +37,7 @@ def align_dataset_to_gravity(
     sampling_rate_hz: float
         Samplingrate of input signal in units of hertz.
 
-    window_length_sec : float
+    window_length_s : float
         Length of desired window in units of seconds.
 
     static_signal_th : float
@@ -71,7 +71,7 @@ def align_dataset_to_gravity(
     >>> # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
     ... # axis (acc_x, ..., gyr_z)
     >>> dataset_df = ...
-    >>> align_dataset_to_gravity(dataset_df, window_length_sec = 0.7, static_signal_th = 2.0, metric = 'median',
+    >>> align_dataset_to_gravity(dataset_df, window_length_s = 0.7, static_signal_th = 2.0, metric = 'median',
     ... gravity = np.array([0.0, 0.0, 1.0])
     <copy of dataset with all axis aligned to gravity>
 
@@ -84,7 +84,7 @@ def align_dataset_to_gravity(
     if not (is_single_sensor_dataset(dataset) or is_multi_sensor_dataset(dataset)):
         raise ValueError("Invalid dataset type!")
 
-    window_length = int(round(window_length_sec * sampling_rate_hz))
+    window_length = int(round(window_length_s * sampling_rate_hz))
 
     if is_single_sensor_dataset(dataset):
         # get static acc vector

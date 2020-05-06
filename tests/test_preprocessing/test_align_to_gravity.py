@@ -41,7 +41,7 @@ class TestAlignToGravity:
             align_dataset_to_gravity(
                 self.sample_sensor_dataset,
                 sampling_rate_hz=1,
-                window_length_sec=3,
+                window_length_s=3,
                 static_signal_th=0.0,
                 metric="maximum",
             )
@@ -57,7 +57,7 @@ class TestAlignToGravity:
         miss_aligned_dataset = rotations.rotate_dataset(self.sample_sensor_dataset, rot)
 
         aligned_dataset = align_dataset_to_gravity(
-            miss_aligned_dataset, sampling_rate_hz=1, window_length_sec=3, static_signal_th=1.0, gravity=gravity
+            miss_aligned_dataset, sampling_rate_hz=1, window_length_s=3, static_signal_th=1.0, gravity=gravity
         )
 
         assert_almost_equal(aligned_dataset["s1"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
@@ -72,7 +72,7 @@ class TestAlignToGravity:
         )
 
         aligned_data = align_dataset_to_gravity(
-            miss_aligned_data, sampling_rate_hz=1, window_length_sec=3, static_signal_th=1.0, gravity=gravity
+            miss_aligned_data, sampling_rate_hz=1, window_length_s=3, static_signal_th=1.0, gravity=gravity
         )
 
         assert_almost_equal(aligned_data[SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
