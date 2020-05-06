@@ -53,47 +53,66 @@ poetry update
 Running `poetry install` will only install packages that are not yet installed. `poetry update` will also check, if 
 newer versions of already installed packages exist.
 
-## Configure your IDE
+## Tools we are using
 
-### Jupyter Lab/Notebooks
+To make it easier to run commandline tasks we use [doit](https://pydoit.org/contents.html) to provide a cross-platform 
+cli for common tasks.
+All commands need to be executed in the `venv` created by poetry.
 
-While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
-prototype your scientific code.
-To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
+To list the available tasks, run:
 
-```
-# poetry isntall including root!
-poetry install
-poetry run doit register_ipykernel
-``` 
-
-After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
-
-Remember to use the autoreload extension to make sure that Jupyter reloads gaitmap, when ever you change something in 
-the library.
-Put this in your first cell of every Jupyter Notebook to activate it:
-
-```python
-%load_ext autoreload  # Load the extension
-%autoreload 2  # Autoreload all modules
+```bash
+$ poetry run doit list
+docs                 Build the html docs using Sphinx.
+format               Reformat all files using black.
+format_check         Check, but not change, formatting using black.
+lint                 Lint all files with Prospector.
+register_ipykernel   Add a jupyter kernel with the gaitmap env to your local install.
+test                 Run Pytest with coverage.
 ```
 
-### Pycharm
-
-You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to
-settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
-```python
-%load_ext autoreload
-%autoreload 2
+To run one of the commands execute (e.g. the `test` command):
+```bash
+poetry run doit test
 ```
+
+To execute `format`, `lint`, and `test` all together, run:
+```bash
+poetry run doit
+# or if you want less output
+petry run doit -v 0
+```
+
+Tou should run this as often as possible!
+At least once before any `git push`.
+
+**Protip**: If you do not want to type `poetry run` all the time, you can also activate the `venv` for your current
+terminal session using `poetry shell`.
+After this you can just type, for example, `doit test`.
+
+To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
+autoformat our code.
+Black can also be integrated [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
+do not want to run it from the commandline.
+Because, it is so easy, we also use *black* to format the test-suite.
+
+For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
+*Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
+
+For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
+To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
+
 
 ## Testing and Test data
 
-While all automated test should go in the test folder, it might be helpful; to cereate some external test script form 
-to time.
+This library uses `pytest` for **testing**. Besides using the doit-command, you can also use an IDE integration
+available for most IDEs.
+
+While all automated tests should go in the test folder, it might be helpful to create some external test script form 
+time to time.
 For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
 dependencies installed (see [IDE Config](#Configure-your-IDE)).
-Test data is available under `test/example_data` and you can import it directly using the `get_...` helper functions in 
+Test data is available under `example_data` and you can import it directly using the `get_...` helper functions in 
 conftest:
 
 ```python
@@ -145,7 +164,49 @@ Make reasonable decisions when it comes to the datasize of this data.
 For more information see `tests/_regression_utils.py` or
 `tests.test_stride_segmentation.test_barth_dtw.TestRegressionOnRealData.test_real_data_both_feed_regression` for an
  example.
+ 
+## Configure your IDE
 
+
+#### Pycharm
+
+**Test runner**: Set the default testrunner to `pytest`. 
+
+**Black**: Refer to this [guide](https://black.readthedocs.io/en/stable/editor_integration.html) 
+
+**Autoreload for the Python console**:
+
+You can instruct Pycharm to automatically reload modules upon changing by adding the following lines to
+settings->Build,Excecution,Deployment->Console->Python Console in the Starting Script:
+
+```python
+%load_ext autoreload
+%autoreload 2
+```
+
+
+#### Jupyter Lab/Notebooks
+
+While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
+prototype your scientific code.
+To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
+
+```
+# poetry install including root!
+poetry install
+poetry run doit register_ipykernel
+``` 
+
+After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
+
+Remember to use the autoreload extension to make sure that Jupyter reloads gaitmap, when ever you change something in 
+the library.
+Put this in your first cell of every Jupyter Notebook to activate it:
+
+```python
+%load_ext autoreload  # Load the extension
+%autoreload 2  # Autoreload all modules
+```
 
 ## Git Workflow
 

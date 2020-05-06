@@ -11,75 +11,61 @@ It's API is designed to mimic `sklearn` to provide you an familiar and elegant i
 
 ## Getting started
 
-## For developers
+### Installation
 
 *gaitmap* only supports Python 3.7 and newer.
 First, install a compatible version of Python.
-If you are using `conda` to manage your Python installation please refer to the 
-[Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Development-Guide.html). 
+Then install the package using pip:
 
-*gaitmap* uses [poetry](https://python-poetry.org) to manage its dependencies.
-Once you installed poetry, run the following commands to initialize a virtual env and install all development 
-dependencies:
+```
+pip install git+https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap.git --upgrade
+```
+
+Or manually with git (note that an editable install with `-e` is not possible for this project):
+
+```
+git clone https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap.git
+cd gaitmap
+pip install . --upgrade
+```
+
+If you are planning to make any changes to the library, please refer to the developer section below.
+
+### Working with Algorithms
+
+*gaitmap* is designed to be a toolbox and not a single algorithm.
+This means you are expected to pick and use individual algorithms.
+A good way to get an overview over the available algorithms and possibilities is to look at the
+[Examples](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/auto_examples/index.html).
+It is also highly advisable to read through the guides on
+[Coordinate Systems](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Coordinate-Systems.html)
+and the
+[Default Datatypes](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Gaitmap-Datatypes.html).
+
+## For developers
+
+The [Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Development-Guide.html)
+and the
+[Project Structure Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Project-Structure.html)
+have detailed information for all new developers.
+Below, we included some very basic information as a quick reference here in the README.
+
+Install Python >3.7 and [poetry](https://python-poetry.org).
+Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
+git clone https://mad-srv.informatik.uni-erlangen.de/newgaitpipeline/gaitmap.git
 poetry install
 ```
 
-In case you encounter any error and need more detailed instruction visit the 
-[Developer Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Development-Guide.html) and the 
-[Project Structure Guide](http://newgaitpipeline.mad-pages.informatik.uni-erlangen.de/gaitmap/guides/Project-Structure.html).
-
-### Testing, linting, etc.
-
-To make it easier to run commandline tasks we use [doit](https://pydoit.org/contents.html) to provide a cross-platform 
-cli for common tasks.
-All commands need to be executed in the `venv` created by poetry.
-
-To list the available tasks, run:
+To run any of the tools required for the development workflow, use the doit commands:
 
 ```bash
 $ poetry run doit list
-docs           Build the html docs using Sphinx.
-format         Reformat all files using black.
-format_check   Check, but not change, formatting using black.
-lint           Lint all files with Prospector.
-test           Run Pytest with coverage.
+docs                 Build the html docs using Sphinx.
+format               Reformat all files using black.
+format_check         Check, but not change, formatting using black.
+lint                 Lint all files with Prospector.
+register_ipykernel   Add a jupyter kernel with the gaitmap env to your local install.
+test                 Run Pytest with coverage.
 ```
-
-To run one of the commands execute (e.g. the `test` command):
-```bash
-poetry run doit test
-```
-
-To execute `format`, `lint`, and `test` all together, run:
-```bash
-poetry run doit
-# or if you want less output
-petry run doit -v 0
-```
-
-Tou should run this as often as possible!
-At least once before any `git push`.
-
-**Protip**: If you do not want to type `poetry run` all the time, you can also activate the `venv` for your current
-terminal session using `poetry shell`.
-After this you can just type, for example, `doit test`.
-
-#### Tools we are using
-
-This library uses `pytest` for **testing**. Besides using the command above, you can also use an IDE integration available
-for most IDEs.
-For *PyCharm* you just need to set the default testrunner to `pytest`.
-
-To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
-autoformat our code.
-Black can also be integrated [into you editor](https://black.readthedocs.io/en/stable/editor_integration.html), if you
-do not want to run it from the commandline.
-Because, it is so easy, we also use *black* to format the test-suite.
-
-For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
-*Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
-
-For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
-To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
