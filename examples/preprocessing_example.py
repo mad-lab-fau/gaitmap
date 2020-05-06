@@ -30,19 +30,27 @@ example_dataset.sort_index(axis=1).head(1)
 # All gaitmap algorithms expect the sensor data to be properly calibrated to physical units. For accelerometer
 # units should be m/s^2 and for gyroscope deg/s.
 
-# your job to make sure that the data is represented in the required physical units!
+# Your job to make sure that the data is represented in the required physical units!
 
 # %%
 # Rotate to Sensor Frame Definition
 # ---------------------------------
 # The sensor orientation / coordinate system during the data recording might not match the gaitmap
-# :ref:`coordinate system definition<coordinate_systems>`. Therefore, we have to ensure, that the input data is close
-# to the correct gaitmap definition (here referred to the sensor-frame ) to always start with a harmonised coordinate
-# system definition, which all following gaitmap function will rely on!
+# :ref:`coordinate system definition<coordinate_systems>`.
+# Therefore, we have to ensure, that the input data is close to the correct gaitmap definition (here referred to the
+# sensor-frame ) to always start with a harmonised coordinate system definition, which all following gaitmap function
+# will rely on!
 #
-# **Note:** This step is **individual** for each sensor position an might vary from dataset to dataset! The rough
-# alignment should be solvable most of the time by using only multiples of 90/180 deg rotations (provided that the
+# **Note:** This step is **specific** for each sensor position and might vary from dataset to dataset.
+# Further, it requires knowledge about the approximate mounting orientation of the sensor on the foot.
+# Based on this knowledge it should be possible to achieve a rough alignment with the gaitmap SF.
+# Most of the time this should be solvable by using only multiples of 90/180 deg rotations (provided that the
 # sensor was at least somewhat aligned to one of the foots axis during recording)!
+#
+# In the provided example, the two sensors were mounted latterly on the foot and their z-axis was pointing "outwards"
+# on both sides.
+# This required two independent rotations for the left and the right foot to achieve the alignment.
+# In other cases, a single rotation for both sensors might be sufficient.
 
 # Rename columns and align with the expected orientation
 import numpy as np
@@ -65,7 +73,7 @@ dataset_sf = rotate_dataset(example_dataset, rotations)
 # %%
 # Visualize one "left" and one "right" stride, and compare the individual sensor axis to the gaitmap
 # :ref:`coordinate system guide<coordinate_systems>`. Axis order and axis sign should match gaitmap coordinate
-# definitions. Note that for sensor-frame, signs will differ for left and right foot!
+# definitions. Note that for the sensor-frame, signs will differ for the left and the right foot!
 
 fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
 ax0.set_title("Left Foot Gyroscope")
@@ -80,8 +88,8 @@ plt.show()
 # %%
 # Align to Gravity
 # ----------------
-# Although we already rotated our initial data somewhat close to the gaitmap coordinate system we still need to make sure
-# that the z-axis is aligned with gravity (defined by [0,0,1]) as required by the gaitmap sensor-frame definition.
+# Although we already rotated our initial data somewhat close to the gaitmap coordinate system we still need to make
+# sure that the z-axis is aligned with gravity (defined by [0,0,1]) as required by the gaitmap sensor-frame definition.
 # Therefore, we will use a static-moment-detection, to derive the absolute sensor orientation based on static
 # accelerometer windows and find the shortest rotation to gravity. The sensor coordinate system will be finally rotated,
 # such that all static accelerometer windows will be close to acc = [0.0, 0.0, 9.81].
@@ -93,7 +101,7 @@ from gaitmap.preprocessing import sensor_alignment
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
 
 # %%
-# Vizualize the result of the gravity alignment
+# Visualize the result of the gravity alignment
 
 fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
 ax0.set_title("Data in sensor-frame but without gravity alignment!")
@@ -121,10 +129,8 @@ plt.show()
 #
 # * Second you could try to **lower** the **window length**: The shorter the window length, the higher the chance that
 #   there is sequence of samples which will be below your set threshold.
-from gaitmap.preprocessing import sensor_alignment
-
-# if alignment fails due to no static windows following the default definition, the user can try to adapt the function
-# parameters "window_length_sec", "static_signal_th" and "metric" to achieve a less strict static window definition
+#
+# These two options can be adapted using the parameters `window_length_sec`, `static_signal_th` and `metric`.
 
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(
     dataset_sf, sampling_rate_hz, window_length_sec=0.5, static_signal_th=3.5, metric="median"
