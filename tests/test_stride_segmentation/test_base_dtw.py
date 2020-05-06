@@ -43,7 +43,7 @@ class DtwTestBase:
 
 
 class TestIOErrors(DtwTestBase):
-    """Test that the correct errors are raised when parameters wrong parameter values are provided."""
+    """Test that the correct errors are raised if wrong parameter values are provided."""
 
     def test_no_template_provided(self):
         with pytest.raises(ValueError) as e:
