@@ -76,12 +76,18 @@ def normalize(v: np.ndarray) -> np.ndarray:
     1D array
 
     >>> normalize(np.array([0, 0, 2]))
-    array([0, 0, 1])
+    array([0., 0., 1.])
 
     2D array
 
     >>> normalize(np.array([[2, 0, 0],[2, 0, 0]]))
-    array([[1, 0, 0],[1, 0, 0]])
+    array([[1., 0., 0.],
+           [1., 0., 0.]])
+
+    0 Array:
+
+    >>> normalize(np.array([0, 0, 0]))
+    array([nan, nan, nan])
 
     """
     v = np.array(v)
@@ -89,7 +95,9 @@ def normalize(v: np.ndarray) -> np.ndarray:
         ax = 0
     else:
         ax = 1
-    return (v.T / norm(v, axis=ax)).T
+    # We do not want a warning when we divide by 0 as we expect it
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return (v.T / norm(v, axis=ax)).T
 
 
 def find_random_orthogonal(v: np.ndarray) -> np.ndarray:
