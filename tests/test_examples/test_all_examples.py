@@ -32,3 +32,6 @@ def test_preprocessing_example(snapshot):
     for acc_l, acc_r in zip(left_acc, right_acc):
         np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
         np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
+
+    # just check first 1000 rows to make sure that snapshot stays in a kB range
+    snapshot.assert_match(dataset_sf_aligned_to_gravity.to_numpy()[:1000])
