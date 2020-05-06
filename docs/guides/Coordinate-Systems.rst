@@ -91,6 +91,16 @@ Foot Frame Overview
   | internal rotation | -gyr_z    | +gyr_z     | +gyr_si   | +gyr_si    |
   +-------------------+-----------+------------+-----------+------------+
 
+.. figure:: /images/signal_templates_coordinate_system_definitions.svg
+    :alt: gaitmap foot frame signal templates
+    :figclass: align-center
+
+    Example signals of 3D-accelerometer and 3D-gyroscope sensor signals for sensor-frame and body-frame coordinate
+    system definitions.
+    The signal section corresponds to one left-/right stride, corresponding to the DTW template definition.
+    Click for `here <../_images/signal_templates_coordinate_system_definitions.svg>`_ for the fullscreen version of
+    image.
+
 Sensor vs Body Frame
 ====================
 
