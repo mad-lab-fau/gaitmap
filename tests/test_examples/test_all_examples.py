@@ -48,6 +48,7 @@ def test_spatial_parameters(snapshot):
 
     snapshot.assert_match(p.parameters_["left_sensor"])
 
+
 def test_rampp_event_detection(snapshot):
     from examples.rampp_event_detection import ed
 
