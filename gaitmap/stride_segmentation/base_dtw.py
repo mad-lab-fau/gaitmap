@@ -129,9 +129,13 @@ class BaseDtw(BaseStrideSegmentation):
     min_match_length_s
         The minimal length of a sequence in seconds to be considered a match.
         Matches that result in shorter sequences, will be ignored.
-        This exclusion is performed as a post-processing step after the matching.
+        In general, this exclusion is performed as a post-processing step after the matching.
         If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
         matches directly.
+    max_match_length_s
+        The maximal length of a sequence in seconds to be considered a match.
+        Matches that result in longer sequences will be ignored.
+        This exclusion is performed as a post-processing step after the matching.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -209,6 +213,7 @@ class BaseDtw(BaseStrideSegmentation):
     max_cost: Optional[float]
     resample_template: bool
     min_match_length_s: Optional[float]
+    max_match_length_s: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -221,6 +226,7 @@ class BaseDtw(BaseStrideSegmentation):
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
     _min_sequence_length: Optional[float]
+    _max_sequence_length: Optional[float]
 
     @property
     def cost_function_(self):
@@ -246,10 +252,12 @@ class BaseDtw(BaseStrideSegmentation):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
         min_match_length_s: Optional[float] = None,
+        max_match_length_s: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
         self.min_match_length_s = min_match_length_s
+        self.max_match_length_s = max_match_length_s
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
@@ -345,6 +353,9 @@ class BaseDtw(BaseStrideSegmentation):
         self._min_sequence_length = self.min_match_length_s
         if self._min_sequence_length not in (None, 0, 0.0):
             self._min_sequence_length *= self.sampling_rate_hz
+        self._max_sequence_length = self.max_match_length_s
+        if self._max_sequence_length not in (None, 0, 0.0):
+            self._max_sequence_length *= self.sampling_rate_hz
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
@@ -420,7 +431,16 @@ class BaseDtw(BaseStrideSegmentation):
             indices = np.where(to_keep)[0]
             matches_start_end_valid = matches_start_end[indices]
             invalid_strides = (
-                np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) < min_sequence_length
+                np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) <= min_sequence_length
+            )
+            to_keep[indices[invalid_strides]] = False
+        max_sequence_length = self._max_sequence_length
+        if max_sequence_length is not None:
+            # only select the once that are not already removed
+            indices = np.where(to_keep)[0]
+            matches_start_end_valid = matches_start_end[indices]
+            invalid_strides = (
+                    np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) >= max_sequence_length
             )
             to_keep[indices[invalid_strides]] = False
         return matches_start_end, to_keep

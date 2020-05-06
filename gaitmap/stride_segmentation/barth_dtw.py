@@ -37,10 +37,15 @@ class BarthDtw(BaseDtw):
         Refer to the specific function to learn more about this.
         The default value should work well with healthy gait (with the default template).
     min_match_length_s
-        The minimal length of a sequence in seconds to be still considered a stride.
-        This exclusion is performed as a post-processing step after the matching.
+        The minimal length of a sequence in seconds to be considered a stride.
+        Matches that result in shorter sequences, will be ignored.
+        In general, this exclusion is performed as a post-processing step after the matching.
         If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
         matches directly.
+    max_match_length_s
+        The maximal length of a sequence in seconds to be considered a stride.
+        Matches that result in longer sequences will be ignored.
+        This exclusion is performed as a post-processing step after the matching.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -135,6 +140,7 @@ class BarthDtw(BaseDtw):
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 2000.0,
         min_match_length_s: Optional[float] = 0.6,
+        max_match_length_s: Optional[float] = 3.,
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
@@ -146,6 +152,7 @@ class BarthDtw(BaseDtw):
             template=template,
             max_cost=max_cost,
             min_match_length_s=min_match_length_s,
+            max_match_length_s=max_match_length_s,
             resample_template=resample_template,
             find_matches_method=find_matches_method,
         )
@@ -187,9 +194,10 @@ class BarthDtw(BaseDtw):
 
         # Resolve strides that have the same start point
         # In case multiple strides have the same start point (after snapping) only take the one with lower cost
-        if self.conflict_resolution:
-            # Only run calcs for strides that are not excluded already
-            valid_indices = np.where(to_keep)[0]
+        # Only run calcs for strides that are not excluded already
+        valid_indices = np.where(to_keep)[0]
+
+        if self.conflict_resolution and len(valid_indices) > 0:
             valid_matches_start_end = matches_start_end[valid_indices]
             # Just to be sure sort based on the start value
             sorted_indices = np.argsort(valid_matches_start_end[:, 0])
@@ -216,5 +224,6 @@ class BarthDtw(BaseDtw):
         super(BarthDtw, self)._post_postprocess_check(matches_start_end)
         # Check if there are still overlapping strides
         if np.any(np.diff(matches_start_end.flatten()) < 0):
-            warnings.warn("There are still overlapping strides left after postprocessing."
-                          "Please manually review the results.")
+            warnings.warn(
+                "There are still overlapping strides left after postprocessing. Please manually review the results."
+            )

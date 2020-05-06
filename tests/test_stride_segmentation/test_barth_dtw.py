@@ -165,14 +165,18 @@ class TestPostProcessing:
 
     def test_simple_stride_time(self):
         example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
-        bad_strides = [2, 5, 9]
-        example_stride_list[bad_strides, 1] -= 0.5
+        bad_strides_short = [2, 5, 9]
+        example_stride_list[bad_strides_short, 1] -= 0.5
+        bad_strides_long = [3, 7]
+        example_stride_list[bad_strides_long, 1] += 0.5
+        bad_strides = [*bad_strides_long, *bad_strides_short]
         to_keep = np.ones(len(example_stride_list)).astype(bool)
 
         # Disable all other postprocessing
         dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=False)
-        # Set min threshold to 0.6
+        # Set min threshold to 0.6 and max to 1.4
         dtw._min_sequence_length = 0.6
+        dtw._max_sequence_length = 1.4
 
         start_end, to_keep = dtw._postprocess_matches(
             None, [], np.array([]), matches_start_end=example_stride_list, to_keep=to_keep
@@ -180,9 +184,9 @@ class TestPostProcessing:
 
         # Check that start-end is unmodified
         assert_array_equal(example_stride_list, start_end)
-        # Check that 3 strides were identified for removal
-        assert np.sum(~to_keep) == 3
-        # Check that the correct 3 strides were identified
+        # Check that number of strides were identified for removal
+        assert np.sum(~to_keep) == len(bad_strides)
+        # Check that the correct strides were identified
         assert np.all(~to_keep[bad_strides])
 
     def test_simple_double_start(self):
@@ -204,6 +208,7 @@ class TestPostProcessing:
         dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True, min_match_length_s=None)
         # Set threshold to None
         dtw._min_sequence_length = None
+        dtw._max_sequence_length = None
 
         start_end, to_keep = dtw._postprocess_matches(
             None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
@@ -241,8 +246,9 @@ class TestPostProcessing:
 
         # Disable all other postprocessing
         dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True)
-        # Set min threshold to 0.6
+        # Set min threshold to 0.6 and max to 3
         dtw._min_sequence_length = 0.6
+        dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
             None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
@@ -280,8 +286,9 @@ class TestPostProcessing:
 
         # Disable all other postprocessing
         dtw = BarthDtw(snap_to_min_win_ms=None, conflict_resolution=True)
-        # Set min threshold to 0.6
+        # Set min threshold to 0.6 and max to 3
         dtw._min_sequence_length = 0.6
+        dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
             None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
