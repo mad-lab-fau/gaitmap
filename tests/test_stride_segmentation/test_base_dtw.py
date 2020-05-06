@@ -7,15 +7,13 @@ does
 the right thing.
 - The same is True for the threshold/max_cost
 
-# TODO: Test template interpolate
-# TODO: Test errors
-
 """
 from typing import Union, Dict
 
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.signal import square
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
@@ -44,7 +42,63 @@ class DtwTestBase:
         return BaseDtw(template=template, **kwargs)
 
 
+class TestIOErrors(DtwTestBase):
+    """Test that the correct errors are raised when parameters wrong parameter values are provided."""
+
+    def test_no_template_provided(self):
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=None)
+            dtw.segment(None, None)
+
+        assert "`template` must be specified" in str(e)
+
+    @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
+    def test_unsuitable_datatype(self, data):
+        """No proper Dataset provided."""
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "The type or shape of the provided dataset is not supported." in str(e)
+
+    def test_invalid_template_combination(self):
+        """Invalid combinations of template and dataset format"""
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=pd.DataFrame(columns=["col1"]), sampling_rate_hz=100)
+
+        assert "Invalid combination of data and template" in str(e)
+
+    def test_multi_sensor_dataset_without_proper_template(self):
+        """Invalid combination of template and multisensor dataset."""
+        # This template can not be used with multi sensor dataframes.
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        sensor1 = pd.DataFrame(sensor1, columns=["col1"])
+        sensor2 = np.array([*np.ones(2) * 2, 0, 1.0, 0, *np.ones(8) * 2])
+        sensor2 = pd.DataFrame(sensor2, columns=["col1"])
+        data = {"sensor1": sensor1, "sensor2": sensor2}
+
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template)
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "template must either be of type `Dict[str, DtwTemplate]`" in str(e)
+
+    def test_invalid_find_matches_method(self):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template, find_matches_method="invalid_name")
+            dtw.segment(data=np.array([]), sampling_rate_hz=100)
+
+        assert "find_matches_method" in str(e)
+
+
 class TestSimpleSegment(DtwTestBase):
+    """Simple Tests with toy examples for matching."""
+
     template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
@@ -53,6 +107,7 @@ class TestSimpleSegment(DtwTestBase):
         self.dtw = dtw
 
     def test_sdtw_simple_match(self):
+        """Test dtw with single match and hand calculated outcomes."""
         sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
         dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
@@ -72,6 +127,7 @@ class TestSimpleSegment(DtwTestBase):
         np.testing.assert_array_equal(dtw.data, sequence)
 
     def test_sdtw_multi_match(self):
+        """Test dtw with multiple matches and hand calculated outcomes."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
         dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
@@ -111,6 +167,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
 
     def test_no_matches_found(self):
+        """Test that no errors are raised when no matches are found."""
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.ones(10), columns=["col1"])
         template = create_dtw_template(template, sampling_rate_hz=100.0)
@@ -202,6 +259,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         assert str(["col3"]) in str(e)
 
     def test_no_sampling_rate_for_resample(self):
+        """Error is raised when resample is True, but no sampling rate provided."""
         template = create_dtw_template(np.ndarray([]))
 
         dtw = self.init_dtw(template=template)
@@ -211,6 +269,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         assert "sampling_rate_hz" in str(e)
 
     def test_sampling_rate_mismatch_warning(self):
+        """Test if warning is raised, when template and data do not have the same sampling rate and resample is False"""
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
         template = create_dtw_template(template, sampling_rate_hz=140.0)  # sampling rate different than data.
@@ -282,6 +341,7 @@ class TestMultiSensorInputs(DtwTestBase):
         )
 
     def test_no_matches_found_multiple(self):
+        """Test postprocessing still works, even when there are no matches."""
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
         template = create_dtw_template(template, sampling_rate_hz=100.0)
@@ -348,3 +408,44 @@ class TestMultiSensorInputs(DtwTestBase):
                 [9.0, 9.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
             ],
         )
+
+
+class TestTemplateResampling(DtwTestBase):
+    def test_resample_length(self):
+        """Unittest the resample func."""
+        test_template = np.ones(100)
+        resampled_template = BaseDtw._resample_template(test_template, 100, 200)
+        assert len(resampled_template) == 200
+
+    def test_resample_real_example(self):
+        """Toy example with hand calculated outcomes."""
+        # Test that this works in general
+        template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
+
+        template = create_dtw_template(np.array(template), sampling_rate_hz=20)
+        dtw = self.init_dtw(template=template)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 2
+
+        # Test with template that is shorter, but resample it
+        short_template = [0, 2, 4, 2, 0]
+
+        template = create_dtw_template(np.array(short_template), sampling_rate_hz=20 * 5 / 9)
+        dtw = self.init_dtw(template=template)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 2
+
+        # Test with template that is shorter, but dont't resample it
+        short_template = [0, 2, 4, 2, 0]
+
+        template = create_dtw_template(np.array(short_template), sampling_rate_hz=20 * 5 / 9)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        dtw.segment(test_data, 20)
+
+        assert len(dtw.matches_start_end_) == 0

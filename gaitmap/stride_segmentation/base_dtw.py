@@ -4,7 +4,7 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
-from scipy.signal import resample
+from scipy.interpolate import interp1d
 from tslearn.metrics import subsequence_cost_matrix, subsequence_path
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
@@ -109,8 +109,7 @@ class BaseDtw(BaseStrideSegmentation):
         However, the dataset can have additional sensors, which are simply ignored.
         In this use case, the outputs are always dictionaries with the sensor name as key.
 
-    TODO: Add link to dataset doumentation in the future
-
+    To better understand the different datatypes have a look at the :ref:`coordinate system guide <coordinate_systems>`.
 
     Parameters
     ----------
@@ -121,6 +120,8 @@ class BaseDtw(BaseStrideSegmentation):
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
+        The resampling is performed using linear interpolation.
+        Note, that this might lead to unexpected results in case of short template arrays.
     max_cost
         The maximal allowed cost to find potential match in the cost function.
         Its usage depends on the exact `find_matches_method` used.
@@ -172,6 +173,17 @@ class BaseDtw(BaseStrideSegmentation):
 
     Notes
     -----
+    msDTW simply calculates the DTW distance of a template at every possible timepoint in the signal.
+    While the template is warped, it is advisable to use a template that has a similar length than the expected matches.
+    Using `resample_template` can help with that.
+    Further, the template should cover the same signal range than the original signal.
+    You can use the `scale` parameter of the :class:`~gaitmap.stride_segmentation.DtwTemplate` to adapt your template
+    to your data.
+
+    If you see unexpected matches or missing matches in your results, it is advisable to plot `acc_cost_mat_` and
+    `cost_function_`.
+    They can provide insight in the matching process.
+
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
@@ -266,6 +278,13 @@ class BaseDtw(BaseStrideSegmentation):
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
+        if self.find_matches_method not in self._allowed_methods_map:
+            raise ValueError(
+                'Invalid value for "find_matches_method". Must be one of {}'.format(
+                    list(self._allowed_methods_map.keys())
+                )
+            )
+
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             # Single template single sensor: easy
@@ -285,7 +304,6 @@ class BaseDtw(BaseStrideSegmentation):
                 for sensor in get_multi_sensor_dataset_names(data):
                     results[sensor] = self._segment_single_dataset(data[sensor], template)
             else:
-                # TODO: Test
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
@@ -297,8 +315,7 @@ class BaseDtw(BaseStrideSegmentation):
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
         else:
-            # TODO: Better error message
-            # TODO: Test
+            # TODO: Better error message -> This will be fixed globally
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
@@ -329,13 +346,7 @@ class BaseDtw(BaseStrideSegmentation):
         if self._min_sequence_length not in (None, 0, 0.0):
             self._min_sequence_length *= self.sampling_rate_hz
 
-        find_matches_method = self._allowed_methods_map.get(self.find_matches_method, None)
-        if not find_matches_method:
-            raise ValueError(
-                'Invalid value for "find_matches_method". Must be one of {}'.format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
+        find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
         # Calculate cost matrix
         acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
@@ -417,8 +428,9 @@ class BaseDtw(BaseStrideSegmentation):
     def _resample_template(
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
     ) -> np.ndarray:
-        template = resample(
-            template_array, int(template_array.shape[0] * new_sampling_rate / template_sampling_rate_hz),
+        len_template = template_array.shape[0]
+        template = interp1d(np.linspace(0, len_template, len_template), template_array)(
+            np.linspace(0, len_template, int(len_template * new_sampling_rate / template_sampling_rate_hz))
         )
         return template
 
@@ -457,7 +469,6 @@ class BaseDtw(BaseStrideSegmentation):
                 )
             return template.to_numpy(), data.to_numpy()
         # TODO: Better error message
-        # TODO: Test
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod

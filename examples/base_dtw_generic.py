@@ -127,3 +127,5 @@ ax_s_y.axis("off")
 ax_s_y.set_ylim((0, sz2 - 1))
 
 plt.show()
+
+# sphinx_gallery_thumbnail_number = 2
