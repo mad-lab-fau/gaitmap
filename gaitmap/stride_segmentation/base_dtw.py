@@ -109,7 +109,7 @@ class BaseDtw(BaseStrideSegmentation):
         However, the dataset can have additional sensors, which are simply ignored.
         In this use case, the outputs are always dictionaries with the sensor name as key.
 
-    To better understand the different datatypes have a look at the :ref:`Coordinate system guide <coordinate_systems>`.
+    To better understand the different datatypes have a look at the :ref:`coordinate system guide <coordinate_systems>`.
 
     Parameters
     ----------
