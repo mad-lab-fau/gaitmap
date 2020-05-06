@@ -440,7 +440,7 @@ class BaseDtw(BaseStrideSegmentation):
             indices = np.where(to_keep)[0]
             matches_start_end_valid = matches_start_end[indices]
             invalid_strides = (
-                    np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) >= max_sequence_length
+                np.abs(matches_start_end_valid[:, 1] - matches_start_end_valid[:, 0]) >= max_sequence_length
             )
             to_keep[indices[invalid_strides]] = False
         return matches_start_end, to_keep
@@ -452,8 +452,8 @@ class BaseDtw(BaseStrideSegmentation):
         ----------
         matches_start_end
             The start and end of all matches remaining after the postprocessing
+
         """
-        pass
 
     @staticmethod
     def _resample_template(

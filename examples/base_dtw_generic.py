@@ -76,7 +76,7 @@ print(template.sampling_rate_hz)
 
 from gaitmap.stride_segmentation import BaseDtw
 
-dtw = BaseDtw(template, min_match_length_s=0.75 * sz / sampling_rate_hz, max_cost=3)
+dtw = BaseDtw(template, min_match_length_s=0.6 * sz / sampling_rate_hz, max_cost=3)
 
 # %%
 # In a second step we apply the dtw to the long sequence
