@@ -35,8 +35,8 @@ orientations = get_healthy_example_orientation()
 # %%
 # Preparing the data
 # ------------------
-# Orientation and position are sampled at 100 Hz as they are derived from mocap data
-# The stride list is aligned with the IMU samples (204.8).
+# Orientation and position are sampled at 100 Hz as they are derived from mocap data.
+# The stride list is aligned with the IMU samples (204.8 Hz).
 # Therefore, we need to convert the sampling rate for the stride list to be compatible with position and orientation.
 
 stride_list["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
