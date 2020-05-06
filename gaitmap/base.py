@@ -224,7 +224,7 @@ class BaseEventDetection(BaseAlgorithm):
 
 
 class BaseOrientationMethod(BaseAlgorithm):
-    """Base class for the individual Orientation estimation methods that just work on simple data."""
+    """Base class for the individual Orientation estimation methods that work on pd.DataFrame data."""
 
     _action_method = "estimate"
     orientation_object_: Rotation
@@ -242,7 +242,7 @@ class BaseOrientationMethod(BaseAlgorithm):
 
 
 class BasePositionMethod(BaseAlgorithm):
-    """Base class for the individual Position estimation methods that just work on simple data."""
+    """Base class for the individual Position estimation methods that work on pd.DataFrame data."""
 
     _action_method = "estimate"
     velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
@@ -251,7 +251,7 @@ class BasePositionMethod(BaseAlgorithm):
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position of the sensor based on the input data.
 
-        Note that the data is assumed to be in the world-frame (i.e. already rotated)
+        Note that the data is assumed to be in the global-frame (i.e. already rotated)
         """
         raise NotImplementedError("Needs to be implemented by child class.")
 

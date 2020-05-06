@@ -15,11 +15,13 @@ class ForwardBackwardIntegration(BasePositionMethod):
     """Use forward(-backward) integration of acc to estimate velocity and position.
 
     .. warning::
-       We assume that the acc signal is already converted into the world frame!
+       We assume that the acc signal is already converted into the global/world frame!
+       Refer to the :ref:`Coordinate System Guide <coordinate_systems>` for details.
 
     This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a direct-and-reverse (DRI) or
     forward-backward integration.
-    This means we assume zero velocity at the beginning and end of the signal.
+    This means we assume no movement (zero velocity and zero acceleration except gravity) at the beginning and end of
+    the signal.
 
     Further drift correction is applied using a level-assumption (i.e. we assume that the sensor starts and ends its
     movement at the same z-position/height).
@@ -37,9 +39,10 @@ class ForwardBackwardIntegration(BasePositionMethod):
     level_assumption
         If True, it is assumed that the stride starts and ends at z=0 and dedrifting in that direction is applied
         accordingly.
-    gravity : Optional (3,) array
+    gravity : Optional (3,) array, or None
         The value of gravity that will be subtracted from each Acc sample before integration.
-        If this is `None`, no gravity will be subtracted.
+        If this is `None`, no gravity subtraction will be performed.
+        By default 9.81 m/s^2 will be subtracted from the z-Axis.
 
     Attributes
     ----------
@@ -61,6 +64,11 @@ class ForwardBackwardIntegration(BasePositionMethod):
     .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
+
+    See Also
+    --------
+    gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation
+    gaitmap.trajectory_reconstruction.StrideLevelTrajectory: Apply the method for each stride of a stride list.
 
     """
 

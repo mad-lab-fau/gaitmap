@@ -26,13 +26,15 @@ class MadgwickAHRS(BaseOrientationMethod):
         This parameter controls how harsh the acceleration based correction is.
         A high value performs large corrections and a small value small and gradual correction.
         A high value should only be used if the sensor is moved slowly.
-        A value of 0 is identical to just the Gyro Integration.
+        A value of 0 is identical to just the Gyro Integration (see also
+        :class:`gaitmap.trajectory_reconstruction.SimpleGyroIntegration` for a separate implementation).
     initial_orientation
         The initial orientation of the sensor that is assumed.
         It is critical that this value is close to the actual orientation.
         Otherwise, the estimated orientation will drift until the real orientation is found.
-        In some cases, the algorithm will not be able to converge if the initial orientation is too far of and the
+        In some cases, the algorithm will not be able to converge if the initial orientation is too far off and the
         orientation will slowly oscillate.
+        If you pass a array, remember that the order of elements must be x, y, z, w.
 
     Attributes
     ----------
@@ -59,6 +61,11 @@ class MadgwickAHRS(BaseOrientationMethod):
            Rehabilitation Robotics, 1–7. https://doi.org/10.1109/ICORR.2011.5975346
     .. [2] http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
+    See Also
+    --------
+    gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation
+    gaitmap.trajectory_reconstruction.StrideLevelTrajectory: Apply the method for each stride of a stride list.
+
     """
 
     initial_orientation: Union[np.ndarray, Rotation]
@@ -69,7 +76,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     data: SingleSensorDataset
     sampling_rate_hz: float
 
-    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = Rotation.identity()):
+    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.])):
         self.initial_orientation = initial_orientation
         self.beta = beta
 

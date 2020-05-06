@@ -40,6 +40,11 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
+    See Also
+    --------
+    gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation
+    gaitmap.trajectory_reconstruction.StrideLevelTrajectory: Apply the method for each stride of a stride list.
+
     """
 
     initial_orientation: Union[np.ndarray, Rotation]
@@ -49,7 +54,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     data: SingleSensorDataset
     sampling_rate_hz: float
 
-    def __init__(self, initial_orientation: Union[np.ndarray, Rotation] = Rotation.identity()):
+    def __init__(self, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.])):
         self.initial_orientation = initial_orientation
 
     # TODO: Allow to continue the integration

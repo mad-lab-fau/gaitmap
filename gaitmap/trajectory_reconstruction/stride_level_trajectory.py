@@ -64,7 +64,8 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     pos_method
         An instance of any available position method with the desired parameters set.
         This method is called with the data of each stride to actually calculate the position.
-        Besides the raw data it is provided the orientations calculated by the `ori_method`.
+        The provided data is already transformed into the global frame using the orientations calculated by the
+        `ori_method` on the same stride.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each stride with
         gravity. To do so, half the window size before and half the window size after the start of the stride will
@@ -77,12 +78,15 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     Other Parameters
     ----------------
     data
-        contains gyroscope and acceleration data
+        The data passed to the `estimate` method.
     stride_event_list
-        A Stride list that will be used to separate `self.data` for integration. For each stride, one sequence of
-        orientations will be obtained, all of them result in a Multiindex Pandas Dataframe.
+        The event list passed to the `estimate` method.
     sampling_rate_hz
-        sampling rate of gyroscope data in Hz
+        The sampling rate of the data.
+
+    See Also
+    --------
+    gaitmap.trajectory_reconstruction: Implemented algorithms for orientation and position estimation
 
     """
 
@@ -116,6 +120,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
             At least must contain 3D-gyroscope data.
         stride_event_list
             List of events for one or multiple sensors.
+            For each stride, the orientation and position will be calculated separately.
         sampling_rate_hz
             Sampling rate with which gyroscopic data was recorded.
 
