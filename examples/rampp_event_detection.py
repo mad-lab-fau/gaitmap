@@ -18,6 +18,8 @@ The used implementation is based on the work of Rampp et al. [1]_.
 # For this we take some example data that contains the regular walking movement during a 2x20m walk test of a healthy
 # subject. The IMU signals are already rotated so that they align with the gaitmap SF coordinate system.
 # The data contains information from two sensors - one from the right and one from the left foot.
+# For further information regarding the coordinate system refer to the :ref:`coordinate system
+# guide<coordinate_systems>`.
 from gaitmap.example_data import get_healthy_example_imu_data
 
 data = get_healthy_example_imu_data()
@@ -40,6 +42,8 @@ stride_list_left = stride_list["left_sensor"]
 # ------------------
 # The data is expected to be in the gaitmap BF to be able to use the same template for the left and the right foot.
 # Therefore, we need to transform the our dataset into the body frame.
+# For further information regarding the coordinate system refer to the :ref:`coordinate system
+# guide<coordinate_systems>`.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
 # We use the `..._like` parameters to identify the data of the left and the right foot based on the name of the sensor.
@@ -50,6 +54,10 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # ----------------------------
 # First we need to initialize the Rampp event detection.
 # In most cases it is sufficient to keep all parameters at default.
+# The default search window for the initial contact is set to 80 ms before and 50 ms after the local minimum in the
+# gyr_ml signal.
+# The default window size for the minimal velocity is set to 100 ms with 50 % overlap.
+# Those default values are different from the original paper, but have proven to be useful in daily life usage.
 from gaitmap.event_detection import RamppEventDetection
 
 ed = RamppEventDetection()
