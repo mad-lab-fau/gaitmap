@@ -20,6 +20,7 @@ stride_list = get_healthy_example_stride_events()
 # Creating TemporalParameterCalculation object
 # -------------------------------------------
 # We need this object for calculating the temporal parameters.
+# Temporal parameters are calculated based on ic and tc events
 
 p = TemporalParameterCalculation()
 p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)

@@ -180,12 +180,9 @@ class TestSpatialParameterRegression:
     def test_regression_on_example_data(
         self, healthy_example_orientation, healthy_example_position, healthy_example_stride_events, snapshot
     ):
-        healthy_example_orientation = healthy_example_orientation["left_sensor"]
-        healthy_example_position = healthy_example_position["left_sensor"]
-        healthy_example_stride_events = healthy_example_stride_events["left_sensor"]
-
         # Convert stride list back to mocap samples:
-        healthy_example_stride_events[["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
+        healthy_example_stride_events["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
+        healthy_example_stride_events["right_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
         t = SpatialParameterCalculation()
         t.calculate(healthy_example_stride_events, healthy_example_position, healthy_example_orientation, 100)
-        snapshot.assert_match(t.parameters_)
+        snapshot.assert_match(t.parameters_["left_sensor"])

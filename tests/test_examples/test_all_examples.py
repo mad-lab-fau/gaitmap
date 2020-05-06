@@ -47,5 +47,3 @@ def test_spatial_parameters(snapshot):
     from examples.spatial_parameters import p
 
     snapshot.assert_match(p.parameters_["left_sensor"])
-
-
