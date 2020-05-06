@@ -30,3 +30,23 @@ GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
 #: The gravity vector in m/s^2 in the FSF
 GRAV_VEC = np.array([0.0, 0.0, 9.81])
 GRAV_VEC.flags.writeable = False
+
+#: Sensor to body frame conversion for the left foot
+FSF_FBF_CONVERSION_LEFT = {
+    "acc_x": (1, "acc_pa"),
+    "acc_y": (1, "acc_ml"),
+    "acc_z": (-1, "acc_si"),
+    "gyr_x": (-1, "gyr_pa"),
+    "gyr_y": (-1, "gyr_ml"),
+    "gyr_z": (-1, "gyr_si"),
+}
+
+#: Sensor to body frame conversion for the right foot
+FSF_FBF_CONVERSION_RIGHT = {
+    "acc_x": (1, "acc_pa"),
+    "acc_y": (-1, "acc_ml"),
+    "acc_z": (-1, "acc_si"),
+    "gyr_x": (1, "gyr_pa"),
+    "gyr_y": (-1, "gyr_ml"),
+    "gyr_z": (1, "gyr_si"),
+}
