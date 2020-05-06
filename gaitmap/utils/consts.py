@@ -31,8 +31,8 @@ GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
 GRAV_VEC = np.array([0.0, 0.0, 9.81])
 GRAV_VEC.flags.writeable = False
 
-#: Definition of the conversion of all axes for the left foot
-CONVERSION_LEFT = {
+#: Sensor to body frame conversion for the left foot
+FSF_FBF_CONVERSION_LEFT = {
     "acc_x": (1, "acc_pa"),
     "acc_y": (1, "acc_ml"),
     "acc_z": (-1, "acc_si"),
@@ -41,8 +41,8 @@ CONVERSION_LEFT = {
     "gyr_z": (-1, "gyr_si"),
 }
 
-#: Definition of the conversion of all axes for the right foot
-CONVERSION_RIGHT = {
+#: Sensor to body frame conversion for the right foot
+FSF_FBF_CONVERSION_RIGHT = {
     "acc_x": (1, "acc_pa"),
     "acc_y": (-1, "acc_ml"),
     "acc_z": (-1, "acc_si"),

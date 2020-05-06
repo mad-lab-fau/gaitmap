@@ -7,7 +7,7 @@ from typing import Optional, List
 
 import pandas as pd
 
-from gaitmap.utils.consts import SF_COLS, BF_COLS, CONVERSION_LEFT, CONVERSION_RIGHT
+from gaitmap.utils.consts import SF_COLS, BF_COLS, FSF_FBF_CONVERSION_LEFT, FSF_FBF_CONVERSION_RIGHT
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     SingleSensorDataset,
@@ -44,7 +44,7 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
 
     # Loop over all axes and convert each one separately
     for sf_col_name in SF_COLS:
-        result[CONVERSION_LEFT[sf_col_name][1]] = CONVERSION_LEFT[sf_col_name][0] * data[sf_col_name]
+        result[FSF_FBF_CONVERSION_LEFT[sf_col_name][1]] = FSF_FBF_CONVERSION_LEFT[sf_col_name][0] * data[sf_col_name]
 
     return result
 
@@ -76,7 +76,7 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
 
     # Loop over all axes and convert each one separately
     for sf_col_name in SF_COLS:
-        result[CONVERSION_RIGHT[sf_col_name][1]] = CONVERSION_RIGHT[sf_col_name][0] * data[sf_col_name]
+        result[FSF_FBF_CONVERSION_RIGHT[sf_col_name][1]] = FSF_FBF_CONVERSION_RIGHT[sf_col_name][0] * data[sf_col_name]
 
     return result
 
