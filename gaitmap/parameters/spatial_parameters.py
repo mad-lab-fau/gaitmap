@@ -1,4 +1,4 @@
-"""Calculate spatial parameters algorithm by Kanzler et al. 2015."""
+"""Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
 from typing import Union, Dict, Tuple
 
 import numpy as np
@@ -31,7 +31,7 @@ from gaitmap.utils.rotations import find_angle_between_orientations, find_unsign
 
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
-    """This class is responsible for calculating spatial parameters of strides.
+    """This class is responsible for calculating spatial parameters of strides based on [1]_ and [2]_.
 
     Attributes
     ----------
@@ -87,6 +87,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
        Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
        In 2015 37th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC)
        (pp. 5424-5427). IEEE.
+    .. [2] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014).
+       Inertial sensor-based stride parameter calculation from gait sequences in geriatric patients.
+       IEEE transactions on biomedical engineering, 62(4), 1089-1097.
 
     Examples
     --------

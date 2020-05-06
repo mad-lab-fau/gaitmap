@@ -132,3 +132,11 @@ class TestTemporalParameterCalculation:
         t.calculate(stride_events_list, 100)
         for sensor in t.parameters_:
             assert_frame_equal(t.parameters_[sensor], expected_temporal_parameters[sensor])
+
+
+class TestTemporalParameterRegression:
+    def test_regression_on_example_data(self, healthy_example_stride_events, snapshot):
+        healthy_example_stride_events = healthy_example_stride_events["left_sensor"]
+        t = TemporalParameterCalculation()
+        t.calculate(healthy_example_stride_events, 204.8)
+        snapshot.assert_match(t.parameters_)

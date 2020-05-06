@@ -35,3 +35,15 @@ def test_preprocessing_example(snapshot):
 
     # just check first 1000 rows to make sure that snapshot stays in a kB range
     snapshot.assert_match(dataset_sf_aligned_to_gravity.to_numpy()[:1000])
+
+
+def test_temporal_parameters(snapshot):
+    from examples.temporal_parameters import p
+
+    snapshot.assert_match(p.parameters_["left_sensor"])
+
+
+def test_spatial_parameters(snapshot):
+    from examples.spatial_parameters import p
+
+    snapshot.assert_match(p.parameters_["left_sensor"])
