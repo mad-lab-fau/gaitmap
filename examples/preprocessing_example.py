@@ -132,6 +132,6 @@ plt.show()
 #
 # These two options can be adapted using the parameters `window_length_sec`, `static_signal_th` and `metric`.
 
-dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(
+dataset_sf_aligned_to_gravity_ = sensor_alignment.align_dataset_to_gravity(
     dataset_sf, sampling_rate_hz, window_length_s=0.5, static_signal_th=3.5, metric="median"
 )
