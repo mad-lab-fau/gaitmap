@@ -311,6 +311,24 @@ class TestIsSingleSensorPositionList:
 
         assert is_single_sensor_position_list(df)
 
+    @pytest.mark.parametrize(
+        "cols, index, both",
+        (
+            (["s_id", "sample", "pos_x", "pos_y", "pos_z"], [], True),
+            (["sample", "pos_x", "pos_y", "pos_z"], [], False),
+            (["pos_x", "pos_y", "pos_z"], ["s_id", "sample"], True),
+            (["pos_x", "pos_y", "pos_z"], ["sample"], False),
+        ),
+    )
+    def test_valid_versions_without_s_id(self, cols, index, both):
+
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_position_list(df) == both
+        assert is_single_sensor_position_list(df, s_id=False) is True
+
 
 class TestIsSingleSensorOrientationList:
     @pytest.mark.parametrize(
@@ -339,12 +357,30 @@ class TestIsSingleSensorOrientationList:
             (["q_x", "q_y", "q_z", "q_w", "something_else"], ["s_id", "sample"]),
         ),
     )
-    def test_valid_versions(self, cols, index):
+    def test_valid_versions_with_s_id(self, cols, index):
         df = pd.DataFrame(columns=[*cols, *index])
         if index:
             df = df.set_index(index)
 
         assert is_single_sensor_orientation_list(df)
+
+    @pytest.mark.parametrize(
+        "cols, index, both",
+        (
+            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w"], [], True),
+            (["sample", "q_x", "q_y", "q_z", "q_w"], [], False),
+            (["q_x", "q_y", "q_z", "q_w"], ["s_id", "sample"], True),
+            (["q_x", "q_y", "q_z", "q_w"], ["sample"], False),
+        ),
+    )
+    def test_valid_versions_without_s_id(self, cols, index, both):
+
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_orientation_list(df) == both
+        assert is_single_sensor_orientation_list(df, s_id=False) is True
 
 
 class TestIsMultiSensorPositionList:
