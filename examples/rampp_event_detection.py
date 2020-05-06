@@ -191,7 +191,7 @@ fig.show()
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
 
 ed2 = RamppEventDetection()
-segmented_stride_list = stride_list["left_sensor"].iloc[[11,12,13,14,15,16]]
+segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
 ed2.detect(
     data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, segmented_stride_list=segmented_stride_list,
 )
@@ -255,4 +255,3 @@ fig.tight_layout()
 
 plt.legend(loc="upper left")
 fig.show()
-
