@@ -11,7 +11,7 @@ from gaitmap.utils.consts import SF_GYR, SF_ACC
 
 # %%
 # Getting some example data
-# --------------------------
+# -------------------------
 #
 # For this we take some example data that contains the regular walking movement during a 2x20m walk test of a healthy
 # subject. The sensors were attached to the lateral side of each foot, which means, that the recorded sensor data must

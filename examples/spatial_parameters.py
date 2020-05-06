@@ -17,7 +17,7 @@ The used implementation is based on the work of Kanzler et al [1]_ and Rampp et 
 
 # %%
 # Getting input data
-# --------------------------
+# ------------------
 #
 # For this we need stride event list obtained from event detection method, position and orientation list
 # obtained from trajectory reconstruction.
