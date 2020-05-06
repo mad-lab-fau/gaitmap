@@ -210,6 +210,7 @@ class TestIsSingleSensorStrideList:
         """Test that the column equals check for min_vel_strides work."""
         min_vel_cols = ["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"]
         stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list["s_id"] = start
         stride_list["start"] = start
         stride_list["min_vel"] = min_vel
 
@@ -223,6 +224,17 @@ class TestIsSingleSensorStrideList:
 
         with pytest.raises(ValueError):
             is_single_sensor_stride_list(valid, stride_type="invalid_value")
+
+    def test_identical_stride_ids(self):
+        """Test that the search for identical stride ids works."""
+        min_vel_cols = ["s_id", "start", "end"]
+        stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list["s_id"] = np.array([1, 2, 2])
+        expected_outcome = False
+
+        out = is_single_sensor_stride_list(stride_list, stride_type="min_vel")
+
+        assert expected_outcome == out
 
 
 class TestIsMultiSensorStrideList:
