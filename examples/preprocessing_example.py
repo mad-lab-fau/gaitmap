@@ -7,8 +7,7 @@ use of all gaitmap functions.
 """
 
 import matplotlib.pyplot as plt
-from gaitmap.utils.consts import *
-
+from gaitmap.utils.consts import SF_GYR, SF_ACC
 
 # %%
 # Getting some example data
@@ -75,7 +74,7 @@ dataset_sf = rotate_dataset(example_dataset, rotations)
 # :ref:`coordinate system guide<coordinate_systems>`. Axis order and axis sign should match gaitmap coordinate
 # definitions. Note that for the sensor-frame, signs will differ for the left and the right foot!
 
-fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
+_, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
 ax0.set_title("Left Foot Gyroscope")
 ax0.set_ylabel("gyr [deg/s]")
 ax0.plot(dataset_sf["left_sensor"][SF_GYR].to_numpy()[585:780, :])
@@ -103,7 +102,7 @@ dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(datase
 # %%
 # Visualize the result of the gravity alignment
 
-fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
+_, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
 ax0.set_title("Data in sensor-frame but without gravity alignment!")
 ax0.set_ylabel("acc [m/s^2]")
 ax0.plot(dataset_sf["left_sensor"][SF_ACC].to_numpy()[:700, :])
