@@ -113,12 +113,10 @@ class RamppEventDetection(BaseEventDetection):
     Any stride where the gait events are detected in a different order is dropped!
 
     Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the
-    `segmented_stride_list`) are detected and the last (segmented) stride of each sequence is dropped.
+    `segmented_stride_list`) are detected and the first (segmented) stride of each sequence is dropped.
     This is required due to the shift of stride borders between the `segmented_stride_list` and the `stride_events_`.
-    For the last segmented stride in a continuous sequence there are no gait events available and thus it needs to be
-    to keep the `stride_events_` list consistent.
-    As the first segmented_stride of a continuous sequence also only provides a pre_ic and a min_vel sample for the
-    first stride in the `stride_events_`, the `stride_events_` list has two strides less than the
+    Thus, the dropped first segmented_stride of a continuous sequence only provides a pre_ic and a min_vel sample for
+    the first stride in the `stride_events_`. Therefore, the `stride_events_` list has one stride less than the
     `segmented_stride_list`.
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>`.
