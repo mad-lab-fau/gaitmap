@@ -7,7 +7,7 @@ from typing import Optional, List
 
 import pandas as pd
 
-from gaitmap.utils.consts import SF_COLS, BF_COLS
+from gaitmap.utils.consts import SF_COLS, BF_COLS, conversion_left, conversion_right
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     SingleSensorDataset,
@@ -39,16 +39,6 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
     """
     if not is_single_sensor_dataset(data, frame="sensor"):
         raise ValueError("No valid FSF SingleSensorDataset supplied.")
-    # Definition of the conversion of all axes for the left foot
-    # TODO: Put into consts.py
-    conversion_left = {
-        "acc_x": (1, "acc_pa"),
-        "acc_y": (1, "acc_ml"),
-        "acc_z": (-1, "acc_si"),
-        "gyr_x": (-1, "gyr_pa"),
-        "gyr_y": (-1, "gyr_ml"),
-        "gyr_z": (-1, "gyr_si"),
-    }
 
     result = pd.DataFrame(columns=BF_COLS)
 
@@ -81,16 +71,6 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
     """
     if not is_single_sensor_dataset(data, frame="sensor"):
         raise ValueError("No valid FSF SingleSensorDataset supplied.")
-    # Definition of the conversion of all axes for the right foot
-    # TODO: Put into consts.py
-    conversion_right = {
-        "acc_x": (1, "acc_pa"),
-        "acc_y": (-1, "acc_ml"),
-        "acc_z": (-1, "acc_si"),
-        "gyr_x": (1, "gyr_pa"),
-        "gyr_y": (-1, "gyr_ml"),
-        "gyr_z": (1, "gyr_si"),
-    }
 
     result = pd.DataFrame(columns=BF_COLS)
 
