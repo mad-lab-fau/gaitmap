@@ -143,10 +143,6 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
         ax.axvline(stride["end"], color="r")
 
     ax.scatter(
-        ic_idx, bf_data["left_sensor"][sensor].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
-    )
-
-    ax.scatter(
         pre_ic_idx,
         bf_data["left_sensor"][sensor].to_numpy()[pre_ic_idx],
         marker="d",
@@ -154,6 +150,10 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
         color="k",
         zorder=3,
         label="pre_ic",
+    )
+
+    ax.scatter(
+        ic_idx, bf_data["left_sensor"][sensor].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
     )
 
     ax.scatter(
