@@ -32,7 +32,7 @@ GRAV_VEC = np.array([0.0, 0.0, 9.81])
 GRAV_VEC.flags.writeable = False
 
 #: Definition of the conversion of all axes for the left foot
-conversion_left = {
+CONVERSION_LEFT = {
     "acc_x": (1, "acc_pa"),
     "acc_y": (1, "acc_ml"),
     "acc_z": (-1, "acc_si"),
@@ -42,7 +42,7 @@ conversion_left = {
 }
 
 #: Definition of the conversion of all axes for the right foot
-conversion_right = {
+CONVERSION_RIGHT = {
     "acc_x": (1, "acc_pa"),
     "acc_y": (-1, "acc_ml"),
     "acc_z": (-1, "acc_si"),
