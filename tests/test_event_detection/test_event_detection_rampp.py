@@ -13,6 +13,7 @@ from gaitmap.event_detection.rampp_event_detection import (
 from gaitmap.utils import coordinate_conversion, dataset_helper
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+import random
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -133,7 +134,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         # switch s_ids in stride list to random numbers
-        stride_list_left["s_id"] = np.random.randint(1000, size=(stride_list_left["s_id"].size, 1))
+        stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
         # find breaks in segmented strides and drop first strides of new sequences
