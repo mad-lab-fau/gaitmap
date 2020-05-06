@@ -109,9 +109,12 @@ class BarthDtw(BaseDtw):
         It is advisable that any custom template starts and ends with a clear peak as well, as this improves the
         matching performance in the border regions.
     Initiation and Termination Strides
-        As initiation strides start and termination strides end with a flat resting period, it is usually hard to match
-        them with the same template as regular strides.
-        Depending on your `max_cost` parameter, such strides (and turning strides) might be included in the output.
+        Be aware that initiation and termination strides can usually not be matched with the same template as regular
+        strides.
+        However, depending on the gait of the subject and the chosen `max_cost` parameters it might however happen
+        that some of them are matched on occasion.
+        If this is an issue for your analysis, you should try to develop further post-processing steps to exclude these
+        strides as part of your pipeline.
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
