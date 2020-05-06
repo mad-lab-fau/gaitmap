@@ -100,13 +100,26 @@ class RamppEventDetection(BaseEventDetection):
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
         Also refer to the :ref:`image below <fe>`.
 
-    The :func:`~gaitmap.event_detection.RamppEventDetection.detect` provides a stride list `stride_events_` with
+    The :func:`~gaitmap.event_detection.RamppEventDetection.detect` method provides a stride list `stride_events_` with
     the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
     `min_vel` samples.
     The start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds to
     the min_vel sample of the subsequent stride.
     Furthermore, the `stride_events_` list provides the `pre_ic` which is the ic event of the previous stride in the
     stride list.
+
+    The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check.
+    The gait events within one stride provided by the `segmented_stride_list` must occur in the order tc - ic - men_vel.
+    Any stride where the gait events are detected in a different order is dropped!
+
+    Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the
+    `segmented_stride_list`) are detected and the last (segmented) stride of each sequence is dropped.
+    This is required due to the shift of stride borders between the `segmented_stride_list` and the `stride_events_`.
+    For the last segmented stride in a continuous sequence there are no gait events available and thus it needs to be
+    to keep the `stride_events_` list consistent.
+    As the first segmented_stride of a continuous sequence also only provides a pre_ic and a min_vel sample for the
+    first stride in the `stride_events_`, the `stride_events_` list has two strides less than the
+    `segmented_stride_list`.
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>`.
 
@@ -264,7 +277,7 @@ class RamppEventDetection(BaseEventDetection):
         tmp_stride_event_df["ic"] = tmp_stride_event_df["ic"].shift(-1)
         # tc of each stride is the tc in the subsequent segmented stride
         tmp_stride_event_df["tc"] = tmp_stride_event_df["tc"].shift(-1)
-        # drop remaining nans (last list will get some by shift(-1) operation above
+        # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
         tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
 
         # find breaks in continuous gait sequence and drop the last (segmented) stride of each sequence
@@ -392,7 +405,7 @@ def _enforce_consistency(tmp_stride_event_df):
         tmp_stride_event_df["min_vel_ic_diff"] > 0
     )
 
-    # drop any nans that have occured through calculation of differences or by non detected events
+    # drop any nans that have occurred through calculation of differences or by non detected events
     tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
 
     tmp_stride_event_df = tmp_stride_event_df.drop(["ic_tc_diff", "min_vel_ic_diff"], axis=1)
