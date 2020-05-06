@@ -99,7 +99,7 @@ class BarthDtw(BaseDtw):
         minimum in the raw data.
         This helps to align the end of one stride with the start of the next stride (which is a requirement for certain
         event detection algorithms) and resolve small overlaps between neighboring strides.
-        However, this assumes that the start and the end of each match is marked by a clear minima in one axis of the
+        However, this assumes that the start and the end of each match is marked by a clear minimum in one axis of the
         raw data.
         If you are using a template that does not assume this, this post-processing step might lead to unexpected
         results and you should deactivate it in such a case by setting `snap_to_min_win_ms` to `None`.

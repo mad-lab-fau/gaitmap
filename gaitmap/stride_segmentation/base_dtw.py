@@ -173,7 +173,7 @@ class BaseDtw(BaseStrideSegmentation):
 
     Notes
     -----
-    msDTW simple calculates the DTW distance of a template at every possible timepoint in the signal.
+    msDTW simply calculates the DTW distance of a template at every possible timepoint in the signal.
     While the template is warped, it is advisable to use a template that has a similar length than the expected matches.
     Using `resample_template` can help with that.
     Further, the template should cover the same signal range than the original signal.
