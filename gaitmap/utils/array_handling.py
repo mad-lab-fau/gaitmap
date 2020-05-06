@@ -190,8 +190,6 @@ def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
     strides = sliding_window_view(data, window_length=d, overlap=d - 1)
     # select all windows around indices
     windows = strides[indices.astype(int) - radius + start_padding, :]
-
-    # TODO handle cases were index is to close to start
     return np.nanargmin(windows, axis=1) + indices - radius
 
 
