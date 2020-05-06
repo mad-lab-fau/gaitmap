@@ -180,3 +180,79 @@ plt.legend(loc="best")
 
 fig.tight_layout()
 fig.show()
+
+# %%
+# Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the
+# `segmented_stride_list`) are detected and the first (segmented) stride of each sequence is dropped.
+# This is required due to the shift of stride borders between the `segmented_stride_list` and the `stride_events_`.
+# Thus, the dropped first segmented_stride of a continuous sequence only provides a pre_ic and a min_vel sample for
+# the first stride in the `stride_events_`. Therefore, the `stride_events_` list has one stride less than the
+# `segmented_stride_list`.
+from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
+
+ed2 = RamppEventDetection()
+segmented_stride_list = stride_list["left_sensor"].iloc[[11,12,13,14,15,16]]
+ed2.detect(
+    data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, segmented_stride_list=segmented_stride_list,
+)
+
+fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
+
+sensor_axis = "gyr_ml"
+
+ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][sensor_axis])
+for i, stride in segmented_stride_list.iterrows():
+    ax1.axvline(stride["start"], color="g")
+    ax1.axvline(stride["end"], color="r")
+    ax1.axvspan(stride["start"], stride["end"], alpha=0.2)
+
+ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][sensor_axis])
+
+ic_idx = ed2.stride_events_["ic"].to_numpy().astype(int)
+tc_idx = ed2.stride_events_["tc"].to_numpy().astype(int)
+min_vel_idx = ed2.stride_events_["min_vel"].to_numpy().astype(int)
+pre_ic_idx = ed2.stride_events_["pre_ic"].to_numpy().astype(int)
+
+for i, stride in ed2.stride_events_.iterrows():
+    ax2.axvline(stride["start"], color="g")
+    ax2.axvline(stride["end"], color="r")
+    ax2.axvspan(stride["start"], stride["end"], alpha=0.2)
+
+ax2.scatter(
+    pre_ic_idx,
+    bf_data["left_sensor"][sensor_axis].to_numpy()[pre_ic_idx],
+    marker="d",
+    s=50,
+    color="k",
+    zorder=3,
+    label="pre_ic",
+)
+
+ax2.scatter(
+    ic_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
+)
+
+ax2.scatter(
+    tc_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
+)
+
+ax2.scatter(
+    min_vel_idx,
+    bf_data["left_sensor"][sensor_axis].to_numpy()[min_vel_idx],
+    marker="s",
+    s=50,
+    color="y",
+    zorder=3,
+    label="min_vel",
+)
+
+ax1.set_title("Segmented stride list")
+ax1.set_ylabel("gyr_ml (°/s)")
+ax2.set_title("Stride events")
+ax2.set_ylabel("gyr_ml (°/s)")
+ax1.set_xlim(2700, 4650)
+fig.tight_layout()
+
+plt.legend(loc="upper left")
+fig.show()
+
