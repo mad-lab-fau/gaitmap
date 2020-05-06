@@ -1,4 +1,4 @@
-"""Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014"""
+"""Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
 from typing import Union, Dict, Tuple
 
 import numpy as np

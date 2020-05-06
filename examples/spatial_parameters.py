@@ -1,6 +1,6 @@
 r"""
 Spatial parameters calculation
-===============================
+==============================
 
 This example illustrates illustrates how spatial parameters can be calculated for each stride  by
 the :class:`~gaitmap.parameters.SpatialParameterCalculation`.
