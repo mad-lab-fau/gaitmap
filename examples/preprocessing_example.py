@@ -30,17 +30,19 @@ example_dataset.sort_index(axis=1).head(1)
 # All gaitmap algorithms expect the sensor data to be properly calibrated to physical units. For accelerometer
 # units should be m/s^2 and for gyroscope deg/s.
 
+# your job to make sure that the data is represented in the required physical units!
 
 # %%
 # Rotate to Sensor Frame Definition
 # ---------------------------------
-# The sensor orientation / coordinate system during the data recording might not match the gaitmap coordinate system
-# definition. Therefore, we have to ensure, that the input data is close to the correct gaitmap definition (here
-# referred to the sensor-frame) to always start with a harmonised coordinate system definition, which all following
-# gaitmap function will rely on!
-# Note: This step is individual for each sensor position an might vary from dataset to dataset! The rough alignment
-# should be solvable most of the time by using only multiples of 90 deg rotations (provided that the sensor was at least
-# somewhat aligned to one of the foots axis during recording)!
+# The sensor orientation / coordinate system during the data recording might not match the gaitmap
+# :ref:`coordinate system definition<coordinate_systems>`. Therefore, we have to ensure, that the input data is close
+# to the correct gaitmap definition (here referred to the sensor-frame ) to always start with a harmonised coordinate
+# system definition, which all following gaitmap function will rely on!
+#
+# **Note:** This step is **individual** for each sensor position an might vary from dataset to dataset! The rough
+# alignment should be solvable most of the time by using only multiples of 90/180 deg rotations (provided that the
+# sensor was at least somewhat aligned to one of the foots axis during recording)!
 
 # Rename columns and align with the expected orientation
 import numpy as np
@@ -61,9 +63,9 @@ rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
 dataset_sf = rotate_dataset(example_dataset, rotations)
 
 # %%
-# Visualize one "left" and one "right" stride, and compare the individual sensor axis to the gaitmap coordinate system
-# guide. Axis order and axis sign should match gaitmap coordinate definitions. Note that for sensor-frame, signs will
-# differ for left and right foot!
+# Visualize one "left" and one "right" stride, and compare the individual sensor axis to the gaitmap
+# :ref:`coordinate system guide<coordinate_systems>`. Axis order and axis sign should match gaitmap coordinate
+# definitions. Note that for sensor-frame, signs will differ for left and right foot!
 
 fig, (ax0, ax1) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8, 5))
 ax0.set_title("Left Foot Gyroscope")
@@ -83,6 +85,9 @@ plt.show()
 # Therefore, we will use a static-moment-detection, to derive the absolute sensor orientation based on static
 # accelerometer windows and find the shortest rotation to gravity. The sensor coordinate system will be finally rotated,
 # such that all static accelerometer windows will be close to acc = [0.0, 0.0, 9.81].
+# If the default parameters for this function will not work out for your specific dataset, please refer to the
+# troubleshooting section below for more information!
+
 from gaitmap.preprocessing import sensor_alignment
 
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
@@ -110,12 +115,12 @@ plt.show()
 # The align_dataset_to_gravity function might fail to find static windows within your input signal and therefore might
 # also fail to align your signal. In this case you might need to tweak the default parameters a bit:
 #
-# * First you could try to **increase** the threshold: The threshold refers to the metric calculated over the given
-# window on the norm of the gyroscope. So given the default metric "median" this means, a window will be considered
-# static if the median of the gyroscope norm is lower than the given threshold within the window length.
+# * First you could try to **increase** the **threshold**: The threshold refers to the metric calculated over the given
+#   window on the norm of the gyroscope. So given the default metric "median" this means, a window will be considered
+#   static if the median of the gyroscope norm is lower than the given threshold within the window length.
 #
-# * Second you could try to **lower** the window length: The shorter the window length, the higher the chance that there
-# is sequence of samples which will be below your set threshold.
+# * Second you could try to **lower** the **window length**: The shorter the window length, the higher the chance that
+#   there is sequence of samples which will be below your set threshold.
 from gaitmap.preprocessing import sensor_alignment
 
 # if alignment fails due to no static windows following the default definition, the user can try to adapt the function
