@@ -54,7 +54,7 @@ class TestOrientationMethodMixin:
         sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
-        np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation.as_quat())
+        np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation)
 
     def test_output_formats(self):
         test = self.init_algo_class()

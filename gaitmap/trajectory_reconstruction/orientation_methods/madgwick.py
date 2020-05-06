@@ -76,7 +76,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     data: SingleSensorDataset
     sampling_rate_hz: float
 
-    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.])):
+    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0])):
         self.initial_orientation = initial_orientation
         self.beta = beta
 
@@ -105,6 +105,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         initial_orientation = self.initial_orientation
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
+        initial_orientation = initial_orientation.copy()
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
 

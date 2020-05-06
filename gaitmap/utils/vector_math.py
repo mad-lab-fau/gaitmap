@@ -96,7 +96,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
     else:
         ax = 1
     # We do not want a warning when we divide by 0 as we expect it
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide="ignore", invalid="ignore"):
         return (v.T / norm(v, axis=ax)).T
 
 
