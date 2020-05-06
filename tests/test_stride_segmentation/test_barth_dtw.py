@@ -294,6 +294,24 @@ class TestPostProcessing:
         # Check that the correct 5 strides were identified
         assert np.all(~to_keep[bad_strides])
 
+    def test_post_post_warning_is_raised(self, healthy_example_imu_data):
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        # Disable all conflict resolutions to force a double match
+        dtw = BarthDtw(max_cost=10000, min_match_length_s=None, conflict_resolution=False, snap_to_min_win_ms=None)
+
+        with pytest.warns(UserWarning) as w:
+            dtw.segment(data, sampling_rate_hz=204.8)
+
+        assert "overlapping strides" in str(w[0])
+
+        # Test that no warning is raised with default paras
+        dtw = BarthDtw()
+
+        with pytest.warns(None) as w:
+            dtw.segment(data, sampling_rate_hz=204.8)
+
+        assert len(w) == 0
+
 
 # Add all the tests of base dtw, as they should pass here as well
 

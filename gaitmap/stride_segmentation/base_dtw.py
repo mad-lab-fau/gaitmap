@@ -368,6 +368,7 @@ class BaseDtw(BaseStrideSegmentation):
                 data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
             )
             matches_start_end_ = matches_start_end_[to_keep]
+            self._post_postprocess_check(matches_start_end_)
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
             # TODO: Add warning in case there are still overlapping matches after the conflict resolution
         return acc_cost_mat_, paths_, costs_, matches_start_end_
@@ -423,6 +424,16 @@ class BaseDtw(BaseStrideSegmentation):
             )
             to_keep[indices[invalid_strides]] = False
         return matches_start_end, to_keep
+
+    def _post_postprocess_check(self, matches_start_end):
+        """Check that is invoked after all processing is done.
+
+        Parameters
+        ----------
+        matches_start_end
+            The start and end of all matches remaining after the postprocessing
+        """
+        pass
 
     @staticmethod
     def _resample_template(

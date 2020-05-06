@@ -1,4 +1,5 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
+import warnings
 from typing import Optional, Union, Dict, List, Tuple
 
 import numpy as np
@@ -210,3 +211,10 @@ class BarthDtw(BaseDtw):
                 to_keep[valid_indices[indices[keep]]] = True
 
         return matches_start_end, to_keep
+
+    def _post_postprocess_check(self, matches_start_end):
+        super(BarthDtw, self)._post_postprocess_check(matches_start_end)
+        # Check if there are still overlapping strides
+        if np.any(np.diff(matches_start_end.flatten()) < 0):
+            warnings.warn("There are still overlapping strides left after postprocessing."
+                          "Please manually review the results.")
