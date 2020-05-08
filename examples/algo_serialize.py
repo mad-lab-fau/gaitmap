@@ -51,6 +51,11 @@ print(json_str)
 # All algorithms can be loaded from json as well using the `from_json` method.
 # This method can be called on any algorithm class and the Algorithm class specified in the json object is returned.
 # To avoid confusion it is advisable to use either the exact algorithm class that was stored or `BaseAlgorithm`.
-
 loaded_slt = BaseAlgorithm.from_json(json_str)
+pprint(loaded_slt.get_params())
+
+# %%
+# To show that you can call `from_json` from any Algorithm class we will perform the same import using the
+# `StrideLevelTrajectory`.
+loaded_slt = StrideLevelTrajectory.from_json(json_str)
 pprint(loaded_slt.get_params())
