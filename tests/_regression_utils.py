@@ -49,6 +49,10 @@ class PyTestSnapshotTest:
         return self.snapshot_folder / "{}.csv".format(self.test_name)
 
     @property
+    def file_name_txt(self):
+        return self.snapshot_folder / "{}.txt".format(self.test_name)
+
+    @property
     def test_name(self):
         cls_name = getattr(self.request.node.cls, "__name__", "")
         flattened_node_name = re.sub(r"\s+", " ", self.request.node.name.replace(r"\n", " "))
@@ -66,6 +70,9 @@ class PyTestSnapshotTest:
             value.to_json(self.file_name_json, indent=4, orient="table")
         elif isinstance(value, np.ndarray):
             np.savetxt(self.file_name_csv, value, delimiter=",")
+        elif isinstance(value, str):
+            with open(self.file_name_txt, "w") as f:
+                f.write(value)
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(type(value)))
 
@@ -80,6 +87,13 @@ class PyTestSnapshotTest:
             if not filename.is_file():
                 raise SnapshotNotFound()
             return np.genfromtxt(filename, delimiter=",")
+        elif dtype == str:
+            filename = self.file_name_txt
+            if not filename.is_file():
+                raise SnapshotNotFound()
+            with open(self.file_name_txt, "r") as f:
+                value = f.read()
+            return value
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(dtype))
 
@@ -100,6 +114,8 @@ class PyTestSnapshotTest:
                     assert_frame_equal(value, prev_snapshot, **kwargs)
                 elif value_dtype == np.ndarray:
                     np.testing.assert_array_almost_equal(value, prev_snapshot, **kwargs)
+                elif value_dtype == str:
+                    assert value == prev_snapshot
                 else:
                     raise ValueError("The dtype {} is not supported for snapshot testing".format(value_dtype))
 

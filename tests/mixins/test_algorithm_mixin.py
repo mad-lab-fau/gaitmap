@@ -1,10 +1,14 @@
 """A mixin for all common tests that should be run on all algorithm classes."""
 import inspect
 
-from numpydoc.docscrape import NumpyDocString
+import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
+from numpydoc.docscrape import NumpyDocString
+from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType
+from tests.conftest import compare_algo_objects
 
 
 class TestAlgorithmMixin:
@@ -81,3 +85,12 @@ class TestAlgorithmMixin:
 
         assert "an_invalid_name" in str(e)
         assert self.algorithm_class.__name__ in str(e)
+
+    def test_json_roundtrip(self):
+        instance = self.algorithm_class()
+
+        json_str = instance.to_json()
+
+        instance_from_json = self.algorithm_class.from_json(json_str)
+
+        compare_algo_objects(instance, instance_from_json)
