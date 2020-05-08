@@ -104,6 +104,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.sampling_rate_hz = sampling_rate_hz
 
         # TODO check for reasonable input values for sensor_channel_config, peak_prominence and window_size_s
+        # sensor_channel_config can be list or str. list must be == BF_ACC/GYR, str must be one of it entries
 
         window_size = self.window_size_s * self.sampling_rate_hz
 
@@ -113,6 +114,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             self.gait_sequences_ = dict()
             self.start_ = dict()
             self.end_ = dict()
+            # TODO merge the gait sequences from both feet? with logical or?
             for sensor in get_multi_sensor_dataset_names(data):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
@@ -122,13 +124,26 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         return self
 
-    @staticmethod
     def _detect_single_dataset(
         self, data: pd.DataFrame, window_size: float,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """Detect gait sequences for a single sensor data set."""
-        acc = data[BF_ACC]
-        gyr = data[BF_GYR]
+
+        # define 3d signal to analyze for active signal and further parameters
+        if "acc" in self.sensor_channel_config:
+            s_3d = data[BF_ACC]
+            active_signal_th = 0.2
+            fft_factor = 100
+        else:
+            s_3d = data[BF_GYR]
+            active_signal_th = 50
+            fft_factor = 1
+
+        # define the 1d signal to analyze for frequency spectrum
+        if type(self.sensor_channel_config) == list:
+            s_1d = norm(np.array(data[self.sensor_channel_config]), axis=1)
+        else:
+            s_1d = data[self.sensor_channel_config]
 
         # TODO put awesome code here
         gait_sequences_ = None
