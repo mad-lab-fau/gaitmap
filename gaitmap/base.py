@@ -38,13 +38,13 @@ class CustomEncoder(json.JSONEncoder):
 
 
 def _custom_deserialize(json_obj):
-    if "_algorithm_name" in json_obj:
+    if "_gaitmap_obj" in json_obj:
         return _BaseSerializable._from_json_dict(json_obj)
     if "_obj_type" in json_obj:
         if json_obj["_obj_type"] == "Rotation":
             return Rotation.from_quat(json_obj["quat"])
         if json_obj["_obj_type"] == "Array":
-            return np.array(json_obj['array'])
+            return np.array(json_obj["array"])
     return json_obj
 
 
@@ -104,8 +104,9 @@ class _BaseSerializable:
         return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
 
     def _to_json_dict(self) -> Dict[str, Any]:
-        json_dict = self.get_params(deep=False)
-        json_dict["_algorithm_name"] = self.__class__.__name__
+        json_dict = dict()
+        json_dict["_gaitmap_obj"] = self.__class__.__name__
+        json_dict["params"] = self.get_params(deep=False)
         return json_dict
 
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
@@ -175,8 +176,9 @@ class _BaseSerializable:
 
     @classmethod
     def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
-        subclass = cls._find_subclass(json_dict.pop("_algorithm_name"))
-        input_data = {k: json_dict[k] for k in subclass._get_param_names() if k in json_dict}
+        subclass = cls._find_subclass(json_dict.pop("_gaitmap_obj"))
+        params = json_dict["params"]
+        input_data = {k: params[k] for k in subclass._get_param_names() if k in params}
         instance = subclass(**input_data)
         return instance
 
