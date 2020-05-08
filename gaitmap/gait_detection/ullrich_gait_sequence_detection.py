@@ -13,9 +13,6 @@ from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
-    StrideList,
     Dataset,
     get_multi_sensor_dataset_names,
 )
@@ -101,7 +98,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         TODO add example
 
         """
-
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
@@ -130,7 +126,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self, data: pd.DataFrame, window_size: float,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """Detect gait sequences for a single sensor data set."""
-
         gait_sequences_dict = {"start": [], "end": []}
 
         # define 3d signal to analyze for active signal and further parameters
@@ -148,22 +143,22 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         s_3d_norm = norm(s_3d_zero_mean, axis=1)
 
         # define the 1d signal to analyze for frequency spectrum
-        if type(self.sensor_channel_config) == list:
+        if isinstance(self.sensor_channel_config, list):
             s_1d = s_3d_norm
         else:
-            s_1d = data[self.sensor_channel_config]
+            s_1d = np.array(data[self.sensor_channel_config])
             s_1d = s_1d - np.mean(s_1d, axis=0)
 
         # sliding windows
         overlap = int(window_size / 2)
         s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
-        s_1d = sliding_window_view(s_1d, window_size, int(window_size / 2))
+        s_1d = sliding_window_view(s_1d, window_size, overlap)
 
         row_idx = 0
         for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
 
             if self._ullrich_gsd_algorithm(row_norm, row_s_1d, fft_factor, active_signal_th):
-                gait_sequences_dict["start"].append(row_idx*overlap)
+                gait_sequences_dict["start"].append(row_idx * overlap)
                 gait_sequences_dict["end"].append(row_idx * overlap + window_size)
 
             row_idx = row_idx + 1
@@ -172,13 +167,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         start_ = np.array(gait_sequences_dict["start"])
         end_ = np.array(gait_sequences_dict["end"])
 
-        #todo concat overlapping gs
+        # todo concat overlapping gs
 
         return gait_sequences_, start_, end_
 
     def _ullrich_gsd_algorithm(self, s_3d_norm, s_1d, fft_factor, active_signal_th):
-        """the actual algorithm with the single processing steps"""
-
+        """Apply the actual algorithm with the single processing steps."""
         gait_sequence_flag = False
 
         # active signal detection
@@ -194,7 +188,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             f_s_1d = f_s_1d * fft_factor
 
             # find dominant frequency
-            dominant_frq = _autocorr(s_1d, self.sampling_rate_hz)
+            dominant_frq = _autocorr(s_1d, frq_axis, self.sampling_rate_hz)
 
             if dominant_frq < 0.5:
                 gait_sequence_flag = False
@@ -251,7 +245,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                                 candidate_evaluation[i_candidate] = False
 
                     # if the majority of decisions is pro harmonic, set the boutFlag to true
-                if np.where(candidate_evaluation is False)[0].size <= len(candidate_evaluation) / 2:
+                if np.where(~candidate_evaluation)[0].size <= len(candidate_evaluation) / 2:
                     gait_sequence_flag = True
                     harmonics_candidates = harmonics_candidates[candidate_evaluation]
                 else:
@@ -263,7 +257,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
 # TODO consistent naming of variables in helper functions
 def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
-    """ function to create and apply butterworth lowpass filter"""
+    """Create and apply butterworth lowpass filter."""
     nyq = 0.5 * sampling_rate_hz
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype="low", analog=False)
@@ -272,7 +266,7 @@ def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
 
 
 def _my_fft(sig, sampling_rate_hz):
-    """ function to perform a fft and also return the frequency axis in Hz """
+    """Perform a fft and also return the frequency axis in Hz."""
     n = len(sig)  # length of the signal
     k = np.arange(n)
     t_end = (n * 1.0) / sampling_rate_hz
@@ -286,7 +280,7 @@ def _my_fft(sig, sampling_rate_hz):
 
 
 def _autocorr(x, frq_axis, sampling_rate_hz):
-    """function to compute autocorrelation and find dominant frequency peak"""
+    """Compute autocorrelation and find dominant frequency peak."""
     result = np.correlate(x, x, mode="full")
     lower_bound = int(np.floor(sampling_rate_hz / 3))  # (=102.4 Hz / 3 Hz = upper bound of locomotor band)
     upper_bound = int(np.ceil(sampling_rate_hz / 0.5))  # (=102.4 Hz / 0.5 Hz = lower bound of locomotor band)

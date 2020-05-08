@@ -11,8 +11,7 @@ class TestUllrichGaitSequenceDetection:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        gsd = UllrichGaitSequenceDetection()
+        gsd = UllrichGaitSequenceDetection(peak_prominence=30)
         gsd.detect(data, 204.8)
 
-        # snapshot.assert_match(ed.stride_events_["left_sensor"], "left", check_dtype=False)
-        # snapshot.assert_match(ed.stride_events_["right_sensor"], "right", check_dtype=False)
+        return None
