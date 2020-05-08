@@ -1,4 +1,6 @@
 r"""
+.. _algo_serialize:
+
 Export Algorithms to JSON
 =========================
 
@@ -8,13 +10,12 @@ reproducibility.
 The example will use :class:`~gaitmap.trajectory_reconstruction.StrideLevelParameter` as example, but the same will
 work with all other algorithms (and Pipelines).
 
-.. warning
-    This json export only stores the Parameters of an algorithm and **not** any potential results!
+.. warning:: This json export only stores the Parameters of an algorithm and **not** any potential results!
 
-.. waring
-    While calling an Algorithms with the same parameters should produce the same results, you also need to ensure
-    that the same version of gaitmap (and all other dependencies) is used to ensure full reproducibility.
-    This means you should save the exact library version together with the json version of the used algorithms.
+.. warning:: While calling an Algorithms with the same parameters should produce the same results, you also need to
+            ensure that the same version of gaitmap (and all other dependencies) is used to ensure full
+            reproducibility.
+            This means you should save the exact library version together with the json version of the used algorithms.
 """
 from pprint import pprint
 

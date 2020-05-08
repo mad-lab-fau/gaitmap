@@ -47,6 +47,7 @@ class PyTestSnapshotTest:
     @property
     def file_name_csv(self):
         return self.snapshot_folder / "{}.csv".format(self.test_name)
+
     @property
     def file_name_txt(self):
         return self.snapshot_folder / "{}.txt".format(self.test_name)
@@ -70,7 +71,7 @@ class PyTestSnapshotTest:
         elif isinstance(value, np.ndarray):
             np.savetxt(self.file_name_csv, value, delimiter=",")
         elif isinstance(value, str):
-            with open(self.file_name_txt, 'w') as f:
+            with open(self.file_name_txt, "w") as f:
                 f.write(value)
         else:
             raise ValueError("The dtype {} is not supported for snapshot testing".format(type(value)))
@@ -90,7 +91,7 @@ class PyTestSnapshotTest:
             filename = self.file_name_txt
             if not filename.is_file():
                 raise SnapshotNotFound()
-            with open(self.file_name_txt, 'r') as f:
+            with open(self.file_name_txt, "r") as f:
                 value = f.read()
             return value
         else:

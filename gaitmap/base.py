@@ -23,18 +23,18 @@ from gaitmap.utils.dataset_helper import (
 BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
 
 
-class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, _BaseSerializable):
-            return obj._to_json_dict()
-        if isinstance(obj, Rotation):
-            return dict(_obj_type="Rotation", quat=obj.as_quat().tolist())
-        if isinstance(obj, np.generic):
-            return obj.item()
-        if isinstance(obj, np.ndarray):
-            return dict(_obj_type="Array", array=obj.tolist())
+class _CustomEncoder(json.JSONEncoder):
+    def default(self, o):  # noqa: method-hidden
+        if isinstance(o, _BaseSerializable):
+            return o._to_json_dict()
+        if isinstance(o, Rotation):
+            return dict(_obj_type="Rotation", quat=o.as_quat().tolist())
+        if isinstance(o, np.generic):
+            return o.item()
+        if isinstance(o, np.ndarray):
+            return dict(_obj_type="Array", array=o.tolist())
         # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, o)
 
 
 def _custom_deserialize(json_obj):
@@ -99,6 +99,14 @@ class _BaseSerializable:
             if subclass.__name__ == name:
                 return subclass
         raise ValueError("No algorithm class with name {} exists".format(name))
+
+    @classmethod
+    def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
+        subclass = cls._find_subclass(json_dict.pop("_gaitmap_obj"))
+        params = json_dict["params"]
+        input_data = {k: params[k] for k in subclass._get_param_names() if k in params}
+        instance = subclass(**input_data)
+        return instance
 
     def _get_params_without_nested_class(self) -> Dict[str, Any]:
         return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
@@ -171,19 +179,32 @@ class _BaseSerializable:
         return self.__class__(**cloned_dict)
 
     def to_json(self) -> str:
-        final_dict = self._to_json_dict()
-        return json.dumps(final_dict, indent=4, cls=CustomEncoder)
+        """Export the current object parameters as json.
 
-    @classmethod
-    def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
-        subclass = cls._find_subclass(json_dict.pop("_gaitmap_obj"))
-        params = json_dict["params"]
-        input_data = {k: params[k] for k in subclass._get_param_names() if k in params}
-        instance = subclass(**input_data)
-        return instance
+        For details have a look at the this :ref:`example <algo_serialize>`.
+
+        You can use the `from_json` method of any gaitmap algorithm to load the object again.
+
+        .. warning:: This will only export the Parameters of the instance, but **not** any results!
+
+        """
+        final_dict = self._to_json_dict()
+        return json.dumps(final_dict, indent=4, cls=_CustomEncoder)
 
     @classmethod
     def from_json(cls: Type[BaseType], json_str: str) -> BaseType:
+        """Import an gaitmap object from its json representation.
+
+        For details have a look at the this :ref:`example <algo_serialize>`.
+
+        You can use the `to_json` method of a class to export it as a compatible json string.
+
+        Parameters
+        ----------
+        json_str
+            json formatted string
+
+        """
         instance = json.loads(json_str, object_hook=_custom_deserialize)
         return instance
 

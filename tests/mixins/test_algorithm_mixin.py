@@ -94,4 +94,3 @@ class TestAlgorithmMixin:
         instance_from_json = self.algorithm_class.from_json(json_str)
 
         compare_algo_objects(instance, instance_from_json)
-
