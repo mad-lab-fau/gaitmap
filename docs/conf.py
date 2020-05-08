@@ -140,6 +140,9 @@ sphinx_gallery_conf = {
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
     "filename_pattern": re.escape(os.sep),
+    'remove_config_comments': True,
+    'line_numbers': True,
+    'show_memory': True,
 }
 
 # Linkcode
