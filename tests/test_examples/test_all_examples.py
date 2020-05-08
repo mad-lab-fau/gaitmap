@@ -1,4 +1,5 @@
 import matplotlib
+import numpy as np
 
 # This is needed to avoid plots to open
 matplotlib.use("Agg")
@@ -56,3 +57,9 @@ def test_rampp_event_detection(snapshot):
     assert len(ed.stride_events_["right_sensor"]) == 29
     snapshot.assert_match(ed.stride_events_["left_sensor"])
     snapshot.assert_match(ed.stride_events_["right_sensor"])
+
+
+def test_json_example(snapshot):
+    from examples.algo_serialize import json_str, slt, loaded_slt
+
+    snapshot.assert_match(json_str)

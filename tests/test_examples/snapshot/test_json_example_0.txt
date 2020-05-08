@@ -1,0 +1,37 @@
+{
+    "_gaitmap_obj": "StrideLevelTrajectory",
+    "params": {
+        "align_window_width": 10,
+        "ori_method": {
+            "_gaitmap_obj": "MadgwickAHRS",
+            "params": {
+                "beta": 0.5,
+                "initial_orientation": {
+                    "_obj_type": "Rotation",
+                    "quat": [
+                        0.0,
+                        0.7071067811865476,
+                        0.7071067811865476,
+                        0.0
+                    ]
+                }
+            }
+        },
+        "pos_method": {
+            "_gaitmap_obj": "ForwardBackwardIntegration",
+            "params": {
+                "gravity": {
+                    "_obj_type": "Array",
+                    "array": [
+                        0.0,
+                        0.0,
+                        9.81
+                    ]
+                },
+                "level_assumption": true,
+                "steepness": 0.08,
+                "turning_point": 0.8
+            }
+        }
+    }
+}
