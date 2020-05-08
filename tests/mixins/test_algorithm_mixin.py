@@ -8,6 +8,7 @@ from numpydoc.docscrape import NumpyDocString
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType
+from tests.conftest import compare_algo_objects
 
 
 class TestAlgorithmMixin:
@@ -92,18 +93,5 @@ class TestAlgorithmMixin:
 
         instance_from_json = self.algorithm_class.from_json(json_str)
 
-        parameters = instance._get_params_without_nested_class()
-        from_json_parameters = instance_from_json._get_params_without_nested_class()
+        compare_algo_objects(instance, instance_from_json)
 
-        assert set(parameters.keys()) == set(from_json_parameters.keys())
-
-        for p, value in parameters.items():
-            json_val = from_json_parameters[p]
-            if isinstance(value, np.ndarray):
-                assert_array_equal(value, json_val)
-            elif isinstance(value, (tuple, list)):
-                assert list(value) == list(json_val)
-            elif isinstance(value, Rotation):
-                assert_array_equal(value.as_quat(), json_val.as_quat())
-            else:
-                assert value == json_val, p

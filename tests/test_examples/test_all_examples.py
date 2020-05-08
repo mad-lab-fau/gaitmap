@@ -2,6 +2,8 @@ import matplotlib
 import numpy as np
 
 # This is needed to avoid plots to open
+from tests.conftest import compare_algo_objects
+
 matplotlib.use("Agg")
 
 
@@ -63,3 +65,5 @@ def test_json_example(snapshot):
     from examples.algo_serialize import json_str, slt, loaded_slt
 
     snapshot.assert_match(json_str)
+
+    compare_algo_objects(slt, loaded_slt)

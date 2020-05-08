@@ -1,4 +1,7 @@
+import numpy as np
 import pytest
+from numpy.testing import assert_array_equal
+from scipy.spatial.transform import Rotation
 
 from gaitmap.example_data import (
     get_healthy_example_imu_data,
@@ -30,3 +33,21 @@ healthy_example_mocap_data = pytest.fixture()(get_healthy_example_mocap_data)
 healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)
 healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
 healthy_example_position = pytest.fixture()(get_healthy_example_position)
+
+
+def compare_algo_objects(a, b):
+    parameters = a._get_params_without_nested_class()
+    b_parameters = b._get_params_without_nested_class()
+
+    assert set(parameters.keys()) == set(b_parameters.keys())
+
+    for p, value in parameters.items():
+        json_val = b_parameters[p]
+        if isinstance(value, np.ndarray):
+            assert_array_equal(value, json_val)
+        elif isinstance(value, (tuple, list)):
+            assert list(value) == list(json_val)
+        elif isinstance(value, Rotation):
+            assert_array_equal(value.as_quat(), json_val.as_quat())
+        else:
+            assert value == json_val, p
