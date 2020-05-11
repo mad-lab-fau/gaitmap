@@ -74,6 +74,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     sampling_rate_hz: float
 
     def __init__(self, sensor_channel_config: str = "gyr_ml", peak_prominence: float = 17, window_size_s: float = 10):
+        # todo add flag to merge resulting gait sequences, set to False
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
         self.window_size_s = window_size_s
@@ -113,6 +114,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             self.start_ = dict()
             self.end_ = dict()
             # TODO merge the gait sequences from both feet? with logical or?
+            # TODO check if dataframe (=synced) or dict of dataframes, if synced set merge flat to true
             for sensor in get_multi_sensor_dataset_names(data):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
@@ -176,10 +178,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequence_flag = False
 
         # active signal detection
+        #TODO vectorize --> Arne's notebook
         if np.mean(s_3d_norm) > active_signal_th:
             gait_sequence_flag = True
 
             # lowpass filtering
+            # TODO filter before windowing
             lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
             s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
 
@@ -208,6 +212,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 frq_axis_delta = frq_axis[1]
 
                 # define size of window around candidates to look for peak. Allow 0.3 Hz of tolerance
+                # TODO expose tolerance as hidden class attribute
                 harmonic_window_half = int(np.floor(0.3 / frq_axis_delta))
 
                 # list to collect decision of harmonic or not
@@ -282,6 +287,8 @@ def _my_fft(sig, sampling_rate_hz):
 def _autocorr(x, frq_axis, sampling_rate_hz):
     """Compute autocorrelation and find dominant frequency peak."""
     result = np.correlate(x, x, mode="full")
+    # TODO expose range limits as hidden class attributes
+    # TODO check: 5 * upper range limit should be << nyquist frq
     lower_bound = int(np.floor(sampling_rate_hz / 3))  # (=102.4 Hz / 3 Hz = upper bound of locomotor band)
     upper_bound = int(np.ceil(sampling_rate_hz / 0.5))  # (=102.4 Hz / 0.5 Hz = lower bound of locomotor band)
 
