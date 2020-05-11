@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
-from gaitmap.utils.array_handling import find_minima_in_radius
+from gaitmap.utils.array_handling import find_extrema_in_radius
 
 
 class BarthDtw(BaseDtw):
@@ -180,7 +180,7 @@ class BarthDtw(BaseDtw):
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
             # Find the closest minimum for each start and stop value
-            matches_start_end = find_minima_in_radius(
+            matches_start_end = find_extrema_in_radius(
                 data[self.snap_to_min_axis].to_numpy(),
                 matches_start_end.flatten(),
                 int(self.snap_to_min_win_ms * self.sampling_rate_hz / 1000) // 2,

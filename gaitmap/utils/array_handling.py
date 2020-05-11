@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional
 import numpy as np
 from numba import njit
 from scipy.signal import find_peaks
+from typing_extensions import Literal
 
 
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_padding: bool = False) -> np.ndarray:
@@ -160,8 +161,10 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
     return find_peaks(-data, height=threshold, **kwargs)[0]
 
 
-def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
-    """Return the index of the global minima of data in the given radius around each index in indices.
+def find_extrema_in_radius(
+    data: np.ndarray, indices: np.ndarray, radius: int, extrema_type: Literal["min", "max"] = "min"
+):
+    """Return the index of the global extrema of data in the given radius around each index in indices.
 
     Parameters
     ----------
@@ -172,12 +175,19 @@ def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
     radius
         The number of samples to the left and the right that are considered for the search.
         The final search window has the length 2 * radius + 1
+    extrema_type
+        If the minima or maxima of the data is searched.
+
     Returns
     -------
-    list_of_minima_indices
-        Array of the position of each identified minima
+    list_of_extrema_indices
+        Array of the position of each identified extrema
 
     """
+    extrema_funcs = {"min": np.nanargmin, "max": np.nanargmax}
+    if extrema_type not in extrema_funcs:
+        raise ValueError("`extrema_type` must be one of {}, not {}".format(list(extrema_funcs.keys()), extrema_type))
+    extrema_func = extrema_funcs[extrema_type]
     # Search region is twice the radius centered around each index
     data = data.astype(float)
     d = 2 * radius + 1
@@ -190,7 +200,7 @@ def find_minima_in_radius(data: np.ndarray, indices: np.ndarray, radius: int):
     strides = sliding_window_view(data, window_length=d, overlap=d - 1)
     # select all windows around indices
     windows = strides[indices.astype(int) - radius + start_padding, :]
-    return np.nanargmin(windows, axis=1) + indices - radius
+    return extrema_func(windows, axis=1) + indices - radius
 
 
 @njit(cache=True)
