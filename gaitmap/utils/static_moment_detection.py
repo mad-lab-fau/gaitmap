@@ -1,5 +1,5 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import numpy as np
 from numpy.linalg import norm
@@ -167,7 +167,7 @@ def find_static_sequences(
 
 def find_first_static_window_multi_sensor(
     signals: Sequence[np.ndarray], window_length: int, inactive_signal_th: float, metric: METRIC_FUNTION_NAMES
-):
+) -> Tuple[int, int]:
     """Find the first time window in the signal where all provided sensors are static.
 
     Parameters
