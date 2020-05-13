@@ -2,7 +2,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.utils.static_moment_detection import find_static_samples, find_static_sequences
+from gaitmap.utils.static_moment_detection import (
+    find_static_samples,
+    find_static_sequences,
+    find_first_static_window_multi_sensor,
+)
 
 
 class TestFindStaticSamples:
@@ -110,3 +114,75 @@ class TestFindStaticSequences:
             test_input, window_length=window_length, inactive_signal_th=0.1, metric="mean"
         )
         assert_array_equal(test_output, expected_output)
+
+
+class TestFirstStaticWindowsMultiSensor:
+    def test_basic_single_sensor(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
+        test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
+
+        window_length = 4
+        test_output = find_first_static_window_multi_sensor(
+            test_input, window_length=window_length, inactive_signal_th=0, metric="maximum"
+        )
+        assert_array_equal(test_output, (6, 10))
+
+    def test_basic_multi_sensor(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+        test_input_2 = np.array([1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0])
+        test_input = np.column_stack([test_input, test_input, test_input])
+        test_input_2 = np.column_stack([test_input_2, test_input_2, test_input_2])
+
+        window_length = 4
+        test_output = find_first_static_window_multi_sensor(
+            [test_input, test_input_2], window_length=window_length, inactive_signal_th=0, metric="maximum"
+        )
+        assert_array_equal(test_output, (8, 12))
+
+    def test_invalid_shape_sub_array(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+        test_input_2 = np.array([1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0])
+
+        window_length = 4
+        with pytest.raises(ValueError) as e:
+            find_first_static_window_multi_sensor(
+                [test_input, test_input_2], window_length=window_length, inactive_signal_th=0, metric="maximum"
+            )
+        assert "2D" in str(e)
+
+    def test_invalid_shape_np_array(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+        test_input = np.column_stack([test_input, test_input, test_input])
+
+        window_length = 4
+        with pytest.raises(ValueError) as e:
+            find_first_static_window_multi_sensor(
+                test_input, window_length=window_length, inactive_signal_th=0, metric="maximum"
+            )
+        assert "3D" in str(e)
+
+    def test_invalid_metric(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1])
+        test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
+
+        window_length = 4
+
+        with pytest.raises(ValueError) as e:
+            find_first_static_window_multi_sensor(
+                test_input, window_length=window_length, inactive_signal_th=0, metric="invalid metric"
+            )
+
+        assert "metric" in str(e)
+
+    def test_no_static_window(self):
+        test_input = np.array([1, 1, 1, 1, 1, 1])
+        test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
+
+        window_length = 4
+
+        with pytest.raises(ValueError) as e:
+            find_first_static_window_multi_sensor(
+                test_input, window_length=window_length, inactive_signal_th=0, metric="maximum"
+            )
+
+        assert "No static" in str(e)
