@@ -40,6 +40,24 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
+    Examples
+    --------
+    Your data must be a pd.DataFrame with at least columns defined by :obj:`~gaitmap.utils.consts.SF_GYR`.
+
+    >>> import pandas as pd
+    >>> from gaitmap.utils.consts import SF_GYR
+    >>> data = pd.DataFrame(..., columns=SF_GYR)
+    >>> sampling_rate_hz = 100
+    >>> # Create an algorithm instance
+    >>> sgi = SimpleGyroIntegration(initial_orientation=np.array([0, 0, 0, 1.0]))
+    >>> # Apply the algorithm
+    >>> sgi = sgi.estimate(data, sampling_rate_hz=sampling_rate_hz)
+    >>> # Inspect the results
+    >>> sgi.orientation_
+    <pd.Dataframe with resulting quaternions>
+    >>> sgi.orientation_object
+    <scipy.Rotation object>
+
     See Also
     --------
     gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation

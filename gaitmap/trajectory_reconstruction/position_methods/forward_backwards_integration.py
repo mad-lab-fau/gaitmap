@@ -65,6 +65,27 @@ class ForwardBackwardIntegration(BasePositionMethod):
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
 
+    Examples
+    --------
+    Your data must be a pd.DataFrame with at least columns defined by :obj:`~gaitmap.utils.consts.SF_ACC`.
+    Remember, that this method does not transform your data into another coordinate frame, but just integrates it.
+    If you want to use this method to calculate e.g. a stride length, make sure to cenvert your data into the global
+    frame using any of the implemented orientation estimation methods.
+
+    >>> import pandas as pd
+    >>> from gaitmap.utils.consts import SF_ACC
+    >>> data = pd.DataFrame(..., columns=SF_ACC)
+    >>> sampling_rate_hz = 100
+    >>> # Create an algorithm instance
+    >>> fbi = ForwardBackwardIntegration(level_assumption=True, gravity=np.array([0, 0, 9.81]))
+    >>> # Apply the algorithm
+    >>> fbi = fbi.estimate(data, sampling_rate_hz=sampling_rate_hz)
+    >>> # Inspect the results
+    >>> fbi.position_
+    <pd.Dataframe with resulting positions>
+    >>> fbi.velocity_
+    <pd.Dataframe with resulting velocities>
+
     See Also
     --------
     gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation

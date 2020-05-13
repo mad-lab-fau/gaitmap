@@ -84,6 +84,32 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     sampling_rate_hz
         The sampling rate of the data.
 
+    Examples
+    --------
+    You can pick any orientation and any position estimation method that is implemented for this wrapper.
+
+    >>> from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
+    >>> from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration
+    >>> # Create custom instances of the methods you want to use
+    >>> ori_method = SimpleGyroIntegration()
+    >>> pos_method = ForwardBackwardIntegration()
+    >>> # Create an instance of the wrapper
+    >>> per_stride_traj = StrideLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
+    >>> # Apply the method
+    >>> data = ...
+    >>> sampling_rate_hz = 204.8
+    >>> stride_list = ...
+    >>> per_stride_traj = per_stride_traj.estimate(
+    ...                        data,
+    ...                        stride_event_list=stride_list,
+    ...                        sampling_rate_hz=sampling_rate_hz
+    ... )
+    >>> per_stride_traj.position_
+    <Dataframe or dict with all the positions per stride>
+    >>> per_stride_traj.orientation_
+    <Dataframe or dict with all the orientations per stride>
+
+
     See Also
     --------
     gaitmap.trajectory_reconstruction: Implemented algorithms for orientation and position estimation

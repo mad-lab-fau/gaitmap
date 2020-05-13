@@ -61,6 +61,24 @@ class MadgwickAHRS(BaseOrientationMethod):
            Rehabilitation Robotics, 1–7. https://doi.org/10.1109/ICORR.2011.5975346
     .. [2] http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
+    Examples
+    --------
+    Your data must be a pd.DataFrame with columns defined by :obj:`~gaitmap.utils.consts.SF_COLS`.
+
+    >>> import pandas as pd
+    >>> from gaitmap.utils.consts import SF_COLS
+    >>> data = pd.DataFrame(..., columns=SF_COLS)
+    >>> sampling_rate_hz = 100
+    >>> # Create an algorithm instance
+    >>> mad = MadgwickAHRS(beta=0.2, initial_orientation=np.array([0, 0, 0, 1.0]))
+    >>> # Apply the algorithm
+    >>> mad = mad.estimate(data, sampling_rate_hz=sampling_rate_hz)
+    >>> # Inspect the results
+    >>> mad.orientation_
+    <pd.Dataframe with resulting quaternions>
+    >>> mad.orientation_object
+    <scipy.Rotation object>
+
     See Also
     --------
     gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation
@@ -70,8 +88,6 @@ class MadgwickAHRS(BaseOrientationMethod):
 
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
-
-    orientation_: Rotation
 
     data: SingleSensorDataset
     sampling_rate_hz: float
