@@ -15,8 +15,11 @@ transformations. To learn more about such preprocessing steps see :class:`exampl
 #
 # For this we need stride event list obtained from event detection method and the sensor data. The sensor data is
 # already in the correct gaitmap coordinate system in this case.
+import matplotlib.pyplot as plt
+
 from gaitmap.example_data import get_healthy_example_stride_events, get_healthy_example_imu_data
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration, StrideLevelTrajectory
+
 
 stride_list = get_healthy_example_stride_events()
 imu_data = get_healthy_example_imu_data()
@@ -39,4 +42,10 @@ trajectory = StrideLevelTrajectory(ori_method, pos_method)
 # -----------------------------
 sampling_frequency_hz = 204.8
 trajectory.estimate(imu_data, stride_list, sampling_frequency_hz)
-trajectory.position_["left_sensor"]
+
+plt.plot(trajectory.position_["left_sensor"].xs(key=0, level=0))
+plt.title("Left Foot Trajectory per axis")
+plt.legend(trajectory.position_["left_sensor"].columns)
+plt.xlabel("sample")
+plt.ylabel("position (m)")
+plt.show()
