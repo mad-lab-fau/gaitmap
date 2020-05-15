@@ -1,11 +1,20 @@
 r"""
-Trajectory reconstruction
-=========================
+Stride Level Trajectory reconstruction
+======================================
 
-This example illustrates how a trajectory can be reconstructed for each stride  by
-the :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory`. Note that this example does not take care for
-any preprocessing steps, which might be necessary for your data, such as alignment to gravity and axis
-transformations. To learn more about such preprocessing steps see :class:`examples.preprocessing_example`.
+Gaitmap has two ways to reconstruct the trajectory (orientation and position) of an IMU.
+The first method is two use any method from the modules :mod:`~gaitmap.trajectory_reconstruction.orientation_methods`
+or :mod:`~gaitmap.trajectory_reconstruction.position_methods` directly.
+This is a great option, if you want to reconstruct a trajectory without performing any other step of the pipeline.
+The second option is to use any of the available `TrajectoryWrapperClasses` methods from the
+:mod:`~gaitmap.trajectory_reconstruction` module.
+These allow you to easily calculate multiple trajectories for e.g. multiple strides.
+
+This example illustrates how a trajectory can be reconstructed for each stride by the
+:class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` class.
+Note that this example does not take care of any preprocessing steps, which might be necessary for your data, such as
+alignment to gravity and axis transformations.
+To learn more about such preprocessing steps see :ref:`this example <preprocessing>`.
 
 """
 
@@ -13,8 +22,8 @@ transformations. To learn more about such preprocessing steps see :class:`exampl
 # Getting input data
 # ------------------
 #
-# For this we need stride event list obtained from event detection method and the sensor data. The sensor data is
-# already in the correct gaitmap coordinate system in this case.
+# For this we need a stride event list obtained from an event detection method and the sensor data.
+# The example data used in the following is already in the correct gaitmap coordinate system.
 import matplotlib.pyplot as plt
 
 from gaitmap.example_data import get_healthy_example_stride_events, get_healthy_example_imu_data
@@ -24,13 +33,24 @@ from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBack
 stride_list = get_healthy_example_stride_events()
 imu_data = get_healthy_example_imu_data()
 
+stride_list["left_sensor"].head(3)
+
 # %%
-# Setting up necessary objects
-# ----------------------------
+# Selecting and Configuring Algorithms
+# ------------------------------------
+#
+# The stride level method takes an instance of an orientation and a position estimation method as configuration
+# parameter.
 # Here, we use simple gyroscopic integration for orientation estimation and forward-backward integration for position
-# estimation. You can replace them by any of the methods in
-# :class:`~gaitmap.trajectory_reconstruction.orientation_methods`
-# and :class:`~gaitmap.trajectory_reconstruction.position_methods`.
+# estimation.
+# You can replace them by any of the methods in :mod:`~gaitmap.trajectory_reconstruction.orientation_methods`
+# and :mod:`~gaitmap.trajectory_reconstruction.position_methods`.
+#
+# Be aware of the assumptions the used methods make.
+# For example the :class:`~gaitmap.trajectory_reconstruction.ForwardBackwardIntegration` assumes that the start and
+# end of each stride is a resting period.
+# The same assumption is used by the :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` itself to
+# estimate the initial orientation at the beginning of each stride.
 
 ori_method = SimpleGyroIntegration()
 pos_method = ForwardBackwardIntegration()
@@ -43,9 +63,20 @@ trajectory = StrideLevelTrajectory(ori_method, pos_method)
 sampling_frequency_hz = 204.8
 trajectory.estimate(imu_data, stride_list, sampling_frequency_hz)
 
-plt.plot(trajectory.position_["left_sensor"].xs(key=0, level=0))
+# select the postion of the first stride
+first_stride_position = trajectory.position_["left_sensor"].loc[0]
+
+first_stride_position.plot()
 plt.title("Left Foot Trajectory per axis")
-plt.legend(trajectory.position_["left_sensor"].columns)
 plt.xlabel("sample")
-plt.ylabel("position (m)")
+plt.ylabel("position [m]")
+plt.show()
+
+# select the orientation of the first stride
+first_stride_orientation = trajectory.orientation_["left_sensor"].loc[0]
+
+first_stride_orientation.plot()
+plt.title("Left Foot Orientation per axis")
+plt.xlabel("sample")
+plt.ylabel("orientation [a.u.]")
 plt.show()

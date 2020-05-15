@@ -1,4 +1,6 @@
 r"""
+.. _preprocessing:
+
 Preprocessing
 =============
 
