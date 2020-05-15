@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_almost_equal, assert_array_almost_equal
+from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.dataset_helper import Dataset, MultiSensorDataset, get_multi_sensor_dataset_names
+from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
+from gaitmap.utils.dataset_helper import MultiSensorDataset, get_multi_sensor_dataset_names
 from gaitmap.utils.rotations import (
     rotation_from_angle,
     _rotate_sensor,
@@ -16,9 +17,7 @@ from gaitmap.utils.rotations import (
     find_angle_between_orientations,
     find_unsigned_3d_angle,
     angle_diff,
-    rotate_dataset_series,
-)
-from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
+    rotate_dataset_series, find_signed_3d_angle, )
 
 
 @pytest.fixture()
@@ -466,3 +465,31 @@ class TestAngleDiff:
     )
     def test_various_inputs(self, a, b, out):
         assert_almost_equal(angle_diff(a, b), out)
+
+
+class TestSigned3DAngle:
+    @pytest.mark.parametrize('v1, v2, n, r', (
+            ([0, 0, 1], [1, 0, 0], [0, 1, 0], 90),
+            ([0, 0, 1], [1, 0, 0], [0, -1, 0], -90),
+            ([0, 0, 1], [0, 0, 1], [0, 1, 0], 0),
+            ([0, 1, 0], [1, 0, 0], [0, 0, 1], -90),
+            ([0, 1], [1, 0], [0, 0, 1], -90),
+            ([0, 1], [1, 0], [0, 0, -1], 90),
+            ([1, 0], [1, 0], [0, 0, 1], 0),
+    ))
+    def test_simple_angle(self, v1, v2, n, r):
+        result = find_signed_3d_angle(np.array(v1), np.array(v2), np.array(n))
+
+        assert result == np.deg2rad(r)
+
+    @pytest.mark.parametrize('v1, v2, n, r', (
+            ([[0, 0, 1]], [1, 0, 0], [0, 1, 0], [90]),
+            ([[0, 0, 1], [1, 0, 0]], [1, 0, 0], [0, 1, 0], [90, 0]),
+            ([[0, 0, 1], [1, 0, 0]], [[1, 0, 0], [0, 0, 1]], [0, 1, 0], [90, -90]),
+            ([[0, 0, 1], [1, 0, 0]], [[1, 0, 0], [0, 0, 1]], [[0, 1, 0], [0, -1, 0]], [90, 90]),
+    ))
+    def test_angle_multi_d(self, v1, v2, n, r):
+        result = find_signed_3d_angle(np.array(v1), np.array(v2), np.array(n))
+
+        assert_array_equal(np.deg2rad(r), result)
+
