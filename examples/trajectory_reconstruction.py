@@ -37,5 +37,6 @@ trajectory = StrideLevelTrajectory(ori_method, pos_method)
 # %%
 # Calculate and inspect results
 # -----------------------------
-trajectory.estimate(imu_data, stride_list, 204.8)
+sampling_frequency_hz = 204.8
+trajectory.estimate(imu_data, stride_list, sampling_frequency_hz)
 trajectory.position_["left_sensor"]
