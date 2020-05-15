@@ -46,7 +46,8 @@ Functions
    :toctree: generated/
    :template: function.rst
 
-   align_dataset_to_gravity
+    align_dataset_to_gravity
+    get_xy_alignment_from_gyro
 
 
 :mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
@@ -182,6 +183,7 @@ Functions
     find_shortest_rotation
     get_gravity_rotation
     find_unsigned_3d_angle
+    find_signed_3d_angle
     find_angle_between_orientations
     find_rotation_around_axis
 
@@ -312,6 +314,7 @@ Functions
 
     find_static_samples
     find_static_sequences
+    find_first_static_window_multi_sensor
 
 
 :mod:`gaitmap.utils.consts`: Global constants
