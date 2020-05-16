@@ -64,10 +64,29 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
-    parameters_pretty_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     sampling_rate_hz: float
     stride_event_list: StrideList
+
+    @property
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return parameters with column names indicating units."""
+        if isinstance(self.parameters_, dict):
+            parameters_ = {}
+            for sensor in self.parameters_:
+                parameters_[sensor] = self._rename_columns(self.parameters_[sensor])
+            return parameters_
+        return self._rename_columns(self.parameters_)
+
+    @staticmethod
+    def _rename_columns(parameters: pd.DataFrame) -> pd.DataFrame:
+        pretty_columns = {
+            "stride_id": "stride id",
+            "stride_time": "stride time [s]",
+            "swing_time": "swing time [s]",
+            "stance_time": "stance time [s]",
+        }
+        return parameters.rename(columns=pretty_columns)
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of all strides after segmentation and detecting events for all sensors.
@@ -88,13 +107,9 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
         if is_single_sensor_stride_list(stride_event_list, stride_type="min_vel"):  # this means single sensor
-            self.parameters_, self.parameters_pretty_ = self._calculate_single_sensor(
-                stride_event_list, sampling_rate_hz
-            )
+            self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
         elif is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel"):
-            self.parameters_, self.parameters_pretty_ = self._calculate_multiple_sensor(
-                stride_event_list, sampling_rate_hz
-            )
+            self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
         else:
             raise ValueError("Stride list datatype is not supported.")
         return self
@@ -114,8 +129,6 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         -------
         parameters_
             Data frame containing temporal parameters of single sensor
-        parameters_pretty_
-            The same as parameters_ but with column names including units
 
         """
         stride_id_ = stride_event_list["s_id"]
@@ -128,15 +141,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             "swing_time": swing_time_,
             "stance_time": stance_time_,
         }
-        stride_parameter_pretty_dict = {
-            "stride_id": stride_id_,
-            "stride_time [s]": stride_time_,
-            "swing_time [s]": swing_time_,
-            "stance_time [s]": stance_time_,
-        }
         parameters_ = pd.DataFrame(stride_parameter_dict)
-        parameters_pretty_ = pd.DataFrame(stride_parameter_pretty_dict)
-        return parameters_, parameters_pretty_
+        return parameters_
 
     def _calculate_multiple_sensor(
         self: BaseType, stride_event_list: MultiSensorStrideList, sampling_rate_hz: float
@@ -154,17 +160,12 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         -------
         parameters_
             Dictionary of temporal parameters for each sensor
-        parameters_pretty_
-            The same as parameters_ but with column names including units
 
         """
         parameters_ = {}
-        parameters_pretty_ = {}
         for sensor in stride_event_list:
-            parameters_[sensor], parameters_pretty_[sensor] = self._calculate_single_sensor(
-                stride_event_list[sensor], sampling_rate_hz
-            )
-        return parameters_, parameters_pretty_
+            parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
+        return parameters_
 
 
 def _calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rate_hz: float) -> pd.Series:

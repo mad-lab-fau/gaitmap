@@ -116,13 +116,34 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     """
 
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
-    parameters_pretty_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
     sole_angle_course_: PositionList
 
     stride_event_list: StrideList
     positions: PositionList
     orientations: OrientationList
     sampling_rate_hz: float
+
+    @property
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return parameters with column names indicating units."""
+        if isinstance(self.parameters_, dict):
+            parameters_ = {}
+            for sensor in self.parameters_:
+                parameters_[sensor] = self._rename_columns(self.parameters_[sensor])
+            return parameters_
+        return self._rename_columns(self.parameters_)
+
+    @staticmethod
+    def _rename_columns(parameters: pd.DataFrame) -> pd.DataFrame:
+        pretty_columns = {
+            "stride_length": "stride length [m]",
+            "gait_velocity": "gait velocity [m/s]",
+            "ic_angle": "ic angle [deg]",
+            "tc_angle": "tc angle [deg]",
+            "turning_angle": "turning angle [deg]",
+            "arc_length": "arc length [m]",
+        }
+        return parameters.rename(columns=pretty_columns)
 
     def calculate(
         self: BaseType,
@@ -159,7 +180,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             and is_single_sensor_position_list(positions)
             and is_single_sensor_orientation_list(orientations)
         ):
-            self.parameters_, self.parameters_pretty_, self.sole_angle_course_ = self._calculate_single_sensor(
+            self.parameters_, self.sole_angle_course_ = self._calculate_single_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         elif (
@@ -167,7 +188,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             and is_multi_sensor_position_list(positions)
             and is_multi_sensor_orientation_list(orientations)
         ):
-            self.parameters_, self.parameters_pretty_, self.sole_angle_course_ = self._calculate_multiple_sensor(
+            self.parameters_, self.sole_angle_course_ = self._calculate_multiple_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         else:
@@ -198,8 +219,6 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         -------
         parameters_
             Data frame containing spatial parameters of single sensor
-        parameters_pretty_
-            The same as parameters_ but with column names including units
         sole_angle_course_
             The sole angle in the sagttial plane for each stride
 
@@ -229,17 +248,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "turning_angle": turning_angle_,
             "arc_length": arc_length_,
         }
-        stride_parameter_pretty_dict = {
-            "stride_length [m]": stride_length_,
-            "gait_velocity [m/s]": gait_velocity_,
-            "ic_angle [deg]": ic_angle_,
-            "tc_angle [deg]": tc_angle_,
-            "turning_angle [deg]": turning_angle_,
-            "arc_length [m]": arc_length_,
-        }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
-        parameters_pretty_ = pd.DataFrame(stride_parameter_pretty_dict, index=stride_event_list.index)
-        return parameters_, parameters_pretty_, angle_course_
+        return parameters_, angle_course_
 
     def _calculate_multiple_sensor(
         self: BaseType,
@@ -265,20 +275,17 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         -------
         parameters_
             Data frame containing spatial parameters of single sensor
-        parameters_pretty_
-            The same as parameters_ but with column names including units
         sole_angle_course_
             The sole angle in the sagttial plane for each stride
 
         """
         parameters_ = {}
-        parameters_pretty_ = {}
         sole_angle_course_ = {}
         for sensor in stride_event_list:
-            parameters_[sensor], parameters_pretty_[sensor], sole_angle_course_[sensor] = self._calculate_single_sensor(
+            parameters_[sensor], sole_angle_course_[sensor] = self._calculate_single_sensor(
                 stride_event_list[sensor], positions[sensor], orientations[sensor], sampling_rate_hz
             )
-        return parameters_, parameters_pretty_, sole_angle_course_
+        return parameters_, sole_angle_course_
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
