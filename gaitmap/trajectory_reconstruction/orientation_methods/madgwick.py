@@ -143,7 +143,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     qdot = rate_of_change_from_gyro(gyro, q)
 
     if beta > 0.0 and not np.all(acc == 0.0):
-        acc /= np.sqrt(np.sum(acc ** 2))
+        acc = acc / np.sqrt(np.sum(acc ** 2))
         ax, ay, az = acc
 
         # Note that we change the order of q components here as we use a different quaternion definition.
@@ -175,7 +175,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
         qdot -= beta * s
 
     # Integrate rate of change of quaternion to yield quaternion
-    q += qdot / sampling_rate_hz
+    q = q + qdot / sampling_rate_hz
     q /= np.sqrt(np.sum(q ** 2))
 
     return q
