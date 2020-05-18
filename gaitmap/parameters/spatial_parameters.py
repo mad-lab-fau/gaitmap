@@ -39,6 +39,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Data frame containing spatial parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
         It has the same structure as the provided stride list
+    parameters_pretty_
+        The same as parameters_ but with column names including units.
     sole_angle_course_
         The sole angle of all strides over time.
         It has the same structure as the provided position list.
@@ -104,6 +106,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     ...                 sampling_rate_hz=204.8)
     >>> p.parameters_
     <Dataframe/dictionary with all the parameters>
+    >>> p.parameters_pretty_
+    <Dataframe/dictionary with all the parameters with units included in column names>
 
     See Also
     --------
@@ -118,6 +122,28 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     positions: PositionList
     orientations: OrientationList
     sampling_rate_hz: float
+
+    @property
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return parameters with column names indicating units."""
+        if isinstance(self.parameters_, dict):
+            parameters_ = {}
+            for sensor in self.parameters_:
+                parameters_[sensor] = self._rename_columns(self.parameters_[sensor])
+            return parameters_
+        return self._rename_columns(self.parameters_)
+
+    @staticmethod
+    def _rename_columns(parameters: pd.DataFrame) -> pd.DataFrame:
+        pretty_columns = {
+            "stride_length": "stride length [m]",
+            "gait_velocity": "gait velocity [m/s]",
+            "ic_angle": "ic angle [deg]",
+            "tc_angle": "tc angle [deg]",
+            "turning_angle": "turning angle [deg]",
+            "arc_length": "arc length [m]",
+        }
+        return parameters.rename(columns=pretty_columns)
 
     def calculate(
         self: BaseType,
@@ -142,7 +168,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Returns
         -------
         self
-            The class instance with spatial parameters populated in `self.parameters_`
+            The class instance with spatial parameters populated in `self.parameters_`, `self.parameters_pretty_`
 
         """
         self.stride_event_list = stride_event_list

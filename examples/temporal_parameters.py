@@ -32,3 +32,7 @@ p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
 # in case of single sensor or dictionary of data frames for multiple sensors.
 # As our passed stride_list here consists of two sensors, the output will be a dictionary.
 p.parameters_["left_sensor"]
+
+# %%
+# `parameters_pretty_` is another version of `parameters_` but using human readable column names that indicate units.
+p.parameters_pretty_["left_sensor"]

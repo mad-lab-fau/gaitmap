@@ -23,6 +23,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     parameters_
         Data frame containing temporal parameters for each stride in case of single sensor
         or dictionary of data frames in multi sensors.
+    parameters_pretty_
+        The same as parameters_ but with column names including units.
 
     Other Parameters
     ----------------
@@ -53,7 +55,8 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     >>> p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
     >>> p.parameters_
     <Dataframe/dictionary with all the parameters>
-
+    >>> p.parameters_pretty_
+    <Dataframe/dictionary with all the parameters with units included in column names>
     See Also
     --------
     gaitmap.parameters.SpatialParameterCalculation: Calculate spatial parameters
@@ -64,6 +67,26 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     sampling_rate_hz: float
     stride_event_list: StrideList
+
+    @property
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        """Return parameters with column names indicating units."""
+        if isinstance(self.parameters_, dict):
+            parameters_ = {}
+            for sensor in self.parameters_:
+                parameters_[sensor] = self._rename_columns(self.parameters_[sensor])
+            return parameters_
+        return self._rename_columns(self.parameters_)
+
+    @staticmethod
+    def _rename_columns(parameters: pd.DataFrame) -> pd.DataFrame:
+        pretty_columns = {
+            "stride_id": "stride id",
+            "stride_time": "stride time [s]",
+            "swing_time": "swing time [s]",
+            "stance_time": "stance time [s]",
+        }
+        return parameters.rename(columns=pretty_columns)
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of all strides after segmentation and detecting events for all sensors.
@@ -78,7 +101,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         Returns
         -------
         self
-            The class instance with temporal parameters populated in `self.parameters_`
+            The class instance with temporal parameters populated in `self.parameters_`, `self.parameters_pretty_`
 
         """
         self.sampling_rate_hz = sampling_rate_hz
