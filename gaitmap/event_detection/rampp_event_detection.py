@@ -230,7 +230,7 @@ class RamppEventDetection(BaseEventDetection):
             tmp_stride_event_df, stride_type="segmented", check_stride_list=False
         )
 
-        tmp_stride_event_df = _segmented_stride_list_to_min_vel_single_sensor(
+        tmp_stride_event_df, _ = _segmented_stride_list_to_min_vel_single_sensor(
             tmp_stride_event_df, target_stride_type="min_vel"
         )
 
