@@ -151,12 +151,18 @@ Required additional columns are documented in :obj:`~gaitmap.utils.consts.SL_ADD
 
 >>> from gaitmap.utils.consts import SL_ADDITIONAL_COLS
 >>> SL_ADDITIONAL_COLS
-{'min_vel': ['pre_ic', 'ic', 'min_vel', 'tc']}
+{
+    "min_vel": ["pre_ic", "ic", "min_vel", "tc"],
+    "segmented": ["ic", "min_vel", "tc"],
+    "ic": ["ic", "min_vel", "tc"],
+}
 
-At the moment only the `min_vel`- stride list is support besides the basic one.
-It is expected to hold all relevant gait events and the `start` and `end` of each stride should be identical with the
-`min_vel` value of the current and next stride respectively.
-For more details see :class:`~gaitmap.event_detection.RamppEventDetection`.
+At the moment three types of strides lists are supported besides the basic one.
+The `min_vel` and the `ic` describe stride lists in which each stride starts and stops with the respective event.
+The `segmented` stride list expects that the start and the end of each stride corresponds to some time point between the
+`min_vel` and the `tc`.
+For more details on the `min_vel` strides see :class:`~gaitmap.event_detection.RamppEventDetection` and for the
+`segmented` strides see :class:`~gaitmap.stride_segmentation.BarthDtw`.
 
 The format of a stride list can be checked using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list`.
 
@@ -179,6 +185,25 @@ Its format can be validated using :func:`~gaitmap.utils.dataset_helper.is_multi_
 >>> multi_sensor_stride_list = {"sensor1": ..., "sensor2": ...}
 >>> is_multi_sensor_stride_list(multi_sensor_stride_list, stride_type="any")
 True
+
+Depending on the stride type the expected order of events changes as well.
+This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
+
+>>> from gaitmap.utils.consts import SL_EVENT_ORDER
+>>> SL_EVENT_ORDER
+{
+    "segmented": ["tc", "ic", "min_vel"],
+    "min_vel": ["pre_ic", "min_vel", "tc", "ic"],
+    "ic": ["ic", "min_vel", "tc"],
+}
+
+The normal format check shown above does not check if the values in the stride list follow this order.
+However, you can use :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency` to remove strides
+with invalid event order.
+
+Further, it is possible to convert a segmented stride list into an "min_vel" or "ic" stride list using
+:func:`~gaitmap.utils.stride_list_conversion.convert_segmented_stride_list`.
+Note that conversions between "min_vel" and "ic" is not supported as this would lead to the unneeded removal of strides.
 
 Position and Orientation Lists
 ==============================

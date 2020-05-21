@@ -217,7 +217,7 @@ def is_single_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
-    gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency: Remove strides that do not have the correct
+    gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency: Remove strides that do not have the correct
         event order
 
     """
@@ -279,7 +279,7 @@ def is_multi_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_stride_list: Check for multi-sensor stride lists
-    gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency: Remove strides that do not have the correct
+    gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency: Remove strides that do not have the correct
         event order
 
     """

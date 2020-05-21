@@ -6,7 +6,7 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.utils.stride_list_conversions import (
+from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
 )
