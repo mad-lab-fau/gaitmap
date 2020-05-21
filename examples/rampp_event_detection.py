@@ -35,7 +35,8 @@ data.sort_index(axis=1).head(1)
 from gaitmap.example_data import get_healthy_example_stride_borders
 
 stride_list = get_healthy_example_stride_borders()
-stride_list_left = stride_list["left_sensor"]
+
+stride_list["left_sensor"].head()
 
 # %%
 # Preparing the data
@@ -79,6 +80,7 @@ min_vel_events_left = ed.min_vel_event_list_["left_sensor"]
 print("Gait events for {} min_vel strides were detected.".format(len(min_vel_events_left)))
 min_vel_events_left.head()
 
+# %%
 # As a secondary output we get the `segmented_event_list_`, which holds the same event information than the
 # `min_vel_event_list_`, but the start and the end of each stride are unchanged compared to the input.
 # This also means that no strides are removed due to the conversion step explained below.
