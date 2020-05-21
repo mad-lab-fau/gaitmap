@@ -6,6 +6,7 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
+from gaitmap.event_detection.stride_list_conversions import enforce_stride_list_consistency
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
@@ -262,7 +263,7 @@ class RamppEventDetection(BaseEventDetection):
         tmp_stride_event_df = pd.DataFrame(tmp_stride_event_dict)
 
         # check for consistency, remove inconsistent lines
-        tmp_stride_event_df = _enforce_consistency(tmp_stride_event_df)
+        tmp_stride_event_df = enforce_stride_list_consistency(tmp_stride_event_df, stride_type="segmented")
 
         # now add start and end according to min_vel:
         # start of each stride is the min_vel in a segmented stride
@@ -386,26 +387,3 @@ def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
     tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
     breaks = np.where(tmp != 0)[0]
     return list(breaks)
-
-
-def _enforce_consistency(tmp_stride_event_df):
-    """Exclude those strides where the gait events do not match the expected order.
-
-    Correct order in segmented strides should be tc - ic - men_vel.
-    """
-    # check difference ic - tc > 0
-    tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic"] - tmp_stride_event_df["tc"]
-    tmp_stride_event_df["ic_tc_diff"] = tmp_stride_event_df["ic_tc_diff"].where(tmp_stride_event_df["ic_tc_diff"] > 0)
-
-    # check difference min_vel - ic > 0
-    tmp_stride_event_df["min_vel_ic_diff"] = tmp_stride_event_df["min_vel"] - tmp_stride_event_df["ic"]
-    tmp_stride_event_df["min_vel_ic_diff"] = tmp_stride_event_df["min_vel_ic_diff"].where(
-        tmp_stride_event_df["min_vel_ic_diff"] > 0
-    )
-
-    # drop any nans that have occurred through calculation of differences or by non detected events
-    tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
-
-    tmp_stride_event_df = tmp_stride_event_df.drop(["ic_tc_diff", "min_vel_ic_diff"], axis=1)
-
-    return tmp_stride_event_df
