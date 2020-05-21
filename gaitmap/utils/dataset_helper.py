@@ -183,7 +183,7 @@ def is_single_sensor_stride_list(
     - the value of `s_id` is unique
 
     Note that this function does only check the structure and not the plausibility of the contained values.
-    For this `~gaitmap.event_detection.enforce_stride_list_consistency` can be used.
+    For this `~gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency` can be used.
 
     However, depending on the type of stride list, further requirements need to be fulfilled:
 
@@ -217,7 +217,8 @@ def is_single_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
-    gaitmap.event_detection.enforce_stride_list_consistency: Remove strides that do not have the correct event order
+    gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency: Remove strides that do not have the correct
+        event order
 
     """
     if not isinstance(stride_list, pd.DataFrame):
@@ -278,7 +279,8 @@ def is_multi_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_stride_list: Check for multi-sensor stride lists
-    gaitmap.event_detection.enforce_stride_list_consistency: Remove strides that do not have the correct event order
+    gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency: Remove strides that do not have the correct
+        event order
 
     """
     if not isinstance(stride_list, dict):

@@ -6,7 +6,7 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.event_detection.stride_list_conversions import enforce_stride_list_consistency
+from gaitmap.utils.stride_list_conversions import enforce_stride_list_consistency
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
