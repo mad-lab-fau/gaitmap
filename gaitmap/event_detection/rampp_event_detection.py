@@ -6,7 +6,10 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.utils.stride_list_conversions import enforce_stride_list_consistency
+from gaitmap.utils.stride_list_conversions import (
+    enforce_stride_list_consistency,
+    _segmented_stride_list_to_min_vel_single_sensor,
+)
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
@@ -214,8 +217,8 @@ class RamppEventDetection(BaseEventDetection):
         # build first dict / df based on segment start and end
         tmp_stride_event_dict = {
             "s_id": segmented_stride_list["s_id"],
-            "seg_start": segmented_stride_list["start"],
-            "seg_end": segmented_stride_list["end"],
+            "start": segmented_stride_list["start"],
+            "end": segmented_stride_list["end"],
             "ic": ic,
             "tc": tc,
             "min_vel": min_vel,
@@ -227,28 +230,11 @@ class RamppEventDetection(BaseEventDetection):
             tmp_stride_event_df, stride_type="segmented", check_stride_list=False
         )
 
-        # now add start and end according to min_vel:
-        # start of each stride is the min_vel in a segmented stride
-        tmp_stride_event_df["start"] = tmp_stride_event_df["min_vel"]
-        # end of each stride is the min_vel in the subsequent segmented stride
-        tmp_stride_event_df["end"] = tmp_stride_event_df["min_vel"].shift(-1)
-        # pre-ic of each stride is the ic in the current segmented stride
-        tmp_stride_event_df["pre_ic"] = tmp_stride_event_df["ic"]
-        # ic of each stride is the ic in the subsequent segmented stride
-        tmp_stride_event_df["ic"] = tmp_stride_event_df["ic"].shift(-1)
-        # tc of each stride is the tc in the subsequent segmented stride
-        tmp_stride_event_df["tc"] = tmp_stride_event_df["tc"].shift(-1)
-        # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
-        tmp_stride_event_df = tmp_stride_event_df.dropna(how="any")
+        tmp_stride_event_df = _segmented_stride_list_to_min_vel_single_sensor(
+            tmp_stride_event_df, target_stride_type="min_vel"
+        )
 
-        # find breaks in continuous gait sequence and drop the last (segmented) stride of each sequence
-        stride_list_breaks = _find_breaks_in_stride_list(tmp_stride_event_df)
-        stride_events_ = tmp_stride_event_df.drop(tmp_stride_event_df.index[stride_list_breaks])
-
-        # drop cols that are not needed anymore
-        stride_events_ = stride_events_.drop(["seg_start", "seg_end"], axis=1)
-        # re-sort columns
-        stride_events_ = stride_events_[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+        stride_events_ = tmp_stride_event_df[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
         return stride_events_
 
@@ -332,12 +318,3 @@ def _detect_ic(
 def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
 
-
-def _find_breaks_in_stride_list(stride_event_df: pd.DataFrame) -> list:
-    """Find breaks in the segmented stride list.
-
-    Find the breaks by checking where the end of one stride does not match the start of the subsequent stride.
-    """
-    tmp = stride_event_df["seg_start"].iloc[1:].to_numpy() - stride_event_df["seg_end"].iloc[:-1].to_numpy()
-    breaks = np.where(tmp != 0)[0]
-    return list(breaks)
