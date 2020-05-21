@@ -263,7 +263,9 @@ class RamppEventDetection(BaseEventDetection):
         tmp_stride_event_df = pd.DataFrame(tmp_stride_event_dict)
 
         # check for consistency, remove inconsistent lines
-        tmp_stride_event_df = enforce_stride_list_consistency(tmp_stride_event_df, stride_type="segmented")
+        tmp_stride_event_df = enforce_stride_list_consistency(
+            tmp_stride_event_df, stride_type="segmented", check_stride_list=False
+        )
 
         # now add start and end according to min_vel:
         # start of each stride is the min_vel in a segmented stride
