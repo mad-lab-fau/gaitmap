@@ -140,7 +140,6 @@ def enforce_stride_list_consistency(
     """
     if check_stride_list is True and not is_single_sensor_stride_list(stride_list, stride_type=stride_type):
         raise ValueError("The provided stride list format is not supported.")
-    # TODO: Test for all stride list types
     order = SL_EVENT_ORDER[stride_type]
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
 
