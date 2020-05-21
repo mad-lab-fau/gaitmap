@@ -1,4 +1,6 @@
 """A couple of utils to convert stride lists into different formats."""
+from typing import Tuple
+
 from typing_extensions import Literal
 import numpy as np
 
@@ -66,7 +68,7 @@ def enforce_stride_list_consistency(
     stride_list: SingleSensorStrideList,
     stride_type=Literal["segmented", "min_vel", "ic"],
     check_stride_list: bool = True,
-) -> SingleSensorStrideList:
+) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Exclude those strides where the gait events do not match the expected order.
 
     Correct order in depends on the stride type:
@@ -88,12 +90,18 @@ def enforce_stride_list_consistency(
         Setting this to False might be useful if you use the consistency check while you are still building a proper
         stride list.
 
+    Returns
+    -------
+    cleaned_stride_list
+        stride_list but will all invalid strides removed
+    invalid_strides
+        all strides that were removed
+
     """
     if check_stride_list is True and not is_single_sensor_stride_list(stride_list, stride_type=stride_type):
         raise ValueError("The provided stride list format is not supported.")
     # TODO: Test for all stride list types
     order = SL_EVENT_ORDER[stride_type]
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
-    stride_list = stride_list[bool_map]
 
-    return stride_list
+    return stride_list[bool_map], stride_list[~bool_map]
