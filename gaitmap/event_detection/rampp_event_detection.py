@@ -45,20 +45,6 @@ class RamppEventDetection(BaseEventDetection):
         as pandas DataFrame. The stride borders for the stride_events are aligned with the min_vel samples. Hence,
         the start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds
         to the min_vel sample of the subsequent stride.
-    start_ : 1D array or dictionary with such values
-        The array of start samples of all strides. Start samples of each stride correspond to the min_vel sample of
-        the same stride.
-    end_ : 1D array or dictionary with such values
-        The array of end samples of all strides. End samples of each stride correspond to the min_vel sample of the
-        subsequent stride.
-    tc_ : 1D array or dictionary with such values
-        The array of terminal contact samples of all strides.
-    min_vel_ : 1D array or dictionary with such values
-        The array of min_vel samples of all strides.
-    ic_ : 1D array or dictionary with such values
-        The array of initial contact samples of all strides.
-    pre_ic_ : 1D array or dictionary with such values
-        The array of pre-initial contact samples of all strides.
 
     Other Parameters
     ----------------
@@ -70,6 +56,19 @@ class RamppEventDetection(BaseEventDetection):
         A list of strides provided by a stride segmentation method. The stride list is expected to have no gaps
         between subsequent strides. That means for subsequent strides the end sample of one stride should be the
         start sample of the next stride.
+
+    Examples
+    --------
+    Get gait events from single sensor signal
+
+    >>> event_detection = RamppEventDetection()
+    >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
+    >>> event_detection.stride_events_
+        s_id   start     end      ic      tc  min_vel  pre_ic
+    0      0   519.0   710.0   651.0   584.0    519.0   498.0
+    1      1   710.0   935.0   839.0   802.0    710.0   651.0
+    2      2   935.0  1183.0  1089.0  1023.0    935.0   839.0
+    ...
 
     Notes
     -----
@@ -83,7 +82,7 @@ class RamppEventDetection(BaseEventDetection):
 
     initial contact (`ic`), originally called heel strike (HS) in the paper [1]_:
         At `ic` the foot decelerates rapidly when the foot hits the ground.
-        For the detection of `ic_` only the signal between the absolute maximum and the end of the first half of the
+        For the detection of `ic` only the signal between the absolute maximum and the end of the first half of the
         gyr_ml signal is considered.
         Within this segment, `ic` is found by searching for the minimum between the point of the steepest negative
         slope and the point of the steepest positive slope in the following signal.
@@ -136,12 +135,6 @@ class RamppEventDetection(BaseEventDetection):
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
 
-    start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    tc_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    min_vel_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    pre_ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
     stride_events_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
     data: Dataset
@@ -169,19 +162,6 @@ class RamppEventDetection(BaseEventDetection):
         self
             The class instance with all result attributes populated
 
-        Examples
-        --------
-        Get gait events from single sensor signal
-
-        >>> event_detection = RamppEventDetection()
-        >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
-        >>> event_detection.stride_events_
-            s_id   start     end      ic      tc  min_vel  pre_ic
-        0      0   519.0   710.0   651.0   584.0    519.0   498.0
-        1      1   710.0   935.0   839.0   802.0    710.0   651.0
-        2      2   935.0  1183.0  1089.0  1023.0    935.0   839.0
-        ...
-
         """
         if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(segmented_stride_list):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")
@@ -201,33 +181,13 @@ class RamppEventDetection(BaseEventDetection):
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         if is_single_sensor_dataset(data):
-            (
-                self.stride_events_,
-                self.start_,
-                self.end_,
-                self.min_vel_,
-                self.pre_ic_,
-                self.ic_,
-                self.tc_,
-            ) = self._detect_single_dataset(data, segmented_stride_list, ic_search_region, min_vel_search_win_size)
+            self.stride_events_ = self._detect_single_dataset(
+                data, segmented_stride_list, ic_search_region, min_vel_search_win_size
+            )
         elif is_multi_sensor_dataset(data):
             self.stride_events_ = dict()
-            self.start_ = dict()
-            self.end_ = dict()
-            self.min_vel_ = dict()
-            self.pre_ic_ = dict()
-            self.ic_ = dict()
-            self.tc_ = dict()
             for sensor in get_multi_sensor_dataset_names(data):
-                (
-                    self.stride_events_[sensor],
-                    self.start_[sensor],
-                    self.end_[sensor],
-                    self.min_vel_[sensor],
-                    self.pre_ic_[sensor],
-                    self.ic_[sensor],
-                    self.tc_[sensor],
-                ) = self._detect_single_dataset(
+                self.stride_events_[sensor] = self._detect_single_dataset(
                     data[sensor], segmented_stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
         else:
@@ -290,15 +250,7 @@ class RamppEventDetection(BaseEventDetection):
         # re-sort columns
         stride_events_ = stride_events_[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
-        # extract single events as arrays
-        start_ = stride_events_["start"].to_numpy()
-        end_ = stride_events_["end"].to_numpy()
-        min_vel_ = stride_events_["min_vel"].to_numpy()
-        pre_ic_ = stride_events_["pre_ic"].to_numpy()
-        ic_ = stride_events_["ic"].to_numpy()
-        tc_ = stride_events_["tc"].to_numpy()
-
-        return stride_events_, start_, end_, min_vel_, pre_ic_, ic_, tc_
+        return stride_events_
 
     @staticmethod
     def _find_all_events(
