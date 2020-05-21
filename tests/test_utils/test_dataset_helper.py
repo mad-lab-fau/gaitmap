@@ -193,6 +193,10 @@ class TestIsSingleSensorStrideList:
             (["s_id", "start", "end", "gsd_id", "something_extra"], "any"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], "min_vel"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"], "min_vel"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "ic"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "ic"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "segmented"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "segmented"),
         ),
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types):
@@ -215,6 +219,22 @@ class TestIsSingleSensorStrideList:
         stride_list["min_vel"] = min_vel
 
         out = is_single_sensor_stride_list(stride_list, stride_type="min_vel")
+
+        assert out == expected
+
+    @pytest.mark.parametrize(
+        "start, ic, expected",
+        ((np.arange(10), np.arange(10), True), (np.arange(10), np.arange(10) + 1, False), ([], [], True)),
+    )
+    def test_columns_same_ic(self, start, ic, expected):
+        """Test that the column equals check for ic_strides work."""
+        min_vel_cols = ["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"]
+        stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list["s_id"] = start
+        stride_list["start"] = start
+        stride_list["ic"] = ic
+
+        out = is_single_sensor_stride_list(stride_list, stride_type="ic")
 
         assert out == expected
 
@@ -251,6 +271,8 @@ class TestIsMultiSensorStrideList:
             (["s_id", "start", "end", "gsd_id", "something_extra"], "any"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], "min_vel"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"], "min_vel"),
+            (["s_id", "start", "end", "gsd_id",  "ic", "min_vel", "tc"], "ic"),
+            (["s_id", "start", "end", "gsd_id",  "ic", "min_vel", "tc", "something_extra"], "ic"),
         ),
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types):
