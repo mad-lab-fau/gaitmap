@@ -42,8 +42,8 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data, 204.8, healthy_example_stride_borders)
 
-        snapshot.assert_match(ed.stride_events_["left_sensor"], "left", check_dtype=False)
-        snapshot.assert_match(ed.stride_events_["right_sensor"], "right", check_dtype=False)
+        snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
+        snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
 
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test to see if the algorithm is generally working on the example data when provided as dict"""
@@ -61,7 +61,7 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data_dict, 204.8, stride_list_dict)
 
-        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.stride_events_)) == dict_keys
+        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.min_vel_event_list_)) == dict_keys
 
     def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if output is similar for input dicts or regular multisensor data sets"""
@@ -82,8 +82,8 @@ class TestEventDetectionRampp:
         ed_dict = RamppEventDetection()
         ed_dict.detect(data_dict, 204.8, stride_list_dict)
 
-        assert_frame_equal(ed_df.stride_events_["left_sensor"], ed_dict.stride_events_["l"])
-        assert_frame_equal(ed_df.stride_events_["right_sensor"], ed_dict.stride_events_["r"])
+        assert_frame_equal(ed_df.min_vel_event_list_["left_sensor"], ed_dict.min_vel_event_list_["l"])
+        assert_frame_equal(ed_df.min_vel_event_list_["right_sensor"], ed_dict.min_vel_event_list_["r"])
 
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
@@ -124,8 +124,8 @@ class TestEventDetectionRampp:
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
-        # per default stride_events_ has 7 columns
-        assert_array_equal(np.array(ed.stride_events_.shape), np.array((0, 7)))
+        # per default min_vel_event_list_ has 7 columns
+        assert_array_equal(np.array(ed.min_vel_event_list_.shape), np.array((0, 7)))
 
     def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if the s_id from the stride list is correctly transferred to the output of event detection"""
@@ -138,9 +138,9 @@ class TestEventDetectionRampp:
         ed.detect(data_left, 204.8, stride_list_left)
 
         # Check that all of the old stride ids are still in the new one and that they have the correct min_vel
-        assert np.all(ed.stride_events_["s_id"].isin(stride_list_left["s_id"]))
+        assert np.all(ed.min_vel_event_list_["s_id"].isin(stride_list_left["s_id"]))
         # Old Start end, new events
-        combined = pd.merge(ed.stride_events_, stride_list_left, on="s_id")
+        combined = pd.merge(ed.min_vel_event_list_, stride_list_left, on="s_id")
         assert np.all(combined["min_vel"] < combined["end_y"])
         assert np.all(combined["min_vel"] > combined["start_y"])
 

@@ -163,7 +163,7 @@ class RamppEventDetection(BaseEventDetection):
 
     Attributes
     ----------
-    stride_events_ : A stride list or dictionary with such values
+    min_vel_event_list_ : A stride list or dictionary with such values
         ...
     start_ : 1D array or dictionary with such values
         ...
@@ -184,7 +184,7 @@ class RamppEventDetection(BaseEventDetection):
         ...
     sampling_rate_hz
         ...
-    segmented_stride_list
+    stride_list
         ...
 
     """
@@ -210,7 +210,7 @@ class RamppEventDetection(BaseEventDetection):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
-        """Find gait events in data within strides provided by segmented_stride_list.
+        """Find gait events in data within strides provided by stride_list.
 
         Parameters
         ----------
@@ -231,8 +231,8 @@ class RamppEventDetection(BaseEventDetection):
         Get gait events from single sensor signal
 
         >>> event_detection = RamppEventDetection()
-        >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
-        >>> event_detection.stride_events_
+        >>> event_detection.detect(data=data, sampling_rate_hz=204.8, stride_list=stride_list)
+        >>> event_detection.min_vel_event_list_
             s_id   start     end      ic      tc  min_vel  pre_ic
         0      0   519.0   710.0   651.0   584.0    519.0   498.0
         1      1   710.0   935.0   839.0   802.0    710.0   651.0

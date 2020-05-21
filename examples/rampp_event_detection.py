@@ -67,17 +67,24 @@ ed = ed.detect(bf_data, sampling_rate_hz, stride_list)
 # %%
 # Inspecting the results
 # ----------------------
-# The main output is the `stride_events_`, which contains the samples of initial contact (ic), terminal contact (tc),
-# and minimal velocity (min_vel).
-# Furthermore it contains start and end of each stride, which are aligned to the min_vel samples.
+# The main output is the `min_vel_event_list_`, which contains the samples of initial contact (ic), terminal contact
+# (tc), and minimal velocity (min_vel) formatted in a way that can be directly used for a stride-level trajectory
+# reconstruction.
 # The start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds to the
 # min_vel sample of the subsequent stride.
-# Furthermore, the `stride_events_` list provides the pre_ic which is the ic event of the previous stride in the
+# Furthermore, the `min_vel_event_list_` list provides the pre_ic which is the ic event of the previous stride in the
 # stride list.
 # As we passed a dataset with two sensors, the output will be a dictionary.
-stride_events_left = ed.stride_events_["left_sensor"]
-print("Gait events for {} strides were detected.".format(len(stride_events_left)))
-stride_events_left.head()
+min_vel_events_left = ed.min_vel_event_list_["left_sensor"]
+print("Gait events for {} min_vel strides were detected.".format(len(min_vel_events_left)))
+min_vel_events_left.head()
+
+# As a secondary output we get the `segmented_event_list_`, which holds the same event information than the
+# `min_vel_event_list_`, but the start and the end of each stride are unchanged compared to the input.
+# This also means that no strides are removed due to the conversion step explained below.
+segmented_events_left = ed.segmented_event_list_["left_sensor"]
+print("Gait events for {} segmented strides were detected.".format(len(segmented_events_left)))
+segmented_events_left.head()
 
 # %%
 # To get a better understanding of the results, we can plot the data and the gait events.
@@ -93,12 +100,12 @@ fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
 ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]])
 ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
 
-ic_idx = ed.stride_events_["left_sensor"]["ic"].to_numpy().astype(int)
-tc_idx = ed.stride_events_["left_sensor"]["tc"].to_numpy().astype(int)
-min_vel_idx = ed.stride_events_["left_sensor"]["min_vel"].to_numpy().astype(int)
+ic_idx = ed.min_vel_event_list_["left_sensor"]["ic"].to_numpy().astype(int)
+tc_idx = ed.min_vel_event_list_["left_sensor"]["tc"].to_numpy().astype(int)
+min_vel_idx = ed.min_vel_event_list_["left_sensor"]["min_vel"].to_numpy().astype(int)
 
 for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
-    for i, stride in ed.stride_events_["left_sensor"].iterrows():
+    for i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")
 
@@ -122,7 +129,7 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
 
     ax.grid(True)
 
-ax1.set_title("Rampp event detection result")
+ax1.set_title("Events of min_vel strides")
 ax1.set_ylabel("gyr_ml (°/s)")
 ax2.set_ylabel("acc_pa [m/s^2]")
 ax1.set_xlim(3600, 7200)
@@ -143,10 +150,10 @@ fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
 ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]])
 ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
 
-pre_ic_idx = ed.stride_events_["left_sensor"]["pre_ic"].to_numpy().astype(int)
+pre_ic_idx = ed.min_vel_event_list_["left_sensor"]["pre_ic"].to_numpy().astype(int)
 
 for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
-    for i, stride in ed.stride_events_["left_sensor"].iterrows():
+    for i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")
 
@@ -190,18 +197,18 @@ fig.tight_layout()
 fig.show()
 
 # %%
-# Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the
-# `segmented_stride_list`) are detected and the first (segmented) stride of each sequence is dropped.
-# This is required due to the shift of stride borders between the `segmented_stride_list` and the `stride_events_`.
-# Thus, the dropped first segmented_stride of a continuous sequence only provides a pre_ic and a min_vel sample for
-# the first stride in the `stride_events_`. Therefore, the `stride_events_` list has one stride less than the
-# `segmented_stride_list`.
+# Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the `stride_list`)
+# are detected and the first (segmented) stride of each sequence is dropped.
+# This is required due to the shift of stride borders between the `stride_list` and the `min_vel_event_list_`.
+# Thus, the dropped first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
+# the first stride in the `min_vel_event_list_`.
+# Therefore, the `min_vel_event_list_` list has one stride less than the `segmented_event_list_`.
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
 
 ed2 = RamppEventDetection()
 segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
 ed2.detect(
-    data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, segmented_stride_list=segmented_stride_list,
+    data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, stride_list=segmented_stride_list,
 )
 
 fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
@@ -216,12 +223,12 @@ for i, stride in segmented_stride_list.iterrows():
 
 ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][sensor_axis])
 
-ic_idx = ed2.stride_events_["ic"].to_numpy().astype(int)
-tc_idx = ed2.stride_events_["tc"].to_numpy().astype(int)
-min_vel_idx = ed2.stride_events_["min_vel"].to_numpy().astype(int)
-pre_ic_idx = ed2.stride_events_["pre_ic"].to_numpy().astype(int)
+ic_idx = ed2.min_vel_event_list_["ic"].to_numpy().astype(int)
+tc_idx = ed2.min_vel_event_list_["tc"].to_numpy().astype(int)
+min_vel_idx = ed2.min_vel_event_list_["min_vel"].to_numpy().astype(int)
+pre_ic_idx = ed2.min_vel_event_list_["pre_ic"].to_numpy().astype(int)
 
-for i, stride in ed2.stride_events_.iterrows():
+for i, stride in ed2.min_vel_event_list_.iterrows():
     ax2.axvline(stride["start"], color="g")
     ax2.axvline(stride["end"], color="r")
     ax2.axvspan(stride["start"], stride["end"], alpha=0.2)

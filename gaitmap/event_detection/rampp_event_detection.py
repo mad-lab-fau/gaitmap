@@ -43,11 +43,19 @@ class RamppEventDetection(BaseEventDetection):
 
     Attributes
     ----------
-    stride_events_ : A stride list or dictionary with such values
-        The result of the `detect` method holding all temporal gait events and start / end of all strides. Formatted
-        as pandas DataFrame. The stride borders for the stride_events are aligned with the min_vel samples. Hence,
-        the start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds
-        to the min_vel sample of the subsequent stride.
+    min_vel_event_list_ : A stride list or dictionary with such values
+        The result of the `detect` method holding all temporal gait events and start / end of all strides.
+        The stride borders for the stride_events are aligned with the min_vel samples.
+        Hence, the start sample of each stride corresponds to the min_vel sample of that stride and the end sample
+        corresponds to the min_vel sample of the subsequent stride.
+        Strides for which no valid events could be found are removed.
+        Additional strides might have been removed due to the conversion from segmented to min_vel strides.
+    segmented_event_list_ : A stride list or dictionary with such values
+        The result of the `detect` method holding all temporal gait events and start / end of all strides.
+        This version of the results has the same stride borders than the input `stride_list` and has additional columns
+        for all the detected events.
+        Strides for which no valid events could be found are removed.
+
 
     Other Parameters
     ----------------
@@ -55,7 +63,7 @@ class RamppEventDetection(BaseEventDetection):
         The data passed to the `detect` method.
     sampling_rate_hz
         The sampling rate of the data
-    segmented_stride_list
+    stride_list
         A list of strides provided by a stride segmentation method. The stride list is expected to have no gaps
         between subsequent strides. That means for subsequent strides the end sample of one stride should be the
         start sample of the next stride.
@@ -65,8 +73,8 @@ class RamppEventDetection(BaseEventDetection):
     Get gait events from single sensor signal
 
     >>> event_detection = RamppEventDetection()
-    >>> event_detection.detect(data=data, sampling_rate_hz=204.8, segmented_stride_list=stride_list)
-    >>> event_detection.stride_events_
+    >>> event_detection.detect(data=data, sampling_rate_hz=204.8, stride_list=stride_list)
+    >>> event_detection.min_vel_event_list_
         s_id   start     end      ic      tc  min_vel  pre_ic
     0      0   519.0   710.0   651.0   584.0    519.0   498.0
     1      1   710.0   935.0   839.0   802.0    710.0   651.0
@@ -103,26 +111,29 @@ class RamppEventDetection(BaseEventDetection):
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
         Also refer to the :ref:`image below <fe>`.
 
-    The :func:`~gaitmap.event_detection.RamppEventDetection.detect` method provides a stride list `stride_events_` with
-    the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
+    The :func:`~gaitmap.event_detection.RamppEventDetection.detect` method provides a stride list `min_vel_event_list`
+    with the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
     `min_vel` samples.
     The start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds to
     the min_vel sample of the subsequent stride.
-    Furthermore, the `stride_events_` list provides the `pre_ic` which is the ic event of the previous stride in the
-    stride list.
+    Furthermore, the `min_vel_event_list` list provides the `pre_ic` which is the ic event of the previous stride in
+    the stride list.
 
     The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check.
-    The gait events within one stride provided by the `segmented_stride_list` must occur in the order tc - ic - men_vel.
+    The gait events within one stride provided by the `stride_list` must occur in the expected order.
     Any stride where the gait events are detected in a different order is dropped!
+    For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
 
-    Furthermore, breaks in continuous gait sequences (with continuous subsequent strides according to the
-    `segmented_stride_list`) are detected and the first (segmented) stride of each sequence is dropped.
-    This is required due to the shift of stride borders between the `segmented_stride_list` and the `stride_events_`.
-    Thus, the dropped first segmented_stride of a continuous sequence only provides a pre_ic and a min_vel sample for
-    the first stride in the `stride_events_`. Therefore, the `stride_events_` list has one stride less than the
-    `segmented_stride_list`.
+    Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
+    continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
+    first (segmented) stride of each sequence is dropped.
+    This is required due to the shift of stride borders between the `stride_list` and the `min_vel_event_list`.
+    Thus, the first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
+    the first stride in the `min_vel_event_list`.
+    Therefore, the `min_vel_event_list` list has one stride less per gait sequence than the `segmented_stride_list`.
 
-    Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>`.
+    Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
+    different types of strides can be found :ref`here<_stride_list_guide>`.
 
     The image below gives an overview about the events and where they occur in the signal.
 
@@ -138,18 +149,19 @@ class RamppEventDetection(BaseEventDetection):
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
 
-    stride_events_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
     data: Dataset
     sampling_rate_hz: float
-    segmented_stride_list: pd.DataFrame
+    stride_list: pd.DataFrame
 
     def __init__(self, ic_search_region_ms: Tuple[float, float] = (80, 50), min_vel_search_win_size_ms: float = 100):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: StrideList) -> BaseType:
-        """Find gait events in data within strides provided by segmented_stride_list.
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, stride_list: StrideList) -> BaseType:
+        """Find gait events in data within strides provided by stride_list.
 
         Parameters
         ----------
@@ -157,7 +169,7 @@ class RamppEventDetection(BaseEventDetection):
             The data set holding the imu raw data
         sampling_rate_hz
             The sampling rate of the data
-        segmented_stride_list
+        stride_list
             A list of strides provided by a stride segmentation method
 
         Returns
@@ -166,15 +178,15 @@ class RamppEventDetection(BaseEventDetection):
             The class instance with all result attributes populated
 
         """
-        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(segmented_stride_list):
+        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(stride_list):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")
 
-        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(segmented_stride_list):
+        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(stride_list):
             raise ValueError("Provided stride list does not fit to provided multi sensor data set")
 
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
-        self.segmented_stride_list = segmented_stride_list
+        self.stride_list = stride_list
 
         ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         if all(v == 0 for v in ic_search_region):
@@ -184,14 +196,15 @@ class RamppEventDetection(BaseEventDetection):
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         if is_single_sensor_dataset(data):
-            self.stride_events_ = self._detect_single_dataset(
-                data, segmented_stride_list, ic_search_region, min_vel_search_win_size
+            self.min_vel_event_list_, self.segmented_event_list_ = self._detect_single_dataset(
+                data, stride_list, ic_search_region, min_vel_search_win_size
             )
         elif is_multi_sensor_dataset(data):
-            self.stride_events_ = dict()
+            self.min_vel_event_list_ = dict()
+            self.segmented_event_list_ = dict()
             for sensor in get_multi_sensor_dataset_names(data):
-                self.stride_events_[sensor] = self._detect_single_dataset(
-                    data[sensor], segmented_stride_list[sensor], ic_search_region, min_vel_search_win_size
+                self.min_vel_event_list_[sensor], self.segmented_event_list_[sensor] = self._detect_single_dataset(
+                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
         else:
             raise ValueError("Provided data set is not supported by gaitmap")
@@ -201,42 +214,40 @@ class RamppEventDetection(BaseEventDetection):
     def _detect_single_dataset(
         self,
         data: pd.DataFrame,
-        segmented_stride_list: pd.DataFrame,
+        stride_list: pd.DataFrame,
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
-    ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         # find events in all segments
-        ic, tc, min_vel = self._find_all_events(
-            gyr, acc, segmented_stride_list, ic_search_region, min_vel_search_win_size
-        )
+        ic, tc, min_vel = self._find_all_events(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
 
         # build first dict / df based on segment start and end
-        tmp_stride_event_dict = {
-            "s_id": segmented_stride_list["s_id"],
-            "start": segmented_stride_list["start"],
-            "end": segmented_stride_list["end"],
+        segmented_event_list = {
+            "s_id": stride_list["s_id"],
+            "start": stride_list["start"],
+            "end": stride_list["end"],
             "ic": ic,
             "tc": tc,
             "min_vel": min_vel,
         }
-        tmp_stride_event_df = pd.DataFrame(tmp_stride_event_dict)
+        segmented_event_list = pd.DataFrame(segmented_event_list)
 
         # check for consistency, remove inconsistent lines
-        tmp_stride_event_df, _ = enforce_stride_list_consistency(
-            tmp_stride_event_df, stride_type="segmented", check_stride_list=False
+        segmented_event_list, _ = enforce_stride_list_consistency(
+            segmented_event_list, stride_type="segmented", check_stride_list=False
         )
 
-        tmp_stride_event_df, _ = _segmented_stride_list_to_min_vel_single_sensor(
-            tmp_stride_event_df, target_stride_type="min_vel"
+        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
+            segmented_event_list, target_stride_type="min_vel"
         )
 
-        stride_events_ = tmp_stride_event_df[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+        min_vel_event_list = min_vel_event_list[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
-        return stride_events_
+        return min_vel_event_list, segmented_event_list
 
     @staticmethod
     def _find_all_events(
