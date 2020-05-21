@@ -256,6 +256,24 @@ Functions
     is_multi_sensor_position_list
     set_correct_index
 
+:mod:`gaitmap.utils.stride_list_conversion`: Helper to transform and filter stridelists
+=======================================================================================
+
+.. automodule:: gaitmap.utils.stride_list_conversion
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.utils.stride_list_conversion
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    convert_segmented_stride_list
+    enforce_stride_list_consistency
+
 
 :mod:`gaitmap.utils.coordinate_conversion`: Convert axes from sensor frame to body frame
 ========================================================================================

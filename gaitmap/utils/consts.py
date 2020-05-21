@@ -18,7 +18,17 @@ BF_COLS = [*BF_ACC, *BF_GYR]
 #: The minimal required columns for a stride list
 SL_COLS = ["s_id", "start", "end"]
 #: Additional Columns of a stride list depending on its type
-SL_ADDITIONAL_COLS = {"min_vel": ["pre_ic", "ic", "min_vel", "tc"]}
+SL_ADDITIONAL_COLS = {
+    "min_vel": ["pre_ic", "ic", "min_vel", "tc"],
+    "segmented": ["ic", "min_vel", "tc"],
+    "ic": ["ic", "min_vel", "tc"],
+}
+#: Expected Order of events based on the stride type
+SL_EVENT_ORDER = {
+    "segmented": ["tc", "ic", "min_vel"],
+    "min_vel": ["pre_ic", "min_vel", "tc", "ic"],
+    "ic": ["ic", "min_vel", "tc"],
+}
 
 #: The default names of the Velocity columns in the global frame
 GF_VEL = ["vel_x", "vel_y", "vel_z"]

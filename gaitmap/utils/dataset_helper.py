@@ -172,7 +172,7 @@ def is_multi_sensor_dataset(
 
 
 def is_single_sensor_stride_list(
-    stride_list: SingleSensorStrideList, stride_type: Literal["any", "min_vel"] = "any"
+    stride_list: SingleSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
@@ -180,8 +180,12 @@ def is_single_sensor_stride_list(
 
     - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
     - has only a single level column index
+    - the value of `s_id` is unique
 
-    Depending on the type of stride list, further requirements need to be fulfilled:
+    Note that this function does only check the structure and not the plausibility of the contained values.
+    For this `~gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency` can be used.
+
+    However, depending on the type of stride list, further requirements need to be fulfilled:
 
     min_vel
         A min-vel stride list describes a stride list that defines a stride from one midstance (`min_vel`) to the next.
@@ -191,6 +195,16 @@ def is_single_sensor_stride_list(
         See :mod:`~gaitmap.event_detection` for details.
         For this type of stride list it is further tested, that the "start" column is actual identical to the "min_vel"
         column.
+    segmented
+        A segmented stride list is a stride list in which every stride starts and ends between min_vel and tc.
+        For this stride list, we expect that all relevant events within each stride are already detected.
+        Hence, it is checked if columns with the name `["ic", "tc", "min_vel"]` exist.
+        If you want to check the structure of a stride list right after the segmentation, where no events are detected
+        yet use `"any"` as `stride_type`.
+    ic
+        A IC stride list is a stride list in which every stride starts and ends with a IC.
+        Regarding columns, it has the same requirements as the "segmented" stride list.
+        Additionally it is checked, if the "start" columns is actually identical to the "ic" column.
 
     Parameters
     ----------
@@ -203,6 +217,8 @@ def is_single_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_multi_sensor_stride_list: Check for multi-sensor stride lists
+    gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency: Remove strides that do not have the correct
+        event order
 
     """
     if not isinstance(stride_list, pd.DataFrame):
@@ -215,7 +231,7 @@ def is_single_sensor_stride_list(
 
     # Depending of the stridetype check additional conditions
     additional_columns = SL_ADDITIONAL_COLS
-    start_event = {"min_vel": "min_vel"}
+    start_event = {"min_vel": "min_vel", "ic": "ic"}
 
     # Check columns exist
     if stride_type != "any" and stride_type not in additional_columns:
@@ -263,6 +279,8 @@ def is_multi_sensor_stride_list(
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_stride_list: Check for multi-sensor stride lists
+    gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency: Remove strides that do not have the correct
+        event order
 
     """
     if not isinstance(stride_list, dict):
