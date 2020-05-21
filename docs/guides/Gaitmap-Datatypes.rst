@@ -130,6 +130,8 @@ The sensor names can be chosen arbitrarily.
 For the future, methods are planned that make active use of multiple sensors at the same time.
 These might handle multi-sensor input differently.
 
+.. _stride_list_guide:
+
 Stride Lists
 ============
 

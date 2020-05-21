@@ -14,7 +14,24 @@ from gaitmap.utils.dataset_helper import (
 
 
 def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: Literal["min_vel", "ic"]) -> StrideList:
+    """Convert a segmented stride list with detected events into other types of stride lists.
 
+    During the conversion some strides might be removed.
+    For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.
+
+    Parameters
+    ----------
+    stride_list
+        Stride list to be converted
+    target_stride_type
+        The stride list type that should be converted to
+
+    Returns
+    -------
+    converted_stride_list
+        Stride list in the new format
+
+    """
     if is_single_sensor_stride_list(stride_list, stride_type="segmented"):
         return _segmented_stride_list_to_min_vel_single_sensor(stride_list, target_stride_type=target_stride_type)[0]
     if is_multi_sensor_stride_list(stride_list, stride_type="segmented"):
@@ -28,6 +45,29 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
 def _segmented_stride_list_to_min_vel_single_sensor(
     stride_list: SingleSensorStrideList, target_stride_type: Literal["min_vel", "ic"]
 ) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
+    """Convert a segmented stride list with detected events into other types of stride lists.
+
+    During the conversion some strides might be removed.
+    For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.
+
+    Note, this function does not check if the input is a proper stride list.
+
+    Parameters
+    ----------
+    stride_list
+        Stride list to be converted
+    target_stride_type
+        The stride list type that should be converted to
+
+    Returns
+    -------
+    converted_stride_list
+        Stride list in the new format
+    removed_strides
+        Strides that were removed during the conversion.
+        This stride list is still in the input format.
+
+    """
     converted_stride_list = stride_list.copy()
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
