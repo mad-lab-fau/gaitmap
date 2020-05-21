@@ -44,6 +44,8 @@ class TestEventDetectionRampp:
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
+        snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
+        snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
 
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test to see if the algorithm is generally working on the example data when provided as dict"""
@@ -62,6 +64,7 @@ class TestEventDetectionRampp:
         ed.detect(data_dict, 204.8, stride_list_dict)
 
         assert list(dataset_helper.get_multi_sensor_dataset_names(ed.min_vel_event_list_)) == dict_keys
+        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.segmented_event_list_)) == dict_keys
 
     def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if output is similar for input dicts or regular multisensor data sets"""
@@ -125,7 +128,9 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
         # per default min_vel_event_list_ has 7 columns
-        assert_array_equal(np.array(ed.min_vel_event_list_.shape), np.array((0, 7)))
+        assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 7)
+        # per default segmented_event_list_ has 6 columns
+        assert_array_equal(np.array(ed.segmented_event_list_.shape[1]), 6)
 
     def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if the s_id from the stride list is correctly transferred to the output of event detection"""
@@ -137,12 +142,17 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
 
-        # Check that all of the old stride ids are still in the new one and that they have the correct min_vel
+        # Check that all of the old stride ids are still in the new one
         assert np.all(ed.min_vel_event_list_["s_id"].isin(stride_list_left["s_id"]))
-        # Old Start end, new events
+        assert np.all(ed.segmented_event_list_["s_id"].isin(stride_list_left["s_id"]))
+        # The new start should be inside the old stride
         combined = pd.merge(ed.min_vel_event_list_, stride_list_left, on="s_id")
         assert np.all(combined["min_vel"] < combined["end_y"])
         assert np.all(combined["min_vel"] > combined["start_y"])
+        # The new starts and ends should be identical to the old ones
+        combined = pd.merge(ed.segmented_event_list_, stride_list_left, on="s_id")
+        assert np.all(combined["start_x"] == combined["start_y"])
+        assert np.all(combined["end_x"] == combined["end_y"])
 
     def test_single_data_multi_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test correct error for combination of single sensor data set and multi sensor stride list"""
