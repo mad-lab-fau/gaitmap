@@ -271,8 +271,8 @@ class TestIsMultiSensorStrideList:
             (["s_id", "start", "end", "gsd_id", "something_extra"], "any"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], "min_vel"),
             (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"], "min_vel"),
-            (["s_id", "start", "end", "gsd_id",  "ic", "min_vel", "tc"], "ic"),
-            (["s_id", "start", "end", "gsd_id",  "ic", "min_vel", "tc", "something_extra"], "ic"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "ic"),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "ic"),
         ),
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types):
