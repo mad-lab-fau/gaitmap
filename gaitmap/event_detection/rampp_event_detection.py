@@ -6,10 +6,6 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
-from gaitmap.utils.stride_list_conversion import (
-    enforce_stride_list_consistency,
-    _segmented_stride_list_to_min_vel_single_sensor,
-)
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
@@ -20,6 +16,10 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     Dataset,
     get_multi_sensor_dataset_names,
+)
+from gaitmap.utils.stride_list_conversion import (
+    enforce_stride_list_consistency,
+    _segmented_stride_list_to_min_vel_single_sensor,
 )
 
 
@@ -317,4 +317,3 @@ def _detect_ic(
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
     return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
-

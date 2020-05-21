@@ -8,7 +8,6 @@ from gaitmap.base import BaseType
 from gaitmap.event_detection.rampp_event_detection import (
     RamppEventDetection,
     _detect_min_vel,
-    _find_breaks_in_stride_list,
 )
 from gaitmap.utils import coordinate_conversion, dataset_helper
 from gaitmap.utils.consts import BF_COLS
@@ -137,12 +136,13 @@ class TestEventDetectionRampp:
         stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
         ed = RamppEventDetection()
         ed.detect(data_left, 204.8, stride_list_left)
-        # find breaks in segmented strides and drop first strides of new sequences
-        stride_list_left.rename(columns={"start": "seg_start", "end": "seg_end"}, inplace=True)
-        stride_list_breaks = _find_breaks_in_stride_list(stride_list_left)
-        stride_list_left = stride_list_left.drop(stride_list_left.index[stride_list_breaks])
-        # the s_ids of the event detection and the stride list should be identical (except for the last entry)
-        assert_array_equal(np.array(ed.stride_events_["s_id"]), np.array(stride_list_left["s_id"])[:-1])
+
+        # Check that all of the old stride ids are still in the new one and that they have the correct min_vel
+        assert np.all(ed.stride_events_["s_id"].isin(stride_list_left["s_id"]))
+        # Old Start end, new events
+        combined = pd.merge(ed.stride_events_, stride_list_left, on="s_id")
+        assert np.all(combined["min_vel"] < combined["end_y"])
+        assert np.all(combined["min_vel"] > combined["start_y"])
 
     def test_single_data_multi_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test correct error for combination of single sensor data set and multi sensor stride list"""
