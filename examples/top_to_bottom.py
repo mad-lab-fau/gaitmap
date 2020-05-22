@@ -97,14 +97,10 @@ p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=sampling_r
 
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 
-stride_event_list = ed.stride_events_
-positions = trajectory.position_
-orientations = trajectory.orientation_
-
 p = SpatialParameterCalculation()
 p = p.calculate(
-    stride_event_list=stride_event_list,
-    positions=positions,
-    orientations=orientations,
+    stride_event_list=ed.stride_events_,
+    positions=trajectory.position_,
+    orientations=trajectory.orientation_,
     sampling_rate_hz=sampling_rate_hz,
 )
