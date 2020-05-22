@@ -77,3 +77,12 @@ ed = ed.detect(bf_data, sampling_rate_hz, dtw.stride_list_)
 stride_events_left = ed.stride_events_["left_sensor"]
 print("Gait events for {} strides were detected.".format(len(stride_events_left)))
 stride_events_left.head()
+
+# trajectory reconstruction
+from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration, StrideLevelTrajectory
+
+ori_method = SimpleGyroIntegration()
+pos_method = ForwardBackwardIntegration()
+trajectory = StrideLevelTrajectory(ori_method, pos_method)
+
+trajectory.estimate(dataset_sf, ed.stride_events_, sampling_rate_hz)
