@@ -13,6 +13,7 @@ from gaitmap.utils.dataset_helper import (
 )
 from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
 from gaitmap.utils.static_moment_detection import find_static_sequences
+from gaitmap.utils.vector_math import normalize
 
 
 def align_dataset_to_gravity(
@@ -129,16 +130,16 @@ def _get_static_acc_vector(
     return np.median(data[SF_ACC].to_numpy()[static_indices], axis=0)
 
 
-def get_xy_alignment_from_gyro(
+def align_heading_of_sensors(
     gyro_signal_sensor: np.ndarray, gyro_signal_ref: np.ndarray, movement_threshold: float = 150,
 ) -> Rotation:
-    """Align multiple sensors attached to the same rigid body in the xy-plane.
+    """Align the heading (rotation in the ground plane) of multiple sensors attached to the same rigid body.
 
-    This function can be used to find relative xy-rotation of two sensors attached to the same body segment.
+    This function can be used to find relative heading of two sensors attached to the same body segment.
     It is assumed, that they are already aligned so that the gravity vector aligns with the z-axis.
-    To find the alignment in the xy-plane it is assumed that both sensors measure roughly the same angular velocity.
+    To find the alignment in the ground-plane it is assumed that both sensors measure roughly the same angular velocity.
     Then the optimal rotation around the gravity axis is determined to align both measurements.
-    This rotation is the median angle between the gyroscope vectors in the xy-plane.
+    This rotation is the median angle between the gyroscope vectors in the ground-plane.
     As this angle can vary highly for small values due to noise, the `movement_threshold` is used to select only active
     regions of the signal for the comparison.
 
@@ -154,25 +155,25 @@ def get_xy_alignment_from_gyro(
 
     Returns
     -------
-    xy-Rotation
+    relative_heading
         The required rotation to align the sensor to the reference
 
     Notes
     -----
     This function could be used to rotate multiple sensors attached to the same foot in a common reference coordinate
     system to compare the raw signal values.
-    In a 2 step process, one could first align all signals to gravity and then apply `get_xy_alignment_from_gyro` to
+    In a 2 step process, one could first align all signals to gravity and then apply `align_heading_of_sensors` to
     find the missing rotation in the xy-plane.
 
     """
-    gravity = np.array([0, 0, 1])
+    gravity = normalize(GRAV_VEC)
 
-    ref_mag = np.sqrt(gyro_signal_ref[:, 0] ** 2 + gyro_signal_ref[:, 1] ** 2)
-    sensor_mag = np.sqrt(gyro_signal_sensor[:, 0] ** 2 + gyro_signal_sensor[:, 1] ** 2)
+    reference_magnitude = np.sqrt(gyro_signal_ref[:, 0] ** 2 + gyro_signal_ref[:, 1] ** 2)
+    sensor_magnitude = np.sqrt(gyro_signal_sensor[:, 0] ** 2 + gyro_signal_sensor[:, 1] ** 2)
 
     angle_diff = find_signed_3d_angle(gyro_signal_ref[:, :2], gyro_signal_sensor[:, :2], gravity)
 
-    mags = np.max(np.stack([ref_mag, sensor_mag]), axis=0)
+    mags = np.max(np.stack([reference_magnitude, sensor_magnitude]), axis=0)
     angle_diff = angle_diff.T[(mags > movement_threshold)].T
 
     angle_diff = np.unwrap(angle_diff)

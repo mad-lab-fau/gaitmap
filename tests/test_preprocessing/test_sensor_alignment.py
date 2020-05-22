@@ -4,7 +4,7 @@ import pytest
 from numpy.linalg import norm
 from numpy.testing import assert_almost_equal
 
-from gaitmap.preprocessing.sensor_alignment import align_dataset_to_gravity, get_xy_alignment_from_gyro
+from gaitmap.preprocessing.sensor_alignment import align_dataset_to_gravity, align_heading_of_sensors
 from gaitmap.utils.consts import SF_ACC, SF_COLS
 from gaitmap.utils.dataset_helper import MultiSensorDataset
 from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
@@ -81,7 +81,7 @@ class TestXYAlignment:
     def test_xy_alignment_simple(self, angle):
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
-        rot = get_xy_alignment_from_gyro(signal, rot_signal)
+        rot = align_heading_of_sensors(signal, rot_signal)
         rotvec = rot.as_rotvec()
 
         assert_almost_equal(np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]), -angle)
@@ -92,7 +92,7 @@ class TestXYAlignment:
     def test_xy_alignment_dummy(self,):
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), 0).apply(signal)
-        rot = get_xy_alignment_from_gyro(signal, rot_signal)
+        rot = align_heading_of_sensors(signal, rot_signal)
         rotvec = rot.as_rotvec()
 
         assert_almost_equal(rotvec, [0, 0, 0])
@@ -104,7 +104,7 @@ class TestXYAlignment:
 
         noise = np.random.normal(scale=5, size=(500, 3))
 
-        rot = get_xy_alignment_from_gyro(signal, rot_signal + noise)
+        rot = align_heading_of_sensors(signal, rot_signal + noise)
         rotvec = rot.as_rotvec()
 
         angle_error = ((np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]) - -angle) + 180) % 360 - 180

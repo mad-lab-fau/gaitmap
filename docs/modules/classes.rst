@@ -47,7 +47,7 @@ Functions
    :template: function.rst
 
     align_dataset_to_gravity
-    get_xy_alignment_from_gyro
+    align_heading_of_sensors
 
 
 :mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
