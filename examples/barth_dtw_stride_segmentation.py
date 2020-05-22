@@ -52,7 +52,7 @@ plt.show()
 # The template only makes use of the gyro information.
 # Further, if you use this template in the DTW, your data is expected to be in the gaitmap BF to be able to use the
 # same template for the left and the right foot.
-# Therefore, we need to transform the our dataset into the body frame.
+# Therefore, we need to transform the dataset into the body frame.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
 # We use the `..._like` parameters to identify the data of the left and the right foot based on the name of the sensor.

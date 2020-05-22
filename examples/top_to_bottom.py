@@ -6,9 +6,6 @@ This example illustrates the whole top-to-bottom pipeline:
 preprocessing -> DTW -> EventDetection -> TrajectoryReconstruction -> ParameterEstimation
 """
 
-import matplotlib.pyplot as plt
-from gaitmap.utils.consts import SF_GYR, SF_ACC
-
 # Getting some example data
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
 
@@ -37,6 +34,16 @@ dataset_sf = rotate_dataset(example_dataset, rotations)
 # %%
 # Align to Gravity
 
+import matplotlib.pyplot as plt
 from gaitmap.preprocessing import sensor_alignment
 
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
+
+# %%
+# DTW
+
+np.random.seed(0)
+
+from gaitmap.utils.coordinate_conversion import convert_to_fbf
+
+bf_data = convert_to_fbf(example_dataset, left_like="left_", right_like="right_")
