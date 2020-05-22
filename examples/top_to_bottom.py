@@ -47,3 +47,19 @@ np.random.seed(0)
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
 bf_data = convert_to_fbf(example_dataset, left_like="left_", right_like="right_")
+
+from gaitmap.stride_segmentation import BarthDtw
+
+dtw = BarthDtw()
+
+# Apply the dtw to the data
+dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
+
+# %%
+# Inspecting the results
+# ----------------------
+# The main output is the `stride_list_`, which contains the start and the end of all identified strides.
+# As we passed a dataset with two sensors, the output will be a dictionary.
+stride_list_left = dtw.stride_list_["left_sensor"]
+print("{} strides were detected.".format(len(stride_list_left)))
+stride_list_left.head()
