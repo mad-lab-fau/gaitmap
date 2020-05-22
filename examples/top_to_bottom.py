@@ -86,3 +86,11 @@ pos_method = ForwardBackwardIntegration()
 trajectory = StrideLevelTrajectory(ori_method, pos_method)
 
 trajectory.estimate(dataset_sf, ed.stride_events_, sampling_rate_hz)
+
+# %%
+# Temporal parameter calculation
+
+from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
+
+p = TemporalParameterCalculation()
+p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=204.8)
