@@ -46,7 +46,7 @@ np.random.seed(0)
 
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
-bf_data = convert_to_fbf(example_dataset, left_like="left_", right_like="right_")
+bf_data = convert_to_fbf(dataset_sf_aligned_to_gravity, left_like="left_", right_like="right_")
 
 from gaitmap.stride_segmentation import BarthDtw
 
@@ -63,3 +63,16 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 stride_list_left = dtw.stride_list_["left_sensor"]
 print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left.head()
+
+# %%
+# Applying the event detection
+
+from gaitmap.event_detection import RamppEventDetection
+
+ed = RamppEventDetection()
+# apply the event detection to the data
+ed = ed.detect(bf_data, sampling_rate_hz, dtw.stride_list_)
+
+stride_events_left = ed.stride_events_["left_sensor"]
+print("Gait events for {} strides were detected.".format(len(stride_events_left)))
+stride_events_left.head()
