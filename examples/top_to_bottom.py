@@ -93,4 +93,21 @@ trajectory.estimate(dataset_sf, ed.stride_events_, sampling_rate_hz)
 from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 
 p = TemporalParameterCalculation()
-p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=204.8)
+p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=sampling_rate_hz)
+
+# %%
+# spatial parameter calculation
+
+from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
+
+stride_event_list = ed.stride_events_
+positions = trajectory.position_
+orientations = trajectory.orientation_
+
+p = SpatialParameterCalculation()
+p = p.calculate(
+    stride_event_list=stride_event_list,
+    positions=positions,
+    orientations=orientations,
+    sampling_rate_hz=sampling_rate_hz,
+)
