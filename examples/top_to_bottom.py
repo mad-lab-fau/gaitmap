@@ -6,6 +6,9 @@ This example illustrates the whole top-to-bottom pipeline:
 preprocessing -> DTW -> EventDetection -> TrajectoryReconstruction -> ParameterEstimation
 """
 
+# %%
+# Preprocessing
+# ----------------------
 # Getting raw and not-rotated example data
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
 
@@ -28,18 +31,17 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
 )
 
 rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
-
 dataset_sf = rotate_dataset(example_dataset, rotations)
 
-# %%
-# Align to Gravity
 
+# Align to Gravity
 from gaitmap.preprocessing import sensor_alignment
 
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
 
 # %%
 # DTW
+# ----------------------
 
 np.random.seed(0)
 
@@ -55,16 +57,8 @@ dtw = BarthDtw()
 dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 # %%
-# Inspecting the results
+# Event detection
 # ----------------------
-# The main output is the `stride_list_`, which contains the start and the end of all identified strides.
-# As we passed a dataset with two sensors, the output will be a dictionary.
-stride_list_left = dtw.stride_list_["left_sensor"]
-print("{} strides were detected.".format(len(stride_list_left)))
-stride_list_left.head()
-
-# %%
-# Applying the event detection
 
 from gaitmap.event_detection import RamppEventDetection
 
@@ -77,7 +71,9 @@ stride_events_left = ed.stride_events_["left_sensor"]
 print("Gait events for {} strides were detected.".format(len(stride_events_left)))
 stride_events_left.head()
 
-# trajectory reconstruction
+# Trajectory Reconstruction
+# ----------------------
+
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration, StrideLevelTrajectory
 
 ori_method = SimpleGyroIntegration()
@@ -88,6 +84,7 @@ trajectory.estimate(dataset_sf, ed.stride_events_, sampling_rate_hz)
 
 # %%
 # Temporal parameter calculation
+# ----------------------
 
 from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 
@@ -96,6 +93,7 @@ p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=sampling_r
 
 # %%
 # spatial parameter calculation
+# ----------------------
 
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 
