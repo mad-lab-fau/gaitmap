@@ -411,3 +411,42 @@ def angle_diff(a: Union[float, np.ndarray], b: Union[float, np.ndarray]) -> Unio
     diff = a - b
     diff = (diff + np.pi) % (2 * np.pi) - np.pi
     return diff
+
+
+def find_signed_3d_angle(v1: np.ndarray, v2: np.ndarray, rotation_axis: np.ndarray) -> Union[float, np.ndarray]:
+    """Find the signed angle (in rad) between two 3D vectors.
+
+    Signed means that the angle varies between -180 and 180 deg (or rather -pi and pi)
+    This implementation uses acrtan2 to calculate the angle.
+
+    Parameters
+    ----------
+    v1
+        2D or 3D vector or series of vectors
+    v2
+        2D or 3D vector or series of vectors
+    rotation_axis
+        Axis the rotation is performed around. The direction of this axis also indicates the sign of the angle
+
+    """
+    v1 = normalize(v1)
+    v2 = normalize(v2)
+
+    single = False
+    if v1.ndim == 1:
+        single = True
+
+    v1 = np.atleast_2d(v1)
+    v2 = np.broadcast_to(v2, v1.shape)
+    # If on of the vectors is a 2D vector instead of a 3D vector, add a 0 as z-value
+    if v1.shape[-1] == 2:
+        v1 = np.pad(v1, ((0, 0), (0, 1)), mode="constant", constant_values=0)
+    if v2.shape[-1] == 2:
+        v2 = np.pad(v2, ((0, 0), (0, 1)), mode="constant", constant_values=0)
+
+    rotation_axis = normalize(rotation_axis)
+
+    angle = np.arctan2(np.sum(np.cross(v1, v2) * rotation_axis, axis=-1), np.sum(v1 * v2, axis=-1))
+    if single:
+        return angle[0]
+    return angle

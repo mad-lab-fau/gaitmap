@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
@@ -12,6 +14,12 @@ from gaitmap.example_data import (
     get_healthy_example_position,
 )
 from tests._regression_utils import PyTestSnapshotTest
+
+
+@pytest.fixture(autouse=True)
+def reset_random_seed():
+    np.random.seed(10)
+    random.seed(10)
 
 
 @pytest.fixture
