@@ -9,6 +9,7 @@ preprocessing -> DTW -> EventDetection -> TrajectoryReconstruction -> ParameterE
 # %%
 # Preprocessing
 # ----------------------
+
 # Getting raw and not-rotated example data
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
 
@@ -71,6 +72,7 @@ stride_events_left = ed.stride_events_["left_sensor"]
 print("Gait events for {} strides were detected.".format(len(stride_events_left)))
 stride_events_left.head()
 
+# %%
 # Trajectory Reconstruction
 # ----------------------
 
