@@ -73,6 +73,7 @@ ed = RamppEventDetection()
 # apply the event detection to the data
 ed = ed.detect(bf_data, sampling_rate_hz, dtw.stride_list_)
 
+# printing some results
 stride_events_left = ed.stride_events_["left_sensor"]
 print("Gait events for {} strides were detected.".format(len(stride_events_left)))
 stride_events_left.head()
