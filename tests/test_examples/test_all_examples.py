@@ -67,3 +67,11 @@ def test_json_example(snapshot):
     snapshot.assert_match(json_str)
 
     compare_algo_objects(slt, loaded_slt)
+
+
+def test_trajectory_reconstruction(snapshot):
+    from examples.trajectory_reconstruction import trajectory
+
+    # just look at last values to see if final result is correct and save runtime
+    snapshot.assert_match(trajectory.position_["left_sensor"].tail(20))
+    snapshot.assert_match(trajectory.orientation_["left_sensor"].tail(20))
