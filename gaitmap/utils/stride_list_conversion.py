@@ -92,14 +92,14 @@ def _segmented_stride_list_to_min_vel_single_sensor(
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
     breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0
 
-    # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
-    converted_stride_list = converted_stride_list.dropna(how="any")
-
     # drop unneeded tmp columns
     converted_stride_list = converted_stride_list.drop(["old_start", "old_end"], axis=1)
 
     # Remove the last stride of each gait sequence as its end value is already part of the next gait sequence
     converted_stride_list = converted_stride_list[~breaks]
+
+    # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
+    converted_stride_list = converted_stride_list.dropna(how="any")
 
     return converted_stride_list, stride_list[~stride_list["s_id"].isin(converted_stride_list["s_id"])]
 
