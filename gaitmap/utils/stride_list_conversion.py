@@ -89,11 +89,11 @@ def _segmented_stride_list_to_min_vel_single_sensor(
         # As the ic occurs after the tc in the segmented stride, new tc is the tc of the next stride
         converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
-    # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
-    converted_stride_list = converted_stride_list.dropna(how="any")
-
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
     breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0
+
+    # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
+    converted_stride_list = converted_stride_list.dropna(how="any")
 
     # drop unneeded tmp columns
     converted_stride_list = converted_stride_list.drop(["old_start", "old_end"], axis=1)

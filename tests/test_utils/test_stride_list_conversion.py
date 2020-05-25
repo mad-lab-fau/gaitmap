@@ -94,9 +94,25 @@ class TestConvertSegmentedStrideList:
         assert np.all(converted["start"] == converted[target])
         # We drop two strides, one at the end of both sequences
         assert len(dropped) == 2
+        assert list(dropped.index) == [4, 9]
         # check consistency
         _, tmp = enforce_stride_list_consistency(converted, stride_type=target)
         assert len(tmp) == 0
+        # Check that the length of all strides is still 1
+        assert np.all((converted["end"] - converted["start"]).round(2) == 1.)
+
+    def test_second_to_last_stride_is_break(self):
+        """Test an edge case where there is a break right before the last stride."""
+        stride_list = self._create_example_stride_list_with_pause()
+        # Drop the second to last stride to create a pause
+        stride_list = stride_list.drop(8)
+        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(stride_list, "min_vel")
+
+        # Check that the length of all strides is still 1
+        assert np.all((converted["end"] - converted["start"]).round(2) == 1.)
+        # We should have dropped 3 strides
+        assert len(dropped) == 3
+        assert list(dropped.index) == [4, 7, 9]
 
     @pytest.mark.parametrize("target", ("ic", "min_vel"))
     def test_simple_conversion_multiple(self, target):
