@@ -99,7 +99,7 @@ class TestConvertSegmentedStrideList:
         _, tmp = enforce_stride_list_consistency(converted, stride_type=target)
         assert len(tmp) == 0
         # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.)
+        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
 
     def test_second_to_last_stride_is_break(self):
         """Test an edge case where there is a break right before the last stride."""
@@ -109,7 +109,7 @@ class TestConvertSegmentedStrideList:
         converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(stride_list, "min_vel")
 
         # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.)
+        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
         # We should have dropped 3 strides
         assert len(dropped) == 3
         assert list(dropped.index) == [4, 7, 9]
