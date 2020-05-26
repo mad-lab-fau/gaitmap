@@ -83,6 +83,20 @@ class TestIODataStructures:
         snapshot.assert_match(instance.orientation_.loc[first_last_stride], "ori")
         snapshot.assert_match(instance.position_.loc[first_last_stride], "pos")
 
+    def test_single_sensor_output_empty_stride_list(
+        self, healthy_example_imu_data, healthy_example_stride_events,
+    ):
+        empty_stride_events = pd.DataFrame(columns=healthy_example_stride_events["left_sensor"].columns)
+        test_data = healthy_example_imu_data["left_sensor"]
+
+        instance = StrideLevelTrajectory()
+        instance.estimate(test_data, empty_stride_events, 204.8)
+
+        assert is_single_sensor_orientation_list(instance.orientation_)
+        assert is_single_sensor_position_list(instance.position_)
+        assert len(instance.orientation_) == 0
+        assert len(instance.position_) == 0
+
     def test_multi_sensor_output(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
         test_stride_events = healthy_example_stride_events
         test_data = healthy_example_imu_data

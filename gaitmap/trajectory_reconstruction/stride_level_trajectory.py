@@ -193,6 +193,13 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         rotation = dict()
         velocity = dict()
         position = dict()
+        if len(event_list) == 0:
+            index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=["s_id", "sample"])
+            return (
+                pd.DataFrame(columns=GF_ORI, index=index.copy()),
+                pd.DataFrame(columns=GF_VEL, index=index.copy()),
+                pd.DataFrame(columns=GF_POS, index=index.copy()),
+            )
         for _, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_rotation, i_velocity, i_position = self._estimate_stride(data, i_start, i_end)
