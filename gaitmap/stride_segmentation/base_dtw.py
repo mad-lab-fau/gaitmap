@@ -360,10 +360,13 @@ class BaseDtw(BaseStrideSegmentation):
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
         # Calculate cost matrix
-        acc_cost_mat_ = subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+        acc_cost_mat_ = self._calculate_cost_matrix(template, matching_data)
 
-        matches = find_matches_method(
-            acc_cost_mat=acc_cost_mat_, max_cost=self.max_cost, min_distance=self._min_sequence_length
+        matches = self._find_matches(
+            acc_cost_mat=acc_cost_mat_,
+            max_cost=self.max_cost,
+            min_sequence_length=self._min_sequence_length,
+            find_matches_method=find_matches_method,
         )
         if len(matches) == 0:
             paths_ = []
@@ -383,6 +386,12 @@ class BaseDtw(BaseStrideSegmentation):
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
             # TODO: Add warning in case there are still overlapping matches after the conflict resolution
         return acc_cost_mat_, paths_, costs_, matches_start_end_
+
+    def _calculate_cost_matrix(self, template, matching_data):  # noqa: no-self-use
+        return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+
+    def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
+        return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
 
     def _postprocess_matches(
         self,
