@@ -151,6 +151,13 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             s_1d = np.array(data[self.sensor_channel_config])
             s_1d = s_1d - np.mean(s_1d, axis=0)
 
+        # lowpass filter the signal
+        # TODO this is now happening before the windowing and thus before the active signal detection. Does this
+        #  change the results?
+        lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
+        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+
+
         # sliding windows
         overlap = int(window_size / 2)
         s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
@@ -165,7 +172,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         row_idx = 0
         for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
 
-            if self._ullrich_gsd_algorithm(row_norm, row_s_1d, fft_factor, active_signal_th):
+            if self._ullrich_gsd_algorithm(row_s_1d, fft_factor, lp_freq_hz):
                 gait_sequences_dict["start"].append(row_idx * overlap)
                 gait_sequences_dict["end"].append(row_idx * overlap + window_size)
 
@@ -179,14 +186,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         return gait_sequences_, start_, end_
 
-    def _ullrich_gsd_algorithm(self, s_3d_norm, s_1d, fft_factor, active_signal_th):
+    def _ullrich_gsd_algorithm(self, s_1d, fft_factor, lp_freq_hz):
         """Apply the actual algorithm with the single processing steps."""
         gait_sequence_flag = True
-
-        # lowpass filtering
-        # TODO filter before windowing
-        lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
-        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
 
         # apply FFT
         frq_axis, f_s_1d = _my_fft(s_1d, self.sampling_rate_hz)
