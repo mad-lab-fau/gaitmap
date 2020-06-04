@@ -169,19 +169,19 @@ def find_extrema_in_radius(
     Parameters
     ----------
     data : 1D array
-        Data used to find the minima
+        Data used to find the extrema
     indices : 1D array of ints
-        Around each index the minima is searched in the region defined by radius
+        Around each index the extremum is searched in the region defined by radius
     radius
         The number of samples to the left and the right that are considered for the search.
         The final search window has the length 2 * radius + 1
     extrema_type
-        If the minima or maxima of the data is searched.
+        If the minima or maxima of the data are searched.
 
     Returns
     -------
     list_of_extrema_indices
-        Array of the position of each identified extrema
+        Array of the position of each identified extremum
 
     """
     extrema_funcs = {"min": np.nanargmin, "max": np.nanargmax}
