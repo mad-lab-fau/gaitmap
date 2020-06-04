@@ -157,7 +157,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
         s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
 
-
         # sliding windows
         overlap = int(window_size / 2)
         s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
@@ -168,6 +167,18 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         active_signal_mask = np.mean(s_3d_norm, axis=1) > active_signal_th
         s_3d_norm = s_3d_norm[active_signal_mask, :]
         s_1d = s_1d[active_signal_mask, :]
+
+        # dominant frequency via autocorrelation
+        # set upper and lower motion band boundaries
+        # TODO expose upper and lower bound as hidden parameters
+        lower_bound = int(np.floor(self.sampling_rate_hz / 3))  # (=102.4 Hz / 3 Hz = upper bound of locomotor band)
+        upper_bound = int(np.ceil(self.sampling_rate_hz / 0.5))  # (=102.4 Hz / 0.5 Hz = lower bound of locomotor band)
+        # autocorr from 0-upper motion band
+        auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
+        # calculate dominant frequency in Hz
+        dominant_frequency = (
+            1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
+        )
 
         row_idx = 0
         for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
@@ -194,17 +205,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         frq_axis, f_s_1d = _my_fft(s_1d, self.sampling_rate_hz)
         f_s_1d = f_s_1d * fft_factor
 
-        # find dominant frequency
-        dominant_frq = _autocorr(s_1d, frq_axis, self.sampling_rate_hz)
-
         if dominant_frq < 0.5:
             gait_sequence_flag = False
         else:
             # apply peak detection: peaks should be higher than mean of f_s_1d
             min_height = np.mean(f_s_1d[frq_axis <= lp_freq_hz])
-            peaks, _ = find_peaks(
-                f_s_1d[frq_axis <= lp_freq_hz], height=min_height, prominence=self.peak_prominence
-            )
+            peaks, _ = find_peaks(f_s_1d[frq_axis <= lp_freq_hz], height=min_height, prominence=self.peak_prominence)
             # find index of dominant frq on frq_axis
             dominant_frq_idx = np.where(frq_axis == dominant_frq)[0]
 
@@ -303,3 +309,13 @@ def _autocorr(x, frq_axis, sampling_rate_hz):
     dominant_frequency = frq_axis[(np.abs(frq_axis - dominant_frequency)).argmin()]
 
     return dominant_frequency
+
+
+@njit(nogil=True, parallel=True, cache=True)
+def _row_wise_autocorrelation(array, lag_max):
+    out = np.empty((array.shape[0], lag_max + 1))
+    for tau in range(lag_max + 1):
+        tmax = array.shape[1] - tau
+        umax = array.shape[1] + tau
+        out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
+    return out
