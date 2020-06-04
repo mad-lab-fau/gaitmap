@@ -4,11 +4,14 @@ from typing import Optional, Tuple, Union, Dict
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
+from scipy.fft import rfft
 
-from scipy.signal import butter, lfilter, find_peaks
+from scipy.signal import butter, lfilter, find_peaks, peak_prominences
+
+from numba import njit
 
 from gaitmap.base import BaseGaitDetection, BaseType
-from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
@@ -163,9 +166,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         s_1d = sliding_window_view(s_1d, window_size, overlap)
 
         # active signal detection
-        # create boolean mask
+        # create boolean mask based on s_3d_norm
         active_signal_mask = np.mean(s_3d_norm, axis=1) > active_signal_th
-        s_3d_norm = s_3d_norm[active_signal_mask, :]
+        # only keep those rows with active signal
         s_1d = s_1d[active_signal_mask, :]
 
         # dominant frequency via autocorrelation
@@ -180,18 +183,60 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
         )
 
-        row_idx = 0
-        for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
+        # determine harmonics candidates
+        harmonics_candidates = np.outer(dominant_frequency, np.arange(2, 6))
 
-            if self._ullrich_gsd_algorithm(row_s_1d, fft_factor, lp_freq_hz):
-                gait_sequences_dict["start"].append(row_idx * overlap)
-                gait_sequences_dict["end"].append(row_idx * overlap + window_size)
+        # compute the row-wise fft of the windowed signal
+        f_s_1d = np.abs(rfft(s_1d)/window_size)
 
-            row_idx = row_idx + 1
+        # Distance on the fft freq axis
+        freq_axis_delta = self.sampling_rate_hz / 2 / f_s_1d.shape[1]
 
-        gait_sequences_ = pd.DataFrame(gait_sequences_dict)
-        start_ = np.array(gait_sequences_dict["start"])
-        end_ = np.array(gait_sequences_dict["end"])
+        # For efficient calculation, transform the row wise fft into an single 1D array
+        f_s_1d_flat = f_s_1d.flatten()
+        # Also flatten the harmonics array
+        harmonics_flat = np.round(
+            (harmonics_candidates / freq_axis_delta + (np.arange(f_s_1d.shape[0])[:, None] * f_s_1d.shape[1])).flatten())
+
+        # define size of window around candidates to look for peak. Allow 0.3 Hz of tolerance
+        # TODO expose tolerance as hidden class attribute
+        harmonic_window_half = int(np.floor(0.3 / freq_axis_delta))
+
+        closest_peaks = find_extrema_in_radius(f_s_1d_flat, harmonics_flat, harmonic_window_half, "max").astype(int)
+
+        peak_prominence = peak_prominences(f_s_1d_flat, closest_peaks)[0].reshape(harmonics_candidates.shape)
+        peak_heights = f_s_1d_flat[closest_peaks].reshape(harmonics_candidates.shape)
+
+        # Apply thresholds
+        # peaks should be higher than mean of f_s_1d
+        min_peak_height = np.mean(f_s_1d[:,:np.floor(lp_freq_hz/freq_axis_delta).astype(int)], axis=1)
+        # duplicate to match the shape of peak_heights
+        min_peak_height = np.tile(min_peak_height, (peak_heights.shape[1], 1)).T
+
+        harmonics_found = np.ones(harmonics_candidates.shape)
+        harmonics_found[(peak_heights < min_peak_height) | (peak_prominence < self.peak_prominence)] = 0
+        n_harmonics = harmonics_found.sum(axis=1)
+
+        # find valid windows with n_harmonics > threshold
+        n_harmonics_threshold = 2  # as defined in the paper
+
+        valid_windows = n_harmonics >= n_harmonics_threshold
+        valid_windows_start_stop = bool_array_to_start_end_array(valid_windows)
+        valid_windows_start_stop *= window_size - overlap
+        valid_windows_start_stop[:, 1] += window_size - overlap
+        #
+        # row_idx = 0
+        # for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
+        #
+        #     if self._ullrich_gsd_algorithm(row_s_1d, fft_factor, lp_freq_hz):
+        #         gait_sequences_dict["start"].append(row_idx * overlap)
+        #         gait_sequences_dict["end"].append(row_idx * overlap + window_size)
+        #
+        #     row_idx = row_idx + 1
+        #
+        # gait_sequences_ = pd.DataFrame(gait_sequences_dict)
+        # start_ = np.array(gait_sequences_dict["start"])
+        # end_ = np.array(gait_sequences_dict["end"])
 
         # todo concat overlapping gs
 
