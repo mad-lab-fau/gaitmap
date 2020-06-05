@@ -31,13 +31,26 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Parameters
     ----------
-    TODO add parameters
+    sensor_channel_config
+        The sensor channel or sensor that should be used for the gait sequence detection. Can be a str or a list of
+        str. If it is a list it must be either `BF_ACC` or `BF_GYR` in order to perform the analysis on the norm of
+        the acc / the gyr signal. If it is a string it must be one of the entries of `BF_ACC` / `BF_GYR`. Default
+        value is `gyr_ml` as by the publication this showed the best results.
+    peak_prominence
+        The threshold for the peak prominence that each harmonics peak must provide. This relates to the
+        `peak_prominence` provided by :func:`~scipy.signal.peak_prominences`. The frequency spectrum of the sensor
+        signal will be investigated at harmonics of the dominant frequency regarding peaks that have a
+        `peak_prominence` higher than the specified value. The lower the value, the more inclusive is the algorithm,
+        meaning that the requirements of a signal to be detected as gait are lower. The higher the value the more
+        specific is the algorithm to include a signal as gait.
+    window_size_s
+        The algorithm works on a window basis. The `window_size_s` specified the length of this window in seconds.
+        Default value is 10 s.
 
     Attributes
     ----------
-    TODO finalize
-    TODO do we need a datatype 'gait_sequence_list'? Can this be a subtype of a stride_list?
-    gait_sequences_ : A gait_sequence_list or dictionary with such values
+    TODO Is there going to be datatype 'gait_sequence_list'? Can this be a subtype of a stride_list?
+    gait_sequences_ : A pandas.DataFrame or dictionary with pandas.DataFrames
         The result of the `detect` method holding all gait sequences with their start and end samples. Formatted
         as pandas DataFrame.
     start_ : 1D array or dictionary with such values
@@ -53,6 +66,18 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         The data passed to the `detect` method.
     sampling_rate_hz
         The sampling rate of the data
+
+    Examples
+    --------
+    Find sequences of gait in sensor signal
+
+    >>> gsd = UllrichGaitSequenceDetection(peak_prominence=17)
+    >>> gsd = gsd.detect(data, 204.8)
+    >>> gsd.gait_sequences_
+        gsd_id  start     end
+    0   0       1024      3072
+    1   1       4096      8192
+    ...
 
     Notes
     -----
@@ -76,11 +101,24 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     data: Dataset
     sampling_rate_hz: float
 
-    def __init__(self, sensor_channel_config: str = "gyr_ml", peak_prominence: float = 17, window_size_s: float = 10):
-        # todo add flag to merge resulting gait sequences, set to False
+    def __init__(
+        self,
+        sensor_channel_config: str = "gyr_ml",
+        peak_prominence: float = 17,
+        window_size_s: float = 10,
+        locomotion_band: Tuple[float, float] = (0.5, 3),
+        harmonic_tolerance_hz: float = 0.3,
+        merge_gait_sequences_from_sensors: bool = False,
+    ):
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
         self.window_size_s = window_size_s
+
+        # TODO what is a good way to place this as "hidden variable". should that even appear in the __init__?
+        # TODO Do they require documentation in the docstring?
+        self.__locomotion_band = locomotion_band
+        self.__harmonic_tolerance_hz = harmonic_tolerance_hz
+        self.__merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
 
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences in data.
@@ -97,13 +135,13 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self
             The class instance with all result attributes populated
 
-        Examples
-        --------
-        TODO add example
-
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
+
+        # TODO check if merge_gait_sequences_from_sensors is set to True and only allow that for synced sensors
+        if self.__merge_gait_sequences_from_sensors:
+            raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
 
         # TODO check for reasonable input values for sensor_channel_config, peak_prominence and window_size_s
         # sensor_channel_config can be list or str. list must be == BF_ACC/GYR, str must be one of it entries
@@ -211,11 +249,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     def _get_dominant_frequency(self, s_1d):
         """Compute the dominant frequency of each window using autocorrelation."""
-        # dominant frequency via autocorrelation
         # set upper and lower motion band boundaries
-        # TODO expose upper and lower bound as hidden parameters
-        lower_bound = int(np.floor(self.sampling_rate_hz / 3))  # (=102.4 Hz / 3 Hz = upper bound of locomotor band)
-        upper_bound = int(np.ceil(self.sampling_rate_hz / 0.5))  # (=102.4 Hz / 0.5 Hz = lower bound of locomotor band)
+        # (=102.4 Hz / 3 Hz = upper bound of locomotion band)
+        lower_bound = int(np.floor(self.sampling_rate_hz / self.__locomotion_band[1]))
+        # (=102.4 Hz / 0.5 Hz = lower bound of locomotion band)
+        upper_bound = int(np.ceil(self.sampling_rate_hz / self.__locomotion_band[0]))
         # autocorr from 0-upper motion band
         auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
         # calculate dominant frequency in Hz
@@ -243,9 +281,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             (harmonics_candidates / freq_axis_delta + (np.arange(f_s_1d.shape[0])[:, None] * f_s_1d.shape[1])).flatten()
         )
 
-        # define size of window around candidates to look for peak. Allow 0.3 Hz of tolerance
-        # TODO expose tolerance as hidden class attribute
-        harmonic_window_half = int(np.floor(0.3 / freq_axis_delta))
+        # define size of window around candidates to look for peak. Allow per default 0.3 Hz of tolerance
+        harmonic_window_half = int(np.floor(self.__harmonic_tolerance_hz / freq_axis_delta))
 
         # TODO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
         #  one which is a little bit lower, but with peak prominence > threshold. In this case martins method would
@@ -274,7 +311,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         return valid_windows
 
 
-# TODO consistent naming of variables in helper functions
 def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     """Create and apply butterworth lowpass filter."""
     nyq = 0.5 * sampling_rate_hz
