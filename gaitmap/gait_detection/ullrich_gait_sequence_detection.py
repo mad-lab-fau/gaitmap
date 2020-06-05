@@ -187,7 +187,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         harmonics_candidates = np.outer(dominant_frequency, np.arange(2, 6))
 
         # compute the row-wise fft of the windowed signal and normalize it
-        f_s_1d = np.abs(rfft(s_1d)/window_size)
+        f_s_1d = np.abs(rfft(s_1d) / window_size) * fft_factor
 
         # Distance on the fft freq axis
         freq_axis_delta = self.sampling_rate_hz / 2 / f_s_1d.shape[1]
@@ -196,7 +196,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         f_s_1d_flat = f_s_1d.flatten()
         # Also flatten the harmonics array
         harmonics_flat = np.round(
-            (harmonics_candidates / freq_axis_delta + (np.arange(f_s_1d.shape[0])[:, None] * f_s_1d.shape[1])).flatten())
+            (harmonics_candidates / freq_axis_delta + (np.arange(f_s_1d.shape[0])[:, None] * f_s_1d.shape[1])).flatten()
+        )
 
         # define size of window around candidates to look for peak. Allow 0.3 Hz of tolerance
         # TODO expose tolerance as hidden class attribute
@@ -209,7 +210,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # Apply thresholds
         # peaks should be higher than mean of f_s_1d
-        min_peak_height = np.mean(f_s_1d[:,:np.floor(lp_freq_hz/freq_axis_delta).astype(int)], axis=1)
+        min_peak_height = np.mean(f_s_1d[:, : np.floor(lp_freq_hz / freq_axis_delta).astype(int)], axis=1)
         # duplicate to match the shape of peak_heights
         min_peak_height = np.tile(min_peak_height, (peak_heights.shape[1], 1)).T
 
