@@ -131,6 +131,48 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self, data: pd.DataFrame, window_size: float,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """Detect gait sequences for a single sensor data set."""
+        s_3d_norm, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
+
+        # sig_length is required later for the concatenation of gait sequences
+        sig_length = len(s_1d)
+
+        # lowpass filter the signal
+        # TODO this is now happening before the windowing and thus before the active signal detection. Does this
+        #  change the results?
+        lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
+        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+
+        # sliding windows
+        overlap = int(window_size / 2)
+        s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
+        s_1d = sliding_window_view(s_1d, window_size, overlap)
+
+        # active signal detection
+        s_1d, active_signal_mask = self._active_signal_detection(s_3d_norm, s_1d, active_signal_th)
+
+        # dominant frequency via autocorrelation
+        dominant_frequency = self._get_dominant_frequency(s_1d)
+
+        # get valid windows w.r.t. harmonics in frequency spectrum
+        valid_windows = self._harmonics_analysis(s_1d, dominant_frequency, window_size, fft_factor, lp_freq_hz)
+
+        # now we need to incorporate those windows that have already been discarded by the active signal detection
+        gait_sequences_bool = np.copy(active_signal_mask)
+        gait_sequences_bool[active_signal_mask] = valid_windows
+
+        gait_sequences_start = gait_sequences_bool * range(len(gait_sequences_bool)) * overlap
+        gait_sequences_start = gait_sequences_start[gait_sequences_start > 0]
+        # concat subsequent gs
+        gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
+
+        gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+        start_ = np.array(gait_sequences_["start"])
+        end_ = np.array(gait_sequences_["end"])
+
+        return gait_sequences_, start_, end_
+
+    def _signal_extraction(self, data):
+        """Extract the relevant signals and set required parameters from the data."""
         # define 3d signal to analyze for active signal and further parameters
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
@@ -152,25 +194,23 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             s_1d = np.array(data[self.sensor_channel_config])
             s_1d = s_1d - np.mean(s_1d, axis=0)
 
-        # lowpass filter the signal
-        # TODO this is now happening before the windowing and thus before the active signal detection. Does this
-        #  change the results?
-        lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
-        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+        return s_3d_norm, s_1d, active_signal_th, fft_factor
 
-        sig_length = len(s_1d)
+    @staticmethod
+    def _active_signal_detection(s_3d_norm, s_1d, active_signal_th):
+        """Perform active signal detection based on 3d signal norm.
 
-        # sliding windows
-        overlap = int(window_size / 2)
-        s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
-        s_1d = sliding_window_view(s_1d, window_size, overlap)
-
+        Returns the s_1d reduced to the active windows and the boolean mask for the in-/active windows
+        """
         # active signal detection
         # create boolean mask based on s_3d_norm
         active_signal_mask = np.mean(s_3d_norm, axis=1) > active_signal_th
         # only keep those rows with active signal
         s_1d = s_1d[active_signal_mask, :]
+        return s_1d, active_signal_mask
 
+    def _get_dominant_frequency(self, s_1d):
+        """Compute the dominant frequency of each window using autocorrelation."""
         # dominant frequency via autocorrelation
         # set upper and lower motion band boundaries
         # TODO expose upper and lower bound as hidden parameters
@@ -183,6 +223,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
         )
 
+        return dominant_frequency
+
+    def _harmonics_analysis(self, s_1d, dominant_frequency, window_size, fft_factor, lp_freq_hz):
+        """Analyze the frequency spectrum of s_1d regarding peaks at harmonics of the dominant frequency."""
         # determine harmonics candidates
         harmonics_candidates = np.outer(dominant_frequency, np.arange(2, 6))
 
@@ -227,20 +271,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         valid_windows = n_harmonics >= n_harmonics_threshold
 
-        # now we need to incorporate those windows that have already been discarded by the active signal detection
-        gait_sequences_bool = np.copy(active_signal_mask)
-        gait_sequences_bool[active_signal_mask] = valid_windows
-
-        gait_sequences_start = gait_sequences_bool * range(len(gait_sequences_bool)) * overlap
-        gait_sequences_start = gait_sequences_start[gait_sequences_start > 0]
-        # concat subsequent gs
-        gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
-
-        gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
-        start_ = np.array(gait_sequences_["start"])
-        end_ = np.array(gait_sequences_["end"])
-
-        return gait_sequences_, start_, end_
+        return valid_windows
 
 
 # TODO consistent naming of variables in helper functions
@@ -264,15 +295,7 @@ def _row_wise_autocorrelation(array, lag_max):
 
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
-    """ Concat consecutive gait sequences to a single one.
-
-    sig_length: length of 1d signal that is analyzed regarding harmonics
-    gait_sequences_start: result of harmonics analysis: array that contains the start samples of the windows that were
-    identified as gait sequences
-    window_size:  int value that determines the size of the window that is used for frequency analysis
-
-    returns: corrected list of gait sequences where consecutive bouts are concatenated and saved with start and end
-    """
+    """Concat consecutive gait sequences to a single one."""
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
         gait_sequences_start_corrected = gait_sequences_start
