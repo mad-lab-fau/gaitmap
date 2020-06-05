@@ -186,7 +186,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # determine harmonics candidates
         harmonics_candidates = np.outer(dominant_frequency, np.arange(2, 6))
 
-        # compute the row-wise fft of the windowed signal
+        # compute the row-wise fft of the windowed signal and normalize it
         f_s_1d = np.abs(rfft(s_1d)/window_size)
 
         # Distance on the fft freq axis
@@ -221,97 +221,22 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         n_harmonics_threshold = 2  # as defined in the paper
 
         valid_windows = n_harmonics >= n_harmonics_threshold
-        valid_windows_start_stop = bool_array_to_start_end_array(valid_windows)
-        valid_windows_start_stop *= window_size - overlap
-        valid_windows_start_stop[:, 1] += window_size - overlap
-        #
-        # row_idx = 0
-        # for row_norm, row_s_1d in zip(s_3d_norm, s_1d):
-        #
-        #     if self._ullrich_gsd_algorithm(row_s_1d, fft_factor, lp_freq_hz):
-        #         gait_sequences_dict["start"].append(row_idx * overlap)
-        #         gait_sequences_dict["end"].append(row_idx * overlap + window_size)
-        #
-        #     row_idx = row_idx + 1
-        #
-        # gait_sequences_ = pd.DataFrame(gait_sequences_dict)
-        # start_ = np.array(gait_sequences_dict["start"])
-        # end_ = np.array(gait_sequences_dict["end"])
 
-        # todo concat overlapping gs
+        # now we need to incorporate those windows that have already been discarded by the active signal detection
+        gait_sequences_bool = np.copy(active_signal_mask)
+        gait_sequences_bool[active_signal_mask] = valid_windows
+
+        gait_sequences_start_end = bool_array_to_start_end_array(gait_sequences_bool)
+        gait_sequences_start_end *= window_size - overlap
+        gait_sequences_start_end[:, 1] += window_size  # - overlap TODO check if this -overlap is needed or not!
+
+        gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+        start_ = np.array(gait_sequences_["start"])
+        end_ = np.array(gait_sequences_["end"])
+
+        # todo concat subsequent gs
 
         return gait_sequences_, start_, end_
-
-    def _ullrich_gsd_algorithm(self, s_1d, fft_factor, lp_freq_hz):
-        """Apply the actual algorithm with the single processing steps."""
-        gait_sequence_flag = True
-
-        # apply FFT
-        frq_axis, f_s_1d = _my_fft(s_1d, self.sampling_rate_hz)
-        f_s_1d = f_s_1d * fft_factor
-
-        if dominant_frq < 0.5:
-            gait_sequence_flag = False
-        else:
-            # apply peak detection: peaks should be higher than mean of f_s_1d
-            min_height = np.mean(f_s_1d[frq_axis <= lp_freq_hz])
-            peaks, _ = find_peaks(f_s_1d[frq_axis <= lp_freq_hz], height=min_height, prominence=self.peak_prominence)
-            # find index of dominant frq on frq_axis
-            dominant_frq_idx = np.where(frq_axis == dominant_frq)[0]
-
-            # define harmonics candidates as 4 multiples of dominant_frq_idx
-            harmonics_candidates = np.array([dominant_frq_idx[0] * factor for factor in range(2, 6)])
-
-            # get delta in Hz on frq_axis
-            frq_axis_delta = frq_axis[1]
-
-            # define size of window around candidates to look for peak. Allow 0.3 Hz of tolerance
-            # TODO expose tolerance as hidden class attribute
-            harmonic_window_half = int(np.floor(0.3 / frq_axis_delta))
-
-            # list to collect decision of harmonic or not
-            candidate_evaluation = np.array([False for candidate in harmonics_candidates])
-
-            for i_candidate, candidate in enumerate(harmonics_candidates):
-                # if the candidate is at the position of a detected peak assign to be harmonic
-                if np.isin(candidate, peaks):
-                    candidate_evaluation[i_candidate] = True
-                # if not, look for a peak in a window around the candidate
-                else:
-                    # define window
-                    window = np.arange(candidate - harmonic_window_half, candidate + harmonic_window_half + 1)
-                    # look for matches between window indices and detected peaks
-                    peak_matches = np.where(np.isin(window, peaks))[0]
-                    # if there is exactly one match, this is assigned to be harmonic
-                    if peak_matches.size == 1:
-                        # only assign if the value is above the minimum height for a peak
-                        if f_s_1d[peak_matches[0] + window[0]] > min_height:
-                            harmonics_candidates[i_candidate] = peak_matches[0] + window[0]
-                            candidate_evaluation[i_candidate] = True
-                        else:
-                            candidate_evaluation[i_candidate] = False
-                    # if there is no match at all, there is no harmonic detected
-                    elif peak_matches.size == 0:
-                        candidate_evaluation[i_candidate] = False
-                    # if there is more than one match, decide for the peak with the highest value
-                    else:
-                        window_max = np.max(f_s_1d[window])
-                        # only assign if the value is above the minimum height for a peak
-                        if window_max >= min_height:
-                            harmonics_candidates[i_candidate] = np.argmax(f_s_1d[window]) + window[0]
-                            candidate_evaluation[i_candidate] = True
-                        else:
-                            candidate_evaluation[i_candidate] = False
-
-                # if the majority of decisions is pro harmonic, set the boutFlag to true
-            if np.where(~candidate_evaluation)[0].size <= len(candidate_evaluation) / 2:
-                gait_sequence_flag = True
-                harmonics_candidates = harmonics_candidates[candidate_evaluation]
-            else:
-                gait_sequence_flag = False
-                harmonics_candidates = harmonics_candidates[candidate_evaluation]
-
-        return gait_sequence_flag
 
 
 # TODO consistent naming of variables in helper functions
@@ -322,38 +247,6 @@ def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     b, a = butter(order, normal_cutoff, btype="low", analog=False)
     y = lfilter(b, a, data)
     return y
-
-
-def _my_fft(sig, sampling_rate_hz):
-    """Perform a fft and also return the frequency axis in Hz."""
-    n = len(sig)  # length of the signal
-    k = np.arange(n)
-    t_end = (n * 1.0) / sampling_rate_hz
-    frq = (k * 1.0) / t_end  # two sides frequency range
-    frq = frq[range(n // 2)]  # one side frequency range
-
-    y = np.fft.fft(sig, n) / n  # fft computing and normalization
-    y = y[range(n // 2)]
-
-    return frq, abs(y)
-
-
-def _autocorr(x, frq_axis, sampling_rate_hz):
-    """Compute autocorrelation and find dominant frequency peak."""
-    result = np.correlate(x, x, mode="full")
-    # TODO expose range limits as hidden class attributes
-    # TODO check: 5 * upper range limit should be << nyquist frq
-    lower_bound = int(np.floor(sampling_rate_hz / 3))  # (=102.4 Hz / 3 Hz = upper bound of locomotor band)
-    upper_bound = int(np.ceil(sampling_rate_hz / 0.5))  # (=102.4 Hz / 0.5 Hz = lower bound of locomotor band)
-
-    result_half = result[result.size // 2 :]
-
-    dominant_peak = np.argmax(result_half[lower_bound : upper_bound + 1]) + lower_bound
-    dominant_frequency = sampling_rate_hz / dominant_peak
-
-    dominant_frequency = frq_axis[(np.abs(frq_axis - dominant_frequency)).argmin()]
-
-    return dominant_frequency
 
 
 @njit(nogil=True, parallel=True, cache=True)

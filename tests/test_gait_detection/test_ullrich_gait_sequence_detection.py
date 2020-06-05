@@ -11,7 +11,10 @@ class TestUllrichGaitSequenceDetection:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        gsd = UllrichGaitSequenceDetection(peak_prominence=30)
+        data.iloc[:2048] = 0
+        data.iloc[-3072:] = 0
+
+        gsd = UllrichGaitSequenceDetection(peak_prominence=17)
         gsd.detect(data, 204.8)
 
         return None
