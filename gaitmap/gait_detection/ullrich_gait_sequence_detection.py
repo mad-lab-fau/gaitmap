@@ -6,12 +6,12 @@ import pandas as pd
 from numpy.linalg import norm
 from scipy.fft import rfft
 
-from scipy.signal import butter, lfilter, find_peaks, peak_prominences
+from scipy.signal import butter, lfilter, peak_prominences
 
 from numba import njit
 
 from gaitmap.base import BaseGaitDetection, BaseType
-from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
+from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
@@ -131,8 +131,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self, data: pd.DataFrame, window_size: float,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """Detect gait sequences for a single sensor data set."""
-        gait_sequences_dict = {"start": [], "end": []}
-
         # define 3d signal to analyze for active signal and further parameters
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
@@ -159,6 +157,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         #  change the results?
         lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
         s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+
+        sig_length = len(s_1d)
 
         # sliding windows
         overlap = int(window_size / 2)
@@ -203,6 +203,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # TODO expose tolerance as hidden class attribute
         harmonic_window_half = int(np.floor(0.3 / freq_axis_delta))
 
+        # TODO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
+        #  one which is a little bit lower, but with peak prominence > threshold. In this case martins method would
+        #  have found the second peak and correctly concluded that the harmonic was found.
+        #  With my method, I find the first and then conclude that the peak prominence is to low and discard it.
         closest_peaks = find_extrema_in_radius(f_s_1d_flat, harmonics_flat, harmonic_window_half, "max").astype(int)
 
         peak_prominence = peak_prominences(f_s_1d_flat, closest_peaks)[0].reshape(harmonics_candidates.shape)
@@ -219,7 +223,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         n_harmonics = harmonics_found.sum(axis=1)
 
         # find valid windows with n_harmonics > threshold
-        n_harmonics_threshold = 2  # as defined in the paper
+        n_harmonics_threshold = 2  # 2 as defined in the paper
 
         valid_windows = n_harmonics >= n_harmonics_threshold
 
@@ -227,15 +231,14 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_bool = np.copy(active_signal_mask)
         gait_sequences_bool[active_signal_mask] = valid_windows
 
-        gait_sequences_start_end = bool_array_to_start_end_array(gait_sequences_bool)
-        gait_sequences_start_end *= window_size - overlap
-        gait_sequences_start_end[:, 1] += window_size  # - overlap TODO check if this -overlap is needed or not!
+        gait_sequences_start = gait_sequences_bool * range(len(gait_sequences_bool)) * overlap
+        gait_sequences_start = gait_sequences_start[gait_sequences_start > 0]
+        # concat subsequent gs
+        gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
         gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
         start_ = np.array(gait_sequences_["start"])
         end_ = np.array(gait_sequences_["end"])
-
-        # todo concat subsequent gs
 
         return gait_sequences_, start_, end_
 
@@ -258,3 +261,41 @@ def _row_wise_autocorrelation(array, lag_max):
         umax = array.shape[1] + tau
         out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
     return out
+
+
+def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
+    """ Concat consecutive gait sequences to a single one.
+
+    sig_length: length of 1d signal that is analyzed regarding harmonics
+    gait_sequences_start: result of harmonics analysis: array that contains the start samples of the windows that were
+    identified as gait sequences
+    window_size:  int value that determines the size of the window that is used for frequency analysis
+
+    returns: corrected list of gait sequences where consecutive bouts are concatenated and saved with start and end
+    """
+    # if there are no samples in the gait_sequences_start return the input
+    if len(gait_sequences_start) == 0:
+        gait_sequences_start_corrected = gait_sequences_start
+    else:
+        # empty list for result
+        gait_sequences_start_corrected = []
+        # first derivative of walking bout samples to get their relative distances
+        gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
+        # compute those indices in the derivative where it is higher than the window size, these are the
+        # non-consecutive bouts
+        diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
+        # split up the walking bout samples in the locations where they are not consecutive
+        split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
+        # iterate over the single splits
+        for jump in split_jumps:
+            # start of the corrected walking bout is the first index of the jump
+            start = jump[0]
+            # length of the corrected walking bout is computed
+            end = jump[-1] + window_size
+            # if start+length exceeds the signal length correct the bout length
+            if end > sig_length:
+                end = sig_length
+            # append list with start and length to the corrected walking bout samples
+            gait_sequences_start_corrected.append([start, end])
+
+    return np.array(gait_sequences_start_corrected)
