@@ -204,6 +204,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
         gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+        # TODO should this be called gsd_id or rather gs_id?
+        # add a column for the gsd_id
+        gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gsd_id"})
         start_ = np.array(gait_sequences_["start"])
         end_ = np.array(gait_sequences_["end"])
 
