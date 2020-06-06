@@ -20,7 +20,7 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorOrientationList,
 )
 
-BaseType = TypeVar("BaseType", bound="BaseAlgorithms")
+BaseType = TypeVar("BaseType", bound="_BaseSerializable")
 
 
 class _CustomEncoder(json.JSONEncoder):
@@ -88,13 +88,13 @@ class _BaseSerializable:
         return sorted([p.name for p in parameters])
 
     @classmethod
-    def _get_subclasses(cls):
+    def _get_subclasses(cls: Type[BaseType]):
         for subclass in cls.__subclasses__():
             yield from subclass._get_subclasses()
             yield subclass
 
     @classmethod
-    def _find_subclass(cls: BaseType, name) -> BaseType:
+    def _find_subclass(cls: Type[BaseType], name: str) -> Type[BaseType]:
         for subclass in _BaseSerializable._get_subclasses():
             if subclass.__name__ == name:
                 return subclass
