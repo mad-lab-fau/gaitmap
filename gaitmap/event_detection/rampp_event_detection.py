@@ -133,7 +133,7 @@ class RamppEventDetection(BaseEventDetection):
     Therefore, the `min_vel_event_list` list has one stride less per gait sequence than the `segmented_stride_list`.
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
-    different types of strides can be found :ref`here<_stride_list_guide>`.
+    different types of strides can be found :ref:`here<stride_list_guide>`.
 
     The image below gives an overview about the events and where they occur in the signal.
 
