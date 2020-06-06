@@ -120,14 +120,17 @@ class _BaseSerializable:
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters for this algorithm.
 
-        Returns
-        -------
-        params
-            Parameter names mapped to their values.
+        Parameters
+        ----------
         deep
             Only relevant if object contains nested algorithm objects.
             If this is the case and deep is True, the params of these nested objects are included in the output using a
             prefix like `nested_object_name__` (Note the two "_" at the end)
+
+        Returns
+        -------
+        params
+            Parameter names mapped to their values.
 
         """
         # Basically copied from sklearn
