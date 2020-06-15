@@ -51,12 +51,13 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     This method requires the output of a event detection method as input.
 
     >>> stride_list = ... #  from event detection
-    >>> p = TemporalParameterCalculation()
-    >>> p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
-    >>> p.parameters_
+    >>> temporal_paras = TemporalParameterCalculation()
+    >>> temporal_paras = temporal_paras.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
+    >>> temporal_paras.parameters_
     <Dataframe/dictionary with all the parameters>
-    >>> p.parameters_pretty_
+    >>> temporal_paras.parameters_pretty_
     <Dataframe/dictionary with all the parameters with units included in column names>
+
     See Also
     --------
     gaitmap.parameters.SpatialParameterCalculation: Calculate spatial parameters
