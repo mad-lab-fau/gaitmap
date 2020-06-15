@@ -1,4 +1,6 @@
 r"""
+.. _example_barth_stride_segmentation:
+
 BarthDtw stride segmentation
 ============================
 

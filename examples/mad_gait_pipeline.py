@@ -1,14 +1,24 @@
 r"""
-Full top-to-bottom
-=============
+MaD DiGait Pipeline
+===================
 
-This example illustrates the whole top-to-bottom pipeline:
-preprocessing -> DTW -> EventDetection -> TrajectoryReconstruction -> ParameterEstimation
+This pipeline showcases the current gait analysis pipeline used by the MaD-Lab with all required steps:
+Preprocessing -> Stride Segmentation -> Event Detection -> Trajectory Reconstruction -> Parameter Estimation
+
+This should serve as a compact example that can be copied and pasted into new projects.
+For more details on the individual steps have a look at the extended examples and the documentation of the main classes:
+
+- :ref:`Preprocessing <example_preprocessing>`
+- :ref:`Stride Segmentation (BarthDTW) <example_barth_stride_segmentation>`
+- :ref:`Event Detection (RamppEventDetection) <example_rampp_event_detection>`
+- :ref:`Trajectory Reconstruction (double Integration) <example_preprocessing>`
+- :ref:`Temporal Parameters <example_temporal_parameters>` and :ref:`Spatial Parameters <example_spatial_parameters>`
+
 """
 
 # %%
 # Preprocessing
-# ----------------------
+# -------------
 
 # Getting raw and not-rotated example data
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated

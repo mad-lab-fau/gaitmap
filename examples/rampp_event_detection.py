@@ -1,4 +1,6 @@
 r"""
+.. _example_rampp_event_detection:
+
 Rampp event detection
 =====================
 

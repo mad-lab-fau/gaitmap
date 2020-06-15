@@ -1,4 +1,6 @@
 r"""
+.. _example_temporal_parameters:
+
 Temporal parameters calculation
 ===============================
 

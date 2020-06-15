@@ -1,5 +1,5 @@
 r"""
-.. _preprocessing:
+.. _example_preprocessing:
 
 Preprocessing
 =============
