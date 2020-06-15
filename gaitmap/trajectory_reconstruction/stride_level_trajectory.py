@@ -137,7 +137,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
 
-    def estimate(self: BaseType, data: object, stride_event_list: object, sampling_rate_hz: object) -> object:
+    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
