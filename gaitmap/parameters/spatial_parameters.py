@@ -147,7 +147,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "turning_angle": "turning angle [deg]",
             "arc_length": "arc length [m]",
         }
-        return parameters.rename(columns=pretty_columns)
+        renamed_paras = parameters.rename(columns=pretty_columns)
+        renamed_paras.index.name = "stride id"
+        return renamed_paras
 
     def calculate(
         self: BaseType,

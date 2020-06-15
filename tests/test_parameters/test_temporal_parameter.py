@@ -34,22 +34,22 @@ def multiple_stride_list():
 
 @pytest.fixture
 def temporal_parameters_multiple_strides():
-    temporal_parameters = pd.DataFrame(columns=["stride_id", "stride_time", "swing_time", "stance_time"])
-    temporal_parameters["stride_id"] = [0, 1, 2]
+    temporal_parameters = pd.DataFrame(columns=["s_id", "stride_time", "swing_time", "stance_time"])
+    temporal_parameters["s_id"] = [0, 1, 2]
     temporal_parameters["stride_time"] = [2.0, 2.0, 3.0]
     temporal_parameters["swing_time"] = [1.0, 1.0, 2.0]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
-    return temporal_parameters
+    return temporal_parameters.set_index("s_id")
 
 
 @pytest.fixture
 def temporal_parameters_single_stride():
-    temporal_parameters = pd.DataFrame(columns=["stride_id", "stride_time", "swing_time", "stance_time"])
-    temporal_parameters["stride_id"] = [0]
+    temporal_parameters = pd.DataFrame(columns=["s_id", "stride_time", "swing_time", "stance_time"])
+    temporal_parameters["s_id"] = [0]
     temporal_parameters["stride_time"] = [2.0]
     temporal_parameters["swing_time"] = [1.0]
     temporal_parameters["stance_time"] = [1.0]
-    return temporal_parameters
+    return temporal_parameters.set_index("s_id")
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
