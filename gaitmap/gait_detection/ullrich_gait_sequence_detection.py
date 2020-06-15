@@ -106,6 +106,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_channel_config: str = "gyr_ml",
         peak_prominence: float = 17,
         window_size_s: float = 10,
+        active_signal_threshold: float = 50,
         locomotion_band: Tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
@@ -116,6 +117,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # TODO what is a good way to place this as "hidden variable". should that even appear in the __init__?
         # TODO Do they require documentation in the docstring?
+        self.__active_signal_threshold = active_signal_threshold
         self.__locomotion_band = locomotion_band
         self.__harmonic_tolerance_hz = harmonic_tolerance_hz
         self.__merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
@@ -217,12 +219,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # define 3d signal to analyze for active signal and further parameters
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
-            active_signal_th = 0.2
             fft_factor = 100
         else:
             s_3d = np.array(data[BF_GYR])
-            active_signal_th = 50
             fft_factor = 1
+
+        active_signal_th = self.__active_signal_threshold
 
         # subtract mean to compensate for gravity in case of acc / bad calibration in case of gyr
         s_3d_zero_mean = s_3d - np.mean(s_3d, axis=0)
