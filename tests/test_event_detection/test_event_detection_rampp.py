@@ -26,7 +26,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = RamppEventDetection()
-        ed.detect(data_left, 204.8, stride_list_left)
+        ed.detect(data_left, stride_list_left, 204.8)
         return ed
 
 
@@ -40,7 +40,7 @@ class TestEventDetectionRampp:
         )
 
         ed = RamppEventDetection()
-        ed.detect(data, 204.8, healthy_example_stride_borders)
+        ed.detect(data, healthy_example_stride_borders, 204.8)
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
@@ -61,7 +61,7 @@ class TestEventDetectionRampp:
         }
 
         ed = RamppEventDetection()
-        ed.detect(data_dict, 204.8, stride_list_dict)
+        ed.detect(data_dict, stride_list_dict, 204.8)
 
         assert list(dataset_helper.get_multi_sensor_dataset_names(ed.min_vel_event_list_)) == dict_keys
         assert list(dataset_helper.get_multi_sensor_dataset_names(ed.segmented_event_list_)) == dict_keys
@@ -73,7 +73,7 @@ class TestEventDetectionRampp:
         )
 
         ed_df = RamppEventDetection()
-        ed_df.detect(data, 204.8, healthy_example_stride_borders)
+        ed_df.detect(data, healthy_example_stride_borders, 204.8)
 
         dict_keys = ["l", "r"]
         data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
@@ -83,7 +83,7 @@ class TestEventDetectionRampp:
         }
 
         ed_dict = RamppEventDetection()
-        ed_dict.detect(data_dict, 204.8, stride_list_dict)
+        ed_dict.detect(data_dict, stride_list_dict, 204.8)
 
         assert_frame_equal(ed_df.min_vel_event_list_["left_sensor"], ed_dict.min_vel_event_list_["l"])
         assert_frame_equal(ed_df.min_vel_event_list_["right_sensor"], ed_dict.min_vel_event_list_["r"])
@@ -93,7 +93,7 @@ class TestEventDetectionRampp:
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = RamppEventDetection()
         with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
-            ed.detect(data, 204.8, healthy_example_stride_borders)
+            ed.detect(data, healthy_example_stride_borders, 204.8)
 
     def test_min_vel_search_win_size_ms_dummy_data(self):
         """Test if error is raised correctly if windows size matches the size of the input data"""
@@ -108,7 +108,7 @@ class TestEventDetectionRampp:
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = RamppEventDetection(min_vel_search_win_size_ms=5000)
         with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
-            ed.detect(data_left, 204.8, stride_list_left)
+            ed.detect(data_left, stride_list_left, 204.8)
 
     def test_valid_ic_search_region_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if error is raised correctly on too small ic_search_region_ms"""
@@ -117,7 +117,7 @@ class TestEventDetectionRampp:
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = RamppEventDetection(ic_search_region_ms=(1, 1))
         with pytest.raises(ValueError):
-            ed.detect(data_left, 204.8, stride_list_left)
+            ed.detect(data_left, stride_list_left, 204.8)
 
     def test_input_stride_list_size_one(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if gait event detection also works with stride list of length 1"""
@@ -126,7 +126,7 @@ class TestEventDetectionRampp:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = RamppEventDetection()
-        ed.detect(data_left, 204.8, stride_list_left)
+        ed.detect(data_left, stride_list_left, 204.8)
         # per default min_vel_event_list_ has 7 columns
         assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 7)
         # per default segmented_event_list_ has 6 columns
@@ -140,7 +140,7 @@ class TestEventDetectionRampp:
         # switch s_ids in stride list to random numbers
         stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
         ed = RamppEventDetection()
-        ed.detect(data_left, 204.8, stride_list_left)
+        ed.detect(data_left, stride_list_left, 204.8)
 
         # Check that all of the old stride ids are still in the new one
         assert np.all(ed.min_vel_event_list_["s_id"].isin(stride_list_left["s_id"]))
