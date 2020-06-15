@@ -15,21 +15,25 @@ For more details on the individual steps have a look at the extended examples an
 - :ref:`Temporal Parameters <example_temporal_parameters>` and :ref:`Spatial Parameters <example_spatial_parameters>`
 
 """
+# %%
+# Load example data
+# -----------------
+import numpy as np
+
+from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
+
+np.random.seed(0)
+
+example_dataset = get_healthy_example_imu_data_not_rotated()
+sampling_rate_hz = 204.8
 
 # %%
 # Preprocessing
 # -------------
-
-# Getting raw and not-rotated example data
-from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
-
-example_dataset = get_healthy_example_imu_data_not_rotated()
-sampling_rate_hz = 204.8
-example_dataset.sort_index(axis=1).head(1)
-
-# Rename columns and align with the expected orientation
-import numpy as np
+# Fix the alignment between the sensor coordinate system and the gaitmap coordinate system.
+# This will be different for each sensor position and recording.
 from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
+from gaitmap.preprocessing import sensor_alignment
 
 # rotate left_sensor first by -90 deg around the x-axis, followed by a -90 deg rotation around the z-axis
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
@@ -44,75 +48,92 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
 rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
 dataset_sf = rotate_dataset(example_dataset, rotations)
 
-
 # Align to Gravity
-from gaitmap.preprocessing import sensor_alignment
-
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
 
 # %%
-# DTW
-# ----------------------
-
-np.random.seed(0)
-
+# Stride Segmentation
+# -------------------
+# In this step the continuous datastream is segmented into individual strides.
+# For longer datasets it might be required to first identify segments of walking to reduce the chance of
+# false-positives.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
-
-bf_data = convert_to_fbf(dataset_sf_aligned_to_gravity, left_like="left_", right_like="right_")
-
 from gaitmap.stride_segmentation import BarthDtw
 
 dtw = BarthDtw()
-
-# Apply the dtw to the data
+# Convert data to foot-frame
+bf_data = convert_to_fbf(dataset_sf_aligned_to_gravity, left_like="left_", right_like="right_")
 dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 # %%
 # Event detection
-# ----------------------
-
+# ----------------
+# For each identified stride, we now identify important stride events.
 from gaitmap.event_detection import RamppEventDetection
 
 ed = RamppEventDetection()
-# apply the event detection to the data
-ed = ed.detect(bf_data, sampling_rate_hz, dtw.stride_list_)
-
-# printing some results
-stride_events_left = ed.stride_events_["left_sensor"]
-print("Gait events for {} strides were detected.".format(len(stride_events_left)))
-stride_events_left.head()
+ed = ed.detect(data=bf_data, stride_list=dtw.stride_list_, sampling_rate_hz=sampling_rate_hz)
 
 # %%
 # Trajectory Reconstruction
-# ----------------------
+# -------------------------
+# Using the identified events the trajectory of each stride is reconstructed using double integration starting from the
+# `min_vel` event of each stride.
+from gaitmap.trajectory_reconstruction import StrideLevelTrajectory
 
-from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration, StrideLevelTrajectory
-
-ori_method = SimpleGyroIntegration()
-pos_method = ForwardBackwardIntegration()
-trajectory = StrideLevelTrajectory(ori_method, pos_method)
-
-trajectory.estimate(dataset_sf, ed.stride_events_, sampling_rate_hz)
+trajectory = StrideLevelTrajectory()
+trajectory = trajectory.estimate(
+    data=dataset_sf, stride_event_list=ed.min_vel_event_list_, sampling_rate_hz=sampling_rate_hz
+)
 
 # %%
-# Temporal parameter calculation
-# ----------------------
-
+# Temporal Parameter Calculation
+# ------------------------------
+# Now we have all information to calculate relevant temporal parameters (like stride time)
 from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 
-p = TemporalParameterCalculation()
-p = p.calculate(stride_event_list=ed.stride_events_, sampling_rate_hz=sampling_rate_hz)
+temporal_paras = TemporalParameterCalculation()
+temporal_paras = temporal_paras.calculate(stride_event_list=ed.min_vel_event_list_, sampling_rate_hz=sampling_rate_hz)
 
 # %%
-# spatial parameter calculation
-# ----------------------
-
+# Spatial Parameter Calculation
+# -----------------------------
+# Like the temporal parameters, we can also calculate the spatial parameter.
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 
-p = SpatialParameterCalculation()
-p = p.calculate(
-    stride_event_list=ed.stride_events_,
+spatial_paras = SpatialParameterCalculation()
+spatial_paras = spatial_paras.calculate(
+    stride_event_list=ed.min_vel_event_list_,
     positions=trajectory.position_,
     orientations=trajectory.orientation_,
     sampling_rate_hz=sampling_rate_hz,
 )
+
+# %%
+# Inspecting the Results
+# ----------------------
+# The class of each step allows you to inspect all results in detail.
+# Here we will just print and plot the most important once.
+# Note, that the plots below are for sure not the best way to represent results!
+import matplotlib.pyplot as plt
+
+print(
+    "The following number of strides were identified and parameterized for each sensor: {}".format(
+        {k: len(v) for k, v in ed.min_vel_event_list_.items()}
+    )
+)
+
+# %%
+for k, v in temporal_paras.parameters_pretty_.items():
+    v.plot()
+    plt.title("All temporal parameters of sensor {}".format(k))
+
+# %%
+for k, v in spatial_paras.parameters_pretty_.items():
+    v[["stride length [m]", "gait velocity [m/s]", "arc length [m]"]].plot()
+    plt.title("All spatial parameters of sensor {}".format(k))
+
+# %%
+for k, v in spatial_paras.parameters_pretty_.items():
+    v.filter(like="angle").plot()
+    plt.title("All angle parameters of sensor {}".format(k))
