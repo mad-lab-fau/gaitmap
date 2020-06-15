@@ -1,4 +1,6 @@
 r"""
+.. _example_rampp_event_detection:
+
 Rampp event detection
 =====================
 
@@ -63,7 +65,7 @@ from gaitmap.event_detection import RamppEventDetection
 
 ed = RamppEventDetection()
 # apply the event detection to the data
-ed = ed.detect(bf_data, sampling_rate_hz, stride_list)
+ed = ed.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=sampling_rate_hz)
 
 # %%
 # Inspecting the results

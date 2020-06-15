@@ -10,6 +10,7 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorStrideList,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    set_correct_index,
 )
 
 
@@ -51,12 +52,13 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     This method requires the output of a event detection method as input.
 
     >>> stride_list = ... #  from event detection
-    >>> p = TemporalParameterCalculation()
-    >>> p = p.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
-    >>> p.parameters_
+    >>> temporal_paras = TemporalParameterCalculation()
+    >>> temporal_paras = temporal_paras.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
+    >>> temporal_paras.parameters_
     <Dataframe/dictionary with all the parameters>
-    >>> p.parameters_pretty_
+    >>> temporal_paras.parameters_pretty_
     <Dataframe/dictionary with all the parameters with units included in column names>
+
     See Also
     --------
     gaitmap.parameters.SpatialParameterCalculation: Calculate spatial parameters
@@ -81,12 +83,13 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     @staticmethod
     def _rename_columns(parameters: pd.DataFrame) -> pd.DataFrame:
         pretty_columns = {
-            "stride_id": "stride id",
             "stride_time": "stride time [s]",
             "swing_time": "swing time [s]",
             "stance_time": "stance time [s]",
         }
-        return parameters.rename(columns=pretty_columns)
+        renamed_paras = parameters.rename(columns=pretty_columns)
+        renamed_paras.index.name = "stride id"
+        return renamed_paras
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters of all strides after segmentation and detecting events for all sensors.
@@ -131,17 +134,16 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             Data frame containing temporal parameters of single sensor
 
         """
-        stride_id_ = stride_event_list["s_id"]
+        stride_event_list = set_correct_index(stride_event_list, ["s_id"])
         stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
         swing_time_ = _calc_swing_time(stride_event_list["ic"], stride_event_list["tc"], sampling_rate_hz)
         stance_time_ = [stride_time - swing_time for stride_time, swing_time in zip(stride_time_, swing_time_)]
         stride_parameter_dict = {
-            "stride_id": stride_id_,
             "stride_time": stride_time_,
             "swing_time": swing_time_,
             "stance_time": stance_time_,
         }
-        parameters_ = pd.DataFrame(stride_parameter_dict)
+        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_
 
     def _calculate_multiple_sensor(

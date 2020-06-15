@@ -2,11 +2,7 @@
     "schema":{
         "fields":[
             {
-                "name":"index",
-                "type":"integer"
-            },
-            {
-                "name":"stride_id",
+                "name":"s_id",
                 "type":"integer"
             },
             {
@@ -23,203 +19,175 @@
             }
         ],
         "primaryKey":[
-            "index"
+            "s_id"
         ],
         "pandas_version":"0.20.0"
     },
     "data":[
         {
-            "index":0,
-            "stride_id":0,
+            "s_id":0,
             "stride_time":1.0693359375,
             "swing_time":0.3466796875,
             "stance_time":0.72265625
         },
         {
-            "index":1,
-            "stride_id":1,
+            "s_id":1,
             "stride_time":1.07421875,
             "swing_time":0.361328125,
             "stance_time":0.712890625
         },
         {
-            "index":2,
-            "stride_id":2,
+            "s_id":2,
             "stride_time":1.0693359375,
             "swing_time":0.3515625,
             "stance_time":0.7177734375
         },
         {
-            "index":3,
-            "stride_id":3,
+            "s_id":3,
             "stride_time":1.0693359375,
             "swing_time":0.3515625,
             "stance_time":0.7177734375
         },
         {
-            "index":4,
-            "stride_id":4,
+            "s_id":4,
             "stride_time":1.0498046875,
             "swing_time":0.3515625,
             "stance_time":0.6982421875
         },
         {
-            "index":5,
-            "stride_id":5,
+            "s_id":5,
             "stride_time":1.0498046875,
             "swing_time":0.3515625,
             "stance_time":0.6982421875
         },
         {
-            "index":6,
-            "stride_id":6,
+            "s_id":6,
             "stride_time":1.0498046875,
             "swing_time":0.3515625,
             "stance_time":0.6982421875
         },
         {
-            "index":7,
-            "stride_id":7,
+            "s_id":7,
             "stride_time":1.0693359375,
             "swing_time":0.361328125,
             "stance_time":0.7080078125
         },
         {
-            "index":8,
-            "stride_id":8,
+            "s_id":8,
             "stride_time":1.0791015625,
             "swing_time":0.3466796875,
             "stance_time":0.732421875
         },
         {
-            "index":9,
-            "stride_id":9,
+            "s_id":9,
             "stride_time":1.0791015625,
             "swing_time":0.3564453125,
             "stance_time":0.72265625
         },
         {
-            "index":10,
-            "stride_id":10,
+            "s_id":10,
             "stride_time":1.103515625,
             "swing_time":0.3515625,
             "stance_time":0.751953125
         },
         {
-            "index":11,
-            "stride_id":11,
+            "s_id":11,
             "stride_time":1.0986328125,
             "swing_time":0.361328125,
             "stance_time":0.7373046875
         },
         {
-            "index":12,
-            "stride_id":12,
+            "s_id":12,
             "stride_time":1.15234375,
             "swing_time":0.37109375,
             "stance_time":0.78125
         },
         {
-            "index":13,
-            "stride_id":13,
+            "s_id":13,
             "stride_time":2.275390625,
             "swing_time":1.4990234375,
             "stance_time":0.7763671875
         },
         {
-            "index":14,
-            "stride_id":14,
+            "s_id":14,
             "stride_time":1.162109375,
             "swing_time":0.380859375,
             "stance_time":0.78125
         },
         {
-            "index":15,
-            "stride_id":15,
+            "s_id":15,
             "stride_time":1.0986328125,
             "swing_time":0.3564453125,
             "stance_time":0.7421875
         },
         {
-            "index":16,
-            "stride_id":16,
+            "s_id":16,
             "stride_time":1.0693359375,
             "swing_time":0.3564453125,
             "stance_time":0.712890625
         },
         {
-            "index":17,
-            "stride_id":17,
+            "s_id":17,
             "stride_time":1.083984375,
             "swing_time":0.361328125,
             "stance_time":0.72265625
         },
         {
-            "index":18,
-            "stride_id":18,
+            "s_id":18,
             "stride_time":1.0595703125,
             "swing_time":0.3515625,
             "stance_time":0.7080078125
         },
         {
-            "index":19,
-            "stride_id":19,
+            "s_id":19,
             "stride_time":1.0791015625,
             "swing_time":0.3515625,
             "stance_time":0.7275390625
         },
         {
-            "index":20,
-            "stride_id":20,
+            "s_id":20,
             "stride_time":1.0888671875,
             "swing_time":0.3515625,
             "stance_time":0.7373046875
         },
         {
-            "index":21,
-            "stride_id":21,
+            "s_id":21,
             "stride_time":1.0888671875,
             "swing_time":0.3466796875,
             "stance_time":0.7421875
         },
         {
-            "index":22,
-            "stride_id":22,
+            "s_id":22,
             "stride_time":1.103515625,
             "swing_time":0.361328125,
             "stance_time":0.7421875
         },
         {
-            "index":23,
-            "stride_id":23,
+            "s_id":23,
             "stride_time":1.1083984375,
             "swing_time":0.380859375,
             "stance_time":0.7275390625
         },
         {
-            "index":24,
-            "stride_id":24,
+            "s_id":24,
             "stride_time":1.1083984375,
             "swing_time":0.3564453125,
             "stance_time":0.751953125
         },
         {
-            "index":25,
-            "stride_id":25,
+            "s_id":25,
             "stride_time":1.123046875,
             "swing_time":0.37109375,
             "stance_time":0.751953125
         },
         {
-            "index":26,
-            "stride_id":26,
+            "s_id":26,
             "stride_time":1.1279296875,
             "swing_time":0.361328125,
             "stance_time":0.7666015625
         },
         {
-            "index":27,
-            "stride_id":27,
+            "s_id":27,
             "stride_time":1.1328125,
             "swing_time":0.37109375,
             "stance_time":0.76171875

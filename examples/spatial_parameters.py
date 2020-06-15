@@ -1,4 +1,6 @@
 r"""
+.. _example_spatial_parameters:
+
 Spatial parameters calculation
 ==============================
 

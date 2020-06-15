@@ -125,7 +125,7 @@ def convert_to_fbf(
     >>> dataset = ... # Dataset in FSF
     >>> fbf_dataset = convert_to_fbf(dataset, left_like="left_", right_like="right_")
 
-    Alternativly, you can specify the full sensor names.
+    Alternatively, you can specify the full sensor names.
 
     >>> fbf_dataset = convert_to_fbf(dataset, left=["left_sensor"], right_sensor=["right_sensor"])
 

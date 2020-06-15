@@ -101,12 +101,16 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     >>> stride_list = ...  # from event detection
     >>> positions = ...  # from position estimation
     >>> orientations = ...  # from orientation estimation
-    >>> p = SpatialParameterCalculation()
-    >>> p = p.calculate(stride_event_list=stride_list, positions=positions, orientations=orientations,
-    ...                 sampling_rate_hz=204.8)
-    >>> p.parameters_
+    >>> spatial_paras = SpatialParameterCalculation()
+    >>> spatial_paras = spatial_paras.calculate(
+    ...                               stride_event_list=stride_list,
+    ...                               positions=positions,
+    ...                               orientations=orientations,
+    ...                               sampling_rate_hz=204.8
+    ...                  )
+    >>> spatial_paras.parameters_
     <Dataframe/dictionary with all the parameters>
-    >>> p.parameters_pretty_
+    >>> spatial_paras.parameters_pretty_
     <Dataframe/dictionary with all the parameters with units included in column names>
 
     See Also
@@ -143,7 +147,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "turning_angle": "turning angle [deg]",
             "arc_length": "arc length [m]",
         }
-        return parameters.rename(columns=pretty_columns)
+        renamed_paras = parameters.rename(columns=pretty_columns)
+        renamed_paras.index.name = "stride id"
+        return renamed_paras
 
     def calculate(
         self: BaseType,

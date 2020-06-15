@@ -73,7 +73,7 @@ class RamppEventDetection(BaseEventDetection):
     Get gait events from single sensor signal
 
     >>> event_detection = RamppEventDetection()
-    >>> event_detection.detect(data=data, sampling_rate_hz=204.8, stride_list=stride_list)
+    >>> event_detection.detect(data=data, stride_list=stride_list, sampling_rate_hz=204.8)
     >>> event_detection.min_vel_event_list_
         s_id   start     end      ic      tc  min_vel  pre_ic
     0      0   519.0   710.0   651.0   584.0    519.0   498.0
@@ -160,17 +160,17 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, stride_list: StrideList) -> BaseType:
+    def detect(self: BaseType, data: Dataset, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
         ----------
         data
             The data set holding the imu raw data
-        sampling_rate_hz
-            The sampling rate of the data
         stride_list
             A list of strides provided by a stride segmentation method
+        sampling_rate_hz
+            The sampling rate of the data
 
         Returns
         -------
