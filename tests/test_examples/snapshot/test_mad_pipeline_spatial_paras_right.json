@@ -1,0 +1,274 @@
+{
+    "schema":{
+        "fields":[
+            {
+                "name":"stride id",
+                "type":"integer"
+            },
+            {
+                "name":"stride length [m]",
+                "type":"number"
+            },
+            {
+                "name":"gait velocity [m\/s]",
+                "type":"number"
+            },
+            {
+                "name":"ic angle [deg]",
+                "type":"number"
+            },
+            {
+                "name":"tc angle [deg]",
+                "type":"number"
+            },
+            {
+                "name":"turning angle [deg]",
+                "type":"number"
+            },
+            {
+                "name":"arc length [m]",
+                "type":"number"
+            }
+        ],
+        "primaryKey":[
+            "stride id"
+        ],
+        "pandas_version":"0.20.0"
+    },
+    "data":[
+        {
+            "stride id":0,
+            "stride length [m]":1.3688251407,
+            "gait velocity [m\/s]":1.2918681512,
+            "ic angle [deg]":-19.9940225076,
+            "tc angle [deg]":60.9003022576,
+            "turning angle [deg]":0.3578639541,
+            "arc length [m]":1.4645593936
+        },
+        {
+            "stride id":1,
+            "stride length [m]":1.3364643701,
+            "gait velocity [m\/s]":1.2555408395,
+            "ic angle [deg]":-26.8001022023,
+            "tc angle [deg]":64.8960500217,
+            "turning angle [deg]":1.4059615506,
+            "arc length [m]":1.4424656751
+        },
+        {
+            "stride id":2,
+            "stride length [m]":1.3894786917,
+            "gait velocity [m\/s]":1.2876255025,
+            "ic angle [deg]":-24.7396155086,
+            "tc angle [deg]":64.5918792205,
+            "turning angle [deg]":-0.1426689376,
+            "arc length [m]":1.4951982031
+        },
+        {
+            "stride id":3,
+            "stride length [m]":1.3987781332,
+            "gait velocity [m\/s]":1.3201371506,
+            "ic angle [deg]":-21.2160521701,
+            "tc angle [deg]":62.5621245589,
+            "turning angle [deg]":-4.7586758941,
+            "arc length [m]":1.5039923921
+        },
+        {
+            "stride id":4,
+            "stride length [m]":1.4746131913,
+            "gait velocity [m\/s]":1.404654798,
+            "ic angle [deg]":-21.928195695,
+            "tc angle [deg]":63.9645177022,
+            "turning angle [deg]":1.6448543614,
+            "arc length [m]":1.5836237435
+        },
+        {
+            "stride id":5,
+            "stride length [m]":1.4462797836,
+            "gait velocity [m\/s]":1.3776655799,
+            "ic angle [deg]":-22.6402749547,
+            "tc angle [deg]":64.6460891454,
+            "turning angle [deg]":-1.9731798608,
+            "arc length [m]":1.5445265277
+        },
+        {
+            "stride id":6,
+            "stride length [m]":1.3996171597,
+            "gait velocity [m\/s]":1.3209290061,
+            "ic angle [deg]":-23.2363082777,
+            "tc angle [deg]":66.8124342981,
+            "turning angle [deg]":3.6656489964,
+            "arc length [m]":1.5170407632
+        },
+        {
+            "stride id":7,
+            "stride length [m]":1.4360283585,
+            "gait velocity [m\/s]":1.3368118537,
+            "ic angle [deg]":-26.176912545,
+            "tc angle [deg]":66.5067510403,
+            "turning angle [deg]":1.4828337294,
+            "arc length [m]":1.5491296726
+        },
+        {
+            "stride id":8,
+            "stride length [m]":1.4197241243,
+            "gait velocity [m\/s]":1.3156538491,
+            "ic angle [deg]":-22.9731973923,
+            "tc angle [deg]":66.1294477283,
+            "turning angle [deg]":-4.5619270306,
+            "arc length [m]":1.5218022469
+        },
+        {
+            "stride id":9,
+            "stride length [m]":1.2319368082,
+            "gait velocity [m\/s]":1.1263422247,
+            "ic angle [deg]":-21.6638022816,
+            "tc angle [deg]":63.0261421902,
+            "turning angle [deg]":-0.1729024572,
+            "arc length [m]":1.3317429586
+        },
+        {
+            "stride id":10,
+            "stride length [m]":1.3383441964,
+            "gait velocity [m\/s]":1.2128004045,
+            "ic angle [deg]":-21.3591223402,
+            "tc angle [deg]":63.2150637108,
+            "turning angle [deg]":-2.1274795499,
+            "arc length [m]":1.4198949584
+        },
+        {
+            "stride id":11,
+            "stride length [m]":1.2367189373,
+            "gait velocity [m\/s]":1.1207081343,
+            "ic angle [deg]":-26.0632459503,
+            "tc angle [deg]":61.9554160654,
+            "turning angle [deg]":1.5825212276,
+            "arc length [m]":1.3480256842
+        },
+        {
+            "stride id":12,
+            "stride length [m]":1.1627735413,
+            "gait velocity [m\/s]":1.0090509375,
+            "ic angle [deg]":-16.5981461133,
+            "tc angle [deg]":55.600975657,
+            "turning angle [deg]":29.980879511,
+            "arc length [m]":1.2571528311
+        },
+        {
+            "stride id":14,
+            "stride length [m]":1.3203360756,
+            "gait velocity [m\/s]":1.1964815411,
+            "ic angle [deg]":-21.2001688619,
+            "tc angle [deg]":61.6796934504,
+            "turning angle [deg]":5.1772454815,
+            "arc length [m]":1.4256706309
+        },
+        {
+            "stride id":15,
+            "stride length [m]":1.4582820296,
+            "gait velocity [m\/s]":1.33926529,
+            "ic angle [deg]":-22.5825412802,
+            "tc angle [deg]":63.2449797937,
+            "turning angle [deg]":-1.551401048,
+            "arc length [m]":1.5437614338
+        },
+        {
+            "stride id":16,
+            "stride length [m]":1.4785043401,
+            "gait velocity [m\/s]":1.3763531311,
+            "ic angle [deg]":-20.9156638738,
+            "tc angle [deg]":63.0965387978,
+            "turning angle [deg]":-1.1709777884,
+            "arc length [m]":1.5618187518
+        },
+        {
+            "stride id":17,
+            "stride length [m]":1.4791462967,
+            "gait velocity [m\/s]":1.3895833099,
+            "ic angle [deg]":-24.3418128246,
+            "tc angle [deg]":66.6553547326,
+            "turning angle [deg]":-0.1066729583,
+            "arc length [m]":1.5702955377
+        },
+        {
+            "stride id":18,
+            "stride length [m]":1.3534061264,
+            "gait velocity [m\/s]":1.2598980667,
+            "ic angle [deg]":-23.1736199103,
+            "tc angle [deg]":65.5047276365,
+            "turning angle [deg]":0.8856524241,
+            "arc length [m]":1.4494710057
+        },
+        {
+            "stride id":19,
+            "stride length [m]":1.348706269,
+            "gait velocity [m\/s]":1.2386324838,
+            "ic angle [deg]":-20.2380115402,
+            "tc angle [deg]":64.0146046538,
+            "turning angle [deg]":-1.4208514212,
+            "arc length [m]":1.4577499512
+        },
+        {
+            "stride id":20,
+            "stride length [m]":1.3259748344,
+            "gait velocity [m\/s]":1.2177562605,
+            "ic angle [deg]":-23.2332517629,
+            "tc angle [deg]":62.4824449481,
+            "turning angle [deg]":-1.2519580983,
+            "arc length [m]":1.4160146312
+        },
+        {
+            "stride id":21,
+            "stride length [m]":1.2687108453,
+            "gait velocity [m\/s]":1.1651658346,
+            "ic angle [deg]":-19.5849105688,
+            "tc angle [deg]":61.8944972442,
+            "turning angle [deg]":2.1401707774,
+            "arc length [m]":1.360845438
+        },
+        {
+            "stride id":22,
+            "stride length [m]":1.3024004228,
+            "gait velocity [m\/s]":1.1854738071,
+            "ic angle [deg]":-22.0641247282,
+            "tc angle [deg]":60.4666807798,
+            "turning angle [deg]":-0.2449520491,
+            "arc length [m]":1.401631031
+        },
+        {
+            "stride id":23,
+            "stride length [m]":1.282261175,
+            "gait velocity [m\/s]":1.1517854764,
+            "ic angle [deg]":-19.8293841194,
+            "tc angle [deg]":62.2360840009,
+            "turning angle [deg]":1.7645811738,
+            "arc length [m]":1.3758988169
+        },
+        {
+            "stride id":24,
+            "stride length [m]":1.3836415639,
+            "gait velocity [m\/s]":1.2320425752,
+            "ic angle [deg]":-20.3021742792,
+            "tc angle [deg]":61.1583112291,
+            "turning angle [deg]":-4.0905428807,
+            "arc length [m]":1.4850177523
+        },
+        {
+            "stride id":25,
+            "stride length [m]":1.2936051548,
+            "gait velocity [m\/s]":1.1569010293,
+            "ic angle [deg]":-20.5478283439,
+            "tc angle [deg]":62.2518107007,
+            "turning angle [deg]":4.8935565362,
+            "arc length [m]":1.3863201197
+        },
+        {
+            "stride id":26,
+            "stride length [m]":1.2946435642,
+            "gait velocity [m\/s]":1.142857767,
+            "ic angle [deg]":-20.085899757,
+            "tc angle [deg]":62.8440089547,
+            "turning angle [deg]":-0.2247531908,
+            "arc length [m]":1.3946285933
+        }
+    ]
+}

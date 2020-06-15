@@ -1,0 +1,184 @@
+{
+    "schema":{
+        "fields":[
+            {
+                "name":"stride id",
+                "type":"integer"
+            },
+            {
+                "name":"stride time [s]",
+                "type":"number"
+            },
+            {
+                "name":"swing time [s]",
+                "type":"number"
+            },
+            {
+                "name":"stance time [s]",
+                "type":"number"
+            }
+        ],
+        "primaryKey":[
+            "stride id"
+        ],
+        "pandas_version":"0.20.0"
+    },
+    "data":[
+        {
+            "stride id":0,
+            "stride time [s]":1.0595703125,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.6640625
+        },
+        {
+            "stride id":1,
+            "stride time [s]":1.064453125,
+            "swing time [s]":0.3759765625,
+            "stance time [s]":0.6884765625
+        },
+        {
+            "stride id":2,
+            "stride time [s]":1.0791015625,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.6982421875
+        },
+        {
+            "stride id":3,
+            "stride time [s]":1.0595703125,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.6787109375
+        },
+        {
+            "stride id":4,
+            "stride time [s]":1.0498046875,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.6689453125
+        },
+        {
+            "stride id":5,
+            "stride time [s]":1.0498046875,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.6640625
+        },
+        {
+            "stride id":6,
+            "stride time [s]":1.0595703125,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.673828125
+        },
+        {
+            "stride id":7,
+            "stride time [s]":1.07421875,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.693359375
+        },
+        {
+            "stride id":8,
+            "stride time [s]":1.0791015625,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.693359375
+        },
+        {
+            "stride id":9,
+            "stride time [s]":1.09375,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.6982421875
+        },
+        {
+            "stride id":10,
+            "stride time [s]":1.103515625,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.7177734375
+        },
+        {
+            "stride id":11,
+            "stride time [s]":1.103515625,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.72265625
+        },
+        {
+            "stride id":12,
+            "stride time [s]":1.15234375,
+            "swing time [s]":0.37109375,
+            "stance time [s]":0.78125
+        },
+        {
+            "stride id":14,
+            "stride time [s]":1.103515625,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.7080078125
+        },
+        {
+            "stride id":15,
+            "stride time [s]":1.0888671875,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.703125
+        },
+        {
+            "stride id":16,
+            "stride time [s]":1.07421875,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.6787109375
+        },
+        {
+            "stride id":17,
+            "stride time [s]":1.064453125,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.6787109375
+        },
+        {
+            "stride id":18,
+            "stride time [s]":1.07421875,
+            "swing time [s]":0.380859375,
+            "stance time [s]":0.693359375
+        },
+        {
+            "stride id":19,
+            "stride time [s]":1.0888671875,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.693359375
+        },
+        {
+            "stride id":20,
+            "stride time [s]":1.0888671875,
+            "swing time [s]":0.37109375,
+            "stance time [s]":0.7177734375
+        },
+        {
+            "stride id":21,
+            "stride time [s]":1.0888671875,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.703125
+        },
+        {
+            "stride id":22,
+            "stride time [s]":1.0986328125,
+            "swing time [s]":0.3857421875,
+            "stance time [s]":0.712890625
+        },
+        {
+            "stride id":23,
+            "stride time [s]":1.11328125,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.7177734375
+        },
+        {
+            "stride id":24,
+            "stride time [s]":1.123046875,
+            "swing time [s]":0.400390625,
+            "stance time [s]":0.72265625
+        },
+        {
+            "stride id":25,
+            "stride time [s]":1.1181640625,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.72265625
+        },
+        {
+            "stride id":26,
+            "stride time [s]":1.1328125,
+            "swing time [s]":0.3955078125,
+            "stance time [s]":0.7373046875
+        }
+    ]
+}

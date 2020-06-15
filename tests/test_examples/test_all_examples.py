@@ -75,3 +75,15 @@ def test_trajectory_reconstruction(snapshot):
     # just look at last values to see if final result is correct and save runtime
     snapshot.assert_match(trajectory.position_["left_sensor"].tail(20))
     snapshot.assert_match(trajectory.orientation_["left_sensor"].tail(20))
+
+
+def test_mad_pipeline(snapshot):
+    from examples.mad_gait_pipeline import ed, spatial_paras, temporal_paras
+
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left")
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right")
+    snapshot.assert_match(spatial_paras.parameters_pretty_["right_sensor"], "spatial_paras_right")
+    snapshot.assert_match(temporal_paras.parameters_pretty_["right_sensor"], "temporal_paras_right")
+    snapshot.assert_match(spatial_paras.parameters_pretty_["left_sensor"], "spatial_paras_left")
+    snapshot.assert_match(temporal_paras.parameters_pretty_["left_sensor"], "temporal_paras_left")
+
