@@ -469,7 +469,8 @@ class BaseDtw(BaseStrideSegmentation):
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
     ) -> np.ndarray:
         len_template = template_array.shape[0]
-        template = interp1d(np.linspace(0, len_template, len_template), template_array)(
+        current_x = np.linspace(0, len_template, len_template)
+        template = interp1d(current_x, template_array, axis=0)(
             np.linspace(0, len_template, int(len_template * new_sampling_rate / template_sampling_rate_hz))
         )
         return template

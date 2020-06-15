@@ -16,6 +16,7 @@ import pytest
 from scipy.signal import square
 
 from gaitmap.base import BaseType
+from gaitmap.stride_segmentation import BarthOriginalTemplate
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
@@ -449,3 +450,14 @@ class TestTemplateResampling(DtwTestBase):
         dtw.segment(test_data, 20)
 
         assert len(dtw.matches_start_end_) == 0
+
+    @pytest.mark.parametrize("sampling_rate", (102.4, 204.8, 100, 500, 409.6))
+    def test_resample_decimal_values(self, sampling_rate):
+        """As a test, we gonna try to resample the Barth Template to various sampling rates."""
+        test_template = BarthOriginalTemplate().data
+        resampled_template = BaseDtw._resample_template(
+            test_template, BarthOriginalTemplate().sampling_rate_hz, sampling_rate
+        )
+
+        # We just gonna check the length of the resampled template
+        assert len(resampled_template) == int(200 * sampling_rate / 204.8)
