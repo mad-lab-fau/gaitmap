@@ -54,8 +54,8 @@ class TestRegressionOnRealData:
         dtw.segment(data, sampling_rate_hz=204.8)
         out_without_snapping = dtw.matches_start_end_["left_sensor"]
 
-        assert dtw.stride_list_["left_sensor"]["start"][0] == 364
-        assert dtw.stride_list_["left_sensor"]["end"][0] == 574
+        assert dtw.stride_list_["left_sensor"]["start"][0] == 365
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 571
         assert_array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
 
         # on
