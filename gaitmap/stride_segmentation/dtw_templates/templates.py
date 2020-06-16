@@ -208,8 +208,7 @@ def create_interpolated_dtw_template(
         A multiplicative factor multiplied onto the template to adapt for another signal range
     use_cols
         The columns of the template that should actually be used.
-        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
-        must match a subset of these columns.
+        The content of `use_cols` must match a subset of these given stride dataframe columns.
 
     See Also
     --------
@@ -218,12 +217,12 @@ def create_interpolated_dtw_template(
     gaitmap.stride_segmentation.DtwTemplate: Template base class
 
     """
+    if not isinstance(stride_data, list):
+        stride_data = [stride_data]
+
     if n_samples is None:
         # get mean stride length over given strides
         n_samples = int(np.rint(np.mean([len(df) for df in stride_data])))
-
-    if not isinstance(stride_data, list):
-        stride_data = [stride_data]
 
     for df in stride_data:
         if not is_single_sensor_dataset(df, check_acc=False, check_gyr=True, frame="body"):
