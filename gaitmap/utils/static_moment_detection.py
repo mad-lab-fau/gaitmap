@@ -10,14 +10,14 @@ from gaitmap.utils.array_handling import _bool_fill
 
 # supported metric functions
 _METRIC_FUNCTIONS = {"maximum": np.nanmax, "variance": np.nanvar, "mean": np.nanmean, "median": np.nanmedian}
-METRIC_FUNTION_NAMES = Literal["maximum", "variance", "mean", "median"]
+METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median"]
 
 
 def find_static_samples(
     signal: np.ndarray,
     window_length: int,
     inactive_signal_th: float,
-    metric: METRIC_FUNTION_NAMES = "mean",
+    metric: METRIC_FUNCTION_NAMES = "mean",
     overlap: int = None,
 ) -> np.ndarray:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
@@ -105,7 +105,7 @@ def find_static_sequences(
     signal: np.ndarray,
     window_length: int,
     inactive_signal_th: float,
-    metric: METRIC_FUNTION_NAMES = "mean",
+    metric: METRIC_FUNCTION_NAMES = "mean",
     overlap: int = None,
 ) -> np.ndarray:
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
@@ -166,7 +166,7 @@ def find_static_sequences(
 
 
 def find_first_static_window_multi_sensor(
-    signals: Sequence[np.ndarray], window_length: int, inactive_signal_th: float, metric: METRIC_FUNTION_NAMES
+    signals: Sequence[np.ndarray], window_length: int, inactive_signal_th: float, metric: METRIC_FUNCTION_NAMES
 ) -> Tuple[int, int]:
     """Find the first time window in the signal where all provided sensors are static.
 
