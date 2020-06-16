@@ -339,16 +339,20 @@ class BaseDtw(BaseStrideSegmentation):
 
         if self.sampling_rate_hz != template.sampling_rate_hz:
             if self.resample_template is True:
-                template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
+                final_template = self._resample_template(
+                    template_array, template.sampling_rate_hz, self.sampling_rate_hz
+                )
             elif template.sampling_rate_hz:
                 warnings.warn(
                     "The data and template sampling rate are different ({} Hz vs. {} Hz), "
                     "but `resample_template` is False. "
                     "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
                 )
-                template = template_array
+                final_template = template_array
+            else:
+                final_template = template_array
         else:
-            template = template_array
+            final_template = template_array
 
         self._min_sequence_length = self.min_match_length_s
         if self._min_sequence_length not in (None, 0, 0.0):
@@ -360,7 +364,7 @@ class BaseDtw(BaseStrideSegmentation):
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
         # Calculate cost matrix
-        acc_cost_mat_ = self._calculate_cost_matrix(template, matching_data)
+        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data)
 
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,

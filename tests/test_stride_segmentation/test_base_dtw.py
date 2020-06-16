@@ -461,3 +461,17 @@ class TestTemplateResampling(DtwTestBase):
 
         # We just gonna check the length of the resampled template
         assert len(resampled_template) == int(200 * sampling_rate / 204.8)
+
+    def test_bug_missing_if(self):
+        """Test that no error is thrown if sampling rates are different, but the template has no sampling rate."""
+
+        template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
+
+        template = create_dtw_template(np.array(template), sampling_rate_hz=None)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        try:
+            dtw.segment(test_data, 20)
+        except:
+            pytest.fail(pytrace=True)
