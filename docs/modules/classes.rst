@@ -247,6 +247,7 @@ Functions
     find_local_minima_with_distance
     find_extrema_in_radius
     split_array_at_nan
+    interpolate1D
 
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes

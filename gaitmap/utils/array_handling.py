@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional
 import numpy as np
 from numba import njit
 from scipy.signal import find_peaks
+from scipy.interpolate import interp1d
 from typing_extensions import Literal
 
 
@@ -221,3 +222,33 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
         # perform logical or operation to combine all overlapping window results
         array[index] = np.logical_or(array[index], val)
     return array
+
+
+def interpolate1D(array: np.ndarray, n_samples: int, kind: str = "linear") -> np.ndarray:
+    """Interpolate a given input array to fixed number of samples.
+
+    This function is wrapper for the
+    `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+    method.
+
+    Parameters
+    ----------
+    array : 1D array
+        Data which shall be interpolated
+    n_samples : int
+        Number of samples in interpolation result
+    kind : str
+        Interpolation function: Please refer to `scipy.interpolate.interp1d
+        <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+    Returns
+    -------
+    interpolated input data
+        Interpolted array with length n_samples, while first and last value of input array equal first and last value
+        of output array.
+
+    """
+    x_orig = np.linspace(0, len(array), num=len(array), endpoint=True)
+    interp_func = interp1d(x_orig, array, kind=kind)
+    x_new = np.linspace(0, len(array), num=n_samples, endpoint=True)
+    return interp_func(x_new)
