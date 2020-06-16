@@ -224,7 +224,7 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
     return array
 
 
-def interpolate1D(array: np.ndarray, n_samples: int, kind: str = "linear") -> np.ndarray:
+def interpolate1d(array: np.ndarray, n_samples: int, kind: str = "linear") -> np.ndarray:
     """Interpolate a given input array to fixed number of samples.
 
     This function is wrapper for the

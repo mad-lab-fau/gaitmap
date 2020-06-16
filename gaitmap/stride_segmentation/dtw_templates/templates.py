@@ -1,11 +1,13 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, List
 
 import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.utils.array_handling import interpolate1d
+from gaitmap.utils.dataset_helper import is_single_sensor_dataset
 
 
 class DtwTemplate(_BaseSerializable):
@@ -173,3 +175,66 @@ def create_dtw_template(
     )
 
     return template_instance
+
+
+def create_interpolated_dtw_template(
+    stride_data: Tuple[pd.DataFrame, List[pd.DataFrame]],
+    kind: str = "linear",
+    n_samples: Optional[int] = None,
+    sampling_rate_hz: Optional[float] = None,
+    scaling: Optional[float] = None,
+    use_cols: Optional[Tuple[Union[str, int]]] = None,
+) -> DtwTemplate:
+    """Create a DtwTemplate by interpolation. If multiple strides are given they are combined by calculating their mean.
+
+    This function can be used to generate a DtwTemplate from multiple input strides, all stride will be interpolated
+    to the same length, and combined by calculating their mean. Interpolation and mean calculation will be performed
+    over all given input axis.
+
+    Parameters
+    ----------
+    stride_data
+        Either a single dataframe or a list of dataframes which shall be used for template generation. Each dataframe
+        should therefore contain a single stride in gaitmap body frame convention
+    kind
+        Interpolation function: Please refer to `scipy.interpolate.interp1d
+        <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+    n_samples
+        Number of samples to which the data will be interpolated. If None, the number of samples will be the mean
+        length of all given input strides.
+    sampling_rate_hz
+        The sampling rate that was used to record the template data
+    scaling
+        A multiplicative factor multiplied onto the template to adapt for another signal range
+    use_cols
+        The columns of the template that should actually be used.
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.DtwTemplate: Template base class
+
+    """
+    if n_samples is None:
+        # get mean stride length over given strides
+        n_samples = int(np.rint(np.mean([len(df) for df in stride_data])))
+
+    if not isinstance(stride_data, list):
+        stride_data = [stride_data]
+
+    for df in stride_data:
+        if not is_single_sensor_dataset(df, check_acc=False, check_gyr=True, frame="body"):
+            raise ValueError("All input dataframes must full fill the gaitmap bodyframe coordinate convention!")
+
+    # interpolate all strides to mean number of samples
+    stride_dataframe_list_resampled = [
+        stride_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for stride_df in stride_data
+    ]
+
+    # calcualte elementwise mean over all strides
+    stride_template_df = pd.concat(stride_dataframe_list_resampled).mean(level=0)
+
+    return create_dtw_template(stride_template_df, sampling_rate_hz, scaling, use_cols)

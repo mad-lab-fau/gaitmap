@@ -96,6 +96,7 @@ Functions
    :template: function.rst
 
     create_dtw_template
+    create_interpolated_dtw_template
     base_dtw.find_matches_find_peaks
     base_dtw.find_matches_min_under_threshold
 
@@ -247,7 +248,7 @@ Functions
     find_local_minima_with_distance
     find_extrema_in_radius
     split_array_at_nan
-    interpolate1D
+    interpolate1d
 
 
 :mod:`gaitmap.utils.dataset_helper`: Helper to perform validation of the default datatypes
