@@ -333,24 +333,22 @@ class BaseDtw(BaseStrideSegmentation):
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
                 "template."
             )
+        if (
+            template.sampling_rate_hz
+            and self.sampling_rate_hz != template.sampling_rate_hz
+            and self.resample_template is False
+        ):
+            warnings.warn(
+                "The data and template sampling rate are different ({} Hz vs. {} Hz), "
+                "but `resample_template` is False. "
+                "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
+            )
 
         # Extract the parts of the data that is relevant for matching.
         template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
 
-        if self.sampling_rate_hz != template.sampling_rate_hz:
-            if self.resample_template is True:
-                final_template = self._resample_template(
-                    template_array, template.sampling_rate_hz, self.sampling_rate_hz
-                )
-            elif template.sampling_rate_hz:
-                warnings.warn(
-                    "The data and template sampling rate are different ({} Hz vs. {} Hz), "
-                    "but `resample_template` is False. "
-                    "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
-                )
-                final_template = template_array
-            else:
-                final_template = template_array
+        if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
+            final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:
             final_template = template_array
 
