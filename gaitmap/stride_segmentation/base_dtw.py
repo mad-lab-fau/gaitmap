@@ -117,6 +117,9 @@ class BaseDtw(BaseStrideSegmentation):
         The template used for matching.
         The required data type and shape depends on the use case.
         For more details view the class docstring.
+        Note that the `scale` parameter of the template is used to downscale the data before the matching is performed.
+        If you have data in another data range (e.g. a different unit), the scale parameter of the template should be
+        adjusted.
     resample_template
         If `True` the template will be resampled to match the sampling rate of the data.
         This requires a valid value for `template.sampling_rate_hz` value.
@@ -124,6 +127,7 @@ class BaseDtw(BaseStrideSegmentation):
         Note, that this might lead to unexpected results in case of short template arrays.
     max_cost
         The maximal allowed cost to find potential match in the cost function.
+        Note that the cost is roughly calculated as: `sqrt(|template - data/template.scaling|)`.
         Its usage depends on the exact `find_matches_method` used.
         Refer to the specific funtion to learn more about this.
     min_match_length_s
@@ -346,6 +350,12 @@ class BaseDtw(BaseStrideSegmentation):
 
         # Extract the parts of the data that is relevant for matching.
         template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
+        # Ensure that all values are floats
+        template_array = template_array.astype(float)
+        matching_data = matching_data.astype(float)
+        # Downscale the data by the factor provided by the template
+        scaling_factor = float(getattr(template, "scaling", None) or 1.0)
+        matching_data /= scaling_factor
 
         if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
             final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)

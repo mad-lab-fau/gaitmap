@@ -16,6 +16,8 @@ class DtwTemplate(_BaseSerializable):
     data
         The actual data representing the template.
         If this should be a array or a dataframe might depend on your usecase.
+        Usually it is a good idea to scale the data to a range from 0-1 and then use the scale parameter to downscale
+        the signal.
     template_file_name
         Alternative to providing a `template` you can provide the filename of any file stored in
         `gaitmap/stride_segmentation/dtw_templates`.
@@ -23,9 +25,12 @@ class DtwTemplate(_BaseSerializable):
     sampling_rate_hz
         The sampling rate that was used to record the template data
     scaling
-        A multiplicative factor multiplied onto the template to adapt for another signal range.
-        Usually the scaled template should have the same value range as the data signal.
+        A multiplicative factor used to downscale the signal before the template is applied.
+        The downscaled signal should then have have the same value range as the template signal.
         A large scale difference between data and template will result in mismatches.
+        At the moment only homogeneous scaling of all axis is supported.
+        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
+        scaling factor in the same way.
     use_cols
         The columns of the template that should actually be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
@@ -70,8 +75,7 @@ class DtwTemplate(_BaseSerializable):
         if self._data is None:
             with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
                 self._data = pd.read_csv(test_data, header=0)
-        scaling = getattr(self, "scaling", None) or 1
-        template = self._data * scaling
+        template = self._data
 
         if getattr(self, "use_cols", None) is None:
             return template
@@ -89,9 +93,15 @@ class BarthOriginalTemplate(DtwTemplate):
     Parameters
     ----------
     scaling
-        A multiplicative factor multiplied onto the template to adapt for another signal range.
-        For this template the default value is 500, which loosly scales the template to match a signal that has a
-        a max-gyro peak of approx. 500 deg/s in `gyr_ml` during the swing phase.
+        A multiplicative factor used to downscale the signal before the template is applied.
+        The downscaled signal should then have have the same value range as the template signal.
+        A large scale difference between data and template will result in mismatches.
+        At the moment only homogeneous scaling of all axis is supported.
+        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
+        scaling factor in the same way.
+        For this template the default value is 500, which is adapted for data that has a max-gyro peak of approx.
+        500 deg/s in `gyr_ml` during the swing phase.
+        This is appropriate for most walking styles.
     use_cols
         The columns of the template that should actually be used.
         The default (all gyro axis) should work well, but will not match turning stride.
@@ -140,9 +150,14 @@ def create_dtw_template(
     sampling_rate_hz
         The sampling rate that was used to record the template data
     scaling
-        A multiplicative factor multiplied onto the template to adapt for another signal range
+        A multiplicative factor used to downscale the signal before the template is applied.
+        The downscaled signal should then have have the same value range as the template signal.
+        A large scale difference between data and template will result in mismatches.
+        At the moment only homogeneous scaling of all axis is supported.
+        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
+        scaling factor in the same way.
     use_cols
-        The columns of the template that should actualle be used.
+        The columns of the template that should actually be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
         must match a subset of these columns.
 
