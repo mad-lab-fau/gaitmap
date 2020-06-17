@@ -47,9 +47,13 @@ example_dataset.sort_index(axis=1).head(1)
 # Based on this knowledge it should be possible to achieve a rough alignment with the gaitmap SF.
 # Most of the time this should be solvable by using only multiples of 90/180 deg rotations (provided that the
 # sensor was at least somewhat aligned to one of the foots axis during recording)!
+# Helper functions for this initial alignment are provided in an additional external package called **gaitmap-io**!
 #
-# In the provided example, the two sensors were mounted latterly on the foot and their z-axis was pointing "outwards"
-# on both sides.
+# In the provided example, the two sensors were mounted laterally on the foot. Given a birds eye view of both feet:
+#   - The x-axis for left and right foot was pointing "upwards" (parallel to gravity)
+#   - The y-axis for left foot was pointing in movement direction "forwards", while the y-axis for the right foot was pointing opposite to the movement direction "backwards"
+#   - The z-axis for left and right foot was pointing "outwards" on the lateral side
+#
 # This required two independent rotations for the left and the right foot to achieve the alignment.
 # In other cases, a single rotation for both sensors might be sufficient.
 
