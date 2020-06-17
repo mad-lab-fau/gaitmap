@@ -1,5 +1,5 @@
 r"""
-.. _mulit_process:
+.. _example_mulit_process:
 
 Running multiple pipelines in parallel
 =======================================
@@ -11,7 +11,7 @@ Core.
 While gaitmap tries to make use of lower level C-implementations (that release the GIL) for many of the heavy lifting
 tasks, this does not result in the expected performance increase one might expect from going from a 2-core to a 4-core
 processor.
-To make proper use of multiple cores, Python - and in turn gaitmap - need to run multiple separte processes, each bound
+To make proper use of multiple cores, Python - and in turn gaitmap - need to run multiple separate processes, each bound
 to a different core.
 
 The following example shows how a gaitmap Algorithms (or pipeline of algorithms) can be run in parallel with different
@@ -21,51 +21,69 @@ A similar multiprocessing approach could be used to compute multiple subjects or
 .. note:: To get the best performance you need to select a number of parallel processes that make sense for your CPU.
           While, it might be tempting to set this number to the number of available processing thread, this might not
           always yield the best results.
-          Modern CPU have adaptive clock speeds and hitting the processor with a all core load usually results in a
+          Modern CPU have adaptive clock speeds and hitting the processor with an all core load usually results in a
           reduction of per core performance.
           Hence, more parallel processes might not always result in the best overall performance.
 
+The following example shows how you can make a parameter sweep for the Stride Segmentation Algorithm using `joblib`
+as a helper module.
+Other Python helper to spawn multiple processes will of course work as well.
+
 """
 from pprint import pprint
+from typing import Dict, Any
 
 # %%
-# To JSON
-# -------
-# In the following we will create an algorithm instance that itself has other nested algorithm objects.
-# In the from the json output
-from scipy.spatial.transform import Rotation
+# Load some example data
+# ----------------------
+from gaitmap.example_data import get_healthy_example_imu_data
+from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
-from gaitmap.base import BaseAlgorithm
-from gaitmap.trajectory_reconstruction import StrideLevelTrajectory, MadgwickAHRS, ForwardBackwardIntegration
-
-# First, let's load some data and set up the Stride detection algorithm we want to run
-
-from sklearn
-custom_ori_method = MadgwickAHRS(beta=0.5, initial_orientation=Rotation.from_quat([0, 3, 3, 0]))
-custom_pos_method = ForwardBackwardIntegration(turning_point=0.8)
-
-slt = StrideLevelTrajectory(ori_method=custom_ori_method, pos_method=custom_pos_method, align_window_width=10)
-pprint(slt.get_params())
+data = get_healthy_example_imu_data()
+bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
+sampling_rate_hz = 204.8
 
 # %%
-json_str = slt.to_json()
+# Preparing the stride segmentation
+# ---------------------------------
+# In this example we simulate a Gridsearch.
+# To make this example as real-life as possible, we use the sklearn `ParameterGrid` to set up our parameter sweep.
+# Note, that we make use of gaitmaps `set_params` methods later.
+# Hence, we can specify parameters for the nested template object in the parameter grid using the double "_" notation.
+from gaitmap.stride_segmentation import BarthDtw
+from sklearn.model_selection import ParameterGrid
 
-print(json_str)
+dtw = BarthDtw()
+parameter_grid = ParameterGrid({"max_cost": [1800, 2200], "template__use_cols": [("gyr_ml",), ("gyr_ml", "gyr_si")]})
 
-# %%
-# This output could now be stored in a file to document the exact parameters that were used for a specific analysis.
-#
-#
-# From JSON
-# ---------
-# All algorithms can be loaded from json as well using the `from_json` method.
-# This method can be called on any algorithm class and the Algorithm class specified in the json object is returned.
-# To avoid confusion it is advisable to use either the exact algorithm class that was stored or `BaseAlgorithm`.
-loaded_slt = BaseAlgorithm.from_json(json_str)
-pprint(loaded_slt.get_params())
+pprint(list(parameter_grid))
 
 # %%
-# To show that you can call `from_json` from any Algorithm class we will perform the same import using the
-# `StrideLevelTrajectory`.
-loaded_slt = StrideLevelTrajectory.from_json(json_str)
-pprint(loaded_slt.get_params())
+# Creating a function for the Multi-processing
+# --------------------------------------------
+# To run something in parallel, we need to write a function that will be executed in every process.
+# The function below returns the entire dtw object, which might not be desired, as each object contains a copy of the
+# entire data.
+# Further, the current concept will copy the entire data to each process.
+# This could be further optimized by using a read-only shared memory object for the data.
+
+
+def run(dtw: BarthDtw, parameter: Dict[str, Any]) -> BarthDtw:
+    # For this run change the parameters on the dtw object
+    dtw = dtw.set_params(**parameter)
+    dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
+    return dtw
+
+
+# %%
+# Do the Parallel Run
+# -------------------
+# Finally we use joblib to run the code in parallel using 2 workers.
+from joblib import Parallel, delayed
+
+results = Parallel(n_jobs=2)(delayed(run)(dtw, para) for para in parameter_grid)
+
+# %%
+# We will not inspect the results here, but we can see that each dtw, object has different parameters set.
+for r in results:
+    pprint(r.get_params())
