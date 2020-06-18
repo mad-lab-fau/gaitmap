@@ -14,12 +14,12 @@ processor.
 To make proper use of multiple cores, Python - and in turn gaitmap - need to run multiple separate processes, each bound
 to a different core.
 
-The following example shows how a gaitmap Algorithms (or pipeline of algorithms) can be run in parallel with different
+The following example shows how a gaitmap algorithm (or pipeline of algorithms) can be run in parallel with different
 parameter combinations.
 A similar multiprocessing approach could be used to compute multiple subjects or recordings in parallel.
 
 .. note:: To get the best performance you need to select a number of parallel processes that make sense for your CPU.
-          While, it might be tempting to set this number to the number of available processing thread, this might not
+          While it might be tempting to set this number to the number of available processing threads, this might not
           always yield the best results.
           Modern CPU have adaptive clock speeds and hitting the processor with an all core load usually results in a
           reduction of per core performance.
@@ -27,7 +27,7 @@ A similar multiprocessing approach could be used to compute multiple subjects or
 
 The following example shows how you can make a parameter sweep for the Stride Segmentation Algorithm using `joblib`
 as a helper module.
-Other Python helper to spawn multiple processes will of course work as well.
+Other Python helpers to spawn multiple processes will of course work as well.
 
 """
 from pprint import pprint
@@ -69,7 +69,7 @@ pprint(list(parameter_grid))
 
 
 def run(dtw: BarthDtw, parameter: Dict[str, Any]) -> BarthDtw:
-    # For this run change the parameters on the dtw object
+    # For this run, change the parameters on the dtw object
     dtw = dtw.set_params(**parameter)
     dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
     return dtw
@@ -84,6 +84,6 @@ from joblib import Parallel, delayed
 results = Parallel(n_jobs=2)(delayed(run)(dtw, para) for para in parameter_grid)
 
 # %%
-# We will not inspect the results here, but we can see that each dtw, object has different parameters set.
+# We will not inspect the results here, but we can see that each dtw object has different parameters set.
 for r in results:
     pprint(r.get_params())
