@@ -86,3 +86,11 @@ def test_mad_pipeline(snapshot):
     snapshot.assert_match(temporal_paras.parameters_pretty_["right_sensor"], "temporal_paras_right")
     snapshot.assert_match(spatial_paras.parameters_pretty_["left_sensor"], "spatial_paras_left")
     snapshot.assert_match(temporal_paras.parameters_pretty_["left_sensor"], "temporal_paras_left")
+
+
+def test_multi_process():
+    """Test the multiprocess example.
+
+    We do not test the multi process example.
+    Unfortunately, it is somehow not possible to execute something that uses multiprocessing in pytest.
+    """
