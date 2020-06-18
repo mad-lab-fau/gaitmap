@@ -333,22 +333,24 @@ class BaseDtw(BaseStrideSegmentation):
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
                 "template."
             )
+        if (
+            template.sampling_rate_hz
+            and self.sampling_rate_hz != template.sampling_rate_hz
+            and self.resample_template is False
+        ):
+            warnings.warn(
+                "The data and template sampling rate are different ({} Hz vs. {} Hz), "
+                "but `resample_template` is False. "
+                "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
+            )
 
         # Extract the parts of the data that is relevant for matching.
         template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
 
-        if self.sampling_rate_hz != template.sampling_rate_hz:
-            if self.resample_template is True:
-                template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
-            elif template.sampling_rate_hz:
-                warnings.warn(
-                    "The data and template sampling rate are different ({} Hz vs. {} Hz), "
-                    "but `resample_template` is False. "
-                    "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
-                )
-                template = template_array
+        if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
+            final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:
-            template = template_array
+            final_template = template_array
 
         self._min_sequence_length = self.min_match_length_s
         if self._min_sequence_length not in (None, 0, 0.0):
@@ -360,7 +362,7 @@ class BaseDtw(BaseStrideSegmentation):
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
         # Calculate cost matrix
-        acc_cost_mat_ = self._calculate_cost_matrix(template, matching_data)
+        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data)
 
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,

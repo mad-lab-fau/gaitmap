@@ -461,3 +461,55 @@ class TestTemplateResampling(DtwTestBase):
 
         # We just gonna check the length of the resampled template
         assert len(resampled_template) == int(200 * sampling_rate / 204.8)
+
+    def test_bug_missing_if(self):
+        """Test that no error is thrown if sampling rates are different, but the template has no sampling rate."""
+
+        template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
+
+        template = create_dtw_template(np.array(template), sampling_rate_hz=None)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        try:
+            dtw.segment(test_data, 20)
+        except Exception as e:
+            pytest.fail("Raised unexpected error: {}".format(e), pytrace=True)
+
+    def test_error_if_not_template_sampling_rate(self):
+        """If the template should be resampled, but the template has no sampling rate, raise an error."""
+        template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
+
+        template = create_dtw_template(np.array(template), sampling_rate_hz=None)
+        dtw = self.init_dtw(template=template, resample_template=True)
+
+        with pytest.raises(ValueError) as e:
+            dtw.segment(test_data, 20)
+
+        assert "resample the template" in str(e)
+
+    def test_warning_when_no_resample_but_different_sampling_rate(self):
+        """In case the template and the data have different sampling rates, but resample is false, the user will be
+        warned."""
+
+        template_arr = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+        test_data = np.array([0, 0, *template_arr, 0, 0, *template_arr, 0, 0])
+
+        template = create_dtw_template(np.array(template_arr), sampling_rate_hz=10)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        with pytest.warns(UserWarning) as w:
+            dtw.segment(test_data, 20)
+
+        assert len(w) == 1
+        assert "sampling rate are different" in str(w[0])
+
+        # The warning should not be raised in case their is no template sampling rate
+        template = create_dtw_template(np.array(template_arr), sampling_rate_hz=False)
+        dtw = self.init_dtw(template=template, resample_template=False)
+
+        with pytest.warns(None) as w:
+            dtw.segment(test_data, 20)
+
+        assert len(w) == 0
