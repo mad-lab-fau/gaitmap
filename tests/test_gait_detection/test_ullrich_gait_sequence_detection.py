@@ -28,8 +28,9 @@ class TestUllrichGaitSequenceDetection:
     @pytest.mark.parametrize(
         "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), (BF_ACC, 13), (BF_GYR, 11))
     )
-    def test_different_activities_different_configs(self, healthy_example_imu_data, sensor_channel_config,
-                                                 peak_prominence, snapshot):
+    def test_different_activities_different_configs(
+        self, healthy_example_imu_data, sensor_channel_config, peak_prominence, snapshot
+    ):
         """Test if the algorithm is generally working with different sensor channel configs and their respective
                 optimal peak prominence thresholds."""
         data = coordinate_conversion.convert_to_fbf(
@@ -60,7 +61,7 @@ class TestUllrichGaitSequenceDetection:
         if isinstance(filename, (tuple, list)):
             filename = "_".join(filename)
         filename = filename + "_" + str(peak_prominence)
-        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], filename, check_dtype=True)
+        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], filename, check_dtype=False)
 
     def test_invalid_sensor_channel_config_type(self, healthy_example_imu_data):
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
