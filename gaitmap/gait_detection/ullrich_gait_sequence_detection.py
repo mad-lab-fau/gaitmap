@@ -248,6 +248,13 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # active signal detection
         s_1d, active_signal_mask = self._active_signal_detection(s_3d_norm, s_1d, active_signal_th)
 
+        if s_1d.size == 0:
+            gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
+            start_ = np.array(gait_sequences_["start"])
+            end_ = np.array(gait_sequences_["end"])
+
+            return gait_sequences_, start_, end_
+
         # dominant frequency via autocorrelation
         dominant_frequency = self._get_dominant_frequency(s_1d)
 
