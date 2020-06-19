@@ -77,7 +77,7 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config)
             gsd = gsd.detect(data, 204.8)
 
-    @pytest.mark.parametrize("sensor_channel_config",("dummy",["dummy"]))
+    @pytest.mark.parametrize("sensor_channel_config", ("dummy", ["dummy"]))
     def test_invalid_sensor_channel_config_value(self, healthy_example_imu_data, sensor_channel_config):
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
         data = coordinate_conversion.convert_to_fbf(
@@ -104,7 +104,7 @@ class TestUllrichGaitSequenceDetection:
             gsd = gsd.detect(data, 204.8)
 
     @pytest.mark.parametrize("locomotion_band", ([1], (0, 1, 2)))
-    def test_invalid_locomotion_band_size(self, healthy_example_imu_data,locomotion_band):
+    def test_invalid_locomotion_band_size(self, healthy_example_imu_data, locomotion_band):
         """Check if ValueError is raised for locomotion band with other than two values."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -115,7 +115,7 @@ class TestUllrichGaitSequenceDetection:
             gsd1 = gsd1.detect(data, 204.8)
 
     @pytest.mark.parametrize("locomotion_band", ((3, 0.5), (0.5, 0.5)))
-    def test_invalid_locomotion_value_order(self, healthy_example_imu_data,locomotion_band):
+    def test_invalid_locomotion_value_order(self, healthy_example_imu_data, locomotion_band):
         """Check if ValueError is raised for locomotion band where second value is smaller or equal than first."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
