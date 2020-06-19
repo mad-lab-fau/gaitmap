@@ -169,49 +169,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # TODO implement merging of gait sequences for synced data
         if self.merge_gait_sequences_from_sensors and is_multi_sensor_dataset(data) and isinstance(data, pd.DataFrame):
             raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
-        if (
-            self.merge_gait_sequences_from_sensors
-            and is_multi_sensor_dataset(data)
-            and not isinstance(data, pd.DataFrame)
-        ):
-            raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
-        # check for correct input value for sensor_channel_config
-        if isinstance(self.sensor_channel_config, list) and not (
-            self.sensor_channel_config == BF_ACC or self.sensor_channel_config == BF_GYR
-        ):
-            raise ValueError(
-                "The sensor_channel_config list you have passed is invalid. If you pass a list it must be either "
-                "BF_ACC or BF_GYR."
-            )
-
-        if (
-            isinstance(self.sensor_channel_config, str)
-            and self.sensor_channel_config not in np.array([BF_ACC, BF_GYR]).flatten()
-        ):
-            raise ValueError(
-                "The sensor_channel_config str you have passed is invalid. If you pass a str it must be one of the "
-                "entries of either BF_ACC or BF_GYR."
-            )
-
-        if not (isinstance(self.sensor_channel_config, list) or isinstance(self.sensor_channel_config, str)):
-            raise ValueError("Sensor_channel_config must be a list or a str.")
-
-        # check locomotion band
-        if len(self.locomotion_band) != 2:
-            raise ValueError("The tuple for the locomotion band must contain exactly two values.")
-        if self.locomotion_band[0] >= self.locomotion_band[1]:
-            raise ValueError("The first entry of the locomotion band must be smaller than the second value.")
-        if self.locomotion_band[0] <= 0:
-            raise ValueError("The first entry of the locomotion band must be larger than 0.")
-
-        # check if 5 * upper freq range limit is close to nyquist freq (allow for a difference > 5 Hz). This would
-        # cause edge cases for the flattened fft peak detection later on.
-        if (self.sampling_rate_hz / 2) - (5 * self.locomotion_band[1]) < 5:
-            raise ValueError(
-                "The upper limit of the locomotion band is too close to the Nyquist frequency of the "
-                "signal. It should be smaller than 5 Hz."
-            )
+        self._assert_input_data(data)
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
@@ -396,6 +355,51 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         valid_windows = n_harmonics >= n_harmonics_threshold
 
         return valid_windows
+
+    def _assert_input_data(self, data):
+        if (
+            self.merge_gait_sequences_from_sensors
+            and is_multi_sensor_dataset(data)
+            and not isinstance(data, pd.DataFrame)
+        ):
+            raise ValueError("Merging of data set is only possible for synchronized data sets.")
+
+        # check for correct input value for sensor_channel_config
+        if isinstance(self.sensor_channel_config, list) and not (
+            self.sensor_channel_config == BF_ACC or self.sensor_channel_config == BF_GYR
+        ):
+            raise ValueError(
+                "The sensor_channel_config list you have passed is invalid. If you pass a list it must be either "
+                "BF_ACC or BF_GYR."
+            )
+
+        if (
+            isinstance(self.sensor_channel_config, str)
+            and self.sensor_channel_config not in np.array([BF_ACC, BF_GYR]).flatten()
+        ):
+            raise ValueError(
+                "The sensor_channel_config str you have passed is invalid. If you pass a str it must be one of the "
+                "entries of either BF_ACC or BF_GYR."
+            )
+
+        if not isinstance(self.sensor_channel_config, (str, list)):
+            raise ValueError("Sensor_channel_config must be a list or a str.")
+
+        # check locomotion band
+        if len(self.locomotion_band) != 2:
+            raise ValueError("The tuple for the locomotion band must contain exactly two values.")
+        if self.locomotion_band[0] >= self.locomotion_band[1]:
+            raise ValueError("The first entry of the locomotion band must be smaller than the second value.")
+        if self.locomotion_band[0] <= 0:
+            raise ValueError("The first entry of the locomotion band must be larger than 0.")
+
+        # check if 5 * upper freq range limit is close to nyquist freq (allow for a difference > 5 Hz). This would
+        # cause edge cases for the flattened fft peak detection later on.
+        if (self.sampling_rate_hz / 2) - (5 * self.locomotion_band[1]) < 5:
+            raise ValueError(
+                "The upper limit of the locomotion band is too close to the Nyquist frequency of the "
+                "signal. It should be smaller than 5 Hz."
+            )
 
 
 def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
