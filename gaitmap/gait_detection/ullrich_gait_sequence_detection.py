@@ -33,9 +33,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     ----------
     sensor_channel_config
         The sensor channel or sensor that should be used for the gait sequence detection. Can be a str or a list of
-        str. If it is a list it must be either `BF_ACC` or `BF_GYR` in order to perform the analysis on the norm of
-        the acc / the gyr signal. If it is a string it must be one of the entries of `BF_ACC` / `BF_GYR`. Default
-        value is `gyr_ml` as by the publication this showed the best results.
+        str. If it is a list it must be either :obj:`~gaitmap.utils.consts.BF_ACC` or
+        :obj:`~gaitmap.utils.consts.BF_GYR` in order to perform the analysis on the norm of the acc / the gyr signal.
+        If it is a string it must be one of the entries of :obj:`~gaitmap.utils.consts.BF_ACC` /
+        :obj:`~gaitmap.utils.consts.BF_GYR`. Default value is `gyr_ml` as by the publication this showed the best
+        results.
     peak_prominence
         The threshold for the peak prominence that each harmonics peak must provide. This relates to the
         `peak_prominence` provided by :func:`~scipy.signal.peak_prominences`. The frequency spectrum of the sensor
@@ -45,7 +47,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         specific is the algorithm to include a signal as gait.
     window_size_s
         The algorithm works on a window basis. The `window_size_s` specified the length of this window in seconds.
-        Default value is 10 s.
+        Default value is 10 s. The windowing in this algorithm works with a 50% overlap of subsequent windows.
 
     Attributes
     ----------
@@ -81,7 +83,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Notes
     -----
-    TODO: Add additional details about the algorithm for event detection
+    TODO: Add additional details about the algorithm for gait sequence detection
 
     .. [1] M. Ullrich, A. Küderle, J. Hannink, S. Del Din, H. Gassner, F. Marxreiter, J. Klucken, B.M.
         Eskofier, F. Kluge, Detection of Gait From Continuous Inertial Sensor Data Using Harmonic
@@ -115,12 +117,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.peak_prominence = peak_prominence
         self.window_size_s = window_size_s
 
-        # TODO what is a good way to place this as "hidden variable". should that even appear in the __init__?
-        # TODO Do they require documentation in the docstring?
-        self.__active_signal_threshold = active_signal_threshold
-        self.__locomotion_band = locomotion_band
-        self.__harmonic_tolerance_hz = harmonic_tolerance_hz
-        self.__merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
+        # TODO Provide documentation in the docstring
+        self.active_signal_threshold = active_signal_threshold
+        self.locomotion_band = locomotion_band
+        self.harmonic_tolerance_hz = harmonic_tolerance_hz
+        self.merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
 
     def detect(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences in data.
@@ -147,6 +148,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # TODO check for reasonable input values for sensor_channel_config, peak_prominence and window_size_s
         # sensor_channel_config can be list or str. list must be == BF_ACC/GYR, str must be one of it entries
+
+        # TODO check if 5 * upper freq range limit << nyquist freq
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
@@ -206,9 +209,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
         gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
-        # TODO should this be called gsd_id or rather gs_id?
-        # add a column for the gsd_id
-        gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gsd_id"})
+
+        # add a column for the gs_id
+        gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gs_id"})
         start_ = np.array(gait_sequences_["start"])
         end_ = np.array(gait_sequences_["end"])
 
@@ -224,7 +227,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             s_3d = np.array(data[BF_GYR])
             fft_factor = 1
 
-        active_signal_th = self.__active_signal_threshold
+        active_signal_th = self.active_signal_threshold
 
         # subtract mean to compensate for gravity in case of acc / bad calibration in case of gyr
         s_3d_zero_mean = s_3d - np.mean(s_3d, axis=0)
@@ -256,9 +259,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         """Compute the dominant frequency of each window using autocorrelation."""
         # set upper and lower motion band boundaries
         # (=102.4 Hz / 3 Hz = upper bound of locomotion band)
-        lower_bound = int(np.floor(self.sampling_rate_hz / self.__locomotion_band[1]))
+        lower_bound = int(np.floor(self.sampling_rate_hz / self.locomotion_band[1]))
         # (=102.4 Hz / 0.5 Hz = lower bound of locomotion band)
-        upper_bound = int(np.ceil(self.sampling_rate_hz / self.__locomotion_band[0]))
+        upper_bound = int(np.ceil(self.sampling_rate_hz / self.locomotion_band[0]))
         # autocorr from 0-upper motion band
         auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
         # calculate dominant frequency in Hz
@@ -287,7 +290,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         )
 
         # define size of window around candidates to look for peak. Allow per default 0.3 Hz of tolerance
-        harmonic_window_half = int(np.floor(self.__harmonic_tolerance_hz / freq_axis_delta))
+        harmonic_window_half = int(np.floor(self.harmonic_tolerance_hz / freq_axis_delta))
 
         # TODO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
         #  one which is a little bit lower, but with peak prominence > threshold. In this case martins method would
