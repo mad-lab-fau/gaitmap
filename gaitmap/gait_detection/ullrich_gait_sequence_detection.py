@@ -54,6 +54,21 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         according to the publication is 50 deg / s for `sensor_channel_config` settings including the gyroscope or
         0.2 g for `sensor_channel_config` settings including the accelerometer. For higher thresholds the signal in
         the window must show more activity to be passed to the frequency analysis.
+    locomotion_band
+        The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
+        frequency. According to literature [  2]_ typical signals measured during locomotion have their dominant
+        frequency within a locomotion band of 0.5 - 3 Hz. This is set as the default value. For very slow or very
+        fast gait these borders might have to be adapted.
+    harmonic_tolerance_hz
+        After identifying the dominant frequency of a window, the algorithm checks for peaks in the frequency
+        spectrum that should appear at harmonics of the dominant frequency. The `harmonic_tolerance_hz` sets the
+        tolerance margin for the harmonics. Default value is 0.3 Hz. This means if a harmonic peak is detected up
+        to 0.3 Hz above or 0.3 Hz below the actual harmonic it is still accepted.
+    merge_gait_sequences_from_sensors
+        The algorithm processes the data from each sensor individually. Therefore, different gait sequences for
+        example for left and right foot, may occur. If `merge_gait_sequences_from_sensors` is set to True,
+        the gait sequences from all sensors will be merged by applying a logical `OR` to the single results. This is
+        only allowed for synchronized sensor data.
 
     Attributes
     ----------
@@ -96,6 +111,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         Frequencies, IEEE Journal of Biomedical and Health Informatics. (2020) 1–1.
         https://doi.org/10.1109/JBHI.2020.2975361.
 
+    .. [2] Iluz, T., Gazit, E., Herman, T. et al. Automated detection of missteps during community ambulation in
+        patients with Parkinson’s disease: a new approach for quantifying fall risk in the community setting.
+        J NeuroEngineering Rehabil 11, 48 (2014). https://doi.org/10.1186/1743-0003-11-48
+
+
     """
 
     sensor_channel_config: str
@@ -122,8 +142,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
         self.window_size_s = window_size_s
-
-        # TODO Provide documentation in the docstring
         self.active_signal_threshold = active_signal_threshold
         self.locomotion_band = locomotion_band
         self.harmonic_tolerance_hz = harmonic_tolerance_hz
