@@ -265,8 +265,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_bool = np.copy(active_signal_mask)
         gait_sequences_bool[active_signal_mask] = valid_windows
 
-        gait_sequences_start = gait_sequences_bool * range(len(gait_sequences_bool)) * overlap
-        gait_sequences_start = gait_sequences_start[gait_sequences_start > 0]
+        gait_sequences_start = (np.arange(len(gait_sequences_bool)) * overlap)[gait_sequences_bool]
         # concat subsequent gs
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
