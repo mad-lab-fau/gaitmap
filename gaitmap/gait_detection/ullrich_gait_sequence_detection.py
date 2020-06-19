@@ -169,7 +169,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # TODO implement merging of gait sequences for synced data
         if self.merge_gait_sequences_from_sensors and is_multi_sensor_dataset(data) and isinstance(data, pd.DataFrame):
             raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
-        if self.merge_gait_sequences_from_sensors and is_multi_sensor_dataset and isinstance(data, pd.DataFrame):
+        if (
+            self.merge_gait_sequences_from_sensors
+            and is_multi_sensor_dataset(data)
+            and not isinstance(data, pd.DataFrame)
+        ):
             raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
         # check for correct input value for sensor_channel_config
@@ -190,7 +194,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 "entries of either BF_ACC or BF_GYR."
             )
 
-        if not isinstance((self.sensor_channel_config, list) or isinstance(self.sensor_channel_config, str)):
+        if not (isinstance(self.sensor_channel_config, list) or isinstance(self.sensor_channel_config, str)):
             raise ValueError("Sensor_channel_config must be a list or a str.")
 
         # check locomotion band

@@ -157,6 +157,6 @@ class TestUllrichGaitSequenceDetection:
         # create dict of dfs to mock up non-synced data
         data_dict = {"left": data["left_sensor"], "right": data["right_sensor"]}
         merge_gait_sequences_from_sensors = True
-        with pytest.raises(ValueError, match=r".* synchronized data sets. .*"):
+        with pytest.raises(ValueError, match=r".* synchronized data sets."):
             gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
             gsd = gsd.detect(data_dict, 204.8)
