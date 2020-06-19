@@ -166,14 +166,43 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO check if merge_gait_sequences_from_sensors is set to True and only allow that for synced sensors
-        if self.__merge_gait_sequences_from_sensors:
-            raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
+        # TODO implement merging of gait sequences for synced data
+        if self.merge_gait_sequences_from_sensors:
+            if is_multi_sensor_dataset(data) and type(data) is pd.DataFrame:
+                raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
+            if is_multi_sensor_dataset and type(data) is not pd.DataFrame:
+                raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
-        # TODO check for reasonable input values for sensor_channel_config, peak_prominence and window_size_s
-        # sensor_channel_config can be list or str. list must be == BF_ACC/GYR, str must be one of it entries
+        # check for correct input value for sensor_channel_config
+        if type(self.sensor_channel_config) is list:
+            if not (self.sensor_channel_config == BF_ACC or self.sensor_channel_config == BF_GYR):
+                raise ValueError(
+                    "The sensor_channel_config list you have passed is invalid. If you pass a list it must be either "
+                    "BF_ACC or BF_GYR."
+                )
 
-        # TODO check if 5 * upper freq range limit << nyquist freq
+        elif type(self.sensor_channel_config) is str:
+            if self.sensor_channel_config not in np.array([BF_ACC, BF_GYR]).flatten():
+                raise ValueError(
+                    "The sensor_channel_config str you have passed is invalid. If you pass a str it must be one of the "
+                    "entries of either BF_ACC or BF_GYR."
+                )
+        else:
+            raise ValueError("Sensor_channel_config must be a list or a str.")
+
+        # check locomotion band
+        if len(self.locomotion_band) != 2:
+            raise ValueError("The tuple for the locomotion band must contain exactly two values.")
+        if self.locomotion_band[0] >= self.locomotion_band[1]:
+            raise ValueError("The first entry of the locomotion band must be smaller than the second value.")
+        if self.locomotion_band[0] <= 0:
+            raise ValueError("The first entry of the locomotion band must be larger than 0.")
+
+        # check if 5 * upper freq range limit is close to nyquist freq (allow for a difference > 5 Hz). This would
+        # cause edge cases for the flattened fft peak detection later on.
+        if (self.sampling_rate_hz / 2) - (5 * self.locomotion_band[1]) < 5:
+            raise ValueError("The upper limit of the locomotion band is too close to the Nyquist frequency of the "
+                             "signal. It should be smaller than 5 Hz.")
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
@@ -211,6 +240,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # sliding windows
         overlap = int(window_size / 2)
+        if window_size > len(s_3d_norm):
+            raise ValueError("The selected window size is larger than the actual signal.")
         s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
         s_1d = sliding_window_view(s_1d, window_size, overlap)
 
@@ -319,13 +350,16 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             (harmonics_candidates / freq_axis_delta + (np.arange(f_s_1d.shape[0])[:, None] * f_s_1d.shape[1])).flatten()
         )
 
+        if self.harmonic_tolerance_hz < freq_axis_delta:
+            raise ValueError("Value for harmonic_tolerance_hz too small. Must be > {} ".format(freq_axis_delta))
         # define size of window around candidates to look for peak. Allow per default 0.3 Hz of tolerance
         harmonic_window_half = int(np.floor(self.harmonic_tolerance_hz / freq_axis_delta))
 
         # TODO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
-        #  one which is a little bit lower, but with peak prominence > threshold. In this case martins method would
-        #  have found the second peak and correctly concluded that the harmonic was found.
-        #  With my method, I find the first and then conclude that the peak prominence is to low and discard it.
+        #  one which is a little bit lower, but with peak prominence > threshold. In this case the original
+        #  implementation would have found the second peak and correctly concluded that the harmonic was found.
+        #  With this implementation method, we find the first and then conclude that the peak prominence is too low and
+        #  discard it.
         closest_peaks = find_extrema_in_radius(f_s_1d_flat, harmonics_flat, harmonic_window_half, "max").astype(int)
 
         peak_prominence = peak_prominences(f_s_1d_flat, closest_peaks)[0].reshape(harmonics_candidates.shape)
