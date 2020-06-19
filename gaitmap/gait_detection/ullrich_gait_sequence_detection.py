@@ -48,6 +48,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     window_size_s
         The algorithm works on a window basis. The `window_size_s` specified the length of this window in seconds.
         Default value is 10 s. The windowing in this algorithm works with a 50% overlap of subsequent windows.
+    active_signal_threshold
+        Before the actual FFT analysis, the algorithm compares the mean signal norm within each window against the
+        `active_signal_threshold` in order to reject windows with rest right from the beginning. Default value is
+        according to the publication is 50 deg / s for `sensor_channel_config` settings including the gyroscope or
+        0.2 g for `sensor_channel_config` settings including the accelerometer. For higher thresholds the signal in
+        the window must show more activity to be passed to the frequency analysis.
 
     Attributes
     ----------
@@ -220,14 +226,20 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     def _signal_extraction(self, data):
         """Extract the relevant signals and set required parameters from the data."""
         # define 3d signal to analyze for active signal and further parameters
+        active_signal_th = self.active_signal_threshold
+
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
+            # scaling factor for the FFT result to get comparable numerical range for acc or gyr configurations
             fft_factor = 100
+            # TODO is it fine to only check for None and finally set this value here?
+            if active_signal_th is None:
+                active_signal_th = 0.2
         else:
             s_3d = np.array(data[BF_GYR])
             fft_factor = 1
-
-        active_signal_th = self.active_signal_threshold
+            if active_signal_th is None:
+                active_signal_th = 50
 
         # subtract mean to compensate for gravity in case of acc / bad calibration in case of gyr
         s_3d_zero_mean = s_3d - np.mean(s_3d, axis=0)
