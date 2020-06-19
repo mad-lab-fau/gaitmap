@@ -134,7 +134,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_channel_config: str = "gyr_ml",
         peak_prominence: float = 17,
         window_size_s: float = 10,
-        active_signal_threshold: float = 50,
+        active_signal_threshold: float = None,
         locomotion_band: Tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
