@@ -195,7 +195,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self, data: pd.DataFrame, window_size: float,
     ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
         """Detect gait sequences for a single sensor data set."""
-        s_3d_norm, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
+        s_3d, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
 
         # sig_length is required later for the concatenation of gait sequences
         sig_length = len(s_1d)
@@ -208,10 +208,17 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # sliding windows
         overlap = int(window_size / 2)
-        if window_size > len(s_3d_norm):
+        if window_size > len(s_3d):
             raise ValueError("The selected window size is larger than the actual signal.")
-        s_3d_norm = sliding_window_view(s_3d_norm, window_size, overlap)
+        s_3d = sliding_window_view(s_3d, window_size, overlap)
+        # subtract mean per window
+        s_3d = s_3d - np.mean(s_3d, axis=1)[:, np.newaxis, :]
+        # compute norm per window
+        s_3d_norm = norm(s_3d, axis=2)
+
         s_1d = sliding_window_view(s_1d, window_size, overlap)
+        # subtract mean per window
+        s_1d = s_1d - np.mean(s_1d, axis=1)[:, np.newaxis]
 
         # active signal detection
         s_1d, active_signal_mask = self._active_signal_detection(s_3d_norm, s_1d, active_signal_th)
@@ -264,18 +271,13 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             if active_signal_th is None:
                 active_signal_th = 50
 
-        # subtract mean to compensate for gravity in case of acc / bad calibration in case of gyr
-        s_3d_zero_mean = s_3d - np.mean(s_3d, axis=0)
-        s_3d_norm = norm(s_3d_zero_mean, axis=1)
-
         # define the 1d signal to analyze for frequency spectrum
         if isinstance(self.sensor_channel_config, list):
-            s_1d = s_3d_norm
+            s_1d = norm(s_3d, axis=1)
         else:
             s_1d = np.array(data[self.sensor_channel_config])
-            s_1d = s_1d - np.mean(s_1d, axis=0)
 
-        return s_3d_norm, s_1d, active_signal_th, fft_factor
+        return s_3d, s_1d, active_signal_th, fft_factor
 
     @staticmethod
     def _active_signal_detection(s_3d_norm, s_1d, active_signal_th):
