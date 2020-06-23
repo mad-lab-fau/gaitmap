@@ -11,6 +11,21 @@ from gaitmap.utils.consts import BF_ACC, BF_GYR
 class TestUllrichGaitSequenceDetection:
     """Test the gait sequence detection by Ullrich."""
 
+    def test_single_sensor_input(self, healthy_example_imu_data, snapshot):
+        """Dummy test to see if the algorithm is generally working on the example data"""
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+
+        data = data["left_sensor"]
+
+        gsd = UllrichGaitSequenceDetection()
+        gsd = gsd.detect(data, 204.8)
+
+        assert len(gsd.gait_sequences_) == 1
+
+        return None
+
     def test_multi_sensor_input(self, healthy_example_imu_data, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
         data = coordinate_conversion.convert_to_fbf(
