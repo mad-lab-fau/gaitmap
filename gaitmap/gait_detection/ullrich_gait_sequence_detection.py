@@ -94,10 +94,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     --------
     Find sequences of gait in sensor signal
 
-    >>> gsd = UllrichGaitSequenceDetection(peak_prominence=17)
+    >>> gsd = UllrichGaitSequenceDetection()
     >>> gsd = gsd.detect(data, 204.8)
     >>> gsd.gait_sequences_
-        gsd_id  start     end
+        gs_id  start     end
     0   0       1024      3072
     1   1       4096      8192
     ...
