@@ -200,9 +200,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # sig_length is required later for the concatenation of gait sequences
         sig_length = len(s_1d)
 
-        # lowpass filter the signal
-        # TODO this is now happening before the windowing and thus before the active signal detection. Does this
-        #  change the results?
+        # lowpass filter the signal: this is now happening before the windowing and thus before the active signal
+        # detection compared to JBHI version
         lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
         s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
 
