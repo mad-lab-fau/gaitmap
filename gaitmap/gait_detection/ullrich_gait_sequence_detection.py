@@ -315,6 +315,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # compute the row-wise fft of the windowed signal and normalize it
         f_s_1d = np.abs(rfft(s_1d) / window_size) * fft_factor
+        # removing the last sample of the fft to be consistent with JBHI implementation
+        f_s_1d = f_s_1d[:, :-1]
 
         # Distance on the fft freq axis
         freq_axis_delta = self.sampling_rate_hz / 2 / f_s_1d.shape[1]
