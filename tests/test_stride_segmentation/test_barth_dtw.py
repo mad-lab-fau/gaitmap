@@ -69,7 +69,7 @@ class TestRegressionOnRealData:
     def test_conflict_resolution_on_off(self, healthy_example_imu_data):
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         # For both cases set the threshold so high that wrong matches will occure
-        max_cost = 2500
+        max_cost = 5
         min_match_length_s = 0.1
         # off
         dtw = BarthDtw(max_cost=max_cost, conflict_resolution=False, min_match_length_s=min_match_length_s)

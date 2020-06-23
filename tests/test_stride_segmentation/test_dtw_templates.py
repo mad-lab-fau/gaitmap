@@ -38,14 +38,6 @@ class TestTemplateBaseClass:
 
         assert_array_equal(instance.data, template[["col_1"]])
 
-    def test_use_scaling(self):
-        template = np.stack((np.arange(10), np.arange(10, 20))).T
-        template = pd.DataFrame(template, columns=["col_1", "col_2"])
-
-        instance = DtwTemplate(data=template, scaling=2, use_cols=["col_1"])
-
-        assert_array_equal(instance.data, 2 * template[["col_1"]])
-
     def test_use_columns_wrong_dim(self):
         template = np.arange(10)
 
@@ -66,7 +58,7 @@ class TestBartTemplate:
 
         barth_instance = BarthOriginalTemplate()
 
-        assert_frame_equal(barth_instance.data, instance.data * 500)
+        assert_frame_equal(barth_instance.data, instance.data)
         assert barth_instance.sampling_rate_hz == 204.8
         assert barth_instance.scaling == 500.0
 
@@ -85,7 +77,7 @@ class TestCreateTemplate:
         template = np.stack((np.arange(10), np.arange(10, 20))).T
         template = pd.DataFrame(template, columns=["col_1", "col_2"])
         sampling_rate_hz = 100
-        use_cols = ["col_1"]
+        use_cols = ("col_1",)
 
         instance = create_dtw_template(template, sampling_rate_hz=sampling_rate_hz, use_cols=use_cols)
 
