@@ -344,8 +344,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         peak_heights = f_s_1d_flat[closest_peaks].reshape(harmonics_candidates.shape)
 
         # Apply thresholds
-        # peaks should be higher than mean of f_s_1d
-        min_peak_height = np.mean(f_s_1d[:, : np.floor(lp_freq_hz / freq_axis_delta).astype(int)], axis=1)
+        # peaks should be higher than mean of f_s_1d in the area <= lp_freq_hz. Have to add a + 1 to include the limit
+        min_peak_height = np.mean(f_s_1d[:, : np.floor(lp_freq_hz / freq_axis_delta).astype(int) + 1], axis=1)
         # duplicate to match the shape of peak_heights
         min_peak_height = np.tile(min_peak_height, (peak_heights.shape[1], 1)).T
 
