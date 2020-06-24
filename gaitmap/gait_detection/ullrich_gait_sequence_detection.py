@@ -242,7 +242,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # we need to distinguish between even or odd windows sizes to compute the correct start samples
         if window_size % 2 == 0:
             gait_sequences_start = (np.arange(len(gait_sequences_bool)) * overlap)[gait_sequences_bool]
-            print("even")
         else:
             gait_sequences_start = (np.arange(len(gait_sequences_bool)) * (overlap + 1))[gait_sequences_bool]
         # concat subsequent gs
