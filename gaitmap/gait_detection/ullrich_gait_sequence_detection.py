@@ -1,4 +1,5 @@
 """The gait sequence detection algorithm by Rampp et al. 2020."""
+import itertools
 from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
@@ -32,12 +33,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     Parameters
     ----------
     sensor_channel_config
-        The sensor channel or sensor that should be used for the gait sequence detection. Can be a str or a list of
-        str. If it is a list it must be either :obj:`~gaitmap.utils.consts.BF_ACC` or
-        :obj:`~gaitmap.utils.consts.BF_GYR` in order to perform the analysis on the norm of the acc / the gyr signal.
-        If it is a string it must be one of the entries of :obj:`~gaitmap.utils.consts.BF_ACC` /
-        :obj:`~gaitmap.utils.consts.BF_GYR`. Default value is `gyr_ml` as by the publication this showed the best
-        results.
+        The sensor channel or sensor that should be used for the gait sequence detection. Must be a str. If the
+        algorithm should be applied to a single sensor axis the string must be one of the entries in either
+         :obj:`~gaitmap.utils.consts.BF_ACC` or :obj:`~gaitmap.utils.consts.BF_GYR`. In order to perform the analysis
+         on the norm of the acc / the gyr signal, you need to pass "acc" or "gyr". Default value is `gyr_ml` as by the
+         publication this showed the best results.
     peak_prominence
         The threshold for the peak prominence that each harmonics peak must provide. This relates to the
         `peak_prominence` provided by :func:`~scipy.signal.peak_prominences`. The frequency spectrum of the sensor
@@ -118,7 +118,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     """
 
-    sensor_channel_config: Union[str, list]
+    sensor_channel_config: str
     peak_prominence: float
     window_size_s: float
 
@@ -131,7 +131,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     def __init__(
         self,
-        sensor_channel_config: Union[str, list] = "gyr_ml",
+        sensor_channel_config: str = "gyr_ml",
         peak_prominence: float = 17.0,
         window_size_s: float = 10,
         active_signal_threshold: float = None,
@@ -261,6 +261,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # define 3d signal to analyze for active signal and further parameters
         active_signal_th = self.active_signal_threshold
 
+        # define the 3d signal, fft factor and active signal th
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
             # scaling factor for the FFT result to get comparable numerical range for acc or gyr configurations
@@ -274,11 +275,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             if active_signal_th is None:
                 active_signal_th = 50
 
-        # define the 1d signal to analyze for frequency spectrum
-        if isinstance(self.sensor_channel_config, list):
-            s_1d = norm(s_3d, axis=1)
-        else:
+        # determine the 1d signal that is going to be used for the frequency analysis
+        if self.sensor_channel_config in list(itertools.chain(BF_ACC, BF_GYR)):
             s_1d = np.array(data[self.sensor_channel_config])
+        else:
+            s_1d = norm(s_3d, axis=1)
 
         return s_3d, s_1d, active_signal_th, fft_factor
 
@@ -372,25 +373,18 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
         # check for correct input value for sensor_channel_config
-        if isinstance(self.sensor_channel_config, list) and not (
-            self.sensor_channel_config == BF_ACC or self.sensor_channel_config == BF_GYR
-        ):
-            raise ValueError(
-                "The sensor_channel_config list you have passed is invalid. If you pass a list it must be either "
-                "BF_ACC or BF_GYR."
-            )
-
         if (
             isinstance(self.sensor_channel_config, str)
-            and self.sensor_channel_config not in np.array([BF_ACC, BF_GYR]).flatten()
+            and self.sensor_channel_config not in list(itertools.chain(BF_ACC, BF_GYR, ["gyr", "acc"]))
         ):
             raise ValueError(
                 "The sensor_channel_config str you have passed is invalid. If you pass a str it must be one of the "
-                "entries of either BF_ACC or BF_GYR."
+                "entries of either BF_ACC or BF_GYR or just gyr or acc in order to apply the norm of the respective "
+                "sensor."
             )
 
-        if not isinstance(self.sensor_channel_config, (str, list)):
-            raise ValueError("Sensor_channel_config must be a list or a str.")
+        if not isinstance(self.sensor_channel_config, str):
+            raise ValueError("Sensor_channel_config must be a str.")
 
         # check locomotion band
         if len(self.locomotion_band) != 2:

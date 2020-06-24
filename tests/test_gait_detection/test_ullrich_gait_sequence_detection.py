@@ -19,7 +19,7 @@ class TestUllrichGaitSequenceDetection:
 
         data = data["left_sensor"]
 
-        gsd = UllrichGaitSequenceDetection()
+        gsd = UllrichGaitSequenceDetection(sensor_channel_config="acc_si")
         gsd = gsd.detect(data, 204.8)
 
         assert len(gsd.gait_sequences_) == 1
@@ -37,7 +37,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.gait_sequences_["right_sensor"]) == 1
 
     @pytest.mark.parametrize(
-        "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), (BF_ACC, 13), (BF_GYR, 11))
+        "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), ("acc", 13), ("gyr", 11))
     )
     def test_different_activities_different_configs(
         self, healthy_example_imu_data, sensor_channel_config, peak_prominence, snapshot
@@ -81,11 +81,11 @@ class TestUllrichGaitSequenceDetection:
         )
         # use an int instead of str or list
         sensor_channel_config = 1
-        with pytest.raises(ValueError, match=r".* must be a list or a str."):
+        with pytest.raises(ValueError, match=r".* must be a str."):
             gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config)
             gsd = gsd.detect(data, 204.8)
 
-    @pytest.mark.parametrize("sensor_channel_config", ("dummy", ["dummy"]))
+    @pytest.mark.parametrize("sensor_channel_config", "dummy")
     def test_invalid_sensor_channel_config_value(self, healthy_example_imu_data, sensor_channel_config):
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
         data = coordinate_conversion.convert_to_fbf(
@@ -95,8 +95,6 @@ class TestUllrichGaitSequenceDetection:
         with pytest.raises(ValueError, match=r".* you have passed is invalid. .*"):
             gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config)
             gsd = gsd.detect(data, 204.8)
-
-    # todo add test to check different allowed sensor_channel_configs (with fixture?)
 
     def test_invalid_window_size(self, healthy_example_imu_data):
         """Check if ValueError is raised for window size higher than len of signal."""
