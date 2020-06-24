@@ -298,9 +298,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     def _get_dominant_frequency(self, s_1d):
         """Compute the dominant frequency of each window using autocorrelation."""
         # set upper and lower motion band boundaries
-        # (=102.4 Hz / 3 Hz = upper bound of locomotion band)
+        # (sampling_rate / locomotion_band_upper = lower bound of autocorrelation)
         lower_bound = int(np.floor(self.sampling_rate_hz / self.locomotion_band[1]))
-        # (=102.4 Hz / 0.5 Hz = lower bound of locomotion band)
+        # (sampling_rate / locomotion_band_lower = upper bound of autocorrelation)
         upper_bound = int(np.ceil(self.sampling_rate_hz / self.locomotion_band[0]))
         # autocorr from 0-upper motion band
         auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
