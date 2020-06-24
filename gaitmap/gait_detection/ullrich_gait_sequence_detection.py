@@ -408,7 +408,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 "signal. It should be smaller than 5 Hz."
             )
 
-
+# TODO move this to general utils
 def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     """Create and apply butterworth lowpass filter."""
     nyq = 0.5 * sampling_rate_hz
@@ -417,7 +417,7 @@ def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     y = lfilter(b, a, data)
     return y
 
-
+# TODO move this to general utils
 @njit(nogil=True, parallel=True, cache=True)
 def _row_wise_autocorrelation(array, lag_max):
     out = np.empty((array.shape[0], lag_max + 1))
