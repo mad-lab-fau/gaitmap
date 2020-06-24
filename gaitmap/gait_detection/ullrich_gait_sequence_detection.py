@@ -118,7 +118,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     """
 
-    sensor_channel_config: str
+    sensor_channel_config: Union[str, List]
     peak_prominence: float
     window_size_s: float
 
