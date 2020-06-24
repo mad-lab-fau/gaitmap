@@ -19,7 +19,7 @@ class TestUllrichGaitSequenceDetection:
 
         data = data["left_sensor"]
 
-        gsd = UllrichGaitSequenceDetection(sensor_channel_config="acc_si")
+        gsd = UllrichGaitSequenceDetection()
         gsd = gsd.detect(data, 204.8)
 
         assert len(gsd.gait_sequences_) == 1
