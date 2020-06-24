@@ -24,8 +24,6 @@ class TestUllrichGaitSequenceDetection:
 
         assert len(gsd.gait_sequences_) == 1
 
-        return None
-
     def test_multi_sensor_input(self, healthy_example_imu_data, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
         data = coordinate_conversion.convert_to_fbf(
@@ -37,8 +35,6 @@ class TestUllrichGaitSequenceDetection:
 
         assert len(gsd.gait_sequences_["left_sensor"]) == 1
         assert len(gsd.gait_sequences_["right_sensor"]) == 1
-
-        return None
 
     @pytest.mark.parametrize(
         "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), (BF_ACC, 13), (BF_GYR, 11))
