@@ -118,7 +118,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     """
 
-    sensor_channel_config: Union[str, List]
+    sensor_channel_config: Union[str, list]
     peak_prominence: float
     window_size_s: float
 
@@ -131,7 +131,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     def __init__(
         self,
-        sensor_channel_config: str = "gyr_ml",
+        sensor_channel_config: Union[str, list] = "gyr_ml",
         peak_prominence: float = 17,
         window_size_s: float = 10,
         active_signal_threshold: float = None,
