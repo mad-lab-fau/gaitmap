@@ -397,8 +397,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # cause edge cases for the flattened fft peak detection later on.
         if (self.sampling_rate_hz / 2) - (5 * self.locomotion_band[1]) < 5:
             raise ValueError(
-                "The upper limit of the locomotion band is too close to the Nyquist frequency of the "
-                "signal. It should be smaller than 5 Hz."
+                "The upper limit of the locomotion band ({} Hz) is too close to the Nyquist frequency ({} Hz) of the "
+                "signal, given the sampling rate of {} Hz. The difference between upper limit of locomotion band and "
+                "Nyquist frequency should be smaller than 5 Hz.".format(
+                    self.locomotion_band[1], self.sampling_rate_hz / 2, self.sampling_rate_hz
+                )
             )
 
 
