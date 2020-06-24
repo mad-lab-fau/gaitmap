@@ -373,9 +373,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
         # check for correct input value for sensor_channel_config
-        if (
-            isinstance(self.sensor_channel_config, str)
-            and self.sensor_channel_config not in list(itertools.chain(BF_ACC, BF_GYR, ["gyr", "acc"]))
+        if isinstance(self.sensor_channel_config, str) and self.sensor_channel_config not in list(
+            itertools.chain(BF_ACC, BF_GYR, ["gyr", "acc"])
         ):
             raise ValueError(
                 "The sensor_channel_config str you have passed is invalid. If you pass a str it must be one of the "
@@ -402,6 +401,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 "signal. It should be smaller than 5 Hz."
             )
 
+
 # TODO move this to general utils
 def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     """Create and apply butterworth lowpass filter."""
@@ -410,6 +410,7 @@ def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
     b, a = butter(order, normal_cutoff, btype="low", analog=False)
     y = lfilter(b, a, data)
     return y
+
 
 # TODO move this to general utils
 @njit(nogil=True, parallel=True, cache=True)
