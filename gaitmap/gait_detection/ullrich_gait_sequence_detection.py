@@ -58,7 +58,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
         frequency. According to literature [  2]_ typical signals measured during locomotion have their dominant
         frequency within a locomotion band of 0.5 - 3 Hz. This is set as the default value. For very slow or very
-        fast gait these borders might have to be adapted.
+        fast gait these borders might have to be adapted. Please note that the signal to be analyzed is going to be
+        lowpass filtered with cut-off frequency of 6 Hz. Therefore, values for the upper limit of the locomotion band
+        higher than 6 Hz might not be reasonable. This algorithm expects the dominant frequency of the gait signal to
+        be between 0.5 and 1.5 Hz.
     harmonic_tolerance_hz
         After identifying the dominant frequency of a window, the algorithm checks for peaks in the frequency
         spectrum that should appear at harmonics of the dominant frequency. The `harmonic_tolerance_hz` sets the
