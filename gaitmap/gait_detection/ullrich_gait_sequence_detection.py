@@ -336,7 +336,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # define size of window around candidates to look for peak. Allow per default 0.3 Hz of tolerance
         harmonic_window_half = int(np.floor(self.harmonic_tolerance_hz / freq_axis_delta))
 
-        # TODO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
+        # INFO Edgecase: If close to a harmonic are 2 peaks, 1 with a high value, but peak prominence < threshold, and
         #  one which is a little bit lower, but with peak prominence > threshold. In this case the original
         #  implementation would have found the second peak and correctly concluded that the harmonic was found.
         #  With this implementation method, we find the first and then conclude that the peak prominence is too low and
