@@ -5,10 +5,7 @@ from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection.rampp_event_detection import (
-    RamppEventDetection,
-    _detect_min_vel,
-)
+from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel, _detect_tc
 from gaitmap.utils import coordinate_conversion, dataset_helper
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -171,3 +168,14 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         with pytest.raises(ValueError):
             ed.detect(data_left, 204.8, stride_list_left)
+
+    def test_sign_change_for_detect_tc(self):
+        """Test correct handling of signal that does or does not provide a change of the sign"""
+
+        # with sign change
+        signal1 = np.concatenate([np.ones(10), np.ones(10) * -1])
+        assert _detect_tc(signal1) == 9
+
+        # without sign change
+        signal2 = np.ones(10)
+        assert np.isnan(_detect_tc(signal2))

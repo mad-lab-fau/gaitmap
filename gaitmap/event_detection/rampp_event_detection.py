@@ -327,4 +327,7 @@ def _detect_ic(
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
-    return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
+    try:
+        return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
+    except IndexError:
+        return np.nan
