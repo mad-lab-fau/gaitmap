@@ -24,6 +24,11 @@ class TestSlidingWindow:
         with pytest.raises(ValueError, match=r".* window_length .*"):
             sliding_window_view(np.arange(0, 10), window_length=1, overlap=0)
 
+    def test_invalid_inputs_window_size(self):
+        """Test if value error is raised correctly for window length > signal length."""
+        with pytest.raises(ValueError, match=r"negative dimensions are not allowed"):
+            sliding_window_view(np.arange(0, 10), window_length=15, overlap=0)
+
     def test_view_of_array(selfs):
         """Test if output is actually just a different view onto the input data."""
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])

@@ -379,3 +379,13 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
     ) -> BaseType:
         """Find spatial parameters in in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseGaitDetection(BaseAlgorithm):
+    """Base class for all gait detection algorithms."""
+
+    _action_method = "detect"
+
+    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
+        """Find gait sequences or other regions of interest in data."""
+        raise NotImplementedError("Needs to be implemented by child class.")

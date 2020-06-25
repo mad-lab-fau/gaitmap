@@ -49,6 +49,23 @@ Functions
     align_dataset_to_gravity
     align_heading_of_sensors
 
+:mod:`gaitmap.gait_detection`: Algorithms to find gait and regions of interest
+==============================================================================
+
+.. automodule:: gaitmap.gait_detection
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.gait_detection
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    UllrichGaitSequenceDetection
+
 
 :mod:`gaitmap.stride_segmentation`: Algorithms to find stride candidates
 ========================================================================
