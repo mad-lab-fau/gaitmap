@@ -197,7 +197,7 @@ def create_interpolated_dtw_template(
         Either a single dataframe or a list of dataframes which shall be used for template generation. Each dataframe
         should therefore full fill the gaitmap body frame convention
     kind
-        Interpolation function: Please refer to :py:funcscipy.interpolate.interp1d
+        Interpolation function: Please refer to :py:func:`scipy.interpolate.interp1d`
     n_samples
         Number of samples to which the data will be interpolated. If None, the number of samples will be the mean
         length of all given input sequences.
@@ -219,20 +219,20 @@ def create_interpolated_dtw_template(
     if not isinstance(signal_sequence, list):
         signal_sequence = [signal_sequence]
 
+    for df in signal_sequence:
+        if not is_single_sensor_dataset(df, check_acc=False, check_gyr=False, frame="any"):
+            raise ValueError("All input dataframes must be a single sensor dataset!")
+
     if n_samples is None:
         # get mean stride length over given strides
         n_samples = int(np.rint(np.mean([len(df) for df in signal_sequence])))
 
-    for df in signal_sequence:
-        if not is_single_sensor_dataset(df, check_acc=False, check_gyr=True, frame="body"):
-            raise ValueError("All input dataframes must full fill the gaitmap bodyframe coordinate convention!")
-
     # interpolate all strides to mean number of samples
-    stride_dataframe_list_resampled = [
-        stride_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for stride_df in signal_sequence
+    resampled_sequences_df_list = [
+        signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for signal_df in signal_sequence
     ]
 
     # calcualte elementwise mean over all strides
-    stride_template_df = pd.concat(stride_dataframe_list_resampled).mean(level=0)
+    template_df = pd.concat(resampled_sequences_df_list).mean(level=0)
 
-    return create_dtw_template(stride_template_df, sampling_rate_hz, scaling, use_cols)
+    return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
