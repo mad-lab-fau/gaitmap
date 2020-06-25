@@ -174,7 +174,8 @@ def find_extrema_in_radius(
         Around each index the extremum is searched in the region defined by radius
     radius
         The number of samples to the left and the right that are considered for the search.
-        The final search window has the length 2 * radius + 1
+        The final search window has the length 2 * radius + 1.
+        In case the radius is 0, `indices is returned without further processing.
     extrema_type
         If the minima or maxima of the data are searched.
 
@@ -188,10 +189,14 @@ def find_extrema_in_radius(
     if extrema_type not in extrema_funcs:
         raise ValueError("`extrema_type` must be one of {}, not {}".format(list(extrema_funcs.keys()), extrema_type))
     extrema_func = extrema_funcs[extrema_type]
+    if radius == 0:
+        # In case the serach radius is 0 samples, we can just return the input.
+        return indices
     # Search region is twice the radius centered around each index
-    data = data.astype(float)
     d = 2 * radius + 1
     start_padding = 0
+
+    data = data.astype(float)
     if len(data) - np.max(indices) <= radius:
         data = np.pad(data, (0, radius), constant_values=np.nan)
     if np.min(indices) < radius:

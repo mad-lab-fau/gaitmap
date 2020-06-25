@@ -319,3 +319,11 @@ class TestFindMinRadius:
         out = find_extrema_in_radius(data, indices, radius)
         assert_array_equal(out[radius:], indices[radius:] - radius)
         assert_array_equal(out[:radius], np.zeros(radius))
+
+    def test_radius_zero(self):
+        """Test that if the radius is 0 the value itself gets returned."""
+        data = np.array([0, 0, 0, 1, 0, 0, 0])  # min at 3
+        radius = 0
+        indices = np.array([2, 3, 4])  # All should find the minima
+        out = find_extrema_in_radius(data, indices, radius, extrema_type="max")
+        assert_array_equal(out, indices)
