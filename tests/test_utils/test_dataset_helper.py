@@ -20,6 +20,8 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
     is_multi_sensor_position_list,
     is_multi_sensor_orientation_list,
+    is_single_sensor_regions_of_interest_list,
+    is_multi_sensor_regions_of_interest_list,
 )
 
 
@@ -37,8 +39,13 @@ def frame(request):
     return request.param
 
 
-@pytest.fixture(params=("any", "min_vel"))
+@pytest.fixture(params=("any", "min_vel", "ic", "segmented"))
 def stride_types(request):
+    return request.param
+
+
+@pytest.fixture(params=("any", "gs", "roi"))
+def roi_types(request):
     return request.param
 
 
@@ -194,18 +201,19 @@ class TestIsSingleSensorStrideList:
     @pytest.mark.parametrize(
         "cols, stride_types_valid",
         (
-            (["s_id", "start", "end", "gsd_id"], "any"),
-            (["s_id", "start", "end", "gsd_id", "something_extra"], "any"),
-            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], "min_vel"),
-            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"], "min_vel"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "ic"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "ic"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "segmented"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "segmented"),
+            (["s_id", "start", "end", "gsd_id"], ["any"]),
+            (["s_id", "start", "end", "gsd_id", "something_extra"], ["any"]),
+            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], ["segmented", "min_vel", "ic"]),
+            (
+                ["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"],
+                ["segmented", "min_vel", "ic"],
+            ),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], ["ic", "segmented"]),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], ["ic", "segmented"]),
         ),
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index):
-        expected_outcome = stride_types == stride_types_valid or stride_types == "any"
+        expected_outcome = stride_types in stride_types_valid or stride_types == "any"
         df = pd.DataFrame(columns=cols)
         if as_index:
             df = df.set_index("s_id")
@@ -275,16 +283,19 @@ class TestIsMultiSensorStrideList:
     @pytest.mark.parametrize(
         "cols, stride_types_valid",
         (
-            (["s_id", "start", "end", "gsd_id"], "any"),
-            (["s_id", "start", "end", "gsd_id", "something_extra"], "any"),
-            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], "min_vel"),
-            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"], "min_vel"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], "ic"),
-            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "ic"),
+            (["s_id", "start", "end", "gsd_id"], ["any"]),
+            (["s_id", "start", "end", "gsd_id", "something_extra"], ["any"]),
+            (["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"], ["segmented", "min_vel", "ic"]),
+            (
+                ["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc", "something_extra"],
+                ["segmented", "min_vel", "ic"],
+            ),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"], ["ic", "segmented"]),
+            (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], ["ic", "segmented"]),
         ),
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index):
-        expected_outcome = stride_types == stride_types_valid or stride_types == "any"
+        expected_outcome = stride_types in stride_types_valid or stride_types == "any"
         df = pd.DataFrame(columns=cols)
         if as_index:
             df = df.set_index("s_id")
@@ -530,3 +541,106 @@ class TestSetCorrectIndex:
 
         assert out.index.names == expected
         assert ("t2" in out.columns) is not drop_additional
+
+
+class TestIsSingleRegionsOfInterestList:
+    @pytest.mark.parametrize(
+        "value",
+        (
+            list(range(6)),
+            "test",
+            np.arange(6),
+            {},
+            pd.DataFrame(),
+            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()),
+        ),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_single_sensor_regions_of_interest_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, roi_type_valid",
+        (
+            (["start", "end", "gs_id"], "gs"),
+            (["start", "end", "gs_id", "something_extra"], "gs"),
+            (["start", "end", "roi_id"], "roi"),
+            (["start", "end", "roi_id", "something_extra"], "roi"),
+        ),
+    )
+    def test_valid_versions(self, cols, roi_type_valid, roi_types):
+        expected_outcome = roi_types in roi_type_valid or roi_types == "any"
+
+        out = is_single_sensor_regions_of_interest_list(pd.DataFrame(columns=cols), region_type=roi_types)
+
+        assert expected_outcome == out
+
+    def test_invalid_region_type_argument(self):
+        valid_cols = ["start", "end", "gs_id"]
+        valid = pd.DataFrame(columns=valid_cols)
+
+        with pytest.raises(ValueError):
+            is_single_sensor_regions_of_interest_list(valid, region_type="invalid_value")
+
+    @pytest.mark.parametrize("col_name", ("gs_id", "roi_id"))
+    def test_identical_region_ids(self, col_name):
+        """Test that the search for identical region ids works."""
+        cols = [col_name, "start", "end"]
+        roi_list = pd.DataFrame(columns=cols)
+        roi_list[col_name] = np.array([1, 2, 2])
+        expected_outcome = False
+
+        out = is_single_sensor_regions_of_interest_list(roi_list, region_type="any")
+
+        assert expected_outcome == out
+
+    @pytest.mark.parametrize("col_name", ("gs_id", "roi_id"))
+    def test_id_col_as_index(self, col_name):
+        """Test that the id col can either be the index or a column."""
+        cols = [col_name, "start", "end"]
+        roi_list = pd.DataFrame(columns=cols)
+        roi_list = roi_list.set_index(col_name)
+
+        out = is_single_sensor_regions_of_interest_list(roi_list, region_type="any")
+
+        assert out is True
+
+
+class TestIsMultiSensorRegionsOfInterestList:
+    @pytest.mark.parametrize(
+        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_multi_sensor_stride_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, roi_type_valid",
+        (
+            (["start", "end", "gs_id"], "gs"),
+            (["start", "end", "gs_id", "something_extra"], "gs"),
+            (["start", "end", "roi_id"], "roi"),
+            (["start", "end", "roi_id", "something_extra"], "roi"),
+        ),
+    )
+    def test_valid_versions(self, cols, roi_type_valid, roi_types):
+        expected_outcome = roi_types in roi_type_valid or roi_types == "any"
+
+        out = is_multi_sensor_regions_of_interest_list({"s1": pd.DataFrame(columns=cols)}, region_type=roi_types)
+
+        assert expected_outcome == out
+
+    def test_only_one_invalid(self):
+        valid_cols = ["gs_id", "start", "end"]
+        invalid_cols = ["start", "end"]
+        valid = {"s1": pd.DataFrame(columns=valid_cols)}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+
+        assert is_multi_sensor_regions_of_interest_list(valid)
+        assert not is_multi_sensor_regions_of_interest_list(invalid)
+
+    def test_invalid_region_type_argument(self):
+        valid_cols = ["start", "end", "gs_id"]
+        valid = pd.DataFrame(columns=valid_cols)
+
+        with pytest.raises(ValueError):
+            is_multi_sensor_regions_of_interest_list({"si": valid}, region_type="invalid_value")

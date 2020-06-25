@@ -13,7 +13,11 @@ Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
 SingleSensorStrideList = pd.DataFrame
 MultiSensorStrideList = Dict[str, pd.DataFrame]
-StrideList = Union[SingleSensorDataset, MultiSensorStrideList]
+StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
+
+SingleSensorRegionsOfInterestList = pd.DataFrame
+MultiSensorRegionsOfInterestList = Dict[str, pd.DataFrame]
+RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
 SingleSensorPositionList = pd.DataFrame
 MultiSensorPositionList = Dict[str, pd.DataFrame]
@@ -299,6 +303,102 @@ def is_multi_sensor_stride_list(
 
     for k in keys:
         if not is_single_sensor_stride_list(stride_list[k], stride_type=stride_type):
+            return False
+    return True
+
+
+def is_single_sensor_regions_of_interest_list(
+    roi_list: SingleSensorRegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any"
+) -> bool:
+    """Check if an input is a single-sensor regions-of-interest list.
+
+    A valid region of interest list:
+
+    - is a pandas Dataframe with at least the following columns: `["start", "end"]`
+    - additionally it has either a column or a single index named either "roi_id" or "gs_id" depended on the specified
+      `region_type`. The value of this id column must be unique.
+    - has only a single level column index
+
+    Note that this function does only check the structure and not the plausibility of the contained values.
+
+    Parameters
+    ----------
+    roi_list
+        The object that should be tested
+    region_type
+        The expected region type of this object.
+        If this is "any" any of the possible versions are checked
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_regions_of_interest_list: Check for multi-sensor regions-of-interest
+        lists
+    """
+    if not isinstance(roi_list, pd.DataFrame):
+        return False
+
+    roi_list = roi_list.reset_index()
+    columns = roi_list.columns
+
+    if isinstance(columns, pd.MultiIndex):
+        return False
+
+    index_cols = {"roi": "roi_id", "gs": "gs_id"}
+    if region_type != "any" and region_type not in index_cols:
+        raise ValueError('The argument `region_type` must be "any" or one of {}'.format(list(index_cols.keys())))
+    # In case the region type is any, we must check if at least one of the possible id cols exist:
+    if region_type == "any":
+        matched_index_col = [col for col in columns if col in index_cols.values()]
+        if not matched_index_col:
+            return False
+        region_type = list(index_cols.keys())[list(index_cols.values()).index(matched_index_col[0])]
+
+    minimal_columns = ["start", "end"]
+    all_columns = [*minimal_columns, index_cols[region_type]]
+    if not all(v in columns for v in all_columns):
+        return False
+
+    # Check that the roi ids are unique
+    id_col = roi_list[index_cols[region_type]]
+    if not id_col.nunique() == id_col.size:
+        return False
+
+    return True
+
+
+def is_multi_sensor_regions_of_interest_list(
+    roi_list: MultiSensorRegionsOfInterestList, region_type: Literal["any", "roi", "gsd"] = "any"
+) -> bool:
+    """Check if an input is a multi-sensor stride list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor stride lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    roi_list
+        The object that should be tested
+    region_type
+        The expected region type of this object.
+        If this is "any" any of the possible versions are checked
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_regions_of_interest_list: Check for multi-sensor roi lists
+
+    """
+    if not isinstance(roi_list, dict):
+        return False
+
+    keys = roi_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_regions_of_interest_list(roi_list[k], region_type=region_type):
             return False
     return True
 
