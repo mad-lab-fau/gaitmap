@@ -4,7 +4,12 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, create_dtw_template, BarthOriginalTemplate
+from gaitmap.stride_segmentation.dtw_templates import (
+    DtwTemplate,
+    create_dtw_template,
+    BarthOriginalTemplate,
+    create_interpolated_dtw_template,
+)
 
 
 class TestTemplateBaseClass:
@@ -84,3 +89,74 @@ class TestCreateTemplate:
         assert_array_equal(instance.data, template[["col_1"]])
         assert instance.sampling_rate_hz == sampling_rate_hz
         assert_array_equal(instance.use_cols, use_cols)
+
+
+class TestCreateInterpolatedTemplate:
+    def test_create_interpolated_template_single_dataset(self):
+        """Test function can handle single dataset input."""
+        template_data = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        instance = create_interpolated_dtw_template(template_data, kind="linear", n_samples=None)
+
+        assert_array_equal(instance.data, template_data[["dummy_col"]])
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_template_dataset_list(self):
+        """Test function can handle lists of dataset input."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+
+        assert_array_equal(instance.data, template_data1[["dummy_col"]])
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_template_calculates_mean(self):
+        """Test if result is actually mena over all inputs."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+
+        result_template_df = pd.DataFrame(np.array([0, 0, 0, 0, 0]), columns=["dummy_col"])
+        assert_array_equal(instance.data, result_template_df.to_numpy())
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_mean_length_over_input_sequences_template(self):
+        """Test template has mean length of all input sequences."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1]), columns=["dummy_col"])
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+
+        assert_array_equal(len(instance.data), 3)
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_fixed_length_template_upsample(self):
+        """Test template has specified length for upsampling."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1]), columns=["dummy_col"])
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=5)
+
+        assert_array_equal(len(instance.data), 5)
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_fixed_length_template_downsample(self):
+        """Test template has specified length for downsampling."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 5]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1, 2, 3, 4, 5, 6]), columns=["dummy_col"])
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=3)
+
+        assert_array_equal(len(instance.data), 3)
+        assert isinstance(instance, DtwTemplate)
+
+    def test_create_interpolated_template_check_multisensordataset_exception(self):
+        """Test only single sensor datasets are valid input."""
+        template_data1 = pd.DataFrame(np.array([[0, 1, 2], [0, 1, 2]]), columns=["col_1", "col_2", "col_3"])
+        template_data2 = pd.DataFrame(np.array([[0, 1, 2], [0, 1, 2]]), columns=["col_1", "col_2", "col_3"])
+
+        dataset = {"left_sensor": template_data1, "right_sensor": template_data2}
+
+        with pytest.raises(ValueError, match=r".* single sensor dataset*"):
+            create_interpolated_dtw_template(dataset, kind="linear", n_samples=None)
