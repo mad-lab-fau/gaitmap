@@ -178,7 +178,7 @@ def create_dtw_template(
 
 
 def create_interpolated_dtw_template(
-    signal_sequence: Tuple[pd.DataFrame, List[pd.DataFrame]],
+    signal_sequence: Union[pd.DataFrame, List[pd.DataFrame]],
     kind: str = "linear",
     n_samples: Optional[int] = None,
     sampling_rate_hz: Optional[float] = None,
@@ -204,13 +204,20 @@ def create_interpolated_dtw_template(
     sampling_rate_hz
         The sampling rate that was used to record the template data
     scaling
-        A multiplicative factor multiplied onto the template to adapt for another signal range
+        A multiplicative factor used to downscale the signal before the template is applied.
+        The downscaled signal should then have have the same value range as the template signal.
+        A large scale difference between data and template will result in mismatches.
+        At the moment only homogeneous scaling of all axis is supported.
+        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
+        scaling factor in the same way.
     use_cols
         The columns of the template that should actually be used.
-        The content of `use_cols` must match a subset of these given sequence dataframe columns.
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
 
     See Also
     --------
+    gaitmap.stride_segmentation.create_dtw_template: Helper function to create instance of template class
     gaitmap.stride_segmentation.BaseDtw: How to apply templates
     gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
     gaitmap.stride_segmentation.DtwTemplate: Template base class
