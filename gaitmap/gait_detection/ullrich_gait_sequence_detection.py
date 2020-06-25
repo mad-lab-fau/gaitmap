@@ -18,7 +18,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
     Dataset,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_dataset_names, RegionsOfInterestList,
 )
 
 
@@ -75,8 +75,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Attributes
     ----------
-    TODO Is there going to be datatype 'gait_sequence_list'? Can this be a subtype of a stride_list?
-    gait_sequences_ : A pandas.DataFrame or dictionary with pandas.DataFrames
+    gait_sequences_
         The result of the `detect` method holding all gait sequences with their start and end samples. Formatted
         as pandas DataFrame.
     start_ : 1D array or dictionary with such values
@@ -127,7 +126,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
     end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    gait_sequences_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    gait_sequences_: RegionsOfInterestList
 
     data: Dataset
     sampling_rate_hz: float
