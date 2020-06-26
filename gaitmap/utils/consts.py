@@ -38,6 +38,8 @@ GF_VEL = ["vel_x", "vel_y", "vel_z"]
 GF_POS = ["pos_x", "pos_y", "pos_z"]
 #: The default names of the Orientation columns in the global frame
 GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
+#: The default index names for all global frame spatial paras
+GF_INDEX = ["s_id", "sample"]
 
 #: The gravity vector in m/s^2 in the FSF
 GRAV_VEC = np.array([0.0, 0.0, 9.81])

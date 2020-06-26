@@ -4,6 +4,7 @@ from typing import Union, Dict
 import pandas as pd
 
 from gaitmap.base import BaseType, BaseTemporalParameterCalculation
+from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
@@ -134,7 +135,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             Data frame containing temporal parameters of single sensor
 
         """
-        stride_event_list = set_correct_index(stride_event_list, ["s_id"])
+        stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
         stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
         swing_time_ = _calc_swing_time(stride_event_list["ic"], stride_event_list["tc"], sampling_rate_hz)
         stance_time_ = [stride_time - swing_time for stride_time, swing_time in zip(stride_time_, swing_time_)]
