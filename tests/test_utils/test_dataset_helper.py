@@ -268,7 +268,7 @@ class TestIsSingleSensorStrideList:
         stride_list["s_id"] = np.array([1, 2, 2])
         expected_outcome = False
 
-        out = is_single_sensor_stride_list(stride_list, stride_type="min_vel")
+        out = is_single_sensor_stride_list(stride_list, stride_type="any")
 
         assert expected_outcome == out
 
@@ -611,7 +611,7 @@ class TestIsMultiSensorRegionsOfInterestList:
         "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
-        assert not is_multi_sensor_stride_list(value)
+        assert not is_multi_sensor_regions_of_interest_list(value)
 
     @pytest.mark.parametrize(
         "cols, roi_type_valid",
