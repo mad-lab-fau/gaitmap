@@ -171,7 +171,7 @@ def is_multi_sensor_dataset(
     return True
 
 
-def is_single_sensor_stride_list(
+def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
     stride_list: SingleSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:
     """Check if an input is a single-sensor stride list.

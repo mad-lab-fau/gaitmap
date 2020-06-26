@@ -18,7 +18,8 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_dataset,
     is_multi_sensor_dataset,
     SingleSensorDataset,
-    get_multi_sensor_dataset_names, set_correct_index,
+    get_multi_sensor_dataset_names,
+    set_correct_index,
 )
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 

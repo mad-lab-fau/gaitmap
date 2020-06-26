@@ -15,7 +15,8 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_stride_list,
     StrideList,
     Dataset,
-    get_multi_sensor_dataset_names, set_correct_index,
+    get_multi_sensor_dataset_names,
+    set_correct_index,
 )
 from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,

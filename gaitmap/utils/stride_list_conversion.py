@@ -9,7 +9,8 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     SingleSensorStrideList,
     is_single_sensor_stride_list,
-    is_multi_sensor_stride_list, set_correct_index,
+    is_multi_sensor_stride_list,
+    set_correct_index,
 )
 
 
