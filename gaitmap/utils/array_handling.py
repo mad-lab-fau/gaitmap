@@ -236,7 +236,7 @@ def interpolate1d(array: np.ndarray, n_samples: int, kind: str = "linear") -> np
     n_samples : int
         Number of samples in interpolation result
     kind : str
-        Interpolation function: Please refer to :py:func:`scipy.interpolate.interp1d`
+        Interpolation function. Please refer to :py:class:`scipy.interpolate.interp1d`
 
     Returns
     -------

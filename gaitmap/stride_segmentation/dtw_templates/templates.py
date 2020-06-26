@@ -197,7 +197,7 @@ def create_interpolated_dtw_template(
         Either a single dataframe or a list of dataframes which shall be used for template generation. Each dataframe
         should therefore full fill the gaitmap body frame convention
     kind
-        Interpolation function: Please refer to :py:func:`scipy.interpolate.interp1d`
+        Interpolation function. Please refer to :py:class:`scipy.interpolate.interp1d`.
     n_samples
         Number of samples to which the data will be interpolated. If None, the number of samples will be the mean
         length of all given input sequences.
@@ -239,7 +239,7 @@ def create_interpolated_dtw_template(
         signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for signal_df in signal_sequence
     ]
 
-    # calcualte elementwise mean over all strides
+    # calculate element-wise mean over all strides
     template_df = pd.concat(resampled_sequences_df_list).mean(level=0)
 
     return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
