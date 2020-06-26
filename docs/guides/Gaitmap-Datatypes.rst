@@ -141,15 +141,22 @@ Such information is stored in a *StrideList*.
 
 A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least have the columns defined by
 :obj:`~gaitmap.utils.consts.SL_COLS`.
-Instead of beeing a column, `s_id` can also be the name of the index.
-This is the default in all cases were stride lists are generated during the pipeline.
-However, all aglorithms that take a stride list as input support both formats (index or column)
+The index is expected to have one level with the name `s_id`.
+Instead of being part of the index, it can also be a column with the same name.
+All algorithms that take a stride list as input support both formats (index or column)
 Independent of that, `s_id` index or column should contain a unique identifier for each stride in the stride list.
 All other columns should provide values in samples since the start of the recording (not the start of the stride!)
 
 >>> from gaitmap.utils.consts import SL_COLS
 >>> SL_COLS
-['s_id', 'start', 'end']
+['start', 'end']
+
+>>> from gaitmap.utils.consts import SL_INDEX
+>>> SL_INDEX
+['s_id']
+
+Developers can use :py:func:`~gaitmap.utils.dataset_helper.set_correct_index` to unify the format of a stride list and
+easily support `s_id` as index or column.
 
 Depending of the type of stride list, more columns are expected.
 Required additional columns are documented in :obj:`~gaitmap.utils.consts.SL_ADDITIONAL_COLS`.

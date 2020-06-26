@@ -7,7 +7,7 @@ from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.consts import BF_ACC, BF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
@@ -15,7 +15,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_stride_list,
     StrideList,
     Dataset,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_dataset_names, set_correct_index,
 )
 from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
@@ -75,10 +75,11 @@ class RamppEventDetection(BaseEventDetection):
     >>> event_detection = RamppEventDetection()
     >>> event_detection.detect(data=data, stride_list=stride_list, sampling_rate_hz=204.8)
     >>> event_detection.min_vel_event_list_
-        s_id   start     end      ic      tc  min_vel  pre_ic
-    0      0   519.0   710.0   651.0   584.0    519.0   498.0
-    1      1   710.0   935.0   839.0   802.0    710.0   651.0
-    2      2   935.0  1183.0  1089.0  1023.0    935.0   839.0
+           start     end      ic      tc  min_vel  pre_ic
+    s_id
+    0      519.0   710.0   651.0   584.0    519.0   498.0
+    1      710.0   935.0   839.0   802.0    710.0   651.0
+    2      935.0  1183.0  1089.0  1023.0    935.0   839.0
     ...
 
     Notes
@@ -222,19 +223,21 @@ class RamppEventDetection(BaseEventDetection):
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
+        stride_list = set_correct_index(stride_list, SL_INDEX)
+
         # find events in all segments
         ic, tc, min_vel = self._find_all_events(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
 
         # build first dict / df based on segment start and end
         segmented_event_list = {
-            "s_id": stride_list["s_id"],
+            "s_id": stride_list.index,
             "start": stride_list["start"],
             "end": stride_list["end"],
             "ic": ic,
             "tc": tc,
             "min_vel": min_vel,
         }
-        segmented_event_list = pd.DataFrame(segmented_event_list)
+        segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
 
         # check for consistency, remove inconsistent lines
         segmented_event_list, _ = enforce_stride_list_consistency(
@@ -245,7 +248,7 @@ class RamppEventDetection(BaseEventDetection):
             segmented_event_list, target_stride_type="min_vel"
         )
 
-        min_vel_event_list = min_vel_event_list[["s_id", "start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+        min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
         return min_vel_event_list, segmented_event_list
 

@@ -124,10 +124,10 @@ class TestEventDetectionRampp:
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = RamppEventDetection()
         ed.detect(data_left, stride_list_left, 204.8)
-        # per default min_vel_event_list_ has 7 columns
-        assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 7)
-        # per default segmented_event_list_ has 6 columns
-        assert_array_equal(np.array(ed.segmented_event_list_.shape[1]), 6)
+        # per default min_vel_event_list_ has 6 columns
+        assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 6)
+        # per default segmented_event_list_ has 5 columns
+        assert_array_equal(np.array(ed.segmented_event_list_.shape[1]), 5)
 
     def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if the s_id from the stride list is correctly transferred to the output of event detection"""
@@ -140,8 +140,8 @@ class TestEventDetectionRampp:
         ed.detect(data_left, stride_list_left, 204.8)
 
         # Check that all of the old stride ids are still in the new one
-        assert np.all(ed.min_vel_event_list_["s_id"].isin(stride_list_left["s_id"]))
-        assert np.all(ed.segmented_event_list_["s_id"].isin(stride_list_left["s_id"]))
+        assert np.all(ed.min_vel_event_list_.index.isin(stride_list_left["s_id"]))
+        assert np.all(ed.segmented_event_list_.index.isin(stride_list_left["s_id"]))
         # The new start should be inside the old stride
         combined = pd.merge(ed.min_vel_event_list_, stride_list_left, on="s_id")
         assert np.all(combined["min_vel"] < combined["end_y"])
