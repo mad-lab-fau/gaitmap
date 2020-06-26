@@ -15,18 +15,23 @@ It's API is designed to mimic `sklearn` to provide you an familiar and elegant i
 
 *gaitmap* only supports Python 3.7 and newer.
 First, install a compatible version of Python.
-Then install the package using pip:
+Then install the package using pip.
 
+The latest stable version:
 ```
-pip install git@mad-srv.informatik.uni-erlangen.de:MadLab/GaitAnalysis/gaitmap.git --upgrade
+pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
 ```
 
-Or manually with git (note that an editable install with `-e` is not possible for this project):
-
+The current development version:
 ```
-git clone https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git
-cd gaitmap
-pip install . --upgrade
+pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@develop --upgrade
+```
+
+A specific version (e.g. 1.0.0):
+
+For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
+```
+pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.0.0 --upgrade
 ```
 
 If you are planning to make any changes to the library, please refer to the developer section below.
