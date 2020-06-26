@@ -8,6 +8,7 @@ from gaitmap.utils.array_handling import (
     split_array_at_nan,
     find_local_minima_below_threshold,
     find_extrema_in_radius,
+    interpolate1d,
 )
 
 
@@ -327,3 +328,19 @@ class TestFindMinRadius:
         indices = np.array([2, 3, 4])  # All should find the minima
         out = find_extrema_in_radius(data, indices, radius, extrema_type="max")
         assert_array_equal(out, indices)
+
+
+class TestInterpolate1D:
+    def test_interpolate1d_upsample(self):
+        """Test if data is upsampled to the correct number of samples."""
+        data = np.array([0, 1, 2, 3])
+        data_interpolated = interpolate1d(data, n_samples=10, kind="linear")
+
+        assert_array_equal(len(data_interpolated), 10)
+
+    def test_interpolate1d_downsample(self):
+        """Test if data is downsampled to the correct number of samples."""
+        data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        data_interpolated = interpolate1d(data, n_samples=4, kind="linear")
+
+        assert_array_equal(len(data_interpolated), 4)

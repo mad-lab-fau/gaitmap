@@ -1,11 +1,13 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, List
 
 import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.utils.array_handling import interpolate1d
+from gaitmap.utils.dataset_helper import is_single_sensor_dataset
 
 
 class DtwTemplate(_BaseSerializable):
@@ -173,3 +175,71 @@ def create_dtw_template(
     )
 
     return template_instance
+
+
+def create_interpolated_dtw_template(
+    signal_sequence: Union[pd.DataFrame, List[pd.DataFrame]],
+    kind: str = "linear",
+    n_samples: Optional[int] = None,
+    sampling_rate_hz: Optional[float] = None,
+    scaling: Optional[float] = None,
+    use_cols: Optional[Tuple[Union[str, int]]] = None,
+) -> DtwTemplate:
+    """Create a DtwTemplate by interpolation. If multiple sequences are given use mean to combine them.
+
+    This function can be used to generate a DtwTemplate from multiple input signal sequences, all sequences will be
+    interpolated to the same length, and combined by calculating their mean. Interpolation and mean calculation will
+    be performed over all given input axis.
+
+    Parameters
+    ----------
+    signal_sequence
+        Either a single dataframe or a list of dataframes which shall be used for template generation. Each dataframe
+        should therefore full fill the gaitmap body frame convention
+    kind
+        Interpolation function. Please refer to :py:class:`scipy.interpolate.interp1d`.
+    n_samples
+        Number of samples to which the data will be interpolated. If None, the number of samples will be the mean
+        length of all given input sequences.
+    sampling_rate_hz
+        The sampling rate that was used to record the template data
+    scaling
+        A multiplicative factor used to downscale the signal before the template is applied.
+        The downscaled signal should then have have the same value range as the template signal.
+        A large scale difference between data and template will result in mismatches.
+        At the moment only homogeneous scaling of all axis is supported.
+        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
+        scaling factor in the same way.
+    use_cols
+        The columns of the template that should actually be used.
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.create_dtw_template: Helper function to create instance of template class
+    gaitmap.stride_segmentation.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
+    gaitmap.stride_segmentation.DtwTemplate: Template base class
+
+    """
+    if not isinstance(signal_sequence, list):
+        signal_sequence = [signal_sequence]
+
+    for df in signal_sequence:
+        if not is_single_sensor_dataset(df, check_acc=False, check_gyr=False, frame="any"):
+            raise ValueError("All input dataframes must be a single sensor dataset!")
+
+    if n_samples is None:
+        # get mean stride length over given strides
+        n_samples = int(np.rint(np.mean([len(df) for df in signal_sequence])))
+
+    # interpolate all strides to mean number of samples
+    resampled_sequences_df_list = [
+        signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for signal_df in signal_sequence
+    ]
+
+    # calculate element-wise mean over all strides
+    template_df = pd.concat(resampled_sequences_df_list).mean(level=0)
+
+    return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
