@@ -4,9 +4,9 @@
 It's API is designed to mimic `sklearn` to provide you an familiar and elegant interface
 
 
-[![pipeline status](https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/badges/master/pipeline.svg)](https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/-/commits/master)
-[![coverage report](https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/badges/master/coverage.svg)](https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/-/commits/master)
-[![docs](https://img.shields.io/badge/docs-online-green.svg)](http://GaitAnalysis.mad-pages.informatik.uni-erlangen.de/gaitmap/README.html)
+[![pipeline status](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/badges/master/pipeline.svg)](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/commits/master)
+[![coverage report](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/badges/master/coverage.svg)](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/commits/master)
+[![docs](https://img.shields.io/badge/docs-online-green.svg)](http://MadLab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/README.html)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Getting started

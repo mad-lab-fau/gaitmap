@@ -14,7 +14,7 @@ import pandas as pd
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
 PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
 GITLAB_FOLDER_PATH = (
-    "https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/-/raw/master/example_data/{}?inline=false"
+    "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/raw/master/example_data/{}?inline=false"
 )
 
 

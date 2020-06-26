@@ -25,7 +25,7 @@ from gaitmap.base import BaseAlgorithm
 
 sys.path.insert(0, os.path.abspath(".."))
 
-URL = "https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/-/blob/master"
+URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/blob/master"
 
 # -- Project information -----------------------------------------------------
 
