@@ -240,7 +240,24 @@ Algorithmic Implementation
 Alignment with the Foot Sensor Frame
 ------------------------------------
 
-TODO: Add info about transforming the raw sensor frame into the FSF
+Aligning the coordinate system of a sensor with the gaitmap coordinate system can be a complicated, but usually requires
+two steps:
+
+- Rough Alignment of sensor axis using prior knowledge of the sensor orientation (or other methods)
+- Alignment of the z-axis using gravity during a static moment
+    (:py:func`~gaitmap.preprocessing.sensor_alignment.align_dataset_to_gravity`)
+
+The alignment should be performed in this order, because the orientation of the sensor after the gravtiy alignment can
+not be easily predicted, if the alignment error is large.
+Therefore, prior knowledge should be used to already rotate the sensor before performing a gravity alignment.
+
+For a full example on how to perform these alignment steps see our :ref:`Preprocessing Example <example_preprocessing>`.
+
+.. note:: Perfect alignment will be impossible as every sensor attached to a foot or a shoe can not be attached
+   perfectly flat.
+   You should aim to make the alignment as good as possible, but small misalignment in the heading of the sensor
+   will not negatively effect the performance of any algorithm.
+
 
 Transformation into the Foot Body Frame
 ---------------------------------------
