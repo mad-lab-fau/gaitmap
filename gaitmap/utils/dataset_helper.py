@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI, SL_INDEX
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI, \
+    SL_INDEX, ROI_ID_COLS
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -307,6 +308,15 @@ def is_multi_sensor_stride_list(
     return True
 
 
+def _get_regions_of_interest_types(roi_list_columns):
+    valid_index_dict = ROI_ID_COLS
+    matched_index_col = [col for col in roi_list_columns if col in valid_index_dict.values()]
+    if not matched_index_col:
+        raise ValueError("The correct type of region list can not be determined.")
+    region_type = list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+    return region_type
+
+
 def is_single_sensor_regions_of_interest_list(
     roi_list: SingleSensorRegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any"
 ) -> bool:
@@ -343,15 +353,15 @@ def is_single_sensor_regions_of_interest_list(
     if isinstance(columns, pd.MultiIndex):
         return False
 
-    index_cols = {"roi": "roi_id", "gs": "gs_id"}
+    index_cols = ROI_ID_COLS
     if region_type != "any" and region_type not in index_cols:
         raise ValueError('The argument `region_type` must be "any" or one of {}'.format(list(index_cols.keys())))
     # In case the region type is any, we must check if at least one of the possible id cols exist:
     if region_type == "any":
-        matched_index_col = [col for col in columns if col in index_cols.values()]
-        if not matched_index_col:
+        try:
+            region_type = _get_regions_of_interest_types(columns)
+        except ValueError:
             return False
-        region_type = list(index_cols.keys())[list(index_cols.values()).index(matched_index_col[0])]
 
     minimal_columns = ["start", "end"]
     all_columns = [*minimal_columns, index_cols[region_type]]
