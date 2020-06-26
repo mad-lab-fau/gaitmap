@@ -4,12 +4,13 @@ from typing import Tuple
 from typing_extensions import Literal
 import numpy as np
 
-from gaitmap.utils.consts import SL_EVENT_ORDER
+from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.dataset_helper import (
     StrideList,
     SingleSensorStrideList,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    set_correct_index,
 )
 
 
@@ -68,6 +69,7 @@ def _segmented_stride_list_to_min_vel_single_sensor(
         This stride list is still in the input format.
 
     """
+    stride_list = set_correct_index(stride_list, SL_INDEX)
     converted_stride_list = stride_list.copy()
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
@@ -101,7 +103,7 @@ def _segmented_stride_list_to_min_vel_single_sensor(
     # drop remaining nans (last list elements will get some nans by shift(-1) operation above)
     converted_stride_list = converted_stride_list.dropna(how="any")
 
-    return converted_stride_list, stride_list[~stride_list["s_id"].isin(converted_stride_list["s_id"])]
+    return converted_stride_list, stride_list[~stride_list.index.isin(converted_stride_list.index)]
 
 
 def enforce_stride_list_consistency(

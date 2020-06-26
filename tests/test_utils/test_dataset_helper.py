@@ -42,6 +42,11 @@ def stride_types(request):
     return request.param
 
 
+@pytest.fixture(params=(True, False))
+def as_index(request):
+    return request.param
+
+
 class TestColumnHelper:
 
     method: Callable
@@ -199,10 +204,13 @@ class TestIsSingleSensorStrideList:
             (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "segmented"),
         ),
     )
-    def test_valid_versions(self, cols, stride_types_valid, stride_types):
+    def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index):
         expected_outcome = stride_types == stride_types_valid or stride_types == "any"
+        df = pd.DataFrame(columns=cols)
+        if as_index:
+            df = df.set_index("s_id")
 
-        out = is_single_sensor_stride_list(pd.DataFrame(columns=cols), stride_type=stride_types)
+        out = is_single_sensor_stride_list(df, stride_type=stride_types)
 
         assert expected_outcome == out
 
@@ -275,10 +283,13 @@ class TestIsMultiSensorStrideList:
             (["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc", "something_extra"], "ic"),
         ),
     )
-    def test_valid_versions(self, cols, stride_types_valid, stride_types):
+    def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index):
         expected_outcome = stride_types == stride_types_valid or stride_types == "any"
+        df = pd.DataFrame(columns=cols)
+        if as_index:
+            df = df.set_index("s_id")
 
-        out = is_multi_sensor_stride_list({"s1": pd.DataFrame(columns=cols)}, stride_type=stride_types)
+        out = is_multi_sensor_stride_list({"s1": df}, stride_type=stride_types)
 
         assert expected_outcome == out
 

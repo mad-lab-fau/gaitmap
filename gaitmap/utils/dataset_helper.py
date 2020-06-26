@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI
+from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI, SL_INDEX
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
@@ -171,14 +171,15 @@ def is_multi_sensor_dataset(
     return True
 
 
-def is_single_sensor_stride_list(
+def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
     stride_list: SingleSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
     A valid stride list:
 
-    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
+    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`.
+      The `s_id` column can also be part of the index.
     - has only a single level column index
     - the value of `s_id` is unique
 
@@ -224,6 +225,11 @@ def is_single_sensor_stride_list(
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
+    try:
+        stride_list = set_correct_index(stride_list, SL_INDEX)
+    except KeyError:
+        return False
+
     columns = stride_list.columns
 
     if isinstance(columns, pd.MultiIndex):
@@ -252,7 +258,7 @@ def is_single_sensor_stride_list(
         return False
 
     # Check that the stride ids are unique
-    if not stride_list["s_id"].nunique() == stride_list["s_id"].size:
+    if not stride_list.index.nunique() == stride_list.index.size:
         return False
 
     return True

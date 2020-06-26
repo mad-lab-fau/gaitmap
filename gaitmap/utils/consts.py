@@ -16,7 +16,9 @@ BF_ACC = ["acc_pa", "acc_ml", "acc_si"]
 BF_COLS = [*BF_ACC, *BF_GYR]
 
 #: The minimal required columns for a stride list
-SL_COLS = ["s_id", "start", "end"]
+SL_COLS = ["start", "end"]
+#: Expected index cols for a stride list
+SL_INDEX = ["s_id"]
 #: Additional Columns of a stride list depending on its type
 SL_ADDITIONAL_COLS = {
     "min_vel": ["pre_ic", "ic", "min_vel", "tc"],
@@ -36,6 +38,8 @@ GF_VEL = ["vel_x", "vel_y", "vel_z"]
 GF_POS = ["pos_x", "pos_y", "pos_z"]
 #: The default names of the Orientation columns in the global frame
 GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
+#: The default index names for all global frame spatial paras
+GF_INDEX = ["s_id", "sample"]
 
 #: The gravity vector in m/s^2 in the FSF
 GRAV_VEC = np.array([0.0, 0.0, 9.81])

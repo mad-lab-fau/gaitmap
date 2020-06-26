@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation
 from gaitmap.base import BaseOrientationMethod, BaseType, BasePositionMethod, BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS
+from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS, SL_INDEX
 from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
@@ -19,6 +19,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
+    set_correct_index,
 )
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 
@@ -190,6 +191,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, event_list: StrideList
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        event_list = set_correct_index(event_list, SL_INDEX)
         rotation = dict()
         velocity = dict()
         position = dict()
@@ -200,12 +202,12 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
                 pd.DataFrame(columns=GF_VEL, index=index.copy()),
                 pd.DataFrame(columns=GF_POS, index=index.copy()),
             )
-        for _, i_stride in event_list.iterrows():
+        for s_id, i_stride in event_list.iterrows():
             i_start, i_end = (int(i_stride["start"]), int(i_stride["end"]))
             i_rotation, i_velocity, i_position = self._estimate_stride(data, i_start, i_end)
-            rotation[i_stride["s_id"]] = pd.DataFrame(i_rotation.as_quat(), columns=GF_ORI)
-            velocity[i_stride["s_id"]] = pd.DataFrame(i_velocity, columns=GF_VEL)
-            position[i_stride["s_id"]] = pd.DataFrame(i_position, columns=GF_POS)
+            rotation[s_id] = pd.DataFrame(i_rotation.as_quat(), columns=GF_ORI)
+            velocity[s_id] = pd.DataFrame(i_velocity, columns=GF_VEL)
+            position[s_id] = pd.DataFrame(i_position, columns=GF_POS)
         rotation = pd.concat(rotation)
         rotation.index = rotation.index.rename(("s_id", "sample"))
         velocity = pd.concat(velocity)
