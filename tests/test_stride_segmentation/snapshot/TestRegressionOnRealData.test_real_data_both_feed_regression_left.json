@@ -2,10 +2,6 @@
     "schema":{
         "fields":[
             {
-                "name":"index",
-                "type":"integer"
-            },
-            {
                 "name":"s_id",
                 "type":"integer"
             },
@@ -19,175 +15,147 @@
             }
         ],
         "primaryKey":[
-            "index"
+            "s_id"
         ],
         "pandas_version":"0.20.0"
     },
     "data":[
         {
-            "index":0,
             "s_id":0,
             "start":364,
             "end":584
         },
         {
-            "index":1,
             "s_id":1,
             "start":584,
             "end":802
         },
         {
-            "index":2,
             "s_id":2,
             "start":802,
             "end":1023
         },
         {
-            "index":3,
             "s_id":3,
             "start":1023,
             "end":1242
         },
         {
-            "index":4,
             "s_id":4,
             "start":1242,
             "end":1458
         },
         {
-            "index":5,
             "s_id":5,
             "start":1458,
             "end":1672
         },
         {
-            "index":6,
             "s_id":6,
             "start":1672,
             "end":1887
         },
         {
-            "index":7,
             "s_id":7,
             "start":1887,
             "end":2104
         },
         {
-            "index":8,
             "s_id":8,
             "start":2104,
             "end":2327
         },
         {
-            "index":9,
             "s_id":9,
             "start":2327,
             "end":2546
         },
         {
-            "index":10,
             "s_id":10,
             "start":2546,
             "end":2773
         },
         {
-            "index":11,
             "s_id":11,
             "start":2773,
             "end":2998
         },
         {
-            "index":12,
             "s_id":12,
             "start":2998,
             "end":3231
         },
         {
-            "index":13,
             "s_id":13,
             "start":3231,
             "end":3453
         },
         {
-            "index":14,
             "s_id":14,
             "start":3934,
             "end":4163
         },
         {
-            "index":15,
             "s_id":15,
             "start":4163,
             "end":4382
         },
         {
-            "index":16,
             "s_id":16,
             "start":4382,
             "end":4603
         },
         {
-            "index":17,
             "s_id":17,
             "start":4603,
             "end":4822
         },
         {
-            "index":18,
             "s_id":18,
             "start":4822,
             "end":5043
         },
         {
-            "index":19,
             "s_id":19,
             "start":5043,
             "end":5267
         },
         {
-            "index":20,
             "s_id":20,
             "start":5267,
             "end":5489
         },
         {
-            "index":21,
             "s_id":21,
             "start":5489,
             "end":5713
         },
         {
-            "index":22,
             "s_id":22,
             "start":5713,
             "end":5936
         },
         {
-            "index":23,
             "s_id":23,
             "start":5936,
             "end":6167
         },
         {
-            "index":24,
             "s_id":24,
             "start":6167,
             "end":6395
         },
         {
-            "index":25,
             "s_id":25,
             "start":6395,
             "end":6628
         },
         {
-            "index":26,
             "s_id":26,
             "start":6628,
             "end":6858
         },
         {
-            "index":27,
             "s_id":27,
             "start":6858,
             "end":7091

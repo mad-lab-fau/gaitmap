@@ -178,7 +178,8 @@ def is_single_sensor_stride_list(
 
     A valid stride list:
 
-    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`
+    - is a pandas Dataframe with at least the following columns: `["s_id", "start", "end"]`.
+      The `s_id` column can also be part of the index.
     - has only a single level column index
     - the value of `s_id` is unique
 
@@ -224,6 +225,7 @@ def is_single_sensor_stride_list(
     if not isinstance(stride_list, pd.DataFrame):
         return False
 
+    stride_list = stride_list.reset_index()
     columns = stride_list.columns
 
     if isinstance(columns, pd.MultiIndex):

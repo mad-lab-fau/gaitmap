@@ -109,6 +109,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
         expected_stride_list["start"] = [5, 18]
         expected_stride_list["end"] = [7, 20]
         expected_stride_list["s_id"] = [0, 1]
+        expected_stride_list = expected_stride_list.set_index("s_id")
         assert_frame_equal(dtw.stride_list_.astype(np.int64), expected_stride_list.astype(np.int64))
 
     def test_stride_list_multi_d(self):
@@ -127,11 +128,11 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(
             dtw.stride_list_["sensor1"].astype(np.int64),
-            pd.DataFrame([[0, 5, 7]], columns=["s_id", "start", "end"]).astype(np.int64),
+            pd.DataFrame([[0, 5, 7]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
         )
         assert_frame_equal(
             dtw.stride_list_["sensor2"].astype(np.int64),
-            pd.DataFrame([[0, 2, 4]], columns=["s_id", "start", "end"]).astype(np.int64),
+            pd.DataFrame([[0, 2, 4]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
         )
 
     def test_stride_list_passes_test_func(self):
