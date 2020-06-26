@@ -5,8 +5,17 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_GYR, BF_ACC, SL_COLS, SL_ADDITIONAL_COLS, GF_POS, GF_ORI, \
-    SL_INDEX, ROI_ID_COLS
+from gaitmap.utils.consts import (
+    SF_ACC,
+    SF_GYR,
+    BF_GYR,
+    BF_ACC,
+    SL_COLS,
+    SL_ADDITIONAL_COLS,
+    GF_POS,
+    GF_ORI,
+    ROI_ID_COLS,
+)
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]

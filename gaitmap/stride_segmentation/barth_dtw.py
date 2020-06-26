@@ -91,6 +91,9 @@ class BarthDtw(BaseDtw):
     matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if `snap_to_min_window_ms` is equal to `None`.
         Otherwise, it return the start and end values before the sanpping is applied.
+    roi_ids_ : List of length n_detected_strides or dictionary with such values
+        The id of the region of interest each match belongs to.
+        If not region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
 
     Other Parameters
     ----------------
@@ -98,6 +101,9 @@ class BarthDtw(BaseDtw):
         The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
+    regions_of_interest
+        Specific regions that should be considered during matching.
+        The rest of the signal is simply ignored.
 
     Notes
     -----

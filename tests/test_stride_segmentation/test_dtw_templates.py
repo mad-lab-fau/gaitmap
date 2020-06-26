@@ -37,7 +37,7 @@ class TestTemplateBaseClass:
         assert_array_equal(instance.data, template)
 
     def test_no_valid_info_provided(self):
-        """Test that an error is raised, if neiter a filename nor a array is provided."""
+        """Test that an error is raised, if neither a filename nor a array is provided."""
         instance = DtwTemplate()
 
         with pytest.raises(AttributeError):

@@ -18,7 +18,8 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
     is_single_sensor_dataset,
     Dataset,
-    get_multi_sensor_dataset_names, RegionsOfInterestList,
+    get_multi_sensor_dataset_names,
+    RegionsOfInterestList,
 )
 
 

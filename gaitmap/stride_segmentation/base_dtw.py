@@ -4,19 +4,26 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_cost_matrix, subsequence_path
+from tslearn.metrics import subsequence_path, _subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
+from gaitmap.utils.consts import ROI_ID_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_single_sensor_dataset,
     is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
+    RegionsOfInterestList,
+    is_single_sensor_regions_of_interest_list,
+    SingleSensorRegionsOfInterestList,
+    _get_regions_of_interest_types,
+    set_correct_index,
 )
 
 
@@ -171,6 +178,9 @@ class BaseDtw(BaseStrideSegmentation):
         This base implementation of the DTW does not do this, but potential subclasses might modify the matches list
         during postprocessing.
         This does **not** preserve matches that were removed during postprocessing.
+    roi_ids_ : List of length n_detected_strides or dictionary with such values
+        The id of the region of interest each match belongs to.
+        If not region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
 
     Other Parameters
     ----------------
@@ -178,6 +188,9 @@ class BaseDtw(BaseStrideSegmentation):
         The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
+    regions_of_interest
+        Specific regions that should be considered during matching.
+        The rest of the signal is simply ignored.
 
     Notes
     -----
@@ -224,13 +237,16 @@ class BaseDtw(BaseStrideSegmentation):
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
+    roi_ids_: Union[Sequence[float], Dict[str, Sequence[float]]]
 
     data: Union[np.ndarray, Dataset]
+    regions_of_interest: Optional[RegionsOfInterestList]
     sampling_rate_hz: float
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
     _min_sequence_length: Optional[float]
     _max_sequence_length: Optional[float]
+    _roi_type = Union[Optional[str], Dict[str, Optional[str]]]
 
     @property
     def cost_function_(self):
@@ -265,7 +281,13 @@ class BaseDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
+    def segment(
+        self: BaseType,
+        data: Union[np.ndarray, Dataset],
+        sampling_rate_hz: float,
+        regions_of_interest: Optional[RegionsOfInterestList] = None,
+        **kwargs,
+    ) -> BaseType:
         """Find matches by warping the provided template to the data.
 
         Parameters
@@ -273,6 +295,9 @@ class BaseDtw(BaseStrideSegmentation):
         data : array, single-sensor dataframe, or multi-sensor dataset
             The input data.
             For details on the required datatypes review the class docstring.
+        regions_of_interest
+            Regions of interest in the signal that should be considered for matching.
+            All signal outside these regions is ignored.
         sampling_rate_hz
             The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
             a number of samples and it will be used to resample the template if `resample_template` is `True`.
@@ -285,6 +310,9 @@ class BaseDtw(BaseStrideSegmentation):
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
+        self.regions_of_interest = regions_of_interest
+
+        # TODO: Check region of interest Dtype
 
         # Validate and transform inputs
         if self.template is None:
@@ -300,38 +328,54 @@ class BaseDtw(BaseStrideSegmentation):
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             # Single template single sensor: easy
-            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
-                data, template
-            )
+            (
+                self.acc_cost_mat_,
+                self.paths_,
+                self.costs_,
+                self.matches_start_end_,
+                self.roi_ids_,
+                self._roi_type,
+            ) = self._segment_single_dataset(data, template, regions_of_interest)
         elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
                 results = dict()
                 for sensor, single_template in template.items():
-                    results[sensor] = self._segment_single_dataset(data[sensor], single_template)
+                    roi = self._get_region_of_interest_for_sensor(sensor)
+                    results[sensor] = self._segment_single_dataset(data[sensor], single_template, roi)
             elif is_single_sensor_dataset(template.data, check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
                 for sensor in get_multi_sensor_dataset_names(data):
-                    results[sensor] = self._segment_single_dataset(data[sensor], template)
+                    roi = self._get_region_of_interest_for_sensor(sensor)
+                    results[sensor] = self._segment_single_dataset(data[sensor], template, roi)
             else:
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
-            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = dict(), dict(), dict(), dict()
+            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_, self.roi_ids_, self._roi_type = (
+                dict(),
+                dict(),
+                dict(),
+                dict(),
+                dict(),
+                dict(),
+            )
             for sensor, r in results.items():
                 self.acc_cost_mat_[sensor] = r[0]
                 self.paths_[sensor] = r[1]
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
+                self.roi_ids_[sensor] = r[4]
+                self._roi_type = r[5]
         else:
             # TODO: Better error message -> This will be fixed globally
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
-    def _segment_single_dataset(self, dataset, template):
+    def _segment_single_dataset(self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]):
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -371,9 +415,17 @@ class BaseDtw(BaseStrideSegmentation):
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
-        # Calculate cost matrix
-        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data)
+        if roi is not None:
+            roi_start_end = roi[["start", "end"]].to_numpy()
+            roi_type = _get_regions_of_interest_types(roi.reset_index().columns)
+            roi = set_correct_index(roi, [ROI_ID_COLS[roi_type]])
+        else:
+            roi_start_end = np.array([[0, len(matching_data)]])
+            roi_type = None
 
+        # Calculate cost matrix
+        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data, roi_start_end)
+        # TODO: Rework the ROI concept here and how to report the costmat/costfunc in case of ROI
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,
             max_cost=self.max_cost,
@@ -384,6 +436,7 @@ class BaseDtw(BaseStrideSegmentation):
             paths_ = []
             costs_ = []
             matches_start_end_ = []
+            roi_id_ = []
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
@@ -396,11 +449,18 @@ class BaseDtw(BaseStrideSegmentation):
             matches_start_end_ = matches_start_end_[to_keep]
             self._post_postprocess_check(matches_start_end_)
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
-            # TODO: Add warning in case there are still overlapping matches after the conflict resolution
-        return acc_cost_mat_, paths_, costs_, matches_start_end_
+            if roi is None:
+                roi_id_ = []
+            else:
+                roi_id_ = np.ones(len(matches_start_end_))
+                for i, (start, end) in roi[["start", "end"]].iterrows():
+                    roi_id_[np.where((matches_start_end_[0] > start) & (matches_start_end_[1] < end))[0]] = i
+        return acc_cost_mat_, paths_, costs_, matches_start_end_, roi_id_, roi_type
 
-    def _calculate_cost_matrix(self, template, matching_data):  # noqa: no-self-use
-        return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+    def _calculate_cost_matrix(self, template, matching_data, rois_start_end):  # noqa: no-self-use
+        template = to_time_series(template)
+        matching_data = to_time_series(matching_data)
+        return _multi_roi_dtw_cost_mat(template, matching_data, rois_start_end)
 
     def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
         return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
@@ -476,6 +536,11 @@ class BaseDtw(BaseStrideSegmentation):
 
         """
 
+    def _get_region_of_interest_for_sensor(self, sensor_name: str):
+        if self.regions_of_interest is None or is_single_sensor_regions_of_interest_list(self.regions_of_interest):
+            return self.regions_of_interest
+        return self.regions_of_interest.get(sensor_name, None)
+
     @staticmethod
     def _resample_template(
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
@@ -532,3 +597,13 @@ class BaseDtw(BaseStrideSegmentation):
             path_array = np.array(path)
             paths.append(path_array)
         return paths
+
+
+@njit(cache=True, parallel=True)
+def _multi_roi_dtw_cost_mat(template: np.ndarray, matching_data: np.ndarray, rois_start_end: np.ndarray):
+    l1 = template.shape[0]
+    l2 = matching_data.shape[0]
+    cost_matrix = np.full((l1, l2), np.inf)
+    for start, end in rois_start_end:
+        cost_matrix[:, start : end + 1] = _subsequence_cost_matrix(template, matching_data[start : end + 1])
+    return cost_matrix

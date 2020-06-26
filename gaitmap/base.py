@@ -4,7 +4,7 @@ import inspect
 import json
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Union, Type
+from typing import Callable, Dict, TypeVar, Any, List, Union, Type, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from gaitmap.utils.dataset_helper import (
     OrientationList,
     SingleSensorDataset,
     SingleSensorOrientationList,
+    RegionsOfInterestList,
 )
 
 BaseType = TypeVar("BaseType", bound="_BaseSerializable")
@@ -302,7 +303,13 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     _action_method = "segment"
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **kwargs) -> BaseType:
+    def segment(
+        self: BaseType,
+        data: Dataset,
+        sampling_rate_hz: float,
+        regions_of_interest: Optional[RegionsOfInterestList] = None,
+        **kwargs,
+    ) -> BaseType:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -313,7 +320,7 @@ class BaseEventDetection(BaseAlgorithm):
     _action_method = "detect"
 
     def detect(self: BaseType, data: Dataset, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Find gait events in data within strides provided by stride_list."""
+        """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 

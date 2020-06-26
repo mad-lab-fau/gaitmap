@@ -140,6 +140,57 @@ class TestSimpleSegment(DtwTestBase):
         np.testing.assert_array_equal(dtw.data, sequence)
 
 
+# TODO: Test all possible combinations from roi/data/template format
+# TODO: Test ROI on large datasets
+
+
+class TestRoiSegment(DtwTestBase):
+    """Simple Tests that test the use of roi."""
+
+    template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+
+    @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
+    def _create_instance(self, request):
+        dtw = self.init_dtw(template=self.template, find_matches_method=request.param,)
+        self.dtw = dtw
+
+    def test_simple_roi(self):
+        """Test dtw where the center match should be ignored, as it is outside the ROI."""
+        sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
+        roi = pd.DataFrame(
+            np.array([[0, len(sequence)], [2 * len(sequence), 3 * len(sequence)]]), columns=["start", "end"]
+        )
+        roi.index.name = "roi_id"
+        roi = roi.reset_index()
+
+        sequence = sequence * 3
+
+        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0, regions_of_interest=roi)
+
+        np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [[0, 31], [1, 32], [2, 33]]])
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [31, 33]])
+        np.testing.assert_array_equal(
+            dtw.acc_cost_mat_[:, :13],
+            [
+                [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            ],
+        )
+        np.testing.assert_array_equal(
+            dtw.acc_cost_mat_[:, 26:],
+            [
+                [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+            ],
+        )
+        assert np.all(dtw.acc_cost_mat_[:, 14:26] == np.inf)
+
+        np.testing.assert_array_equal(dtw.data, sequence)
+
+
 class TestMultiDimensionalArrayInputs(DtwTestBase):
     @pytest.mark.parametrize(
         "template, data",
