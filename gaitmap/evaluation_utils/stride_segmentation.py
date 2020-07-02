@@ -54,12 +54,28 @@ def evaluate_segmented_stride_list(
         A 2 column data frame which contains only NaN in the ground truth column and the index values of the
         wrongly strides in the ground truth column.
 
+    Examples
+    --------
+    >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
+    >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
+    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_left, stride_list_right, tolerance=2)
+    >>> tp
+      s_id s_id_ground_truth
+    0    0                 0
+    1    2                 2
+    >>> fp
+      s_id s_id_ground_truth
+    0    1               NaN
+    1    3               NaN
+    >>> fn
+      s_id s_id_ground_truth
+    0  NaN                 1
+
     See Also
     --------
     match_stride_lists : Find matching strides between stride lists.
 
     """
-    # TODO: Add example
     matches = match_stride_lists(
         stride_list_left=segmented_stride_list,
         stride_list_right=ground_truth,
@@ -130,23 +146,20 @@ def match_stride_lists(
 
     Examples
     --------
-    TODO: Add example
-    >>> ground_truth_labels = [[10,20],[21,30],[31,40],[50,60]]
-    >>> predicted_labels = [[10,21],[20,34],[31,40]]
-    >>> tp_labels, fp_labels, fn_labels = compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels,
-    ... tolerance = 2)
-    >>> tp_labels
-        array([[10, 21], [31, 40]])
-    >>> fp_labels
-        array([20, 34])
-    >>> fn_labels
-        array([[21, 30], [50, 60]])
+    >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
+    >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
+    >>> match_stride_lists(stride_list_left, stride_list_right, tolerance=2)
+      s_id_left s_id_right
+    0         0          0
+    1         1        NaN
+    2         2          2
+    3         3        NaN
+    4       NaN          1
 
     See Also
     --------
     evaluate_segmented_stride_list : Find True positive, True negatives and False positives from comparing two stride
         lists.
-
 
     """
     if not is_single_sensor_stride_list(stride_list_left):
