@@ -1,3 +1,5 @@
+"""A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
+
 from typing import Union, Tuple
 
 import numpy as np
@@ -13,7 +15,49 @@ def evaluate_segmented_stride_list(
     tolerance: Union[int, float] = 0,
     segmented_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-):
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
+
+    This compares a segmented stride list with a ground truth stride list and returns True Positives, False Positives
+    and True Negatives matches.
+    The comparison is purely based on the start and end values of each stride in the lists.
+    Two strides are considered a positive match, if both their start and their end values differ by less than the
+    threshold.
+    If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
+    with the lowest combined distance is considered.
+
+    Parameters
+    ----------
+    segmented_stride_list
+        The list of segmented strides.
+    ground_truth
+        The ground truth stride list.
+    tolerance
+        The allowed tolerance between labels.
+        Its unit depends on the units used in the stride lists.
+    segmented_postfix
+        A postfix that will be append to the index name of the segmented stride list in the output.
+    ground_truth_postfix
+        A postfix that will be append to the index name of the ground truth in the output.
+
+    Returns
+    -------
+    true_positives
+        A 2 column data frame which contains the indices of all matching strides between the two stride lists.
+    false_positives
+        A 2 column data frame which contains only NaN in the segmented index column and the index values of the
+        not-detected strides in the ground truth column.
+    false_negatives
+        A 2 column data frame which contains only NaN in the ground truth column and the index values of the
+        wrongly strides in the ground truth column.
+
+    See Also
+    --------
+    `~gaitmap.evaluation_utils.stride_segmentation.match_stride_lists`: Find True positive,
+        True negatives and False positives from comparing two stride lists.
+
+    """
+    # TODO: Add example
     matches = match_stride_lists(
         stride_list_left=segmented_stride_list,
         stride_list_right=ground_truth,
@@ -57,11 +101,11 @@ def match_stride_lists(
     ----------
     stride_list_left
         The first stride list used for comparison
-    stride_list_right : list of labels or 2D array
+    stride_list_right
         The second stride list used for comparison
     tolerance
         The allowed tolerance between labels.
-        Its unit depends on the units used in the stride list.
+        Its unit depends on the units used in the stride lists.
     one_to_one
         If True, only a single unique match will be returned per stride.
         If False, multiple matches are possible.
@@ -83,13 +127,20 @@ def match_stride_lists(
     TODO: Add example
     >>> ground_truth_labels = [[10,20],[21,30],[31,40],[50,60]]
     >>> predicted_labels = [[10,21],[20,34],[31,40]]
-    >>> tp_labels, fp_labels, fn_labels = compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels, tolerance = 2)
+    >>> tp_labels, fp_labels, fn_labels = compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels,
+    ... tolerance = 2)
     >>> tp_labels
-    >>> ... array([[10, 21], [31, 40]])
+        array([[10, 21], [31, 40]])
     >>> fp_labels
-    >>> ... array([20, 34])
-    >>> false_negative_labels
-    >>> ... array([[21, 30], [50, 60]])
+        array([20, 34])
+    >>> fn_labels
+        array([[21, 30], [50, 60]])
+
+    See Also
+    --------
+    `~gaitmap.evaluation_utils.stride_segmentation.evaluate_segmented_stride_list`: Find True positive,
+        True negatives and False positives from comparing two stride lists.
+
 
     """
     stride_list_left = set_correct_index(stride_list_left, SL_INDEX)
