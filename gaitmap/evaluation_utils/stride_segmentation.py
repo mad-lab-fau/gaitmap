@@ -1,31 +1,86 @@
+from typing import Union, Tuple
+
 import numpy as np
+import pandas as pd
 
-def compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels, tolerance=0):
-    """Compare ground-truth label list with predicted label list with the given tolerance.
+from gaitmap.utils.consts import SL_INDEX
+from gaitmap.utils.dataset_helper import StrideList, set_correct_index, is_single_sensor_stride_list
 
-    This function will retrun a list of all true-positive, all false-positive and all false-negative labels.
 
+def evaluate_segmented_stride_list(
+    segmented_stride_list: StrideList,
+    ground_truth: StrideList,
+    tolerance: Union[int, float] = 0,
+    segmented_postfix: str = "",
+    ground_truth_postfix: str = "_ground_truth",
+):
+    matches = match_stride_lists(
+        stride_list_left=segmented_stride_list,
+        stride_list_right=ground_truth,
+        tolerance=tolerance,
+        one_to_one=True,
+        left_postfix=segmented_postfix,
+        right_postfix=ground_truth_postfix,
+    )
+    left_index_name = segmented_stride_list.index.name + segmented_postfix
+    right_index_name = ground_truth.index.name + ground_truth_postfix
+    tp = matches.dropna().reset_index(drop=True)
+    fp = matches[matches[right_index_name].isna()].reset_index(drop=True)
+    fn = matches[matches[left_index_name].isna()].reset_index(drop=True)
+
+    return tp, fp, fn
+
+
+def match_stride_lists(
+    stride_list_left: StrideList,
+    stride_list_right=StrideList,
+    tolerance: Union[int, float] = 0,
+    one_to_one: bool = True,
+    left_postfix: str = "_left",
+    right_postfix: str = "_right",
+) -> pd.DataFrame:
+    """Find matching strides in two stride lists with a certain tolerance.
+
+    This function will find matching strides in two stride lists as long as both start and end of a stride and its
+    matching stride differ by less than the selected tolerance.
+    This can be helpful to compare a the result of a segmentation to a ground truth.
+
+    Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
+    right stride list (and vise-versa) are returned.
+    For a stride that has no valid match, it will be mapped to a NaN.
+    If `one_to_one` is False, multiple matches for each stride can be found.
+    This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
+    If `one_to_one` is True (the default) only a single match will be returned per stride.
+    This will be the match with the lowest combined difference between the start and the end label.
 
     Parameters
     ----------
-    ground_truth_labels : list of labels or 2D array
-        Ground truth list of label pairs [start, end] which define one stride.
+    stride_list_left
+        The first stride list used for comparison
+    stride_list_right : list of labels or 2D array
+        The second stride list used for comparison
+    tolerance
+        The allowed tolerance between labels.
+        Its unit depends on the units used in the stride list.
+    one_to_one
+        If True, only a single unique match will be returned per stride.
+        If False, multiple matches are possible.
+    left_postfix
+        A postfix that will be append to the index name of the left stride list in the output.
+    right_postfix
+        A postfix that will be append to the index name of the left stride list in the output.
 
-    predicted_labels : list of labels or 2D array
-        Predicted list of label pairs [start, end] which define one stride.
-
-    tolerance: int
-        Deviation between compared values in samples, after values are still considered a match (e.g. [2,4] and [1,6]
-        would still count as a match with given tolerance = 2.
-
-    Returns :
+    Returns
     -------
-    [true_positive_labels, false_positive_labels, false_negative_labels]
-        retruns a list of all true-positive, all false-positive and all false-negative labels
-
+    matches_df
+        A 2 column dataframe with the column names `s_id{left_postfix}` and `s_id{right_postfix}`.
+        Each row is a match containing the index value of the left and the right list, that belong together.
+        Strides that do not have a match will be mapped to a NaN.
+        The list is sorted by the index values of the left stride list.
 
     Examples
     --------
+    TODO: Add example
     >>> ground_truth_labels = [[10,20],[21,30],[31,40],[50,60]]
     >>> predicted_labels = [[10,21],[20,34],[31,40]]
     >>> tp_labels, fp_labels, fn_labels = compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels, tolerance = 2)
@@ -37,51 +92,60 @@ def compare_label_lists_with_tolerance(ground_truth_labels, predicted_labels, to
     >>> ... array([[21, 30], [50, 60]])
 
     """
-    if np.array(ground_truth_labels).size == 0:
-        false_positive_labels = np.array(predicted_labels)
-        if false_positive_labels.ndim == 1 and false_positive_labels.size > 0:
-            false_positive_labels = false_positive_labels.reshape(1, 2)
-        return np.empty(0), false_positive_labels, np.empty(0)
+    stride_list_left = set_correct_index(stride_list_left, SL_INDEX)
+    stride_list_right = set_correct_index(stride_list_right, SL_INDEX)
 
-    if np.array(predicted_labels).size == 0:
-        false_negative_labels = np.array(ground_truth_labels)
-        if false_negative_labels.ndim == 1 and false_negative_labels.size > 0:
-            false_negative_labels = false_negative_labels.reshape(1, 2)
-        return np.empty(0), np.empty(0), false_negative_labels
+    if not is_single_sensor_stride_list(stride_list_left):
+        raise ValueError("stride_list_left is not a valid stride list")
+    if not is_single_sensor_stride_list(stride_list_right):
+        raise ValueError("stride_list_right is not a valid stride list")
 
-    similar = np.zeros(np.shape(ground_truth_labels))
-    for l in predicted_labels:
-        similar = np.logical_or(similar, np.abs(ground_truth_labels - np.asarray(l)) <= tolerance)
-    bool_similar = np.array([np.array_equal([True, True], t) for t in similar])
+    if left_postfix == right_postfix:
+        raise ValueError("The postifix for the left and the right stride list must be different.")
 
-    idx_false = np.squeeze(np.argwhere(~bool_similar).tolist())
-    if idx_false.size == 0:
-        false_negative_labels = np.empty(0)
+    left_indices, right_indices = _match_start_end_label_lists(
+        stride_list_left[["start", "end"]].to_numpy(),
+        stride_list_right[["start", "end"]].to_numpy(),
+        tolerance=tolerance,
+        one_to_one=one_to_one,
+    )
+
+    left_index_name = stride_list_left.index.name + left_postfix
+    right_index_name = stride_list_right.index.name + right_postfix
+
+    matches_left = pd.DataFrame(index=stride_list_left.index, columns=[right_index_name])
+    matches_left.index.name = left_index_name
+    matches_right = pd.DataFrame(index=stride_list_right.index, columns=[left_index_name])
+    matches_right.index.name = right_index_name
+
+    stride_list_left_idx = stride_list_left.iloc[left_indices].index
+    stride_list_right_idx = stride_list_right.iloc[right_indices].index
+
+    matches_left.loc[stride_list_left_idx, right_index_name] = stride_list_right_idx
+    matches_right.loc[stride_list_right_idx, left_index_name] = stride_list_left_idx
+    matches_left = matches_left.reset_index()
+    matches_right = matches_right.reset_index()
+    matches = (
+        pd.concat([matches_left, matches_right]).drop_duplicates().sort_values(left_index_name).reset_index(drop=True)
+    )
+    return matches
+
+
+def _match_start_end_label_lists(
+    list_left: np.ndarray, list_right: np.ndarray, tolerance: Union[int, float], one_to_one: bool
+) -> Tuple[np.ndarray, np.ndarray]:
+    distance = np.empty((len(list_left), len(list_right), 2))
+    distance[..., 0] = np.subtract.outer(list_left[0], list_right[0])
+    distance[..., 1] = np.subtract.outer(list_left[1], list_right[1])
+    distance = np.abs(distance)
+    valid_matches = distance <= tolerance
+    valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
+
+    if one_to_one is True:
+        left_indices = distance.sum(axis=-1).argmin(axis=0)
+        left_indices = left_indices[valid_matches[left_indices, np.arange(distance.shape[1])]]
+        right_indices = distance.sum(axis=-1).argmin(axis=1)
+        right_indices = right_indices[valid_matches[np.arange(distance.shape[0]), right_indices]]
     else:
-        false_negative_labels = np.take(ground_truth_labels, idx_false, axis=0)
-        if false_negative_labels.ndim == 1:
-            false_negative_labels = false_negative_labels.reshape(1, 2)
-
-    # get true positive and false positive labels by comparing all ground truth labels with predicted label list
-    similar = np.zeros(np.shape(predicted_labels))
-    for l in ground_truth_labels:
-        similar = np.logical_or(similar, np.abs(predicted_labels - np.asarray(l)) <= tolerance)
-    bool_similar = np.array([np.array_equal([True, True], t) for t in similar])
-
-    idx_true = np.squeeze(np.argwhere(bool_similar).tolist())
-    if idx_true.size == 0:
-        true_positive_labels = np.empty(0)
-    else:
-        true_positive_labels = np.take(predicted_labels, idx_true, axis=0)
-        if true_positive_labels.ndim == 1:
-            true_positive_labels = true_positive_labels.reshape(1, 2)
-
-    idx_false = np.squeeze(np.argwhere(~bool_similar).tolist())
-    if idx_false.size == 0:
-        false_positive_labels = np.empty(0)
-    else:
-        false_positive_labels = np.take(predicted_labels, idx_false, axis=0)
-        if false_positive_labels.ndim == 1:
-            false_positive_labels = false_positive_labels.reshape(1, 2)
-
-    return true_positive_labels, false_positive_labels, false_negative_labels
+        left_indices, right_indices = np.where(valid_matches)
+    return left_indices, right_indices
