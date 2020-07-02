@@ -25,6 +25,9 @@ def evaluate_segmented_stride_list(
     threshold.
     If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
     with the lowest combined distance is considered.
+    This might still lead to unexpected results in certain cases.
+    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
+    method to get reliable results.
 
     Parameters
     ----------
@@ -95,6 +98,10 @@ def match_stride_lists(
     This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
     If `one_to_one` is True (the default) only a single match will be returned per stride.
     This will be the match with the lowest combined difference between the start and the end label.
+    In case multiple strides have the same combined difference, the one that occurs first in the list is chosen.
+    This might still lead to unexpected results in certain cases.
+    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
+    method to get reliable results.
 
     Parameters
     ----------
@@ -142,16 +149,19 @@ def match_stride_lists(
 
 
     """
-    stride_list_left = set_correct_index(stride_list_left, SL_INDEX)
-    stride_list_right = set_correct_index(stride_list_right, SL_INDEX)
-
     if not is_single_sensor_stride_list(stride_list_left):
         raise ValueError("stride_list_left is not a valid stride list")
     if not is_single_sensor_stride_list(stride_list_right):
         raise ValueError("stride_list_right is not a valid stride list")
 
     if left_postfix == right_postfix:
-        raise ValueError("The postifix for the left and the right stride list must be different.")
+        raise ValueError("The postfix for the left and the right stride list must be different.")
+
+    if tolerance < 0:
+        raise ValueError("The tolerance must be larger 0.")
+
+    stride_list_left = set_correct_index(stride_list_left, SL_INDEX)
+    stride_list_right = set_correct_index(stride_list_right, SL_INDEX)
 
     left_indices, right_indices = _match_start_end_label_lists(
         stride_list_left[["start", "end"]].to_numpy(),
@@ -162,10 +172,9 @@ def match_stride_lists(
 
     left_index_name = stride_list_left.index.name + left_postfix
     right_index_name = stride_list_right.index.name + right_postfix
-
-    matches_left = pd.DataFrame(index=stride_list_left.index, columns=[right_index_name])
+    matches_left = pd.DataFrame(index=stride_list_left.index.copy(), columns=[right_index_name])
     matches_left.index.name = left_index_name
-    matches_right = pd.DataFrame(index=stride_list_right.index, columns=[left_index_name])
+    matches_right = pd.DataFrame(index=stride_list_right.index.copy(), columns=[left_index_name])
     matches_right.index.name = right_index_name
 
     stride_list_left_idx = stride_list_left.iloc[left_indices].index
@@ -176,7 +185,10 @@ def match_stride_lists(
     matches_left = matches_left.reset_index()
     matches_right = matches_right.reset_index()
     matches = (
-        pd.concat([matches_left, matches_right]).drop_duplicates().sort_values(left_index_name).reset_index(drop=True)
+        pd.concat([matches_left, matches_right])
+        .drop_duplicates()
+        .sort_values([left_index_name, right_index_name])
+        .reset_index(drop=True)
     )
     return matches
 
@@ -185,17 +197,19 @@ def _match_start_end_label_lists(
     list_left: np.ndarray, list_right: np.ndarray, tolerance: Union[int, float], one_to_one: bool
 ) -> Tuple[np.ndarray, np.ndarray]:
     distance = np.empty((len(list_left), len(list_right), 2))
-    distance[..., 0] = np.subtract.outer(list_left[0], list_right[0])
-    distance[..., 1] = np.subtract.outer(list_left[1], list_right[1])
+    distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
+    distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
     distance = np.abs(distance)
     valid_matches = distance <= tolerance
     valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
 
     if one_to_one is True:
+        argmin_array_left = np.zeros(valid_matches.shape).astype(bool)
         left_indices = distance.sum(axis=-1).argmin(axis=0)
-        left_indices = left_indices[valid_matches[left_indices, np.arange(distance.shape[1])]]
+        argmin_array_left[left_indices, np.arange(distance.shape[1])] = True
         right_indices = distance.sum(axis=-1).argmin(axis=1)
-        right_indices = right_indices[valid_matches[np.arange(distance.shape[0]), right_indices]]
-    else:
-        left_indices, right_indices = np.where(valid_matches)
+        argmin_array_right = np.zeros(valid_matches.shape).astype(bool)
+        argmin_array_right[np.arange(distance.shape[0]), right_indices] = True
+        valid_matches &= argmin_array_left & argmin_array_right
+    left_indices, right_indices = np.where(valid_matches)
     return left_indices, right_indices
