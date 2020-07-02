@@ -336,6 +336,25 @@ Functions
     find_first_static_window_multi_sensor
 
 
+:mod:`gaitmap.evaluation_utils`: Helper to evaluate the output of the algorithms
+================================================================================
+
+.. automodule:: gaitmap.evaluation_utils
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.evaluation_utils
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    evaluate_segmented_stride_list
+    match_stride_lists
+
+
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================
 

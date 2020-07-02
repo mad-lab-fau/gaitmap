@@ -53,8 +53,7 @@ def evaluate_segmented_stride_list(
 
     See Also
     --------
-    `~gaitmap.evaluation_utils.stride_segmentation.match_stride_lists`: Find True positive,
-        True negatives and False positives from comparing two stride lists.
+    match_stride_lists : Find matching strides between stride lists.
 
     """
     # TODO: Add example
@@ -138,8 +137,8 @@ def match_stride_lists(
 
     See Also
     --------
-    `~gaitmap.evaluation_utils.stride_segmentation.evaluate_segmented_stride_list`: Find True positive,
-        True negatives and False positives from comparing two stride lists.
+    evaluate_segmented_stride_list : Find True positive, True negatives and False positives from comparing two stride
+        lists.
 
 
     """
