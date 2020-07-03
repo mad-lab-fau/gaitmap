@@ -13,6 +13,7 @@ def evaluate_segmented_stride_list(
     segmented_stride_list: StrideList,
     ground_truth: StrideList,
     tolerance: Union[int, float] = 0,
+    one_to_one: bool = True,
     segmented_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -38,6 +39,9 @@ def evaluate_segmented_stride_list(
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
+    one_to_one
+        If True, only a single unique match will be returned per stride.
+        If False, multiple matches are possible.
     segmented_postfix
         A postfix that will be append to the index name of the segmented stride list in the output.
     ground_truth_postfix
@@ -56,9 +60,9 @@ def evaluate_segmented_stride_list(
 
     Examples
     --------
-    >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
-    >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_left, stride_list_right, tolerance=2)
+    >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
+    >>> stride_list_ground_truth = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
+    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_seg, stride_list_ground_truth, tolerance=2)
     >>> tp
       s_id s_id_ground_truth
     0    0                 0
@@ -77,12 +81,12 @@ def evaluate_segmented_stride_list(
 
     """
     matches = match_stride_lists(
-        stride_list_left=segmented_stride_list,
-        stride_list_right=ground_truth,
+        stride_list_a=segmented_stride_list,
+        stride_list_b=ground_truth,
         tolerance=tolerance,
-        one_to_one=True,
-        left_postfix=segmented_postfix,
-        right_postfix=ground_truth_postfix,
+        one_to_one=one_to_one,
+        postfix_a=segmented_postfix,
+        postfix_b=ground_truth_postfix,
     )
     left_index_name = segmented_stride_list.index.name + segmented_postfix
     right_index_name = ground_truth.index.name + ground_truth_postfix
@@ -94,12 +98,12 @@ def evaluate_segmented_stride_list(
 
 
 def match_stride_lists(
-    stride_list_left: StrideList,
-    stride_list_right=StrideList,
+    stride_list_a: StrideList,
+    stride_list_b: StrideList,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
-    left_postfix: str = "_left",
-    right_postfix: str = "_right",
+    postfix_a: str = "_a",
+    postfix_b: str = "_b",
 ) -> pd.DataFrame:
     """Find matching strides in two stride lists with a certain tolerance.
 
@@ -121,9 +125,9 @@ def match_stride_lists(
 
     Parameters
     ----------
-    stride_list_left
+    stride_list_a
         The first stride list used for comparison
-    stride_list_right
+    stride_list_b
         The second stride list used for comparison
     tolerance
         The allowed tolerance between labels.
@@ -131,15 +135,15 @@ def match_stride_lists(
     one_to_one
         If True, only a single unique match will be returned per stride.
         If False, multiple matches are possible.
-    left_postfix
+    postfix_a
         A postfix that will be append to the index name of the left stride list in the output.
-    right_postfix
+    postfix_b
         A postfix that will be append to the index name of the left stride list in the output.
 
     Returns
     -------
     matches_df
-        A 2 column dataframe with the column names `s_id{left_postfix}` and `s_id{right_postfix}`.
+        A 2 column dataframe with the column names `s_id{left_postfix}` and `s_id{postfix_b}`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         Strides that do not have a match will be mapped to a NaN.
         The list is sorted by the index values of the left stride list.
@@ -162,36 +166,36 @@ def match_stride_lists(
         lists.
 
     """
-    if not is_single_sensor_stride_list(stride_list_left):
-        raise ValueError("stride_list_left is not a valid stride list")
-    if not is_single_sensor_stride_list(stride_list_right):
-        raise ValueError("stride_list_right is not a valid stride list")
+    if not is_single_sensor_stride_list(stride_list_a):
+        raise ValueError("stride_list_a is not a valid stride list")
+    if not is_single_sensor_stride_list(stride_list_b):
+        raise ValueError("stride_list_b is not a valid stride list")
 
-    if left_postfix == right_postfix:
+    if postfix_a == postfix_b:
         raise ValueError("The postfix for the left and the right stride list must be different.")
 
     if tolerance < 0:
         raise ValueError("The tolerance must be larger 0.")
 
-    stride_list_left = set_correct_index(stride_list_left, SL_INDEX)
-    stride_list_right = set_correct_index(stride_list_right, SL_INDEX)
+    stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
+    stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
 
     left_indices, right_indices = _match_start_end_label_lists(
-        stride_list_left[["start", "end"]].to_numpy(),
-        stride_list_right[["start", "end"]].to_numpy(),
+        stride_list_a[["start", "end"]].to_numpy(),
+        stride_list_b[["start", "end"]].to_numpy(),
         tolerance=tolerance,
         one_to_one=one_to_one,
     )
 
-    left_index_name = stride_list_left.index.name + left_postfix
-    right_index_name = stride_list_right.index.name + right_postfix
-    matches_left = pd.DataFrame(index=stride_list_left.index.copy(), columns=[right_index_name])
+    left_index_name = stride_list_a.index.name + postfix_a
+    right_index_name = stride_list_b.index.name + postfix_b
+    matches_left = pd.DataFrame(index=stride_list_a.index.copy(), columns=[right_index_name])
     matches_left.index.name = left_index_name
-    matches_right = pd.DataFrame(index=stride_list_right.index.copy(), columns=[left_index_name])
+    matches_right = pd.DataFrame(index=stride_list_b.index.copy(), columns=[left_index_name])
     matches_right.index.name = right_index_name
 
-    stride_list_left_idx = stride_list_left.iloc[left_indices].index
-    stride_list_right_idx = stride_list_right.iloc[right_indices].index
+    stride_list_left_idx = stride_list_a.iloc[left_indices].index
+    stride_list_right_idx = stride_list_b.iloc[right_indices].index
 
     matches_left.loc[stride_list_left_idx, right_index_name] = stride_list_right_idx
     matches_right.loc[stride_list_right_idx, left_index_name] = stride_list_left_idx

@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.evaluation_utils import match_stride_lists
+from gaitmap.evaluation_utils import match_stride_lists, evaluate_segmented_stride_list
 
 
 class TestMatchStrideList:
@@ -18,18 +18,18 @@ class TestMatchStrideList:
         with pytest.raises(ValueError) as e:
             match_stride_lists([], sl)
 
-        assert "stride_list_left" in str(e)
+        assert "stride_list_a" in str(e)
 
         with pytest.raises(ValueError) as e:
             match_stride_lists(sl, [])
 
-        assert "stride_list_right" in str(e)
+        assert "stride_list_b" in str(e)
 
     def test_invalid_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
 
         with pytest.raises(ValueError) as e:
-            match_stride_lists(sl, sl, right_postfix="same", left_postfix="same")
+            match_stride_lists(sl, sl, postfix_b="same", postfix_a="same")
 
         assert "The postfix" in str(e)
 
@@ -44,9 +44,9 @@ class TestMatchStrideList:
     def test_change_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
 
-        out = match_stride_lists(sl, sl, right_postfix="_right_different", left_postfix="_left_different")
+        out = match_stride_lists(sl, sl, postfix_b="_b_different", postfix_a="_a_different")
 
-        assert_array_equal(list(out.columns), ["s_id_left_different", "s_id_right_different"])
+        assert_array_equal(list(out.columns), ["s_id_a_different", "s_id_b_different"])
 
     @pytest.mark.parametrize("one_to_one", (True, False))
     def test_simple_one_to_one_match_tolerance(self, one_to_one):
@@ -55,8 +55,8 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0, one_to_one=one_to_one)
 
-        assert_array_equal(out["s_id_left"].to_numpy(), [0, 1, 2, 3])
-        assert_array_equal(out["s_id_right"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2, 3])
 
     def test_simple_match_with_tolerance(self):
         list_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
@@ -64,12 +64,12 @@ class TestMatchStrideList:
         list_right = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
 
         out = match_stride_lists(list_left, list_right, tolerance=0.0, one_to_one=False)
-        assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0, 1, 2, 3, np.nan, np.nan, np.nan, np.nan])
-        assert_array_equal(out["s_id_right"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan, 0, 1, 2, 3])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan, np.nan, np.nan, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan, 0, 1, 2, 3])
 
         out = match_stride_lists(list_left, list_right, tolerance=0.15, one_to_one=False)
-        assert_array_equal(out["s_id_left"].to_numpy(), [0, 1, 2, 3])
-        assert_array_equal(out["s_id_right"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2, 3])
 
     def test_simple_missing_strides_no_tolerance(self):
         list_left = self._create_valid_list([[0, 1], [2, 3], [3, 4]])
@@ -77,8 +77,8 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0)
 
-        assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0.0, 1, 2, np.nan])
-        assert_array_equal(out["s_id_right"].to_numpy().astype(float), [0.0, 2, np.nan, 1])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0.0, 1, 2, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0.0, 2, np.nan, 1])
 
     def test_simple_double_match_no_tolerance(self):
         list_left = self._create_valid_list([[0, 1], [1, 2], [1, 2], [2, 3], [3, 4]])
@@ -86,8 +86,8 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0, one_to_one=False)
 
-        assert_array_equal(out["s_id_left"].to_numpy(), [0, 1, 2, 3, 4, 4])
-        assert_array_equal(out["s_id_right"].to_numpy(), [0, 1, 1, 2, 3, 4])
+        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2, 3, 4, 4])
+        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 1, 2, 3, 4])
 
     def test_simple_double_match_no_tolerance_enforce_one_to_one(self):
         list_left = self._create_valid_list([[0, 1], [1, 2], [1, 2], [2, 3], [3, 4]])
@@ -95,8 +95,8 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0, one_to_one=True)
 
-        assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0, 1, 2, 3, 4, np.nan])
-        assert_array_equal(out["s_id_right"].to_numpy().astype(float), [0, 1, np.nan, 2, 3, 4])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, 4, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2, 3, 4])
 
     def test_double_match_with_tolerance_enforce_one_to_one(self):
         list_left = self._create_valid_list([[0, 1], [1.1, 2.1], [1, 2], [2, 3], [3, 4]])
@@ -104,8 +104,8 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0.15, one_to_one=True)
 
-        assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0, 1, 2, 3, 4, np.nan])
-        assert_array_equal(out["s_id_right"].to_numpy().astype(float), [0, np.nan, 1, 2, 4, 3])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, 4, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0, np.nan, 1, 2, 4, 3])
 
     def test_one_sided_double_match_no_tolerance_enforce_one_to_one(self):
         list_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4], [1, 2]])
@@ -113,12 +113,12 @@ class TestMatchStrideList:
 
         out = match_stride_lists(list_left, list_right, tolerance=0, one_to_one=True)
 
-        assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0, 1, 2, 3, 4])
-        assert_array_equal(out["s_id_right"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, 4])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
 
-    @pytest.mark.parametrize("side", ("left", "right"))
+    @pytest.mark.parametrize("side", ("a", "b"))
     def test_empty_stride_lists(self, side):
-        opposite = [s for s in ("left", "right") if s != side][0]
+        opposite = [s for s in ("a", "b") if s != side][0]
         sl = self._create_valid_list([[0, 1], [1, 2], [2, 3]])
         empty = self._create_valid_list([])
 
@@ -136,3 +136,101 @@ class TestMatchStrideList:
         out = match_stride_lists(empty, empty)
 
         assert len(out) == 0
+
+    def test_segmented_stride_list_perfect_match(self):
+        list_ground_truth = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+
+        assert fp.empty
+        assert fn.empty
+        assert len(tp) == len(list_ground_truth)
+        assert_array_equal(tp["s_id"].to_numpy(), tp["s_id_ground_truth"].to_numpy())
+
+    def test_segmented_stride_list_empty_ground_truth(self):
+        list_ground_truth = self._create_valid_list([])
+        list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+
+        assert tp.empty
+        assert fn.empty
+        assert len(fp) == len(list_predicted)
+        assert_array_equal(fp["s_id"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(fp["s_id_ground_truth"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan, np.nan]))
+        assert len(list_ground_truth) == (len(tp) + len(fn))
+
+    def test_segmented_stride_list_empty_prediction(self):
+        list_ground_truth = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        list_predicted = self._create_valid_list([])
+
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+
+        assert tp.empty
+        assert fp.empty
+        assert len(fn) == len(list_ground_truth)
+        assert_array_equal(fn["s_id_ground_truth"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(fn["s_id"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
+        assert len(list_ground_truth) == (len(tp) + len(fn))
+
+    def test_segmented_stride_list_match(self):
+        list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50], [50, 60]])
+        list_predicted = self._create_valid_list([[0, 10], [11, 19], [19, 30], [30, 41], [70, 80], [80, 90]])
+
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=1)
+
+        assert_array_equal(tp["s_id"].to_numpy(), [2, 3])
+        assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0, 1])
+
+        assert_array_equal(fp["s_id"].to_numpy(), [0, 1, 4, 5])
+        assert_array_equal(fp["s_id_ground_truth"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan, np.nan]))
+
+        assert_array_equal(fn["s_id"].to_numpy().astype(float), [np.nan, np.nan])
+        assert_array_equal(fn["s_id_ground_truth"].to_numpy(), [2, 3])
+
+        assert len(list_ground_truth) == (len(tp) + len(fn))
+
+    def test_segmented_stride_list_no_match(self):
+        list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50]])
+        list_predicted = self._create_valid_list([[60, 70], [70, 80], [90, 100]])
+
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=0)
+
+        assert tp.empty
+
+        assert_array_equal(fn["s_id"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan]))
+        assert_array_equal(fn["s_id_ground_truth"].to_numpy(), [0, 1, 2])
+
+        assert_array_equal(fp["s_id"].to_numpy(), [0, 1, 2])
+        assert_array_equal(fp["s_id_ground_truth"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan]))
+
+        assert len(list_ground_truth) == (len(tp) + len(fn))
+
+    def test_segmented_stride_list_double_match_predicted_many_to_one(self):
+        list_ground_truth = self._create_valid_list([[20, 30]])
+        list_predicted = self._create_valid_list([[18, 30], [20, 28]])
+
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=2, one_to_one=False)
+
+        assert_array_equal(tp["s_id"].to_numpy(), [0, 1])
+        assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0, 0])
+
+        assert fp.empty
+        assert fn.empty
+
+        assert len(list_ground_truth) != (len(tp) + len(fn))
+
+    def test_segmented_stride_list_double_match_predicted_one_to_one(self):
+        list_ground_truth = self._create_valid_list([[20, 30]])
+        list_predicted = self._create_valid_list([[18, 30], [20, 28]])
+
+        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=2, one_to_one=True)
+
+        assert_array_equal(tp["s_id"].to_numpy(), 0)
+        assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0])
+
+        assert_array_equal(fp["s_id"].to_numpy(), 1)
+        assert_array_equal(fp["s_id_ground_truth"].to_numpy().astype(float), np.array(np.nan))
+
+        assert fn.empty
+
+        assert len(list_ground_truth) == (len(tp) + len(fn))
