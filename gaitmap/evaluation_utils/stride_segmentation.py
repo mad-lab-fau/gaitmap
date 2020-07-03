@@ -209,6 +209,8 @@ def match_stride_lists(
 def _match_start_end_label_lists(
     list_left: np.ndarray, list_right: np.ndarray, tolerance: Union[int, float], one_to_one: bool
 ) -> Tuple[np.ndarray, np.ndarray]:
+    if len(list_left) == 0 or len(list_right) == 0:
+        return np.array([]), np.array([])
     distance = np.empty((len(list_left), len(list_right), 2))
     distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
     distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])

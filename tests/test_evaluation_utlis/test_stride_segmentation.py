@@ -115,3 +115,24 @@ class TestMatchStrideList:
 
         assert_array_equal(out["s_id_left"].to_numpy().astype(float), [0, 1, 2, 3, 4])
         assert_array_equal(out["s_id_right"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+
+    @pytest.mark.parametrize("side", ("left", "right"))
+    def test_empty_stride_lists(self, side):
+        opposite = [s for s in ("left", "right") if s != side][0]
+        sl = self._create_valid_list([[0, 1], [1, 2], [2, 3]])
+        empty = self._create_valid_list([])
+
+        emtpy_name = "stride_list_" + side
+        normal_name = "stride_list_" + opposite
+
+        out = match_stride_lists(**{emtpy_name: empty, normal_name: sl})
+
+        assert_array_equal(out["s_id_" + side].to_numpy().astype(float), [np.nan, np.nan, np.nan])
+        assert_array_equal(out["s_id_" + opposite].to_numpy().astype(float), [0.0, 1, 2])
+
+    def test_empty_stride_lists_both(self):
+        empty = self._create_valid_list([])
+
+        out = match_stride_lists(empty, empty)
+
+        assert len(out) == 0
