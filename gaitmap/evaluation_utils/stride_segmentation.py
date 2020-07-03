@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ def evaluate_segmented_stride_list(
     one_to_one: bool = True,
     segmented_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> pd.DataFrame:
     """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
 
     This compares a segmented stride list with a ground truth stride list and returns True Positives, False Positives
@@ -42,6 +42,7 @@ def evaluate_segmented_stride_list(
     one_to_one
         If True, only a single unique match will be returned per stride.
         If False, multiple matches are possible.
+        If this is set to False, some calculated metrics from these matches might not be well defined!
     segmented_postfix
         A postfix that will be append to the index name of the segmented stride list in the output.
     ground_truth_postfix
@@ -49,31 +50,29 @@ def evaluate_segmented_stride_list(
 
     Returns
     -------
-    true_positives
-        A 2 column data frame which contains the indices of all matching strides between the two stride lists.
-    false_positives
-        A 2 column data frame which contains only NaN in the segmented index column and the index values of the
-        not-detected strides in the ground truth column.
-    false_negatives
-        A 2 column data frame which contains only NaN in the ground truth column and the index values of the
-        wrongly strides in the ground truth column.
+    matches_df
+        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        `match_type`.
+        Each row is a match containing the index value of the left and the right list, that belong together.
+        The `match_type` column indicates the type of match.
+        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
+        Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
+        positives)
+        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+
 
     Examples
     --------
     >>> stride_list_ground_truth = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
     >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
-    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_ground_truth, stride_list_seg, tolerance=2)
-    >>> tp
-      s_id s_id_ground_truth
-    0    0                 0
-    1    2                 2
-    >>> fp
-      s_id s_id_ground_truth
-    0    1               NaN
-    1    3               NaN
-    >>> fn
-      s_id s_id_ground_truth
-    0  NaN                 1
+    >>> matches = evaluate_segmented_stride_list(stride_list_ground_truth, stride_list_seg, tolerance=2)
+    >>> matches
+      s_id s_id_ground_truth match_type
+    0    0                 0         tp
+    1    1               NaN         fp
+    2    2                 2         tp
+    3    3               NaN         fp
+    4  NaN                 1         fn
 
     See Also
     --------
@@ -90,11 +89,10 @@ def evaluate_segmented_stride_list(
     )
     segmented_index_name = segmented_stride_list.index.name + segmented_postfix
     ground_truth_index_name = ground_truth.index.name + ground_truth_postfix
-    tp = matches.dropna().reset_index(drop=True)
-    fp = matches[matches[ground_truth_index_name].isna()].reset_index(drop=True)
-    fn = matches[matches[segmented_index_name].isna()].reset_index(drop=True)
-
-    return tp, fp, fn
+    matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
+    matches.loc[matches[ground_truth_index_name].isna(), "match_type"] = "fp"
+    matches.loc[matches[segmented_index_name].isna(), "match_type"] = "fn"
+    return matches
 
 
 def match_stride_lists(
@@ -143,7 +141,7 @@ def match_stride_lists(
     Returns
     -------
     matches_df
-        A 2 column dataframe with the column names `s_id{left_postfix}` and `s_id{postfix_b}`.
+        A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         Strides that do not have a match will be mapped to a NaN.
         The list is sorted by the index values of the left stride list.
@@ -232,3 +230,16 @@ def _match_start_end_label_lists(
         valid_matches &= argmin_array_left & argmin_array_right
     left_indices, right_indices = np.where(valid_matches)
     return left_indices, right_indices
+
+
+def _get_match_type_dfs(match_results: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    matches_types = match_results.groupby("match_type")
+    matches_types_dict = dict()
+    for group in ["tp", "fp", "fn"]:
+        tmp = matches_types.groups.get(group, None)
+        if tmp is None:
+            matches_types_dict[group] = pd.DataFrame(columns=match_results.columns.copy())
+        else:
+            matches_types_dict[group] = match_results.loc[tmp]
+
+    return matches_types_dict
