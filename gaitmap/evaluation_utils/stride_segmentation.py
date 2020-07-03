@@ -10,8 +10,8 @@ from gaitmap.utils.dataset_helper import StrideList, set_correct_index, is_singl
 
 
 def evaluate_segmented_stride_list(
-    segmented_stride_list: StrideList,
     ground_truth: StrideList,
+    segmented_stride_list: StrideList,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     segmented_postfix: str = "",
@@ -32,10 +32,10 @@ def evaluate_segmented_stride_list(
 
     Parameters
     ----------
-    segmented_stride_list
-        The list of segmented strides.
     ground_truth
         The ground truth stride list.
+    segmented_stride_list
+        The list of segmented strides.
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -60,9 +60,9 @@ def evaluate_segmented_stride_list(
 
     Examples
     --------
-    >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
     >>> stride_list_ground_truth = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_seg, stride_list_ground_truth, tolerance=2)
+    >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
+    >>> tp, fp, fn = evaluate_segmented_stride_list(stride_list_ground_truth, stride_list_seg, tolerance=2)
     >>> tp
       s_id s_id_ground_truth
     0    0                 0
@@ -88,11 +88,11 @@ def evaluate_segmented_stride_list(
         postfix_a=segmented_postfix,
         postfix_b=ground_truth_postfix,
     )
-    left_index_name = segmented_stride_list.index.name + segmented_postfix
-    right_index_name = ground_truth.index.name + ground_truth_postfix
+    segmented_index_name = segmented_stride_list.index.name + segmented_postfix
+    ground_truth_index_name = ground_truth.index.name + ground_truth_postfix
     tp = matches.dropna().reset_index(drop=True)
-    fp = matches[matches[right_index_name].isna()].reset_index(drop=True)
-    fn = matches[matches[left_index_name].isna()].reset_index(drop=True)
+    fp = matches[matches[ground_truth_index_name].isna()].reset_index(drop=True)
+    fn = matches[matches[segmented_index_name].isna()].reset_index(drop=True)
 
     return tp, fp, fn
 

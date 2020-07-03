@@ -140,7 +140,7 @@ class TestMatchStrideList:
     def test_segmented_stride_list_perfect_match(self):
         list_ground_truth = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
         list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted)
 
         assert fp.empty
         assert fn.empty
@@ -150,7 +150,7 @@ class TestMatchStrideList:
     def test_segmented_stride_list_empty_ground_truth(self):
         list_ground_truth = self._create_valid_list([])
         list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted)
 
         assert tp.empty
         assert fn.empty
@@ -163,7 +163,7 @@ class TestMatchStrideList:
         list_ground_truth = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
         list_predicted = self._create_valid_list([])
 
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted)
 
         assert tp.empty
         assert fp.empty
@@ -176,7 +176,7 @@ class TestMatchStrideList:
         list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50], [50, 60]])
         list_predicted = self._create_valid_list([[0, 10], [11, 19], [19, 30], [30, 41], [70, 80], [80, 90]])
 
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=1)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted, tolerance=1)
 
         assert_array_equal(tp["s_id"].to_numpy(), [2, 3])
         assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0, 1])
@@ -193,7 +193,7 @@ class TestMatchStrideList:
         list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50]])
         list_predicted = self._create_valid_list([[60, 70], [70, 80], [90, 100]])
 
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=0)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted, tolerance=0)
 
         assert tp.empty
 
@@ -209,7 +209,7 @@ class TestMatchStrideList:
         list_ground_truth = self._create_valid_list([[20, 30]])
         list_predicted = self._create_valid_list([[18, 30], [20, 28]])
 
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=2, one_to_one=False)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted, tolerance=2, one_to_one=False)
 
         assert_array_equal(tp["s_id"].to_numpy(), [0, 1])
         assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0, 0])
@@ -223,7 +223,7 @@ class TestMatchStrideList:
         list_ground_truth = self._create_valid_list([[20, 30]])
         list_predicted = self._create_valid_list([[18, 30], [20, 28]])
 
-        tp, fp, fn = evaluate_segmented_stride_list(list_predicted, list_ground_truth, tolerance=2, one_to_one=True)
+        tp, fp, fn = evaluate_segmented_stride_list(list_ground_truth, list_predicted, tolerance=2, one_to_one=True)
 
         assert_array_equal(tp["s_id"].to_numpy(), 0)
         assert_array_equal(tp["s_id_ground_truth"].to_numpy(), [0])
