@@ -9,6 +9,135 @@ from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import StrideList, set_correct_index, is_single_sensor_stride_list
 
 
+def recall_score(matches_df: pd.DataFrame) -> float:
+    """Compute the recall.
+
+    The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
+    negatives. The recall is intuitively the ability of the classifier to find all the positive samples.
+
+    The best value is 1 and the worst value is 0.
+
+    Parameters
+    ----------
+    matches_df
+       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+       `match_type`.
+       Each row is a match containing the index value of the left and the right list, that belong together.
+       The `match_type` column indicates the type of match.
+       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
+       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
+       positives)
+       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+
+    Returns
+    -------
+    recall score
+
+    """
+    matches_dict = _get_match_type_dfs(matches_df)
+    tp = len(matches_dict["tp"])
+    fn = len(matches_dict["fn"])
+    return tp / (tp + fn)
+
+
+def precision_score(matches_df: pd.DataFrame) -> float:
+    """Compute the precision.
+
+    The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
+    positives. The precision is intuitively the ability of the classifier not to label as positive a sample that is
+    negative.
+
+    The best value is 1 and the worst value is 0.
+
+    Parameters
+    ----------
+    matches_df
+       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+       `match_type`.
+       Each row is a match containing the index value of the left and the right list, that belong together.
+       The `match_type` column indicates the type of match.
+       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
+       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
+       positives)
+       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+
+    Returns
+    -------
+    precision score
+
+    """
+    matches_dict = _get_match_type_dfs(matches_df)
+    tp = len(matches_dict["tp"])
+    fp = len(matches_dict["fp"])
+    print(tp)
+    print(fp)
+    return tp / (tp + fp)
+
+
+def f1_score(matches_df: pd.DataFrame) -> float:
+    """Compute the F1 score, also known as balanced F-score or F-measure.
+
+    The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
+    best value at 1 and worst score at 0.
+
+    The formula for the F1 score is:
+    F1 = 2 * (precision * recall) / (precision + recall)
+
+    Parameters
+    ----------
+    matches_df
+       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+       `match_type`.
+       Each row is a match containing the index value of the left and the right list, that belong together.
+       The `match_type` column indicates the type of match.
+       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
+       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
+       positives)
+       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+
+    Returns
+    -------
+    F1 score
+
+    """
+    recall = recall_score(matches_df)
+    precision = precision_score(matches_df)
+    return 2 * (precision * recall) / (precision + recall)
+
+
+def precision_recall_f1_score(matches_df: pd.DataFrame) -> float:
+    """Compute precision, recall and F1-score.
+
+    The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
+    positives. The precision is intuitively the ability of the classifier not to label as positive a sample that is
+    negative.
+
+    The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
+    negatives. The recall is intuitively the ability of the classifier to find all the positive samples.
+
+    The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
+    best value at 1 and worst score at 0.
+
+    Parameters
+    ----------
+    matches_df
+        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        `match_type`.
+        Each row is a match containing the index value of the left and the right list, that belong together.
+        The `match_type` column indicates the type of match.
+        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
+        Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
+        positives)
+        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+
+    Returns
+    -------
+    precision, recall, F1-score
+
+    """
+    return precision_score(matches_df), recall_score(matches_df), f1_score(matches_df)
+
+
 def evaluate_segmented_stride_list(
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
@@ -236,10 +365,9 @@ def _get_match_type_dfs(match_results: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     matches_types = match_results.groupby("match_type")
     matches_types_dict = dict()
     for group in ["tp", "fp", "fn"]:
-        tmp = matches_types.groups.get(group, None)
-        if tmp is None:
-            matches_types_dict[group] = pd.DataFrame(columns=match_results.columns.copy())
+        if group in np.unique(match_results["match_type"]):
+            matches_types_dict[group] = matches_types.get_group(group)
         else:
-            matches_types_dict[group] = match_results.loc[tmp]
+            matches_types_dict[group] = pd.DataFrame(columns=match_results.columns.copy())
 
     return matches_types_dict
