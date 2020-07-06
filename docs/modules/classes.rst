@@ -353,6 +353,10 @@ Functions
 
     evaluate_segmented_stride_list
     match_stride_lists
+    recall_score
+    precision_score
+    f1_score
+    precision_recall_f1_score
 
 
 :mod:`gaitmap.utils.consts`: Global constants

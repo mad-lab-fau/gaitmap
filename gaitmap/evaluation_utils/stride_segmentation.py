@@ -33,6 +33,11 @@ def recall_score(matches_df: pd.DataFrame) -> float:
     -------
     recall score
 
+    See Also
+    --------
+    gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
+
+
     """
     matches_dict = _get_match_type_dfs(matches_df)
     tp = len(matches_dict["tp"])
@@ -65,12 +70,14 @@ def precision_score(matches_df: pd.DataFrame) -> float:
     -------
     precision score
 
+    See Also
+    --------
+    gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
+
     """
     matches_dict = _get_match_type_dfs(matches_df)
     tp = len(matches_dict["tp"])
     fp = len(matches_dict["fp"])
-    print(tp)
-    print(fp)
     return tp / (tp + fp)
 
 
@@ -98,6 +105,10 @@ def f1_score(matches_df: pd.DataFrame) -> float:
     Returns
     -------
     F1 score
+
+    See Also
+    --------
+    gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
     recall = recall_score(matches_df)
@@ -133,6 +144,10 @@ def precision_recall_f1_score(matches_df: pd.DataFrame) -> float:
     Returns
     -------
     precision, recall, F1-score
+
+    See Also
+    --------
+    gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
     return precision_score(matches_df), recall_score(matches_df), f1_score(matches_df)
@@ -365,7 +380,7 @@ def _get_match_type_dfs(match_results: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     matches_types = match_results.groupby("match_type")
     matches_types_dict = dict()
     for group in ["tp", "fp", "fn"]:
-        if group in np.unique(match_results["match_type"]):
+        if group in matches_types.groups:
             matches_types_dict[group] = matches_types.get_group(group)
         else:
             matches_types_dict[group] = pd.DataFrame(columns=match_results.columns.copy())
