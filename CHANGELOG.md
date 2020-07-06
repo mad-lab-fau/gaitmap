@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] -
 
+### Added
+
+#### The new `evaluation_utils` module [#117](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/117)
+
+A new module was started that will contain helper functions to evaluate the results of gait analysis pipelines.
+This is the first version and we already added:
+
+- A set of function to compare stride lists based on start and end values [!66](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/66)
+- A set of common metrics (recall, precision, f1) that can be calculated for segmentation results [!66](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/66)
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Migration Guide
+
 ## [1.0.1] - 2020-07-15
 
 A small bug fix release that fixes some issues with the new template creation function.
