@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] -
 
+### Fixed
+
+- The stride interpolation template creation function now works correctly if the index of the individual strides is 
+  different (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/68).
+
 ## [1.0.0] - 2020-06-26
 
 This is the first official release of gaitmap (Wuhu!).
