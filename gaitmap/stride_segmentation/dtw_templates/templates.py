@@ -236,7 +236,8 @@ def create_interpolated_dtw_template(
 
     # interpolate all strides to mean number of samples
     resampled_sequences_df_list = [
-        signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0) for signal_df in signal_sequence
+        signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0).reset_index(drop=True)
+        for signal_df in signal_sequence
     ]
 
     # calculate element-wise mean over all strides

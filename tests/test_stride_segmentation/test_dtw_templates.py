@@ -110,8 +110,19 @@ class TestCreateInterpolatedTemplate:
         assert_array_equal(instance.data, template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
+    def test_create_interpolated_template_different_indices(self):
+        """Test that interpolation works even if strides have different indices."""
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        template_data2.index = template_data2.index + 10
+
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+
+        assert_array_equal(instance.data, template_data1[["dummy_col"]])
+        assert isinstance(instance, DtwTemplate)
+
     def test_create_interpolated_template_calculates_mean(self):
-        """Test if result is actually mena over all inputs."""
+        """Test if result is actually mean over all inputs."""
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
 
