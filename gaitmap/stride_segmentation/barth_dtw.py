@@ -1,6 +1,6 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 import warnings
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Optional, Union, Dict, List, Tuple, Sequence
 
 import numpy as np
 import pandas as pd
@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.array_handling import find_extrema_in_radius
+from gaitmap.utils.consts import ROI_ID_COLS
 
 
 class BarthDtw(BaseDtw):
@@ -168,15 +169,20 @@ class BarthDtw(BaseDtw):
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
+        roi_type = self._roi_type or {}
         if isinstance(start_ends, dict):
-            return {k: self._format_stride_list(v) for k, v in start_ends.items()}
-        return self._format_stride_list(start_ends)
+            return {
+                k: self._format_stride_list(v, self.roi_ids_[k], roi_type.get(k, None)) for k, v in start_ends.items()
+            }
+        return self._format_stride_list(start_ends, self.roi_ids_, self._roi_type)
 
     @staticmethod
-    def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
+    def _format_stride_list(array: np.ndarray, roi_ids: Sequence[str], roi_type: str) -> pd.DataFrame:
         if len(array) == 0:
             array = None
         as_df = pd.DataFrame(array, columns=["start", "end"])
+        if roi_type:
+            as_df[ROI_ID_COLS[roi_type]] = roi_ids
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df
