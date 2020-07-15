@@ -149,6 +149,8 @@ def create_dtw_template(
     template
         The actual data representing the template.
         If this should be a array or a dataframe might depend on your usecase.
+        Note, that complex dataframe structures might not be preserved exactly when the template object is converted
+        to json.
     sampling_rate_hz
         The sampling rate that was used to record the template data
     scaling
