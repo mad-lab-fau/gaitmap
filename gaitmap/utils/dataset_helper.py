@@ -353,6 +353,7 @@ def is_single_sensor_regions_of_interest_list(
     --------
     gaitmap.utils.dataset_helper.is_multi_sensor_regions_of_interest_list: Check for multi-sensor regions-of-interest
         lists
+
     """
     if not isinstance(roi_list, pd.DataFrame):
         return False

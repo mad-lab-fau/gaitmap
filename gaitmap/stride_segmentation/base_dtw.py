@@ -4,7 +4,6 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict, Callable
 
 import numpy as np
 import pandas as pd
-from numba import njit
 from scipy.interpolate import interp1d
 from tslearn.metrics import subsequence_path, _subsequence_cost_matrix
 from tslearn.utils import to_time_series
@@ -238,8 +237,8 @@ class BaseDtw(BaseStrideSegmentation):
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
-    costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
-    roi_ids_: Union[Sequence[str], Dict[str, Sequence[str]]]
+    costs_: Union[np.ndarray, Dict[str, np.ndarray]]
+    roi_ids_: Union[np.ndarray, Dict[str, np.ndarray]]
 
     data: Union[np.ndarray, Dataset]
     regions_of_interest: Optional[RegionsOfInterestList]
@@ -257,7 +256,8 @@ class BaseDtw(BaseStrideSegmentation):
             return {s: self._nested_cost_function(cost_mat) for s, cost_mat in self.acc_cost_mat_.items()}
         return np.sqrt(self.acc_cost_mat_[-1, :])
 
-    def _nested_cost_function(self, cost_mats):
+    @staticmethod
+    def _nested_cost_function(cost_mats):
         if isinstance(cost_mats, dict):
             return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in cost_mats.items()}
         return np.sqrt(cost_mats[-1, :])
@@ -376,7 +376,7 @@ class BaseDtw(BaseStrideSegmentation):
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
                 self.roi_ids_[sensor] = r[4]
-                self._roi_type = r[5]
+                self._roi_type[sensor] = r[5]
         else:
             # TODO: Better error message -> This will be fixed globally
             raise ValueError("The type or shape of the provided dataset is not supported.")
@@ -389,9 +389,9 @@ class BaseDtw(BaseStrideSegmentation):
                 "template."
             )
         if (
-                template.sampling_rate_hz
-                and self.sampling_rate_hz != template.sampling_rate_hz
-                and self.resample_template is False
+            template.sampling_rate_hz
+            and self.sampling_rate_hz != template.sampling_rate_hz
+            and self.resample_template is False
         ):
             warnings.warn(
                 "The data and template sampling rate are different ({} Hz vs. {} Hz), "
@@ -441,12 +441,14 @@ class BaseDtw(BaseStrideSegmentation):
                 acc_cost_mats[roi_id] = cost_mat
                 paths.extend(p)
                 costs.extend(c)
-                roi_ids.extend([roi_id] * len(costs))
+                roi_ids.extend([roi_id] * len(c))
+            costs = np.array(costs)
+            roi_ids = np.array(roi_ids)
         else:
             acc_cost_mats, paths, costs = self._process_single_roi(
                 0, len(matching_data), final_template, matching_data, find_matches_method
             )
-            roi_ids = []
+            roi_ids = np.array([])
             roi_type = None
 
         matches_start_end = np.array([[p[0][-1], p[-1][-1]] for p in paths])
@@ -456,15 +458,17 @@ class BaseDtw(BaseStrideSegmentation):
                 data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
             )
             matches_start_end = matches_start_end[to_keep]
+            if len(roi_ids) > 0:
+                roi_ids = roi_ids[to_keep]
             self._post_postprocess_check(matches_start_end)
             paths = [p for i, p in enumerate(paths) if i in np.where(to_keep)[0]]
         return acc_cost_mats, paths, costs, matches_start_end, roi_ids, roi_type
 
     def _process_single_roi(
         self, start: int, end: int, template: np.ndarray, data: np.ndarray, find_matches_method: Callable
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         # Calculate cost matrix
-        acc_cost_mat = self._calculate_cost_matrix(template, data[start : end])
+        acc_cost_mat = self._calculate_cost_matrix(template, data[start:end])
         matches = np.sort(
             self._find_matches(
                 acc_cost_mat=acc_cost_mat,

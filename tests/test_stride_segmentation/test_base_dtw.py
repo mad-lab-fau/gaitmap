@@ -184,6 +184,7 @@ class TestRoiSegment(DtwTestBase):
         )
 
         np.testing.assert_array_equal(dtw.data, sequence)
+        np.testing.assert_array_equal(dtw.roi_ids_, [0, 1])
 
     def test_multi_sensor_roi(self):
         sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
@@ -233,6 +234,7 @@ class TestRoiSegment(DtwTestBase):
             )
 
             assert_frame_equal(dtw.data[sensor], data[sensor])
+            np.testing.assert_array_equal(dtw.roi_ids_[sensor], [0, 1])
 
 
 class TestMultiDimensionalArrayInputs(DtwTestBase):
