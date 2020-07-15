@@ -239,7 +239,7 @@ class BaseDtw(BaseStrideSegmentation):
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
-    roi_ids_: Union[Sequence[float], Dict[str, Sequence[float]]]
+    roi_ids_: Union[Sequence[str], Dict[str, Sequence[str]]]
 
     data: Union[np.ndarray, Dataset]
     regions_of_interest: Optional[RegionsOfInterestList]
@@ -451,12 +451,13 @@ class BaseDtw(BaseStrideSegmentation):
 
         matches_start_end = np.array([[p[0][-1], p[-1][-1]] for p in paths])
         to_keep = np.ones(len(matches_start_end)).astype(bool)
-        matches_start_end, to_keep = self._postprocess_matches(
-            data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
-        )
-        matches_start_end = matches_start_end[to_keep]
-        self._post_postprocess_check(matches_start_end)
-        paths = [p for i, p in enumerate(paths) if i in np.where(to_keep)[0]]
+        if len(matches_start_end) > 0:
+            matches_start_end, to_keep = self._postprocess_matches(
+                data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
+            )
+            matches_start_end = matches_start_end[to_keep]
+            self._post_postprocess_check(matches_start_end)
+            paths = [p for i, p in enumerate(paths) if i in np.where(to_keep)[0]]
         return acc_cost_mats, paths, costs, matches_start_end, roi_ids, roi_type
 
     def _process_single_roi(
