@@ -13,7 +13,7 @@ from typing import Union, Dict
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.signal import square
+from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate
@@ -140,14 +140,10 @@ class TestSimpleSegment(DtwTestBase):
         np.testing.assert_array_equal(dtw.data, sequence)
 
 
-# TODO: Test all possible combinations from roi/data/template format
-# TODO: Test ROI on large datasets
-
-
 class TestRoiSegment(DtwTestBase):
     """Simple Tests that test the use of roi."""
 
-    template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+    template = create_dtw_template(pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"]), sampling_rate_hz=100.0)
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
     def _create_instance(self, request):
@@ -163,15 +159,15 @@ class TestRoiSegment(DtwTestBase):
         roi.index.name = "roi_id"
         roi = roi.reset_index()
 
-        sequence = sequence * 3
+        sequence = pd.DataFrame(sequence * 3, columns=["col1"])
 
-        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0, regions_of_interest=roi)
+        dtw = self.dtw.segment(sequence, sampling_rate_hz=100.0, regions_of_interest=roi)
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [[0, 31], [1, 32], [2, 33]]])
         np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [31, 33]])
         np.testing.assert_array_equal(
-            dtw.acc_cost_mat_[:, :13],
+            dtw.acc_cost_mat_[0],
             [
                 [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
                 [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
@@ -179,16 +175,64 @@ class TestRoiSegment(DtwTestBase):
             ],
         )
         np.testing.assert_array_equal(
-            dtw.acc_cost_mat_[:, 26:],
+            dtw.acc_cost_mat_[1],
             [
                 [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
                 [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
                 [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
             ],
         )
-        assert np.all(dtw.acc_cost_mat_[:, 14:26] == np.inf)
 
         np.testing.assert_array_equal(dtw.data, sequence)
+
+    def test_multi_sensor_roi(self):
+        sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
+        roi = pd.DataFrame(
+            np.array([[0, len(sequence)], [2 * len(sequence), 3 * len(sequence)]]), columns=["start", "end"]
+        )
+        roi.index.name = "roi_id"
+        roi = roi.reset_index()
+
+        sequence = sequence * 3
+        sensor1 = np.array(sequence)
+        sensor1 = pd.DataFrame(sensor1, columns=["col1"])
+        sensor2 = np.array(sequence)
+        sensor2 = pd.DataFrame(sensor2, columns=["col1"])
+        data = {"sensor1": sensor1, "sensor2": sensor2}
+
+        dtw = self.dtw.segment(data, sampling_rate_hz=100.0, regions_of_interest=roi)
+
+        correct_paths = [[(0, 5), (1, 6), (2, 7)], [[0, 31], [1, 32], [2, 33]]]
+        for sensor in ["sensor1", "sensor2"]:
+            np.testing.assert_array_equal(dtw.paths_[sensor], correct_paths)
+            np.testing.assert_array_equal(dtw.costs_[sensor], [0.0, 0.0])
+            np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7], [31, 33]])
+            np.testing.assert_array_equal(
+                dtw.acc_cost_mat_[sensor][0],
+                [
+                    [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                    [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                    [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                ],
+            )
+            np.testing.assert_array_equal(
+                dtw.acc_cost_mat_[sensor][1],
+                [
+                    [4.0, 4.0, 4.0, 4.0, 4.0, 0.0, 1.0, 0.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+                    [5.0, 5.0, 5.0, 5.0, 5.0, 1.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+                    [9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+                ],
+            )
+            np.testing.assert_array_equal(
+                dtw.cost_function_[sensor][0],
+                np.sqrt([9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+            )
+            np.testing.assert_array_equal(
+                dtw.cost_function_[sensor][1],
+                np.sqrt([9.0, 9.0, 9.0, 9.0, 9.0, 1.0, 1.0, 0.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+            )
+
+            assert_frame_equal(dtw.data[sensor], data[sensor])
 
 
 class TestMultiDimensionalArrayInputs(DtwTestBase):

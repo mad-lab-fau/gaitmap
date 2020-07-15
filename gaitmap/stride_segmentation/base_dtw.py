@@ -1,6 +1,6 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 import warnings
-from typing import Optional, Sequence, List, Tuple, Union, Dict
+from typing import Optional, Sequence, List, Tuple, Union, Dict, Callable
 
 import numpy as np
 import pandas as pd
@@ -234,7 +234,7 @@ class BaseDtw(BaseStrideSegmentation):
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
-    acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
+    acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
     roi_ids_: Union[Sequence[float], Dict[str, Sequence[float]]]
@@ -244,16 +244,21 @@ class BaseDtw(BaseStrideSegmentation):
     sampling_rate_hz: float
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
-    _min_sequence_length: Optional[float]
-    _max_sequence_length: Optional[float]
+    _min_sequence_length: Optional[int]
+    _max_sequence_length: Optional[int]
     _roi_type = Union[Optional[str], Dict[str, Optional[str]]]
 
     @property
-    def cost_function_(self):
+    def cost_function_(self) -> Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]:
         """Cost function extracted from the accumulated cost matrix."""
         if isinstance(self.acc_cost_mat_, dict):
-            return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in self.acc_cost_mat_.items()}
+            return {s: self._nested_cost_function(cost_mat) for s, cost_mat in self.acc_cost_mat_.items()}
         return np.sqrt(self.acc_cost_mat_[-1, :])
+
+    def _nested_cost_function(self, cost_mats):
+        if isinstance(cost_mats, dict):
+            return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in cost_mats.items()}
+        return np.sqrt(cost_mats[-1, :])
 
     @property
     def matches_start_end_original_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
@@ -382,9 +387,9 @@ class BaseDtw(BaseStrideSegmentation):
                 "template."
             )
         if (
-            template.sampling_rate_hz
-            and self.sampling_rate_hz != template.sampling_rate_hz
-            and self.resample_template is False
+                template.sampling_rate_hz
+                and self.sampling_rate_hz != template.sampling_rate_hz
+                and self.resample_template is False
         ):
             warnings.warn(
                 "The data and template sampling rate are different ({} Hz vs. {} Hz), "
@@ -415,52 +420,69 @@ class BaseDtw(BaseStrideSegmentation):
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
+        # This is a naive implementation of looping over all ROI.
+        # This might be slower, but much more readable
+
         if roi is not None:
-            roi_start_end = roi[["start", "end"]].to_numpy()
             roi_type = _get_regions_of_interest_types(roi.reset_index().columns)
             roi = set_correct_index(roi, [ROI_ID_COLS[roi_type]])
+
+            acc_cost_mats = dict()
+            paths = []
+            costs = []
+            roi_ids = []
+
+            for roi_id, (start, end) in roi[["start", "end"]].iterrows():
+                cost_mat, p, c = self._process_single_roi(
+                    start, end, final_template, matching_data, find_matches_method
+                )
+                acc_cost_mats[roi_id] = cost_mat
+                paths.extend(p)
+                costs.extend(c)
+                roi_ids.extend([roi_id] * len(costs))
         else:
-            roi_start_end = np.array([[0, len(matching_data)]])
+            acc_cost_mats, paths, costs = self._process_single_roi(
+                0, len(matching_data), final_template, matching_data, find_matches_method
+            )
+            roi_ids = []
             roi_type = None
 
+        matches_start_end = np.array([[p[0][-1], p[-1][-1]] for p in paths])
+        to_keep = np.ones(len(matches_start_end)).astype(bool)
+        matches_start_end, to_keep = self._postprocess_matches(
+            data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
+        )
+        matches_start_end = matches_start_end[to_keep]
+        self._post_postprocess_check(matches_start_end)
+        paths = [p for i, p in enumerate(paths) if i in np.where(to_keep)[0]]
+        return acc_cost_mats, paths, costs, matches_start_end, roi_ids, roi_type
+
+    def _process_single_roi(
+        self, start: int, end: int, template: np.ndarray, data: np.ndarray, find_matches_method: Callable
+    ):
         # Calculate cost matrix
-        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data, roi_start_end)
-        # TODO: Rework the ROI concept here and how to report the costmat/costfunc in case of ROI
-        matches = self._find_matches(
-            acc_cost_mat=acc_cost_mat_,
-            max_cost=self.max_cost,
-            min_sequence_length=self._min_sequence_length,
-            find_matches_method=find_matches_method,
+        acc_cost_mat = self._calculate_cost_matrix(template, data[start : end])
+        matches = np.sort(
+            self._find_matches(
+                acc_cost_mat=acc_cost_mat,
+                max_cost=self.max_cost,
+                min_sequence_length=self._min_sequence_length,
+                find_matches_method=find_matches_method,
+            )
         )
         if len(matches) == 0:
-            paths_ = []
-            costs_ = []
-            matches_start_end_ = []
-            roi_id_ = []
+            costs = np.array([])
+            paths = np.array([])
         else:
-            paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
-            matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
-            # Calculate cost before potential modifications are made to start and end
-            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
-            to_keep = np.ones(len(matches_start_end_)).astype(bool)
-            matches_start_end_, to_keep = self._postprocess_matches(
-                data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
-            )
-            matches_start_end_ = matches_start_end_[to_keep]
-            self._post_postprocess_check(matches_start_end_)
-            paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
-            if roi is None:
-                roi_id_ = []
-            else:
-                roi_id_ = np.ones(len(matches_start_end_))
-                for i, (start, end) in roi[["start", "end"]].iterrows():
-                    roi_id_[np.where((matches_start_end_[0] > start) & (matches_start_end_[1] < end))[0]] = i
-        return acc_cost_mat_, paths_, costs_, matches_start_end_, roi_id_, roi_type
+            costs = np.sqrt(acc_cost_mat[-1, :][matches])
+            paths = self._find_multiple_paths(acc_cost_mat, matches, data_offset=start)
 
-    def _calculate_cost_matrix(self, template, matching_data, rois_start_end):  # noqa: no-self-use
+        return acc_cost_mat, paths, costs
+
+    def _calculate_cost_matrix(self, template, matching_data):  # noqa: no-self-use
         template = to_time_series(template)
         matching_data = to_time_series(matching_data)
-        return _multi_roi_dtw_cost_mat(template, matching_data, rois_start_end)
+        return _subsequence_cost_matrix(template, matching_data)
 
     def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
         return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
@@ -590,20 +612,13 @@ class BaseDtw(BaseStrideSegmentation):
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod
-    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
+    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray, data_offset: int) -> List[np.ndarray]:
         paths = []
         for start in start_points:
             path = subsequence_path(acc_cost_mat, start)
             path_array = np.array(path)
+            # In case we had a cost matrix that only represented parts of the data, we add the offset to "long sequence"
+            # column
+            path_array[:, 1] += data_offset
             paths.append(path_array)
         return paths
-
-
-@njit(cache=True, parallel=True)
-def _multi_roi_dtw_cost_mat(template: np.ndarray, matching_data: np.ndarray, rois_start_end: np.ndarray):
-    l1 = template.shape[0]
-    l2 = matching_data.shape[0]
-    cost_matrix = np.full((l1, l2), np.inf)
-    for start, end in rois_start_end:
-        cost_matrix[:, start : end + 1] = _subsequence_cost_matrix(template, matching_data[start : end + 1])
-    return cost_matrix
