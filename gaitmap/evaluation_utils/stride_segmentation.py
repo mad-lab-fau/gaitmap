@@ -116,7 +116,7 @@ def f1_score(matches_df: pd.DataFrame) -> float:
     return 2 * (precision * recall) / (precision + recall)
 
 
-def precision_recall_f1_score(matches_df: pd.DataFrame) -> float:
+def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, float]:
     """Compute precision, recall and F1-score.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
