@@ -35,9 +35,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     sensor_channel_config
         The sensor channel or sensor that should be used for the gait sequence detection. Must be a str. If the
         algorithm should be applied to a single sensor axis the string must be one of the entries in either
-         :obj:`~gaitmap.utils.consts.BF_ACC` or :obj:`~gaitmap.utils.consts.BF_GYR`. In order to perform the analysis
-         on the norm of the acc / the gyr signal, you need to pass "acc" or "gyr". Default value is `gyr_ml` as by the
-         publication this showed the best results.
+        :obj:`~gaitmap.utils.consts.BF_ACC` or :obj:`~gaitmap.utils.consts.BF_GYR`. In order to perform the analysis
+        on the norm of the acc / the gyr signal, you need to pass "acc" or "gyr". Default value is `gyr_ml` as by the
+        publication this showed the best results.
     peak_prominence
         The threshold for the peak prominence that each harmonics peak must provide. This relates to the
         `peak_prominence` provided by :func:`~scipy.signal.peak_prominences`. The frequency spectrum of the sensor
