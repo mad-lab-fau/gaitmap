@@ -15,6 +15,7 @@ from gaitmap.utils.consts import (
     GF_POS,
     GF_ORI,
     ROI_ID_COLS,
+    SL_INDEX,
 )
 
 SingleSensorDataset = pd.DataFrame
