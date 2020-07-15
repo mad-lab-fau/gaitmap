@@ -166,8 +166,10 @@ class BaseDtw(BaseStrideSegmentation):
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
         The accumulated cost matrix of the DTW. The last row represents the cost function.
+        In case regions of intrest are provided, this will be a a dictionary of cost functions for each sensor.
     cost_function_ : 1D array with the same length as the data or dictionary with such values
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
+        In case regions of intrest are provided, a separate cost function for each region of intrest will be provided.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
         Note that the start and end values of the path might not match the start and the end values in
