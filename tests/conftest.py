@@ -1,8 +1,10 @@
 import random
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
+from pandas._testing import assert_frame_equal, assert_series_equal
 from scipy.spatial.transform import Rotation
 
 from gaitmap.example_data import (
@@ -57,5 +59,9 @@ def compare_algo_objects(a, b):
             assert list(value) == list(json_val)
         elif isinstance(value, Rotation):
             assert_array_equal(value.as_quat(), json_val.as_quat())
+        elif isinstance(value, pd.DataFrame):
+            assert_frame_equal(value, json_val)
+        elif isinstance(value, pd.Series):
+            assert_series_equal(value, json_val)
         else:
             assert value == json_val, p

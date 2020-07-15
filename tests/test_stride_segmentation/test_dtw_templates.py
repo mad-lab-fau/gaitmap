@@ -10,6 +10,21 @@ from gaitmap.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     create_interpolated_dtw_template,
 )
+from tests.conftest import compare_algo_objects
+
+
+class TestSerialize:
+    """Test that templates can be serialized correctly."""
+
+    @pytest.mark.parametrize("dtype", (list, np.array, pd.Series, pd.DataFrame))
+    def test_different_dtypes(self, dtype):
+        template = dtype(list(range(10)))
+
+        instance = DtwTemplate(data=template)
+
+        new_instance = DtwTemplate.from_json(instance.to_json())
+
+        compare_algo_objects(instance, new_instance)
 
 
 class TestTemplateBaseClass:

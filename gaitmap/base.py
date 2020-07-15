@@ -33,6 +33,10 @@ class _CustomEncoder(json.JSONEncoder):
             return o.item()
         if isinstance(o, np.ndarray):
             return dict(_obj_type="Array", array=o.tolist())
+        if isinstance(o, pd.DataFrame):
+            return dict(_obj_type="DataFrame", df=o.to_json(orient="columns"))
+        if isinstance(o, pd.Series):
+            return dict(_obj_type="Series", df=o.to_json())
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
@@ -45,6 +49,10 @@ def _custom_deserialize(json_obj):
             return Rotation.from_quat(json_obj["quat"])
         if json_obj["_obj_type"] == "Array":
             return np.array(json_obj["array"])
+        if json_obj["_obj_type"] == "DataFrame":
+            return pd.read_json(json_obj["df"], orient="columns")
+        if json_obj["_obj_type"] == "Series":
+            return pd.read_json(json_obj["df"], typ="series")
     return json_obj
 
 
