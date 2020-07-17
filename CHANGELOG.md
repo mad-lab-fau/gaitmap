@@ -24,6 +24,9 @@ This is the first version and we already added:
 
 ### Fixed
 
+- Fixed a bug in the madgwick algorithms that might have caused some incorrect results in earlier version
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/70)
+
 ### Migration Guide
 
 ## [1.0.1] - 2020-07-15
