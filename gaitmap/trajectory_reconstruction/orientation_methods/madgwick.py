@@ -138,16 +138,15 @@ class MadgwickAHRS(BaseOrientationMethod):
 
 @njit()
 def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
-    q = initial_orientation
-
+    q = np.copy(initial_orientation)
     qdot = rate_of_change_from_gyro(gyro, q)
+
+    # Note that we change the order of q components here as we use a different quaternion definition.
+    q1, q2, q3, q0 = q
 
     if beta > 0.0 and not np.all(acc == 0.0):
         acc = acc / np.sqrt(np.sum(acc ** 2))
         ax, ay, az = acc
-
-        # Note that we change the order of q components here as we use a different quaternion definition.
-        q1, q2, q3, q0 = q
 
         # Auxiliary variables to avoid repeated arithmetic
         _2q0 = 2.0 * q0
@@ -159,7 +158,10 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
         _4q2 = 4.0 * q2
         _8q1 = 8.0 * q1
         _8q2 = 8.0 * q2
-        q0q0, q1q1, q2q2, q3q3 = q ** 2
+        q0q0 = q0 * q0
+        q1q1 = q1 * q1
+        q2q2 = q2 * q2
+        q3q3 = q3 * q3
 
         # Gradient decent algorithm corrective step
         s0 = _4q0 * q2q2 + _2q2 * ax + _4q0 * q1q1 - _2q1 * ay
@@ -169,7 +171,9 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
         # Switch the component order back
         s = np.array([s1, s2, s3, s0])
-        s /= np.sqrt(np.sum(s ** 2))
+        mag_s = np.sqrt(np.sum(s ** 2))
+        if mag_s != 0.0:
+            s /= np.sqrt(np.sum(s ** 2))
 
         # Apply feedback step
         qdot -= beta * s
