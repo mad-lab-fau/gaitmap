@@ -165,10 +165,10 @@ class BaseDtw(BaseStrideSegmentation):
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
         The accumulated cost matrix of the DTW. The last row represents the cost function.
-        In case regions of intrest are provided, this will be a a dictionary of cost functions for each sensor.
+        In case regions of interest are provided, this will be a dictionary of cost functions for each sensor.
     cost_function_ : 1D array with the same length as the data or dictionary with such values
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
-        In case regions of intrest are provided, a separate cost function for each region of intrest will be provided.
+        In case regions of interest are provided, a separate cost function for each region of intrest will be provided.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
         Note that the start and end values of the path might not match the start and the end values in
@@ -181,7 +181,7 @@ class BaseDtw(BaseStrideSegmentation):
         This does **not** preserve matches that were removed during postprocessing.
     roi_ids_ : List of length n_detected_strides or dictionary with such values
         The id of the region of interest each match belongs to.
-        If not region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
+        If no region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
 
     Other Parameters
     ----------------
@@ -422,10 +422,12 @@ class BaseDtw(BaseStrideSegmentation):
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
+        # Handling regions of interest
         # This is a naive implementation of looping over all ROI.
         # This might be slower, but much more readable
-
         if roi is not None:
+            # Determine if a roi or a gs list was passed.
+            # Both will be treated in the same way, but we need to know the correct name for the column
             roi_type = _get_regions_of_interest_types(roi.reset_index().columns)
             roi = set_correct_index(roi, [ROI_ID_COLS[roi_type]])
 
@@ -434,6 +436,9 @@ class BaseDtw(BaseStrideSegmentation):
             costs = []
             roi_ids = []
 
+            # Apply DTW to each ROI separately
+            # We store one cost matrix per ROI and all other values per match
+            # The positon of each match will still be relative to the start of the recording NOT the ROI.
             for roi_id, (start, end) in roi[["start", "end"]].iterrows():
                 cost_mat, p, c = self._process_single_roi(
                     start, end, final_template, matching_data, find_matches_method
@@ -452,8 +457,10 @@ class BaseDtw(BaseStrideSegmentation):
             roi_type = None
 
         matches_start_end = np.array([[p[0][-1], p[-1][-1]] for p in paths])
-        to_keep = np.ones(len(matches_start_end)).astype(bool)
+
+        # Postprocessing
         if len(matches_start_end) > 0:
+            to_keep = np.ones(len(matches_start_end)).astype(bool)
             matches_start_end, to_keep = self._postprocess_matches(
                 data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
             )
@@ -467,8 +474,9 @@ class BaseDtw(BaseStrideSegmentation):
     def _process_single_roi(
         self, start: int, end: int, template: np.ndarray, data: np.ndarray, find_matches_method: Callable
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        # Calculate cost matrix
+        # Calculate cost matrix per roi
         acc_cost_mat = self._calculate_cost_matrix(template, data[start:end])
+        # Find all matches in all cost matrizes
         matches = np.sort(
             self._find_matches(
                 acc_cost_mat=acc_cost_mat,
@@ -481,6 +489,7 @@ class BaseDtw(BaseStrideSegmentation):
             costs = np.array([])
             paths = np.array([])
         else:
+            # Find all paths for all matches
             costs = np.sqrt(acc_cost_mat[-1, :][matches])
             paths = self._find_multiple_paths(acc_cost_mat, matches, data_offset=start)
 

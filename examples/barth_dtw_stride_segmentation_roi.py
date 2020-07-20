@@ -13,7 +13,7 @@ In this example we will create an example output of such an algorithms and will 
 `BarthDtw` stride segmentation algorithms.
 However, all other stride segmentation algorithms should support this functionality as well.
 
-Note, that for smaller datasets, it the algorithms might actually be slower when using multiple regions of interest,
+Note, that for smaller datasets, the algorithms might actually be slower when using multiple regions of interest,
 compared to analysing the entire dataset.
 This is, because the method relies on a slow Python loop to process the individual regions of interest.
 """
@@ -80,10 +80,10 @@ print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left
 
 # %%
-# Further, if we try to plot the results, we will see that we now have multiple cost matrizes and cost functions per
+# Further, if we try to plot the results, we will see that we now have multiple cost matrices and cost functions per
 # sensor.
 # This is simply because the DTW was applied separately to the two regions.
-# `dtw.acc_cost_mat_[<sensor name>]` and `dtw.acc_cost_mat_[<sensor name>]` are dictionaries of the form `{<roi_id> :
+# `dtw.acc_cost_mat_[<sensor name>]` and `dtw.cost_function_[<sensor name>]` are dictionaries of the form `{<roi_id> :
 # ...}`.
 # We can loop over them to plot its content, as shown below.
 import numpy as np
