@@ -1,11 +1,11 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, Tuple, List, Dict, Type
 
 import numpy as np
 import pandas as pd
 
-from gaitmap.base import _BaseSerializable
+from gaitmap.base import _BaseSerializable, BaseType
 from gaitmap.utils.array_handling import interpolate1d
 from gaitmap.utils.dataset_helper import is_single_sensor_dataset
 

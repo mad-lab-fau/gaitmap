@@ -26,6 +26,16 @@ class TestSerialize:
 
         compare_algo_objects(instance, new_instance)
 
+    def test_index_order_long_dfs(self):
+        """Loading df based templates might change their index."""
+        template = pd.DataFrame(list(range(20)))
+
+        instance = DtwTemplate(data=template)
+
+        new_instance = DtwTemplate.from_json(instance.to_json())
+
+        compare_algo_objects(instance, new_instance)
+
 
 class TestTemplateBaseClass:
     def test_template_provided(self):
