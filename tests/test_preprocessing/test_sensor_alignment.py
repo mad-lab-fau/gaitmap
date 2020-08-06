@@ -111,3 +111,19 @@ class TestXYAlignment:
         # Allow error of 2 deg
         assert np.abs(angle_error) < 2.0
         assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1, 3)
+
+    @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
+    def test_smoothing(self, angle):
+        signal = np.random.normal(scale=1000, size=(500, 3))
+        rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
+
+        noise = np.random.normal(scale=5, size=(500, 3))
+        outlier = np.random.choice([0, 1000, -1000], size=(500, 3), p=[0.9, 0.05, 0.05])
+
+        rot = align_heading_of_sensors(signal, rot_signal + noise + outlier)
+        rotvec = rot.as_rotvec()
+
+        angle_error = ((np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]) - -angle) + 180) % 360 - 180
+        # Allow error of 2 deg
+        assert np.abs(angle_error) < 2.0
+        assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1, 3)

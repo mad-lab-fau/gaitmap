@@ -1,9 +1,12 @@
 """Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils import rotations
+from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     is_single_sensor_dataset,
@@ -131,7 +134,10 @@ def _get_static_acc_vector(
 
 
 def align_heading_of_sensors(
-    gyro_signal_sensor: np.ndarray, gyro_signal_ref: np.ndarray, movement_threshold: float = 150,
+    gyro_signal_sensor: np.ndarray,
+    gyro_signal_ref: np.ndarray,
+    movement_threshold: float = 150,
+    smoothing_window_size: Optional[int] = None,
 ) -> Rotation:
     """Align the heading (rotation in the ground plane) of multiple sensors attached to the same rigid body.
 
@@ -142,6 +148,12 @@ def align_heading_of_sensors(
     This rotation is the median angle between the gyroscope vectors in the ground-plane.
     As this angle can vary highly for small values due to noise, the `movement_threshold` is used to select only active
     regions of the signal for the comparison.
+    In some cases noise and signal artifacts might still effect the final result.
+    In these cases the angle smoothing option should be use to remove outliers using a moving median filter on the
+    calculated angle, before they are unwraped.
+    This functionality can be controlled by the `smoothing_window_size`.
+    Note that the effect of smoothing was not investigated in detail and it is advisable to calculate and visualise the
+    residual distance between the sensor signals to catch potential misalignments.
 
     Parameters
     ----------
@@ -151,7 +163,13 @@ def align_heading_of_sensors(
         The gyro signal in deg/s of the reference sensor
     movement_threshold
         Minimal required gyro value in the xy-plane.
+        The unit will depend on the unit of the gyroscope.
+        The default value is assumes deg/s as the unit.
         Values below this threshold are not considered in the calculation of the optimal alignment.
+    smoothing_window_size
+        Size of the moving median filter that is applied to the extracted angles to remove outliers.
+        Optimal size should be determined empirical.
+        In case it is None, not filter is applied.
 
     Returns
     -------
@@ -174,8 +192,12 @@ def align_heading_of_sensors(
     angle_diff = find_signed_3d_angle(gyro_signal_ref[:, :2], gyro_signal_sensor[:, :2], gravity)
 
     mags = np.max(np.stack([reference_magnitude, sensor_magnitude]), axis=0)
-    angle_diff = angle_diff.T[(mags > movement_threshold)].T
 
+    angle_diff = angle_diff.T[(mags > movement_threshold)].T
+    if smoothing_window_size is not None:
+        angle_diff = sliding_window_view(
+            angle_diff, smoothing_window_size, smoothing_window_size - 1, nan_padding=False
+        )
     angle_diff = np.unwrap(angle_diff)
     angle = np.nanmedian(angle_diff)
 
