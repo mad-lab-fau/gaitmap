@@ -320,25 +320,7 @@ class BaseDtw(BaseStrideSegmentation):
         self.sampling_rate_hz = sampling_rate_hz
         self.regions_of_interest = regions_of_interest
 
-        # Validate and transform inputs
-        if self.template is None:
-            raise ValueError("A `template` must be specified.")
-
-        if self.find_matches_method not in self._allowed_methods_map:
-            raise ValueError(
-                'Invalid value for "find_matches_method". Must be one of {}'.format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
-        # Check if the region of interest format is valid in general. We will test later if the combination of ROI and
-        # sensor data matches.
-        if regions_of_interest is not None and not (
-            is_single_sensor_regions_of_interest_list(self.regions_of_interest)
-            or is_multi_sensor_regions_of_interest_list(self.regions_of_interest)
-        ):
-            raise ValueError(
-                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
-            )
+        self._validate_base_inputs()
 
         template = self.template
         if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
@@ -390,9 +372,27 @@ class BaseDtw(BaseStrideSegmentation):
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
-    def _segment_single_dataset(  # noqa: MC0001
-        self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]
-    ):
+    def _validate_base_inputs(self):
+        if self.template is None:
+            raise ValueError("A `template` must be specified.")
+
+        if self.find_matches_method not in self._allowed_methods_map:
+            raise ValueError(
+                'Invalid value for "find_matches_method". Must be one of {}'.format(
+                    list(self._allowed_methods_map.keys())
+                )
+            )
+        # Check if the region of interest format is valid in general. We will test later if the combination of ROI and
+        # sensor data matches.
+        if self.regions_of_interest is not None and not (
+            is_single_sensor_regions_of_interest_list(self.regions_of_interest)
+            or is_multi_sensor_regions_of_interest_list(self.regions_of_interest)
+        ):
+            raise ValueError(
+                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
+            )
+
+    def _validate_single_dataset_input(self, template, roi):
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -413,6 +413,9 @@ class BaseDtw(BaseStrideSegmentation):
                 "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
             )
 
+    def _segment_single_dataset(self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]):
+
+        self._validate_single_dataset_input(template, roi)
         # Extract the parts of the data that is relevant for matching.
         template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
         # Ensure that all values are floats
