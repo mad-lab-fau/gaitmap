@@ -140,6 +140,16 @@ class TestSimpleSegment(DtwTestBase):
         np.testing.assert_array_equal(dtw.data, sequence)
 
 
+def create_dummy_single_sensor_roi():
+    cols = ["start", "end", "gs_id"]
+    return pd.DataFrame(columns=cols)
+
+
+def create_dummy_multi_sensor_roi():
+    cols = ["start", "end", "gs_id"]
+    return {"sensor_1": pd.DataFrame(columns=cols)}
+
+
 class TestRoiSegment(DtwTestBase):
     """Simple Tests that test the use of roi."""
 
@@ -149,6 +159,31 @@ class TestRoiSegment(DtwTestBase):
     def _create_instance(self, request):
         dtw = self.init_dtw(template=self.template, find_matches_method=request.param,)
         self.dtw = dtw
+
+    @pytest.mark.parametrize(
+        "roi", (pd.DataFrame(), create_dummy_multi_sensor_roi()),
+    )
+    def test_invalid_roi_single_dataset(self, roi):
+        """Test that an error is raised if an invalid roi is provided."""
+        sequence = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+
+        with pytest.raises(ValueError) as e:
+            # call segment with invalid ROI
+            self.dtw.segment(sequence, sampling_rate_hz=10.0, regions_of_interest=roi)
+
+        assert "region_of_interest" in str(e)
+
+    def test_invalid_roi_multiple_dataset(self):
+        """Test that an error is raised if an invalid roi is provided."""
+        sequence = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+
+        with pytest.raises(ValueError) as e:
+            # call segment with invalid ROI
+            self.dtw.segment(
+                {"sensor": pd.DataFrame(sequence)}, sampling_rate_hz=10.0, regions_of_interest=pd.DataFrame()
+            )
+
+        assert "region_of_interest" in str(e)
 
     def test_simple_roi(self):
         """Test dtw where the center match should be ignored, as it is outside the ROI."""

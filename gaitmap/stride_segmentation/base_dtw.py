@@ -23,6 +23,7 @@ from gaitmap.utils.dataset_helper import (
     SingleSensorRegionsOfInterestList,
     _get_regions_of_interest_types,
     set_correct_index,
+    is_multi_sensor_regions_of_interest_list,
 )
 
 
@@ -288,7 +289,7 @@ class BaseDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(
+    def segment(  # noqa: MC0001
         self: BaseType,
         data: Union[np.ndarray, Dataset],
         sampling_rate_hz: float,
@@ -319,8 +320,6 @@ class BaseDtw(BaseStrideSegmentation):
         self.sampling_rate_hz = sampling_rate_hz
         self.regions_of_interest = regions_of_interest
 
-        # TODO: Check region of interest Dtype
-
         # Validate and transform inputs
         if self.template is None:
             raise ValueError("A `template` must be specified.")
@@ -330,6 +329,15 @@ class BaseDtw(BaseStrideSegmentation):
                 'Invalid value for "find_matches_method". Must be one of {}'.format(
                     list(self._allowed_methods_map.keys())
                 )
+            )
+        # Check if the region of interest format is valid in general. We will test later if the combination of ROI and
+        # sensor data matches.
+        if regions_of_interest is not None and not (
+            is_single_sensor_regions_of_interest_list(self.regions_of_interest)
+            or is_multi_sensor_regions_of_interest_list(self.regions_of_interest)
+        ):
+            raise ValueError(
+                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
             )
 
         template = self.template
@@ -382,7 +390,9 @@ class BaseDtw(BaseStrideSegmentation):
             raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
-    def _segment_single_dataset(self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]):
+    def _segment_single_dataset(  # noqa: MC0001
+        self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]
+    ):
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -397,6 +407,10 @@ class BaseDtw(BaseStrideSegmentation):
                 "The data and template sampling rate are different ({} Hz vs. {} Hz), "
                 "but `resample_template` is False. "
                 "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
+            )
+        if roi is not None and not is_single_sensor_regions_of_interest_list(roi):
+            raise ValueError(
+                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
             )
 
         # Extract the parts of the data that is relevant for matching.
@@ -575,7 +589,9 @@ class BaseDtw(BaseStrideSegmentation):
         """
 
     def _get_region_of_interest_for_sensor(self, sensor_name: str):
-        if self.regions_of_interest is None or is_single_sensor_regions_of_interest_list(self.regions_of_interest):
+        if self.regions_of_interest is None:
+            return None
+        if is_single_sensor_regions_of_interest_list(self.regions_of_interest):
             return self.regions_of_interest
         return self.regions_of_interest.get(sensor_name, None)
 
