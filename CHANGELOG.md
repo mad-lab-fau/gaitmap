@@ -29,6 +29,7 @@ This is the first version and we already added:
 
 - Fixed a bug in the madgwick algorithms that might have caused some incorrect results in earlier version
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/70)
+- Fixed a bug that the ROI list was not correctly validated. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/71)
 
 ### Migration Guide
 
