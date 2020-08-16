@@ -21,6 +21,10 @@ This is the first version and we already added:
 
 ### Changed
 
+- To get or load the data of a DtwTemplate you now need to call `get_data` on the method instead of just using the
+  `data` property (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/73)
+  This is done to conform with the basic class structure needed for proper serialization.
+
 ### Deprecated
 
 - The format in which DataFrame Attributes are stored in json has been changed.
@@ -46,6 +50,8 @@ This is the first version and we already added:
   If you have DtwTemplates stored as json, load them (you will get a warning) once. Double check that the ordering of 
   the template data is correct. If it is not, sort it correctly and then save the object again.
   This should fix all issues going forward.
+- To get or load the data of a DtwTemplate, you now need to use `template.get_data()` instead of `template.data`.
+  Simply replacing the old with the new option should fix all issues.
 
 ## [1.0.1] - 2020-07-15
 
