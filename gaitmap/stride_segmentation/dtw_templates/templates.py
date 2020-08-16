@@ -20,6 +20,7 @@ class DtwTemplate(_BaseSerializable):
         If this should be a array or a dataframe might depend on your usecase.
         Usually it is a good idea to scale the data to a range from 0-1 and then use the scale parameter to downscale
         the signal.
+        Do not use this attribute directly to access the data, but use the `get_data` method instead.
     template_file_name
         Alternative to providing a `template` you can provide the filename of any file stored in
         `gaitmap/stride_segmentation/dtw_templates`.
@@ -49,8 +50,7 @@ class DtwTemplate(_BaseSerializable):
     template_file_name: Optional[str]
     use_cols: Optional[Tuple[Union[str, int]]]
     scaling: Optional[float]
-
-    _data: Optional[Union[np.ndarray, pd.DataFrame]]
+    data: Optional[Union[np.ndarray, pd.DataFrame]]
 
     def __init__(
         self,
@@ -60,24 +60,23 @@ class DtwTemplate(_BaseSerializable):
         scaling: Optional[float] = None,
         use_cols: Optional[Tuple[Union[str, int]]] = None,
     ):
-        self._data = data
+        self.data = data
         self.template_file_name = template_file_name
         self.sampling_rate_hz = sampling_rate_hz
         self.scaling = scaling
         self.use_cols = use_cols
 
-    @property
-    def data(self) -> Union[np.ndarray, pd.DataFrame]:
+    def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
 
         If no dataset is registered yet, it will be read from the file path if provided.
         """
-        if self._data is None and self.template_file_name is None:
-            raise AttributeError("Neither a template array nor a template file is provided.")
-        if self._data is None:
+        if self.data is None and self.template_file_name is None:
+            raise ValueError("Neither a template array nor a template file is provided.")
+        if self.data is None:
             with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
-                self._data = pd.read_csv(test_data, header=0)
-        template = self._data
+                self.data = pd.read_csv(test_data, header=0)
+        template = self.data
 
         if getattr(self, "use_cols", None) is None:
             return template

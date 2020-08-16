@@ -586,7 +586,7 @@ class TestTemplateResampling(DtwTestBase):
     @pytest.mark.parametrize("sampling_rate", (102.4, 204.8, 100, 500, 409.6))
     def test_resample_decimal_values(self, sampling_rate):
         """As a test, we gonna try to resample the Barth Template to various sampling rates."""
-        test_template = BarthOriginalTemplate().data
+        test_template = BarthOriginalTemplate().get_data()
         resampled_template = BaseDtw._resample_template(
             test_template, BarthOriginalTemplate().sampling_rate_hz, sampling_rate
         )

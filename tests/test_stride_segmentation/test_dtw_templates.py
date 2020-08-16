@@ -50,15 +50,15 @@ class TestTemplateBaseClass:
         """Test that an error is raised, if neither a filename nor a array is provided."""
         instance = DtwTemplate()
 
-        with pytest.raises(AttributeError):
-            _ = instance.data
+        with pytest.raises(ValueError):
+            _ = instance.get_data()
 
     def test_use_columns_array(self):
         template = np.stack((np.arange(10), np.arange(10, 20))).T
 
         instance = DtwTemplate(data=template, use_cols=[1])
 
-        assert_array_equal(instance.data, template[:, 1])
+        assert_array_equal(instance.get_data(), template[:, 1])
 
     def test_use_columns_dataframe(self):
         template = np.stack((np.arange(10), np.arange(10, 20))).T
@@ -66,7 +66,7 @@ class TestTemplateBaseClass:
 
         instance = DtwTemplate(data=template, use_cols=["col_1"])
 
-        assert_array_equal(instance.data, template[["col_1"]])
+        assert_array_equal(instance.get_data(), template[["col_1"]])
 
     def test_use_columns_wrong_dim(self):
         template = np.arange(10)
@@ -74,12 +74,12 @@ class TestTemplateBaseClass:
         instance = DtwTemplate(data=template, use_cols=[1])
 
         with pytest.raises(ValueError):
-            _ = instance.data
+            _ = instance.get_data()
 
     def test_load_from_file(self):
         instance = DtwTemplate(template_file_name="barth_original_template.csv")
 
-        assert instance.data.shape == (200, 3)
+        assert instance.get_data().shape == (200, 3)
 
 
 class TestBartTemplate:
@@ -88,7 +88,7 @@ class TestBartTemplate:
 
         barth_instance = BarthOriginalTemplate()
 
-        assert_frame_equal(barth_instance.data, instance.data)
+        assert_frame_equal(barth_instance.get_data(), instance.get_data())
         assert barth_instance.sampling_rate_hz == 204.8
         assert barth_instance.scaling == 500.0
 
@@ -100,7 +100,7 @@ class TestCreateTemplate:
 
         instance = create_dtw_template(template, sampling_rate_hz=sampling_rate_hz)
 
-        assert_array_equal(instance.data, template)
+        assert_array_equal(instance.get_data(), template)
         assert instance.sampling_rate_hz == sampling_rate_hz
 
     def test_create_template_use_col(self):
@@ -111,7 +111,7 @@ class TestCreateTemplate:
 
         instance = create_dtw_template(template, sampling_rate_hz=sampling_rate_hz, use_cols=use_cols)
 
-        assert_array_equal(instance.data, template[["col_1"]])
+        assert_array_equal(instance.get_data(), template[["col_1"]])
         assert instance.sampling_rate_hz == sampling_rate_hz
         assert_array_equal(instance.use_cols, use_cols)
 
@@ -122,7 +122,7 @@ class TestCreateInterpolatedTemplate:
         template_data = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         instance = create_interpolated_dtw_template(template_data, kind="linear", n_samples=None)
 
-        assert_array_equal(instance.data, template_data[["dummy_col"]])
+        assert_array_equal(instance.get_data(), template_data[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_dataset_list(self):
@@ -132,7 +132,7 @@ class TestCreateInterpolatedTemplate:
 
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
 
-        assert_array_equal(instance.data, template_data1[["dummy_col"]])
+        assert_array_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_different_indices(self):
@@ -143,7 +143,7 @@ class TestCreateInterpolatedTemplate:
 
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
 
-        assert_array_equal(instance.data, template_data1[["dummy_col"]])
+        assert_array_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_calculates_mean(self):
@@ -154,7 +154,7 @@ class TestCreateInterpolatedTemplate:
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
 
         result_template_df = pd.DataFrame(np.array([0, 0, 0, 0, 0]), columns=["dummy_col"])
-        assert_array_equal(instance.data, result_template_df.to_numpy())
+        assert_array_equal(instance.get_data(), result_template_df.to_numpy())
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_mean_length_over_input_sequences_template(self):
@@ -164,7 +164,7 @@ class TestCreateInterpolatedTemplate:
 
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
 
-        assert_array_equal(len(instance.data), 3)
+        assert_array_equal(len(instance.get_data()), 3)
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_upsample(self):
@@ -174,7 +174,7 @@ class TestCreateInterpolatedTemplate:
 
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=5)
 
-        assert_array_equal(len(instance.data), 5)
+        assert_array_equal(len(instance.get_data()), 5)
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_downsample(self):
@@ -184,7 +184,7 @@ class TestCreateInterpolatedTemplate:
 
         instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=3)
 
-        assert_array_equal(len(instance.data), 3)
+        assert_array_equal(len(instance.get_data()), 3)
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_check_multisensordataset_exception(self):
