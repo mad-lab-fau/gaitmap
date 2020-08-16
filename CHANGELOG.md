@@ -23,15 +23,29 @@ This is the first version and we already added:
 
 ### Deprecated
 
+- The format in which DataFrame Attributes are stored in json has been changed.
+  The old format can still be loaded, but this will be removed in future versions.
+  Related to https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/72.
+  See the migration guide for actions to take. 
+
 ### Removed
 
 ### Fixed
 
 - Fixed a bug in the madgwick algorithms that might have caused some incorrect results in earlier version
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/70)
-- Fixed a bug that the ROI list was not correctly validated. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/71)
+- Fixed a bug that the ROI list was not correctly validated. 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/71)
+- Fixed issue that templates that were stored in json do not preserve order when loaded again (see more info in migration guide)
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/72)
 
 ### Migration Guide
+
+- The format in which DataFrame Attributes are stored in json has been changed and the old format will be fully removed
+  in the future.
+  If you have DtwTemplates stored as json, load them (you will get a warning) once. Double check that the ordering of 
+  the template data is correct. If it is not, sort it correctly and then save the object again.
+  This should fix all issues going forward.
 
 ## [1.0.1] - 2020-07-15
 
