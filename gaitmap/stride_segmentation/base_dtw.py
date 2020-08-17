@@ -212,6 +212,7 @@ class BaseDtw(BaseAlgorithm):
            [6, 8]])
 
     """
+    _action_method = "segment"
 
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
@@ -310,7 +311,7 @@ class BaseDtw(BaseAlgorithm):
                 results = dict()
                 for sensor, single_template in template.items():
                     results[sensor] = self._segment_single_dataset(data[sensor], single_template)
-            elif is_single_sensor_dataset(template.data, check_gyr=False, check_acc=False):
+            elif is_single_sensor_dataset(template.get_data(), check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
                 for sensor in get_multi_sensor_dataset_names(data):
@@ -349,7 +350,7 @@ class BaseDtw(BaseAlgorithm):
             )
 
         # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
+        template_array, matching_data = self._extract_relevant_data_and_template(template.get_data(), dataset)
         # Ensure that all values are floats
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)
