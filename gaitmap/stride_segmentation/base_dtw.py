@@ -1,29 +1,22 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 import warnings
-from typing import Optional, Sequence, List, Tuple, Union, Dict, Callable
+from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_path, _subsequence_cost_matrix
+from tslearn.metrics import subsequence_path, subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
-from gaitmap.utils.consts import ROI_ID_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_single_sensor_dataset,
     is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
-    RegionsOfInterestList,
-    is_single_sensor_regions_of_interest_list,
-    SingleSensorRegionsOfInterestList,
-    _get_regions_of_interest_types,
-    set_correct_index,
-    is_multi_sensor_regions_of_interest_list,
 )
 
 
@@ -166,10 +159,8 @@ class BaseDtw(BaseStrideSegmentation):
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
         The accumulated cost matrix of the DTW. The last row represents the cost function.
-        In case regions of interest are provided, this will be a dictionary of cost functions for each sensor.
     cost_function_ : 1D array with the same length as the data or dictionary with such values
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
-        In case regions of interest are provided, a separate cost function for each region of intrest will be provided.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
         Note that the start and end values of the path might not match the start and the end values in
@@ -180,9 +171,6 @@ class BaseDtw(BaseStrideSegmentation):
         This base implementation of the DTW does not do this, but potential subclasses might modify the matches list
         during postprocessing.
         This does **not** preserve matches that were removed during postprocessing.
-    roi_ids_ : List of length n_detected_strides or dictionary with such values
-        The id of the region of interest each match belongs to.
-        If no region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
 
     Other Parameters
     ----------------
@@ -190,9 +178,6 @@ class BaseDtw(BaseStrideSegmentation):
         The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
-    regions_of_interest
-        Specific regions that should be considered during matching.
-        The rest of the signal is simply ignored.
 
     Notes
     -----
@@ -236,32 +221,23 @@ class BaseDtw(BaseStrideSegmentation):
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
-    acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]
+    acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
-    costs_: Union[np.ndarray, Dict[str, np.ndarray]]
-    roi_ids_: Union[np.ndarray, Dict[str, np.ndarray]]
+    costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
 
     data: Union[np.ndarray, Dataset]
-    regions_of_interest: Optional[RegionsOfInterestList]
     sampling_rate_hz: float
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
-    _min_sequence_length: Optional[int]
-    _max_sequence_length: Optional[int]
-    _roi_type = Union[Optional[str], Dict[str, Optional[str]]]
+    _min_sequence_length: Optional[float]
+    _max_sequence_length: Optional[float]
 
     @property
-    def cost_function_(self) -> Union[np.ndarray, Dict[str, np.ndarray], Dict[str, Dict[str, np.ndarray]]]:
+    def cost_function_(self):
         """Cost function extracted from the accumulated cost matrix."""
         if isinstance(self.acc_cost_mat_, dict):
-            return {s: self._nested_cost_function(cost_mat) for s, cost_mat in self.acc_cost_mat_.items()}
+            return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in self.acc_cost_mat_.items()}
         return np.sqrt(self.acc_cost_mat_[-1, :])
-
-    @staticmethod
-    def _nested_cost_function(cost_mats):
-        if isinstance(cost_mats, dict):
-            return {s: np.sqrt(cost_mat[-1, :]) for s, cost_mat in cost_mats.items()}
-        return np.sqrt(cost_mats[-1, :])
 
     @property
     def matches_start_end_original_(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
@@ -289,13 +265,7 @@ class BaseDtw(BaseStrideSegmentation):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(  # noqa: MC0001
-        self: BaseType,
-        data: Union[np.ndarray, Dataset],
-        sampling_rate_hz: float,
-        regions_of_interest: Optional[RegionsOfInterestList] = None,
-        **kwargs,
-    ) -> BaseType:
+    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.
 
         Parameters
@@ -303,9 +273,6 @@ class BaseDtw(BaseStrideSegmentation):
         data : array, single-sensor dataframe, or multi-sensor dataset
             The input data.
             For details on the required datatypes review the class docstring.
-        regions_of_interest
-            Regions of interest in the signal that should be considered for matching.
-            All signal outside these regions is ignored.
         sampling_rate_hz
             The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
             a number of samples and it will be used to resample the template if `resample_template` is `True`.
@@ -318,61 +285,8 @@ class BaseDtw(BaseStrideSegmentation):
         """
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
-        self.regions_of_interest = regions_of_interest
 
-        self._validate_base_inputs()
-
-        template = self.template
-        if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
-            # Single template single sensor: easy
-            (
-                self.acc_cost_mat_,
-                self.paths_,
-                self.costs_,
-                self.matches_start_end_,
-                self.roi_ids_,
-                self._roi_type,
-            ) = self._segment_single_dataset(data, template, regions_of_interest)
-        elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
-            if isinstance(template, dict):
-                # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
-                # Ignore the rest
-                results = dict()
-                for sensor, single_template in template.items():
-                    roi = self._get_region_of_interest_for_sensor(sensor)
-                    results[sensor] = self._segment_single_dataset(data[sensor], single_template, roi)
-            elif is_single_sensor_dataset(template.get_data(), check_gyr=False, check_acc=False):
-                # single template, multiple sensors: Apply template to all sensors
-                results = dict()
-                for sensor in get_multi_sensor_dataset_names(data):
-                    roi = self._get_region_of_interest_for_sensor(sensor)
-                    results[sensor] = self._segment_single_dataset(data[sensor], template, roi)
-            else:
-                raise ValueError(
-                    "In case of a multi-sensor dataset input, the used template must either be of type "
-                    "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
-                )
-            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_, self.roi_ids_, self._roi_type = (
-                dict(),
-                dict(),
-                dict(),
-                dict(),
-                dict(),
-                dict(),
-            )
-            for sensor, r in results.items():
-                self.acc_cost_mat_[sensor] = r[0]
-                self.paths_[sensor] = r[1]
-                self.costs_[sensor] = r[2]
-                self.matches_start_end_[sensor] = r[3]
-                self.roi_ids_[sensor] = r[4]
-                self._roi_type[sensor] = r[5]
-        else:
-            # TODO: Better error message -> This will be fixed globally
-            raise ValueError("The type or shape of the provided dataset is not supported.")
-        return self
-
-    def _validate_base_inputs(self):
+        # Validate and transform inputs
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
@@ -382,17 +296,42 @@ class BaseDtw(BaseStrideSegmentation):
                     list(self._allowed_methods_map.keys())
                 )
             )
-        # Check if the region of interest format is valid in general. We will test later if the combination of ROI and
-        # sensor data matches.
-        if self.regions_of_interest is not None and not (
-            is_single_sensor_regions_of_interest_list(self.regions_of_interest)
-            or is_multi_sensor_regions_of_interest_list(self.regions_of_interest)
-        ):
-            raise ValueError(
-                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
-            )
 
-    def _validate_single_dataset_input(self, template, roi):
+        template = self.template
+        if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
+            # Single template single sensor: easy
+            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
+                data, template
+            )
+        elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+            if isinstance(template, dict):
+                # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
+                # Ignore the rest
+                results = dict()
+                for sensor, single_template in template.items():
+                    results[sensor] = self._segment_single_dataset(data[sensor], single_template)
+            elif is_single_sensor_dataset(template.data, check_gyr=False, check_acc=False):
+                # single template, multiple sensors: Apply template to all sensors
+                results = dict()
+                for sensor in get_multi_sensor_dataset_names(data):
+                    results[sensor] = self._segment_single_dataset(data[sensor], template)
+            else:
+                raise ValueError(
+                    "In case of a multi-sensor dataset input, the used template must either be of type "
+                    "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
+                )
+            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = dict(), dict(), dict(), dict()
+            for sensor, r in results.items():
+                self.acc_cost_mat_[sensor] = r[0]
+                self.paths_[sensor] = r[1]
+                self.costs_[sensor] = r[2]
+                self.matches_start_end_[sensor] = r[3]
+        else:
+            # TODO: Better error message -> This will be fixed globally
+            raise ValueError("The type or shape of the provided dataset is not supported.")
+        return self
+
+    def _segment_single_dataset(self, dataset, template):
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -408,15 +347,9 @@ class BaseDtw(BaseStrideSegmentation):
                 "but `resample_template` is False. "
                 "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
             )
-        if roi is not None and not is_single_sensor_regions_of_interest_list(roi):
-            raise ValueError(
-                "Invalid value for the `region_of_interest`. Refer to the documentation for the allowed formats."
-            )
 
-    def _segment_single_dataset(self, dataset, template, roi: Optional[SingleSensorRegionsOfInterestList]):
-        self._validate_single_dataset_input(template, roi)
         # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(template.get_data(), dataset)
+        template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
         # Ensure that all values are floats
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)
@@ -438,83 +371,36 @@ class BaseDtw(BaseStrideSegmentation):
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
-        # Handling regions of interest
-        # This is a naive implementation of looping over all ROI.
-        # This might be slower, but much more readable
-        if roi is not None:
-            # Determine if a roi or a gs list was passed.
-            # Both will be treated in the same way, but we need to know the correct name for the column
-            roi_type = _get_regions_of_interest_types(roi.reset_index().columns)
-            roi = set_correct_index(roi, [ROI_ID_COLS[roi_type]])
+        # Calculate cost matrix
+        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data)
 
-            acc_cost_mats = dict()
-            paths = []
-            costs = []
-            roi_ids = []
-
-            # Apply DTW to each ROI separately
-            # We store one cost matrix per ROI and all other values per match
-            # The positon of each match will still be relative to the start of the recording NOT the ROI.
-            for roi_id, (start, end) in roi[["start", "end"]].iterrows():
-                cost_mat, p, c = self._process_single_roi(
-                    start, end, final_template, matching_data, find_matches_method
-                )
-                acc_cost_mats[roi_id] = cost_mat
-                paths.extend(p)
-                costs.extend(c)
-                roi_ids.extend([roi_id] * len(c))
-            costs = np.array(costs)
-            roi_ids = np.array(roi_ids)
-        else:
-            acc_cost_mats, paths, costs = self._process_single_roi(
-                0, len(matching_data), final_template, matching_data, find_matches_method
-            )
-            roi_ids = np.array([])
-            roi_type = None
-
-        matches_start_end = np.array([[p[0][-1], p[-1][-1]] for p in paths])
-
-        # Postprocessing
-        if len(matches_start_end) > 0:
-            to_keep = np.ones(len(matches_start_end)).astype(bool)
-            matches_start_end, to_keep = self._postprocess_matches(
-                data=dataset, paths=paths, cost=costs, matches_start_end=matches_start_end, to_keep=to_keep
-            )
-            matches_start_end = matches_start_end[to_keep]
-            if len(roi_ids) > 0:
-                roi_ids = roi_ids[to_keep]
-            self._post_postprocess_check(matches_start_end)
-            paths = [p for i, p in enumerate(paths) if i in np.where(to_keep)[0]]
-        return acc_cost_mats, paths, costs, matches_start_end, roi_ids, roi_type
-
-    def _process_single_roi(
-        self, start: int, end: int, template: np.ndarray, data: np.ndarray, find_matches_method: Callable
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        # Calculate cost matrix per roi
-        acc_cost_mat = self._calculate_cost_matrix(template, data[start:end])
-        # Find all matches in all cost matrizes
-        matches = np.sort(
-            self._find_matches(
-                acc_cost_mat=acc_cost_mat,
-                max_cost=self.max_cost,
-                min_sequence_length=self._min_sequence_length,
-                find_matches_method=find_matches_method,
-            )
+        matches = self._find_matches(
+            acc_cost_mat=acc_cost_mat_,
+            max_cost=self.max_cost,
+            min_sequence_length=self._min_sequence_length,
+            find_matches_method=find_matches_method,
         )
         if len(matches) == 0:
-            costs = np.array([])
-            paths = np.array([])
+            paths_ = []
+            costs_ = []
+            matches_start_end_ = []
         else:
-            # Find all paths for all matches
-            costs = np.sqrt(acc_cost_mat[-1, :][matches])
-            paths = self._find_multiple_paths(acc_cost_mat, matches, data_offset=start)
-
-        return acc_cost_mat, paths, costs
+            paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
+            matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
+            # Calculate cost before potential modifications are made to start and end
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
+            to_keep = np.ones(len(matches_start_end_)).astype(bool)
+            matches_start_end_, to_keep = self._postprocess_matches(
+                data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
+            )
+            matches_start_end_ = matches_start_end_[to_keep]
+            self._post_postprocess_check(matches_start_end_)
+            paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
+            # TODO: Add warning in case there are still overlapping matches after the conflict resolution
+        return acc_cost_mat_, paths_, costs_, matches_start_end_
 
     def _calculate_cost_matrix(self, template, matching_data):  # noqa: no-self-use
-        template = to_time_series(template)
-        matching_data = to_time_series(matching_data)
-        return _subsequence_cost_matrix(template, matching_data)
+        return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
 
     def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
         return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
@@ -590,13 +476,6 @@ class BaseDtw(BaseStrideSegmentation):
 
         """
 
-    def _get_region_of_interest_for_sensor(self, sensor_name: str):
-        if self.regions_of_interest is None:
-            return None
-        if is_single_sensor_regions_of_interest_list(self.regions_of_interest):
-            return self.regions_of_interest
-        return self.regions_of_interest.get(sensor_name, None)
-
     @staticmethod
     def _resample_template(
         template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
@@ -646,13 +525,10 @@ class BaseDtw(BaseStrideSegmentation):
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod
-    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray, data_offset: int) -> List[np.ndarray]:
+    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
         paths = []
         for start in start_points:
             path = subsequence_path(acc_cost_mat, start)
             path_array = np.array(path)
-            # In case we had a cost matrix that only represented parts of the data, we add the offset to "long sequence"
-            # column
-            path_array[:, 1] += data_offset
             paths.append(path_array)
         return paths
