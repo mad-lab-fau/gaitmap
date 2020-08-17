@@ -1,18 +1,18 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 import warnings
-from typing import Optional, Union, Dict, List, Tuple, Sequence
+from typing import Optional, Union, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
+from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.array_handling import find_extrema_in_radius
-from gaitmap.utils.consts import ROI_ID_COLS
 
 
-class BarthDtw(BaseDtw):
+class BarthDtw(BaseDtw, BaseStrideSegmentation):
     """Segment strides using a single stride template and Dynamic Time Warping.
 
     BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
@@ -85,18 +85,13 @@ class BarthDtw(BaseDtw):
         The cost value associated with each stride.
     acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
         The accumulated cost matrix of the DTW. The last row represents the cost function.
-        In case regions of interest are provided, this will be a dictionary of cost functions for each sensor.
     cost_function_ : 1D array with the same length as the data or dictionary with such values
         The final cost function calculated as the square root of the last row of the accumulated cost matrix.
-        In case regions of interest are provided, a separate cost function for each region of intrest will be provided.
     paths_ : list of arrays with length n_detected_strides or dictionary with such values
         The full path through the cost matrix of each detected stride.
     matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if `snap_to_min_window_ms` is equal to `None`.
         Otherwise, it return the start and end values before the sanpping is applied.
-    roi_ids_ : List of length n_detected_strides or dictionary with such values
-        The id of the region of interest each match belongs to.
-        If no region of interest was specified or no matches found, this will be an empty list / a dict of empty lists.
 
     Other Parameters
     ----------------
@@ -104,9 +99,6 @@ class BarthDtw(BaseDtw):
         The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
-    regions_of_interest
-        Specific regions that should be considered during matching.
-        The rest of the signal is simply ignored.
 
     Notes
     -----
@@ -171,20 +163,15 @@ class BarthDtw(BaseDtw):
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
-        roi_type = self._roi_type or {}
         if isinstance(start_ends, dict):
-            return {
-                k: self._format_stride_list(v, self.roi_ids_[k], roi_type.get(k, None)) for k, v in start_ends.items()
-            }
-        return self._format_stride_list(start_ends, self.roi_ids_, self._roi_type)
+            return {k: self._format_stride_list(v) for k, v in start_ends.items()}
+        return self._format_stride_list(start_ends)
 
     @staticmethod
-    def _format_stride_list(array: np.ndarray, roi_ids: Sequence[str], roi_type: str) -> pd.DataFrame:
+    def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
         if len(array) == 0:
             array = None
         as_df = pd.DataFrame(array, columns=["start", "end"])
-        if roi_type:
-            as_df[ROI_ID_COLS[roi_type]] = roi_ids
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df
