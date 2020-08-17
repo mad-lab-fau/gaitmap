@@ -318,11 +318,12 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     _action_method = "segment"
 
+    stride_list_: StrideList
+
     def segment(
         self: BaseType,
         data: Dataset,
         sampling_rate_hz: float,
-        regions_of_interest: Optional[RegionsOfInterestList] = None,
         **kwargs,
     ) -> BaseType:
         """Find stride candidates in data."""

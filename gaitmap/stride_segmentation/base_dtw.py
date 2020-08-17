@@ -9,7 +9,7 @@ from tslearn.metrics import subsequence_path, subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
-from gaitmap.base import BaseStrideSegmentation, BaseType
+from gaitmap.base import BaseStrideSegmentation, BaseType, BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.dataset_helper import (
@@ -70,7 +70,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
 
 
-class BaseDtw(BaseStrideSegmentation):
+class BaseDtw(BaseAlgorithm):
     """A basic implementation of subsequent dynamic time warping.
 
     This uses the DTW implementation of :func:`tslearn <tslearn.metrics.subsequence_cost_matrix>`.
