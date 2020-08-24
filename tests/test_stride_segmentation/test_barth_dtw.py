@@ -13,7 +13,6 @@ from tests.test_stride_segmentation.test_base_dtw import (
     TestSimpleSegment,
     TestMultiDimensionalArrayInputs,
     TestMultiSensorInputs,
-    TestRoiSegment,
 )
 
 
