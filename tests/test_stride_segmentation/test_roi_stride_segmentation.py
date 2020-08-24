@@ -14,12 +14,12 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self) -> RoiStrideSegmentation:
         # We use a simple dtw to create the instance
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        template = create_dtw_template(pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None,)
-        data = np.array([0, 1.0, 0])
-        instance = RoiStrideSegmentation(segmentation_algorithms=dtw)
+        data = pd.DataFrame(np.array([0, 1.0, 0]))
+        instance = RoiStrideSegmentation(segmentation_algorithm=dtw)
         instance.segment(
-            data, sampling_rate_hz=100, regions_of_interest=pd.DataFrame([0, 3, 0], columns=["start", "end", "gs_id"])
+            data, sampling_rate_hz=100, regions_of_interest=pd.DataFrame([[0, 3, 0]], columns=["start", "end", "gs_id"])
         )
         return instance
 
