@@ -6,8 +6,13 @@ from numpy.testing import assert_array_equal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation import create_dtw_template, BarthDtw
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
-from gaitmap.utils.dataset_helper import Dataset, is_multi_sensor_dataset, get_multi_sensor_dataset_names, \
-    is_single_sensor_stride_list, is_multi_sensor_stride_list
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    is_multi_sensor_dataset,
+    get_multi_sensor_dataset_names,
+    is_single_sensor_stride_list,
+    is_multi_sensor_stride_list,
+)
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -100,10 +105,19 @@ class TestParameterValidation:
 
         assert "single-sensor regions of interest list with an unsynchronised" in str(e)
 
+    def test_invalid_stride_id_naming(self):
+        self.instance.set_params(s_id_naming="wrong")
+
+        with pytest.raises(ValueError) as e:
+            self.instance.segment(
+                pd.DataFrame(), sampling_rate_hz=10.0, regions_of_interest=create_dummy_single_sensor_roi()
+            )
+        assert "s_id_naming" in str(e)
+
+
 
 class MockStrideSegmentation(BaseStrideSegmentation):
     """A Mock stride segmentation class for testing."""
-
 
     def __init__(self, n=3):
         self.n = 3
@@ -118,9 +132,7 @@ class MockStrideSegmentation(BaseStrideSegmentation):
             stride_list = {}
             for sensor in get_multi_sensor_dataset_names(data):
                 tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype(int)
-                stride_list[sensor] = pd.DataFrame(
-                    {"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]}
-                )
+                stride_list[sensor] = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
             self.stride_list_ = stride_list
         else:
             tmp = np.linspace(0, len(data), self.n + 1).astype(int)
@@ -133,6 +145,7 @@ class TestCombinedStridelist:
     """Test the actual ROI stuff.
 
     """
+
     @pytest.fixture(autouse=True, params=["replace", "prefix"])
     def _s_id_naming(self, request):
         self.s_id_naming = request.param

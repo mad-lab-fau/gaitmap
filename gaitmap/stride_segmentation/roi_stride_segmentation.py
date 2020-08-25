@@ -135,7 +135,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 "`segmentation_algorithm` must be a valid instance of a StrideSegmentation algorithm. Currently `None`"
             )
         if self.s_id_naming not in ["replace", "prefix"]:
-            raise ValueError("Invalid value for `s_id_nameing`")
+            raise ValueError("Invalid value for `s_id_naming`")
         if is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
             self._multi_dataset = False
         elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
