@@ -18,6 +18,9 @@
                 "type":"integer"
             }
         ],
+        "primaryKey":[
+            "s_id"
+        ],
         "pandas_version":"0.20.0"
     },
     "data":[
@@ -64,55 +67,55 @@
             "end":1887
         },
         {
-            "s_id":0,
+            "s_id":7,
             "roi_id":1,
             "start":5043,
             "end":5267
         },
         {
-            "s_id":1,
+            "s_id":8,
             "roi_id":1,
             "start":5267,
             "end":5489
         },
         {
-            "s_id":2,
+            "s_id":9,
             "roi_id":1,
             "start":5489,
             "end":5713
         },
         {
-            "s_id":3,
+            "s_id":10,
             "roi_id":1,
             "start":5713,
             "end":5936
         },
         {
-            "s_id":4,
+            "s_id":11,
             "roi_id":1,
             "start":5936,
             "end":6167
         },
         {
-            "s_id":5,
+            "s_id":12,
             "roi_id":1,
             "start":6167,
             "end":6395
         },
         {
-            "s_id":6,
+            "s_id":13,
             "roi_id":1,
             "start":6395,
             "end":6628
         },
         {
-            "s_id":7,
+            "s_id":14,
             "roi_id":1,
             "start":6628,
             "end":6858
         },
         {
-            "s_id":8,
+            "s_id":15,
             "roi_id":1,
             "start":6858,
             "end":7091

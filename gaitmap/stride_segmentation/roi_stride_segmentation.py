@@ -254,4 +254,4 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             concat_stride_list["s_id"] = (
                 concat_stride_list[index_name].astype(str) + "_" + concat_stride_list["s_id"].astype(str)
             )
-        return concat_stride_list
+        return concat_stride_list.set_index("s_id")
