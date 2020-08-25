@@ -18,11 +18,95 @@ from gaitmap.utils.dataset_helper import (
 
 
 class RoiStrideSegmentation(BaseStrideSegmentation):
-    """Apply any stride segmentation algorithms to specific regions of intrest in a longer dataset."""
+    """Apply any stride segmentation algorithms to specific regions of interest in a longer dataset.
+
+    In many cases it is preferable to not apply a stride segmentation algorithm to an entire dataset, but rather
+    preselect regions of interest.
+    These regions could be defined by some activity recognition algorithms or manually using further knowledge about
+    the kind of recording.
+
+    This class allows you to easily loop over all specified regions of interest and call the selected stride
+    segmentation algorithm just with the selected piece of data.
+    The final stride list is than again concatenated over all regions of interest.
+
+    The class supports different types of input data combinations:
+
+    Single-sensor datasets with single-sensor regions of interest
+        If a simple single-sensor dataset and a single-sensor region of interest is supplied, the segmentation method
+        will be simply called for each region of interest.
+    Synchronised multi-sensor dataset with single-sensor regions of interest
+        If a synchronised multi-sensor dataset (multi-level pandas dataframe) is passed and just a single-sensor
+        regions of interest list, this list will be applied to all sensors.
+        This class will handle looping the rois and looping the individual sensors will be handled by the actual
+        segmentation algorithm.
+    Multi-sensor dataset with multi-sensor regions of interest
+        If a multi-sensor regions of interest list is provided the entries for each sensor will be applied to
+        respective datastreams of the dataset.
+        In this case this class handles looping over the sensors and over the ROIs.
+        The actual segmentation method will be called for each combination of sensor and ROI individually.
+        All outputs will become nested dictionaries with the sensor-name at the top level.
+        Note that sensors that do not have ROIs specified will not be processed.
+
+    For more information about the valid formats for the regions of interest list, review the
+    :ref:`coordinate system guide <coordinate_systems>`.
+
+    Parameters
+    ----------
+    segmentation_algorithm
+        An instance of a valid segmentation algorithm with all the wanted parameters set.
+
+    Attributes
+    ----------
+    stride_list_ : pd.DataFrame or Dictionary of such values
+        The final stride list marking the start and the end of each detected stride.
+        It further contains a column "gsd_id" or "roi_id" (depending on the roi list used in the input) that
+        indicates in which of the ROIs each stride was detected.
+        The "start" and "end" values are relative to the start of the dataset (and not the individual ROIs).
+        In case a multi-sensor ROI list was used, this will be a dictionary with one stride list per sensor.
+        Further information about the outputs can be found in the documentation of the used segmentation algorithm.
+    instances_per_roi_ : (Nested) Dictionary of StrideSegmentation algorithm instances
+        The actual instances of the stride segmentation algorithm for each ROI.
+        They can be used to inspect further results and extract debug information.
+        For available values review the documentation of the used stride segmentation algorithm.
+        Remember that all values and data in these individual instances are relative to the start of each individual
+        ROI.
+        In case a multi-sensor ROI list was used, this will be a nested dictionary, with the sensor name as the top
+        level and the ROI-ID as the second level. 
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the `segment` method.
+    sampling_rate_hz
+        The sampling rate of the data
+    regions_of_interest
+        The regions of interest list defining the start and the end of each region
+
+    Examples
+    --------
+
+    >>> # We need our normal raw data (note that the required format might depend on the used segmentation method) and
+    ... # And a valid region of interest list
+    >>> data = pd.DataFrame(...)
+    >>> roi_list = pd.DataFrame(...)
+    >>> # Create an instance of your stride segmentation algorithm
+    >>> from gaitmap.stride_segmentation import BarthDtw
+    >>> dtw = BarthDtw()
+    >>> # Now we can use the RoiStrideSegmentation to apply BarthDtw to each ROI
+    >>> roi_seg = RoiStrideSegmentation(segmentation_algorithm=dtw)
+    >>> roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi_list)
+    >>> # Inspect the results
+    >>> roi_seg.stride_list_
+    # TODO: Add example output
+    >>> roi_seg.instances_per_roi_
+    {"roi_1": <BarthDtw...>, "roi_2": <BarthDtw ...>, ...}
+
+    """
 
     segmentation_algorithm: Optional[BaseStrideSegmentation]
 
     instances_per_roi_: Dict[Hashable, BaseStrideSegmentation]
+    stride_list_: StrideList
 
     data: Dataset
     sampling_rate_hz: float
@@ -105,9 +189,16 @@ class RoiStrideSegmentation(BaseStrideSegmentation):
         combined_stride_list = {}
         for _, (index, start, end) in rois[[index_col, "start", "end"]].iterrows():
             per_roi_algo = self.segmentation_algorithm.clone()
-            roi_data = sensor_data.loc[start: end]
+            roi_data = sensor_data.iloc[start:end]
             per_roi_algo.segment(data=roi_data, sampling_rate_hz=sampling_rate_hz, **kwargs)
             instances_per_roi[index] = per_roi_algo
+            stride_list = per_roi_algo.stride_list_
+            if isinstance(stride_list, dict):
+                for strides in stride_list.values():
+                    # This is an inplace modification!
+                    strides[["start", "end"]] += start
+            else:
+                stride_list[["start", "end"]] += start
             combined_stride_list[index] = per_roi_algo.stride_list_
 
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
@@ -120,8 +211,12 @@ class RoiStrideSegmentation(BaseStrideSegmentation):
         """
         # We assume all algorithms follow convention and return the correct format
         if self._multi_dataset:
+            inverted_stride_dict = {}
+            for roi, stride_list in stride_lists.items():
+                for sensor, strides in stride_list.items():
+                    inverted_stride_dict.setdefault(sensor, {})[roi] = strides
             combined_stride_list = {}
-            for sensor, strides in stride_lists.items():
+            for sensor, strides in inverted_stride_dict.items():
                 combined_stride_list[sensor] = pd.concat(strides, names=[index_name]).reset_index(index_name)
         else:
             combined_stride_list = pd.concat(stride_lists, names=[index_name]).reset_index(index_name)
