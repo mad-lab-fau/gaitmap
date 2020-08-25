@@ -1,4 +1,4 @@
-from typing import Dict, Hashable, Optional
+from typing import Dict, Hashable, Optional, TypeVar, Generic
 
 import pandas as pd
 
@@ -16,8 +16,10 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
 )
 
+StrideSegmentationAlgorithm = TypeVar("StrideSegmentationAlgorithm", bound=BaseStrideSegmentation)
 
-class RoiStrideSegmentation(BaseStrideSegmentation):
+
+class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAlgorithm]):
     """Apply any stride segmentation algorithms to specific regions of interest in a longer dataset.
 
     In many cases it is preferable to not apply a stride segmentation algorithm to an entire dataset, but rather
@@ -103,9 +105,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation):
 
     """
 
-    segmentation_algorithm: Optional[BaseStrideSegmentation]
+    segmentation_algorithm: Optional[StrideSegmentationAlgorithm]
 
-    instances_per_roi_: Dict[Hashable, BaseStrideSegmentation]
+    instances_per_roi_: Dict[Hashable, StrideSegmentationAlgorithm]
     stride_list_: StrideList
 
     data: Dataset
@@ -115,7 +117,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation):
     _multi_dataset: bool
     _multi_roi: bool
 
-    def __init__(self, segmentation_algorithm: Optional[BaseStrideSegmentation] = None):
+    def __init__(self, segmentation_algorithm: Optional[StrideSegmentationAlgorithm] = None):
         self.segmentation_algorithm = segmentation_algorithm
 
     def segment(

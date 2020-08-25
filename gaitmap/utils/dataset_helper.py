@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List, Sequence, Iterable
+from typing import Union, Dict, List, Sequence, Iterable, Hashable
 
 import numpy as np
 import pandas as pd
@@ -19,23 +19,23 @@ from gaitmap.utils.consts import (
 )
 
 SingleSensorDataset = pd.DataFrame
-MultiSensorDataset = Union[pd.DataFrame, Dict[str, SingleSensorDataset]]
+MultiSensorDataset = Union[pd.DataFrame, Dict[Hashable, SingleSensorDataset]]
 Dataset = Union[SingleSensorDataset, MultiSensorDataset]
 
 SingleSensorStrideList = pd.DataFrame
-MultiSensorStrideList = Dict[str, pd.DataFrame]
+MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
 StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
 
 SingleSensorRegionsOfInterestList = pd.DataFrame
-MultiSensorRegionsOfInterestList = Dict[str, pd.DataFrame]
+MultiSensorRegionsOfInterestList = Dict[Hashable, pd.DataFrame]
 RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
 SingleSensorPositionList = pd.DataFrame
-MultiSensorPositionList = Dict[str, pd.DataFrame]
+MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
 PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
 SingleSensorOrientationList = pd.DataFrame
-MultiSensorOrientationList = Dict[str, pd.DataFrame]
+MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 

@@ -4,7 +4,7 @@ import inspect
 import json
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Union, Type, Optional
+from typing import Callable, Dict, TypeVar, Any, List, Union, Type
 from warnings import warn
 
 import numpy as np
@@ -19,7 +19,6 @@ from gaitmap.utils.dataset_helper import (
     OrientationList,
     SingleSensorDataset,
     SingleSensorOrientationList,
-    RegionsOfInterestList,
 )
 
 BaseType = TypeVar("BaseType", bound="_BaseSerializable")
