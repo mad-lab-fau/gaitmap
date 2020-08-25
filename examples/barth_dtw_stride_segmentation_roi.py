@@ -10,8 +10,8 @@ This can massively speed up the computation or focus the analysis on a specific 
 Most of the time such regions of interest would be defined using some sort of gait detection algorithms (e.g.
 :mod:`~gaitmap.gait_detection.UllrichGaitSequenceDetection`).
 In this example we will create an example output of such an algorithms and will use it to limit the search region for
-`BarthDtw` stride segmentation algorithms.
-However, all other stride segmentation algorithms should support this functionality as well.
+the `BarthDtw` stride segmentation algorithms.
+However, all other stride segmentation algorithms should this functionality as well.
 
 Note, that for smaller datasets, the algorithms might actually be slower when using multiple regions of interest,
 compared to analysing the entire dataset.
@@ -63,50 +63,63 @@ from gaitmap.stride_segmentation import BarthDtw
 dtw = BarthDtw()
 
 # %%
-# Applying the DTW
-# ----------------
-# We apply the DTW in the same way as usual, but use the optional parameter `regions_of_interest` to define the
-# search regions
-dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz, regions_of_interest=roi)
+# Setting up the ROI wrapper
+# --------------------------
+# To apply our method to multiple regions of interest wie use the `RoiStrideSegmentation` wrapper.
+from gaitmap.stride_segmentation import RoiStrideSegmentation
+
+roi_seg = RoiStrideSegmentation(segmentation_algorithm=dtw)
+
+# %%
+# Applying the segmentation
+# -------------------------
+# Instead of our original dtw object we now use the wrapper with the same inputs to segment.
+roi_seg = roi_seg.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz, regions_of_interest=roi)
 
 # %%
 # Inspecting the results
 # ----------------------
-# Regions of interest effect the outputs in multiple ways.
-# First, the stride list contains an additional column called `roi_id` (or `gs_id`, depending on the input).
-# It indicates to which region of interest the specific stride belongs
-stride_list_left = dtw.stride_list_["left_sensor"]
+# The wrapper will automatically combine all stride lists from all ROIs into one.
+# The additional "roi_id" column indicates in which ROI a stride was identified in.
+
+stride_list_left = roi_seg.stride_list_["left_sensor"]
 print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left
 
 # %%
-# Further, if we try to plot the results, we will see that we now have multiple cost matrices and cost functions per
-# sensor.
+# All other outputs of our stride segmentation method are not accumulated, as they differ from method to method.
+# However, we can inspect the individual instances stored in the `instances_per_roi_` attribute to get this information.
+#
+# In the following we will plot the cost matrices that are created for ROI.
+# We will see that we now have multiple cost matrices and cost functions per sensor.
 # This is simply because the DTW was applied separately to the two regions.
-# `dtw.acc_cost_mat_[<sensor name>]` and `dtw.cost_function_[<sensor name>]` are dictionaries of the form `{<roi_id> :
-# ...}`.
-# We can loop over them to plot its content, as shown below.
+# To plot the outputs together, we need to loop all dtw instances.
 import numpy as np
+from itertools import chain
 
+# Create combined outputs
 sensor = "left_sensor"
+cost_funcs = {roi: dtw.cost_function_[sensor] for roi, dtw in roi_seg.instances_per_roi_.items()}
+cost_mat = {roi: dtw.acc_cost_mat_[sensor] for roi, dtw in roi_seg.instances_per_roi_.items()}
+full_cost_matrix = np.full((len(roi_seg.segmentation_algorithm.template.get_data()), len(roi_seg.data)), np.nan)
+
 fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
-dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
+roi_seg.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
 axs[0].set_ylabel("gyro [deg/s]")
-cost_funcs = dtw.cost_function_[sensor]
-cost_mat = dtw.acc_cost_mat_[sensor]
-full_cost_matrix = np.full((len(dtw.template.data), len(dtw.data)), np.nan)
-for roi, (start, end) in dtw.regions_of_interest[["start", "end"]].iterrows():
+for roi, (start, end) in roi_seg.regions_of_interest[["start", "end"]].iterrows():
     axs[1].plot(np.arange(start, end), cost_funcs[roi], c="C0")
     full_cost_matrix[:, start:end] = cost_mat[roi]
 axs[1].set_ylabel("dtw cost [a.u.]")
-axs[1].axhline(dtw.max_cost, color="k", linestyle="--")
+axs[1].axhline(roi_seg.segmentation_algorithm.max_cost, color="k", linestyle="--")
 axs[2].imshow(full_cost_matrix, aspect="auto")
 axs[2].set_ylabel("template position [#]")
-for p in dtw.paths_[sensor]:
-    axs[2].plot(p.T[1], p.T[0])
-for s in dtw.matches_start_end_original_[sensor]:
-    axs[1].axvspan(*s, alpha=0.3, color="g")
-for _, s in dtw.stride_list_[sensor][["start", "end"]].iterrows():
+for roi_id, dtw_instance in roi_seg.instances_per_roi_.items():
+    roi_start = roi_seg.regions_of_interest.loc[roi_id]["start"]
+    for p in dtw_instance.paths_[sensor]:
+        axs[2].plot(p.T[1] + roi_start, p.T[0])
+    for start, end in dtw_instance.matches_start_end_original_[sensor]:
+        axs[1].axvspan(start + roi_start, end + roi_start, alpha=0.3, color="g")
+for _, s in roi_seg.stride_list_[sensor][["start", "end"]].iterrows():
     axs[0].axvspan(*s, alpha=0.3, color="g")
 axs[0].set_xlabel("time [#]")
 fig.tight_layout()

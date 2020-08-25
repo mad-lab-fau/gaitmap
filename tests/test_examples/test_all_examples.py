@@ -2,6 +2,7 @@ import matplotlib
 import numpy as np
 
 # This is needed to avoid plots to open
+from gaitmap.utils.consts import SF_ACC
 from tests.conftest import compare_algo_objects
 
 matplotlib.use("Agg")
@@ -21,10 +22,14 @@ def test_barth_dtw_example(snapshot):
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
+def test_roi(snapshot):
+    from examples.barth_dtw_stride_segmentation_roi import roi_seg
+
+    snapshot.assert_match(roi_seg.stride_list_["left_sensor"])
+
+
 def test_preprocessing_example(snapshot):
-    import numpy as np
     from examples.preprocessing_example import dataset_sf_aligned_to_gravity
-    from gaitmap.utils.consts import SF_ACC
 
     desired_acc_vec = np.array([0.0, 0.0, 9.81])
 
