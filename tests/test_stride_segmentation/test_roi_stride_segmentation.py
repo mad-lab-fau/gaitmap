@@ -1,9 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 
+from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation import create_dtw_template, BarthDtw
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
+from gaitmap.utils.dataset_helper import Dataset, is_multi_sensor_dataset, get_multi_sensor_dataset_names, \
+    is_single_sensor_stride_list, is_multi_sensor_stride_list
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -95,3 +99,93 @@ class TestParameterValidation:
             )
 
         assert "single-sensor regions of interest list with an unsynchronised" in str(e)
+
+
+class MockStrideSegmentation(BaseStrideSegmentation):
+    """A Mock stride segmentation class for testing."""
+
+
+    def __init__(self, n=3):
+        self.n = 3
+
+    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **kwargs) -> BaseType:
+        self.data = data
+        self.sampling_rate_hz = sampling_rate_hz
+        # For testing we will save the kwargs
+        self._kwargs = kwargs
+        # We will just detect a n-strides in the data
+        if is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+            stride_list = {}
+            for sensor in get_multi_sensor_dataset_names(data):
+                tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype(int)
+                stride_list[sensor] = pd.DataFrame(
+                    {"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]}
+                )
+            self.stride_list_ = stride_list
+        else:
+            tmp = np.linspace(0, len(data), self.n + 1).astype(int)
+            self.stride_list_ = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
+
+        return self
+
+
+class TestCombinedStridelist:
+    """Test the actual ROI stuff.
+
+    """
+    @pytest.fixture(autouse=True, params=["replace", "prefix"])
+    def _s_id_naming(self, request):
+        self.s_id_naming = request.param
+
+    def test_single_sensor(self):
+        roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
+        data = pd.DataFrame(np.ones(27))
+        roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
+
+        roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
+        assert len(roi_seg.stride_list_) == len(roi) * roi_seg.segmentation_algorithm.n
+        assert is_single_sensor_stride_list(roi_seg.stride_list_)
+
+        assert len(roi_seg.instances_per_roi_) == len(roi)
+        assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values()])
+
+        if self.s_id_naming == "replace":
+            assert_array_equal(roi_seg.stride_list_["s_id"], list(range(len(roi_seg.stride_list_))))
+        else:
+            assert roi_seg.stride_list_["s_id"][0] == "0_0"
+
+    def test_multi_sensor(self):
+        roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
+        data = {"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}
+        roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
+        roi = {"s1": roi, "s2": roi.copy().iloc[:2]}
+
+        roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
+        assert is_multi_sensor_stride_list(roi_seg.stride_list_)
+        assert len(roi_seg.instances_per_roi_) == len(roi)
+        assert all([isinstance(o, dict) for o in roi_seg.instances_per_roi_.values()])
+
+        for sensor in ["s1", "s2"]:
+            assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_[sensor].values()])
+            assert len(roi_seg.stride_list_[sensor]) == len(roi[sensor]) * roi_seg.segmentation_algorithm.n
+            if self.s_id_naming == "replace":
+                assert_array_equal(roi_seg.stride_list_[sensor]["s_id"], list(range(len(roi_seg.stride_list_[sensor]))))
+            else:
+                assert roi_seg.stride_list_[sensor]["s_id"][0] == "0_0"
+
+    def test_multi_sensor_sync(self):
+        roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
+        data = pd.concat({"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}, axis=1)
+        roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
+
+        roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
+        assert is_multi_sensor_stride_list(roi_seg.stride_list_)
+        assert len(roi_seg.instances_per_roi_) == len(roi)
+        assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values()])
+
+        for sensor in ["s1", "s2"]:
+            assert len(roi_seg.stride_list_[sensor]) == len(roi) * roi_seg.segmentation_algorithm.n
+            if self.s_id_naming == "replace":
+                assert_array_equal(roi_seg.stride_list_[sensor]["s_id"], list(range(len(roi_seg.stride_list_[sensor]))))
+            else:
+                assert roi_seg.stride_list_[sensor]["s_id"][0] == "0_0"
