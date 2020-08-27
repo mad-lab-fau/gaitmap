@@ -1,3 +1,4 @@
+"""Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
 from typing import Dict, Hashable, Optional, TypeVar, Generic
 from typing_extensions import Literal
 
@@ -80,7 +81,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         Remember that all values and data in these individual instances are relative to the start of each individual
         ROI.
         In case a multi-sensor ROI list was used, this will be a nested dictionary, with the sensor name as the top
-        level and the ROI-ID as the second level. 
+        level and the ROI-ID as the second level.
 
     Other Parameters
     ----------------
@@ -93,7 +94,6 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     Examples
     --------
-
     >>> # We need our normal raw data (note that the required format might depend on the used segmentation method) and
     ... # And a valid region of interest list
     >>> data = pd.DataFrame(...)
@@ -133,7 +133,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
 
-    def segment(
+    def segment(  # noqa: arguments-differ
         self: BaseType, data: Dataset, sampling_rate_hz: float, regions_of_interest: RegionsOfInterestList, **kwargs
     ) -> BaseType:
         # TODO: Docstring

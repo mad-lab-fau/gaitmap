@@ -86,6 +86,7 @@ Classes
     BarthDtw
     DtwTemplate
     BarthOriginalTemplate
+    RoiStrideSegmentation
 
 Functions
 ---------
