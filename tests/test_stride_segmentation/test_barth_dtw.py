@@ -157,32 +157,6 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 
         assert is_multi_sensor_stride_list(dtw.stride_list_)
 
-    @pytest.mark.parametrize("roi_type", ("roi_id", "gs_id"))
-    def test_stride_list_roi(self, roi_type):
-        sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
-        roi = pd.DataFrame(
-            np.array([[0, len(sequence)], [2 * len(sequence), 3 * len(sequence)]]), columns=["start", "end"]
-        )
-        roi.index.name = roi_type
-        roi = roi.reset_index()
-
-        sequence = sequence * 3
-        sensor1 = np.array(sequence)
-        sensor1 = pd.DataFrame(sensor1, columns=["col1"])
-        sensor2 = np.array(sequence)
-        sensor2 = pd.DataFrame(sensor2, columns=["col1"])
-        data = {"sensor1": sensor1, "sensor2": sensor2}
-
-        template = [0, 1.0, 0]
-        template = pd.DataFrame(template, columns=["col1"])
-        template = create_dtw_template(template, sampling_rate_hz=100.0)
-        dtw = self.init_dtw(template=template)
-        dtw = dtw.segment(data, sampling_rate_hz=100.0, regions_of_interest=roi)
-
-        is_multi_sensor_stride_list(dtw.stride_list_)
-        for sensor in data:
-            assert_array_equal(dtw.stride_list_[sensor][roi_type].to_numpy(), [0, 1])
-
 
 class TestPostProcessing:
     """The postprocessing can get quite complex. This tries to split it in a couple of unit tests.

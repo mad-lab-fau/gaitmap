@@ -115,7 +115,6 @@ class TestParameterValidation:
         assert "s_id_naming" in str(e)
 
 
-
 class MockStrideSegmentation(BaseStrideSegmentation):
     """A Mock stride segmentation class for testing."""
 
@@ -163,9 +162,11 @@ class TestCombinedStridelist:
         assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values()])
 
         if self.s_id_naming == "replace":
-            assert_array_equal(roi_seg.stride_list_["s_id"], list(range(len(roi_seg.stride_list_))))
+            assert_array_equal(roi_seg.stride_list_.index, list(range(len(roi_seg.stride_list_))))
+            assert roi_seg.stride_list_.index.name == "s_id"
         else:
-            assert roi_seg.stride_list_["s_id"][0] == "0_0"
+            assert roi_seg.stride_list_.index[0] == "0_0"
+            assert roi_seg.stride_list_.index.name == "s_id"
 
     def test_multi_sensor(self):
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
@@ -182,9 +183,11 @@ class TestCombinedStridelist:
             assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_[sensor].values()])
             assert len(roi_seg.stride_list_[sensor]) == len(roi[sensor]) * roi_seg.segmentation_algorithm.n
             if self.s_id_naming == "replace":
-                assert_array_equal(roi_seg.stride_list_[sensor]["s_id"], list(range(len(roi_seg.stride_list_[sensor]))))
+                assert_array_equal(roi_seg.stride_list_[sensor].index, list(range(len(roi_seg.stride_list_[sensor]))))
+                assert roi_seg.stride_list_[sensor].index.name == "s_id"
             else:
-                assert roi_seg.stride_list_[sensor]["s_id"][0] == "0_0"
+                assert roi_seg.stride_list_[sensor].index[0] == "0_0"
+                assert roi_seg.stride_list_[sensor].index.name == "s_id"
 
     def test_multi_sensor_sync(self):
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
@@ -199,6 +202,8 @@ class TestCombinedStridelist:
         for sensor in ["s1", "s2"]:
             assert len(roi_seg.stride_list_[sensor]) == len(roi) * roi_seg.segmentation_algorithm.n
             if self.s_id_naming == "replace":
-                assert_array_equal(roi_seg.stride_list_[sensor]["s_id"], list(range(len(roi_seg.stride_list_[sensor]))))
+                assert_array_equal(roi_seg.stride_list_[sensor].index, list(range(len(roi_seg.stride_list_[sensor]))))
+                assert roi_seg.stride_list_[sensor].index.name == "s_id"
             else:
-                assert roi_seg.stride_list_[sensor]["s_id"][0] == "0_0"
+                assert roi_seg.stride_list_[sensor].index[0] == "0_0"
+                assert roi_seg.stride_list_[sensor].index.name == "s_id"
