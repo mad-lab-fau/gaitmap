@@ -57,6 +57,11 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     ----------
     segmentation_algorithm
         An instance of a valid segmentation algorithm with all the wanted parameters set.
+    s_id_naming
+        Controlls how the stride ids of the final stride lists are created to ensure they are unique.
+        In case of "replace" the stride ids created by the stride segmentation algorithms per ROI are removed and
+        replaced with an increasing numerical id.
+        In case of "prefix" the original ids are kept and prefixed with "{roi_id}_".
 
     Attributes
     ----------
@@ -130,6 +135,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     def segment(
         self: BaseType, data: Dataset, sampling_rate_hz: float, regions_of_interest: RegionsOfInterestList, **kwargs
     ) -> BaseType:
+        # TODO: Docstring
         if self.segmentation_algorithm is None:
             raise ValueError(
                 "`segmentation_algorithm` must be a valid instance of a StrideSegmentation algorithm. Currently `None`"
@@ -208,7 +214,8 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             if sensor_name:
                 # In case the original dataset was a dict, sensor_name is passed by the parent.
                 # Here we ensure that the data passed into segment method is still a dict to avoid potential issues with
-                # specific segmentation methods
+                # specific segmentation methods.
+                # We basically pass it as a multi-sensor dataset with just a single sensor
                 roi_data = {sensor_name: roi_data}
             per_roi_algo.segment(data=roi_data, sampling_rate_hz=sampling_rate_hz, **kwargs)
             instances_per_roi[index] = per_roi_algo
@@ -220,6 +227,8 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             else:
                 stride_list[["start", "end"]] += start
             if sensor_name:
+                # The reverse of what we did above.
+                # For this method a single sensor dataset should be a real single sensor dataset
                 combined_stride_list[index] = per_roi_algo.stride_list_[sensor_name]
             combined_stride_list[index] = per_roi_algo.stride_list_
 
@@ -247,6 +256,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     def _merge_single_sensor_stride_lists(self, stride_lists, index_name) -> StrideList:
         concat_stride_list = pd.concat(stride_lists, names=[index_name]).reset_index(index_name).reset_index(drop=True)
+        concat_stride_list = concat_stride_list.sort_values("start")
         # Make the stride id unique
         if self.s_id_naming == "replace":
             concat_stride_list["s_id"] = list(range(len(concat_stride_list)))
