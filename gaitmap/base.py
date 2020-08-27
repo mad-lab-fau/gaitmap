@@ -319,12 +319,7 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     stride_list_: StrideList
 
-    def segment(
-        self: BaseType,
-        data: Dataset,
-        sampling_rate_hz: float,
-        **kwargs,
-    ) -> BaseType:
+    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **kwargs,) -> BaseType:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 

@@ -9,7 +9,7 @@ from tslearn.metrics import subsequence_path, subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
-from gaitmap.base import BaseStrideSegmentation, BaseType, BaseAlgorithm
+from gaitmap.base import BaseType, BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.dataset_helper import (
@@ -212,6 +212,7 @@ class BaseDtw(BaseAlgorithm):
            [6, 8]])
 
     """
+
     _action_method = "segment"
 
     template: Optional[DtwTemplate]
