@@ -59,7 +59,7 @@ Install Python >3.7 and [poetry](https://python-poetry.org).
 Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
-git clone https://mad-srv.informatik.uni-erlangen.de/GaitAnalysis/gaitmap.git
+git clone https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git
 poetry install
 ```
 
