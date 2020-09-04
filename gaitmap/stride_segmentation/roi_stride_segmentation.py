@@ -60,7 +60,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     segmentation_algorithm
         An instance of a valid segmentation algorithm with all the wanted parameters set.
     s_id_naming
-        Controlls how the stride ids of the final stride lists are created to ensure they are unique.
+        Controls how the stride ids of the final stride lists are created to ensure they are unique.
         In case of "replace" the stride ids created by the stride segmentation algorithms per ROI are removed and
         replaced with an increasing numerical id.
         In case of "prefix" the original ids are kept and prefixed with "{roi_id}_".
@@ -136,6 +136,23 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     def segment(  # noqa: arguments-differ
         self: BaseType, data: Dataset, sampling_rate_hz: float, regions_of_interest: RegionsOfInterestList, **kwargs
     ) -> BaseType:
+        """Run the segmentation on each region of interest.
+
+        Parameters
+        ----------
+        data : array, single-sensor dataframe, or multi-sensor dataset
+            The input data.
+            For details on the required datatypes review the class docstring.
+        sampling_rate_hz
+            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
+            a number of samples and it will be used to resample the template if `resample_template` is `True`.
+        regions_of_interest : single or multi-sensor regions of interest list
+            The regions of interest that should be used.
+            The segmentation algorithm will be applied to each region individually
+        kwargs
+            All keyword arguments will be passed to the segment method of the selected `segmentation_algorithm`
+
+        """
         # TODO: Docstring
         self.regions_of_interest = regions_of_interest
         self.data = data
