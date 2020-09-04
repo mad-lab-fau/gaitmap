@@ -114,6 +114,14 @@ class TestParameterValidation:
             )
         assert "s_id_naming" in str(e)
 
+    def test_additional_sensors_in_roi(self):
+        with pytest.raises(KeyError) as e:
+            self.instance.segment(
+                {"sensor": pd.DataFrame()}, sampling_rate_hz=10.0, regions_of_interest=create_dummy_multi_sensor_roi()
+            )
+
+        assert "The regions of interest list contains information for a sensor" in str(e)
+
 
 class MockStrideSegmentation(BaseStrideSegmentation):
     """A Mock stride segmentation class for testing."""
@@ -141,9 +149,7 @@ class MockStrideSegmentation(BaseStrideSegmentation):
 
 
 class TestCombinedStridelist:
-    """Test the actual ROI stuff.
-
-    """
+    """Test the actual ROI stuff."""
 
     @pytest.fixture(autouse=True, params=["replace", "prefix"])
     def _s_id_naming(self, request):

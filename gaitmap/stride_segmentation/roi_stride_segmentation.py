@@ -1,5 +1,5 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
-from typing import Dict, Hashable, Optional, TypeVar, Generic
+from typing import Dict, Hashable, Optional, TypeVar, Generic, Union
 from typing_extensions import Literal
 
 import pandas as pd
@@ -115,7 +115,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     segmentation_algorithm: Optional[StrideSegmentationAlgorithm]
     s_id_naming: Literal["replace", "prefix"]
 
-    instances_per_roi_: Dict[Hashable, StrideSegmentationAlgorithm]
+    instances_per_roi_: Union[
+        Dict[Hashable, StrideSegmentationAlgorithm], Dict[Hashable, Dict[Hashable, StrideSegmentationAlgorithm]]
+    ]
     stride_list_: StrideList
 
     data: Dataset
@@ -168,7 +170,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             for sensor, roi in self.regions_of_interest.items():
                 sensor_data = self.data[sensor]
                 combined_stride_list, instances_per_roi = self._segment_single_sensor(
-                    sensor_data, self.sampling_rate_hz, roi, **kwargs
+                    sensor_data, self.sampling_rate_hz, roi, sensor_name=sensor, **kwargs
                 )
                 stride_list[sensor] = combined_stride_list
                 instances[sensor] = instances_per_roi
@@ -220,7 +222,8 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 # The reverse of what we did above.
                 # For this method a single sensor dataset should be a real single sensor dataset
                 combined_stride_list[index] = per_roi_algo.stride_list_[sensor_name]
-            combined_stride_list[index] = per_roi_algo.stride_list_
+            else:
+                combined_stride_list[index] = per_roi_algo.stride_list_
 
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
         return combined_stride_list, instances_per_roi
@@ -288,7 +291,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             sensor_names = get_multi_sensor_dataset_names(self.data)
             missing_sensors = [key for key in self.regions_of_interest.keys() if key not in sensor_names]
             if len(missing_sensors) > 0:
-                KeyError(
+                raise KeyError(
                     "The regions of interest list contains information for a sensor ({}) that is not in the "
                     "dataset.".format(missing_sensors)
                 )
