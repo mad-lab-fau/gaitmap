@@ -125,8 +125,6 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     stride_event_list: StrideList
     sampling_rate_hz: float
 
-    velocity_: Union[Dict[str, pd.DataFrame], pd.DataFrame]
-
     def __init__(
         self,
         ori_method: BaseOrientationMethod = SimpleGyroIntegration(),

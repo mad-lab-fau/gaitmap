@@ -16,6 +16,7 @@ from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
     PositionList,
+    VelocityList,
     OrientationList,
     SingleSensorDataset,
     SingleSensorOrientationList,
@@ -356,7 +357,7 @@ class BasePositionMethod(BaseAlgorithm):
     """Base class for the individual Position estimation methods that work on pd.DataFrame data."""
 
     _action_method = "estimate"
-    velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    velocity_: VelocityList
     position_: PositionList
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
@@ -374,6 +375,7 @@ class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
 
     orientation_: OrientationList
     position_: PositionList
+    velocity_: VelocityList
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Estimate the combined orientation and position of the IMU."""
