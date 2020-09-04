@@ -13,6 +13,7 @@ from gaitmap.utils.consts import (
     SL_COLS,
     SL_ADDITIONAL_COLS,
     GF_POS,
+    GF_VEL,
     GF_ORI,
     ROI_ID_COLS,
     SL_INDEX,
@@ -33,6 +34,10 @@ RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegi
 SingleSensorPositionList = pd.DataFrame
 MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
 PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
+
+SingleSensorVelocityList = pd.DataFrame
+MultiSensorVelocityList = Dict[str, pd.DataFrame]
+VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
 SingleSensorOrientationList = pd.DataFrame
 MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
@@ -512,6 +517,78 @@ def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> boo
 
     for k in keys:
         if not is_single_sensor_position_list(position_list[k]):
+            return False
+    return True
+
+
+def is_single_sensor_velocity_list(velocity_list: SingleSensorVelocityList, s_id: bool = True) -> bool:
+    """Check if an input is a single-sensor velocity list.
+
+    A valid position list:
+
+    - Is a pandas DataFrame with at least the following columns: `["sample", "vel_x", "vel_y", "vel_z"]`
+    - The additional column `["s_id"]` is expected for stride level orientation lists.
+    - The columns `sample` (and `s_id`) can also be part of the index instead
+
+    Parameters
+    ----------
+    velocity_list
+        The object that should be tested
+    s_id
+        If True the orientation list is expected to have a column (either regular or in the index) that is named `s_id`.
+        If False this check is not performed.
+        A orientation list without an `s_id` would be used to store orientation information without a clear association
+        to a stride.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_multi_sensor_velocity_list: Check for multi-sensor velocity lists
+
+    """
+    if not isinstance(velocity_list, pd.DataFrame):
+        return False
+    index_cols = ["sample"]
+    if s_id is True:
+        index_cols.append("s_id")
+    try:
+        velocity_list = set_correct_index(velocity_list, index_cols)
+    except KeyError:
+        return False
+    columns = velocity_list.columns
+    expected_columns = GF_VEL
+    if not all(v in columns for v in expected_columns):
+        return False
+    return True
+
+
+def is_multi_sensor_velocity_list(velocity_list: MultiSensorVelocityList) -> bool:
+    """Check if an input is a multi-sensor velocity list.
+
+    A valid multi-sensor stride list is dictionary of single-sensor velocity lists.
+
+    This function :func:`~gaitmap.utils.dataset_helper.is_single_sensor_velocity_list` for each of the contained stride
+    lists.
+
+    Parameters
+    ----------
+    velocity_list
+        The object that should be tested
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_velocity_list: Check for multi-sensor velocity lists
+
+    """
+    if not isinstance(velocity_list, dict):
+        return False
+
+    keys = velocity_list.keys()
+
+    if len(keys) == 0:
+        return False
+
+    for k in keys:
+        if not is_single_sensor_velocity_list(velocity_list[k]):
             return False
     return True
 

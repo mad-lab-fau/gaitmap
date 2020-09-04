@@ -17,8 +17,10 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_stride_list,
     set_correct_index,
     is_single_sensor_position_list,
+    is_single_sensor_velocity_list,
     is_single_sensor_orientation_list,
     is_multi_sensor_position_list,
+    is_multi_sensor_velocity_list,
     is_multi_sensor_orientation_list,
     is_single_sensor_regions_of_interest_list,
     is_multi_sensor_regions_of_interest_list,
@@ -374,6 +376,60 @@ class TestIsSingleSensorPositionList:
         assert is_single_sensor_position_list(df, s_id=False) is True
 
 
+
+class TestIsSingleSensorVelocityList:
+    @pytest.mark.parametrize(
+        "value",
+        (
+            list(range(6)),
+            "test",
+            np.arange(6),
+            {},
+            pd.DataFrame(),
+            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame(columns=["sample", "vel_x", "vel_y", "vel_z"]),
+            pd.DataFrame(columns=["s_id", "sample", "vel_x", "vel_z"]),
+        ),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_single_sensor_velocity_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "vel_x", "vel_y", "vel_z"], []),
+            (["s_id", "sample", "vel_x", "vel_y", "vel_z", "something_else"], []),
+            (["sample", "vel_x", "vel_y", "vel_z"], ["s_id"]),
+            (["vel_x", "vel_y", "vel_z"], ["s_id", "sample"]),
+            (["vel_x", "vel_y", "vel_z", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_velocity_list(df)
+
+    @pytest.mark.parametrize(
+        "cols, index, both",
+        (
+            (["s_id", "sample", "vel_x", "vel_y", "vel_z"], [], True),
+            (["sample", "vel_x", "vel_y", "vel_z"], [], False),
+            (["vel_x", "vel_y", "vel_z"], ["s_id", "sample"], True),
+            (["vel_x", "vel_y", "vel_z"], ["sample"], False),
+        ),
+    )
+    def test_valid_versions_without_s_id(self, cols, index, both):
+
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_single_sensor_velocity_list(df) == both
+        assert is_single_sensor_velocity_list(df, s_id=False) is True
+
+
 class TestIsSingleSensorOrientationList:
     @pytest.mark.parametrize(
         "value",
@@ -459,6 +515,41 @@ class TestIsMultiSensorPositionList:
 
         assert is_multi_sensor_position_list(valid)
         assert not is_multi_sensor_position_list(invalid)
+
+
+
+class TestIsMultiSensorVelocityList:
+    @pytest.mark.parametrize(
+        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+    )
+    def test_wrong_datatype(self, value):
+        assert not is_multi_sensor_velocity_list(value)
+
+    @pytest.mark.parametrize(
+        "cols, index",
+        (
+            (["s_id", "sample", "vel_x", "vel_y", "vel_z"], []),
+            (["s_id", "sample", "vel_x", "vel_y", "vel_z", "something_else"], []),
+            (["sample", "vel_x", "vel_y", "vel_z"], ["s_id"]),
+            (["vel_x", "vel_y", "vel_z"], ["s_id", "sample"]),
+            (["vel_x", "vel_y", "vel_z", "something_else"], ["s_id", "sample"]),
+        ),
+    )
+    def test_valid_versions(self, cols, index):
+        df = pd.DataFrame(columns=[*cols, *index])
+        if index:
+            df = df.set_index(index)
+
+        assert is_multi_sensor_velocity_list({"s1": df})
+
+    def test_only_one_invalid(self):
+        valid_cols = ["s_id", "sample", "vel_x", "vel_y", "vel_z"]
+        invalid_cols = ["sample", "vel_x", "vel_y", "vel_z"]
+        valid = {"s1": pd.DataFrame(columns=valid_cols)}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+
+        assert is_multi_sensor_velocity_list(valid)
+        assert not is_multi_sensor_velocity_list(invalid)
 
 
 class TestIsMultiSensorOrientationList:
