@@ -376,7 +376,6 @@ class TestIsSingleSensorPositionList:
         assert is_single_sensor_position_list(df, s_id=False) is True
 
 
-
 class TestIsSingleSensorVelocityList:
     @pytest.mark.parametrize(
         "value",
@@ -515,7 +514,6 @@ class TestIsMultiSensorPositionList:
 
         assert is_multi_sensor_position_list(valid)
         assert not is_multi_sensor_position_list(invalid)
-
 
 
 class TestIsMultiSensorVelocityList:
