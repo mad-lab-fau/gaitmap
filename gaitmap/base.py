@@ -4,7 +4,7 @@ import inspect
 import json
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Union, Type
+from typing import Callable, Dict, TypeVar, Any, List, Type
 from warnings import warn
 
 import numpy as np

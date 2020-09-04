@@ -1,6 +1,6 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
 import warnings
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
