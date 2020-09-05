@@ -83,6 +83,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         if the angle is pointing downwards (i.e. the heel is higher than the toe), following the convetion in [1]_.
         The sole angle is assumed to be 0 during midstance.
         The IC and TC angles are simply the sole angles at the respective time points.
+    Max. Sensor Lift
+        The maximal relative height (relative the the height at midstance) the sensor reaches during the stride.
 
 
     .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
@@ -146,6 +148,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": "tc angle [deg]",
             "turning_angle": "turning angle [deg]",
             "arc_length": "arc length [m]",
+            "max_sensor_lift": "max. sensor lift [m]"
         }
         renamed_paras = parameters.rename(columns=pretty_columns)
         renamed_paras.index.name = "stride id"
@@ -239,6 +242,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         )
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)
+        max_sensor_lift_ = _calc_max_sensor_lift(positions)
 
         angle_course_ = _compute_sole_angle_course(orientations)
         ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
@@ -253,6 +257,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": tc_angle_,
             "turning_angle": turning_angle_,
             "arc_length": arc_length_,
+            "max_sensor_lift": max_sensor_lift_
         }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_, angle_course_
@@ -311,7 +316,7 @@ def _get_angle_at_index(angle_course: np.array, index_per_stride: pd.Series) -> 
     return angle_course[indexer].reset_index(level=1, drop=True)
 
 
-def _calc_turning_angle(orientations) -> pd.Series:
+def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
     start = orientations.groupby(level="s_id").first()
     end = orientations.groupby(level="s_id").last()
     angles = pd.Series(
@@ -348,3 +353,7 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     floor_angle = np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1]))) - 90
     floor_angle = pd.Series(floor_angle, index=forward.index)
     return floor_angle
+
+
+def _calc_max_sensor_lift(positions: pd.DataFrame) -> pd.Series:
+    return positions["pos_z"].groupby(level="s_id").max()
