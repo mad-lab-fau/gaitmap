@@ -1,5 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, Hashable
 
 import numpy as np
 import pandas as pd
@@ -119,7 +119,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
-    parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    parameters_: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
     sole_angle_course_: PositionList
 
     stride_event_list: StrideList
@@ -128,7 +128,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     sampling_rate_hz: float
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -263,7 +263,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         positions: MultiSensorPositionList,
         orientations: MultiSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.Series]]:
+    ) -> Tuple[Dict[Hashable, pd.DataFrame], Dict[Hashable, pd.Series]]:
         """Find spatial parameters of each stride in case of multiple sensors.
 
         Parameters
