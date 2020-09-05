@@ -50,6 +50,8 @@ This is the first version and we already added:
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/70)
 - Fixed issue that templates that were stored in json do not preserve order when loaded again (see more info in migration guide)
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/72)
+- Fixed an issue that `rotate_dataset_series` performed an unexpected inplace modification of the data.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/78)
 
 ### Migration Guide
 
