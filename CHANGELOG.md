@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `RoiStrideSegmentation` wrapper class.
 - The `align_heading_of_sensors` method has now an option to run an additional smoothing filter that can avoid
   misalignments in certain cases.
+- `VelocityList` is now a separate dtype representing integrated velocity values
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/77)
 
 #### The new `evaluation_utils` module https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/117
 
