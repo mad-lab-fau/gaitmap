@@ -371,7 +371,7 @@ def _calc_max_sensor_lift(positions: pd.DataFrame) -> pd.Series:
 def _calc_max_lateral_excursion(positions: pd.DataFrame) -> pd.Series:
     """Calculate the maximal lateral deviation from a straight line going from start pos to end pos of a stride.
 
-    x1 = (x1,y1), \vec x2 = (x2,y2) define the line
+    x1 = (x1,y1), x2 = (x2,y2) define the line
     x = (x0,y0) is the point the distance is computed to
     d =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/sqrt((x2-x1)**2+(y2-y1)**2)
 
