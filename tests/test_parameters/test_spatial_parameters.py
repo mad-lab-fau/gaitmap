@@ -151,6 +151,7 @@ class TestSpatialParameterCalculation:
         "turning_angle",
         "arc_length",
         "max_sensor_lift",
+        "max_lateral_excursion",
     ]
 
     def test_single_sensor(

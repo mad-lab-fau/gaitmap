@@ -84,8 +84,14 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         The sole angle is assumed to be 0 during midstance.
         The IC and TC angles are simply the sole angles at the respective time points.
     Max. Sensor Lift
-        The maximal relative height (relative the the height at midstance) the sensor reaches during the stride.
-
+        The maximal relative height (relative to the height at midstance) the sensor reaches during the stride.
+        Note that this is not equivalent to the actual foot lift/toe clearance.
+        These values can be estimated, if the postion of the sensor on the foot is known.
+    Max. Lateral Excursion
+        The maximal lateral distance between the foot and an imaginary straight line spanning from the start to the
+        end position of each stride.
+        This indicates "how far outwards" a subject moves the foot during the swing phase.
+        Note, that this parameter is only meaningfull for straight strides.
 
     .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
        Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
@@ -148,7 +154,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": "tc angle [deg]",
             "turning_angle": "turning angle [deg]",
             "arc_length": "arc length [m]",
-            "max_sensor_lift": "max. sensor lift [m]"
+            "max_sensor_lift": "max. sensor lift [m]",
+            "max_lateral_excursion": "max. lateral excursion [m]",
         }
         renamed_paras = parameters.rename(columns=pretty_columns)
         renamed_paras.index.name = "stride id"
@@ -243,6 +250,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)
         max_sensor_lift_ = _calc_max_sensor_lift(positions)
+        max_lateral_excursion_ = _calc_max_lateral_excursion(positions)
 
         angle_course_ = _compute_sole_angle_course(orientations)
         ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
@@ -257,7 +265,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": tc_angle_,
             "turning_angle": turning_angle_,
             "arc_length": arc_length_,
-            "max_sensor_lift": max_sensor_lift_
+            "max_sensor_lift": max_sensor_lift_,
+            "max_lateral_excursion": max_lateral_excursion_,
         }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_, angle_course_
@@ -357,3 +366,29 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
 
 def _calc_max_sensor_lift(positions: pd.DataFrame) -> pd.Series:
     return positions["pos_z"].groupby(level="s_id").max()
+
+
+def _calc_max_lateral_excursion(positions: pd.DataFrame) -> pd.Series:
+    """Calculate the maximal lateral deviation from a straight line going from start pos to end pos of a stride.
+
+    x1 = (x1,y1), \vec x2 = (x2,y2) define the line
+    x = (x0,y0) is the point the distance is computed to
+    d =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/sqrt((x2-x1)**2+(y2-y1)**2)
+
+    """
+    start = positions.groupby(level="s_id").first()
+    end = positions.groupby(level="s_id").last()
+    stride_length = _calc_stride_length(positions)
+
+    def _calc_per_stride(start, end, length, data):
+        excursion = (
+            (end["pos_x"] - start["pos_x"]) * (start["pos_y"] - data["pos_y"])
+            - (start["pos_x"] - data["pos_x"]) * (end["pos_y"] - start["pos_y"])
+        ).abs()
+        max_excursion = excursion.max()
+        return max_excursion / length
+
+    max_lat_excursion = positions.groupby(level="s_id").apply(
+        lambda x: _calc_per_stride(start.loc[x.name], end.loc[x.name], stride_length.loc[x.name], x)
+    )
+    return max_lat_excursion
