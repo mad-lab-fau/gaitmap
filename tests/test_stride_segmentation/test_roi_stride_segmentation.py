@@ -99,6 +99,8 @@ class TestParameterValidation:
     def test_single_roi_unsync_multi(self):
         with pytest.raises(ValueError) as e:
             # call segment with invalid ROI
+            # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
+            # error.
             self.instance.segment(
                 {"sensor": pd.DataFrame()}, sampling_rate_hz=10.0, regions_of_interest=create_dummy_single_sensor_roi()
             )
@@ -109,6 +111,8 @@ class TestParameterValidation:
         self.instance.set_params(s_id_naming="wrong")
 
         with pytest.raises(ValueError) as e:
+            # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
+            # error.
             self.instance.segment(
                 pd.DataFrame(), sampling_rate_hz=10.0, regions_of_interest=create_dummy_single_sensor_roi()
             )
@@ -116,6 +120,8 @@ class TestParameterValidation:
 
     def test_additional_sensors_in_roi(self):
         with pytest.raises(KeyError) as e:
+            # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
+            # error.
             self.instance.segment(
                 {"sensor": pd.DataFrame()}, sampling_rate_hz=10.0, regions_of_interest=create_dummy_multi_sensor_roi()
             )
