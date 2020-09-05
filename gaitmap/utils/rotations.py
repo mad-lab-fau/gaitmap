@@ -161,7 +161,7 @@ def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> 
     Returns
     -------
     rotated_data
-        `data` rotated by `rotations`
+        copy of `data` rotated by `rotations`
 
     See Also
     --------
@@ -173,9 +173,7 @@ def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> 
     if len(dataset) != len(rotations):
         raise ValueError("The number of rotations must fit the number of samples in the dataset!")
 
-    dataset[SF_ACC] = rotations.apply(dataset[SF_ACC].to_numpy())
-    dataset[SF_GYR] = rotations.apply(dataset[SF_GYR].to_numpy())
-    return dataset
+    return _rotate_sensor(dataset, rotations, inplace=False)
 
 
 def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:

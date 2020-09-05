@@ -260,6 +260,7 @@ class TestRotateDatasetSeries:
         input_gyro = [0, 1, 0]
         data = np.array([[*input_acc, *input_gyro]] * 4)
         data = pd.DataFrame(data, columns=SF_COLS)
+        in_data = data.copy()
         rotations = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad([0, 90, 180, 270]))
 
         out = rotate_dataset_series(data, rotations)
@@ -269,6 +270,10 @@ class TestRotateDatasetSeries:
 
         assert_array_almost_equal(out[SF_ACC].to_numpy(), expected_acc)
         assert_array_almost_equal(out[SF_GYR].to_numpy(), expected_gyro)
+
+        # Check that the rotated version is a copy and the original data was not touched
+        assert_frame_equal(data, in_data)
+        assert data is not out
 
 
 class TestFindShortestRotation:
