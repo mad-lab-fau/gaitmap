@@ -213,7 +213,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Parameters
         ----------
         stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
+            Gait events for each stride obtained from event detection.
         positions
             position of the sensor at each time point as estimated by trajectory reconstruction.
         orientations
@@ -269,7 +269,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Parameters
         ----------
         stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
+            Gait events for each stride obtained from event detection.
         positions
             position of each sensor at each time point as estimated by trajectory reconstruction.
         orientations
@@ -282,7 +282,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         parameters_
             Data frame containing spatial parameters of single sensor
         sole_angle_course_
-            The sole angle in the sagttial plane for each stride
+            The sole angle in the sagittal plane for each stride
 
         """
         parameters_ = {}
