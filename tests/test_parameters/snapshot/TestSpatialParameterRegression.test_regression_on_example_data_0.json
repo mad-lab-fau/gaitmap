@@ -28,6 +28,10 @@
             {
                 "name":"arc_length",
                 "type":"number"
+            },
+            {
+                "name":"max_sensor_lift",
+                "type":"number"
             }
         ],
         "primaryKey":[
@@ -43,7 +47,8 @@
             "ic_angle":28.4474685479,
             "tc_angle":-58.9026769879,
             "turning_angle":0.8698594022,
-            "arc_length":1.5513360737
+            "arc_length":1.5513360737,
+            "max_sensor_lift":0.2301134415
         },
         {
             "s_id":1,
@@ -52,7 +57,8 @@
             "ic_angle":27.6385315273,
             "tc_angle":-57.7818579881,
             "turning_angle":-2.4096975897,
-            "arc_length":1.5574069118
+            "arc_length":1.5574069118,
+            "max_sensor_lift":0.2301766853
         },
         {
             "s_id":2,
@@ -61,7 +67,8 @@
             "ic_angle":30.2278198503,
             "tc_angle":-58.3259922149,
             "turning_angle":0.9655810323,
-            "arc_length":1.5816963244
+            "arc_length":1.5816963244,
+            "max_sensor_lift":0.2276054649
         },
         {
             "s_id":3,
@@ -70,7 +77,8 @@
             "ic_angle":30.223314883,
             "tc_angle":-57.3325854365,
             "turning_angle":-1.436867634,
-            "arc_length":1.5818737492
+            "arc_length":1.5818737492,
+            "max_sensor_lift":0.2317555428
         },
         {
             "s_id":4,
@@ -79,7 +87,8 @@
             "ic_angle":28.6242225881,
             "tc_angle":-56.0937397349,
             "turning_angle":0.7046281926,
-            "arc_length":1.5885061633
+            "arc_length":1.5885061633,
+            "max_sensor_lift":0.228316494
         },
         {
             "s_id":5,
@@ -88,7 +97,8 @@
             "ic_angle":30.4886766276,
             "tc_angle":-57.95647622,
             "turning_angle":-1.1359211006,
-            "arc_length":1.6016727603
+            "arc_length":1.6016727603,
+            "max_sensor_lift":0.2311854401
         },
         {
             "s_id":6,
@@ -97,7 +107,8 @@
             "ic_angle":30.3689407542,
             "tc_angle":-57.7533026934,
             "turning_angle":0.8276670542,
-            "arc_length":1.6030182819
+            "arc_length":1.6030182819,
+            "max_sensor_lift":0.233718998
         },
         {
             "s_id":7,
@@ -106,7 +117,8 @@
             "ic_angle":32.0457203586,
             "tc_angle":-59.5554874436,
             "turning_angle":-2.3186677426,
-            "arc_length":1.6131057685
+            "arc_length":1.6131057685,
+            "max_sensor_lift":0.233695034
         },
         {
             "s_id":8,
@@ -115,7 +127,8 @@
             "ic_angle":29.3454533517,
             "tc_angle":-58.0098248305,
             "turning_angle":-0.2527504878,
-            "arc_length":1.582759801
+            "arc_length":1.582759801,
+            "max_sensor_lift":0.2320816269
         },
         {
             "s_id":9,
@@ -124,7 +137,8 @@
             "ic_angle":29.3461673479,
             "tc_angle":-57.8848554583,
             "turning_angle":1.1694941163,
-            "arc_length":1.5375122367
+            "arc_length":1.5375122367,
+            "max_sensor_lift":0.227329258
         },
         {
             "s_id":10,
@@ -133,7 +147,8 @@
             "ic_angle":28.5000407845,
             "tc_angle":-59.9676321772,
             "turning_angle":4.9944517923,
-            "arc_length":1.4848217009
+            "arc_length":1.4848217009,
+            "max_sensor_lift":0.2215249062
         },
         {
             "s_id":11,
@@ -142,7 +157,8 @@
             "ic_angle":28.1583774485,
             "tc_angle":-53.9292000869,
             "turning_angle":0.3225654193,
-            "arc_length":1.4885365215
+            "arc_length":1.4885365215,
+            "max_sensor_lift":0.221395977
         },
         {
             "s_id":12,
@@ -151,7 +167,8 @@
             "ic_angle":28.1124283142,
             "tc_angle":-53.9317173776,
             "turning_angle":1.2469712083,
-            "arc_length":1.4783438421
+            "arc_length":1.4783438421,
+            "max_sensor_lift":0.2237801361
         },
         {
             "s_id":13,
@@ -160,7 +177,8 @@
             "ic_angle":25.0117264239,
             "tc_angle":-31.7032062918,
             "turning_angle":166.4383169134,
-            "arc_length":1.69781945
+            "arc_length":1.69781945,
+            "max_sensor_lift":0.1505927124
         },
         {
             "s_id":14,
@@ -169,7 +187,8 @@
             "ic_angle":28.6839594129,
             "tc_angle":-59.1063420959,
             "turning_angle":11.8568940439,
-            "arc_length":1.5414925116
+            "arc_length":1.5414925116,
+            "max_sensor_lift":0.2298488235
         },
         {
             "s_id":15,
@@ -178,7 +197,8 @@
             "ic_angle":27.5547112113,
             "tc_angle":-54.5280290629,
             "turning_angle":3.352533851,
-            "arc_length":1.5468678865
+            "arc_length":1.5468678865,
+            "max_sensor_lift":0.221836071
         },
         {
             "s_id":16,
@@ -187,7 +207,8 @@
             "ic_angle":29.1635513554,
             "tc_angle":-56.3614420922,
             "turning_angle":-4.4214734585,
-            "arc_length":1.5628650611
+            "arc_length":1.5628650611,
+            "max_sensor_lift":0.2211088066
         },
         {
             "s_id":17,
@@ -196,7 +217,8 @@
             "ic_angle":30.3615339565,
             "tc_angle":-58.3229411424,
             "turning_angle":-3.3361668592,
-            "arc_length":1.6094576765
+            "arc_length":1.6094576765,
+            "max_sensor_lift":0.2313284187
         },
         {
             "s_id":18,
@@ -205,7 +227,8 @@
             "ic_angle":29.839719557,
             "tc_angle":-57.4892126471,
             "turning_angle":1.2069553708,
-            "arc_length":1.5738554527
+            "arc_length":1.5738554527,
+            "max_sensor_lift":0.2261081886
         },
         {
             "s_id":19,
@@ -214,7 +237,8 @@
             "ic_angle":30.4560202555,
             "tc_angle":-57.0298491105,
             "turning_angle":-0.0440671158,
-            "arc_length":1.5729941805
+            "arc_length":1.5729941805,
+            "max_sensor_lift":0.2223044319
         },
         {
             "s_id":20,
@@ -223,7 +247,8 @@
             "ic_angle":28.6357176475,
             "tc_angle":-55.9808597642,
             "turning_angle":0.3362116327,
-            "arc_length":1.5114984659
+            "arc_length":1.5114984659,
+            "max_sensor_lift":0.2205841675
         },
         {
             "s_id":21,
@@ -232,7 +257,8 @@
             "ic_angle":30.1760488331,
             "tc_angle":-60.5525980127,
             "turning_angle":1.9196223206,
-            "arc_length":1.5399118123
+            "arc_length":1.5399118123,
+            "max_sensor_lift":0.2206864967
         },
         {
             "s_id":22,
@@ -241,7 +267,8 @@
             "ic_angle":28.1118310016,
             "tc_angle":-56.6474639439,
             "turning_angle":-0.436630212,
-            "arc_length":1.5028115619
+            "arc_length":1.5028115619,
+            "max_sensor_lift":0.2282890015
         },
         {
             "s_id":23,
@@ -250,7 +277,8 @@
             "ic_angle":29.3881578168,
             "tc_angle":-55.0160196273,
             "turning_angle":-2.3465777359,
-            "arc_length":1.5043433096
+            "arc_length":1.5043433096,
+            "max_sensor_lift":0.2255875702
         },
         {
             "s_id":24,
@@ -259,7 +287,8 @@
             "ic_angle":28.3453770176,
             "tc_angle":-63.936036546,
             "turning_angle":1.9220138245,
-            "arc_length":1.5124050533
+            "arc_length":1.5124050533,
+            "max_sensor_lift":0.2208199043
         },
         {
             "s_id":25,
@@ -268,7 +297,8 @@
             "ic_angle":29.4753503821,
             "tc_angle":-56.1833148312,
             "turning_angle":-1.6671054155,
-            "arc_length":1.5022919428
+            "arc_length":1.5022919428,
+            "max_sensor_lift":0.2227723007
         },
         {
             "s_id":26,
@@ -277,7 +307,8 @@
             "ic_angle":28.3661404112,
             "tc_angle":-57.7185496794,
             "turning_angle":3.0047894966,
-            "arc_length":1.4566416963
+            "arc_length":1.4566416963,
+            "max_sensor_lift":0.2202466125
         },
         {
             "s_id":27,
@@ -286,7 +317,8 @@
             "ic_angle":25.935243991,
             "tc_angle":-50.029148152,
             "turning_angle":10.7532065942,
-            "arc_length":1.316824898
+            "arc_length":1.316824898,
+            "max_sensor_lift":0.2112852745
         }
     ]
 }
