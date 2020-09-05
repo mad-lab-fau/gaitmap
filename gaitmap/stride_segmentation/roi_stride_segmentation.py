@@ -155,7 +155,6 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             All keyword arguments will be passed to the segment method of the selected `segmentation_algorithm`
 
         """
-        # TODO: Docstring
         self.regions_of_interest = regions_of_interest
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
