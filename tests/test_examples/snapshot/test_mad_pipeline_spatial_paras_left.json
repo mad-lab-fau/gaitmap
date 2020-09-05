@@ -28,6 +28,14 @@
             {
                 "name":"arc length [m]",
                 "type":"number"
+            },
+            {
+                "name":"max. sensor lift [m]",
+                "type":"number"
+            },
+            {
+                "name":"max. lateral excursion [m]",
+                "type":"number"
             }
         ],
         "primaryKey":[
@@ -43,7 +51,9 @@
             "ic angle [deg]":-22.7674082977,
             "tc angle [deg]":63.7176097241,
             "turning angle [deg]":1.9962556143,
-            "arc length [m]":1.5189163769
+            "arc length [m]":1.5189163769,
+            "max. sensor lift [m]":0.1820595428,
+            "max. lateral excursion [m]":0.0317192384
         },
         {
             "stride id":1,
@@ -52,7 +62,9 @@
             "ic angle [deg]":-20.5934907345,
             "tc angle [deg]":63.863034154,
             "turning angle [deg]":-3.4995871059,
-            "arc length [m]":1.4709250176
+            "arc length [m]":1.4709250176,
+            "max. sensor lift [m]":0.1716386806,
+            "max. lateral excursion [m]":0.0772435675
         },
         {
             "stride id":2,
@@ -61,7 +73,9 @@
             "ic angle [deg]":-22.7653633019,
             "tc angle [deg]":63.9178807799,
             "turning angle [deg]":0.1376190265,
-            "arc length [m]":1.4699380527
+            "arc length [m]":1.4699380527,
+            "max. sensor lift [m]":0.1613321155,
+            "max. lateral excursion [m]":0.0628194685
         },
         {
             "stride id":3,
@@ -70,7 +84,9 @@
             "ic angle [deg]":-21.3893186573,
             "tc angle [deg]":65.0989101637,
             "turning angle [deg]":-0.146607677,
-            "arc length [m]":1.542397349
+            "arc length [m]":1.542397349,
+            "max. sensor lift [m]":0.1713863433,
+            "max. lateral excursion [m]":0.0524948321
         },
         {
             "stride id":4,
@@ -79,7 +95,9 @@
             "ic angle [deg]":-22.0579720101,
             "tc angle [deg]":62.6129601817,
             "turning angle [deg]":0.7539662986,
-            "arc length [m]":1.5006903055
+            "arc length [m]":1.5006903055,
+            "max. sensor lift [m]":0.1744891226,
+            "max. lateral excursion [m]":0.052214987
         },
         {
             "stride id":5,
@@ -88,7 +106,9 @@
             "ic angle [deg]":-22.1297558188,
             "tc angle [deg]":63.5724640577,
             "turning angle [deg]":0.0260564009,
-            "arc length [m]":1.5353865487
+            "arc length [m]":1.5353865487,
+            "max. sensor lift [m]":0.1697795364,
+            "max. lateral excursion [m]":0.0357642941
         },
         {
             "stride id":6,
@@ -97,7 +117,9 @@
             "ic angle [deg]":-22.8436031823,
             "tc angle [deg]":63.6200642083,
             "turning angle [deg]":1.5869644435,
-            "arc length [m]":1.4495879683
+            "arc length [m]":1.4495879683,
+            "max. sensor lift [m]":0.1565193767,
+            "max. lateral excursion [m]":0.062740144
         },
         {
             "stride id":7,
@@ -106,7 +128,9 @@
             "ic angle [deg]":-24.2590667943,
             "tc angle [deg]":67.1877294972,
             "turning angle [deg]":-2.7881385674,
-            "arc length [m]":1.5455638301
+            "arc length [m]":1.5455638301,
+            "max. sensor lift [m]":0.1685341859,
+            "max. lateral excursion [m]":0.0959032102
         },
         {
             "stride id":8,
@@ -115,7 +139,9 @@
             "ic angle [deg]":-24.9120444448,
             "tc angle [deg]":62.992168034,
             "turning angle [deg]":1.6223217076,
-            "arc length [m]":1.5047553724
+            "arc length [m]":1.5047553724,
+            "max. sensor lift [m]":0.1720535488,
+            "max. lateral excursion [m]":0.0337993805
         },
         {
             "stride id":9,
@@ -124,7 +150,9 @@
             "ic angle [deg]":-28.6231749313,
             "tc angle [deg]":63.4968985501,
             "turning angle [deg]":-0.190440046,
-            "arc length [m]":1.4056521487
+            "arc length [m]":1.4056521487,
+            "max. sensor lift [m]":0.1561525551,
+            "max. lateral excursion [m]":0.0957492493
         },
         {
             "stride id":10,
@@ -133,7 +161,9 @@
             "ic angle [deg]":-18.7841555785,
             "tc angle [deg]":61.237371346,
             "turning angle [deg]":2.9702556134,
-            "arc length [m]":1.420972578
+            "arc length [m]":1.420972578,
+            "max. sensor lift [m]":0.1654628166,
+            "max. lateral excursion [m]":0.0393090981
         },
         {
             "stride id":11,
@@ -142,7 +172,9 @@
             "ic angle [deg]":-25.3593701338,
             "tc angle [deg]":59.5013186196,
             "turning angle [deg]":0.8432328399,
-            "arc length [m]":1.3539908955
+            "arc length [m]":1.3539908955,
+            "max. sensor lift [m]":0.1605598092,
+            "max. lateral excursion [m]":0.0552046866
         },
         {
             "stride id":12,
@@ -151,7 +183,9 @@
             "ic angle [deg]":-17.7612754924,
             "tc angle [deg]":58.9705169883,
             "turning angle [deg]":-0.0020024792,
-            "arc length [m]":1.3472141283
+            "arc length [m]":1.3472141283,
+            "max. sensor lift [m]":0.1648190254,
+            "max. lateral excursion [m]":0.0603479195
         },
         {
             "stride id":14,
@@ -160,7 +194,9 @@
             "ic angle [deg]":-20.5220205126,
             "tc angle [deg]":60.5223778475,
             "turning angle [deg]":2.5460738157,
-            "arc length [m]":1.5151415813
+            "arc length [m]":1.5151415813,
+            "max. sensor lift [m]":0.1668137569,
+            "max. lateral excursion [m]":0.056986933
         },
         {
             "stride id":15,
@@ -169,7 +205,9 @@
             "ic angle [deg]":-21.4051356123,
             "tc angle [deg]":59.8081987336,
             "turning angle [deg]":-3.8865219883,
-            "arc length [m]":1.4813966885
+            "arc length [m]":1.4813966885,
+            "max. sensor lift [m]":0.1659786626,
+            "max. lateral excursion [m]":0.017107306
         },
         {
             "stride id":16,
@@ -178,7 +216,9 @@
             "ic angle [deg]":-23.485247104,
             "tc angle [deg]":63.6189530654,
             "turning angle [deg]":-4.0187335276,
-            "arc length [m]":1.504436978
+            "arc length [m]":1.504436978,
+            "max. sensor lift [m]":0.1709070245,
+            "max. lateral excursion [m]":0.0808785289
         },
         {
             "stride id":17,
@@ -187,7 +227,9 @@
             "ic angle [deg]":-23.221740273,
             "tc angle [deg]":60.8889902309,
             "turning angle [deg]":1.94020259,
-            "arc length [m]":1.4672260734
+            "arc length [m]":1.4672260734,
+            "max. sensor lift [m]":0.1608726837,
+            "max. lateral excursion [m]":0.0144396029
         },
         {
             "stride id":18,
@@ -196,7 +238,9 @@
             "ic angle [deg]":-27.586813497,
             "tc angle [deg]":62.285237141,
             "turning angle [deg]":-1.8859530098,
-            "arc length [m]":1.4519608321
+            "arc length [m]":1.4519608321,
+            "max. sensor lift [m]":0.1552297617,
+            "max. lateral excursion [m]":0.060426914
         },
         {
             "stride id":19,
@@ -205,7 +249,9 @@
             "ic angle [deg]":-20.583862619,
             "tc angle [deg]":61.136225608,
             "turning angle [deg]":0.2627637899,
-            "arc length [m]":1.4685737354
+            "arc length [m]":1.4685737354,
+            "max. sensor lift [m]":0.1647929769,
+            "max. lateral excursion [m]":0.0377000503
         },
         {
             "stride id":20,
@@ -214,7 +260,9 @@
             "ic angle [deg]":-21.5771013486,
             "tc angle [deg]":63.3892531854,
             "turning angle [deg]":2.5108386809,
-            "arc length [m]":1.4874125099
+            "arc length [m]":1.4874125099,
+            "max. sensor lift [m]":0.1592428568,
+            "max. lateral excursion [m]":0.0335463573
         },
         {
             "stride id":21,
@@ -223,7 +271,9 @@
             "ic angle [deg]":-22.0771966341,
             "tc angle [deg]":60.8267675686,
             "turning angle [deg]":-0.547383979,
-            "arc length [m]":1.3758034422
+            "arc length [m]":1.3758034422,
+            "max. sensor lift [m]":0.1683132307,
+            "max. lateral excursion [m]":0.0381017268
         },
         {
             "stride id":22,
@@ -232,7 +282,9 @@
             "ic angle [deg]":-20.0163365378,
             "tc angle [deg]":60.2814829305,
             "turning angle [deg]":-0.5242251703,
-            "arc length [m]":1.4026143307
+            "arc length [m]":1.4026143307,
+            "max. sensor lift [m]":0.1688262007,
+            "max. lateral excursion [m]":0.0270452774
         },
         {
             "stride id":23,
@@ -241,7 +293,9 @@
             "ic angle [deg]":-21.2581409804,
             "tc angle [deg]":63.3117639731,
             "turning angle [deg]":2.1924354219,
-            "arc length [m]":1.3691203556
+            "arc length [m]":1.3691203556,
+            "max. sensor lift [m]":0.1427789797,
+            "max. lateral excursion [m]":0.0509422589
         },
         {
             "stride id":24,
@@ -250,7 +304,9 @@
             "ic angle [deg]":-22.4215071837,
             "tc angle [deg]":61.0779156811,
             "turning angle [deg]":-2.6864987731,
-            "arc length [m]":1.3987018812
+            "arc length [m]":1.3987018812,
+            "max. sensor lift [m]":0.1656121544,
+            "max. lateral excursion [m]":0.0617779369
         },
         {
             "stride id":25,
@@ -259,7 +315,9 @@
             "ic angle [deg]":-20.2718874044,
             "tc angle [deg]":60.8587065509,
             "turning angle [deg]":3.4039378572,
-            "arc length [m]":1.4031142766
+            "arc length [m]":1.4031142766,
+            "max. sensor lift [m]":0.1662195876,
+            "max. lateral excursion [m]":0.0333080011
         },
         {
             "stride id":26,
@@ -268,7 +326,9 @@
             "ic angle [deg]":-19.6905597628,
             "tc angle [deg]":54.3844834212,
             "turning angle [deg]":11.2104803756,
-            "arc length [m]":1.263898365
+            "arc length [m]":1.263898365,
+            "max. sensor lift [m]":0.1635487901,
+            "max. lateral excursion [m]":0.0386071637
         }
     ]
 }
