@@ -284,6 +284,80 @@ def is_multi_sensor_dataset(
     return True
 
 
+def is_dataset(
+    dataset: Dataset,
+    check_acc: bool = True,
+    check_gyr: bool = True,
+    frame: Literal["any", "body", "sensor"] = "any",
+    raise_exception: bool = False,
+) -> Optional[Literal["single", "multi"]]:
+    """Check if an object is a valid multi-sensor or single-sensor dataset.
+
+    This function will try to check the input using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` and
+    :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
+    In case one of the two checks is successful, a string is returned, which type of dataset the input is.
+
+    Parameters
+    ----------
+    dataset
+        Object that should be checked
+    check_acc
+        If the existence of the correct acc columns should be checked
+    check_gyr
+        If the existence of the correct gyr columns should be checked
+    frame
+        The frame the dataset is expected to be in.
+        This changes which columns are checked for.
+        In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
+        If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
+        `check_gyro` to `False`.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
+
+    Returns
+    -------
+    dataset_type
+        "single" in case of a single-sensor dataset, "multi" in case of a multi-sensor dataset and None in case it is
+        neither.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
+    gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
+
+
+    """
+    if frame not in ["any", "body", "sensor"]:
+        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+
+    try:
+        is_single_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+    except Exception as e:
+        single_error = e
+    else:
+        return "single"
+
+    try:
+        is_multi_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+    except Exception as e:
+        multi_error = e
+    else:
+        return "multi"
+
+    if raise_exception is True:
+        raise ValueError(
+            "The passed object appears to be neither a single- or a multi-sensor dataset. "
+            "Below you can find the errors raised for both checks:\n\n"
+            "Single-Sensor\n"
+            "=============\n"
+            f"{str(single_error)}\n\n"
+            "Single-Sensor\n"
+            "=============\n"
+            f"{str(multi_error)}"
+        )
+
+
 def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
     stride_list: SingleSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
 ) -> bool:

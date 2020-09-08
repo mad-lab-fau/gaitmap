@@ -22,6 +22,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_orientation_list,
     is_single_sensor_regions_of_interest_list,
     is_multi_sensor_regions_of_interest_list,
+    is_dataset,
 )
 
 
@@ -163,7 +164,23 @@ class TestIsMultiSensorDataset:
 
         assert "The passed object appears to be a MultiSensorDataset" in str(e)
         assert 'for the sensor with the name "s1"' in str(e)
-        str(BF_ACC) in str(e)
+        assert str(BF_ACC) in str(e)
+
+
+class TestIsDataset:
+    def test_raises_error_correctly(self):
+        with pytest.raises(ValueError) as e:
+            is_dataset(pd.DataFrame(), frame="body", check_acc=True, check_gyr=False, raise_exception=True)
+
+        assert "The passed object appears to be neither a single- or a multi-sensor dataset." in str(e)
+        assert str(BF_ACC) in str(e)
+        assert "MultiIndex" in str(e)
+
+    @pytest.mark.parametrize(
+        ("obj", "out"), ((pd.DataFrame(), "single"), ({"s1": pd.DataFrame()}, "multi"), ("wrong", None))
+    )
+    def test_basic_function(self, obj, out):
+        assert is_dataset(obj, check_gyr=False, check_acc=False) == out
 
 
 class TestGetMultiSensorDatasetNames:
