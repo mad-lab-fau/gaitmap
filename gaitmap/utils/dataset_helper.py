@@ -123,7 +123,7 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
             helper_str = "one of the following sets of columns: {}".format(columns_sets)
         raise ValueError(
             "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
-                helper_str, df.columns
+                helper_str, list(df.columns)
             )
         )
 
@@ -269,13 +269,16 @@ def is_multi_sensor_dataset(
 
     try:
         for k in get_multi_sensor_dataset_names(dataset):
-            if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
-                return False
+            is_single_sensor_dataset(
+                dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True
+            )
     except Exception as e:
         if raise_exception is True:
             raise ValueError(
                 "The passed object appears to be a MultiSensorDataset, "
-                "but for one of the contained sensors, the following validation error was raised:\n\n{}".format(str(e))
+                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
+                    k, str(e)
+                )
             ) from e
         return False
     return True
