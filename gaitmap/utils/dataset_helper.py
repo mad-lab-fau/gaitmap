@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List, Sequence, Iterable, Hashable
+from typing import Union, Dict, List, Sequence, Iterable, Hashable, Optional
 
 import numpy as np
 import pandas as pd
@@ -44,30 +44,94 @@ MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
-def _has_sf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
-    """Check if columns contain all required columns for the sensor frame."""
+def _get_expected_dataset_cols(
+    frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
+) -> List:
+    expected_cols = []
+    if frame == "sensor":
+        acc = SF_ACC
+        gyr = SF_GYR
+    elif frame == "body":
+        acc = BF_ACC
+        gyr = BF_GYR
+    else:
+        raise ValueError('`frame must be one of ["sensor", "body"]')
     if check_acc is True:
-        if not all(v in columns for v in SF_ACC):
-            return False
-
+        expected_cols.extend(acc)
     if check_gyr is True:
-        if not all(v in columns for v in SF_GYR):
-            return False
-
-    return True
+        expected_cols.extend(gyr)
+    return expected_cols
 
 
-def _has_bf_cols(columns: List[str], check_acc: bool = True, check_gyr: bool = True):
-    """Check if column contain all required columns for the body frame."""
-    if check_acc is True:
-        if not all(v in columns for v in BF_ACC):
-            return False
+def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
+    """Check if an object has a specific dtype."""
+    if not isinstance(obj, dtype):
+        raise TypeError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
 
-    if check_gyr is True:
-        if not all(v in columns for v in BF_GYR):
-            return False
 
-    return True
+def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
+    """Check if a pd.DataFrame has a multiindex.
+
+    Parameters
+    ----------
+    df
+        The dataframe to check
+    nlevels
+        If MultiIndex is expected, how many level should the MultiIndex have
+    expected
+        If the df is expected to have a MultiIndex or not
+    """
+    has_multiindex = isinstance(df.columns, pd.MultiIndex)
+    if not has_multiindex is expected:
+        if expected is False:
+            raise ValueError(
+                "The dataframe is expected to have a single level of columns. "
+                "But it has a MultiIndex with {} levels.".format(df.columns.nlevels)
+            )
+        else:
+            raise ValueError(
+                "The dataframe is expected to have a MultiIndex with {} levels as columns. "
+                "It has just a single normal column level.".format(nlevels)
+            )
+    if has_multiindex is True:
+        if not (df.columns.nlevels == nlevels):
+            raise ValueError(
+                "The dataframe is expected to have a MultiIndex with {} levels as columns. "
+                "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
+            )
+
+
+def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
+    """Check if the dataframe has at least all columns sets.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame()
+    >>> df.columns = ["col1", "col2"]
+    >>> _assert_has_columns(df, [["other_col1", "other_col2"], ["col1", "col2"]])
+    >>> # This raises no error, as df contains all columns of the second set
+    """
+    columns = df.columns
+    result = False
+    for set in columns_sets:
+        result = result or all(v in columns for v in set)
+
+    if result is False:
+        if len(columns_sets) == 1:
+            helper_str = "columns: {}".format(columns_sets[0])
+        else:
+            helper_str = "one of the following sets of columns: {}".format(columns_sets)
+        raise ValueError(
+            "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
+                helper_str, df.columns
+            )
+        )
+
+
+def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]):
+    sensors = get_multi_sensor_dataset_names(obj)
+    if len(sensors) == 0:
+        raise ValueError("The provided multi-sensor object does not contain any data/contains no sensors.")
 
 
 def is_single_sensor_dataset(
@@ -75,7 +139,8 @@ def is_single_sensor_dataset(
     check_acc: bool = True,
     check_gyr: bool = True,
     frame: Literal["any", "body", "sensor"] = "any",
-) -> bool:
+    raise_exception: bool = False,
+) -> Optional[bool]:
     """Check if an object is a valid dataset following all conventions.
 
     A valid single sensor dataset is:
@@ -105,29 +170,40 @@ def is_single_sensor_dataset(
         In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
         If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
         `check_gyro` to `False`.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
 
     """
-    if not isinstance(dataset, pd.DataFrame):
+    if frame not in ["any", "body", "sensor"]:
+        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    try:
+        _assert_is_dtype(dataset, pd.DataFrame)
+        _assert_has_multindex(dataset, expected=False)
+
+        if frame == "any":
+            _assert_has_columns(
+                dataset,
+                [
+                    _get_expected_dataset_cols("sensor", check_acc=check_acc, check_gyr=check_gyr),
+                    _get_expected_dataset_cols("body", check_acc=check_acc, check_gyr=check_gyr),
+                ],
+            )
+        else:
+            _assert_has_columns(dataset, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr)])
+
+    except Exception as e:
+        if raise_exception is True:
+            raise ValueError(
+                "The passed object does not seem to be a SingleSensorDataset. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
         return False
-
-    columns = dataset.columns
-
-    if isinstance(columns, pd.MultiIndex):
-        return False
-
-    if frame == "any":
-        is_sf = _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-        is_bf = _has_bf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-        return is_sf or is_bf
-    if frame == "body":
-        return _has_bf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-    if frame == "sensor":
-        return _has_sf_cols(columns, check_acc=check_acc, check_gyr=check_gyr)
-    raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    return True
 
 
 def is_multi_sensor_dataset(
@@ -135,6 +211,7 @@ def is_multi_sensor_dataset(
     check_acc: bool = True,
     check_gyr: bool = True,
     frame: Literal["any", "body", "sensor"] = "any",
+    raise_exception: bool = False,
 ) -> bool:
     """Check if an object is a valid multi-sensor dataset.
 
@@ -165,29 +242,42 @@ def is_multi_sensor_dataset(
         In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
         If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
         `check_gyro` to `False`.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
 
     """
-    if not isinstance(dataset, (pd.DataFrame, dict)):
+    if frame not in ["any", "body", "sensor"]:
+        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+
+    try:
+        _assert_is_dtype(dataset, (pd.DataFrame, dict))
+        if isinstance(dataset, pd.DataFrame):
+            _assert_has_multindex(dataset, expected=True, nlevels=2)
+        _assert_multisensor_is_not_empty(dataset)
+    except Exception as e:
+        if raise_exception is True:
+            raise ValueError(
+                "The passed object does not seem to be a MultiSensorDataset. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
         return False
 
-    if isinstance(dataset, pd.DataFrame) and (
-        (not isinstance(dataset.columns, pd.MultiIndex)) or (dataset.columns.nlevels != 2)
-    ):
-        # Check that it has multilevel columns
+    try:
+        for k in get_multi_sensor_dataset_names(dataset):
+            if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
+                return False
+    except Exception as e:
+        if raise_exception is True:
+            raise ValueError(
+                "The passed object appears to be a MultiSensorDataset, "
+                "but for one of the contained sensors, the following validation error was raised:\n\n{}".format(str(e))
+            ) from e
         return False
-
-    keys = get_multi_sensor_dataset_names(dataset)
-
-    if len(keys) == 0:
-        return False
-
-    for k in keys:
-        if not is_single_sensor_dataset(dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame):
-            return False
     return True
 
 
