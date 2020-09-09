@@ -84,7 +84,7 @@ is provided:
 >>> is_single_sensor_dataset(bf_dataset, frame="sensor", raise_exception=True)
 Traceback (most recent call last):
     ...
-ValueError: The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+ValidationError: The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
 The dataframe is expected to have columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'].
 Instead it has the following columns: ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si']
 
@@ -146,7 +146,7 @@ Like the single-sensor methods, these functions support exception raising in cas
 >>> is_multi_sensor_dataset(multi_dataset, frame="body", raise_exception=True)
 Traceback (most recent call last):
     ...
-ValueError: The passed object appears to be a MultiSensorDataset, but for the sensor with the name "left_sensor",
+ValidationError: The passed object appears to be a MultiSensorDataset, but for the sensor with the name "left_sensor",
 the following validation error was raised:
 The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
 The dataframe is expected to have columns: ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si'].
@@ -166,7 +166,7 @@ Otherwise, it will return a string, indicating what type of dataset was passed (
 >>> is_dataset(pd.DataFrame(), frame="sensor")
 Traceback (most recent call last):
     ...
-ValueError: The passed object appears to be neither a single- or a multi-sensor dataset.
+ValidationError: The passed object appears to be neither a single- or a multi-sensor dataset.
 Below you can find the errors raised for both checks:
 Single-Sensor
 =============

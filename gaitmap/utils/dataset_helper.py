@@ -18,6 +18,7 @@ from gaitmap.utils.consts import (
     ROI_ID_COLS,
     SL_INDEX,
 )
+from gaitmap.utils.exceptions import ValidationError
 
 SingleSensorDataset = pd.DataFrame
 MultiSensorDataset = Union[pd.DataFrame, Dict[Hashable, SingleSensorDataset]]
@@ -69,7 +70,7 @@ def _get_expected_dataset_cols(
 def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
-        raise TypeError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
+        raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
 
 
 def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
@@ -88,17 +89,17 @@ def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = T
     has_multiindex = isinstance(df.columns, pd.MultiIndex)
     if has_multiindex is not expected:
         if expected is False:
-            raise ValueError(
+            raise ValidationError(
                 "The dataframe is expected to have a single level of columns. "
                 "But it has a MultiIndex with {} levels.".format(df.columns.nlevels)
             )
-        raise ValueError(
+        raise ValidationError(
             "The dataframe is expected to have a MultiIndex with {} levels as columns. "
             "It has just a single normal column level.".format(nlevels)
         )
     if has_multiindex is True:
         if not df.columns.nlevels == nlevels:
-            raise ValueError(
+            raise ValidationError(
                 "The dataframe is expected to have a MultiIndex with {} levels as columns. "
                 "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
             )
@@ -125,7 +126,7 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
             helper_str = "columns: {}".format(columns_sets[0])
         else:
             helper_str = "one of the following sets of columns: {}".format(columns_sets)
-        raise ValueError(
+        raise ValidationError(
             "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
                 helper_str, list(df.columns)
             )
@@ -135,7 +136,7 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
 def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]):
     sensors = get_multi_sensor_dataset_names(obj)
     if len(sensors) == 0:
-        raise ValueError("The provided multi-sensor object does not contain any data/contains no sensors.")
+        raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")
 
 
 def is_single_sensor_dataset(
@@ -200,9 +201,9 @@ def is_single_sensor_dataset(
         else:
             _assert_has_columns(dataset, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr)])
 
-    except Exception as e:
+    except ValidationError as e:
         if raise_exception is True:
-            raise ValueError(
+            raise ValidationError(
                 "The passed object does not seem to be a SingleSensorDataset. "
                 "The validation failed with the following error:\n\n{}".format(str(e))
             ) from e
@@ -255,17 +256,14 @@ def is_multi_sensor_dataset(
     gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
 
     """
-    if frame not in _ALLOWED_FRAMES:
-        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
-
     try:
         _assert_is_dtype(dataset, (pd.DataFrame, dict))
         if isinstance(dataset, pd.DataFrame):
             _assert_has_multindex(dataset, expected=True, nlevels=2)
         _assert_multisensor_is_not_empty(dataset)
-    except Exception as e:
+    except ValidationError as e:
         if raise_exception is True:
-            raise ValueError(
+            raise ValidationError(
                 "The passed object does not seem to be a MultiSensorDataset. "
                 "The validation failed with the following error:\n\n{}".format(str(e))
             ) from e
@@ -276,9 +274,9 @@ def is_multi_sensor_dataset(
             is_single_sensor_dataset(
                 dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True
             )
-    except Exception as e:
+    except ValidationError as e:
         if raise_exception is True:
-            raise ValueError(
+            raise ValidationError(
                 "The passed object appears to be a MultiSensorDataset, "
                 'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
                     k, str(e)
@@ -325,24 +323,21 @@ def is_dataset(
     gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
 
     """
-    if frame not in _ALLOWED_FRAMES:
-        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
-
     try:
         is_single_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
-    except Exception as e:
+    except ValidationError as e:
         single_error = e
     else:
         return "single"
 
     try:
         is_multi_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
-    except Exception as e:
+    except ValidationError as e:
         multi_error = e
     else:
         return "multi"
 
-    raise ValueError(
+    raise ValidationError(
         "The passed object appears to be neither a single- or a multi-sensor dataset. "
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"

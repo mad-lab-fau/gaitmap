@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,8 +10,8 @@ from gaitmap.base import BaseType
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel, _detect_tc
 from gaitmap.utils import coordinate_conversion, dataset_helper
 from gaitmap.utils.consts import BF_COLS
+from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
-import random
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -89,7 +91,7 @@ class TestEventDetectionRampp:
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = RamppEventDetection()
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
 
         assert "The passed object appears to be neither a single- or a multi-sensor dataset" in str(e)

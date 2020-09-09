@@ -24,6 +24,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_regions_of_interest_list,
     is_dataset,
 )
+from gaitmap.utils.exceptions import ValidationError
 
 
 def _create_test_multiindex():
@@ -95,7 +96,7 @@ class TestIsSingleSensorDataset:
             is_single_sensor_dataset(pd.DataFrame(), frame="invalid_value")
 
     def test_error_raising(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             is_single_sensor_dataset(
                 pd.DataFrame(), frame="body", check_acc=True, check_gyr=False, raise_exception=True
             )
@@ -150,14 +151,14 @@ class TestIsMultiSensorDataset:
             )
 
     def test_error_raising(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             is_multi_sensor_dataset(pd.DataFrame(), raise_exception=True)
 
         assert "The passed object does not seem to be a MultiSensorDataset." in str(e)
         assert "MultiIndex" in str(e)
 
     def test_nested_error_raising(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             is_multi_sensor_dataset(
                 {"s1": pd.DataFrame()}, frame="body", check_acc=True, check_gyr=False, raise_exception=True
             )
@@ -169,7 +170,7 @@ class TestIsMultiSensorDataset:
 
 class TestIsDataset:
     def test_raises_error_correctly(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             is_dataset(pd.DataFrame(), frame="body", check_acc=True, check_gyr=False)
 
         assert "The passed object appears to be neither a single- or a multi-sensor dataset." in str(e)
