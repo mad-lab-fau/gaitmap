@@ -89,8 +89,10 @@ class TestEventDetectionRampp:
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = RamppEventDetection()
-        with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
+        with pytest.raises(ValueError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
+
+        assert "The passed object appears to be neither a single- or a multi-sensor dataset" in str(e)
 
     def test_min_vel_search_win_size_ms_dummy_data(self):
         """Test if error is raised correctly if windows size matches the size of the input data"""

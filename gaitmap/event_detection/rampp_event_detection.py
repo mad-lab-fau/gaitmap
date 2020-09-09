@@ -17,6 +17,7 @@ from gaitmap.utils.dataset_helper import (
     Dataset,
     get_multi_sensor_dataset_names,
     set_correct_index,
+    is_dataset,
 )
 from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
@@ -180,10 +181,12 @@ class RamppEventDetection(BaseEventDetection):
             The class instance with all result attributes populated
 
         """
-        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(stride_list):
+        dataset_type = is_dataset(data, frame="body", raise_exception=True)
+
+        if dataset_type == "single" and not is_single_sensor_stride_list(stride_list):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")
 
-        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(stride_list):
+        if dataset_type == "multi" and not is_multi_sensor_stride_list(stride_list):
             raise ValueError("Provided stride list does not fit to provided multi sensor data set")
 
         self.data = data
@@ -197,19 +200,17 @@ class RamppEventDetection(BaseEventDetection):
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
-        if is_single_sensor_dataset(data):
+        if dataset_type == "single":
             self.min_vel_event_list_, self.segmented_event_list_ = self._detect_single_dataset(
                 data, stride_list, ic_search_region, min_vel_search_win_size
             )
-        elif is_multi_sensor_dataset(data):
+        else:
             self.min_vel_event_list_ = dict()
             self.segmented_event_list_ = dict()
             for sensor in get_multi_sensor_dataset_names(data):
                 self.min_vel_event_list_[sensor], self.segmented_event_list_[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
 
         return self
 
