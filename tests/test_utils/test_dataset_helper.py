@@ -101,7 +101,7 @@ class TestIsSingleSensorDataset:
             )
 
         assert "The passed object does not seem to be a SingleSensorDataset." in str(e)
-        assert str(BF_ACC) in str(e)
+        assert str(BF_ACC) in str(e.value)
 
 
 class TestIsMultiSensorDataset:
@@ -162,9 +162,9 @@ class TestIsMultiSensorDataset:
                 {"s1": pd.DataFrame()}, frame="body", check_acc=True, check_gyr=False, raise_exception=True
             )
 
-        assert "The passed object appears to be a MultiSensorDataset" in str(e)
-        assert 'for the sensor with the name "s1"' in str(e)
-        assert str(BF_ACC) in str(e)
+        assert "The passed object appears to be a MultiSensorDataset" in str(e.value)
+        assert 'for the sensor with the name "s1"' in str(e.value)
+        assert str(BF_ACC) in str(e.value)
 
 
 class TestIsDataset:
