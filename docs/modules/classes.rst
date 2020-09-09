@@ -361,6 +361,25 @@ Functions
     precision_recall_f1_score
 
 
+
+:mod:`gaitmap.utils.exceptions`: Custom Exceptions
+==================================================
+
+.. automodule:: gaitmap.utils.exceptions
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.utils.exceptions
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    ValidationError
+
+
 :mod:`gaitmap.utils.consts`: Global constants
 =============================================
 
