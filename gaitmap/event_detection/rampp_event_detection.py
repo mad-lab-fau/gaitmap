@@ -181,7 +181,7 @@ class RamppEventDetection(BaseEventDetection):
             The class instance with all result attributes populated
 
         """
-        dataset_type = is_dataset(data, frame="body", raise_exception=True)
+        dataset_type = is_dataset(data, frame="body")
 
         if dataset_type == "single" and not is_single_sensor_stride_list(stride_list):
             raise ValueError("Provided stride list does not fit to provided single sensor data set")

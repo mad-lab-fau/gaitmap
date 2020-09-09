@@ -291,13 +291,13 @@ def is_dataset(
     check_acc: bool = True,
     check_gyr: bool = True,
     frame: _ALLOWED_FRAMES_TYPE = "any",
-    raise_exception: bool = False,
 ) -> Optional[Literal["single", "multi"]]:
     """Check if an object is a valid multi-sensor or single-sensor dataset.
 
     This function will try to check the input using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` and
     :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
     In case one of the two checks is successful, a string is returned, which type of dataset the input is.
+    Otherwise a descriptive error is raised
 
     Parameters
     ----------
@@ -313,9 +313,6 @@ def is_dataset(
         In case of "any" a dataset is considered valid if it contains the correct columns for one of the two frames.
         If you just want to check the datatype and shape, but not for specific column values, set both `check_acc` and
         `check_gyro` to `False`.
-    raise_exception
-        If True an exception is raised if the object does not pass the validation.
-        If False, the function will return simply True or False.
 
     Returns
     -------
@@ -346,17 +343,16 @@ def is_dataset(
     else:
         return "multi"
 
-    if raise_exception is True:
-        raise ValueError(
-            "The passed object appears to be neither a single- or a multi-sensor dataset. "
-            "Below you can find the errors raised for both checks:\n\n"
-            "Single-Sensor\n"
-            "=============\n"
-            f"{str(single_error)}\n\n"
-            "Single-Sensor\n"
-            "=============\n"
-            f"{str(multi_error)}"
-        )
+    raise ValueError(
+        "The passed object appears to be neither a single- or a multi-sensor dataset. "
+        "Below you can find the errors raised for both checks:\n\n"
+        "Single-Sensor\n"
+        "=============\n"
+        f"{str(single_error)}\n\n"
+        "Single-Sensor\n"
+        "=============\n"
+        f"{str(multi_error)}"
+    )
 
 
 def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
