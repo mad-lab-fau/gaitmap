@@ -43,6 +43,8 @@ SingleSensorOrientationList = pd.DataFrame
 MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
+_ALLOWED_FRAMES = ["any", "body", "sensor"]
+_ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]
 
 def _get_expected_dataset_cols(
     frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
@@ -138,7 +140,7 @@ def is_single_sensor_dataset(
     dataset: SingleSensorDataset,
     check_acc: bool = True,
     check_gyr: bool = True,
-    frame: Literal["any", "body", "sensor"] = "any",
+    frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> Optional[bool]:
     """Check if an object is a valid dataset following all conventions.
@@ -179,8 +181,8 @@ def is_single_sensor_dataset(
     gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
 
     """
-    if frame not in ["any", "body", "sensor"]:
-        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    if frame not in _ALLOWED_FRAMES:
+        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
     try:
         _assert_is_dtype(dataset, pd.DataFrame)
         _assert_has_multindex(dataset, expected=False)
@@ -210,7 +212,7 @@ def is_multi_sensor_dataset(
     dataset: MultiSensorDataset,
     check_acc: bool = True,
     check_gyr: bool = True,
-    frame: Literal["any", "body", "sensor"] = "any",
+    frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> bool:
     """Check if an object is a valid multi-sensor dataset.
@@ -251,8 +253,8 @@ def is_multi_sensor_dataset(
     gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
 
     """
-    if frame not in ["any", "body", "sensor"]:
-        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    if frame not in _ALLOWED_FRAMES:
+        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
 
     try:
         _assert_is_dtype(dataset, (pd.DataFrame, dict))
@@ -288,7 +290,7 @@ def is_dataset(
     dataset: Dataset,
     check_acc: bool = True,
     check_gyr: bool = True,
-    frame: Literal["any", "body", "sensor"] = "any",
+    frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> Optional[Literal["single", "multi"]]:
     """Check if an object is a valid multi-sensor or single-sensor dataset.
@@ -326,10 +328,9 @@ def is_dataset(
     gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
     gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
 
-
     """
-    if frame not in ["any", "body", "sensor"]:
-        raise ValueError('The argument `frame` must be one of ["any", "body", "sensor"]')
+    if frame not in _ALLOWED_FRAMES:
+        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
 
     try:
         is_single_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
