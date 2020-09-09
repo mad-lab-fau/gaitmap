@@ -9,8 +9,6 @@ from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.dataset_helper import (
-    is_multi_sensor_dataset,
-    is_single_sensor_dataset,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
     StrideList,

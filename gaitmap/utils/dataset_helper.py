@@ -46,6 +46,7 @@ OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 _ALLOWED_FRAMES = ["any", "body", "sensor"]
 _ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]
 
+
 def _get_expected_dataset_cols(
     frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
 ) -> List:
@@ -82,21 +83,21 @@ def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = T
         If MultiIndex is expected, how many level should the MultiIndex have
     expected
         If the df is expected to have a MultiIndex or not
+
     """
     has_multiindex = isinstance(df.columns, pd.MultiIndex)
-    if not has_multiindex is expected:
+    if has_multiindex is not expected:
         if expected is False:
             raise ValueError(
                 "The dataframe is expected to have a single level of columns. "
                 "But it has a MultiIndex with {} levels.".format(df.columns.nlevels)
             )
-        else:
-            raise ValueError(
-                "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-                "It has just a single normal column level.".format(nlevels)
-            )
+        raise ValueError(
+            "The dataframe is expected to have a MultiIndex with {} levels as columns. "
+            "It has just a single normal column level.".format(nlevels)
+        )
     if has_multiindex is True:
-        if not (df.columns.nlevels == nlevels):
+        if not df.columns.nlevels == nlevels:
             raise ValueError(
                 "The dataframe is expected to have a MultiIndex with {} levels as columns. "
                 "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
@@ -112,11 +113,12 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
     >>> df.columns = ["col1", "col2"]
     >>> _assert_has_columns(df, [["other_col1", "other_col2"], ["col1", "col2"]])
     >>> # This raises no error, as df contains all columns of the second set
+
     """
     columns = df.columns
     result = False
-    for set in columns_sets:
-        result = result or all(v in columns for v in set)
+    for col_set in columns_sets:
+        result = result or all(v in columns for v in col_set)
 
     if result is False:
         if len(columns_sets) == 1:
@@ -182,7 +184,7 @@ def is_single_sensor_dataset(
 
     """
     if frame not in _ALLOWED_FRAMES:
-        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
+        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
     try:
         _assert_is_dtype(dataset, pd.DataFrame)
         _assert_has_multindex(dataset, expected=False)
@@ -254,7 +256,7 @@ def is_multi_sensor_dataset(
 
     """
     if frame not in _ALLOWED_FRAMES:
-        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
+        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
 
     try:
         _assert_is_dtype(dataset, (pd.DataFrame, dict))
@@ -287,10 +289,7 @@ def is_multi_sensor_dataset(
 
 
 def is_dataset(
-    dataset: Dataset,
-    check_acc: bool = True,
-    check_gyr: bool = True,
-    frame: _ALLOWED_FRAMES_TYPE = "any",
+    dataset: Dataset, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any",
 ) -> Optional[Literal["single", "multi"]]:
     """Check if an object is a valid multi-sensor or single-sensor dataset.
 
@@ -327,7 +326,7 @@ def is_dataset(
 
     """
     if frame not in _ALLOWED_FRAMES:
-        raise ValueError('The argument `frame` must be one of {}'.format(_ALLOWED_FRAMES))
+        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
 
     try:
         is_single_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)

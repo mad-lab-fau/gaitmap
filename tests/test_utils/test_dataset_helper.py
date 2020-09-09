@@ -176,9 +176,7 @@ class TestIsDataset:
         assert str(BF_ACC) in str(e.value)
         assert "MultiIndex" in str(e.value)
 
-    @pytest.mark.parametrize(
-        ("obj", "out"), ((pd.DataFrame(), "single"), ({"s1": pd.DataFrame()}, "multi"))
-    )
+    @pytest.mark.parametrize(("obj", "out"), ((pd.DataFrame(), "single"), ({"s1": pd.DataFrame()}, "multi")))
     def test_basic_function(self, obj, out):
         assert is_dataset(obj, check_gyr=False, check_acc=False) == out
 
