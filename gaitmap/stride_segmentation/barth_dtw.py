@@ -210,7 +210,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
             cost_per_valid_stride = cost[valid_indices]
             # get groups of strides with the same start value
             strides_with_same_start = np.diff(starts, prepend=np.inf) == 0
-            starts[~(strides_with_same_start)] = np.nan
+            starts[~strides_with_same_start] = np.nan
             groups = np.ma.clump_unmasked(np.ma.masked_invalid(starts))
             for s in groups:
                 # For each group find the stride with the lowest original cost
@@ -223,7 +223,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         return matches_start_end, to_keep
 
     def _post_postprocess_check(self, matches_start_end):
-        super(BarthDtw, self)._post_postprocess_check(matches_start_end)
+        super()._post_postprocess_check(matches_start_end)
         # Check if there are still overlapping strides
         if np.any(np.diff(matches_start_end.flatten()) < 0):
             warnings.warn(
