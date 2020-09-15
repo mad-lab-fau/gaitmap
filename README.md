@@ -19,19 +19,19 @@ Then install the package using pip.
 
 The latest stable version:
 ```
-pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
 ```
 
 The current development version:
 ```
-pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@develop --upgrade
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@develop --upgrade
 ```
 
 A specific version (e.g. 1.0.0):
 
 For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
 ```
-pip install git@https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.0.0 --upgrade
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.0.0 --upgrade
 ```
 
 If you are planning to make any changes to the library, please refer to the developer section below.
