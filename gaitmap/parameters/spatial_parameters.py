@@ -92,6 +92,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         end position of each stride.
         This indicates "how far outwards" a subject moves the foot during the swing phase.
         Note, that this parameter is only meaningfull for straight strides.
+        It is further assumed that the inward/outward rotation of the foot is small in comparison the the actual
+        lateral swing of the leg.
 
     .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
        Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
@@ -296,7 +298,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         parameters_
             Data frame containing spatial parameters of single sensor
         sole_angle_course_
-            The sole angle in the sagittal plane for each stride
+            The sole angle in the sagittal plane (around the "ml" axis) for each stride
 
         """
         parameters_ = {}
@@ -364,16 +366,17 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     return floor_angle
 
 
-def _calc_max_sensor_lift(positions: pd.DataFrame) -> pd.Series:
+def _calc_max_sensor_lift(positions: SingleSensorPositionList) -> pd.Series:
     return positions["pos_z"].groupby(level="s_id").max()
 
 
-def _calc_max_lateral_excursion(positions: pd.DataFrame) -> pd.Series:
+def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Series:
     """Calculate the maximal lateral deviation from a straight line going from start pos to end pos of a stride.
 
     x1 = (x1,y1), x2 = (x2,y2) define the line
     x = (x0,y0) is the point the distance is computed to
     d =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/sqrt((x2-x1)**2+(y2-y1)**2)
+      =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/stride_length
 
     """
     start = positions.groupby(level="s_id").first()
