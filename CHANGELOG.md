@@ -28,6 +28,27 @@ This is the first version and we already added:
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/66)
 - A set of common metrics (recall, precision, f1) that can be calculated for segmentation results
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/66)
+  
+### Global Validation Error Handling
+
+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/72,
+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/16
+
+To make developing new algorithms easier and error messages easier to understand for users,
+we modified the data-object validation helper to raise proper descriptive error messages.
+The data-object helpers now have an optional argument (`raise_exception=True`) to trigger the new error-messages.
+
+- Proper validation for the dataset objects.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
+- A new `is_dataset` method to validate either single or multi-sensor datasets.
+  This should be used in functions that should work with both inputs.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
+- A custom error class `ValidationError` used for all validation related errors.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
+
+The following algorithms are already (fully or partially) updated to use the new validation helper:
+
+- `RamppEventDetection`, partially (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
 
 ### Changed
 
@@ -62,6 +83,8 @@ This is the first version and we already added:
   This should fix all issues going forward.
 - To get or load the data of a DtwTemplate, you now need to use `template.get_data()` instead of `template.data`.
   Simply replacing the old with the new option should fix all issues.
+- For custom algorithms using the gaitmap format, you should migrate to the new datatype validation functions!
+  See "Added" section for more details.
 
 ## [1.0.1] - 2020-07-15
 
