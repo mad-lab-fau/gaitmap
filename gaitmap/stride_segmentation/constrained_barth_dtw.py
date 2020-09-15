@@ -6,7 +6,8 @@ from tslearn.metrics import _local_squared_dist
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
-from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, BarthOriginalTemplate
+from gaitmap.stride_segmentation.barth_dtw import BarthDtw
+from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, BarthOriginalTemplate
 
 
 class ConstrainedDtw(BarthDtw):
