@@ -143,6 +143,8 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         max_cost: Optional[float] = 4.0,
         min_match_length_s: Optional[float] = 0.6,
         max_match_length_s: Optional[float] = 3.0,
+        max_template_stretch_ms: Optional[float] = None,
+        max_signal_stretch_ms: Optional[float] = None,
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
@@ -155,6 +157,8 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
             max_cost=max_cost,
             min_match_length_s=min_match_length_s,
             max_match_length_s=max_match_length_s,
+            max_template_stretch_ms=max_template_stretch_ms,
+            max_signal_stretch_ms=max_signal_stretch_ms,
             resample_template=resample_template,
             find_matches_method=find_matches_method,
         )
