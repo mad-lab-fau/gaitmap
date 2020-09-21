@@ -15,6 +15,95 @@ class ConstrainedBarthDtw(BarthDtw):
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
 
+    Parameters
+    ----------
+    template
+        The template used for matching.
+        The required data type and shape depends on the use case.
+        For more details see :class:`~gaitmap.stride_segmentation.BaseDtw`.
+        By default, the :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate` is used
+        with default settings.
+    resample_template
+        If `True` the template will be resampled to match the sampling rate of the data.
+        This requires a valid value for `template.sampling_rate_hz` value.
+    max_cost
+        The maximal allowed cost to find potential match in the cost function.
+        Note that the cost is roughly calculated as: `sqrt(|template - data/template.scaling|)`.
+        Its usage depends on the exact `find_matches_method` used.
+        Refer to the specific function to learn more about this.
+        The default value should work well with healthy gait (with the default template).
+    min_match_length_s
+        The minimal length of a sequence in seconds to be considered a stride.
+        Matches that result in shorter sequences, will be ignored.
+        In general, this exclusion is performed as a post-processing step after the matching.
+        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
+        matches directly.
+    max_match_length_s
+        The maximal length of a sequence in seconds to be considered a stride.
+        Matches that result in longer sequences will be ignored.
+        This exclusion is performed as a post-processing step after the matching.
+    max_template_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the template are allowed to be mapped to just a single datapoint of the signal.
+        The ms value will internally be converted to samples using the template sampling-rate (or the signal
+        sampling-rate, if `resample_template=True`).
+        If no template sampling-rate is provided, this constrain can not be used.
+    max_signal_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
+        The ms value will internally be converted to samples using the data sampling-rate
+    find_matches_method
+        Select the method used to find matches in the cost function.
+
+        - "min_under_thres"
+            Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as method.
+        - "find_peaks"
+            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
+            method.
+    snap_to_min_win_ms
+        The size of the window in ms used to search local minima during the post processing of the stride borders.
+        If this is set to None, this postprocessing step is skipped.
+        Refer to the Notes section for more details.
+    snap_to_min_axis
+        The axis of the data used to search for minima during the processing of the stride borders.
+        The axis label must match one of the axis label in the data.
+        Refer to the Notes section for more details.
+    conflict_resolution
+        This enables a set of checks that handel cases where stride matches overlap with other strides.
+        The following steps will be performed:
+
+        - If multiple matches have the same start point, only the match with the lowest cost will be kept.
+
+    Attributes
+    ----------
+    stride_list_ : A stride list or dictionary with such values
+        The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
+        other algorithms.
+        If `snap_to_min_window_ms` is not `None`, the start and end value might not match to the output of `paths_`.
+        Refer to `matches_start_end_original_` for the unmodified start and end values.
+    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        The start (column 1) and end (column 2) of each detected stride.
+    costs_ : List of length n_detected_strides or dictionary with such values
+        The cost value associated with each stride.
+    acc_cost_mat_ : array with the shapes (length_template x length_data) or dictionary with such values
+        The accumulated cost matrix of the DTW. The last row represents the cost function.
+    cost_function_ : 1D array with the same length as the data or dictionary with such values
+        The final cost function calculated as the square root of the last row of the accumulated cost matrix.
+    paths_ : list of arrays with length n_detected_strides or dictionary with such values
+        The full path through the cost matrix of each detected stride.
+    matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        Identical to `matches_start_end_` if `snap_to_min_window_ms` is equal to `None`.
+        Otherwise, it return the start and end values before the sanpping is applied.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the `segment` method.
+    sampling_rate_hz
+        The sampling rate of the data
+
     See Also
     --------
     gaitmap.stride_segmentation.BarthDtw: For all details on the method
