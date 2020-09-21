@@ -209,12 +209,19 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         if window_size > len(s_3d):
             raise ValueError("The selected window size is larger than the actual signal.")
         s_3d = sliding_window_view(s_3d, window_size, overlap)
+
+        # in case the data is only as long as one window size, the dimensionality of the np array needs to be adjusted
+        if s_3d.ndim < 3:
+            s_3d = s_3d[np.newaxis, :, :]
         # subtract mean per window
         s_3d = s_3d - np.mean(s_3d, axis=1)[:, np.newaxis, :]
         # compute norm per window
         s_3d_norm = norm(s_3d, axis=2)
 
         s_1d = sliding_window_view(s_1d, window_size, overlap)
+        # in case the data is only as long as one window size, the dimensionality of the np array needs to be adjusted
+        if s_1d.ndim < 2:
+            s_1d = s_1d[np.newaxis, :]
         # subtract mean per window
         s_1d = s_1d - np.mean(s_1d, axis=1)[:, np.newaxis]
 
