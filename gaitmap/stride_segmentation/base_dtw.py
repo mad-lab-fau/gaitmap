@@ -385,26 +385,7 @@ class BaseDtw(BaseAlgorithm):
         else:
             final_template = template_array
 
-        self._min_sequence_length = self.min_match_length_s
-        if self._min_sequence_length not in (None, 0, 0.0):
-            self._min_sequence_length *= self.sampling_rate_hz
-        self._max_sequence_length = self.max_match_length_s
-        if self._max_sequence_length not in (None, 0, 0.0):
-            self._max_sequence_length *= self.sampling_rate_hz
-        self._max_template_stretch = self.max_template_stretch_ms
-        if self._max_template_stretch not in (None, 0, 0.0):
-            if self.resample_template is True:
-                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * self.sampling_rate_hz)
-            elif template.sampling_rate_hz is None:
-                raise ValueError(
-                    "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
-                    "the template."
-                )
-            else:
-                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * template.sampling_rate_hz)
-        self._max_signal_stretch = self.max_signal_stretch_ms
-        if self._max_signal_stretch not in (None, 0, 0.0):
-            self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
+        self._validate_constrains(template)
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
@@ -577,6 +558,28 @@ class BaseDtw(BaseAlgorithm):
             path_array = np.array(path)
             paths.append(path_array)
         return paths
+
+    def _validate_constrains(self, template):
+        self._min_sequence_length = self.min_match_length_s
+        if self._min_sequence_length not in (None, 0, 0.0):
+            self._min_sequence_length *= self.sampling_rate_hz
+        self._max_sequence_length = self.max_match_length_s
+        if self._max_sequence_length not in (None, 0, 0.0):
+            self._max_sequence_length *= self.sampling_rate_hz
+        self._max_template_stretch = self.max_template_stretch_ms
+        if self._max_template_stretch not in (None, 0, 0.0):
+            if self.resample_template is True:
+                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * self.sampling_rate_hz)
+            elif template.sampling_rate_hz is None:
+                raise ValueError(
+                    "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
+                    "the template."
+                )
+            else:
+                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * template.sampling_rate_hz)
+        self._max_signal_stretch = self.max_signal_stretch_ms
+        if self._max_signal_stretch not in (None, 0, 0.0):
+            self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
 
 
 @njit()

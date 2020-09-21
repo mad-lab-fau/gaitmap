@@ -1,3 +1,4 @@
+"""A version of BarthDTW that used local warping constrains by default."""
 from typing import Optional, Union, Dict
 
 from typing_extensions import Literal
@@ -17,7 +18,9 @@ class ConstrainedBarthDtw(BarthDtw):
     See Also
     --------
     gaitmap.stride_segmentation.BarthDtw: For all details on the method
+
     """
+
     def __init__(
         self,
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
