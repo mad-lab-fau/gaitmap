@@ -513,3 +513,58 @@ class TestTemplateResampling(DtwTestBase):
             dtw.segment(test_data, 20)
 
         assert len(w) == 0
+
+
+class TestDtwConstrains(DtwTestBase):
+    """Test that the local warping constrains work as expected."""
+
+    def test_signal_constrained(self):
+        template = np.array([0, 1, 0])
+        sequence = [*np.ones(5) * 2, *np.repeat(template, 5), *np.ones(5) * 2, *np.repeat(template, 3), *np.ones(5) * 2]
+        template = create_dtw_template(template, sampling_rate_hz=1)
+
+        # Without constrain
+        dtw = self.init_dtw(template=template, resample_template=True)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 2
+        assert len(dtw.paths_[0]) == 7
+        assert len(dtw.paths_[1]) == 5
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+
+        # Allow a maximum of 3 signal samples matched with the same template sample
+        # At a fake samplingrate of 1 Hz this means 3000 ms
+        # This means only the second match should remain
+
+        dtw = self.init_dtw(template=template, resample_template=True, max_signal_stretch_ms=3000.0)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 1
+        assert dtw.costs_[0] == 0.0
+        assert len(dtw.paths_[0]) == 5
+
+    def test_template_constrained(self):
+        template = np.array([0, 1, 0])
+        sequence = [*np.ones(5) * 2, *template, *np.ones(5) * 2, *np.repeat(template, 2), *np.ones(5) * 2]
+        template = np.repeat(template, 6)
+        template = create_dtw_template(template, sampling_rate_hz=1)
+
+        # Without constrain
+        dtw = self.init_dtw(template=template, resample_template=True)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 2
+        assert len(dtw.paths_[0]) == 18
+        assert len(dtw.paths_[1]) == 18
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+
+        # Allow a maximum of 3 template samples matched with the same template sample
+        # At a fake samplingrate of 1 Hz this means 3000 ms
+        # This means only the second match should remain
+
+        dtw = self.init_dtw(template=template, resample_template=True, max_template_stretch_ms=3000.0)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 1
+        assert dtw.costs_[0] == 0.0
+        assert len(dtw.paths_[0]) == 18

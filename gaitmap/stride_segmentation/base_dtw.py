@@ -567,7 +567,9 @@ class BaseDtw(BaseAlgorithm):
         if self._max_sequence_length not in (None, 0, 0.0):
             self._max_sequence_length *= self.sampling_rate_hz
         self._max_template_stretch = self.max_template_stretch_ms
-        if self._max_template_stretch not in (None, 0, 0.0):
+        if self._max_template_stretch is None:
+            self._max_template_stretch = np.inf
+        elif self._max_template_stretch != 0:
             if self.resample_template is True:
                 self._max_template_stretch = np.round(self._max_template_stretch / 1000 * self.sampling_rate_hz)
             elif template.sampling_rate_hz is None:
@@ -577,12 +579,15 @@ class BaseDtw(BaseAlgorithm):
                 )
             else:
                 self._max_template_stretch = np.round(self._max_template_stretch / 1000 * template.sampling_rate_hz)
+            self._max_template_stretch = int(self._max_template_stretch)
         self._max_signal_stretch = self.max_signal_stretch_ms
-        if self._max_signal_stretch not in (None, 0, 0.0):
+        if self._max_signal_stretch is None:
+            self._max_signal_stretch = np.inf
+        elif self._max_signal_stretch != 0:
             self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
 
 
-@njit()
+@njit(cache=True)
 def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
     """Create a costmatrix using local warping constrains.
 
@@ -612,10 +617,10 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
                 shift = shifts[index]
                 vals[index, :] = cum_sum[i + shift[0], j + shift[1]]
                 # vertical step
-                if index == 0 and vals[index, 1] >= max_subseq_steps:
+                if index == 0 and vals[index, 1] >= max_longseq_steps:
                     vals[index, 0] = np.inf
                 # horizontal step
-                elif index == 1 and vals[index, 2] >= max_longseq_steps:
+                elif index == 1 and vals[index, 2] >= max_subseq_steps:
                     vals[index, 0] = np.inf
 
             smallest_cost = np.argmin(vals[:, 0])
