@@ -48,6 +48,16 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         The maximal length of a sequence in seconds to be considered a stride.
         Matches that result in longer sequences will be ignored.
         This exclusion is performed as a post-processing step after the matching.
+    max_template_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the template are allowed to be mapped to just a single datapoint of the signal.
+        The ms value will internally be converted to samples using the template sampling-rate (or the signal
+        sampling-rate, if `resample_template=True`).
+        If no template sampling-rate is provided, this constrain can not be used.
+    max_signal_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
+        The ms value will internally be converted to samples using the data sampling-rate
     find_matches_method
         Select the method used to find matches in the cost function.
 

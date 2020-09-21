@@ -141,6 +141,16 @@ class BaseDtw(BaseAlgorithm):
         The maximal length of a sequence in seconds to be considered a match.
         Matches that result in longer sequences will be ignored.
         This exclusion is performed as a post-processing step after the matching.
+    max_template_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the template are allowed to be mapped to just a single datapoint of the signal.
+        The ms value will internally be converted to samples using the template sampling-rate (or the signal
+        sampling-rate, if `resample_template=True`).
+        If no template sampling-rate is provided, this constrain can not be used.
+    max_signal_stretch_ms
+        A local warping constrain for the DTW.
+        It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
+        The ms value will internally be converted to samples using the data sampling-rate
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -383,7 +393,15 @@ class BaseDtw(BaseAlgorithm):
             self._max_sequence_length *= self.sampling_rate_hz
         self._max_template_stretch = self.max_template_stretch_ms
         if self._max_template_stretch not in (None, 0, 0.0):
-            self._max_template_stretch = np.round(self._max_template_stretch / 1000 * self.sampling_rate_hz)
+            if self.resample_template is True:
+                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * self.sampling_rate_hz)
+            elif template.sampling_rate_hz is None:
+                raise ValueError(
+                    "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
+                    "the template."
+                )
+            else:
+                self._max_template_stretch = np.round(self._max_template_stretch / 1000 * template.sampling_rate_hz)
         self._max_signal_stretch = self.max_signal_stretch_ms
         if self._max_signal_stretch not in (None, 0, 0.0):
             self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)

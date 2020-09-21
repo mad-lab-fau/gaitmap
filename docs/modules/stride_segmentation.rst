@@ -15,6 +15,7 @@ Classes
 
     BaseDtw
     BarthDtw
+    ConstrainedBarthDtw
     DtwTemplate
     BarthOriginalTemplate
     RoiStrideSegmentation

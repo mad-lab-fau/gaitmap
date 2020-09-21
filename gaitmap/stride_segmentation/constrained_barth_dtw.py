@@ -7,6 +7,17 @@ from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, BarthOriginal
 
 
 class ConstrainedBarthDtw(BarthDtw):
+    """A version of BarthDtw that uses local warping constrains by default.
+
+    This method is identical to :class:`~gaitmap.stride_segmentation.BarthDtw`, but uses local constrains for the
+    template and the signal by default.
+    This exists as a separate class, so that users are aware, they are using a different method that might impact
+    their results.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.BarthDtw: For all details on the method
+    """
     def __init__(
         self,
         template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
@@ -15,8 +26,8 @@ class ConstrainedBarthDtw(BarthDtw):
         max_cost: Optional[float] = 4.0,
         min_match_length_s: Optional[float] = 0.6,
         max_match_length_s: Optional[float] = 3.0,
-        max_template_stretch_ms: Optional[float] = 20,
-        max_signal_stretch_ms: Optional[float] = 30,
+        max_template_stretch_ms: Optional[float] = 100,
+        max_signal_stretch_ms: Optional[float] = 150,
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
