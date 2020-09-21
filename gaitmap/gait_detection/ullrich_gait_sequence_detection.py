@@ -253,7 +253,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # concat subsequent gs
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
-        gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+        if gait_sequences_start_end.size == 0:
+            gait_sequences_ = pd.DataFrame(columns=["start", "end"])
+        else:
+            gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
 
         # add a column for the gs_id
         gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gs_id"})
@@ -434,12 +437,13 @@ def _row_wise_autocorrelation(array, lag_max):
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     """Concat consecutive gait sequences to a single one."""
+    # empty list for result
+    gait_sequences_start_corrected = []
+
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
-        gait_sequences_start_corrected = gait_sequences_start
+        return np.array(gait_sequences_start_corrected)
     else:
-        # empty list for result
-        gait_sequences_start_corrected = []
         # first derivative of walking bout samples to get their relative distances
         gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
         # compute those indices in the derivative where it is higher than the window size, these are the
