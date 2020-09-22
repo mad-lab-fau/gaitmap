@@ -12,6 +12,11 @@ class ConstrainedBarthDtw(BarthDtw):
 
     This method is identical to :class:`~gaitmap.stride_segmentation.BarthDtw`, but uses local constrains for the
     template and the signal by default.
+    Additionally, it only uses the "ml" template direction by default.
+
+    Both changes help to prevent issues, where only the region from TC to IC is mapped as the entire stride.
+    For more information on this see TODO: link to example.
+
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
 
@@ -112,14 +117,14 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(use_cols=("gyr_ml",)),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 4.0,
+        max_cost: Optional[float] = 2.5,
         min_match_length_s: Optional[float] = 0.6,
         max_match_length_s: Optional[float] = 3.0,
-        max_template_stretch_ms: Optional[float] = 150,
-        max_signal_stretch_ms: Optional[float] = 100,
+        max_template_stretch_ms: Optional[float] = 100,
+        max_signal_stretch_ms: Optional[float] = 150,
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
