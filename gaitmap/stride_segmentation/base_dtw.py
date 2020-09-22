@@ -418,7 +418,7 @@ class BaseDtw(BaseAlgorithm):
 
     def _calculate_cost_matrix(self, template, matching_data):
         # In case we don't have local constrains, we can use the simple dtw implementation
-        if self._max_template_stretch is None and self._max_signal_stretch is None:
+        if self._max_template_stretch == np.inf and self._max_signal_stretch == np.inf:
             return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
         # ... otherwise, we use our custom cost matrix. This is slower. Therefore, we only want to use when we need it.
         return _subsequence_cost_matrix_with_constrains(
@@ -579,7 +579,6 @@ class BaseDtw(BaseAlgorithm):
                 )
             else:
                 self._max_template_stretch = np.round(self._max_template_stretch / 1000 * template.sampling_rate_hz)
-            self._max_template_stretch = int(self._max_template_stretch)
         self._max_signal_stretch = self.max_signal_stretch_ms
         if self._max_signal_stretch is None:
             self._max_signal_stretch = np.inf
@@ -629,7 +628,7 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
                 cum_sum[i + 1, j + 1, 1] = vals[0, 1] + 1
                 cum_sum[i + 1, j + 1, 2] = 0
             elif smallest_cost == 1:
-                cum_sum[i + 1, j + 1, 2] += vals[1, 2] + 1
+                cum_sum[i + 1, j + 1, 2] = vals[1, 2] + 1
                 cum_sum[i + 1, j + 1, 1] = 0
             cum_sum[i + 1, j + 1, 0] += vals[smallest_cost, 0]
     return cum_sum[1:, 1:]
