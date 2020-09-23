@@ -7,9 +7,10 @@ import pandas as pd
 from numba import njit
 from numpy.linalg import norm
 from scipy.fft import rfft
-from scipy.signal import butter, lfilter, peak_prominences
+from scipy.signal import peak_prominences
 
 from gaitmap.base import BaseGaitDetection, BaseType
+from gaitmap.utils import signal_processing
 from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
@@ -202,7 +203,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # lowpass filter the signal: this is now happening before the windowing and thus before the active signal
         # detection compared to JBHI version
         lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
-        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+        s_1d = signal_processing.butter_lowpass_filter_1d(s_1d, self.sampling_rate_hz, lp_freq_hz)
 
         # sliding windows
         overlap = int(window_size / 2)
@@ -256,7 +257,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         if gait_sequences_start_end.size == 0:
             gait_sequences_ = pd.DataFrame(columns=["start", "end"])
         else:
-            gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+            gait_sequences_ = pd.DataFrame(
+                {"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]}
+            )
 
         # add a column for the gs_id
         gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gs_id"})
@@ -415,16 +418,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
 
 # TODO move this to general utils
-def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
-    """Create and apply butterworth lowpass filter."""
-    nyq = 0.5 * sampling_rate_hz
-    normal_cutoff = cutoff / nyq
-    b, a = butter(order, normal_cutoff, btype="low", analog=False)
-    y = lfilter(b, a, data)
-    return y
-
-
-# TODO move this to general utils
 @njit(nogil=True, parallel=True, cache=True)
 def _row_wise_autocorrelation(array, lag_max):
     out = np.empty((array.shape[0], lag_max + 1))
@@ -443,24 +436,24 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
         return np.array(gait_sequences_start_corrected)
-    else:
-        # first derivative of walking bout samples to get their relative distances
-        gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
-        # compute those indices in the derivative where it is higher than the window size, these are the
-        # non-consecutive bouts
-        diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
-        # split up the walking bout samples in the locations where they are not consecutive
-        split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
-        # iterate over the single splits
-        for jump in split_jumps:
-            # start of the corrected walking bout is the first index of the jump
-            start = jump[0]
-            # length of the corrected walking bout is computed
-            end = jump[-1] + window_size
-            # if start+length exceeds the signal length correct the bout length
-            if end > sig_length:
-                end = sig_length
-            # append list with start and length to the corrected walking bout samples
-            gait_sequences_start_corrected.append([start, end])
+
+    # first derivative of walking bout samples to get their relative distances
+    gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
+    # compute those indices in the derivative where it is higher than the window size, these are the
+    # non-consecutive bouts
+    diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
+    # split up the walking bout samples in the locations where they are not consecutive
+    split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
+    # iterate over the single splits
+    for jump in split_jumps:
+        # start of the corrected walking bout is the first index of the jump
+        start = jump[0]
+        # length of the corrected walking bout is computed
+        end = jump[-1] + window_size
+        # if start+length exceeds the signal length correct the bout length
+        if end > sig_length:
+            end = sig_length
+        # append list with start and length to the corrected walking bout samples
+        gait_sequences_start_corrected.append([start, end])
 
     return np.array(gait_sequences_start_corrected)
