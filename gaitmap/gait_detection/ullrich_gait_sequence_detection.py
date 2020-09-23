@@ -316,7 +316,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # (sampling_rate / locomotion_band_lower = upper bound of autocorrelation)
         upper_bound = int(np.ceil(self.sampling_rate_hz / self.locomotion_band[0]))
         # autocorr from 0-upper motion band
-        auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
+        auto_corr = signal_processing.row_wise_autocorrelation(s_1d, upper_bound)
         # calculate dominant frequency in Hz
         dominant_frequency = (
             1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
@@ -415,17 +415,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                     self.locomotion_band[1], self.sampling_rate_hz / 2, self.sampling_rate_hz
                 )
             )
-
-
-# TODO move this to general utils
-@njit(nogil=True, parallel=True, cache=True)
-def _row_wise_autocorrelation(array, lag_max):
-    out = np.empty((array.shape[0], lag_max + 1))
-    for tau in range(lag_max + 1):
-        tmax = array.shape[1] - tau
-        umax = array.shape[1] + tau
-        out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
-    return out
 
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
