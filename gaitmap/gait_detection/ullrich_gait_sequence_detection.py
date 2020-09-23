@@ -52,7 +52,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         Before the actual FFT analysis, the algorithm compares the mean signal norm within each window against the
         `active_signal_threshold` in order to reject windows with rest right from the beginning. Default value is
         according to the publication is 50 deg / s for `sensor_channel_config` settings including the gyroscope or
-        0.2 g for `sensor_channel_config` settings including the accelerometer. For higher thresholds the signal in
+        0.2 * 9.81 m/s^2 for `sensor_channel_config` settings including the accelerometer. For higher thresholds the
+        signal in
         the window must show more activity to be passed to the frequency analysis.
     locomotion_band
         The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
@@ -277,10 +278,14 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
             # scaling factor for the FFT result to get comparable numerical range for acc or gyr configurations
-            fft_factor = 100
+            # needs to be divided by 9.81 as gaitmap is working with m/s^2, whereas in the original implementation we
+            # were using g values for acc
+            fft_factor = 100 / 9.81
             # TODO is it fine to only check for None and finally set this value here?
             if active_signal_th is None:
-                active_signal_th = 0.2
+                # needs to be multiplied by 9.81 as gaitmap is working with m/s^2, whereas in the original implementation we
+                # were using g values for acc
+                active_signal_th = 0.2 * 9.81
         else:
             s_3d = np.array(data[BF_GYR])
             fft_factor = 1
