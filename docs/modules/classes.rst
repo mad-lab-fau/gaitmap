@@ -337,6 +337,23 @@ Functions
     find_static_sequences
     find_first_static_window_multi_sensor
 
+:mod:`gaitmap.utils.signal_processing`: Helper to perform some signal processing tasks
+======================================================================================
+
+.. automodule:: gaitmap.utils.signal_processing
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.utils.signal_processing
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    butter_lowpass_filter_1d
+    row_wise_autocorrelation
 
 :mod:`gaitmap.evaluation_utils`: Helper to evaluate the output of the algorithms
 ================================================================================
