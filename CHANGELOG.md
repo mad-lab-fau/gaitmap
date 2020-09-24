@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   misalignments in certain cases.
 - `VelocityList` is now a separate dtype representing integrated velocity values
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/77)
+- `UllrichGaitSequenceDetection` now has its own example in the Sphinx Gallery 
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
+- Added a new module `gaitmap.utils.signal_processing` for general filtering and processing purposes (mainly for
+ moving some functions from `UllrichGaitSequenceDetection` 
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
+
 
 #### The new `evaluation_utils` module https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/117
 
@@ -57,6 +63,11 @@ The following algorithms are already (fully or partially) updated to use the new
 - To get or load the data of a DtwTemplate you now need to call `get_data` on the method instead of just using the
   `data` property (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/73)
   This is done to conform with the basic class structure needed for proper serialization.
+- Changed function name `_butter_lowpass_filter` in `gaitmap.gait_detection.UllrichGaitSequenceDetection` to 
+`butter_lowpass_filter_1d` (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
+- Moved `butter_lowpass_filter_1d` and `row_wise_autocorrelation` from `gaitmap.gait_detection
+.UllrichGaitSequenceDetection` to the new module `gaitmap.utils.signal_processing`
+(https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
 
 ### Deprecated
 
@@ -75,6 +86,14 @@ The following algorithms are already (fully or partially) updated to use the new
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/72)
 - Fixed an issue that `rotate_dataset_series` performed an unexpected inplace modification of the data.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/78)
+- Fixed a bug that would break the `UllrichGaitSequenceDetection` in case of no active signal windows
+(https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/commit/95736e8d2676f98d4c43ea0bfa3dbf3566542f71)
+- Fixed a bug that would break the `UllrichGaitSequenceDetection` in case the input signal was just as long as the
+ window size
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/commit/d516a40520f86bfd39ddcdd813b5c18312785085)
+- Adapted scaling factors for the usage of accelerometer data in the `UllrichGaitSequenceDetection` to work with
+ values given in m/s^2 (in contrast to g as done in the publication / the usage with mGL-algorithms-py)
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
 
 ### Migration Guide
 
