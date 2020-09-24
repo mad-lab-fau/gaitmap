@@ -93,6 +93,13 @@ def test_mad_pipeline(snapshot):
     snapshot.assert_match(temporal_paras.parameters_pretty_["left_sensor"], "temporal_paras_left")
 
 
+def test_ullrich_gait_sequence_detection(snapshot):
+    from examples.ullrich_gait_sequence_detection import gsd
+
+    assert len(gsd.gait_sequences_) == 2
+    snapshot.assert_match(gsd.gait_sequences_)
+
+
 def test_multi_process():
     """Test the multiprocess example.
 
