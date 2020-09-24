@@ -118,7 +118,7 @@ for i, gs in gait_sequences.iterrows():
     end_sample = int(gs["end"])
     ax1.axvline(start_sample, color="g")
     ax1.axvline(end_sample, color="r")
-    ax1.axvspan(start_sample, end_sample, facecolor='grey', alpha=0.8)
+    ax1.axvspan(start_sample, end_sample, facecolor="grey", alpha=0.8)
 
 ax1.grid(True)
 
