@@ -283,8 +283,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             fft_factor = 100 / 9.81
             # TODO is it fine to only check for None and finally set this value here?
             if active_signal_th is None:
-                # needs to be multiplied by 9.81 as gaitmap is working with m/s^2, whereas in the original implementation we
-                # were using g values for acc
+                # needs to be multiplied by 9.81 as gaitmap is working with m/s^2, whereas in the original
+                # implementation we were using g values for acc
                 active_signal_th = 0.2 * 9.81
         else:
             s_3d = np.array(data[BF_GYR])
