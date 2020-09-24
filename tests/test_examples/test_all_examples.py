@@ -97,7 +97,7 @@ def test_ullrich_gait_sequence_detection(snapshot):
     from examples.ullrich_gait_sequence_detection import gsd
 
     assert len(gsd.gait_sequences_) == 2
-    snapshot.assert_match(gsd.gait_sequences_)
+    snapshot.assert_match(gsd.gait_sequences_.astype(np.int64))
 
 
 def test_multi_process():
