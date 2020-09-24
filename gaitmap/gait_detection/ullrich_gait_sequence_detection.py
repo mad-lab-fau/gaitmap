@@ -1,4 +1,4 @@
-"""The gait sequence detection algorithm by Rampp et al. 2020."""
+"""The gait sequence detection algorithm by Ullrich et al. 2020."""
 import itertools
 from typing import Optional, Tuple, Union, Dict
 
@@ -107,7 +107,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Notes
     -----
-    TODO: Add additional details about the algorithm for gait sequence detection
+    The underlying algorithm works under the assumption that the IMU gait signal shows a characteristic pattern of
+    harmonics when looking at the power spectral density. This is in contrast to cyclic non-gait signals, where there
+    is usually only one dominant frequency present.
 
     .. [1] M. Ullrich, A. Küderle, J. Hannink, S. Del Din, H. Gassner, F. Marxreiter, J. Klucken, B.M.
         Eskofier, F. Kluge, Detection of Gait From Continuous Inertial Sensor Data Using Harmonic
