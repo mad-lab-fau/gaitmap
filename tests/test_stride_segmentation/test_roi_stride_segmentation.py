@@ -13,6 +13,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -59,14 +60,14 @@ class TestParameterValidation:
     @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
     def test_unsuitable_datatype(self, data):
         """No proper Dataset provided."""
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             self.instance.segment(
                 data=data,
                 sampling_rate_hz=100,
                 regions_of_interest=pd.DataFrame([[0, 3, 0]], columns=["start", "end", "gs_id"]),
             )
 
-        assert "Invalid data object passed." in str(e)
+        assert "neither a single- or a multi-sensor dataset" in str(e)
 
     @pytest.mark.parametrize(
         "roi", (pd.DataFrame(), None),

@@ -7,6 +7,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 from gaitmap.utils.dataset_helper import MultiSensorDataset, get_multi_sensor_dataset_names
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
     rotation_from_angle,
     _rotate_sensor,
@@ -243,10 +244,10 @@ class TestRotateDataset:
 
 class TestRotateDatasetSeries:
     def test_invalid_input(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             rotate_dataset_series("bla", Rotation.identity(3))
 
-        assert "dataset" in str(e)
+        assert "SingleSensorDataset" in str(e)
 
     def test_invalid_input_length(self):
         data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)

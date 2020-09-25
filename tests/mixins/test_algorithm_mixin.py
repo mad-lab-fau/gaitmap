@@ -1,11 +1,8 @@
 """A mixin for all common tests that should be run on all algorithm classes."""
 import inspect
 
-import numpy as np
 import pytest
-from numpy.testing import assert_array_equal
 from numpydoc.docscrape import NumpyDocString
-from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType
 from tests.conftest import compare_algo_objects

@@ -93,11 +93,11 @@ class SimpleGyroIntegration(BaseOrientationMethod):
             The class instance with all result attributes populated
 
         """
-        if not is_single_sensor_dataset(data, check_acc=False, frame="sensor"):
-            raise ValueError("Data is not a single sensor dataset.")
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
+
+        is_single_sensor_dataset(self.data, check_acc=False, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()

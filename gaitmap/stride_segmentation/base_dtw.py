@@ -15,8 +15,8 @@ from gaitmap.utils.array_handling import find_local_minima_below_threshold, find
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
+    is_dataset,
 )
 
 
@@ -299,13 +299,18 @@ class BaseDtw(BaseAlgorithm):
                 )
             )
 
+        if isinstance(data, np.ndarray):
+            dataset_type = "array"
+        else:
+            dataset_type = is_dataset(data, check_gyr=False, check_acc=False)
+
         template = self.template
-        if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
+        if dataset_type in ("single", "array"):
             # Single template single sensor: easy
             self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
                 data, template
             )
-        elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+        else:  # Multisensor
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
@@ -328,9 +333,6 @@ class BaseDtw(BaseAlgorithm):
                 self.paths_[sensor] = r[1]
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
-        else:
-            # TODO: Better error message -> This will be fixed globally
-            raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
     def _segment_single_dataset(self, dataset, template):

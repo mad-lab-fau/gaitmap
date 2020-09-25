@@ -228,8 +228,7 @@ def create_interpolated_dtw_template(
         signal_sequence = [signal_sequence]
 
     for df in signal_sequence:
-        if not is_single_sensor_dataset(df, check_acc=False, check_gyr=False, frame="any"):
-            raise ValueError("All input dataframes must be a single sensor dataset!")
+        is_single_sensor_dataset(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
 
     if n_samples is None:
         # get mean stride length over given strides

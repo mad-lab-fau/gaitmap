@@ -13,9 +13,9 @@ from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     Dataset,
     SingleSensorDataset,
+    is_dataset,
 )
 from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 
@@ -116,7 +116,8 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     gaitmap.utils.rotations.rotate_dataset_series: Apply a series of rotations to a dataset
 
     """
-    if is_single_sensor_dataset(dataset):
+    dataset_type = is_dataset(dataset, frame="sensor")
+    if dataset_type == "single":
         if isinstance(rotation, dict):
             raise ValueError(
                 "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
@@ -124,8 +125,6 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
             )
         return _rotate_sensor(dataset, rotation, inplace=False)
 
-    if not is_multi_sensor_dataset(dataset):
-        raise ValueError("The data input format is not supported gaitmap")
     rotation_dict = rotation
     if not isinstance(rotation_dict, dict):
         rotation_dict = {k: rotation for k in get_multi_sensor_dataset_names(dataset)}
@@ -168,8 +167,7 @@ def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> 
     gaitmap.utils.rotations.rotate_dataset: Apply a single rotation to the entire dataset
 
     """
-    if not is_single_sensor_dataset(dataset):
-        raise ValueError("Invalid dataset format supplied.")
+    is_single_sensor_dataset(dataset, frame="sensor", raise_exception=True)
     if len(dataset) != len(rotations):
         raise ValueError("The number of rotations must fit the number of samples in the dataset!")
 

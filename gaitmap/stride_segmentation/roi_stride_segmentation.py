@@ -1,8 +1,8 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
 from typing import Dict, Hashable, Optional, TypeVar, Generic, Union
-from typing_extensions import Literal
 
 import pandas as pd
+from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.utils.consts import ROI_ID_COLS
@@ -11,12 +11,11 @@ from gaitmap.utils.dataset_helper import (
     RegionsOfInterestList,
     is_single_sensor_regions_of_interest_list,
     is_multi_sensor_regions_of_interest_list,
-    is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     SingleSensorRegionsOfInterestList,
     _get_regions_of_interest_types,
     StrideList,
     get_multi_sensor_dataset_names,
+    is_dataset,
 )
 
 StrideSegmentationAlgorithm = TypeVar("StrideSegmentationAlgorithm", bound=BaseStrideSegmentation)
@@ -267,12 +266,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             raise ValueError("Invalid value for `s_id_naming`")
 
     def _validate_other_parameters(self):
-        if is_single_sensor_dataset(self.data, check_gyr=False, check_acc=False):
-            self._multi_dataset = False
-        elif is_multi_sensor_dataset(self.data, check_gyr=False, check_acc=False):
-            self._multi_dataset = True
-        else:
-            raise ValueError("Invalid data object passed. Must either be a single or a multi sensor dataset.")
+        self._multi_dataset = is_dataset(self.data, check_acc=False, check_gyr=False) == "multi"
         if is_single_sensor_regions_of_interest_list(self.regions_of_interest):
             self._multi_roi = False
         elif is_multi_sensor_regions_of_interest_list(self.regions_of_interest):

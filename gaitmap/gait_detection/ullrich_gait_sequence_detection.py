@@ -4,22 +4,20 @@ from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from numpy.linalg import norm
 from scipy.fft import rfft
-
 from scipy.signal import butter, lfilter, peak_prominences
-
-from numba import njit
 
 from gaitmap.base import BaseGaitDetection, BaseType
 from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
-    is_single_sensor_dataset,
     Dataset,
     get_multi_sensor_dataset_names,
     RegionsOfInterestList,
+    is_dataset,
 )
 
 
@@ -177,9 +175,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
-        if is_single_sensor_dataset(data):
+        dataset_type = is_dataset(self.data)
+        if dataset_type == "single":
             (self.gait_sequences_, self.start_, self.end_,) = self._detect_single_dataset(data, window_size)
-        elif is_multi_sensor_dataset(data):
+        else:  # Multisensor
             self.gait_sequences_ = dict()
             self.start_ = dict()
             self.end_ = dict()
@@ -189,9 +188,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
                 )
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
-
         return self
 
     def _detect_single_dataset(

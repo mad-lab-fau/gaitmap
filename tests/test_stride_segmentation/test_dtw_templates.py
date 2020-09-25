@@ -10,6 +10,7 @@ from gaitmap.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     create_interpolated_dtw_template,
 )
+from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import compare_algo_objects
 
 
@@ -194,5 +195,5 @@ class TestCreateInterpolatedTemplate:
 
         dataset = {"left_sensor": template_data1, "right_sensor": template_data2}
 
-        with pytest.raises(ValueError, match=r".* single sensor dataset*"):
+        with pytest.raises(ValidationError, match=r".* SingleSensorDataset*"):
             create_interpolated_dtw_template(dataset, kind="linear", n_samples=None)

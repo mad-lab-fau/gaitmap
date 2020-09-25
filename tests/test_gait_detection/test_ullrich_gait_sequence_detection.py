@@ -1,11 +1,9 @@
+import numpy as np
+import pandas as pd
 import pytest
 
 from gaitmap.gait_detection import UllrichGaitSequenceDetection
 from gaitmap.utils import coordinate_conversion
-import pandas as pd
-import numpy as np
-
-from gaitmap.utils.consts import BF_ACC, BF_GYR
 
 
 class TestUllrichGaitSequenceDetection:

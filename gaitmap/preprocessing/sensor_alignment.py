@@ -9,10 +9,9 @@ from gaitmap.utils import rotations
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
 from gaitmap.utils.dataset_helper import (
-    is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
     Dataset,
+    is_dataset,
 )
 from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
 from gaitmap.utils.static_moment_detection import find_static_sequences
@@ -87,12 +86,11 @@ def align_dataset_to_gravity(
         for this method.
 
     """
-    if not (is_single_sensor_dataset(dataset) or is_multi_sensor_dataset(dataset)):
-        raise ValueError("Invalid dataset type!")
+    dataset_type = is_dataset(dataset)
 
     window_length = int(round(window_length_s * sampling_rate_hz))
 
-    if is_single_sensor_dataset(dataset):
+    if dataset_type == "single":
         # get static acc vector
         acc_vector = _get_static_acc_vector(dataset, window_length, static_signal_th, metric)
         # get rotation to gravity

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType, BaseOrientationMethod
 from gaitmap.trajectory_reconstruction import MadgwickAHRS

@@ -3,8 +3,8 @@ from typing import List, Tuple, Optional
 
 import numpy as np
 from numba import njit
-from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
+from scipy.signal import find_peaks
 from typing_extensions import Literal
 
 
