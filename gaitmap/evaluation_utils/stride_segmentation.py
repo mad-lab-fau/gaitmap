@@ -308,10 +308,8 @@ def match_stride_lists(
         lists.
 
     """
-    if not is_single_sensor_stride_list(stride_list_a):
-        raise ValueError("stride_list_a is not a valid stride list")
-    if not is_single_sensor_stride_list(stride_list_b):
-        raise ValueError("stride_list_b is not a valid stride list")
+    is_single_sensor_stride_list(stride_list_a, raise_exception=True)
+    is_single_sensor_stride_list(stride_list_b, raise_exception=True)
 
     if postfix_a == postfix_b:
         raise ValueError("The postfix for the left and the right stride list must be different.")

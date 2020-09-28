@@ -362,7 +362,7 @@ def is_dataset(
 _ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]
 
 
-def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
+def is_single_sensor_stride_list(
     stride_list: SingleSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor stride list.
