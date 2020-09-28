@@ -73,8 +73,8 @@ def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
         raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
 
 
-def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
-    """Check if a pd.DataFrame has a multiindex.
+def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
+    """Check if a pd.DataFrame has a multiindex as columns.
 
     Parameters
     ----------
@@ -105,7 +105,7 @@ def _assert_has_multindex(df: pd.DataFrame, nlevels: int = 2, expected: bool = T
             )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
+def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[Hashable]]):
     """Check if the dataframe has at least all columns sets.
 
     Examples
@@ -130,6 +130,16 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[str]]):
             "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
                 helper_str, list(df.columns)
             )
+        )
+
+
+def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[Hashable]):
+    ex_index_cols = list(index_cols)
+    ac_index_cols = list(df.index.names)
+    if ex_index_cols != ac_index_cols:
+        raise ValidationError(
+            "The dataframe is expected to have exactly the following index columns ({}), "
+            "but it has {}".format(index_cols, df.index.name)
         )
 
 
@@ -188,7 +198,7 @@ def is_single_sensor_dataset(
         raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
     try:
         _assert_is_dtype(dataset, pd.DataFrame)
-        _assert_has_multindex(dataset, expected=False)
+        _assert_has_multindex_cols(dataset, expected=False)
 
         if frame == "any":
             _assert_has_columns(
@@ -259,7 +269,7 @@ def is_multi_sensor_dataset(
     try:
         _assert_is_dtype(dataset, (pd.DataFrame, dict))
         if isinstance(dataset, pd.DataFrame):
-            _assert_has_multindex(dataset, expected=True, nlevels=2)
+            _assert_has_multindex_cols(dataset, expected=True, nlevels=2)
         _assert_multisensor_is_not_empty(dataset)
     except ValidationError as e:
         if raise_exception is True:
@@ -349,8 +359,11 @@ def is_dataset(
     )
 
 
+_ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]
+
+
 def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
-    stride_list: SingleSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
+    stride_list: SingleSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
@@ -392,6 +405,9 @@ def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
     stride_type
         The expected stride type of this object.
         If this is "any" only the generally required columns are checked.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
@@ -400,50 +416,49 @@ def is_single_sensor_stride_list(  # noqa:  too-many-return-statements
         event order
 
     """
-    if not isinstance(stride_list, pd.DataFrame):
-        return False
-
-    try:
-        stride_list = set_correct_index(stride_list, SL_INDEX)
-    except KeyError:
-        return False
-
-    columns = stride_list.columns
-
-    if isinstance(columns, pd.MultiIndex):
-        return False
-
-    # Depending of the stridetype check additional conditions
-    additional_columns = SL_ADDITIONAL_COLS
-    start_event = {"min_vel": "min_vel", "ic": "ic"}
-
     # Check columns exist
-    if stride_type != "any" and stride_type not in additional_columns:
+    if stride_type != "any" and stride_type not in SL_ADDITIONAL_COLS:
         raise ValueError(
             'The argument `stride_type` must be "any" or one of {}'.format(list(SL_ADDITIONAL_COLS.keys()))
         )
-    minimal_columns = SL_COLS
-    all_columns = [*minimal_columns, *additional_columns.get(stride_type, [])]
-    if not all(v in columns for v in all_columns):
-        return False
 
-    # Check that the start time corresponds to the correct event
-    if (
-        start_event.get(stride_type, False)
-        and len(stride_list) > 0
-        and not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy())
-    ):
-        return False
+    try:
+        _assert_is_dtype(stride_list, pd.DataFrame)
+        _assert_has_multindex_cols(stride_list, expected=False)
 
-    # Check that the stride ids are unique
-    if not stride_list.index.nunique() == stride_list.index.size:
-        return False
+        stride_list = set_correct_index(stride_list, SL_INDEX)
 
+        # Check if it has the correct columns
+        all_columns = [*SL_COLS, *SL_ADDITIONAL_COLS.get(stride_type, [])]
+        _assert_has_columns(stride_list, [all_columns])
+
+        start_event = {"min_vel": "min_vel", "ic": "ic"}
+        # Check that the start time corresponds to the correct event
+        if (
+            start_event.get(stride_type, False)
+            and len(stride_list) > 0
+            and not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy())
+        ):
+            raise ValidationError(
+                "For a {} stride list, the start column is expected to be identical to the {} column, "
+                "but they are different.".format(stride_type, start_event[stride_type])
+            )
+        # Check that the stride ids are unique
+        if not stride_list.index.nunique() == stride_list.index.size:
+            raise ValidationError("The stride id of the stride list is expected to be unique.")
+
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object does not seem to be a SingleSensorStrideList. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
+        return False
     return True
 
 
 def is_multi_sensor_stride_list(
-    stride_list: MultiSensorStrideList, stride_type: Literal["any", "segmented", "min_vel", "ic"] = "any"
+    stride_list: MultiSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
 
@@ -459,6 +474,9 @@ def is_multi_sensor_stride_list(
     stride_type
         The expected stride type of this object.
         If this is "any" only the generally required columns are checked.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
@@ -467,17 +485,29 @@ def is_multi_sensor_stride_list(
         event order
 
     """
-    if not isinstance(stride_list, dict):
+    try:
+        _assert_is_dtype(stride_list, dict)
+        _assert_multisensor_is_not_empty(stride_list)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object does not seem to be a MultiSensorStrideList. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
         return False
 
-    keys = stride_list.keys()
-
-    if len(keys) == 0:
+    try:
+        for k in stride_list.keys():
+            is_single_sensor_stride_list(stride_list[k], stride_type=stride_type, raise_exception=True)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object appears to be a MultiSensorStrideList, "
+                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
+                    k, str(e)
+                )
+            ) from e
         return False
-
-    for k in keys:
-        if not is_single_sensor_stride_list(stride_list[k], stride_type=stride_type):
-            return False
     return True
 
 
@@ -824,7 +854,9 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
     return True
 
 
-def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_cols: bool = True) -> pd.DataFrame:
+def set_correct_index(
+    df: pd.DataFrame, index_cols: Iterable[Hashable], drop_false_index_cols: bool = True
+) -> pd.DataFrame:
     """Set the correct columns as index, or leave them if they are already in the index.
 
     Parameters
@@ -843,14 +875,27 @@ def set_correct_index(df: pd.DataFrame, index_cols: Iterable, drop_false_index_c
         A dataframe with the correct columns set as index
 
     """
-    if list(index_cols) == df.index.names:
+    index_cols = list(index_cols)
+    try:
+        _assert_has_index_columns(df, index_cols)
         return df
-    # Find index cols that should not be there
-    wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]
-    df_just_right_index = df.reset_index(level=wrong_index, drop=drop_false_index_cols)
+    except ValidationError:
+        pass
 
-    drop = False
-    if len(wrong_index) == len(df.index.names):
-        # In case all cols got dropped, a new range index was generated, which we need to remove again
-        drop = True
-    return df_just_right_index.reset_index(drop=drop).set_index(index_cols)
+    # In case not all columns are in the the index, reset_the index and check the column names
+    wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]
+    all_wrong = len(wrong_index) == len(df.index.names)
+    df_just_right_index = df.reset_index(level=wrong_index, drop=drop_false_index_cols)
+    if not all_wrong:
+        # In case correct indix cols are remaining make them to regular columns
+        df_just_right_index = df_just_right_index.reset_index()
+
+    try:
+        _assert_has_columns(df_just_right_index, [index_cols])
+    except ValidationError as e:
+        raise ValidationError(
+            "The dataframe is expected to have the following columns either in the index or as columns ({}), "
+            "but it has {}".format(index_cols, df.columns)
+        ) from e
+
+    return df_just_right_index.set_index(index_cols)

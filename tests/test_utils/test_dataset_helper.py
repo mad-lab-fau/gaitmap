@@ -276,6 +276,13 @@ class TestIsSingleSensorStrideList:
 
         assert expected_outcome == out
 
+    def test_error_raising(self):
+        with pytest.raises(ValidationError) as e:
+            is_single_sensor_stride_list(pd.DataFrame(), raise_exception=True)
+
+        assert "The passed object does not seem to be a SingleSensorStrideList." in str(e)
+        assert str(['s_id']) in str(e.value)
+
 
 class TestIsMultiSensorStrideList:
     @pytest.mark.parametrize(
@@ -323,6 +330,16 @@ class TestIsMultiSensorStrideList:
 
         with pytest.raises(ValueError):
             is_multi_sensor_stride_list(valid, stride_type="invalid_value")
+
+    def test_nested_error_raising(self):
+        with pytest.raises(ValidationError) as e:
+            is_multi_sensor_stride_list(
+                {"s1": pd.DataFrame()}, raise_exception=True
+            )
+
+        assert "The passed object appears to be a MultiSensorStrideList" in str(e.value)
+        assert 'for the sensor with the name "s1"' in str(e.value)
+        assert str(['s_id']) in str(e.value)
 
 
 class TestIsSingleSensorPositionList:
@@ -617,7 +634,7 @@ class TestSetCorrectIndex:
         test = test.rename(index_names)
         df = pd.DataFrame(range(9), index=test, columns=["c"])
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValidationError):
             set_correct_index(df, ["does_not_exist", *index_names])
 
     @pytest.mark.parametrize("drop_additional", (True, False))
