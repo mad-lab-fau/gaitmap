@@ -668,7 +668,7 @@ def is_single_sensor_position_list(position_list: SingleSensorPositionList, s_id
         index_cols.append("s_id")
     try:
         position_list = set_correct_index(position_list, index_cols)
-    except KeyError:
+    except ValidationError:
         return False
     columns = position_list.columns
     expected_columns = GF_POS
@@ -740,7 +740,7 @@ def is_single_sensor_velocity_list(velocity_list: SingleSensorVelocityList, s_id
         index_cols.append("s_id")
     try:
         velocity_list = set_correct_index(velocity_list, index_cols)
-    except KeyError:
+    except ValidationError:
         return False
     columns = velocity_list.columns
     expected_columns = GF_VEL
@@ -813,7 +813,7 @@ def is_single_sensor_orientation_list(orientation_list: SingleSensorOrientationL
         index_cols.append("s_id")
     try:
         orientation_list = set_correct_index(orientation_list, index_cols)
-    except KeyError:
+    except ValidationError:
         return False
     columns = orientation_list.columns
     expected_columns = GF_ORI
