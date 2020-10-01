@@ -19,3 +19,4 @@ Functions
     get_healthy_example_stride_events
     get_healthy_example_orientation
     get_healthy_example_position
+    get_ms_example_imu_data
