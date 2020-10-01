@@ -7,6 +7,7 @@ from pandas._testing import assert_frame_equal
 from gaitmap.base import BasePositionMethod
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
 from gaitmap.utils.consts import SF_COLS, SF_ACC, GF_VEL, GF_POS
+
 # TODO: Add regression test on single stride
 from gaitmap.utils.dataset_helper import is_single_sensor_position_list
 from gaitmap.utils.rotations import rotate_dataset_series
