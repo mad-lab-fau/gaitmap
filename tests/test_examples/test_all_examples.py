@@ -22,6 +22,19 @@ def test_barth_dtw_example(snapshot):
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
+def test_constrained_barth_dtw_example(snapshot):
+    from examples.constrained_barth_dtw_stride_segmentation import dtw, cdtw, default_cdtw
+
+    assert len(dtw.matches_start_end_["left_sensor"]) == 74
+    snapshot.assert_match(dtw.matches_start_end_["left_sensor"], "dtw")
+
+    assert len(cdtw.matches_start_end_["left_sensor"]) == 75
+    snapshot.assert_match(cdtw.matches_start_end_["left_sensor"], "cdtw")
+
+    assert len(default_cdtw.matches_start_end_["left_sensor"]) == 75
+    snapshot.assert_match(default_cdtw.matches_start_end_["left_sensor"], "default_cdtw")
+
+
 def test_roi(snapshot):
     from examples.barth_dtw_stride_segmentation_roi import roi_seg
 
