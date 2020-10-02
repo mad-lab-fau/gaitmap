@@ -12,6 +12,7 @@ from gaitmap.evaluation_utils import (
     precision_recall_f1_score,
 )
 from gaitmap.evaluation_utils.stride_segmentation import _get_match_type_dfs
+from gaitmap.utils.exceptions import ValidationError
 
 
 class TestMatchStrideList:
@@ -23,15 +24,15 @@ class TestMatchStrideList:
     def test_invalid_stride_list(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             match_stride_lists([], sl)
 
-        assert "stride_list_a" in str(e)
+        assert "SingleSensorStrideList" in str(e)
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             match_stride_lists(sl, [])
 
-        assert "stride_list_b" in str(e)
+        assert "SingleSensorStrideList" in str(e)
 
     def test_invalid_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
