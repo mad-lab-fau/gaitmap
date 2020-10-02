@@ -117,14 +117,14 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(use_cols=("gyr_ml",)),
+        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 2.5,
+        max_cost: Optional[float] = 4,
         min_match_length_s: Optional[float] = 0.6,
         max_match_length_s: Optional[float] = 3.0,
-        max_template_stretch_ms: Optional[float] = 100,
-        max_signal_stretch_ms: Optional[float] = 150,
+        max_template_stretch_ms: Optional[float] = 120,
+        max_signal_stretch_ms: Optional[float] = 120,
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
