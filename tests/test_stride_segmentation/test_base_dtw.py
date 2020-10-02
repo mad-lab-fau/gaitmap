@@ -96,6 +96,54 @@ class TestIOErrors(DtwTestBase):
 
         assert "find_matches_method" in str(e)
 
+    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
+    @pytest.mark.parametrize("value", (-2, 0))
+    def test_invalid_stretch_larger_zero(self, para, value):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template, **{para: value})
+            dtw.segment(data=np.array([]), sampling_rate_hz=100)
+
+        assert para in str(e)
+        assert str(value) in str(e)
+
+    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
+    def test_none_constrain_is_inf(self, para):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, **{para: None})
+        dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert getattr(dtw, "_" + para.rsplit("_", 1)[0]) == np.inf
+
+    def test_constrains_without_template_sampling_rate(self):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=None)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=3)
+
+        with pytest.raises(ValueError) as e:
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "sampling_rate_hz" in str(e)
+
+    def test_constrains_correct_sampling_rate_used(self):
+        template_sampling_rate = 100
+        signal_sampling_rate = 10
+        template = create_dtw_template(np.ones(30), sampling_rate_hz=template_sampling_rate)
+        data = np.array([*np.ones(50) * 2, 0, 1.0, 0, *np.ones(50) * 2])
+
+        # With resampling
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=1000)
+        dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+        assert dtw._max_template_stretch == 10
+
+        # Without resampling
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=1000, resample_template=False)
+        dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+        assert dtw._max_template_stretch == 100
+
 
 class TestSimpleSegment(DtwTestBase):
     """Simple Tests with toy examples for matching."""
