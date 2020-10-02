@@ -51,12 +51,20 @@ The data-object helpers now have an optional argument (`raise_exception=True`) t
 - A new `is_dataset` method to validate either single or multi-sensor datasets.
   This should be used in functions that should work with both inputs.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
+- Proper validation for the stride list objects.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/86)
+- A new `is_stride_list` method to validate either single or multi-sensor stride lists.
+  This should be used in functions that should work with both inputs.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/86)
 - A custom error class `ValidationError` used for all validation related errors.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
 
-The following algorithms are already (fully or partially) updated to use the new validation helper:
+All existing algorithms are updated to use these new validation methods.
+(https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80,
+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/84,
+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/86)
 
-- `RamppEventDetection`, partially (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/80)
+The remaining datatypes will get updated validation functions in a future release.
 
 ### Changed
 
