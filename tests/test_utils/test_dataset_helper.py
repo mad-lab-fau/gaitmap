@@ -21,6 +21,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_regions_of_interest_list,
     is_multi_sensor_regions_of_interest_list,
     is_dataset,
+    is_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -338,6 +339,26 @@ class TestIsMultiSensorStrideList:
         assert "The passed object appears to be a MultiSensorStrideList" in str(e.value)
         assert 'for the sensor with the name "s1"' in str(e.value)
         assert str(["s_id"]) in str(e.value)
+
+
+class TestIsStrideList:
+    def test_raises_error_correctly(self):
+        with pytest.raises(ValidationError) as e:
+            is_stride_list(pd.DataFrame())
+
+        assert "The passed object appears to be neither a single- or a multi-sensor stride list." in str(e)
+        assert "s_id" in str(e.value)
+        assert "'dict'" in str(e.value)
+
+    @pytest.mark.parametrize(
+        ("obj", "out"),
+        (
+            (pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"]), "single"),
+            ({"s1": pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"])}, "multi"),
+        ),
+    )
+    def test_basic_function(self, obj, out):
+        assert is_stride_list(obj) == out
 
 
 class TestIsSingleSensorPositionList:
