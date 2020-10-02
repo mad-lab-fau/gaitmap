@@ -77,7 +77,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         The axis label must match one of the axis label in the data.
         Refer to the Notes section for more details.
     conflict_resolution
-        This enables a set of checks that handel cases where stride matches overlap with other strides.
+        This enables a set of checks that handle cases where stride matches overlap with other strides.
         The following steps will be performed:
 
         - If multiple matches have the same start point, only the match with the lowest cost will be kept.
@@ -134,16 +134,17 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         If this is an issue for your analysis, you should try to develop further post-processing steps to exclude these
         strides as part of your pipeline.
 
-    See Also
-    --------
-    gaitmap.stride_segmentation.ConstrainedBarthDtw: Version with defaults for the local constrains
-    gaitmap.stride_segmentation.BaseDtw: Dtw base class with more details on the method
-
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
        Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
+
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.ConstrainedBarthDtw: Version with defaults for the local constrains
+    gaitmap.stride_segmentation.BaseDtw: Dtw base class with more details on the method
 
     """
 
