@@ -22,8 +22,8 @@ usually only one dominant frequency present.
 # For this we take some example data that contains the regular walking movement during a 2x20m walk test of a healthy
 # subject. The IMU signals are already rotated so that they align with the gaitmap SF coordinate system.
 # The data contains information from two sensors - one from the right and one from the left foot.
-# For further information regarding the coordinate system refer to the :ref:`coordinate system
-# guide<coordinate_systems>`.
+# For further information regarding the coordinate system refer to the
+# :ref:`coordinate system guide<coordinate_systems>`.
 from gaitmap.example_data import get_healthy_example_imu_data
 
 data = get_healthy_example_imu_data()
@@ -34,9 +34,9 @@ data.sort_index(axis=1).head(1)
 # Preparing the data
 # ------------------
 # The data is expected to be in the gaitmap BF to be able to use the same template for the left and the right foot.
-# Therefore, we need to transform the our dataset into the body frame.
-# For further information regarding the coordinate system refer to the :ref:`coordinate system
-# guide<coordinate_systems>`.
+# Therefore, we need to transform the dataset into the body frame.
+# For further information regarding the coordinate system refer to the
+# :ref:`coordinate system guide<coordinate_systems>`.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
 # We use the `..._like` parameters to identify the data of the left and the right foot based on the name of the sensor.
@@ -74,16 +74,17 @@ test_data_df.head(1)
 # Applying the gait sequence detection
 # ------------------------------------
 # First we need to initialize the Ullrich gait sequence detection.
-# In most cases it is sufficient to keep all parameters at default. These are set as presented in the original paper:
+# In most cases it is sufficient to keep all parameters at default. These are set as presented in the original paper.
 # In correspondence with the original publication usually the `gyr_ml` signal is investigated regarding the
-# presence of gait. It is however also possible to use `gyr` or `acc` in order to apply the algorithm to the signal
-# norm of gyroscope or accelerometer, respectively. Furthermore the `acc_si` was investigated in the paper.
+# presence of gait.
+# It is however also possible to use `gyr` or `acc` in order to apply the algorithm to the signal norm of gyroscope or
+# accelerometer, respectively. Furthermore the `acc_si` was investigated in the paper.
 # The optimal value for the `peak_prominence` which serves as a threshold for the harmonic frequency peaks was found
 # to be `17` in the publication for the `gyr_ml` setting.
 # All experiments in the paper were performed with a `window_size_s` of `10 s`, where subsequent windows were
 # overlapping by 50%.
 # The default value for the `active_signal_threshold` was found experimentally and is per default set to `50 deg/s` for
-# the usage of `gyr_ml`
+# the usage of `gyr_ml`.
 # The algorithm first identifies the dominant frequency of the signal window, which should usually be within the
 # `locomotion_band` of `(0.5 3) Hz`. For very slow gait, the lower bound may have to be decreased.
 from gaitmap.gait_detection import UllrichGaitSequenceDetection
