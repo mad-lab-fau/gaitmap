@@ -257,6 +257,11 @@ This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
     "ic": ["ic", "min_vel", "tc"],
 }
 
+Like the dataset validation function, all stride list methods also support the `raise_exception` parameter.
+If it is True, the method will raise a descriptive error instead of returning `False`.
+Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, were single and
+multi sensor stride lists are allowed as inputs.
+
 The normal format check shown above does not check if the values in the stride list follow this order.
 However, you can use :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency` to remove strides
 with invalid event order.
