@@ -4,7 +4,6 @@ from typing import Optional, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
-from numba import njit
 from numpy.linalg import norm
 from scipy.fft import rfft
 from scipy.signal import peak_prominences
