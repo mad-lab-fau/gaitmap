@@ -46,8 +46,7 @@ class TestIODataStructures:
         gyr_int = StrideLevelTrajectory(align_window_width=8)
         with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor dataset"):
             gyr_int.estimate(fake_data, stride_list, 204.8)
-        error_text = r"The provided combination of data and stride list is not supported by gaitmap."
-        with pytest.raises(ValueError, match=error_text):
+        with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor stride list"):
             gyr_int.estimate(data, fake_stride_list, 204.8)
 
     def test_invalid_input_method(self, healthy_example_imu_data, healthy_example_stride_events):

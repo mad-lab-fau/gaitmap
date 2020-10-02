@@ -161,7 +161,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
         ed = RamppEventDetection()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
     def test_multi_data_single_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
@@ -170,7 +170,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
         ed = RamppEventDetection()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
     def test_sign_change_for_detect_tc(self):

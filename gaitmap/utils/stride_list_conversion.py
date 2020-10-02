@@ -9,8 +9,8 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     SingleSensorStrideList,
     is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
     set_correct_index,
+    is_stride_list,
 )
 
 
@@ -33,14 +33,13 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
         Stride list in the new format
 
     """
-    if is_single_sensor_stride_list(stride_list, stride_type="segmented"):
+    stride_list_type = is_stride_list(stride_list, stride_type="segmented")
+    if stride_list_type == "single":
         return _segmented_stride_list_to_min_vel_single_sensor(stride_list, target_stride_type=target_stride_type)[0]
-    if is_multi_sensor_stride_list(stride_list, stride_type="segmented"):
-        return {
-            k: _segmented_stride_list_to_min_vel_single_sensor(v, target_stride_type=target_stride_type)[0]
-            for k, v in stride_list.items()
-        }
-    raise ValueError("The provided stride list format is not supported.")
+    return {
+        k: _segmented_stride_list_to_min_vel_single_sensor(v, target_stride_type=target_stride_type)[0]
+        for k, v in stride_list.items()
+    }
 
 
 def _segmented_stride_list_to_min_vel_single_sensor(
@@ -140,8 +139,8 @@ def enforce_stride_list_consistency(
         all strides that were removed
 
     """
-    if check_stride_list is True and not is_single_sensor_stride_list(stride_list, stride_type=stride_type):
-        raise ValueError("The provided stride list format is not supported.")
+    if check_stride_list is True:
+        is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
     order = SL_EVENT_ORDER[stride_type]
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
 

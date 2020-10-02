@@ -13,8 +13,6 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
     PositionList,
     SingleSensorPositionList,
     MultiSensorPositionList,
@@ -26,6 +24,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
     is_multi_sensor_orientation_list,
     set_correct_index,
+    is_stride_list,
 )
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
@@ -193,8 +192,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.positions = positions
         self.orientations = orientations
         self.sampling_rate_hz = sampling_rate_hz
+        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
         if (
-            is_single_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            stride_list_type == "single"
             and is_single_sensor_position_list(positions)
             and is_single_sensor_orientation_list(orientations)
         ):
@@ -202,7 +202,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         elif (
-            is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            stride_list_type == "multi"
             and is_multi_sensor_position_list(positions)
             and is_multi_sensor_orientation_list(orientations)
         ):

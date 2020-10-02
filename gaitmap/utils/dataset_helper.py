@@ -534,8 +534,7 @@ def is_stride_list(
     -------
     dataset_type
         "single" in case of a single-sensor stride list, "multi" in case of a multi-sensor stride list and None in case
-        it is
-        neither.
+        it is neither.
 
     See Also
     --------

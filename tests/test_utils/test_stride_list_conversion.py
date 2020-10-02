@@ -4,6 +4,7 @@ import pytest
 from pandas._testing import assert_frame_equal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
@@ -56,18 +57,18 @@ class TestEnforceStrideListConsistency:
         event_list = self._create_example_stride_list(stride_type)
         try:
             enforce_stride_list_consistency(event_list, stride_type)
-        except ValueError as e:
+        except ValidationError as e:
             pytest.fail(str(e))
 
         # Remove the start column to fail the check
         failing_event_list = event_list.drop("start", axis=1)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             enforce_stride_list_consistency(failing_event_list, stride_type)
 
         # Disable the check and see that it works again
         try:
             enforce_stride_list_consistency(failing_event_list, stride_type, check_stride_list=False)
-        except ValueError as e:
+        except ValidationError as e:
             pytest.fail(str(e))
 
 
