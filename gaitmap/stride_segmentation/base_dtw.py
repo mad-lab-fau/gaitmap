@@ -307,27 +307,7 @@ class BaseDtw(BaseAlgorithm):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # Validate and transform inputs
-        if self.template is None:
-            raise ValueError("A `template` must be specified.")
-
-        if self.find_matches_method not in self._allowed_methods_map:
-            raise ValueError(
-                "Invalid value for `find_matches_method`. Must be one of {}".format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
-
-        if self.max_template_stretch_ms is not None and self.max_template_stretch_ms <= 0:
-            raise ValueError(
-                "Invalid value for `max_template_stretch_ms`."
-                "The value must be a number larger than 0 and not {}".format(self.max_template_stretch_ms)
-            )
-        if self.max_signal_stretch_ms is not None and self.max_signal_stretch_ms <= 0:
-            raise ValueError(
-                "Invalid value for `max_signal_stretch_ms`."
-                "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
-            )
+        self._validate_basic_inputs()
 
         self._min_sequence_length = self.min_match_length_s
         if self._min_sequence_length is not None:
@@ -576,6 +556,28 @@ class BaseDtw(BaseAlgorithm):
             path_array = np.array(path)
             paths.append(path_array)
         return paths
+
+    def _validate_basic_inputs(self):
+        if self.template is None:
+            raise ValueError("A `template` must be specified.")
+
+        if self.find_matches_method not in self._allowed_methods_map:
+            raise ValueError(
+                "Invalid value for `find_matches_method`. Must be one of {}".format(
+                    list(self._allowed_methods_map.keys())
+                )
+            )
+
+        if self.max_template_stretch_ms is not None and self.max_template_stretch_ms <= 0:
+            raise ValueError(
+                "Invalid value for `max_template_stretch_ms`."
+                "The value must be a number larger than 0 and not {}".format(self.max_template_stretch_ms)
+            )
+        if self.max_signal_stretch_ms is not None and self.max_signal_stretch_ms <= 0:
+            raise ValueError(
+                "Invalid value for `max_signal_stretch_ms`."
+                "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
+            )
 
     def _validate_constrains(self, template):
         self._max_template_stretch = self.max_template_stretch_ms

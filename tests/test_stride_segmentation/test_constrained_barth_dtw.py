@@ -26,6 +26,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 class TestRegressionOnRealDataConstrainedDtw:
     """These regression tests run on a MS dataset, which produces a bunch of issues wiht the normal dtw."""
+
     def test_real_data_both_feed_regression(self, ms_example_imu_data, snapshot):
         data = convert_to_fbf(ms_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         dtw = ConstrainedBarthDtw(template=BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")))  # Test with default
