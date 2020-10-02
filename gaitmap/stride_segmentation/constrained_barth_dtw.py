@@ -15,7 +15,7 @@ class ConstrainedBarthDtw(BarthDtw):
     Additionally, it only uses the "ml" template direction by default.
 
     Both changes help to prevent issues, where only the region from TC to IC is mapped as the entire stride.
-    For more information on this see TODO: link to example.
+    For more information on this see the :ref:`example <example_constrained_barth_stride_segmentation>`.
 
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
@@ -112,6 +112,11 @@ class ConstrainedBarthDtw(BarthDtw):
     See Also
     --------
     gaitmap.stride_segmentation.BarthDtw: For all details on the method
+
+    .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
+       Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
+       activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
+       Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
 
     """
 
