@@ -52,7 +52,7 @@ This is the first version and we already added:
 - A set of common metrics (recall, precision, f1) that can be calculated for segmentation results
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/66)
   
-### Global Validation Error Handling
+#### Global Validation Error Handling
 
 https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/72,
 https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/16
