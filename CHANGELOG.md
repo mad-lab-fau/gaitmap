@@ -4,7 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ the Migration Guide section),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] -
+## [1.1.1] - 
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Migration Guide
+
+
+## [1.1.0] - 2020-10-04
 
 ### Added
 
@@ -102,6 +117,7 @@ The remaining datatypes will get updated validation functions in a future releas
 - Adapted scaling factors for the usage of accelerometer data in the `UllrichGaitSequenceDetection` to work with
  values given in m/s^2 (in contrast to g as done in the publication / the usage with mGL-algorithms-py)
  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/83)
+- Fixed install link in project README
 
 ### Migration Guide
 
