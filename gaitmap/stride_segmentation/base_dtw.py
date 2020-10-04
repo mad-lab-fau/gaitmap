@@ -5,18 +5,18 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_cost_matrix, subsequence_path
+from tslearn.metrics import subsequence_path, subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
-from gaitmap.base import BaseStrideSegmentation, BaseType
+from gaitmap.base import BaseType, BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.dataset_helper import (
     Dataset,
     is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     get_multi_sensor_dataset_names,
+    is_dataset,
 )
 
 
@@ -70,7 +70,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
 
 
-class BaseDtw(BaseStrideSegmentation):
+class BaseDtw(BaseAlgorithm):
     """A basic implementation of subsequent dynamic time warping.
 
     This uses the DTW implementation of :func:`tslearn <tslearn.metrics.subsequence_cost_matrix>`.
@@ -213,6 +213,8 @@ class BaseDtw(BaseStrideSegmentation):
 
     """
 
+    _action_method = "segment"
+
     template: Optional[DtwTemplate]
     max_cost: Optional[float]
     resample_template: bool
@@ -297,20 +299,25 @@ class BaseDtw(BaseStrideSegmentation):
                 )
             )
 
+        if isinstance(data, np.ndarray):
+            dataset_type = "array"
+        else:
+            dataset_type = is_dataset(data, check_gyr=False, check_acc=False)
+
         template = self.template
-        if isinstance(data, np.ndarray) or is_single_sensor_dataset(data, check_gyr=False, check_acc=False):
+        if dataset_type in ("single", "array"):
             # Single template single sensor: easy
             self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
                 data, template
             )
-        elif is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+        else:  # Multisensor
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
                 results = dict()
                 for sensor, single_template in template.items():
                     results[sensor] = self._segment_single_dataset(data[sensor], single_template)
-            elif is_single_sensor_dataset(template.data, check_gyr=False, check_acc=False):
+            elif is_single_sensor_dataset(template.get_data(), check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
                 for sensor in get_multi_sensor_dataset_names(data):
@@ -326,9 +333,6 @@ class BaseDtw(BaseStrideSegmentation):
                 self.paths_[sensor] = r[1]
                 self.costs_[sensor] = r[2]
                 self.matches_start_end_[sensor] = r[3]
-        else:
-            # TODO: Better error message -> This will be fixed globally
-            raise ValueError("The type or shape of the provided dataset is not supported.")
         return self
 
     def _segment_single_dataset(self, dataset, template):
@@ -349,7 +353,7 @@ class BaseDtw(BaseStrideSegmentation):
             )
 
         # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(template.data, dataset)
+        template_array, matching_data = self._extract_relevant_data_and_template(template.get_data(), dataset)
         # Ensure that all values are floats
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)

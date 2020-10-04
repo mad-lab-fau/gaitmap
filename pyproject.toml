@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gaitmap"
-version = "1.0.0"
+version = "1.0.1"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 authors = [
     "Arne Küderle <arne.kuederle@fau.de>",

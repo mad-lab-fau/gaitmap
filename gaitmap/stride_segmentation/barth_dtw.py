@@ -6,12 +6,13 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
+from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.array_handling import find_extrema_in_radius
 
 
-class BarthDtw(BaseDtw):
+class BarthDtw(BaseDtw, BaseStrideSegmentation):
     """Segment strides using a single stride template and Dynamic Time Warping.
 
     BarthDtw uses a manually created template of an IMU stride to find multiple occurrences of similar signals in a
@@ -209,7 +210,7 @@ class BarthDtw(BaseDtw):
             cost_per_valid_stride = cost[valid_indices]
             # get groups of strides with the same start value
             strides_with_same_start = np.diff(starts, prepend=np.inf) == 0
-            starts[~(strides_with_same_start)] = np.nan
+            starts[~strides_with_same_start] = np.nan
             groups = np.ma.clump_unmasked(np.ma.masked_invalid(starts))
             for s in groups:
                 # For each group find the stride with the lowest original cost
@@ -222,7 +223,7 @@ class BarthDtw(BaseDtw):
         return matches_start_end, to_keep
 
     def _post_postprocess_check(self, matches_start_end):
-        super(BarthDtw, self)._post_postprocess_check(matches_start_end)
+        super()._post_postprocess_check(matches_start_end)
         # Check if there are still overlapping strides
         if np.any(np.diff(matches_start_end.flatten()) < 0):
             warnings.warn(

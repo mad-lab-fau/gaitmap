@@ -1,4 +1,4 @@
-"""The gait sequence detection algorithm by Rampp et al. 2020."""
+"""The gait sequence detection algorithm by Ullrich et al. 2020."""
 import itertools
 from typing import Optional, Tuple, Union, Dict
 
@@ -6,19 +6,18 @@ import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.fft import rfft
-
-from scipy.signal import butter, lfilter, peak_prominences
-
-from numba import njit
+from scipy.signal import peak_prominences
 
 from gaitmap.base import BaseGaitDetection, BaseType
+from gaitmap.utils import signal_processing
 from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
-    is_single_sensor_dataset,
     Dataset,
     get_multi_sensor_dataset_names,
+    RegionsOfInterestList,
+    is_dataset,
 )
 
 
@@ -35,9 +34,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     sensor_channel_config
         The sensor channel or sensor that should be used for the gait sequence detection. Must be a str. If the
         algorithm should be applied to a single sensor axis the string must be one of the entries in either
-         :obj:`~gaitmap.utils.consts.BF_ACC` or :obj:`~gaitmap.utils.consts.BF_GYR`. In order to perform the analysis
-         on the norm of the acc / the gyr signal, you need to pass "acc" or "gyr". Default value is `gyr_ml` as by the
-         publication this showed the best results.
+        :obj:`~gaitmap.utils.consts.BF_ACC` or :obj:`~gaitmap.utils.consts.BF_GYR`. In order to perform the analysis
+        on the norm of the acc / the gyr signal, you need to pass "acc" or "gyr". Default value is `gyr_ml` as by the
+        publication this showed the best results.
     peak_prominence
         The threshold for the peak prominence that each harmonics peak must provide. This relates to the
         `peak_prominence` provided by :func:`~scipy.signal.peak_prominences`. The frequency spectrum of the sensor
@@ -52,7 +51,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         Before the actual FFT analysis, the algorithm compares the mean signal norm within each window against the
         `active_signal_threshold` in order to reject windows with rest right from the beginning. Default value is
         according to the publication is 50 deg / s for `sensor_channel_config` settings including the gyroscope or
-        0.2 g for `sensor_channel_config` settings including the accelerometer. For higher thresholds the signal in
+        0.2 * 9.81 m/s^2 for `sensor_channel_config` settings including the accelerometer. For higher thresholds the
+        signal in
         the window must show more activity to be passed to the frequency analysis.
     locomotion_band
         The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
@@ -75,8 +75,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Attributes
     ----------
-    TODO Is there going to be datatype 'gait_sequence_list'? Can this be a subtype of a stride_list?
-    gait_sequences_ : A pandas.DataFrame or dictionary with pandas.DataFrames
+    gait_sequences_
         The result of the `detect` method holding all gait sequences with their start and end samples. Formatted
         as pandas DataFrame.
     start_ : 1D array or dictionary with such values
@@ -107,7 +106,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     Notes
     -----
-    TODO: Add additional details about the algorithm for gait sequence detection
+    The underlying algorithm works under the assumption that the IMU gait signal shows a characteristic pattern of
+    harmonics when looking at the power spectral density. This is in contrast to cyclic non-gait signals, where there
+    is usually only one dominant frequency present.
 
     .. [1] M. Ullrich, A. Küderle, J. Hannink, S. Del Din, H. Gassner, F. Marxreiter, J. Klucken, B.M.
         Eskofier, F. Kluge, Detection of Gait From Continuous Inertial Sensor Data Using Harmonic
@@ -127,7 +128,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
     end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    gait_sequences_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    gait_sequences_: RegionsOfInterestList
 
     data: Dataset
     sampling_rate_hz: float
@@ -177,9 +178,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
-        if is_single_sensor_dataset(data):
+        dataset_type = is_dataset(self.data)
+        if dataset_type == "single":
             (self.gait_sequences_, self.start_, self.end_,) = self._detect_single_dataset(data, window_size)
-        elif is_multi_sensor_dataset(data):
+        else:  # Multisensor
             self.gait_sequences_ = dict()
             self.start_ = dict()
             self.end_ = dict()
@@ -189,9 +191,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
                 )
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
-
         return self
 
     def _detect_single_dataset(
@@ -206,19 +205,26 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # lowpass filter the signal: this is now happening before the windowing and thus before the active signal
         # detection compared to JBHI version
         lp_freq_hz = 6  # 6 Hz as harmonics are supposed to occur in lower frequencies
-        s_1d = _butter_lowpass_filter(s_1d, lp_freq_hz, self.sampling_rate_hz)
+        s_1d = signal_processing.butter_lowpass_filter_1d(s_1d, self.sampling_rate_hz, lp_freq_hz)
 
         # sliding windows
         overlap = int(window_size / 2)
         if window_size > len(s_3d):
             raise ValueError("The selected window size is larger than the actual signal.")
         s_3d = sliding_window_view(s_3d, window_size, overlap)
+
+        # in case the data is only as long as one window size, the dimensionality of the np array needs to be adjusted
+        if s_3d.ndim < 3:
+            s_3d = s_3d[np.newaxis, :, :]
         # subtract mean per window
         s_3d = s_3d - np.mean(s_3d, axis=1)[:, np.newaxis, :]
         # compute norm per window
         s_3d_norm = norm(s_3d, axis=2)
 
         s_1d = sliding_window_view(s_1d, window_size, overlap)
+        # in case the data is only as long as one window size, the dimensionality of the np array needs to be adjusted
+        if s_1d.ndim < 2:
+            s_1d = s_1d[np.newaxis, :]
         # subtract mean per window
         s_1d = s_1d - np.mean(s_1d, axis=1)[:, np.newaxis]
 
@@ -250,7 +256,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # concat subsequent gs
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
-        gait_sequences_ = pd.DataFrame({"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]})
+        if gait_sequences_start_end.size == 0:
+            gait_sequences_ = pd.DataFrame(columns=["start", "end"])
+        else:
+            gait_sequences_ = pd.DataFrame(
+                {"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]}
+            )
 
         # add a column for the gs_id
         gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gs_id"})
@@ -268,10 +279,14 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         if "acc" in self.sensor_channel_config:
             s_3d = np.array(data[BF_ACC])
             # scaling factor for the FFT result to get comparable numerical range for acc or gyr configurations
-            fft_factor = 100
+            # needs to be divided by 9.81 as gaitmap is working with m/s^2, whereas in the original implementation we
+            # were using g values for acc
+            fft_factor = 100 / 9.81
             # TODO is it fine to only check for None and finally set this value here?
             if active_signal_th is None:
-                active_signal_th = 0.2
+                # needs to be multiplied by 9.81 as gaitmap is working with m/s^2, whereas in the original
+                # implementation we were using g values for acc
+                active_signal_th = 0.2 * 9.81
         else:
             s_3d = np.array(data[BF_GYR])
             fft_factor = 1
@@ -307,7 +322,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # (sampling_rate / locomotion_band_lower = upper bound of autocorrelation)
         upper_bound = int(np.ceil(self.sampling_rate_hz / self.locomotion_band[0]))
         # autocorr from 0-upper motion band
-        auto_corr = _row_wise_autocorrelation(s_1d, upper_bound)
+        auto_corr = signal_processing.row_wise_autocorrelation(s_1d, upper_bound)
         # calculate dominant frequency in Hz
         dominant_frequency = (
             1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
@@ -408,52 +423,32 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
 
-# TODO move this to general utils
-def _butter_lowpass_filter(data, cutoff, sampling_rate_hz, order=4):
-    """Create and apply butterworth lowpass filter."""
-    nyq = 0.5 * sampling_rate_hz
-    normal_cutoff = cutoff / nyq
-    b, a = butter(order, normal_cutoff, btype="low", analog=False)
-    y = lfilter(b, a, data)
-    return y
-
-
-# TODO move this to general utils
-@njit(nogil=True, parallel=True, cache=True)
-def _row_wise_autocorrelation(array, lag_max):
-    out = np.empty((array.shape[0], lag_max + 1))
-    for tau in range(lag_max + 1):
-        tmax = array.shape[1] - tau
-        umax = array.shape[1] + tau
-        out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
-    return out
-
-
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     """Concat consecutive gait sequences to a single one."""
+    # empty list for result
+    gait_sequences_start_corrected = []
+
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
-        gait_sequences_start_corrected = gait_sequences_start
-    else:
-        # empty list for result
-        gait_sequences_start_corrected = []
-        # first derivative of walking bout samples to get their relative distances
-        gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
-        # compute those indices in the derivative where it is higher than the window size, these are the
-        # non-consecutive bouts
-        diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
-        # split up the walking bout samples in the locations where they are not consecutive
-        split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
-        # iterate over the single splits
-        for jump in split_jumps:
-            # start of the corrected walking bout is the first index of the jump
-            start = jump[0]
-            # length of the corrected walking bout is computed
-            end = jump[-1] + window_size
-            # if start+length exceeds the signal length correct the bout length
-            if end > sig_length:
-                end = sig_length
-            # append list with start and length to the corrected walking bout samples
-            gait_sequences_start_corrected.append([start, end])
+        return np.array(gait_sequences_start_corrected)
+
+    # first derivative of walking bout samples to get their relative distances
+    gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
+    # compute those indices in the derivative where it is higher than the window size, these are the
+    # non-consecutive bouts
+    diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
+    # split up the walking bout samples in the locations where they are not consecutive
+    split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
+    # iterate over the single splits
+    for jump in split_jumps:
+        # start of the corrected walking bout is the first index of the jump
+        start = jump[0]
+        # length of the corrected walking bout is computed
+        end = jump[-1] + window_size
+        # if start+length exceeds the signal length correct the bout length
+        if end > sig_length:
+            end = sig_length
+        # append list with start and length to the corrected walking bout samples
+        gait_sequences_start_corrected.append([start, end])
 
     return np.array(gait_sequences_start_corrected)

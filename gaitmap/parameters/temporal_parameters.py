@@ -9,9 +9,8 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
     set_correct_index,
+    is_stride_list,
 )
 
 
@@ -110,12 +109,11 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
-        if is_single_sensor_stride_list(stride_event_list, stride_type="min_vel"):  # this means single sensor
+        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
+        if stride_list_type == "single":  # this means single sensor
             self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
-        elif is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel"):
-            self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
         else:
-            raise ValueError("Stride list datatype is not supported.")
+            self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
         return self
 
     @staticmethod

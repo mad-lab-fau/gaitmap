@@ -4,7 +4,8 @@ import inspect
 import json
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Union, Type
+from typing import Callable, Dict, TypeVar, Any, List, Type
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
     PositionList,
+    VelocityList,
     OrientationList,
     SingleSensorDataset,
     SingleSensorOrientationList,
@@ -34,25 +36,40 @@ class _CustomEncoder(json.JSONEncoder):
         if isinstance(o, np.ndarray):
             return dict(_obj_type="Array", array=o.tolist())
         if isinstance(o, pd.DataFrame):
-            return dict(_obj_type="DataFrame", df=o.to_json(orient="columns"))
+            return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
-            return dict(_obj_type="Series", df=o.to_json())
+            return dict(_obj_type="Series", df=o.to_json(orient="split"))
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
 
 def _custom_deserialize(json_obj):
     if "_gaitmap_obj" in json_obj:
-        return _BaseSerializable._from_json_dict(json_obj)
+        return _BaseSerializable._find_subclass(json_obj["_gaitmap_obj"])._from_json_dict(json_obj)
     if "_obj_type" in json_obj:
         if json_obj["_obj_type"] == "Rotation":
             return Rotation.from_quat(json_obj["quat"])
         if json_obj["_obj_type"] == "Array":
             return np.array(json_obj["array"])
-        if json_obj["_obj_type"] == "DataFrame":
-            return pd.read_json(json_obj["df"], orient="columns")
-        if json_obj["_obj_type"] == "Series":
-            return pd.read_json(json_obj["df"], typ="series")
+        # ToDo: remove deprecation in future version
+        if json_obj["_obj_type"] in ["Series", "DataFrame"]:
+            typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
+            try:
+                return pd.read_json(json_obj["df"], orient="split", typ=typ)
+            except ValueError:
+                if json_obj["_obj_type"] == "Series":
+                    obj = pd.read_json(json_obj["df"], typ="series")
+                else:
+                    obj = pd.read_json(json_obj["df"], orient="columns")
+                warn(
+                    DeprecationWarning(
+                        "Your dataobject used an old format to store DataFrames in json, which might causes issues "
+                        "with index sorting. Double check the loaded objects and save them again. This will save "
+                        "them in a new format without issues.\n"
+                        "Future versions of the gaitmap will not be able to load the outdated format."
+                    )
+                )
+                return obj
     return json_obj
 
 
@@ -110,10 +127,9 @@ class _BaseSerializable:
 
     @classmethod
     def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
-        subclass = cls._find_subclass(json_dict.pop("_gaitmap_obj"))
         params = json_dict["params"]
-        input_data = {k: params[k] for k in subclass._get_param_names() if k in params}
-        instance = subclass(**input_data)
+        input_data = {k: params[k] for k in cls._get_param_names() if k in params}
+        instance = cls(**input_data)
         return instance
 
     def _get_params_without_nested_class(self) -> Dict[str, Any]:
@@ -302,7 +318,9 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     _action_method = "segment"
 
-    def segment(self: BaseType, data: np.ndarray, sampling_rate_hz: float, **kwargs) -> BaseType:
+    stride_list_: StrideList
+
+    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **kwargs,) -> BaseType:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -313,7 +331,7 @@ class BaseEventDetection(BaseAlgorithm):
     _action_method = "detect"
 
     def detect(self: BaseType, data: Dataset, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Find gait events in data within strides provided by stride_list."""
+        """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
@@ -339,7 +357,7 @@ class BasePositionMethod(BaseAlgorithm):
     """Base class for the individual Position estimation methods that work on pd.DataFrame data."""
 
     _action_method = "estimate"
-    velocity_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    velocity_: VelocityList
     position_: PositionList
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
@@ -357,6 +375,7 @@ class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
 
     orientation_: OrientationList
     position_: PositionList
+    velocity_: VelocityList
 
     def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Estimate the combined orientation and position of the IMU."""

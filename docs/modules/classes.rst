@@ -86,6 +86,7 @@ Classes
     BarthDtw
     DtwTemplate
     BarthOriginalTemplate
+    RoiStrideSegmentation
 
 Functions
 ---------
@@ -268,6 +269,7 @@ Functions
 
     is_single_sensor_dataset
     is_multi_sensor_dataset
+    is_dataset
     get_multi_sensor_dataset_names
     is_single_sensor_stride_list
     is_multi_sensor_stride_list
@@ -334,6 +336,65 @@ Functions
     find_static_samples
     find_static_sequences
     find_first_static_window_multi_sensor
+
+:mod:`gaitmap.utils.signal_processing`: Helper to perform some signal processing tasks
+======================================================================================
+
+.. automodule:: gaitmap.utils.signal_processing
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.utils.signal_processing
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    butter_lowpass_filter_1d
+    row_wise_autocorrelation
+
+:mod:`gaitmap.evaluation_utils`: Helper to evaluate the output of the algorithms
+================================================================================
+
+.. automodule:: gaitmap.evaluation_utils
+    :no-members:
+    :no-inherited-members:
+
+Functions
+---------
+.. currentmodule:: gaitmap.evaluation_utils
+
+.. autosummary::
+   :toctree: generated/
+   :template: function.rst
+
+    evaluate_segmented_stride_list
+    match_stride_lists
+    recall_score
+    precision_score
+    f1_score
+    precision_recall_f1_score
+
+
+
+:mod:`gaitmap.utils.exceptions`: Custom Exceptions
+==================================================
+
+.. automodule:: gaitmap.utils.exceptions
+    :no-members:
+    :no-inherited-members:
+
+Classes
+-------
+.. currentmodule:: gaitmap.utils.exceptions
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+    ValidationError
 
 
 :mod:`gaitmap.utils.consts`: Global constants

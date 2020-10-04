@@ -2,6 +2,7 @@ import matplotlib
 import numpy as np
 
 # This is needed to avoid plots to open
+from gaitmap.utils.consts import SF_ACC
 from tests.conftest import compare_algo_objects
 
 matplotlib.use("Agg")
@@ -21,10 +22,14 @@ def test_barth_dtw_example(snapshot):
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
+def test_roi(snapshot):
+    from examples.barth_dtw_stride_segmentation_roi import roi_seg
+
+    snapshot.assert_match(roi_seg.stride_list_["left_sensor"])
+
+
 def test_preprocessing_example(snapshot):
-    import numpy as np
     from examples.preprocessing_example import dataset_sf_aligned_to_gravity
-    from gaitmap.utils.consts import SF_ACC
 
     desired_acc_vec = np.array([0.0, 0.0, 9.81])
 
@@ -86,6 +91,13 @@ def test_mad_pipeline(snapshot):
     snapshot.assert_match(temporal_paras.parameters_pretty_["right_sensor"], "temporal_paras_right")
     snapshot.assert_match(spatial_paras.parameters_pretty_["left_sensor"], "spatial_paras_left")
     snapshot.assert_match(temporal_paras.parameters_pretty_["left_sensor"], "temporal_paras_left")
+
+
+def test_ullrich_gait_sequence_detection(snapshot):
+    from examples.ullrich_gait_sequence_detection import gsd
+
+    assert len(gsd.gait_sequences_) == 2
+    snapshot.assert_match(gsd.gait_sequences_.astype(np.int64))
 
 
 def test_multi_process():

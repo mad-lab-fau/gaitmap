@@ -73,12 +73,23 @@ For the concept of Sensor and Body Frame and how to convert between these frames
 >>> BF_COLS
 ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si']
 
-Algorithms that require data to be in the BF will use the following check to ensure that correct data is passed.
+Alternatively, all dataset check method can raise an optional error, providing additional information about potential
+failed assessments.
+These can be triggered by setting `raise_exception=True`.
+Below we can see the error message that will be raised, if a sensor-frame dataset is expected, but a body-frame dataset
+is provided:
 
 >>> from gaitmap.utils.dataset_helper import is_single_sensor_dataset
 >>> bf_dataset = ...
->>> is_single_sensor_dataset(bf_dataset, frame="body")
-True
+>>> is_single_sensor_dataset(bf_dataset, frame="sensor", raise_exception=True)
+Traceback (most recent call last):
+    ...
+ValidationError: The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+The dataframe is expected to have columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'].
+Instead it has the following columns: ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si']
+
+This method can be used to validate, if the right type of input data is passed.
+In case a method requires a single or a multi-sensor dataset, see below for efficient checking.
 
 Multi-Sensor Datasets
 ---------------------
@@ -114,6 +125,12 @@ independent of the format of the dataset:
 >>> get_multi_sensor_dataset_names(multi_dataset)
 ["left_sensor", "right_sensor"]
 
+All core methods support a *MultiSensorDataset* as input.
+This usually means that the method simply iterates over all sensors and provides a separate output for each sensor.
+The sensor names can be chosen arbitrarily.
+For the future, methods are planned that make active use of multiple sensors at the same time.
+These might handle multi-sensor input differently.
+
 Like *SingleSensorDatasets*, *MultiSensorDatasets* can exist in the Body or the Sensor Frame.
 However, all single-sensor datasets in a *MultiSensorDataset* must be in the same frame.
 This can be checked using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
@@ -124,11 +141,42 @@ True
 >>> is_multi_sensor_dataset(multi_dataset, frame="body")
 False
 
-All core methods support a *MultiSensorDataset* as input.
-This usually means that the method simply iterates over all sensors and provides a separate output for each sensor.
-The sensor names can be chosen arbitrarily.
-For the future, methods are planned that make active use of multiple sensors at the same time.
-These might handle multi-sensor input differently.
+Like the single-sensor methods, these functions support exception raising in case the validation fails:
+
+>>> is_multi_sensor_dataset(multi_dataset, frame="body", raise_exception=True)
+Traceback (most recent call last):
+    ...
+ValidationError: The passed object appears to be a MultiSensorDataset, but for the sensor with the name "left_sensor",
+the following validation error was raised:
+The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+The dataframe is expected to have columns: ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si'].
+Instead it has the following columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z']
+
+This can be used to validate the input to method that expects a *MultiSensorDataset*.
+However, often methods can take either a *SingleSensorDataset* or a *MultiSensorDataset* as input.
+In these cases one should use the generic `is_dataset` method to check.
+This will only fail (and raise an exception) if the single- and the multi-sensor checks fail.
+Otherwise, it will return a string, indicating what type of dataset was passed (and None if the check failed):
+
+>>> from gaitmap.utils.dataset_helper import is_dataset
+>>> is_dataset(multi_dataset, frame="sensor")
+'multi'
+>>> is_dataset(multi_dataset["left_sensor"], frame="sensor")
+'single'
+>>> is_dataset(pd.DataFrame(), frame="sensor")
+Traceback (most recent call last):
+    ...
+ValidationError: The passed object appears to be neither a single- or a multi-sensor dataset.
+Below you can find the errors raised for both checks:
+Single-Sensor
+=============
+The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+The dataframe is expected to have columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'].
+Instead it has the following columns: []
+Single-Sensor
+=============
+The passed object does not seem to be a MultiSensorDataset. The validation failed with the following error:
+The dataframe is expected to have a MultiIndex with 2 levels as columns. It has just a single normal column level.
 
 .. _stride_list_guide:
 
@@ -208,6 +256,11 @@ This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
     "min_vel": ["pre_ic", "min_vel", "tc", "ic"],
     "ic": ["ic", "min_vel", "tc"],
 }
+
+Like the dataset validation function, all stride list methods also support the `raise_exception` parameter.
+If it is True, the method will raise a descriptive error instead of returning `False`.
+Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, were single and
+multi sensor stride lists are allowed as inputs.
 
 The normal format check shown above does not check if the values in the stride list follow this order.
 However, you can use :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency` to remove strides

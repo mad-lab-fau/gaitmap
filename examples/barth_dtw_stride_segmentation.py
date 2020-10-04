@@ -43,7 +43,7 @@ data.sort_index(axis=1).head(1)
 from gaitmap.stride_segmentation import BarthOriginalTemplate
 
 template = BarthOriginalTemplate()
-template.data.plot()
+template.get_data().plot()
 plt.xlabel("Time [#]")
 plt.ylabel("gyro [deg/s]")
 plt.show()

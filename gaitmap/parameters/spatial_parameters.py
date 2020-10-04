@@ -1,5 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, Hashable
 
 import numpy as np
 import pandas as pd
@@ -13,8 +13,6 @@ from gaitmap.utils.dataset_helper import (
     StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
     PositionList,
     SingleSensorPositionList,
     MultiSensorPositionList,
@@ -26,6 +24,7 @@ from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
     is_multi_sensor_orientation_list,
     set_correct_index,
+    is_stride_list,
 )
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
@@ -83,7 +82,17 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         if the angle is pointing downwards (i.e. the heel is higher than the toe), following the convetion in [1]_.
         The sole angle is assumed to be 0 during midstance.
         The IC and TC angles are simply the sole angles at the respective time points.
-
+    Max. Sensor Lift
+        The maximal relative height (relative to the height at midstance) the sensor reaches during the stride.
+        Note that this is not equivalent to the actual foot lift/toe clearance.
+        These values can be estimated, if the postion of the sensor on the foot is known.
+    Max. Lateral Excursion
+        The maximal lateral distance between the foot and an imaginary straight line spanning from the start to the
+        end position of each stride.
+        This indicates "how far outwards" a subject moves the foot during the swing phase.
+        Note, that this parameter is only meaningfull for straight strides.
+        It is further assumed that the inward/outward rotation of the foot is small in comparison the the actual
+        lateral swing of the leg.
 
     .. [1] Kanzler, C. M., Barth, J., Rampp, A., Schlarb, H., Rott, F., Klucken, J., Eskofier, B. M. (2015, August).
        Inertial sensor based and shoe size independent gait analysis including heel and toe clearance estimation.
@@ -119,7 +128,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
-    parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    parameters_: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
     sole_angle_course_: PositionList
 
     stride_event_list: StrideList
@@ -128,7 +137,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     sampling_rate_hz: float
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -146,6 +155,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": "tc angle [deg]",
             "turning_angle": "turning angle [deg]",
             "arc_length": "arc length [m]",
+            "max_sensor_lift": "max. sensor lift [m]",
+            "max_lateral_excursion": "max. lateral excursion [m]",
         }
         renamed_paras = parameters.rename(columns=pretty_columns)
         renamed_paras.index.name = "stride id"
@@ -181,8 +192,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.positions = positions
         self.orientations = orientations
         self.sampling_rate_hz = sampling_rate_hz
+        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
         if (
-            is_single_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            stride_list_type == "single"
             and is_single_sensor_position_list(positions)
             and is_single_sensor_orientation_list(orientations)
         ):
@@ -190,7 +202,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         elif (
-            is_multi_sensor_stride_list(stride_event_list, stride_type="min_vel")
+            stride_list_type == "multi"
             and is_multi_sensor_position_list(positions)
             and is_multi_sensor_orientation_list(orientations)
         ):
@@ -213,7 +225,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         Parameters
         ----------
         stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
+            Gait events for each stride obtained from event detection.
         positions
             position of the sensor at each time point as estimated by trajectory reconstruction.
         orientations
@@ -239,6 +251,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         )
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)
+        max_sensor_lift_ = _calc_max_sensor_lift(positions)
+        max_lateral_excursion_ = _calc_max_lateral_excursion(positions)
 
         angle_course_ = _compute_sole_angle_course(orientations)
         ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
@@ -253,6 +267,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "tc_angle": tc_angle_,
             "turning_angle": turning_angle_,
             "arc_length": arc_length_,
+            "max_sensor_lift": max_sensor_lift_,
+            "max_lateral_excursion": max_lateral_excursion_,
         }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_, angle_course_
@@ -263,13 +279,13 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         positions: MultiSensorPositionList,
         orientations: MultiSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.Series]]:
+    ) -> Tuple[Dict[Hashable, pd.DataFrame], Dict[Hashable, pd.Series]]:
         """Find spatial parameters of each stride in case of multiple sensors.
 
         Parameters
         ----------
         stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
+            Gait events for each stride obtained from event detection.
         positions
             position of each sensor at each time point as estimated by trajectory reconstruction.
         orientations
@@ -282,7 +298,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         parameters_
             Data frame containing spatial parameters of single sensor
         sole_angle_course_
-            The sole angle in the sagttial plane for each stride
+            The sole angle in the sagittal plane (around the "ml" axis) for each stride
 
         """
         parameters_ = {}
@@ -311,7 +327,7 @@ def _get_angle_at_index(angle_course: np.array, index_per_stride: pd.Series) -> 
     return angle_course[indexer].reset_index(level=1, drop=True)
 
 
-def _calc_turning_angle(orientations) -> pd.Series:
+def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
     start = orientations.groupby(level="s_id").first()
     end = orientations.groupby(level="s_id").last()
     angles = pd.Series(
@@ -348,3 +364,34 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     floor_angle = np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1]))) - 90
     floor_angle = pd.Series(floor_angle, index=forward.index)
     return floor_angle
+
+
+def _calc_max_sensor_lift(positions: SingleSensorPositionList) -> pd.Series:
+    return positions["pos_z"].groupby(level="s_id").max()
+
+
+def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Series:
+    """Calculate the maximal lateral deviation from a straight line going from start pos to end pos of a stride.
+
+    x1 = (x1,y1), x2 = (x2,y2) define the line
+    x = (x0,y0) is the point the distance is computed to
+    d =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/sqrt((x2-x1)**2+(y2-y1)**2)
+      =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/stride_length
+
+    """
+    start = positions.groupby(level="s_id").first()
+    end = positions.groupby(level="s_id").last()
+    stride_length = _calc_stride_length(positions)
+
+    def _calc_per_stride(start, end, length, data):
+        excursion = (
+            (end["pos_x"] - start["pos_x"]) * (start["pos_y"] - data["pos_y"])
+            - (start["pos_x"] - data["pos_x"]) * (end["pos_y"] - start["pos_y"])
+        ).abs()
+        max_excursion = excursion.max()
+        return max_excursion / length
+
+    max_lat_excursion = positions.groupby(level="s_id").apply(
+        lambda x: _calc_per_stride(start.loc[x.name], end.loc[x.name], stride_length.loc[x.name], x)
+    )
+    return max_lat_excursion

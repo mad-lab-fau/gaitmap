@@ -37,8 +37,7 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
     gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
-    if not is_single_sensor_dataset(data, frame="sensor"):
-        raise ValueError("No valid FSF SingleSensorDataset supplied.")
+    is_single_sensor_dataset(data, check_acc=False, frame="sensor", raise_exception=True)
 
     result = pd.DataFrame(columns=BF_COLS)
 
@@ -69,8 +68,7 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
     gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
-    if not is_single_sensor_dataset(data, frame="sensor"):
-        raise ValueError("No valid FSF SingleSensorDataset supplied.")
+    is_single_sensor_dataset(data, check_acc=False, frame="sensor", raise_exception=True)
 
     result = pd.DataFrame(columns=BF_COLS)
 

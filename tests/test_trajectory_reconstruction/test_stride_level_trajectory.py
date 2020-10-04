@@ -13,6 +13,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_orientation_list,
     is_multi_sensor_position_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -43,10 +44,9 @@ class TestIODataStructures:
         }
 
         gyr_int = StrideLevelTrajectory(align_window_width=8)
-        error_text = r"Provided data or stride list or combination of both is not supported by gaitmap."
-        with pytest.raises(ValueError, match=error_text):
+        with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor dataset"):
             gyr_int.estimate(fake_data, stride_list, 204.8)
-        with pytest.raises(ValueError, match=error_text):
+        with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor stride list"):
             gyr_int.estimate(data, fake_stride_list, 204.8)
 
     def test_invalid_input_method(self, healthy_example_imu_data, healthy_example_stride_events):

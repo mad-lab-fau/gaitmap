@@ -9,15 +9,14 @@ from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.dataset_helper import (
-    is_multi_sensor_dataset,
-    is_single_sensor_dataset,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
     StrideList,
     Dataset,
     get_multi_sensor_dataset_names,
     set_correct_index,
+    is_dataset,
+    is_stride_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
@@ -180,11 +179,14 @@ class RamppEventDetection(BaseEventDetection):
             The class instance with all result attributes populated
 
         """
-        if is_single_sensor_dataset(data) and not is_single_sensor_stride_list(stride_list):
-            raise ValueError("Provided stride list does not fit to provided single sensor data set")
+        dataset_type = is_dataset(data, frame="body")
+        stride_list_type = is_stride_list(stride_list, stride_type="any")
 
-        if is_multi_sensor_dataset(data) and not is_multi_sensor_stride_list(stride_list):
-            raise ValueError("Provided stride list does not fit to provided multi sensor data set")
+        if dataset_type != stride_list_type:
+            raise ValidationError(
+                "An invalid combination of stride list and dataset was provided."
+                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
+            )
 
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
@@ -197,19 +199,17 @@ class RamppEventDetection(BaseEventDetection):
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
-        if is_single_sensor_dataset(data):
+        if dataset_type == "single":
             self.min_vel_event_list_, self.segmented_event_list_ = self._detect_single_dataset(
                 data, stride_list, ic_search_region, min_vel_search_win_size
             )
-        elif is_multi_sensor_dataset(data):
+        else:
             self.min_vel_event_list_ = dict()
             self.segmented_event_list_ = dict()
             for sensor in get_multi_sensor_dataset_names(data):
                 self.min_vel_event_list_[sensor], self.segmented_event_list_[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
-        else:
-            raise ValueError("Provided data set is not supported by gaitmap")
 
         return self
 

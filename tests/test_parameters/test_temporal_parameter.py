@@ -1,10 +1,9 @@
-from gaitmap.base import BaseType
-from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
-
+import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-import pandas as pd
 
+from gaitmap.base import BaseType
+from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 

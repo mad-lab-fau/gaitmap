@@ -16,11 +16,12 @@ from gaitmap.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     create_interpolated_dtw_template,
 )
-
+from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
 
 __all__ = [
     "BarthDtw",
     "BaseDtw",
+    "RoiStrideSegmentation",
     "DtwTemplate",
     "create_dtw_template",
     "BarthOriginalTemplate",

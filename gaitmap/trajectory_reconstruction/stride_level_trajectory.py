@@ -1,6 +1,6 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
 import warnings
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,14 +13,13 @@ from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS, SL_INDEX
 from gaitmap.utils.dataset_helper import (
     Dataset,
     StrideList,
-    is_single_sensor_stride_list,
-    is_multi_sensor_stride_list,
-    is_single_sensor_dataset,
-    is_multi_sensor_dataset,
     SingleSensorDataset,
     get_multi_sensor_dataset_names,
     set_correct_index,
+    is_dataset,
+    is_stride_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 
 
@@ -125,8 +124,6 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     stride_event_list: StrideList
     sampling_rate_hz: float
 
-    velocity_: Union[Dict[str, pd.DataFrame], pd.DataFrame]
-
     def __init__(
         self,
         ori_method: BaseOrientationMethod = SimpleGyroIntegration(),
@@ -161,18 +158,21 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         if not isinstance(self.pos_method, BasePositionMethod):
             raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
 
-        if is_single_sensor_dataset(self.data) and is_single_sensor_stride_list(
-            stride_event_list, stride_type="min_vel"
-        ):
+        dataset_type = is_dataset(data, frame="sensor")
+        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
+
+        if dataset_type != stride_list_type:
+            raise ValidationError(
+                "An invalid combination of stride list and dataset was provided."
+                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
+            )
+        if dataset_type == "single":
             self.orientation_, self.velocity_, self.position_ = self._estimate_single_sensor(
                 self.data, self.stride_event_list
             )
-        elif is_multi_sensor_dataset(self.data) and is_multi_sensor_stride_list(
-            stride_event_list, stride_type="min_vel"
-        ):
-            self.orientation_, self.velocity_, self.position_ = self._estimate_multi_sensor()
         else:
-            raise ValueError("Provided data or stride list or combination of both is not supported by gaitmap.")
+            self.orientation_, self.velocity_, self.position_ = self._estimate_multi_sensor()
+
         return self
 
     def _estimate_multi_sensor(

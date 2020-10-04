@@ -32,6 +32,9 @@ SL_EVENT_ORDER = {
     "ic": ["ic", "min_vel", "tc"],
 }
 
+#: The allowed index columns for a regions-of-interest list
+ROI_ID_COLS = {"roi": "roi_id", "gs": "gs_id"}
+
 #: The default names of the Velocity columns in the global frame
 GF_VEL = ["vel_x", "vel_y", "vel_z"]
 #: The default names of the Position columns in the global frame

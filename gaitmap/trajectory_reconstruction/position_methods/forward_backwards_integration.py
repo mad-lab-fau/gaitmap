@@ -129,12 +129,12 @@ class ForwardBackwardIntegration(BasePositionMethod):
             The class instance with all result attributes populated
 
         """
+        self.data = data
+        self.sampling_rate_hz = sampling_rate_hz
+
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError("`turning_point` must be in the rage of 0.0 to 1.0")
-        if not is_single_sensor_dataset(data, check_gyr=False, frame="sensor"):
-            raise ValueError("Data is not a single sensor dataset.")
-        self.sampling_rate_hz = sampling_rate_hz
-        self.data = data
+        is_single_sensor_dataset(self.data, check_gyr=False, frame="sensor", raise_exception=True)
 
         acc_data = data[SF_ACC].to_numpy()
         if self.gravity is not None:

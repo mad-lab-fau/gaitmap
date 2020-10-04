@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,8 +10,8 @@ from gaitmap.base import BaseType
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel, _detect_tc
 from gaitmap.utils import coordinate_conversion, dataset_helper
 from gaitmap.utils.consts import BF_COLS
+from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
-import random
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -89,8 +91,10 @@ class TestEventDetectionRampp:
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = RamppEventDetection()
-        with pytest.raises(ValueError, match=r"Provided data set is not supported by gaitmap"):
+        with pytest.raises(ValidationError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
+
+        assert "The passed object appears to be neither a single- or a multi-sensor dataset" in str(e)
 
     def test_min_vel_search_win_size_ms_dummy_data(self):
         """Test if error is raised correctly if windows size matches the size of the input data"""
@@ -157,7 +161,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
         ed = RamppEventDetection()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
     def test_multi_data_single_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
@@ -166,7 +170,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
         ed = RamppEventDetection()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
     def test_sign_change_for_detect_tc(self):

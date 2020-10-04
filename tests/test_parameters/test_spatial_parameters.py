@@ -143,7 +143,16 @@ class TestIndividualParameter:
 class TestSpatialParameterCalculation:
     """Test spatial parameters calculation."""
 
-    parameters = ["stride_length", "gait_velocity", "ic_angle", "tc_angle", "turning_angle", "arc_length"]
+    parameters = [
+        "stride_length",
+        "gait_velocity",
+        "ic_angle",
+        "tc_angle",
+        "turning_angle",
+        "arc_length",
+        "max_sensor_lift",
+        "max_lateral_excursion",
+    ]
 
     def test_single_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list

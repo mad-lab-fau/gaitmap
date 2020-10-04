@@ -7,6 +7,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
 from gaitmap.utils.dataset_helper import MultiSensorDataset, get_multi_sensor_dataset_names
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
     rotation_from_angle,
     _rotate_sensor,
@@ -243,10 +244,10 @@ class TestRotateDataset:
 
 class TestRotateDatasetSeries:
     def test_invalid_input(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             rotate_dataset_series("bla", Rotation.identity(3))
 
-        assert "dataset" in str(e)
+        assert "SingleSensorDataset" in str(e)
 
     def test_invalid_input_length(self):
         data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
@@ -260,6 +261,7 @@ class TestRotateDatasetSeries:
         input_gyro = [0, 1, 0]
         data = np.array([[*input_acc, *input_gyro]] * 4)
         data = pd.DataFrame(data, columns=SF_COLS)
+        in_data = data.copy()
         rotations = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad([0, 90, 180, 270]))
 
         out = rotate_dataset_series(data, rotations)
@@ -269,6 +271,10 @@ class TestRotateDatasetSeries:
 
         assert_array_almost_equal(out[SF_ACC].to_numpy(), expected_acc)
         assert_array_almost_equal(out[SF_GYR].to_numpy(), expected_gyro)
+
+        # Check that the rotated version is a copy and the original data was not touched
+        assert_frame_equal(data, in_data)
+        assert data is not out
 
 
 class TestFindShortestRotation:
