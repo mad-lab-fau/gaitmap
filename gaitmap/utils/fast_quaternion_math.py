@@ -18,3 +18,28 @@ def rate_of_change_from_gyro(gyro: np.ndarray, current_orientation: np.ndarray) 
     qdot[3] = -qx * gyro[0] - qy * gyro[1] - qz * gyro[2]
 
     return 0.5 * qdot
+
+
+@njit()
+def multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Multiply two quaternions."""
+    r = np.empty(4)
+    r[3] = a[3] * b[3] - np.dot(a[:3], b[:3]) 
+    r[:3] = a[3] * b[:3] + b[3] * a[:3] + np.cross(a[:3], b[:3])
+    return r
+
+
+@njit() 
+def rotate_vector(q: np.ndarray, v: np.ndarray) -> np.ndarray:
+    """Rotate a vector by a quaternion.
+    http://graphics.stanford.edu/courses/cs348a-17-winter/Papers/quaternion.pdf chapter 3"""
+    w = q[3]
+    u = q[:3]
+    return 2.0 * (np.dot(u, v) * u + w * np.cross(u, v)) + (w**2 - np.dot(u, u)) * v
+
+
+@njit()
+def quat_from_rotvec(sigma):
+    a_c = np.cos(np.linalg.norm(sigma)/2)
+    a_s = np.sin(np.linalg.norm(sigma)/2)/np.linalg.norm(sigma)
+    return np.append(a_s*sigma, a_c)
