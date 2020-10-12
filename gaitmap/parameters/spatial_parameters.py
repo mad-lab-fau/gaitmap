@@ -195,16 +195,16 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
         if (
             stride_list_type == "single"
-            and is_single_sensor_position_list(positions)
-            and is_single_sensor_orientation_list(orientations)
+            and is_single_sensor_position_list(positions, position_list_type="stride")
+            and is_single_sensor_orientation_list(orientations, orientation_list_type="stride")
         ):
             self.parameters_, self.sole_angle_course_ = self._calculate_single_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
         elif (
             stride_list_type == "multi"
-            and is_multi_sensor_position_list(positions)
-            and is_multi_sensor_orientation_list(orientations)
+            and is_multi_sensor_position_list(positions, position_list_type="stride")
+            and is_multi_sensor_orientation_list(orientations, orientation_list_type="stride")
         ):
             self.parameters_, self.sole_angle_course_ = self._calculate_multiple_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
