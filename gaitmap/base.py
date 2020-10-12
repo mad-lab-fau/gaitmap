@@ -381,10 +381,6 @@ class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
     position_: PositionList
     velocity_: VelocityList
 
-    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Estimate the combined orientation and position of the IMU."""
-        raise NotImplementedError("Needs to be implemented by child class.")
-
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):
     """Base class for temporal parameters calculation."""

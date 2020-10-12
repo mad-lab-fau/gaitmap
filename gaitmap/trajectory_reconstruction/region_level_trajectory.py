@@ -185,9 +185,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self, data: SingleSensorDataset, integration_regions: SingleSensorRegionsOfInterestList
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         # Set the class variable to determine the correct index values per dataset.
-        self._expected_integration_region_index = [ROI_ID_COLS[
-            get_single_sensor_regions_of_interest_types(integration_regions)
-        ]]
+        self._expected_integration_region_index = [
+            ROI_ID_COLS[get_single_sensor_regions_of_interest_types(integration_regions)]
+        ]
         return super()._estimate_single_sensor(data, integration_regions)
 
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
