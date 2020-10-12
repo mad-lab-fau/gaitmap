@@ -368,6 +368,10 @@ class BasePositionMethod(BaseAlgorithm):
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
+class BaseTrajectoryMethod(BasePositionMethod, BaseOrientationMethod):
+    """Base class for methods that can compute orientation and position in one pass."""
+
+
 class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
     """Base class for method that wrap position and orientation methods to be usable with default datatypes."""
 
