@@ -732,6 +732,13 @@ class TestIsSingleRegionsOfInterestList:
 
         assert out is True
 
+    def test_error_raising(self):
+        with pytest.raises(ValidationError) as e:
+            is_single_sensor_regions_of_interest_list(pd.DataFrame(), raise_exception=True)
+
+        assert "The passed object does not seem to be a SingleSensorRegionsOfInterestList." in str(e)
+        assert "['roi_id', 'gs_id']" in str(e.value)
+
 
 class TestIsMultiSensorRegionsOfInterestList:
     @pytest.mark.parametrize(

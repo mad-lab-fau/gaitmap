@@ -416,7 +416,6 @@ def is_single_sensor_stride_list(
         event order
 
     """
-    # Check columns exist
     if stride_type != "any" and stride_type not in SL_ADDITIONAL_COLS:
         raise ValueError(
             'The argument `stride_type` must be "any" or one of {}'.format(list(SL_ADDITIONAL_COLS.keys()))
@@ -568,17 +567,24 @@ def is_stride_list(
     )
 
 
-def _get_regions_of_interest_types(roi_list_columns):
+def get_single_sensor_regions_of_interest_types(roi_list: SingleSensorRegionsOfInterestList) -> Literal["roi", "gs"]:
+    """Identify which type of region of interest list is passed by checking the existing columns."""
+    roi_list_columns = roi_list.reset_index().columns
     valid_index_dict = ROI_ID_COLS
     matched_index_col = [col for col in roi_list_columns if col in valid_index_dict.values()]
     if not matched_index_col:
-        raise ValueError("The correct type of region list can not be determined.")
+        raise ValidationError(
+            "The region of interest list is expected to have one of {} either as a column or in the "
+            "index".format(list(valid_index_dict.values()))
+        )
     region_type = list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
     return region_type
 
 
 def is_single_sensor_regions_of_interest_list(
-    roi_list: SingleSensorRegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any"
+    roi_list: SingleSensorRegionsOfInterestList,
+    region_type: Literal["any", "roi", "gs"] = "any",
+    raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor regions-of-interest list.
 
@@ -598,6 +604,9 @@ def is_single_sensor_regions_of_interest_list(
     region_type
         The expected region type of this object.
         If this is "any" any of the possible versions are checked
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
@@ -605,33 +614,34 @@ def is_single_sensor_regions_of_interest_list(
         lists
 
     """
-    if not isinstance(roi_list, pd.DataFrame):
-        return False
+    if region_type != "any" and region_type not in ROI_ID_COLS:
+        raise ValueError('The argument `region_type` must be "any" or one of {}'.format(list(ROI_ID_COLS.keys())))
 
-    roi_list = roi_list.reset_index()
-    columns = roi_list.columns
+    try:
+        _assert_is_dtype(roi_list, pd.DataFrame)
+        _assert_has_multindex_cols(roi_list, expected=False)
 
-    if isinstance(columns, pd.MultiIndex):
-        return False
+        actual_region_type = get_single_sensor_regions_of_interest_types(roi_list)
+        if region_type is not "any" and actual_region_type != region_type:
+            raise ValidationError(
+                "A ROI list of type {} is expected to have a either an index or a column named {}. "
+                "The provided ROI list appears to be of the type {} instead.".format(
+                    region_type, ROI_ID_COLS[region_type], actual_region_type
+                )
+            )
 
-    index_cols = ROI_ID_COLS
-    if region_type != "any" and region_type not in index_cols:
-        raise ValueError('The argument `region_type` must be "any" or one of {}'.format(list(index_cols.keys())))
-    # In case the region type is any, we must check if at least one of the possible id cols exist:
-    if region_type == "any":
-        try:
-            region_type = _get_regions_of_interest_types(columns)
-        except ValueError:
-            return False
+        roi_list = set_correct_index(roi_list, [ROI_ID_COLS[actual_region_type]])
+        _assert_has_columns(roi_list, [["start", "end"]])
 
-    minimal_columns = ["start", "end"]
-    all_columns = [*minimal_columns, index_cols[region_type]]
-    if not all(v in columns for v in all_columns):
-        return False
-
-    # Check that the roi ids are unique
-    id_col = roi_list[index_cols[region_type]]
-    if not id_col.nunique() == id_col.size:
+        # Check that the roi ids are unique
+        if not roi_list.index.nunique() == roi_list.index.size:
+            raise ValidationError("The roi/gs id of the stride list is expected to be unique.")
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object does not seem to be a SingleSensorRegionsOfInterestList. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
         return False
 
     return True
