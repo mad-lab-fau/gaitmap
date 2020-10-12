@@ -1,6 +1,6 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Optional, Tuple, Dict, Union, Sequence
+from typing import Optional, Tuple, Dict, Union, Sequence, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -18,8 +18,13 @@ from gaitmap.utils.dataset_helper import (
     set_correct_index,
     get_multi_sensor_dataset_names,
     RegionsOfInterestList,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
 )
 from gaitmap.utils.rotations import rotate_dataset_series, get_gravity_rotation
+
+REGION_TYPE = TypeVar("REGION_TYPE")
+REGION_TYPE_SINGLE = TypeVar("REGION_TYPE_SINGLE")
 
 
 class _TrajectoryReconstructionWrapperMixin:
@@ -31,7 +36,7 @@ class _TrajectoryReconstructionWrapperMixin:
     sampling_rate_hz: float
 
     _combined_algo_mode: bool
-    _integration_regions: Union[StrideList, RegionsOfInterestList]
+    _integration_regions: REGION_TYPE
     _expected_integration_region_index: Sequence[str]
 
     def __init__(
@@ -80,7 +85,7 @@ class _TrajectoryReconstructionWrapperMixin:
         return orientation, velocity, position
 
     def _estimate_single_sensor(
-        self, data: SingleSensorDataset, integration_regions: StrideList
+        self, data: SingleSensorDataset, integration_regions: REGION_TYPE_SINGLE,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = tuple((*self._expected_integration_region_index, "sample"))

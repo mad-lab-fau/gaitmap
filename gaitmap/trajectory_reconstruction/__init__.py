@@ -7,5 +7,12 @@ to make applying these methods to the default gaitmap datasets easier.
 from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS, SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
+from gaitmap.trajectory_reconstruction.region_level_trajectory import RegionLevelTrajectory
 
-__all__ = ["MadgwickAHRS", "SimpleGyroIntegration", "ForwardBackwardIntegration", "StrideLevelTrajectory"]
+__all__ = [
+    "MadgwickAHRS",
+    "SimpleGyroIntegration",
+    "ForwardBackwardIntegration",
+    "StrideLevelTrajectory",
+    "RegionLevelTrajectory",
+]
