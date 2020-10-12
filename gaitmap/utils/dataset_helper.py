@@ -1,15 +1,23 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, List, Sequence, Iterable, Hashable, Optional
+from typing import Union, Dict, Sequence, Iterable, Hashable, Optional
 
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
+from gaitmap.utils._datatype_validation_helper import (
+    _ALLOWED_FRAMES,
+    _ALLOWED_FRAMES_TYPE,
+    _get_expected_dataset_cols,
+    _assert_is_dtype,
+    _assert_has_multindex_cols,
+    _assert_has_columns,
+    _assert_has_index_columns,
+    _assert_multisensor_is_not_empty,
+    _ALLOWED_STRIDE_TYPE,
+    _get_multi_sensor_dataset_names,
+)
 from gaitmap.utils.consts import (
-    SF_ACC,
-    SF_GYR,
-    BF_GYR,
-    BF_ACC,
     SL_COLS,
     SL_ADDITIONAL_COLS,
     GF_POS,
@@ -43,110 +51,6 @@ VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 SingleSensorOrientationList = pd.DataFrame
 MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
-
-_ALLOWED_FRAMES = ["any", "body", "sensor"]
-_ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]
-
-
-def _get_expected_dataset_cols(
-    frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
-) -> List:
-    expected_cols = []
-    if frame == "sensor":
-        acc = SF_ACC
-        gyr = SF_GYR
-    elif frame == "body":
-        acc = BF_ACC
-        gyr = BF_GYR
-    else:
-        raise ValueError('`frame must be one of ["sensor", "body"]')
-    if check_acc is True:
-        expected_cols.extend(acc)
-    if check_gyr is True:
-        expected_cols.extend(gyr)
-    return expected_cols
-
-
-def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
-    """Check if an object has a specific dtype."""
-    if not isinstance(obj, dtype):
-        raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
-
-
-def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
-    """Check if a pd.DataFrame has a multiindex as columns.
-
-    Parameters
-    ----------
-    df
-        The dataframe to check
-    nlevels
-        If MultiIndex is expected, how many level should the MultiIndex have
-    expected
-        If the df is expected to have a MultiIndex or not
-
-    """
-    has_multiindex = isinstance(df.columns, pd.MultiIndex)
-    if has_multiindex is not expected:
-        if expected is False:
-            raise ValidationError(
-                "The dataframe is expected to have a single level of columns. "
-                "But it has a MultiIndex with {} levels.".format(df.columns.nlevels)
-            )
-        raise ValidationError(
-            "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-            "It has just a single normal column level.".format(nlevels)
-        )
-    if has_multiindex is True:
-        if not df.columns.nlevels == nlevels:
-            raise ValidationError(
-                "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-                "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
-            )
-
-
-def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[Hashable]]):
-    """Check if the dataframe has at least all columns sets.
-
-    Examples
-    --------
-    >>> df = pd.DataFrame()
-    >>> df.columns = ["col1", "col2"]
-    >>> _assert_has_columns(df, [["other_col1", "other_col2"], ["col1", "col2"]])
-    >>> # This raises no error, as df contains all columns of the second set
-
-    """
-    columns = df.columns
-    result = False
-    for col_set in columns_sets:
-        result = result or all(v in columns for v in col_set)
-
-    if result is False:
-        if len(columns_sets) == 1:
-            helper_str = "columns: {}".format(columns_sets[0])
-        else:
-            helper_str = "one of the following sets of columns: {}".format(columns_sets)
-        raise ValidationError(
-            "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
-                helper_str, list(df.columns)
-            )
-        )
-
-
-def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[Hashable]):
-    ex_index_cols = list(index_cols)
-    ac_index_cols = list(df.index.names)
-    if ex_index_cols != ac_index_cols:
-        raise ValidationError(
-            "The dataframe is expected to have exactly the following index columns ({}), "
-            "but it has {}".format(index_cols, df.index.name)
-        )
-
-
-def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]):
-    sensors = get_multi_sensor_dataset_names(obj)
-    if len(sensors) == 0:
-        raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")
 
 
 def is_single_sensor_dataset(
@@ -357,9 +261,6 @@ def is_dataset(
         "=============\n"
         f"{str(multi_error)}"
     )
-
-
-_ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]
 
 
 def is_single_sensor_stride_list(
@@ -622,7 +523,7 @@ def is_single_sensor_regions_of_interest_list(
         _assert_has_multindex_cols(roi_list, expected=False)
 
         actual_region_type = get_single_sensor_regions_of_interest_types(roi_list)
-        if region_type is not "any" and actual_region_type != region_type:
+        if region_type not in ("any", actual_region_type):
             raise ValidationError(
                 "A ROI list of type {} is expected to have a either an index or a column named {}. "
                 "The provided ROI list appears to be of the type {} instead.".format(
@@ -772,13 +673,7 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
     The keys are not guaranteed to be ordered.
 
     """
-    if isinstance(dataset, pd.DataFrame):
-        keys = dataset.columns.unique(level=0)
-    else:
-        # In case it is a dict
-        keys = dataset.keys()
-
-    return keys
+    return _get_multi_sensor_dataset_names(dataset=dataset)
 
 
 def is_single_sensor_position_list(position_list: SingleSensorPositionList, s_id: bool = True) -> bool:
