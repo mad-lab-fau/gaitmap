@@ -648,7 +648,9 @@ def is_single_sensor_regions_of_interest_list(
 
 
 def is_multi_sensor_regions_of_interest_list(
-    roi_list: MultiSensorRegionsOfInterestList, region_type: Literal["any", "roi", "gsd"] = "any"
+    roi_list: MultiSensorRegionsOfInterestList,
+    region_type: Literal["any", "roi", "gsd"] = "any",
+    raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
 
@@ -664,23 +666,38 @@ def is_multi_sensor_regions_of_interest_list(
     region_type
         The expected region type of this object.
         If this is "any" any of the possible versions are checked
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_regions_of_interest_list: Check for multi-sensor roi lists
 
     """
-    if not isinstance(roi_list, dict):
+    try:
+        _assert_is_dtype(roi_list, dict)
+        _assert_multisensor_is_not_empty(roi_list)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object does not seem to be a MultiSensorStrideList. "
+                "The validation failed with the following error:\n\n{}".format(str(e))
+            ) from e
         return False
 
-    keys = roi_list.keys()
-
-    if len(keys) == 0:
+    try:
+        for k in roi_list.keys():
+            is_single_sensor_regions_of_interest_list(roi_list[k], region_type=region_type, raise_exception=True)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object appears to be a MultiSensorRegionsOfInterestList, "
+                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
+                    k, str(e)
+                )
+            ) from e
         return False
-
-    for k in keys:
-        if not is_single_sensor_regions_of_interest_list(roi_list[k], region_type=region_type):
-            return False
     return True
 
 

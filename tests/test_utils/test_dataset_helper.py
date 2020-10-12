@@ -737,7 +737,7 @@ class TestIsSingleRegionsOfInterestList:
             is_single_sensor_regions_of_interest_list(pd.DataFrame(), raise_exception=True)
 
         assert "The passed object does not seem to be a SingleSensorRegionsOfInterestList." in str(e)
-        assert "['roi_id', 'gs_id']" in str(e.value)
+        assert str(["roi_id", "gs_id"]) in str(e.value)
 
 
 class TestIsMultiSensorRegionsOfInterestList:
@@ -778,3 +778,11 @@ class TestIsMultiSensorRegionsOfInterestList:
 
         with pytest.raises(ValueError):
             is_multi_sensor_regions_of_interest_list({"si": valid}, region_type="invalid_value")
+
+    def test_nested_error_raising(self):
+        with pytest.raises(ValidationError) as e:
+            is_multi_sensor_regions_of_interest_list({"s1": pd.DataFrame()}, raise_exception=True)
+
+        assert "The passed object appears to be a MultiSensorRegionsOfInterestList" in str(e.value)
+        assert 'for the sensor with the name "s1"' in str(e.value)
+        assert str(["roi_id", "gs_id"]) in str(e.value)
