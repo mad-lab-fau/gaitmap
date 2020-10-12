@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The default check for orientation/position/velocity lists now only expects a "sample" column and not a "sample" and a
+ "s_id" column by default.
+ The `s_id` parameter was removed and replaced with a more generic `{position, velocity, orientation}_list_type`
+ parameter than can be used to check for either stride or region based lists.
+ See the migration guide for more information.
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
+
 ### Deprecated
 
 ### Removed
@@ -28,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Migration Guide
+
+- In case your algorithm uses `is_{single,multi}_sensor_{position, velocity, orientation}_list` all usages must be 
+ updated to include `{position, velocity, orientation}_list_type="stride"` to restore the default behaviour before the
+ update.
+ If you were using the function with `s_id=False`, you can update to `{position, velocity, orientation}_list_type=None`
+ to get the same behaviour.
 
 
 ## [1.1.1] - 
