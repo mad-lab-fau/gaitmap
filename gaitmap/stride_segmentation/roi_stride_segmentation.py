@@ -9,14 +9,14 @@ from gaitmap.utils.consts import ROI_ID_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     RegionsOfInterestList,
-    is_single_sensor_regions_of_interest_list,
-    is_multi_sensor_regions_of_interest_list,
     SingleSensorRegionsOfInterestList,
-    _get_regions_of_interest_types,
     StrideList,
     get_multi_sensor_dataset_names,
     is_dataset,
+    is_regions_of_interest_list,
+    get_single_sensor_regions_of_interest_types,
 )
+from gaitmap.utils.exceptions import ValidationError
 
 StrideSegmentationAlgorithm = TypeVar("StrideSegmentationAlgorithm", bound=BaseStrideSegmentation)
 
@@ -194,7 +194,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     ):
         """Call the the segmentation algorithm for each region of interest and store the instance."""
         rois = rois.reset_index()
-        index_col = ROI_ID_COLS[_get_regions_of_interest_types(rois.columns)]
+        index_col = ROI_ID_COLS[get_single_sensor_regions_of_interest_types(rois)]
 
         instances_per_roi = {}
         combined_stride_list = {}
@@ -267,18 +267,14 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     def _validate_other_parameters(self):
         self._multi_dataset = is_dataset(self.data, check_acc=False, check_gyr=False) == "multi"
-        if is_single_sensor_regions_of_interest_list(self.regions_of_interest):
-            self._multi_roi = False
-        elif is_multi_sensor_regions_of_interest_list(self.regions_of_interest):
-            self._multi_roi = True
-        else:
-            raise ValueError("Invalid object passed for `regions_of_interest`")
+        self._multi_roi = is_regions_of_interest_list(self.regions_of_interest, region_type="any") == "multi"
         if self._multi_roi and not self._multi_dataset:
-            raise ValueError("You can not use a multi-sensor regions of interest list with a single sensor dataset.")
+            raise ValidationError(
+                "You can not use a multi-sensor regions of interest list with a single sensor dataset."
+            )
         if not self._multi_roi and self._multi_dataset and isinstance(self.data, dict):
-            raise ValueError(
-                "You can not use a single-sensor regions of interest list with an unsynchronised "
-                "multi-sensor dataset."
+            raise ValidationError(
+                "You can not use a single-sensor regions of interest list with an unsynchronised multi-sensor dataset."
             )
         if self._multi_roi and self._multi_dataset:
             sensor_names = get_multi_sensor_dataset_names(self.data)
