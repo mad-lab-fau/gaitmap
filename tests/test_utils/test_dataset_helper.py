@@ -22,6 +22,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_regions_of_interest_list,
     is_dataset,
     is_stride_list,
+    is_regions_of_interest_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -786,3 +787,25 @@ class TestIsMultiSensorRegionsOfInterestList:
         assert "The passed object appears to be a MultiSensorRegionsOfInterestList" in str(e.value)
         assert 'for the sensor with the name "s1"' in str(e.value)
         assert str(["roi_id", "gs_id"]) in str(e.value)
+
+
+class TestIsRegionsOfInterestList:
+    def test_raises_error_correctly(self):
+        with pytest.raises(ValidationError) as e:
+            is_regions_of_interest_list(pd.DataFrame())
+
+        assert "The passed object appears to be neither a single- or a multi-sensor regions of interest list." in str(e)
+        assert "gs_id" in str(e.value)
+        assert "'dict'" in str(e.value)
+
+    @pytest.mark.parametrize(
+        ("obj", "out"),
+        (
+            (pd.DataFrame(columns=["gs_id", "start", "end"]), "single"),
+            (pd.DataFrame(columns=["roi_id", "start", "end"]), "single"),
+            ({"s1": pd.DataFrame(columns=["roi_id", "start", "end"])}, "multi"),
+            ({"s1": pd.DataFrame(columns=["gs_id", "start", "end"])}, "multi"),
+        ),
+    )
+    def test_basic_function(self, obj, out):
+        assert is_regions_of_interest_list(obj) == out

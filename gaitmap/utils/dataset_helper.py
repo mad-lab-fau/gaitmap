@@ -701,6 +701,66 @@ def is_multi_sensor_regions_of_interest_list(
     return True
 
 
+def is_regions_of_interest_list(
+    roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gsd"] = "any",
+) -> Optional[Literal["single", "multi"]]:
+    """Check if an object is a valid multi-sensor or single-sensor regions of interest list.
+
+    This function will try to check the input using
+    :func:`~gaitmap.utils.dataset_helper.is_single_sensor_regions_of_interest_list` and
+    :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_regions_of_interest_list`.
+    In case one of the two checks is successful, a string is returned, which type of dataset the input is.
+    Otherwise a descriptive error is raised
+
+    Parameters
+    ----------
+    roi_list
+        The object that should be tested
+    region_type
+        The expected region type of this object.
+        If this is "any" any of the possible versions are checked
+
+    Returns
+    -------
+    dataset_type
+        "single" in case of a single-sensor stride list, "multi" in case of a multi-sensor stride list and None in case
+        it is neither.
+
+    See Also
+    --------
+    gaitmap.utils.dataset_helper.is_single_sensor_regions_of_interest_list: Explanation and checks for single sensor
+    regions
+        of interest list
+    gaitmap.utils.dataset_helper.is_multi_sensor_regions_of_interest_list: Explanation and checks for multi sensor
+        regions of interest list
+
+    """
+    try:
+        is_single_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
+    except ValidationError as e:
+        single_error = e
+    else:
+        return "single"
+
+    try:
+        is_multi_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
+    except ValidationError as e:
+        multi_error = e
+    else:
+        return "multi"
+
+    raise ValidationError(
+        "The passed object appears to be neither a single- or a multi-sensor regions of interest list. "
+        "Below you can find the errors raised for both checks:\n\n"
+        "Single-Sensor\n"
+        "=============\n"
+        f"{str(single_error)}\n\n"
+        "Multi-Sensor\n"
+        "=============\n"
+        f"{str(multi_error)}"
+    )
+
+
 def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]:
     """Get the list of sensor names from a multi-sensor dataset.
 
