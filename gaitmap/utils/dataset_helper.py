@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List
+from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable
 
 import numpy as np
 import pandas as pd
@@ -709,6 +709,39 @@ def _is_single_sensor_trajectory_list(
     return True
 
 
+def _is_multi_sensor_trajectory_list(
+    input_datatype: str,
+    single_func: Callable,
+    traj_list: Union[MultiSensorOrientationList, MultiSensorVelocityList, MultiSensorOrientationList],
+    raise_exception: bool = False,
+    **kwargs,
+) -> bool:
+    try:
+        _assert_is_dtype(traj_list, dict)
+        _assert_multisensor_is_not_empty(traj_list)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object does not seem to be a {}. "
+                "The validation failed with the following error:\n\n{}".format(input_datatype, str(e))
+            ) from e
+        return False
+
+    try:
+        for k in traj_list.keys():
+            single_func(traj_list[k], **kwargs, raise_exception=True)
+    except ValidationError as e:
+        if raise_exception is True:
+            raise ValidationError(
+                "The passed object appears to be a {}, "
+                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
+                    input_datatype, k, str(e)
+                )
+            ) from e
+        return False
+    return True
+
+
 def is_single_sensor_position_list(
     position_list: SingleSensorPositionList,
     position_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
@@ -751,7 +784,11 @@ def is_single_sensor_position_list(
     )
 
 
-def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> bool:
+def is_multi_sensor_position_list(
+    position_list: MultiSensorPositionList,
+    position_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    raise_exception: bool = False,
+) -> bool:
     """Check if an input is a multi-sensor position list.
 
     A valid multi-sensor stride list is dictionary of single-sensor position lists.
@@ -763,24 +800,27 @@ def is_multi_sensor_position_list(position_list: MultiSensorPositionList) -> boo
     ----------
     position_list
         The object that should be tested
+    position_list_type
+        Which type of index to expect.
+        If it is None, only a "sample" column is expected.
+        In the remaining cases, an additional column with the correct name is expected.
+        See the function description for details.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_position_list: Check for multi-sensor position lists
 
     """
-    if not isinstance(position_list, dict):
-        return False
-
-    keys = position_list.keys()
-
-    if len(keys) == 0:
-        return False
-
-    for k in keys:
-        if not is_single_sensor_position_list(position_list[k]):
-            return False
-    return True
+    return _is_multi_sensor_trajectory_list(
+        "MultiSensorPositionList",
+        is_single_sensor_position_list,
+        traj_list=position_list,
+        raise_exception=raise_exception,
+        position_list_type=position_list_type,
+    )
 
 
 def is_single_sensor_velocity_list(
@@ -825,7 +865,11 @@ def is_single_sensor_velocity_list(
     )
 
 
-def is_multi_sensor_velocity_list(velocity_list: MultiSensorVelocityList) -> bool:
+def is_multi_sensor_velocity_list(
+    velocity_list: MultiSensorVelocityList,
+    velocity_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    raise_exception: bool = False,
+) -> bool:
     """Check if an input is a multi-sensor velocity list.
 
     A valid multi-sensor stride list is dictionary of single-sensor velocity lists.
@@ -837,28 +881,31 @@ def is_multi_sensor_velocity_list(velocity_list: MultiSensorVelocityList) -> boo
     ----------
     velocity_list
         The object that should be tested
+    velocity_list_type
+        Which type of index to expect.
+        If it is None, only a "sample" column is expected.
+        In the remaining cases, an additional column with the correct name is expected.
+        See the function description for details.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_velocity_list: Check for multi-sensor velocity lists
 
     """
-    if not isinstance(velocity_list, dict):
-        return False
-
-    keys = velocity_list.keys()
-
-    if len(keys) == 0:
-        return False
-
-    for k in keys:
-        if not is_single_sensor_velocity_list(velocity_list[k]):
-            return False
-    return True
+    return _is_multi_sensor_trajectory_list(
+        "MultiSensorVelocityList",
+        is_single_sensor_velocity_list,
+        traj_list=velocity_list,
+        raise_exception=raise_exception,
+        velocity_list_type=velocity_list_type,
+    )
 
 
 def is_single_sensor_orientation_list(
-    orientation_list: SingleSensorVelocityList,
+    orientation_list: SingleSensorOrientationList,
     orientation_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
     raise_exception: bool = False,
 ) -> bool:
@@ -899,7 +946,11 @@ def is_single_sensor_orientation_list(
     )
 
 
-def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationList) -> bool:
+def is_multi_sensor_orientation_list(
+    orientation_list: MultiSensorOrientationList,
+    orientation_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    raise_exception: bool = False,
+) -> bool:
     """Check if an input is a multi-sensor orientation list.
 
     A valid multi-sensor stride list is dictionary of single-sensor Orientation lists.
@@ -911,24 +962,27 @@ def is_multi_sensor_orientation_list(orientation_list: MultiSensorOrientationLis
     ----------
     orientation_list
         The object that should be tested
+    orientation_list_type
+        Which type of index to expect.
+        If it is None, only a "sample" column is expected.
+        In the remaining cases, an additional column with the correct name is expected.
+        See the function description for details.
+    raise_exception
+        If True an exception is raised if the object does not pass the validation.
+        If False, the function will return simply True or False.
 
     See Also
     --------
     gaitmap.utils.dataset_helper.is_single_sensor_orientation_list: Check for multi-sensor orientation lists
 
     """
-    if not isinstance(orientation_list, dict):
-        return False
-
-    keys = orientation_list.keys()
-
-    if len(keys) == 0:
-        return False
-
-    for k in keys:
-        if not is_single_sensor_orientation_list(orientation_list[k]):
-            return False
-    return True
+    return _is_multi_sensor_trajectory_list(
+        "MultiSensorOrientationList",
+        is_single_sensor_orientation_list,
+        traj_list=orientation_list,
+        raise_exception=raise_exception,
+        orientation_list_type=orientation_list_type,
+    )
 
 
 def set_correct_index(

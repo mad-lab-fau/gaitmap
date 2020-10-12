@@ -373,7 +373,7 @@ class TestIsStrideList:
         assert is_stride_list(obj) == out
 
 
-class TestIsSingleSensorPositionList:
+class TestIsSingleSensorTrajLikeList:
     @pytest.fixture(
         autouse=True,
         params=(
@@ -451,106 +451,58 @@ class TestIsSingleSensorPositionList:
         assert str(["sample"]) in str(e.value)
 
 
-class TestIsMultiSensorPositionList:
+class TestIsMultiSensorTrajLikeList:
+    @pytest.fixture(
+        autouse=True,
+        params=(
+            [is_multi_sensor_position_list, "MultiSensorPositionList", GF_POS],
+            [is_multi_sensor_velocity_list, "MultiSensorVelocityList", GF_VEL],
+            [is_multi_sensor_orientation_list, "MultiSensorOrientationList", GF_ORI],
+        ),
+        ids=("pos", "vel", "ori"),
+    )
+    def traj_like_lists(self, request):
+        self.func, self.dtype, self.valid_cols = request.param
+
     @pytest.mark.parametrize(
         "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
-        assert not is_multi_sensor_position_list(value)
+        assert not self.func(value)
 
     @pytest.mark.parametrize(
         "cols, index",
         (
-            (["s_id", "sample", "pos_x", "pos_y", "pos_z"], []),
-            (["s_id", "sample", "pos_x", "pos_y", "pos_z", "something_else"], []),
-            (["sample", "pos_x", "pos_y", "pos_z"], ["s_id"]),
-            (["pos_x", "pos_y", "pos_z"], ["s_id", "sample"]),
-            (["pos_x", "pos_y", "pos_z", "something_else"], ["s_id", "sample"]),
+            (["s_id", "sample"], []),
+            (["s_id", "sample", "something_else"], []),
+            (["sample"], ["s_id"]),
+            ([], ["s_id", "sample"]),
+            (["something_else"], ["s_id", "sample"]),
         ),
     )
     def test_valid_versions(self, cols, index):
-        df = pd.DataFrame(columns=[*cols, *index])
+        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index])
         if index:
             df = df.set_index(index)
 
-        assert is_multi_sensor_position_list({"s1": df})
+        assert self.func({"s1": df}, "stride")
 
     def test_only_one_invalid(self):
-        valid_cols = ["s_id", "sample", "pos_x", "pos_y", "pos_z"]
-        invalid_cols = ["sample", "pos_x", "pos_y", "pos_z"]
+        valid_cols = ["s_id", "sample", *self.valid_cols]
+        invalid_cols = ["sample", *self.valid_cols]
         valid = {"s1": pd.DataFrame(columns=valid_cols)}
         invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
 
-        assert is_multi_sensor_position_list(valid)
-        assert not is_multi_sensor_position_list(invalid)
+        assert self.func(valid, "stride")
+        assert not self.func(invalid, "stride")
 
+    def test_nested_error_raising(self):
+        with pytest.raises(ValidationError) as e:
+            self.func({"s1": pd.DataFrame()}, raise_exception=True)
 
-class TestIsMultiSensorVelocityList:
-    @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
-    )
-    def test_wrong_datatype(self, value):
-        assert not is_multi_sensor_velocity_list(value)
-
-    @pytest.mark.parametrize(
-        "cols, index",
-        (
-            (["s_id", "sample", "vel_x", "vel_y", "vel_z"], []),
-            (["s_id", "sample", "vel_x", "vel_y", "vel_z", "something_else"], []),
-            (["sample", "vel_x", "vel_y", "vel_z"], ["s_id"]),
-            (["vel_x", "vel_y", "vel_z"], ["s_id", "sample"]),
-            (["vel_x", "vel_y", "vel_z", "something_else"], ["s_id", "sample"]),
-        ),
-    )
-    def test_valid_versions(self, cols, index):
-        df = pd.DataFrame(columns=[*cols, *index])
-        if index:
-            df = df.set_index(index)
-
-        assert is_multi_sensor_velocity_list({"s1": df})
-
-    def test_only_one_invalid(self):
-        valid_cols = ["s_id", "sample", "vel_x", "vel_y", "vel_z"]
-        invalid_cols = ["sample", "vel_x", "vel_y", "vel_z"]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
-        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
-
-        assert is_multi_sensor_velocity_list(valid)
-        assert not is_multi_sensor_velocity_list(invalid)
-
-
-class TestIsMultiSensorOrientationList:
-    @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
-    )
-    def test_wrong_datatype(self, value):
-        assert not is_multi_sensor_orientation_list(value)
-
-    @pytest.mark.parametrize(
-        "cols, index",
-        (
-            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w"], []),
-            (["s_id", "sample", "q_x", "q_y", "q_z", "q_w", "something_else"], []),
-            (["sample", "q_x", "q_y", "q_z", "q_w"], ["s_id"]),
-            (["q_x", "q_y", "q_z", "q_w"], ["s_id", "sample"]),
-            (["q_x", "q_y", "q_z", "q_w", "something_else"], ["s_id", "sample"]),
-        ),
-    )
-    def test_valid_versions(self, cols, index):
-        df = pd.DataFrame(columns=[*cols, *index])
-        if index:
-            df = df.set_index(index)
-
-        assert is_multi_sensor_orientation_list({"s1": df})
-
-    def test_only_one_invalid(self):
-        valid_cols = ["s_id", "sample", "q_x", "q_y", "q_z", "q_w"]
-        invalid_cols = ["sample", "q_x", "q_y", "q_z", "q_w"]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
-        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
-
-        assert is_multi_sensor_orientation_list(valid)
-        assert not is_multi_sensor_orientation_list(invalid)
+        assert "The passed object appears to be a {}".format(self.dtype) in str(e.value)
+        assert 'for the sensor with the name "s1"' in str(e.value)
+        assert str(["sample"]) in str(e.value)
 
 
 class TestSetCorrectIndex:
