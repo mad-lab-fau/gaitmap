@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
+from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orientation_from_start
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.dataset_helper import (
     is_single_sensor_orientation_list,
@@ -139,7 +140,7 @@ class TestInitCalculation:
     def test_calc_initial_dummy(self):
         """No rotation expected as already aligned."""
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 20, axis=0), columns=SF_COLS)
-        start_ori = StrideLevelTrajectory.calculate_initial_orientation(dummy_data, 10, 8)
+        start_ori = _initial_orientation_from_start(dummy_data, 10, 8)
         assert_array_equal(start_ori.as_quat(), Rotation.identity().as_quat())
 
     @pytest.mark.parametrize("start", [0, 99])
@@ -147,6 +148,6 @@ class TestInitCalculation:
         """If start is to close to the start or the end of the data a warning is emitted."""
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 100, axis=0), columns=SF_COLS)
         with pytest.warns(UserWarning) as w:
-            StrideLevelTrajectory.calculate_initial_orientation(dummy_data, start, 8)
+            _initial_orientation_from_start(dummy_data, start, 8)
 
         assert "complete window length" in str(w[0])
