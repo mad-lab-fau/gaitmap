@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from scipy.spatial.transform import Rotation
+from typing_extensions import Literal
 
 from gaitmap.base import BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory
@@ -23,6 +24,8 @@ from gaitmap.utils.exceptions import ValidationError
 class TestIODataStructures:
     wrapper_class: BaseTrajectoryReconstructionWrapper
     example_region: Dict[str, pd.DataFrame]
+    key: Literal["s_id", "roi_id"]
+    output_list_type: Literal["roi", "stride"]
 
     @pytest.fixture(params=(StrideLevelTrajectory, RegionLevelTrajectory), autouse=True)
     def select_wrapper(self, healthy_example_stride_events, request):
@@ -31,8 +34,12 @@ class TestIODataStructures:
             self.example_region = {
                 k: v.rename(columns={"s_id": "roi_id"}) for k, v in healthy_example_stride_events.items()
             }
+            self.output_list_type = "roi"
+            self.key = "roi_id"
         else:
             self.example_region = healthy_example_stride_events
+            self.output_list_type = "stride"
+            self.key = "s_id"
 
     def test_invalid_input_data(self, healthy_example_imu_data):
         """Test if error is raised correctly on invalid input data type"""
@@ -69,64 +76,64 @@ class TestIODataStructures:
         instance = self.wrapper_class()
         instance.estimate(test_data, test_stride_events, 204.8)
 
-        assert is_single_sensor_orientation_list(instance.orientation_)
-        assert is_single_sensor_position_list(instance.position_)
-        assert_array_equal(instance.orientation_.reset_index()["s_id"].unique(), test_stride_events["s_id"].unique())
-        assert_array_equal(instance.position_.reset_index()["s_id"].unique(), test_stride_events["s_id"].unique())
-        assert_array_equal(instance.velocity_.reset_index()["s_id"].unique(), test_stride_events["s_id"].unique())
+        assert is_single_sensor_orientation_list(instance.orientation_, self.output_list_type)
+        assert is_single_sensor_position_list(instance.position_, self.output_list_type)
+        assert_array_equal(
+            instance.orientation_.reset_index()[self.key].unique(), test_stride_events[self.key].unique()
+        )
+        assert_array_equal(instance.position_.reset_index()[self.key].unique(), test_stride_events[self.key].unique())
+        assert_array_equal(instance.velocity_.reset_index()[self.key].unique(), test_stride_events[self.key].unique())
 
         for _, s in test_stride_events.iterrows():
-            assert len(instance.orientation_.loc[s["s_id"]]) == s["end"] - s["start"] + 1
-            assert len(instance.position_.loc[s["s_id"]]) == s["end"] - s["start"] + 1
-            assert len(instance.velocity_.loc[s["s_id"]]) == s["end"] - s["start"] + 1
+            assert len(instance.orientation_.loc[s[self.key]]) == s["end"] - s["start"] + 1
+            assert len(instance.position_.loc[s[self.key]]) == s["end"] - s["start"] + 1
+            assert len(instance.velocity_.loc[s[self.key]]) == s["end"] - s["start"] + 1
 
-        first_last_stride = test_stride_events.iloc[[0, -1]]["s_id"]
-        snapshot.assert_match(
-            instance.orientation_.loc[first_last_stride], "ori"
-        )
+        first_last_stride = test_stride_events.iloc[[0, -1]][self.key]
+        snapshot.assert_match(instance.orientation_.loc[first_last_stride], "ori")
         snapshot.assert_match(instance.position_.loc[first_last_stride], "pos")
 
-    def test_single_sensor_output_empty_stride_list(
-        self, healthy_example_imu_data, healthy_example_stride_events,
-    ):
-        empty_stride_events = pd.DataFrame(columns=healthy_example_stride_events["left_sensor"].columns)
+    def test_single_sensor_output_empty_stride_list(self, healthy_example_imu_data):
+        empty_stride_events = pd.DataFrame(columns=self.example_region["left_sensor"].columns)
         test_data = healthy_example_imu_data["left_sensor"]
 
         instance = self.wrapper_class()
         instance.estimate(test_data, empty_stride_events, 204.8)
 
-        assert is_single_sensor_orientation_list(instance.orientation_)
-        assert is_single_sensor_position_list(instance.position_)
+        assert is_single_sensor_orientation_list(instance.orientation_, self.output_list_type)
+        assert is_single_sensor_position_list(instance.position_, self.output_list_type)
         assert len(instance.orientation_) == 0
         assert len(instance.position_) == 0
 
-    def test_multi_sensor_output(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
-        test_stride_events = healthy_example_stride_events
+    def test_multi_sensor_output(self, healthy_example_imu_data, snapshot):
+        test_stride_events = self.example_region
         test_data = healthy_example_imu_data
 
         instance = self.wrapper_class()
         instance.estimate(test_data, test_stride_events, 204.8)
 
-        assert is_multi_sensor_orientation_list(instance.orientation_)
-        assert is_multi_sensor_position_list(instance.position_)
+        assert is_multi_sensor_orientation_list(instance.orientation_, self.output_list_type)
+        assert is_multi_sensor_position_list(instance.position_, self.output_list_type)
         for sensor in test_stride_events.keys():
             assert_array_equal(
-                instance.orientation_[sensor].reset_index()["s_id"].unique(),
-                test_stride_events[sensor]["s_id"].unique(),
+                instance.orientation_[sensor].reset_index()[self.key].unique(),
+                test_stride_events[sensor][self.key].unique(),
             )
             assert_array_equal(
-                instance.position_[sensor].reset_index()["s_id"].unique(), test_stride_events[sensor]["s_id"].unique()
+                instance.position_[sensor].reset_index()[self.key].unique(),
+                test_stride_events[sensor][self.key].unique(),
             )
             assert_array_equal(
-                instance.velocity_[sensor].reset_index()["s_id"].unique(), test_stride_events[sensor]["s_id"].unique()
+                instance.velocity_[sensor].reset_index()[self.key].unique(),
+                test_stride_events[sensor][self.key].unique(),
             )
 
             for _, s in test_stride_events[sensor].iterrows():
-                assert len(instance.orientation_[sensor].loc[s["s_id"]]) == s["end"] - s["start"] + 1
-                assert len(instance.position_[sensor].loc[s["s_id"]]) == s["end"] - s["start"] + 1
-                assert len(instance.velocity_[sensor].loc[s["s_id"]]) == s["end"] - s["start"] + 1
+                assert len(instance.orientation_[sensor].loc[s[self.key]]) == s["end"] - s["start"] + 1
+                assert len(instance.position_[sensor].loc[s[self.key]]) == s["end"] - s["start"] + 1
+                assert len(instance.velocity_[sensor].loc[s[self.key]]) == s["end"] - s["start"] + 1
 
-            first_last_stride = test_stride_events[sensor].iloc[[0, -1]]["s_id"]
+            first_last_stride = test_stride_events[sensor].iloc[[0, -1]][self.key]
             snapshot.assert_match(instance.orientation_[sensor].loc[first_last_stride], "ori_{}".format(sensor))
             snapshot.assert_match(
                 instance.position_[sensor].loc[first_last_stride], "pos_{}".format(sensor),
