@@ -10,6 +10,7 @@ from gaitmap.utils.exceptions import ValidationError
 _ALLOWED_FRAMES = ["any", "body", "sensor"]
 _ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]
 _ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]
+_ALLOWED_TRAJ_LIST_TYPES = Literal["stride", "roi", "gs"]
 
 
 def _get_expected_dataset_cols(

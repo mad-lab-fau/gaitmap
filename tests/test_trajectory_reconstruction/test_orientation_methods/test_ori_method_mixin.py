@@ -65,7 +65,7 @@ class TestOrientationMethodMixin:
 
         assert isinstance(test.orientation_object_, Rotation)
         assert len(test.orientation_object_) == len(sensor_data) + 1
-        assert is_single_sensor_orientation_list(test.orientation_, s_id=False)
+        assert is_single_sensor_orientation_list(test.orientation_, orientation_list_type=None)
         assert len(test.orientation_) == len(sensor_data) + 1
 
     def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
