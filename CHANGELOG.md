@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
 - Global validation errors for orientation/position/velocity lists
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
+- Support for trajectory methods that can calculate orientation and position in one go is added for 
+  `StrideLevelTrajectory` (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87)
 
 ### Changed
 
@@ -41,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  update.
  If you were using the function with `s_id=False`, you can update to `{position, velocity, orientation}_list_type=None`
  to get the same behaviour.
-
 
 ## [1.1.1] - 
 
