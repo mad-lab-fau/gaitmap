@@ -1,12 +1,18 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
 import warnings
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationMethod, BaseType, BasePositionMethod, BaseTrajectoryReconstructionWrapper
+from gaitmap.base import (
+    BaseOrientationMethod,
+    BaseType,
+    BasePositionMethod,
+    BaseTrajectoryReconstructionWrapper,
+    BaseTrajectoryMethod,
+)
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import GF_ORI, SF_ACC, GF_VEL, GF_POS, SL_INDEX
@@ -26,7 +32,8 @@ from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     """Estimate the trajectory over the duration of a stride by considering each stride individually.
 
-    You can select a method for the orientation estimation and a method for the position estimation.
+    You can select a method for the orientation estimation and a method for the position estimation (or a combined
+    method).
     These methods will then be applied to each stride.
     This class will calculate the initial orientation of each stride assuming that it starts at a region of minimal
     movement (`min_vel`).
@@ -66,6 +73,13 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         This method is called with the data of each stride to actually calculate the position.
         The provided data is already transformed into the global frame using the orientations calculated by the
         `ori_method` on the same stride.
+    trajectory_method
+        Instead of providind a separate `ori_method` and `pos_method`, a single `trajectory_method` can be provided
+        that calculated the orientation and the position in one go.
+        This method is called with the data of each stride.
+        If a `trajectory_method` is provided the values for `ori_method` and `pos_method` are ignored.
+        Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
+        per-stride initial orientations based on the mid-stance assumption.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each stride with
         gravity. To do so, half the window size before and half the window size after the start of the stride will
@@ -117,21 +131,26 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
     """
 
     align_window_width: int
-    ori_method: BaseOrientationMethod
-    pos_method: BasePositionMethod
+    ori_method: Optional[BaseOrientationMethod]
+    pos_method: Optional[BasePositionMethod]
+    trajectory_method: Optional[BaseTrajectoryMethod]
 
     data: Dataset
     stride_event_list: StrideList
     sampling_rate_hz: float
 
+    _combined_algo_mode: bool
+
     def __init__(
         self,
-        ori_method: BaseOrientationMethod = SimpleGyroIntegration(),
-        pos_method: BasePositionMethod = ForwardBackwardIntegration(),
+        ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
+        pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
+        trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
         self.ori_method = ori_method
         self.pos_method = pos_method
+        self.trajectory_method = trajectory_method
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
 
@@ -153,10 +172,16 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
 
-        if not isinstance(self.ori_method, BaseOrientationMethod):
-            raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
-        if not isinstance(self.pos_method, BasePositionMethod):
-            raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
+        if self.trajectory_method:
+            if not isinstance(self.trajectory_method, BasePositionMethod):
+                raise ValueError("The provided `trajectory_method` must be a child class of `BaseTrajectoryMethod`.")
+            self._combined_algo_mode = True
+        else:
+            if self.ori_method and not isinstance(self.ori_method, BaseOrientationMethod):
+                raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
+            if self.pos_method and not isinstance(self.pos_method, BasePositionMethod):
+                raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
+            self._combined_algo_mode = False
 
         dataset_type = is_dataset(data, frame="sensor")
         stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
@@ -222,15 +247,22 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper):
         stride_data = data.iloc[start:end].copy()
         initial_orientation = self.calculate_initial_orientation(data, start, self.align_window_width)
 
-        # Apply the orientation method
-        ori_method = self.ori_method.set_params(initial_orientation=initial_orientation)
-        orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_object_
+        if self._combined_algo_mode is False:
+            # Apply the orientation method
+            ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
+            orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_object_
 
-        rotated_stride_data = rotate_dataset_series(stride_data, orientation[:-1])
-        # Apply the Position method
-        pos_method = self.pos_method.estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
-        velocity = pos_method.velocity_
-        position = pos_method.position_
+            rotated_stride_data = rotate_dataset_series(stride_data, orientation[:-1])
+            # Apply the Position method
+            pos_method = self.pos_method.clone().estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
+            velocity = pos_method.velocity_
+            position = pos_method.position_
+        else:
+            trajectory_method = self.trajectory_method.clone().set_params(initial_orientation=initial_orientation)
+            trajectory_method = trajectory_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz)
+            orientation = trajectory_method.orientation_object_
+            velocity = trajectory_method.velocity_
+            position = trajectory_method.position_
         return orientation, velocity, position
 
     @staticmethod
