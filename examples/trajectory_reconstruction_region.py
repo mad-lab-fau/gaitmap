@@ -26,7 +26,9 @@ from gaitmap.example_data import get_healthy_example_imu_data
 from gaitmap.trajectory_reconstruction import (
     SimpleGyroIntegration,
     ForwardBackwardIntegration,
-    RegionLevelTrajectory, MadgwickAHRS, )
+    RegionLevelTrajectory,
+    MadgwickAHRS,
+)
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
 imu_data = get_healthy_example_imu_data()
