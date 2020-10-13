@@ -10,7 +10,7 @@ Base classes
 .. currentmodule:: gaitmap.base
 
 .. autosummary::
-   :toctree: generated/
+   :toctree: generated/base
    :template: class_with_private.rst
 
     BaseAlgorithm
