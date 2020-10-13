@@ -12,10 +12,10 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
     """Create a sliding window view of an input array with given window length and overlap.
 
     .. warning::
-        This function will return by default a view onto your input array, modifying values in your result will directly
-        affect your input data which might lead to unexpected behaviour! If padding is disabled (default) last window
-        fraction of input may not be returned! However, if nan_padding is enabled, this will always return a copy
-        instead of a view of your input data, independent if padding was actually performed or not!
+       This function will return by default a view onto your input array, modifying values in your result will directly
+       affect your input data which might lead to unexpected behaviour! If padding is disabled (default) last window
+       fraction of input may not be returned! However, if `nan_padding` is enabled, this will always return a copy
+       instead of a view of your input data, independent if padding was actually performed or not!
 
     Parameters
     ----------
@@ -176,7 +176,7 @@ def find_extrema_in_radius(
     radius
         The number of samples to the left and the right that are considered for the search.
         The final search window has the length 2 * radius + 1.
-        In case the radius is 0, `indices is returned without further processing.
+        In case the radius is 0, the indices are returned without further processing.
     extrema_type
         If the minima or maxima of the data are searched.
 

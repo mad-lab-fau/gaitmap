@@ -26,7 +26,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     UllrichGaitSequenceDetection uses signal processing approaches to find gait sequences by searching for
     characteristic features in the power spectral density of the imu raw signals as described in Ullrich et al. (
-    2020)  [  1]_.
+    2020)  [1]_.
     For more details refer to the `Notes` section.
 
     Parameters
@@ -56,7 +56,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         the window must show more activity to be passed to the frequency analysis.
     locomotion_band
         The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
-        frequency. According to literature [  2]_ typical signals measured during locomotion have their dominant
+        frequency. According to literature [2]_ typical signals measured during locomotion have their dominant
         frequency within a locomotion band of 0.5 - 3 Hz. This is set as the default value. For very slow or very
         fast gait these borders might have to be adapted. Please note that the signal to be analyzed is going to be
         lowpass filtered with cut-off frequency of 6 Hz. Therefore, values for the upper limit of the locomotion band
