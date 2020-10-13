@@ -44,19 +44,17 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     orientation_
         Output of the selected orientation method applied per stride.
         The first orientation is obtained by aligning the acceleration data at the start of each stride with gravity.
-        Therefore, +-`half_window_width` around each start of the stride are used as we assume the start of the stride
-        to have minimal velocity.
         This contains `len(data) + 1` orientations for each stride, as the initial orientation is included in the
         output.
     position_
         Output of the selected position method applied per stride.
         The initial value of the postion is assumed to be [0, 0, 0].
-        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        This contains `len(data) + 1` values for each stride, as the initial position is included in the
         output.
     velocity_
         The velocity as provided by the selected position method applied per stride.
         The initial value of the velocity is assumed to be [0, 0, 0].
-        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        This contains `len(data) + 1` values for each stride, as the initial velocity is included in the
         output.
 
     Parameters

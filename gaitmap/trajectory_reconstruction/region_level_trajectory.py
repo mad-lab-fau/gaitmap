@@ -35,52 +35,50 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     This class will take any of the implemented orientation, position, and trajectory methods and apply them to all
     regions of interest or gait sequences provided.
-    Note that this class assumes that each gait sequence starts with a static resting period and certain methods, might
+    Note that this class assumes that each gait sequence starts with a static resting period and certain methods might
     require the integration regions to end in a static region as well.
     Check the documentation of the individual ori and pos methods for details.
 
     Attributes
     ----------
     orientation_
-        Output of the selected orientation method applied per stride.
-        The first orientation is obtained by aligning the acceleration data at the start of each stride with gravity.
-        Therefore, +-`half_window_width` around each start of the stride are used as we assume the start of the stride
-        to have minimal velocity.
-        This contains `len(data) + 1` orientations for each stride, as the initial orientation is included in the
+        Output of the selected orientation method applied per region.
+        The first orientation is obtained by aligning the acceleration data at the start of each region with gravity.
+        This contains `len(data) + 1` orientations for each region, as the initial orientation is included in the
         output.
     position_
-        Output of the selected position method applied per stride.
+        Output of the selected position method applied per region.
         The initial value of the postion is assumed to be [0, 0, 0].
-        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        This contains `len(data) + 1` values for each region, as the initial position is included in the
         output.
     velocity_
-        The velocity as provided by the selected position method applied per stride.
+        The velocity as provided by the selected position method applied per region.
         The initial value of the velocity is assumed to be [0, 0, 0].
-        This contains `len(data) + 1` values for each stride, as the initial orientation is included in the
+        This contains `len(data) + 1` values for each region, as the initial velocity is included in the
         output.
 
     Parameters
     ----------
     ori_method
         An instance of any available orientation method with the desired parameters set.
-        This method is called with the data of each stride to actually calculate the orientation.
+        This method is called with the data of each region to actually calculate the orientation.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
         per-stride initial orientations based on the mid-stance assumption.
     pos_method
         An instance of any available position method with the desired parameters set.
-        This method is called with the data of each stride to actually calculate the position.
+        This method is called with the data of each region to actually calculate the position.
         The provided data is already transformed into the global frame using the orientations calculated by the
         `ori_method` on the same stride.
     trajectory_method
         Instead of providind a separate `ori_method` and `pos_method`, a single `trajectory_method` can be provided
         that calculated the orientation and the position in one go.
-        This method is called with the data of each stride.
+        This method is called with the data of each region.
         If a `trajectory_method` is provided the values for `ori_method` and `pos_method` are ignored.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
         per-stride initial orientations based on the mid-stance assumption.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each region with
-        gravity. To do so, half the window size before and half the window size after the start of the regioin will
+        gravity. To do so, half the window size before and half the window size after the start of the region will
         be used to obtain the median value of acceleration data in this phase.
         Note, that +-`np.floor(align_window_size/2)` around the start sample will be used for this. For the first
         region, start of the stride might coincide with the start of the signal. In that case the start of the window
@@ -109,19 +107,19 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     >>> ori_method = SimpleGyroIntegration()
     >>> pos_method = ForwardBackwardIntegration()
     >>> # Create an instance of the wrapper
-    >>> per_stride_traj = RegionLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
+    >>> per_region_traj = RegionLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
     >>> # Apply the method
     >>> data = ...
     >>> sampling_rate_hz = 204.8
-    >>> stride_list = ...
-    >>> per_stride_traj = per_stride_traj.estimate(
-    ...                        data,
-    ...                        stride_event_list=stride_list,
-    ...                        sampling_rate_hz=sampling_rate_hz
+    >>> roi_list = ...
+    >>> per_region_traj = per_region_traj.estimate(
+    ...                                            data,
+    ...                                            regions_of_interest=roi_list,
+    ...                                            sampling_rate_hz=sampling_rate_hz
     ... )
-    >>> per_stride_traj.position_
+    >>> per_region_traj.position_
     <Dataframe or dict with all the positions per stride>
-    >>> per_stride_traj.orientation_
+    >>> per_region_traj.orientation_
     <Dataframe or dict with all the orientations per stride>
 
 

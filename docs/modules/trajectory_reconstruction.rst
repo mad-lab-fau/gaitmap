@@ -12,6 +12,7 @@ TrajectoryWrapperClasses
    :template: class.rst
 
     StrideLevelTrajectory
+    RegionLevelTrajectory
 
 Orientation Estimation Methods
 ------------------------------
