@@ -39,7 +39,7 @@ def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_dista
 
     See Also
     --------
-    gaitmap.stride_segmentation.utils.find_local_minima_with_distance: Details on the function call to `find_peaks`.
+    gaitmap.utils.array_handling.find_local_minima_with_distance: Details on the function call to `find_peaks`.
     scipy.signal.find_peaks: The actual `find_peaks` method.
 
     """
@@ -55,7 +55,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
         Accumulated cost matrix as derived from a DTW
     max_cost
         The max_cost is used to cut the signal into enclosed segments.
-        More details at :func:`~gaitmap.stride_segmentation.utils.find_local_minima_below_threshold`.
+        More details at :func:`~gaitmap.utils.array_handling.find_local_minima_below_threshold`.
 
     Returns
     -------
@@ -64,7 +64,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
 
     See Also
     --------
-    gaitmap.stride_segmentation.utils.find_local_minima_below_threshold: Implementation details.
+    gaitmap.utils.array_handling.find_local_minima_below_threshold: Implementation details.
 
     """
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
