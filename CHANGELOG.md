@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
 - Support for trajectory methods that can calculate orientation and position in one go is added for 
   `StrideLevelTrajectory` (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87)
+- A `RegionLevelTrajectory` class that calculates trajectories for entire ROIs/gait sequences.
+  Otherwise the interface is very similar to `StrideLevelTrajectory`.
 
 ### Changed
 
