@@ -1,8 +1,8 @@
-:mod:`{{module}}`.{{objname}}
+{{module}}.{{objname}}
 {{ underline }}====================
 
 .. currentmodule:: {{ module }}
 
 .. autofunction:: {{ objname }}
 
-.. include:: backreferences/{{module}}.{{objname}}.examples
+.. include:: /modules/generated/backreferences/{{module}}.{{objname}}.examples

@@ -1,11 +1,11 @@
-# Scope and Code Structure of the Project
+# Scope and Code Structure
 
 To ensure that the project is easy to use, easy to maintain, and easy to expand in the future, all developers should
 adhere to the guidelines outlined below.
 Further the developers should familiarize themselves with aim and the scope of the project to make better decision when
 it comes to including new functionality.
 If you are new developer and need to familiarize yourself and need help with setting up your development environment to
-work on this project, have a look at the [Development Guide](Development-Guide.md).
+work on this project, have a look at the [Development Guide](development_guide.md).
 
 **Everything that follows are recommendations.**
 

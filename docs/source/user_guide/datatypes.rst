@@ -1,6 +1,6 @@
-===========================
-Common Datatypes in Gaitmap
-===========================
+================
+Common Datatypes
+================
 
 Gaitmap tries to stick to common data-containers - namely `np.arrays`, `pd.DataFrames`, `dict` - to store all in- and
 outputs of the used algorithm.
