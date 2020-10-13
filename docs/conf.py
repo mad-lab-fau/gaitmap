@@ -18,10 +18,7 @@ from importlib import import_module
 from inspect import getsourcelines, getsourcefile
 from pathlib import Path
 
-import sphinx_bootstrap_theme
-
 import gaitmap
-from gaitmap.base import BaseAlgorithm
 
 sys.path.insert(0, os.path.abspath(".."))
 
