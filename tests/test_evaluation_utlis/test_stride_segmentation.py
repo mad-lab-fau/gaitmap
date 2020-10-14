@@ -27,12 +27,12 @@ class TestMatchStrideList:
         with pytest.raises(ValidationError) as e:
             match_stride_lists([], sl)
 
-        assert "SingleSensorStrideList" in str(e)
+        assert "SensorStrideList" in str(e)
 
         with pytest.raises(ValidationError) as e:
             match_stride_lists(sl, [])
 
-        assert "SingleSensorStrideList" in str(e)
+        assert "SensorStrideList" in str(e)
 
     def test_invalid_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
@@ -145,6 +145,89 @@ class TestMatchStrideList:
         out = match_stride_lists(empty, empty)
 
         assert len(out) == 0
+
+    def test_multi_stride_lists_no_tolerance(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 1], [4, 5], [6, 7], [8, 9]])
+        stride_list_right_b = self._create_valid_list([[3, 4], [1, 2], [5, 6]])
+        multi_stride_list_b = {"left_sensor": stride_list_left_b, "right_sensor": stride_list_right_b}
+
+        out = match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)
+
+        assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+        assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, np.nan, 1, 2, 3])
+
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [1, 0, 2, np.nan, np.nan])
+
+    def test_multi_stride_lists_with_tolerance(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 2], [2, 4], [4, 6], [6, 9]])
+        stride_list_right_b = self._create_valid_list([[0, 2], [2, 4], [3, 5]])
+        multi_stride_list_b = {"left_sensor": stride_list_left_b, "right_sensor": stride_list_right_b}
+
+        out = match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=1)
+
+        assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+        assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, np.nan, 3])
+
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2, np.nan])
+
+    def test_empty_multi_stride_lists_both(self):
+        empty = self._create_valid_list([])
+
+        out = match_stride_lists({"left": empty}, {"left": empty})
+
+        for dataframe in list(out.values):
+            assert not dataframe
+
+    def test_empty_multi_stride_lists(self):
+        full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        empty = self._create_valid_list([])
+
+        out = match_stride_lists({"left": full}, {"left": empty})
+
+        assert_array_equal(out["left"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3])
+        assert_array_equal(out["left"]["s_id_b"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
+
+        out = match_stride_lists({"left": empty}, {"left": full})
+
+        assert_array_equal(out["left"]["s_id_a"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
+        assert_array_equal(out["left"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, 3])
+
+    def test_no_common_sensors_multi_stride_lists(self):
+        full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists({"left": full}, {"right": full})
+
+        assert "do not have any common sensors" in str(e)
+
+    def test_some_common_sensors_multi_stride_lists(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 1], [4, 5], [6, 7], [8, 9]])
+        stride_list_right_b = self._create_valid_list([[3, 4], [1, 2], [5, 6]])
+        multi_stride_list_b = {
+            "left_sensor": stride_list_left_b,
+            "right_sensor": stride_list_right_b,
+            "wrong_sensor": stride_list_right_a,
+        }
+
+        try:
+            print(match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)["wrong_sensor"])
+            assert False
+        except KeyError:
+            assert True
 
 
 class TestEvaluateSegmentedStrideList:
