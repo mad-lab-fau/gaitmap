@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict
+from typing import Union, Tuple, Dict, Hashable
 
 import numpy as np
 import pandas as pd
@@ -253,7 +253,7 @@ def match_stride_lists(
     one_to_one: bool = True,
     postfix_a: str = "_a",
     postfix_b: str = "_b",
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find matching strides in two stride lists with a certain tolerance.
 
     This function will find matching strides in two stride lists as long as both start and end of a stride and its
@@ -291,7 +291,7 @@ def match_stride_lists(
 
     Returns
     -------
-    matches_df
+    matches
         If stride_list_a and stride_list_b are SingleSensorStrideLists
             A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
             Each row is a match containing the index value of the left and the right list, that belong together.
@@ -299,10 +299,8 @@ def match_stride_lists(
             The list is sorted by the index values of the left stride list.
 
         If stride_list_a and stride_list_b are MultiSensorStrideLists
-            A n column dataframe where n is the minimal amount of matching sensors with the column names equal to the
-            sensor names of the MultiSensorStrideLists.
-            Each column contains a dataframe discribed above in the single stride variant.
-            It functions like a dictionary where the key outputs a dataframe.
+            A dictionary with key being the common sensor names and values being
+            dataframes as described above.
 
     Examples
     --------
@@ -328,17 +326,23 @@ def match_stride_lists(
     ... ).rename_axis('s_id')
     >>> stride_list_right_22 = pd.DataFrame([[10,22],[31, 41],[20, 36]], columns=["start", "end"]).rename_axis('s_id')
     ...
-    >>> match_stride_lists(
+    >>> test_output = match_stride_lists(
     ...     {"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
     ...     {"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
     ...     tolerance=1
-    ... ) #doctest: +NORMALIZE_WHITESPACE
-    sensor_name left_sensor        right_sensor
-                     s_id_a s_id_b       s_id_a s_id_b
-    0                     0      0            0      0
-    1                     1      2            1    NaN
-    2                     2      1            2      1
-    3                     3      3          NaN      2
+    ... )
+    >>> test_output["left_sensor"]
+       s_id_a  s_id_b
+    0       0       0
+    1       1       2
+    2       2       1
+    3       3       3
+    >>> test_output["right_sensor"]
+      s_id_a s_id_b
+    0      0      0
+    1      1    NaN
+    2      2      1
+    3    NaN      2
 
     See Also
     --------
@@ -386,7 +390,7 @@ def match_stride_lists(
         )
         return matches
 
-    elif is_multi_sensor_stride_list(stride_list_a) and is_multi_sensor_stride_list(stride_list_b):
+    if is_multi_sensor_stride_list(stride_list_a) and is_multi_sensor_stride_list(stride_list_b):
 
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
@@ -400,10 +404,10 @@ def match_stride_lists(
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")
 
-        data = []
+        matches = {}
 
         for sensor_name in sensor_names_list:
-            output = match_stride_lists(
+            matches[sensor_name] = match_stride_lists(
                 stride_list_a[sensor_name],
                 stride_list_b[sensor_name],
                 tolerance=tolerance,
@@ -411,17 +415,10 @@ def match_stride_lists(
                 postfix_a=postfix_a,
                 postfix_b=postfix_b,
             )
-            output = output.T
-            output["sensor_name"] = sensor_name
 
-            data.append(output)
+        return matches
 
-        matches = pd.concat(data)
-        matches = matches.set_index(["sensor_name", matches.index])
-        return matches.T
-
-    else:
-        raise ValidationError("The passed objects does not seem to be SensorStrideLists.")
+    raise ValidationError("The passed objects do not seem to be SensorStrideLists.")
 
 
 def _match_start_end_label_lists(

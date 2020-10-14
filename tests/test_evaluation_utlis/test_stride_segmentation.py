@@ -160,8 +160,8 @@ class TestMatchStrideList:
         assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
         assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, np.nan, 1, 2, 3])
 
-        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan, np.nan])
-        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [1, 0, 2, np.nan, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [1, 0, 2])
 
     def test_multi_stride_lists_with_tolerance(self):
         stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
@@ -177,16 +177,16 @@ class TestMatchStrideList:
         assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
         assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, np.nan, 3])
 
-        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan, np.nan])
-        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2])
 
     def test_empty_multi_stride_lists_both(self):
         empty = self._create_valid_list([])
 
         out = match_stride_lists({"left": empty}, {"left": empty})
 
-        for dataframe in list(out.values):
-            assert not dataframe
+        for dataframe in list(out.values()):
+            assert dataframe.empty
 
     def test_empty_multi_stride_lists(self):
         full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
@@ -201,6 +201,11 @@ class TestMatchStrideList:
 
         assert_array_equal(out["left"]["s_id_a"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
         assert_array_equal(out["left"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, 3])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists({}, {})
+
+        assert "do not seem to be SensorStrideLists" in str(e)
 
     def test_no_common_sensors_multi_stride_lists(self):
         full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
