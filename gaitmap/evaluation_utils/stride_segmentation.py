@@ -167,7 +167,7 @@ def evaluate_segmented_stride_list(
     one_to_one: bool = True,
     segmented_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
 
     This compares a segmented stride list with a ground truth stride list and returns True Positives, False Positives
@@ -201,7 +201,8 @@ def evaluate_segmented_stride_list(
 
     Returns
     -------
-    matches_df
+    matches
+    If ground_truth and segmented_stride_list are SingleSensorStrideLists
         A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
@@ -210,7 +211,9 @@ def evaluate_segmented_stride_list(
         Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
         positives)
         All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
-
+    If ground_truth and segmented_stride_list are MultiSensorStrideLists
+        A dictionary with the keys being the common sensor names and values being
+        dataframes as described above.
 
     Examples
     --------
@@ -225,6 +228,39 @@ def evaluate_segmented_stride_list(
     3    3               NaN         fp
     4  NaN                 1         fn
 
+    >>> stride_list_ground_truth_left = pd.DataFrame(
+    ...     [[10,21],[20,34],[31,40]],
+    ...     columns=["start", "end"]
+    ... ).rename_axis('s_id')
+    >>> stride_list_ground_truth_right = pd.DataFrame(
+    ...     [[10,21],[20,34],[31,40]],
+    ...     columns=["start", "end"]
+    ... ).rename_axis('s_id')
+    ...
+    >>> stride_list_seg_left = pd.DataFrame(
+    ...     [[10,20],[21,30],[31,40],[50,60]],
+    ...     columns=["start", "end"]
+    ... ).rename_axis('s_id')
+    >>> stride_list_seg_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
+    ...
+    >>> matches = evaluate_segmented_stride_list(
+    ...     {"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
+    ...     {"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
+    ...     tolerance=2
+    ... )
+    >>> matches["left_sensor"]
+      s_id s_id_ground_truth match_type
+    0    0                 0         tp
+    1    1               NaN         fp
+    2    2                 2         tp
+    3    3               NaN         fp
+    4  NaN                 1         fn
+    >>> matches["right_sensor"]
+       s_id  s_id_ground_truth match_type
+    0     0                  0         tp
+    1     1                  1         tp
+    2     2                  2         tp
+
     See Also
     --------
     match_stride_lists : Find matching strides between stride lists.
@@ -238,11 +274,21 @@ def evaluate_segmented_stride_list(
         postfix_a=segmented_postfix,
         postfix_b=ground_truth_postfix,
     )
-    segmented_index_name = segmented_stride_list.index.name + segmented_postfix
-    ground_truth_index_name = ground_truth.index.name + ground_truth_postfix
-    matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
-    matches.loc[matches[ground_truth_index_name].isna(), "match_type"] = "fp"
-    matches.loc[matches[segmented_index_name].isna(), "match_type"] = "fn"
+
+    if is_multi_sensor_stride_list(segmented_stride_list) and is_multi_sensor_stride_list(ground_truth):
+        for sensor_name in get_multi_sensor_dataset_names(matches):
+            segmented_index_name = segmented_stride_list[sensor_name].index.name + segmented_postfix
+            ground_truth_index_name = ground_truth[sensor_name].index.name + ground_truth_postfix
+            matches[sensor_name].loc[~matches[sensor_name].isna().any(axis=1), "match_type"] = "tp"
+            matches[sensor_name].loc[matches[sensor_name][ground_truth_index_name].isna(), "match_type"] = "fp"
+            matches[sensor_name].loc[matches[sensor_name][segmented_index_name].isna(), "match_type"] = "fn"
+    else:
+        segmented_index_name = segmented_stride_list.index.name + segmented_postfix
+        ground_truth_index_name = ground_truth.index.name + ground_truth_postfix
+        matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
+        matches.loc[matches[ground_truth_index_name].isna(), "match_type"] = "fp"
+        matches.loc[matches[segmented_index_name].isna(), "match_type"] = "fn"
+
     return matches
 
 
@@ -299,7 +345,7 @@ def match_stride_lists(
             The list is sorted by the index values of the left stride list.
 
         If stride_list_a and stride_list_b are MultiSensorStrideLists
-            A dictionary with key being the common sensor names and values being
+            A dictionary with the keys being the common sensor names and values being
             dataframes as described above.
 
     Examples
@@ -445,7 +491,22 @@ def _match_start_end_label_lists(
     return left_indices, right_indices
 
 
-def _get_match_type_dfs(match_results: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+def _get_match_type_dfs(
+    match_results: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
+) -> Union[Dict[Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
+    if isinstance(match_results, dict):
+        for dataframe_name in get_multi_sensor_dataset_names(match_results):
+            matches_types = match_results[dataframe_name].groupby("match_type")
+            matches_types_dict = dict()
+            for group in ["tp", "fp", "fn"]:
+                if group in matches_types.groups:
+                    matches_types_dict[group] = matches_types.get_group(group)
+                else:
+                    matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
+            match_results[dataframe_name] = matches_types_dict
+
+        return match_results
+
     matches_types = match_results.groupby("match_type")
     matches_types_dict = dict()
     for group in ["tp", "fp", "fn"]:
