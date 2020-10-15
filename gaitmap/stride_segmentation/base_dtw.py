@@ -631,6 +631,8 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
             for index in range(3):
                 shift = shifts[index]
                 vals[index, :] = cum_sum[i + shift[0], j + shift[1]]
+                # Check if either the number vertical or horizontal step exceed the threshold.
+                # In this case set the distance to infinite, so that this direction can not be picked.
                 # vertical step
                 if index == 0 and vals[index, 1] >= max_longseq_steps:
                     vals[index, 0] = np.inf
@@ -641,9 +643,11 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
             smallest_cost = np.argmin(vals[:, 0])
             # update the step counter based on what step is taken (smallest cost)
             if smallest_cost == 0:
+                # Vertical step is take, update verticals tep counter, reset horizontal
                 cum_sum[i + 1, j + 1, 1] = vals[0, 1] + 1
                 cum_sum[i + 1, j + 1, 2] = 0
             elif smallest_cost == 1:
+                # Horizontal step is take, update horizontal tep counter, reset vertical
                 cum_sum[i + 1, j + 1, 2] = vals[1, 2] + 1
                 cum_sum[i + 1, j + 1, 1] = 0
             cum_sum[i + 1, j + 1, 0] += vals[smallest_cost, 0]
