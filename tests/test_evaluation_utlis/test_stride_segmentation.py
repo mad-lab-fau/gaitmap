@@ -27,12 +27,12 @@ class TestMatchStrideList:
         with pytest.raises(ValidationError) as e:
             match_stride_lists([], sl)
 
-        assert "SensorStrideList" in str(e)
+        assert "SingleSensorStrideList" in str(e.value)
 
         with pytest.raises(ValidationError) as e:
             match_stride_lists(sl, [])
 
-        assert "SensorStrideList" in str(e)
+        assert "SingleSensorStrideList" in str(e.value)
 
     def test_invalid_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
@@ -205,7 +205,7 @@ class TestMatchStrideList:
         with pytest.raises(ValidationError) as e:
             match_stride_lists({}, {})
 
-        assert "do not seem to be SensorStrideLists" in str(e)
+        assert "object does not contain any data/contains no sensors" in str(e.value)
 
     def test_no_common_sensors_multi_stride_lists(self):
         full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])

@@ -9,9 +9,9 @@ from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
     StrideList,
     set_correct_index,
-    is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
     get_multi_sensor_dataset_names,
+    is_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -402,42 +402,23 @@ def match_stride_lists(
     if tolerance < 0:
         raise ValueError("The tolerance must be larger 0.")
 
-    if is_single_sensor_stride_list(stride_list_a) and is_single_sensor_stride_list(stride_list_b):
+    stride_list_a_type = is_stride_list(stride_list_a)
+    stride_list_b_type = is_stride_list(stride_list_b)
 
-        stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
-        stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
+    matches = {}
 
-        left_indices, right_indices = _match_start_end_label_lists(
-            stride_list_a[["start", "end"]].to_numpy(),
-            stride_list_b[["start", "end"]].to_numpy(),
+    if stride_list_a_type == "single" and stride_list_b_type == "single":
+
+        matches = _match_single_stride_lists(
+            stride_list_a,
+            stride_list_b,
             tolerance=tolerance,
             one_to_one=one_to_one,
+            postfix_a=postfix_a,
+            postfix_b=postfix_b,
         )
 
-        left_index_name = stride_list_a.index.name + postfix_a
-        right_index_name = stride_list_b.index.name + postfix_b
-        matches_left = pd.DataFrame(index=stride_list_a.index.copy(), columns=[right_index_name])
-        matches_left.index.name = left_index_name
-        matches_right = pd.DataFrame(index=stride_list_b.index.copy(), columns=[left_index_name])
-        matches_right.index.name = right_index_name
-
-        stride_list_left_idx = stride_list_a.iloc[left_indices].index
-        stride_list_right_idx = stride_list_b.iloc[right_indices].index
-
-        matches_left.loc[stride_list_left_idx, right_index_name] = stride_list_right_idx
-        matches_right.loc[stride_list_right_idx, left_index_name] = stride_list_left_idx
-        matches_left = matches_left.reset_index()
-        matches_right = matches_right.reset_index()
-        matches = (
-            pd.concat([matches_left, matches_right])
-            .drop_duplicates()
-            .sort_values([left_index_name, right_index_name])
-            .reset_index(drop=True)
-        )
-        return matches
-
-    if is_multi_sensor_stride_list(stride_list_a) and is_multi_sensor_stride_list(stride_list_b):
-
+    if stride_list_a_type == "multi" and stride_list_b_type == "multi":
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
             list(
@@ -450,10 +431,8 @@ def match_stride_lists(
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")
 
-        matches = {}
-
         for sensor_name in sensor_names_list:
-            matches[sensor_name] = match_stride_lists(
+            matches[sensor_name] = _match_single_stride_lists(
                 stride_list_a[sensor_name],
                 stride_list_b[sensor_name],
                 tolerance=tolerance,
@@ -462,9 +441,48 @@ def match_stride_lists(
                 postfix_b=postfix_b,
             )
 
-        return matches
+    return matches
 
-    raise ValidationError("The passed objects do not seem to be SensorStrideLists.")
+
+def _match_single_stride_lists(
+    stride_list_a: StrideList,
+    stride_list_b: StrideList,
+    tolerance: Union[int, float] = 0,
+    one_to_one: bool = True,
+    postfix_a: str = "_a",
+    postfix_b: str = "_b",
+) -> pd.DataFrame:
+    stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
+    stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
+
+    left_indices, right_indices = _match_start_end_label_lists(
+        stride_list_a[["start", "end"]].to_numpy(),
+        stride_list_b[["start", "end"]].to_numpy(),
+        tolerance=tolerance,
+        one_to_one=one_to_one,
+    )
+
+    left_index_name = stride_list_a.index.name + postfix_a
+    right_index_name = stride_list_b.index.name + postfix_b
+    matches_left = pd.DataFrame(index=stride_list_a.index.copy(), columns=[right_index_name])
+    matches_left.index.name = left_index_name
+    matches_right = pd.DataFrame(index=stride_list_b.index.copy(), columns=[left_index_name])
+    matches_right.index.name = right_index_name
+
+    stride_list_left_idx = stride_list_a.iloc[left_indices].index
+    stride_list_right_idx = stride_list_b.iloc[right_indices].index
+
+    matches_left.loc[stride_list_left_idx, right_index_name] = stride_list_right_idx
+    matches_right.loc[stride_list_right_idx, left_index_name] = stride_list_left_idx
+    matches_left = matches_left.reset_index()
+    matches_right = matches_right.reset_index()
+    matches = (
+        pd.concat([matches_left, matches_right])
+        .drop_duplicates()
+        .sort_values([left_index_name, right_index_name])
+        .reset_index(drop=True)
+    )
+    return matches
 
 
 def _match_start_end_label_lists(
