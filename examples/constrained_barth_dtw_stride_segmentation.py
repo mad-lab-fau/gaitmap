@@ -4,7 +4,7 @@ r"""
 Constrained BarthDtw stride segmentation
 ========================================
 
-This example illustrates how subsequent DTW with local warping constrains can be more effective than simple DTW for
+This example illustrates how subsequent DTW with local warping constraints can be more effective than simple DTW for
 stride segmentation in a continuous DTW signal.
 
 In a traditional dtw approach (as used by [1]_ and implemented by :class:`~gaitmap.stride_segmentation.BarthDtw`) it
@@ -25,10 +25,10 @@ In normal (aka not subsequence) DTW such "short-cuts" can be prevented by adding
 that constrains the possible regions the warping path can go through.
 However, this is only possible, if the start and the endpoint of the path is known beforehand.
 Therefore, these "global" constrains can not be used in subsequence-DTW.
-But, it is possible to use local constrains, that prohibit that a single sample of the template is mapped to >N
+But, it is possible to use local constraints, that prohibit that a single sample of the template is mapped to >N
 samples of the signal or that a single sample of the signal is mapped to >M samples of the template.
 
-These constrains are used by :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` via the parameters
+These constraints are used by :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` via the parameters
 `max_template_stretch_ms` and `max_signal_stretch_ms`.
 Note that these parameters can also be used in :class:`~gaitmap.stride_segmentation.BarthDtw`, but the
 :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` has already sensible defaults set.
@@ -62,7 +62,7 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # %%
 # Establish a baseline
 # --------------------
-# Before testing the local constrains, we use the simple `BarthDtw` to visualise the issue.
+# Before testing the local constraints, we use the simple `BarthDtw` to visualise the issue.
 # We will remove the `min_match_length_s` post-processing step, so that we can see the warping-paths of the mismatches.
 # Note, that we only use the "gyr_ml" and "gyr_si" axis for matching.
 # In this (and many other cases), this can help recognise more strides correctly, with the risk of segmenting

@@ -8,13 +8,11 @@ from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, BarthOriginal
 
 
 class ConstrainedBarthDtw(BarthDtw):
-    """A version of BarthDtw that uses local warping constrains by default.
+    """A version of BarthDtw that uses local warping constraints by default.
 
-    This method is identical to :class:`~gaitmap.stride_segmentation.BarthDtw`, but uses local constrains for the
+    This method is identical to :class:`~gaitmap.stride_segmentation.BarthDtw`, but uses local constraints for the
     template and the signal by default.
-    Additionally, it only uses the "ml" template direction by default.
-
-    Both changes help to prevent issues, where only the region from TC to IC is mapped as the entire stride.
+    This help to prevent issues, where only the region from TC to IC is mapped as the entire stride.
     For more information on this see the :ref:`example <example_constrained_barth_stride_segmentation>`.
 
     This exists as a separate class, so that users are aware, they are using a different method that might impact
@@ -48,13 +46,13 @@ class ConstrainedBarthDtw(BarthDtw):
         Matches that result in longer sequences will be ignored.
         This exclusion is performed as a post-processing step after the matching.
     max_template_stretch_ms
-        A local warping constrain for the DTW.
+        A local warping constraint for the DTW.
         It describes how many ms of the template are allowed to be mapped to just a single datapoint of the signal.
         The ms value will internally be converted to samples using the template sampling-rate (or the signal
         sampling-rate, if `resample_template=True`).
         If no template sampling-rate is provided, this constrain can not be used.
     max_signal_stretch_ms
-        A local warping constrain for the DTW.
+        A local warping constraint for the DTW.
         It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
         The ms value will internally be converted to samples using the data sampling-rate
     find_matches_method

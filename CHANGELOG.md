@@ -8,10 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implemented local warping constrains for DTW. This should help in cases were only parts of a sequence are matched
+- Implemented local warping constraints for DTW. This should help in cases were only parts of a sequence are matched
   instead of the entire sequence.
-  These constrains are available for `BaseDTW` and `BarthDTW`, but are **off** by default.
-  A new class `ConstrainedBarthDTW` was added, that has the constrains **on** by default.
+  These constraints are available for `BaseDTW` and `BarthDTW`, but are **off** by default.
+  A new class `ConstrainedBarthDTW` was added, that has the constraints **on** by default.
 
 ### Changed
 
