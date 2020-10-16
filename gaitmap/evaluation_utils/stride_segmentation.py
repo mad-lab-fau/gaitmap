@@ -27,7 +27,7 @@ def recall_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) 
     ----------
     matches_df
        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type`.
+       `match_type` or a dictionary of such dataframes.
        Each row is a match containing the index value of the left and the right list, that belong together.
        The `match_type` column indicates the type of match.
        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
@@ -35,18 +35,11 @@ def recall_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) 
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
-       OR
-
-       A dictionary with the keys being the sensor names and values being
-       dataframes as described above.
-
     Returns
     -------
-    If matches_df is a pd.Dataframe
-        recall score
-    If matches_df is a dictionary of pd.Dataframes
-        a dictionary with the keys being the sensor names and values being
-        the recall scores.
+    recall_score
+        This is a float, if the input is just a single dataframe or a dictionary, if the input is a dictionary of
+        dataframes.
 
     See Also
     --------
@@ -87,7 +80,7 @@ def precision_score(
     ----------
     matches_df
        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type`.
+       `match_type` or a dictionary of such dataframes.
        Each row is a match containing the index value of the left and the right list, that belong together.
        The `match_type` column indicates the type of match.
        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
@@ -95,18 +88,11 @@ def precision_score(
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
-       OR
-
-       A dictionary with the keys being the sensor names and values being
-       dataframes as described above.
-
     Returns
     -------
-    If matches_df is a pd.Dataframe
-        precision score
-    If matches_df is a dictionary of pd.Dataframes
-        a dictionary with the keys being the sensor names and values being
-        the precision scores.
+    precision_score
+        This is a float, if the input is just a single dataframe or a dictionary, if the input is a dictionary of
+        dataframes.
 
     See Also
     --------
@@ -144,7 +130,7 @@ def f1_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) -> U
     ----------
     matches_df
        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type`.
+       `match_type` or a dictionary of such dataframes.
        Each row is a match containing the index value of the left and the right list, that belong together.
        The `match_type` column indicates the type of match.
        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
@@ -152,18 +138,11 @@ def f1_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) -> U
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
-       OR
-
-       A dictionary with the keys being the sensor names and values being
-       dataframes as described above.
-
     Returns
     -------
-    If matches_df is a pd.Dataframe
-        F1 score
-    If matches_df is a dictionary of pd.Dataframes
-        a dictionary with the keys being the sensor names and values being
-        the F1 scores.
+    f1_score
+        This is a float, if the input is just a single dataframe or a dictionary, if the input is a dictionary of
+        dataframes.
 
     See Also
     --------
@@ -207,7 +186,7 @@ def precision_recall_f1_score(
     ----------
     matches_df
         A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-        `match_type`.
+        `match_type` or a dictionary of such dataframes.
         Each row is a match containing the index value of the left and the right list, that belong together.
         The `match_type` column indicates the type of match.
         For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
@@ -215,19 +194,10 @@ def precision_recall_f1_score(
         positives)
         All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
-        OR
-
-        A dictionary with the keys being the sensor names and values being
-        dataframes as described above.
-
     Returns
     -------
-    If matches_df is a pd.Dataframe
-        precision, recall, F1-score
-    If matches_df is a dictionary of pd.Dataframes
-        a dictionary with the keys being the sensor names and values being
-        tuples of precision, recall, F1-score.
-
+    score_metrics : (precision, recall, f1_score) or {"sensor_name": (precision, recall, f1_score), ...}
+        Tuple of precision scores or a dictionary with the same scores.
 
     See Also
     --------
@@ -295,7 +265,6 @@ def evaluate_segmented_stride_list(
     Returns
     -------
     matches
-    If ground_truth and segmented_stride_list are SingleSensorStrideLists
         A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
@@ -304,9 +273,8 @@ def evaluate_segmented_stride_list(
         Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
         positives)
         All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
-    If ground_truth and segmented_stride_list are MultiSensorStrideLists
-        A dictionary with the keys being the common sensor names and values being
-        dataframes as described above.
+        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
+
 
     Examples
     --------
@@ -348,11 +316,6 @@ def evaluate_segmented_stride_list(
     2    2                 2         tp
     3    3               NaN         fp
     4  NaN                 1         fn
-    >>> matches["right_sensor"]
-       s_id  s_id_ground_truth match_type
-    0     0                  0         tp
-    1     1                  1         tp
-    2     2                  2         tp
 
     See Also
     --------
@@ -408,6 +371,9 @@ def match_stride_lists(
     This function will find matching strides in two stride lists as long as both start and end of a stride and its
     matching stride differ by less than the selected tolerance.
     This can be helpful to compare a the result of a segmentation to a ground truth.
+    In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
+    the stride lists.
+    Additional sensors are simply ignored,
 
     Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
     right stride list (and vise-versa) are returned.
@@ -441,18 +407,16 @@ def match_stride_lists(
     Returns
     -------
     matches
-        If stride_list_a and stride_list_b are SingleSensorStrideLists
-            A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
-            Each row is a match containing the index value of the left and the right list, that belong together.
-            Strides that do not have a match will be mapped to a NaN.
-            The list is sorted by the index values of the left stride list.
-
-        If stride_list_a and stride_list_b are MultiSensorStrideLists
-            A dictionary with the keys being the common sensor names and values being
-            dataframes as described above.
+        A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
+        Each row is a match containing the index value of the left and the right list, that belong together.
+        Strides that do not have a match will be mapped to a NaN.
+        The list is sorted by the index values of the left stride list.
+        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
 
     Examples
     --------
+    Single Sensor:
+
     >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
     >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
     >>> match_stride_lists(stride_list_left, stride_list_right, tolerance=2, postfix_a="_left", postfix_b="_right")
@@ -462,6 +426,8 @@ def match_stride_lists(
     2         2          2
     3         3        NaN
     4       NaN          1
+
+    Multi Sensor:
 
     >>> stride_list_left_11 = pd.DataFrame(
     ...     [[10,20],[21,30],[31,40],[50,60]],
@@ -486,12 +452,6 @@ def match_stride_lists(
     1       1       2
     2       2       1
     3       3       3
-    >>> test_output["right_sensor"]
-      s_id_a s_id_b
-    0      0      0
-    1      1    NaN
-    2      2      1
-    3    NaN      2
 
     See Also
     --------
