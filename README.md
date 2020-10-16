@@ -1,7 +1,7 @@
 # gaitmap - The Gait and Movement Analysis Package
 
 *gaitmap* provides a set of algorithms to analyse your IMU movement data without getting into your way.
-It's API is designed to mimic `sklearn` to provide you an familiar and elegant interface
+Its API is designed to mimic `sklearn` to provide you a familiar and elegant interface.
 
 
 [![pipeline status](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/badges/master/pipeline.svg)](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/commits/master)
@@ -47,7 +47,7 @@ It is also highly advisable to read through the guides on
 and the
 [Default Datatypes](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Gaitmap-Datatypes.html).
 
-## For developers
+## For Developers
 
 The [Developer Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Development-Guide.html)
 and the
