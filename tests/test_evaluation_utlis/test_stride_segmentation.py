@@ -207,6 +207,20 @@ class TestMatchStrideList:
 
         assert "object does not contain any data/contains no sensors" in str(e.value)
 
+    def test_one_multi_one_single_list(self):
+        multi = {"sensor": self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])}
+        single = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(multi, single)
+
+        assert "not of same type" in str(e)
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(single, multi)
+
+        assert "not of same type" in str(e)
+
     def test_no_common_sensors_multi_stride_lists(self):
         full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
 
@@ -514,6 +528,20 @@ class TestEvaluateSegmentedStrideList:
         assert matches["left"]["fn"].empty
 
         assert len(list_ground_truth) == (len(matches["left"]["tp"]) + len(matches["left"]["fn"]))
+
+    def test_one_multi_one_single_list(self):
+        multi = {"sensor": self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])}
+        single = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+
+        with pytest.raises(ValidationError) as e:
+            evaluate_segmented_stride_list(multi, single)
+
+        assert "not of same type" in str(e)
+
+        with pytest.raises(ValidationError) as e:
+            evaluate_segmented_stride_list(single, multi)
+
+        assert "not of same type" in str(e)
 
 
 class TestEvaluationScores:

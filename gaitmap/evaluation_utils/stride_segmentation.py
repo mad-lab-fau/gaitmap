@@ -265,7 +265,13 @@ def evaluate_segmented_stride_list(
     match_stride_lists : Find matching strides between stride lists.
 
     """
-    is_single = is_stride_list(segmented_stride_list) == "single" and is_stride_list(ground_truth) == "single"
+    segmented_stride_list_type = is_stride_list(segmented_stride_list)
+    ground_truth_type = is_stride_list(ground_truth)
+
+    if (ground_truth_type, segmented_stride_list_type) in [("multi", "single"), ("single", "multi")]:
+        raise ValidationError("The inputted lists are of not of same type")
+
+    is_single = segmented_stride_list_type == "single" and ground_truth_type == "single"
 
     # if inputs are single stride lists convert them to multi stride lists with only one
     # dummy sensor so the algorithm can process them
@@ -407,6 +413,9 @@ def match_stride_lists(
 
     stride_list_a_type = is_stride_list(stride_list_a)
     stride_list_b_type = is_stride_list(stride_list_b)
+
+    if (stride_list_a_type, stride_list_b_type) in [("multi", "single"), ("single", "multi")]:
+        raise ValidationError("The inputted lists are of not of same type")
 
     matches = {}
 
