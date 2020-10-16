@@ -515,25 +515,21 @@ def _match_start_end_label_lists(
 def _get_match_type_dfs(
     match_results: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
 ) -> Union[Dict[Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
-    if isinstance(match_results, dict):
-        for dataframe_name in get_multi_sensor_dataset_names(match_results):
-            matches_types = match_results[dataframe_name].groupby("match_type")
-            matches_types_dict = dict()
-            for group in ["tp", "fp", "fn"]:
-                if group in matches_types.groups:
-                    matches_types_dict[group] = matches_types.get_group(group)
-                else:
-                    matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
-            match_results[dataframe_name] = matches_types_dict
+    is_dict = isinstance(match_results, dict)
+    if not is_dict:
+        match_results = {"__dummy__": match_results}
 
-        return match_results
+    for dataframe_name in get_multi_sensor_dataset_names(match_results):
+        matches_types = match_results[dataframe_name].groupby("match_type")
+        matches_types_dict = dict()
+        for group in ["tp", "fp", "fn"]:
+            if group in matches_types.groups:
+                matches_types_dict[group] = matches_types.get_group(group)
+            else:
+                matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
+        match_results[dataframe_name] = matches_types_dict
 
-    matches_types = match_results.groupby("match_type")
-    matches_types_dict = dict()
-    for group in ["tp", "fp", "fn"]:
-        if group in matches_types.groups:
-            matches_types_dict[group] = matches_types.get_group(group)
-        else:
-            matches_types_dict[group] = pd.DataFrame(columns=match_results.columns.copy())
+    if not is_dict:
+        match_results = match_results["__dummy__"]
 
-    return matches_types_dict
+    return match_results
