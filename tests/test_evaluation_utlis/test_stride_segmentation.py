@@ -574,19 +574,33 @@ class TestEvaluationScores:
 
         assert_array_equal(precision, 1.0)
 
-    def test_recall(self):
+    def test_recall_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
 
         recall = recall_score(matches_df)
 
         assert_array_equal(recall, 0.6)
 
-    def test_perfect_recall(self):
+    def test_perfect_recall_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [])
 
         recall = recall_score(matches_df)
 
         assert_array_equal(recall, 1.0)
+
+    def test_recall_multi(self):
+        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+
+        recall = recall_score({"sensor": matches_df})
+
+        assert_array_equal(recall["sensor"], 0.6)
+
+    def test_perfect_recall_multi(self):
+        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [])
+
+        recall = recall_score({"sensor": matches_df})
+
+        assert_array_equal(recall["sensor"], 1.0)
 
     def test_f1_score(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])

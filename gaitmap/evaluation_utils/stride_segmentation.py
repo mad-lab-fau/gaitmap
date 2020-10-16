@@ -15,7 +15,7 @@ from gaitmap.utils.dataset_helper import (
 from gaitmap.utils.exceptions import ValidationError
 
 
-def recall_score(matches_df: pd.DataFrame) -> float:
+def recall_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) -> Union[Dict[Hashable, float], float]:
     """Compute the recall.
 
     The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
@@ -35,9 +35,18 @@ def recall_score(matches_df: pd.DataFrame) -> float:
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
+       OR
+
+       A dictionary with the keys being the sensor names and values being
+       dataframes as described above.
+
     Returns
     -------
-    recall score
+    If matches_df is a pd.Dataframe
+        recall score
+    If matches_df is a dictionary of pd.Dataframes
+        a dictionary with the keys being the sensor names and values being
+        the recall scores.
 
     See Also
     --------
@@ -45,10 +54,22 @@ def recall_score(matches_df: pd.DataFrame) -> float:
 
 
     """
+    is_not_dict = not isinstance(matches_df, dict)
+    if is_not_dict:
+        matches_df = {"__dummy__": matches_df}
+
+    output = {}
     matches_dict = _get_match_type_dfs(matches_df)
-    tp = len(matches_dict["tp"])
-    fn = len(matches_dict["fn"])
-    return tp / (tp + fn)
+    for sensor_name in get_multi_sensor_dataset_names(matches_dict):
+        tp = len(matches_dict[sensor_name]["tp"])
+        fn = len(matches_dict[sensor_name]["fn"])
+
+        output[sensor_name] = tp / (tp + fn)
+
+    if is_not_dict:
+        output = output["__dummy__"]
+
+    return output
 
 
 def precision_score(matches_df: pd.DataFrame) -> float:
@@ -524,8 +545,8 @@ def _match_start_end_label_lists(
 def _get_match_type_dfs(
     match_results: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
 ) -> Union[Dict[Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
-    is_dict = isinstance(match_results, dict)
-    if not is_dict:
+    is_not_dict = not isinstance(match_results, dict)
+    if is_not_dict:
         match_results = {"__dummy__": match_results}
 
     for dataframe_name in get_multi_sensor_dataset_names(match_results):
@@ -538,7 +559,7 @@ def _get_match_type_dfs(
                 matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
         match_results[dataframe_name] = matches_types_dict
 
-    if not is_dict:
+    if is_not_dict:
         match_results = match_results["__dummy__"]
 
     return match_results
