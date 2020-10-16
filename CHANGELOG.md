@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of the entire sequence.
   These constraints are available for `BaseDTW` and `BarthDTW`, but are **off** by default.
   A new class `ConstrainedBarthDTW` was added, that has the constraints **on** by default.
+- Added support for `MultiSensorStrideLists` for all evaluation functions in `evaluation_utils.stride_segmentation`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/91)
 
 ### Changed
 
