@@ -72,7 +72,9 @@ def recall_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) 
     return output
 
 
-def precision_score(matches_df: pd.DataFrame) -> float:
+def precision_score(
+    matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]
+) -> Union[Dict[Hashable, float], float]:
     """Compute the precision.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -93,19 +95,40 @@ def precision_score(matches_df: pd.DataFrame) -> float:
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
+       OR
+
+       A dictionary with the keys being the sensor names and values being
+       dataframes as described above.
+
     Returns
     -------
-    precision score
+    If matches_df is a pd.Dataframe
+        precision score
+    If matches_df is a dictionary of pd.Dataframes
+        a dictionary with the keys being the sensor names and values being
+        the precision scores.
 
     See Also
     --------
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
+    is_not_dict = not isinstance(matches_df, dict)
+    if is_not_dict:
+        matches_df = {"__dummy__": matches_df}
+
+    output = {}
     matches_dict = _get_match_type_dfs(matches_df)
-    tp = len(matches_dict["tp"])
-    fp = len(matches_dict["fp"])
-    return tp / (tp + fp)
+    for sensor_name in get_multi_sensor_dataset_names(matches_dict):
+        tp = len(matches_dict[sensor_name]["tp"])
+        fp = len(matches_dict[sensor_name]["fp"])
+
+        output[sensor_name] = tp / (tp + fp)
+
+    if is_not_dict:
+        output = output["__dummy__"]
+
+    return output
 
 
 def f1_score(matches_df: pd.DataFrame) -> float:

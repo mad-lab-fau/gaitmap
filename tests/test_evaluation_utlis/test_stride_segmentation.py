@@ -560,19 +560,33 @@ class TestEvaluationScores:
 
         return pd.concat([tp_df, fp_df, fn_df])
 
-    def test_precision(self):
+    def test_precision_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
 
         precision = precision_score(matches_df)
 
         assert_array_equal(precision, 0.6)
 
-    def test_perfect_precision(self):
+    def test_perfect_precision_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [10, 11, 12, 13])
 
         precision = precision_score(matches_df)
 
         assert_array_equal(precision, 1.0)
+        
+    def test_precision_multi(self):
+        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+
+        precision = precision_score({"sensor": matches_df})
+
+        assert_array_equal(precision["sensor"], 0.6)
+
+    def test_perfect_precision_multi(self):
+        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [10, 11, 12, 13])
+
+        precision = precision_score({"sensor": matches_df})
+
+        assert_array_equal(precision["sensor"], 1.0)
 
     def test_recall_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
