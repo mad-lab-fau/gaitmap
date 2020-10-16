@@ -9,7 +9,6 @@ from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
     StrideList,
     set_correct_index,
-    is_multi_sensor_stride_list,
     get_multi_sensor_dataset_names,
     is_stride_list,
 )
@@ -266,6 +265,14 @@ def evaluate_segmented_stride_list(
     match_stride_lists : Find matching strides between stride lists.
 
     """
+    is_single = is_stride_list(segmented_stride_list) == "single" and is_stride_list(ground_truth) == "single"
+
+    # if inputs are single stride lists convert them to multi stride lists with only one
+    # dummy sensor so the algorithm can process them
+    if is_single:
+        segmented_stride_list = {"__dummy__": segmented_stride_list}
+        ground_truth = {"__dummy__": ground_truth}
+
     matches = match_stride_lists(
         stride_list_a=segmented_stride_list,
         stride_list_b=ground_truth,
@@ -275,19 +282,15 @@ def evaluate_segmented_stride_list(
         postfix_b=ground_truth_postfix,
     )
 
-    if is_multi_sensor_stride_list(segmented_stride_list) and is_multi_sensor_stride_list(ground_truth):
-        for sensor_name in get_multi_sensor_dataset_names(matches):
-            segmented_index_name = segmented_stride_list[sensor_name].index.name + segmented_postfix
-            ground_truth_index_name = ground_truth[sensor_name].index.name + ground_truth_postfix
-            matches[sensor_name].loc[~matches[sensor_name].isna().any(axis=1), "match_type"] = "tp"
-            matches[sensor_name].loc[matches[sensor_name][ground_truth_index_name].isna(), "match_type"] = "fp"
-            matches[sensor_name].loc[matches[sensor_name][segmented_index_name].isna(), "match_type"] = "fn"
-    else:
-        segmented_index_name = segmented_stride_list.index.name + segmented_postfix
-        ground_truth_index_name = ground_truth.index.name + ground_truth_postfix
-        matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
-        matches.loc[matches[ground_truth_index_name].isna(), "match_type"] = "fp"
-        matches.loc[matches[segmented_index_name].isna(), "match_type"] = "fn"
+    for sensor_name in get_multi_sensor_dataset_names(matches):
+        segmented_index_name = segmented_stride_list[sensor_name].index.name + segmented_postfix
+        ground_truth_index_name = ground_truth[sensor_name].index.name + ground_truth_postfix
+        matches[sensor_name].loc[~matches[sensor_name].isna().any(axis=1), "match_type"] = "tp"
+        matches[sensor_name].loc[matches[sensor_name][ground_truth_index_name].isna(), "match_type"] = "fp"
+        matches[sensor_name].loc[matches[sensor_name][segmented_index_name].isna(), "match_type"] = "fn"
+
+    if is_single:
+        matches = matches["__dummy__"]
 
     return matches
 
