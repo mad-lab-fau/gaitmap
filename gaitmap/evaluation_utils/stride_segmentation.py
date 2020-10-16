@@ -152,18 +152,40 @@ def f1_score(matches_df: pd.DataFrame) -> float:
        positives)
        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
+       OR
+
+       A dictionary with the keys being the sensor names and values being
+       dataframes as described above.
+
     Returns
     -------
-    F1 score
+     If matches_df is a pd.Dataframe
+        F1 score
+    If matches_df is a dictionary of pd.Dataframes
+        a dictionary with the keys being the sensor names and values being
+        the F1 scores.
 
     See Also
     --------
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    recall = recall_score(matches_df)
-    precision = precision_score(matches_df)
-    return 2 * (precision * recall) / (precision + recall)
+    is_not_dict = not isinstance(matches_df, dict)
+    if is_not_dict:
+        matches_df = {"__temp__": matches_df}
+
+    output = {}
+    recall = recall_score(matches_df.copy())
+    precision = precision_score(matches_df.copy())
+    for sensor_name in list(recall.keys()):
+        output[sensor_name] = (
+            2 * (precision[sensor_name] * recall[sensor_name]) / (precision[sensor_name] + recall[sensor_name])
+        )
+
+    if is_not_dict:
+        output = output["__temp__"]
+
+    return output
 
 
 def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, float]:
