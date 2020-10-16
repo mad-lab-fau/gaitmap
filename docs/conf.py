@@ -35,6 +35,7 @@ author = (
     "Nils Roth <nils.roth@fau.de>, "
     "Malte Ollenschläger <Malte.Ollenschlaeger@fau.de>, "
     "Alzhraa Ahmed <alzhraa.ahmed@fau.de>, "
+    "Raul C. Sîmpetru <raul.simpetru@fau.de>, "
     "Felix Kluge <felix.kluge@fau.de>"
 )
 
