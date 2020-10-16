@@ -131,7 +131,7 @@ def precision_score(
     return output
 
 
-def f1_score(matches_df: pd.DataFrame) -> float:
+def f1_score(matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]) -> Union[Dict[Hashable, float], float]:
     """Compute the F1 score, also known as balanced F-score or F-measure.
 
     The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
@@ -159,7 +159,7 @@ def f1_score(matches_df: pd.DataFrame) -> float:
 
     Returns
     -------
-     If matches_df is a pd.Dataframe
+    If matches_df is a pd.Dataframe
         F1 score
     If matches_df is a dictionary of pd.Dataframes
         a dictionary with the keys being the sensor names and values being
@@ -172,7 +172,7 @@ def f1_score(matches_df: pd.DataFrame) -> float:
     """
     is_not_dict = not isinstance(matches_df, dict)
     if is_not_dict:
-        matches_df = {"__temp__": matches_df}
+        matches_df = {"__dummy__": matches_df}
 
     output = {}
     recall = recall_score(matches_df.copy())
@@ -183,12 +183,14 @@ def f1_score(matches_df: pd.DataFrame) -> float:
         )
 
     if is_not_dict:
-        output = output["__temp__"]
+        output = output["__dummy__"]
 
     return output
 
 
-def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, float]:
+def precision_recall_f1_score(
+    matches_df: Union[Dict[Hashable, pd.DataFrame], pd.DataFrame]
+) -> Union[Dict[Hashable, Tuple[float, float, float]], Tuple[float, float, float]]:
     """Compute precision, recall and F1-score.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -213,16 +215,42 @@ def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, f
         positives)
         All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
 
+        OR
+
+        A dictionary with the keys being the sensor names and values being
+        dataframes as described above.
+
     Returns
     -------
-    precision, recall, F1-score
+    If matches_df is a pd.Dataframe
+        precision, recall, F1-score
+    If matches_df is a dictionary of pd.Dataframes
+        a dictionary with the keys being the sensor names and values being
+        tuples of precision, recall, F1-score.
+
 
     See Also
     --------
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    return precision_score(matches_df), recall_score(matches_df), f1_score(matches_df)
+    is_not_dict = not isinstance(matches_df, dict)
+    if is_not_dict:
+        matches_df = {"__dummy__": matches_df}
+
+    output = {}
+
+    precision = precision_score(matches_df.copy())
+    recall = recall_score(matches_df.copy())
+    f1_score_value = f1_score(matches_df.copy())
+
+    for sensor_name in list(recall.keys()):
+        output[sensor_name] = (precision[sensor_name], recall[sensor_name], f1_score_value[sensor_name])
+
+    if is_not_dict:
+        output = output["__dummy__"]
+
+    return output
 
 
 def evaluate_segmented_stride_list(
