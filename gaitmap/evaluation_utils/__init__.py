@@ -3,6 +3,9 @@
 from gaitmap.evaluation_utils.stride_segmentation import (
     evaluate_segmented_stride_list,
     match_stride_lists,
+)
+
+from gaitmap.evaluation_utils.scores import (
     precision_score,
     recall_score,
     f1_score,
