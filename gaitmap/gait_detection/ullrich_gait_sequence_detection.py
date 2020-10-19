@@ -422,6 +422,26 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
+    def merge_gait_sequences_multi(self):
+        gs_bool = pd.DataFrame(self.gsd_to_boolean())
+
+        # todo: make this sensor name agnostic
+        gs_bool["merged"] = gs_bool["left_sensor"] | gs_bool["right_sensor"]
+
+        # todo: reformat to output with start end
+
+        return gs_bool
+
+    def gsd_to_boolean(self):
+        dataset_type = is_dataset(self.data)
+        if dataset_type == "single":
+            gait_sequences_bool = _gsd_to_boolean_single(self.data, self.gait_sequences_)
+        else:  # Multisensor
+            gait_sequences_bool = dict()
+            for sensor in get_multi_sensor_dataset_names(self.data):
+                gait_sequences_bool[sensor] = _gsd_to_boolean_single(self.data[sensor], self.gait_sequences_[sensor])
+        return gait_sequences_bool
+
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     """Concat consecutive gait sequences to a single one."""
@@ -452,3 +472,14 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
         gait_sequences_start_corrected.append([start, end])
 
     return np.array(gait_sequences_start_corrected)
+
+
+def _gsd_to_boolean_single(data_single, gait_sequences_single):
+    #TODO shift this as a general util function based on numpy
+    gsd_bool_array = np.zeros(len(data_single))
+    gs_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
+
+    for gs_tuple in gs_start_end_tuples:
+        gsd_bool_array[gs_tuple[0]:gs_tuple[1]] = 1
+
+    return gsd_bool_array.astype(int)
