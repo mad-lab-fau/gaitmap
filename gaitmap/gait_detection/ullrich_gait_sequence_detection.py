@@ -10,7 +10,7 @@ from scipy.signal import peak_prominences
 
 from gaitmap.base import BaseGaitDetection, BaseType
 from gaitmap.utils import signal_processing
-from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
+from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
@@ -170,10 +170,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO implement merging of gait sequences for synced data
-        if self.merge_gait_sequences_from_sensors and is_multi_sensor_dataset(data) and isinstance(data, pd.DataFrame):
-            raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
-
         self._assert_input_data(data)
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
@@ -191,6 +187,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
                 )
+
+            if self.merge_gait_sequences_from_sensors:
+                self.gait_sequences_ = self.merge_gait_sequences_multi_sensor_data()
+                self.start_ = np.array(self.gait_sequences_["start"])
+                self.end_ = np.array(self.gait_sequences_["end"])
+
         return self
 
     def _detect_single_dataset(
@@ -422,24 +424,39 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
-    def merge_gait_sequences_multi(self):
-        gs_bool = pd.DataFrame(self.gsd_to_boolean())
+    def merge_gait_sequences_multi_sensor_data(self):
+        """Merge gait sequences from different sensor positions for synced data."""
+        # In case all dataframes are empty, so no gait sequences were detected just return the original variable.
+        if all([df.empty for df in self.gait_sequences_.values()]):
+            return self.gait_sequences_
 
-        # todo: make this sensor name agnostic
-        gs_bool["merged"] = gs_bool["left_sensor"] | gs_bool["right_sensor"]
+        gait_sequences_bool_df = pd.DataFrame(self.gait_sequences_to_boolean())
+        # apply logical or by using any along the columns
+        gait_sequences_bool_array = np.array(gait_sequences_bool_df.any(axis="columns").astype(int))
 
-        # todo: reformat to output with start end
+        gait_sequences_merged = pd.DataFrame(
+            bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
+        )
+        gait_sequences_merged.index.name = "gs_id"
+        gait_sequences_merged = gait_sequences_merged.reset_index()
 
-        return gs_bool
+        return gait_sequences_merged
 
-    def gsd_to_boolean(self):
+    def gait_sequences_to_boolean(self):
+        """Convert gait sequences to a boolean array or a dict of arrays (with sensor positions as keys).
+
+        Array contains 0 / 1 for each signal sample for non-gait / gait.
+        """
         dataset_type = is_dataset(self.data)
         if dataset_type == "single":
-            gait_sequences_bool = _gsd_to_boolean_single(self.data, self.gait_sequences_)
+            gait_sequences_bool = _gait_sequences_to_boolean_single(self.data, self.gait_sequences_)
         else:  # Multisensor
             gait_sequences_bool = dict()
             for sensor in get_multi_sensor_dataset_names(self.data):
-                gait_sequences_bool[sensor] = _gsd_to_boolean_single(self.data[sensor], self.gait_sequences_[sensor])
+                gait_sequences_bool[sensor] = _gait_sequences_to_boolean_single(
+                    self.data[sensor], self.gait_sequences_[sensor]
+                )
+
         return gait_sequences_bool
 
 
@@ -474,12 +491,16 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     return np.array(gait_sequences_start_corrected)
 
 
-def _gsd_to_boolean_single(data_single, gait_sequences_single):
-    #TODO shift this as a general util function based on numpy
-    gsd_bool_array = np.zeros(len(data_single))
-    gs_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
+def _gait_sequences_to_boolean_single(data_single, gait_sequences_single):
+    """Convert gait sequences from a single sensor from a dataframe to boolean array.
 
-    for gs_tuple in gs_start_end_tuples:
-        gsd_bool_array[gs_tuple[0]:gs_tuple[1]] = 1
+    Array contains 0 / 1 for each signal sample for non-gait / gait.
+    """
+    # TODO shift the actual functionality as a general util function? Or simple enough and not necessary?
+    gait_sequences_bool_array = np.zeros(len(data_single))
+    gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
 
-    return gsd_bool_array.astype(int)
+    for gait_sequences_tuple in gait_sequences_start_end_tuples:
+        gait_sequences_bool_array[gait_sequences_tuple[0] : gait_sequences_tuple[1] + 1] = 1
+
+    return gait_sequences_bool_array.astype(int)
