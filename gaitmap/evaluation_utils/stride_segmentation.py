@@ -44,7 +44,7 @@ def evaluate_segmented_stride_list(
     segmented_stride_list
         The list of segmented strides.
     what_to_match
-        A string or a list of string that describe what you want to match. If empty default is ["start", "end"].
+        A string or a list of strings that describe what you want to match. If empty default is ["start", "end"].
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -194,7 +194,7 @@ def match_stride_lists(
     stride_list_b
         The second stride list used for comparison
     what_to_match
-        A string or a list of string that describe what you want to match. If empty default is ["start", "end"]
+        A string or a list of strings that describe what you want to match. If empty default is ["start", "end"]
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
