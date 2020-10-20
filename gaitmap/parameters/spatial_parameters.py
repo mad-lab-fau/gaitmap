@@ -25,7 +25,10 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_orientation_list,
     set_correct_index,
     is_stride_list,
+    is_position_list,
+    is_orientation_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
 
@@ -193,24 +196,23 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.orientations = orientations
         self.sampling_rate_hz = sampling_rate_hz
         stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
-        if (
-            stride_list_type == "single"
-            and is_single_sensor_position_list(positions, position_list_type="stride")
-            and is_single_sensor_orientation_list(orientations, orientation_list_type="stride")
-        ):
+        position_list_type = is_position_list(positions, position_list_type="stride")
+        orientation_list_type = is_orientation_list(orientations, orientation_list_type="stride")
+        if not stride_list_type == position_list_type == orientation_list_type:
+            raise ValidationError(
+                "The provided stride list, the positions, and the orientations should all either "
+                "be all single or all multi sensor objects."
+                "However, the provided stride list is {} sensor, the positions {} sensor and the "
+                "orientations {} sensor.".format(stride_list_type, position_list_type, orientation_list_type)
+            )
+        if stride_list_type == "single":
             self.parameters_, self.sole_angle_course_ = self._calculate_single_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
-        elif (
-            stride_list_type == "multi"
-            and is_multi_sensor_position_list(positions, position_list_type="stride")
-            and is_multi_sensor_orientation_list(orientations, orientation_list_type="stride")
-        ):
+        else:
             self.parameters_, self.sole_angle_course_ = self._calculate_multiple_sensor(
                 stride_event_list, positions, orientations, sampling_rate_hz
             )
-        else:
-            raise ValueError("The provided combinations of input types is not supported.")
         return self
 
     @staticmethod
@@ -224,7 +226,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         Parameters
         ----------
-        stride_event_list
+         stride_event_list
             Gait events for each stride obtained from event detection.
         positions
             position of the sensor at each time point as estimated by trajectory reconstruction.
