@@ -16,13 +16,9 @@ from gaitmap.utils.dataset_helper import (
     PositionList,
     SingleSensorPositionList,
     MultiSensorPositionList,
-    is_single_sensor_position_list,
-    is_multi_sensor_position_list,
     OrientationList,
     SingleSensorOrientationList,
     MultiSensorOrientationList,
-    is_single_sensor_orientation_list,
-    is_multi_sensor_orientation_list,
     set_correct_index,
     is_stride_list,
     is_position_list,
@@ -226,7 +222,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         Parameters
         ----------
-         stride_event_list
+        stride_event_list
             Gait events for each stride obtained from event detection.
         positions
             position of the sensor at each time point as estimated by trajectory reconstruction.
