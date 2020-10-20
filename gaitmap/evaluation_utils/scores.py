@@ -17,14 +17,12 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
     Parameters
     ----------
     matches_df
-       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type` or a dictionary of such dataframes.
-       Each row is a match containing the index value of the left and the right list, that belong together.
-       The `match_type` column indicates the type of match.
-       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-       positives)
-       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        `match_type` or a dictionary of such dataframes.
+        Each row is a match containing the index value of the left and the corresponding right one.
+        The `match_type` column indicates the type of match:
+        "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
+        counterpart exists.
 
     Returns
     -------
@@ -68,14 +66,12 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
     Parameters
     ----------
     matches_df
-       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type` or a dictionary of such dataframes.
-       Each row is a match containing the index value of the left and the right list, that belong together.
-       The `match_type` column indicates the type of match.
-       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-       positives)
-       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        `match_type` or a dictionary of such dataframes.
+        Each row is a match containing the index value of the left and the corresponding right one.
+        The `match_type` column indicates the type of match:
+        "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
+        counterpart exists.
 
     Returns
     -------
@@ -118,14 +114,12 @@ def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[D
     Parameters
     ----------
     matches_df
-       A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-       `match_type` or a dictionary of such dataframes.
-       Each row is a match containing the index value of the left and the right list, that belong together.
-       The `match_type` column indicates the type of match.
-       For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-       Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-       positives)
-       All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        `match_type` or a dictionary of such dataframes.
+        Each row is a match containing the index value of the left and the corresponding right one.
+        The `match_type` column indicates the type of match:
+        "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
+        counterpart exists.
 
     Returns
     -------
@@ -176,12 +170,10 @@ def precision_recall_f1_score(
     matches_df
         A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type` or a dictionary of such dataframes.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        The `match_type` column indicates the type of match.
-        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-        Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-        positives)
-        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+        Each row is a match containing the index value of the left and the corresponding right one.
+        The `match_type` column indicates the type of match:
+        "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
+        counterpart exists.
 
     Returns
     -------
