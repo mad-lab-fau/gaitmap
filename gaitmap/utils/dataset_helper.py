@@ -204,7 +204,7 @@ def is_multi_sensor_dataset(
 
 def is_dataset(
     dataset: Dataset, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any",
-) -> Optional[Literal["single", "multi"]]:
+) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor dataset.
 
     This function will try to check the input using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` and
@@ -230,8 +230,8 @@ def is_dataset(
     Returns
     -------
     dataset_type
-        "single" in case of a single-sensor dataset, "multi" in case of a multi-sensor dataset and None in case it is
-        neither.
+        "single" in case of a single-sensor dataset, "multi" in case of a multi-sensor dataset.
+        In case it is neither, a ValidationError is raised.
 
     See Also
     --------
@@ -415,7 +415,7 @@ def is_multi_sensor_stride_list(
 
 def is_stride_list(
     stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any",
-) -> Optional[Literal["single", "multi"]]:
+) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
     This function will try to check the input using
@@ -435,8 +435,8 @@ def is_stride_list(
     Returns
     -------
     dataset_type
-        "single" in case of a single-sensor stride list, "multi" in case of a multi-sensor stride list and None in case
-        it is neither.
+        "single" in case of a single-sensor stride list, "multi" in case of a multi-sensor stride list.
+        In case it is neither, a ValidationError is raised.
 
     See Also
     --------
@@ -606,7 +606,7 @@ def is_multi_sensor_regions_of_interest_list(
 
 def is_regions_of_interest_list(
     roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gsd"] = "any",
-) -> Optional[Literal["single", "multi"]]:
+) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor regions of interest list.
 
     This function will try to check the input using
@@ -626,8 +626,8 @@ def is_regions_of_interest_list(
     Returns
     -------
     dataset_type
-        "single" in case of a single-sensor roi list, "multi" in case of a multi-sensor roi list and None in case
-        it is neither.
+        "single" in case of a single-sensor roi list, "multi" in case of a multi-sensor roi list.
+        In case it is neither, an error is raised.
 
     See Also
     --------
@@ -751,7 +751,7 @@ def _is_trajectory_list(
     multi_func: Callable,
     traj_list: Union[MultiSensorOrientationList, MultiSensorVelocityList, MultiSensorOrientationList],
     **kwargs,
-) -> Optional[Literal["single", "multi"]]:
+) -> Literal["single", "multi"]:
     try:
         single_func(traj_list, **kwargs, raise_exception=True)
     except ValidationError as e:
@@ -880,8 +880,8 @@ def is_position_list(position_list: PositionList, position_list_type: Optional[_
     Returns
     -------
     dataset_type
-        "single" in case of a single-sensor position_list, "multi" in case of a multi-sensor position_list and None in
-        case it is neither.
+        "single" in case of a single-sensor position_list, "multi" in case of a multi-sensor position_list.
+        In case it is neither a ValidationError is raised.
 
     See Also
     --------
@@ -1002,8 +1002,8 @@ def is_velocity_list(velocity_list: VelocityList, velocity_list_type: Optional[_
     Returns
     -------
     dataset_type
-        "single" in case of a single-sensor velocity_list, "multi" in case of a multi-sensor velocity_list and None in
-        case it is neither.
+        "single" in case of a single-sensor velocity_list, "multi" in case of a multi-sensor velocity_list.
+        In case it is neither a ValidationError is raised.
 
     See Also
     --------
