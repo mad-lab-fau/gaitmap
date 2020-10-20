@@ -1,8 +1,9 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from typing_extensions import Literal
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -26,6 +27,15 @@ from gaitmap.utils.dataset_helper import (
     is_regions_of_interest_list,
     SingleSensorRegionsOfInterestList,
     get_single_sensor_regions_of_interest_types,
+    StrideList,
+    is_stride_list,
+    VelocityList,
+    OrientationList,
+    PositionList,
+    is_orientation_list,
+    is_position_list,
+    is_velocity_list,
+    get_multi_sensor_dataset_names,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -170,7 +180,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self._validate_methods()
 
         dataset_type = is_dataset(data, frame="sensor")
-        roi_list_type = is_regions_of_interest_list(regions_of_interest,)
+        roi_list_type = is_regions_of_interest_list(regions_of_interest)
 
         if dataset_type != roi_list_type:
             raise ValidationError(
@@ -180,6 +190,63 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
         self._estimate(dataset_type=dataset_type)
         return self
+
+    def estimate_intersect(
+        self,
+        data: Dataset,
+        regions_of_interest: RegionsOfInterestList,
+        stride_event_list: StrideList,
+        sampling_rate_hz: float,
+    ) -> BaseType:
+        roi_list_type = is_regions_of_interest_list(regions_of_interest)
+        stride_event_list_type = is_stride_list(stride_event_list)
+
+        if roi_list_type != stride_event_list_type:
+            raise ValidationError(
+                "An invalid combination of ROI list and stride list was provided."
+                "The stride list is {} sensor and the stride list is {} sensor.".format(
+                    stride_event_list_type, roi_list_type
+                )
+            )
+        self.estimate(data=data, regions_of_interest=regions_of_interest, sampling_rate_hz=sampling_rate_hz)
+
+    def intersect(
+        self,
+        stride_event_list: StrideList,
+        return_data: Tuple[Literal["orientation", "position", "velocity"], ...] = (
+            "orientation",
+            "position",
+            "velocity",
+        ),
+    ) -> Tuple[Union[PositionList, OrientationList, VelocityList], ...]:
+        if self._action_is_applied is False:
+            raise ValidationError("You first need to call the `estimate` method before using `intersect`")
+        validation_methods = {
+            "orientation": is_orientation_list,
+            "position": is_position_list,
+            "velocity": is_velocity_list,
+        }
+        return_vals = []
+        stride_list_type = is_stride_list(stride_event_list)
+        for data_name in return_data:
+            data = getattr(self, data_name + "_")
+            data_type = validation_methods[data_name](data)
+            if data_type != stride_list_type:
+                raise ValidationError(
+                    "You are trying to intersect the results from a {} sensor dataset with a {} "
+                    "sensor stride list".format(data_type, stride_list_type)
+                )
+            if data_type == "single":
+                data = self._intersect(data, stride_event_list)
+            else:
+                data = {k: self._intersect(data[k], stride_event_list[k]) for k in get_multi_sensor_dataset_names(data)}
+            return_vals.append(data)
+        return tuple(return_vals)
+
+    def _intersect(
+        self, data: Union[PositionList, OrientationList, VelocityList], stride_event_list: StrideList
+    ) -> Union[PositionList, OrientationList, VelocityList]:
+        pass
 
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, integration_regions: SingleSensorRegionsOfInterestList
@@ -193,5 +260,3 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
         # TODO: Does this way of getting the initial orientation makes for longer sequences?
         return _initial_orientation_from_start(data, start, align_window_width=self.align_window_width)
-
-    # TODO: Add an "estimate_intersect" method
