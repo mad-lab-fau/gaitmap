@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable
+from typing import Union, Tuple, Dict, Hashable, List
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from gaitmap.utils.exceptions import ValidationError
 def evaluate_segmented_stride_list(
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
+    what_to_match: Union[str, List[str]] = None,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     segmented_postfix: str = "",
@@ -42,6 +43,8 @@ def evaluate_segmented_stride_list(
         The ground truth stride list.
     segmented_stride_list
         The list of segmented strides.
+    what_to_match
+        A string or a list of string that describe what you want to match. If empty default is ["start", "end"].
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -114,6 +117,9 @@ def evaluate_segmented_stride_list(
     match_stride_lists : Find matching strides between stride lists.
 
     """
+    # used to overcome the argument is mutable warning
+    what_to_match = what_to_match if what_to_match else ["start", "end"]
+
     segmented_stride_list_type = is_stride_list(segmented_stride_list)
     ground_truth_type = is_stride_list(ground_truth)
 
@@ -131,6 +137,7 @@ def evaluate_segmented_stride_list(
     matches = match_stride_lists(
         stride_list_a=segmented_stride_list,
         stride_list_b=ground_truth,
+        what_to_match=what_to_match,
         tolerance=tolerance,
         one_to_one=one_to_one,
         postfix_a=segmented_postfix,
@@ -153,6 +160,7 @@ def evaluate_segmented_stride_list(
 def match_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
+    what_to_match: Union[str, List[str]] = None,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -185,6 +193,8 @@ def match_stride_lists(
         The first stride list used for comparison
     stride_list_b
         The second stride list used for comparison
+    what_to_match
+        A string or a list of string that describe what you want to match. If empty default is ["start", "end"]
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -257,6 +267,9 @@ def match_stride_lists(
     if tolerance < 0:
         raise ValueError("The tolerance must be larger 0.")
 
+    # used to overcome the argument is mutable warning
+    what_to_match = what_to_match if what_to_match else ["start", "end"]
+
     stride_list_a_type = is_stride_list(stride_list_a)
     stride_list_b_type = is_stride_list(stride_list_b)
 
@@ -270,6 +283,7 @@ def match_stride_lists(
         matches = _match_single_stride_lists(
             stride_list_a,
             stride_list_b,
+            what_to_match,
             tolerance=tolerance,
             one_to_one=one_to_one,
             postfix_a=postfix_a,
@@ -293,6 +307,7 @@ def match_stride_lists(
             matches[sensor_name] = _match_single_stride_lists(
                 stride_list_a[sensor_name],
                 stride_list_b[sensor_name],
+                what_to_match,
                 tolerance=tolerance,
                 one_to_one=one_to_one,
                 postfix_a=postfix_a,
@@ -305,6 +320,7 @@ def match_stride_lists(
 def _match_single_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
+    what_to_match: Union[str, List[str]],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -314,16 +330,18 @@ def _match_single_stride_lists(
     stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
 
     left_indices, right_indices = _match_start_end_label_lists(
-        stride_list_a[["start", "end"]].to_numpy(),
-        stride_list_b[["start", "end"]].to_numpy(),
+        stride_list_a[what_to_match].to_numpy(),
+        stride_list_b[what_to_match].to_numpy(),
         tolerance=tolerance,
         one_to_one=one_to_one,
     )
 
     left_index_name = stride_list_a.index.name + postfix_a
     right_index_name = stride_list_b.index.name + postfix_b
+
     matches_left = pd.DataFrame(index=stride_list_a.index.copy(), columns=[right_index_name])
     matches_left.index.name = left_index_name
+
     matches_right = pd.DataFrame(index=stride_list_b.index.copy(), columns=[left_index_name])
     matches_right.index.name = right_index_name
 
@@ -332,14 +350,17 @@ def _match_single_stride_lists(
 
     matches_left.loc[stride_list_left_idx, right_index_name] = stride_list_right_idx
     matches_right.loc[stride_list_right_idx, left_index_name] = stride_list_left_idx
+
     matches_left = matches_left.reset_index()
     matches_right = matches_right.reset_index()
+
     matches = (
         pd.concat([matches_left, matches_right])
         .drop_duplicates()
         .sort_values([left_index_name, right_index_name])
         .reset_index(drop=True)
     )
+
     return matches
 
 
@@ -348,12 +369,24 @@ def _match_start_end_label_lists(
 ) -> Tuple[np.ndarray, np.ndarray]:
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
+
+    both_1d = (len(list_left.shape) == 1) & (len(list_right.shape) == 1)
+
     distance = np.empty((len(list_left), len(list_right), 2))
-    distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
-    distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
+
+    if both_1d:
+        distance[..., 0] = np.subtract.outer(list_left[:], list_right[:])
+    else:
+        distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
+        distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
+
     distance = np.abs(distance)
     valid_matches = distance <= tolerance
-    valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
+
+    if both_1d:
+        valid_matches = valid_matches[..., 0]
+    else:
+        valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
 
     if one_to_one is True:
         argmin_array_left = np.zeros(valid_matches.shape).astype(bool)
@@ -364,4 +397,5 @@ def _match_start_end_label_lists(
         argmin_array_right[np.arange(distance.shape[0]), right_indices] = True
         valid_matches &= argmin_array_left & argmin_array_right
     left_indices, right_indices = np.where(valid_matches)
+
     return left_indices, right_indices
