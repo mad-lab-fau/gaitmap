@@ -34,6 +34,9 @@ from gaitmap.utils.dataset_helper import (
     is_dataset,
     is_stride_list,
     is_regions_of_interest_list,
+    is_position_list,
+    is_velocity_list,
+    is_orientation_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -443,6 +446,12 @@ class TestIsSingleSensorTrajLikeList:
         for k in TRAJ_TYPE_COLS:
             assert self.func(df, k) == (k == list_type)
 
+    @pytest.mark.parametrize("list_type, index", TRAJ_TYPE_COLS.items())
+    def test_any_roi_list_type(self, list_type, index):
+        valid_cols = [index, "sample", *self.valid_cols]
+        df = pd.DataFrame(columns=valid_cols)
+        assert self.func(df, "any_roi") == (list_type in ["roi", "gs"])
+
     def test_error_raising(self):
         with pytest.raises(ValidationError) as e:
             self.func(pd.DataFrame(), raise_exception=True)
@@ -503,6 +512,36 @@ class TestIsMultiSensorTrajLikeList:
         assert "The passed object appears to be a {}".format(self.dtype) in str(e.value)
         assert 'for the sensor with the name "s1"' in str(e.value)
         assert str(["sample"]) in str(e.value)
+
+
+class TestIsTrajLikeList:
+    @pytest.fixture(
+        autouse=True,
+        params=(
+            [is_position_list, "position", GF_POS],
+            [is_velocity_list, "velocity", GF_VEL],
+            [is_orientation_list, "orientation", GF_ORI],
+        ),
+        ids=("pos", "vel", "ori"),
+    )
+    def traj_like_lists(self, request):
+        self.func, self.dtype, self.valid_cols = request.param
+
+    def test_raises_error_correctly(self):
+        with pytest.raises(ValidationError) as e:
+            self.func(pd.DataFrame())
+
+        assert "The passed object appears to be neither a single- or a multi-sensor {} list.".format(self.dtype) in str(
+            e
+        )
+        assert "sample" in str(e.value)
+        assert "'dict'" in str(e.value)
+
+    def test_basic_function(self):
+        valid_cols = ["s_id", "sample", *self.valid_cols]
+        obj = pd.DataFrame(columns=valid_cols)
+        assert self.func(obj) == "single"
+        assert self.func({"s1": obj}) == "multi"
 
 
 class TestSetCorrectIndex:
