@@ -47,7 +47,7 @@ class _TrajectoryReconstructionWrapperMixin:
 
     def _validate_methods(self):
         if self.trajectory_method:
-            if not isinstance(self.trajectory_method, BasePositionMethod):
+            if not isinstance(self.trajectory_method, BaseTrajectoryMethod):
                 raise ValueError("The provided `trajectory_method` must be a child class of `BaseTrajectoryMethod`.")
             self._combined_algo_mode = True
         else:

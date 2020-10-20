@@ -404,7 +404,7 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
         orientations: OrientationList,
         sampling_rate_hz: float,
     ) -> BaseType:
-        """Find spatial parameters in in strides after segmentation and detecting events of each stride."""
+        """Find spatial parameters in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 

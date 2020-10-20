@@ -1,4 +1,4 @@
-"""Wrapper to apply position and orientation estimation to each stride of a dataset."""
+"""Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -70,8 +70,8 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         The provided data is already transformed into the global frame using the orientations calculated by the
         `ori_method` on the same stride.
     trajectory_method
-        Instead of providind a separate `ori_method` and `pos_method`, a single `trajectory_method` can be provided
-        that calculated the orientation and the position in one go.
+        Instead of providing a separate `ori_method` and `pos_method`, a single `trajectory_method` can be provided
+        that calculates the orientation and the position in one go.
         This method is called with the data of each region.
         If a `trajectory_method` is provided the values for `ori_method` and `pos_method` are ignored.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
@@ -97,7 +97,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     Examples
     --------
     You can pick any orientation and any position estimation method that is implemented for this wrapper.
-    Hoewever, simple integrations might lead to significant drift if the integration regions are longer.
+    However, simple integrations might lead to significant drift if the integration regions are longer.
 
     # TODO: Change to Kalmann filter if available
 
