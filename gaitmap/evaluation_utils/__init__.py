@@ -8,7 +8,7 @@ from gaitmap.evaluation_utils.stride_segmentation import (
     match_stride_lists,
     match_min_vel_stride_lists,
     match_segmented_stride_lists,
-    match_ic_stride_lists
+    match_ic_stride_lists,
 )
 
 from gaitmap.evaluation_utils.scores import (
