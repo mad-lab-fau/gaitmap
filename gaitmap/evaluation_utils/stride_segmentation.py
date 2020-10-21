@@ -821,8 +821,8 @@ def match_segmented_stride_lists(
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find matching strides in two stride lists with a certain tolerance.
 
-    This function will find matching strides in two stride lists as long as both start and end of a stride and its
-    matching stride differ by less than the selected tolerance.
+    This function will find matching strides in two segmented stride lists as long as both start and end of a stride
+    and its matching stride differ by less than the selected tolerance.
     This can be helpful to compare a the result of a segmentation to a ground truth.
     In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
     the stride lists.
@@ -958,7 +958,7 @@ def match_ic_stride_lists(
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find matching strides in two stride lists with a certain tolerance.
 
-    This function will find matching strides in two stride lists as long as both start and end of a stride and its
+    This function will find matching strides in two ic stride lists as long as both start and end of a stride and its
     matching stride differ by less than the selected tolerance.
     This can be helpful to compare a the result of a segmentation to a ground truth.
     In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
