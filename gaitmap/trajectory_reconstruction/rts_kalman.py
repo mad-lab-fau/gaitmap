@@ -65,7 +65,7 @@ class RtsKalman(BaseTrajectoryMethod):
         )
         self.position_ = states[0]
         self.velocity_ = states[1]
-        self.orientation_ = Rotation.from_quat(states[2])
+        self.orientation_object_ = Rotation.from_quat(states[2])
         self.covariance_ = covariances
         return self
 
