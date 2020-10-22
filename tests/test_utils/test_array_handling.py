@@ -193,7 +193,7 @@ class TestBoolArrayToStartEndArray:
     def test_simple_input(self):
         input_array = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
         output_array = bool_array_to_start_end_array(input_array)
-        expected_output = np.array([[2, 3], [6, 8]])
+        expected_output = np.array([[2, 4], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
     def test_invalid_inputs_overlap(self):
@@ -212,28 +212,28 @@ class TestBoolArrayToStartEndArray:
         """Test ones only input."""
         input_array = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
         output_array = bool_array_to_start_end_array(input_array)
-        expected_output = np.array([[0, 8]])
+        expected_output = np.array([[0, 9]])
         assert_array_equal(expected_output, output_array)
 
     def test_edges_array(self):
         """Test correct handling of edges."""
         input_array = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1])
         output_array = bool_array_to_start_end_array(input_array)
-        expected_output = np.array([[0, 2], [6, 8]])
+        expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
     def test_bool_value_array(self):
         """Test correct handling of boolean values."""
         input_array = np.array([True, True, True, False, False, False, True, True, True])
         output_array = bool_array_to_start_end_array(input_array)
-        expected_output = np.array([[0, 2], [6, 8]])
+        expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
     def test_float_value_array(self):
         """Test correct handling of float values."""
         input_array = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
         output_array = bool_array_to_start_end_array(input_array)
-        expected_output = np.array([[0, 2], [6, 8]])
+        expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
 

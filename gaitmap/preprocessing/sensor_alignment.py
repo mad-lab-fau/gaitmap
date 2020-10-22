@@ -14,7 +14,7 @@ from gaitmap.utils.dataset_helper import (
     is_dataset,
 )
 from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
-from gaitmap.utils.static_moment_detection import find_static_sequences
+from gaitmap.utils.static_moment_detection import find_static_sequences, find_static_samples, METRIC_FUNCTION_NAMES
 from gaitmap.utils.vector_math import normalize
 
 
@@ -111,24 +111,21 @@ def align_dataset_to_gravity(
 
 
 def _get_static_acc_vector(
-    data: pd.DataFrame, window_length: int, static_signal_th: float, metric: str = "median"
+    data: pd.DataFrame, window_length: int, static_signal_th: float, metric: METRIC_FUNCTION_NAMES = "median"
 ) -> np.ndarray:
     """Extract the mean accelerometer vector describing the static position of the sensor."""
     # find static windows within the gyro data
-    static_windows = find_static_sequences(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
+    static_bool_array = find_static_samples(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
 
     # raise exception if no static windows could be found with given user settings
-    if static_windows.size == 0:
+    if not any(static_bool_array):
         raise ValueError(
             "No static windows could be found to extract sensor offset orientation. Please check your input data or try"
             " to adapt parameters like window_length, static_signal_th or used metric."
         )
 
-    # generate indices where data can be considered static
-    static_indices = np.concatenate([np.arange(start, end + 1) for start, end in static_windows])
-
     # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
-    return np.median(data[SF_ACC].to_numpy()[static_indices], axis=0)
+    return np.median(data[SF_ACC].to_numpy()[static_bool_array], axis=0)
 
 
 def align_heading_of_sensors(
