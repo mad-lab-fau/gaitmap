@@ -413,9 +413,7 @@ def is_multi_sensor_stride_list(
     return True
 
 
-def is_stride_list(
-    stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any",
-) -> Literal["single", "multi"]:
+def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any",) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
     This function will try to check the input using
@@ -675,6 +673,22 @@ def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]
 
     """
     return _get_multi_sensor_dataset_names(dataset=dataset)
+
+
+def get_single_sensor_trajectory_list_types(
+    traj_list: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList]
+) -> Literal["roi", "gs", "stride"]:
+    """Identify which type of trajectory list is passed by checking the existing columns."""
+    traj_list_columns = traj_list.reset_index().columns
+    valid_index_dict = TRAJ_TYPE_COLS
+    matched_index_col = [col for col in traj_list_columns if col in valid_index_dict.values()]
+    if not matched_index_col:
+        raise ValidationError(
+            "The trajectory (orientation, position, velocity) list is expected to have one of {} either as a column or "
+            "in the index".format(list(valid_index_dict.values()))
+        )
+    list_type = list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+    return list_type
 
 
 def _is_single_sensor_trajectory_list(
