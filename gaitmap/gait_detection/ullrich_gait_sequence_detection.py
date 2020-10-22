@@ -523,6 +523,6 @@ def _gait_sequences_to_boolean_single(
     gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
 
     for sequence_start, sequence_end in gait_sequences_start_end_tuples:
-        gait_sequences_bool_array[sequence_start : sequence_end] = 1
+        gait_sequences_bool_array[sequence_start:sequence_end] = 1
 
     return gait_sequences_bool_array
