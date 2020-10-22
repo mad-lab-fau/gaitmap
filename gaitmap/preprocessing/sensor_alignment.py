@@ -14,7 +14,7 @@ from gaitmap.utils.dataset_helper import (
     is_dataset,
 )
 from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
-from gaitmap.utils.static_moment_detection import find_static_sequences, find_static_samples, METRIC_FUNCTION_NAMES
+from gaitmap.utils.static_moment_detection import find_static_samples, METRIC_FUNCTION_NAMES
 from gaitmap.utils.vector_math import normalize
 
 
