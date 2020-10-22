@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  parameter than can be used to check for either stride or region based lists.
  See the migration guide for more information.
  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
+- It is now ensured that in **all** in gaitmap where a start and an end sample is provided, the end sample is
+  **exclusive**.
+  Meaning if the respective region should be extracted from a dataarray, you can simply do `data[start:end]`.
+  All functions that used different assumptions are changed.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/97~)
 
 ### Deprecated
 
