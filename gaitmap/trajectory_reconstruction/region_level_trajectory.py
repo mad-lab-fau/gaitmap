@@ -18,7 +18,7 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils.consts import ROI_ID_COLS
+from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
     SingleSensorDataset,
@@ -36,6 +36,12 @@ from gaitmap.utils.dataset_helper import (
     is_position_list,
     is_velocity_list,
     get_multi_sensor_dataset_names,
+    SingleSensorStrideList,
+    SingleSensorPositionList,
+    SingleSensorOrientationList,
+    SingleSensorVelocityList,
+    set_correct_index,
+    get_single_sensor_trajectory_list_types,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -198,6 +204,24 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         stride_event_list: StrideList,
         sampling_rate_hz: float,
     ) -> BaseType:
+        """
+        Notes:
+        - This ignores roi of the stride list
+        - This cuts out the sample before the start of each stride as initial value (in case stride starts at start
+        of region, this will be the estimated initial value)
+        -
+
+        Parameters
+        ----------
+        data
+        regions_of_interest
+        stride_event_list
+        sampling_rate_hz
+
+        Returns
+        -------
+
+        """
         roi_list_type = is_regions_of_interest_list(regions_of_interest)
         stride_event_list_type = is_stride_list(stride_event_list)
 
@@ -209,6 +233,10 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
                 )
             )
         self.estimate(data=data, regions_of_interest=regions_of_interest, sampling_rate_hz=sampling_rate_hz)
+        self.orientation_, self.position_, self.velocity_ = self.intersect(
+            stride_event_list=stride_event_list, return_data=("orientation", "position", "velocity")
+        )
+        return self
 
     def intersect(
         self,
@@ -230,23 +258,50 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         stride_list_type = is_stride_list(stride_event_list)
         for data_name in return_data:
             data = getattr(self, data_name + "_")
-            data_type = validation_methods[data_name](data)
+            data_type = validation_methods[data_name](data, "any_roi")
             if data_type != stride_list_type:
                 raise ValidationError(
                     "You are trying to intersect the results from a {} sensor dataset with a {} "
                     "sensor stride list".format(data_type, stride_list_type)
                 )
             if data_type == "single":
-                data = self._intersect(data, stride_event_list)
+                data = self._intersect(data, self.regions_of_interest, stride_event_list)
             else:
-                data = {k: self._intersect(data[k], stride_event_list[k]) for k in get_multi_sensor_dataset_names(data)}
+                data = {
+                    k: self._intersect(data[k], self.regions_of_interest[k], stride_event_list[k])
+                    for k in get_multi_sensor_dataset_names(data)
+                }
             return_vals.append(data)
         return tuple(return_vals)
 
     def _intersect(
-        self, data: Union[PositionList, OrientationList, VelocityList], stride_event_list: StrideList
-    ) -> Union[PositionList, OrientationList, VelocityList]:
-        pass
+        self,
+        data: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
+        regions_of_interest: SingleSensorRegionsOfInterestList,
+        stride_event_list: SingleSensorStrideList,
+    ) -> Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList]:
+        # Note that this ignores the potential roi/gs_id column of the stride list
+        stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
+        traj_list_type = get_single_sensor_trajectory_list_types(data)
+        id_col = TRAJ_TYPE_COLS[traj_list_type]
+        regions_of_interest = set_correct_index(regions_of_interest, [id_col])
+        data = set_correct_index(data, [id_col, "sample"])
+        # TODO: This might be slow, but lets see before we optimize
+        # One way to optimize might be to use search sorted. But this would only work with non overlapping regions.
+        output = {}
+        for region_id, region in regions_of_interest.iterrows():
+            for s_id, stride in stride_event_list.iterrows():
+                if stride["start"] >= region["start"] and stride["end"] <= region["end"]:
+                    # This cuts out the n+1 samples for each stride.
+                    # The first sample is the value before the stride started.
+                    # This is the equivalent to the "initial" position/orientation
+                    output[s_id] = (
+                        data.loc[region_id]
+                        .iloc[stride["start"] - region["start"] : stride["end"] - region["start"] + 1]
+                        .reset_index(drop=True)
+                    )
+        output = pd.concat(output, names=["s_id", "sample"])
+        return output
 
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, integration_regions: SingleSensorRegionsOfInterestList
@@ -258,5 +313,5 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         return super()._estimate_single_sensor(data, integration_regions)
 
     def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
-        # TODO: Does this way of getting the initial orientation makes for longer sequences?
+        # TODO: Does this way of getting the initial orientation makes sense for longer sequences?
         return _initial_orientation_from_start(data, start, align_window_width=self.align_window_width)
