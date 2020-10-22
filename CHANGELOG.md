@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
 - Added a new example for `RegionLevelTrajectory`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
+- Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/93)
       
 
 ### Changed
