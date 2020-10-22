@@ -181,15 +181,13 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             self.gait_sequences_ = dict()
             self.start_ = dict()
             self.end_ = dict()
-            # TODO merge the gait sequences from both feet? with logical or?
-            # TODO check if dataframe (=synced) or dict of dataframes, if synced set merge flat to true
             for sensor in get_multi_sensor_dataset_names(data):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
                 )
 
             if self.merge_gait_sequences_from_sensors:
-                self.gait_sequences_ = self.merge_gait_sequences_multi_sensor_data()
+                self._merge_gait_sequences_multi_sensor_data()
                 self.start_ = np.array(self.gait_sequences_["start"])
                 self.end_ = np.array(self.gait_sequences_["end"])
 
@@ -424,13 +422,18 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
-    def merge_gait_sequences_multi_sensor_data(self):
-        """Merge gait sequences from different sensor positions for synced data."""
+    def _merge_gait_sequences_multi_sensor_data(self):
+        """Merge gait sequences from different sensor positions for synced data.
+
+        Gait sequences from individual sensors are merged by converting the start and end information to a boolean
+        array for each sensor and then applying a logical OR operation.
+        """
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         if all([df.empty for df in self.gait_sequences_.values()]):
-            return pd.DataFrame(columns=["gs_id", "start", "end"])
+            self.gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
+            return
 
-        gait_sequences_bool_df = pd.DataFrame(self.gait_sequences_to_boolean())
+        gait_sequences_bool_df = pd.DataFrame(self._gait_sequences_to_boolean())
         # apply logical or by using any along the columns
         gait_sequences_bool_array = np.array(gait_sequences_bool_df.any(axis="columns").astype(int))
 
@@ -440,9 +443,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_merged.index.name = "gs_id"
         gait_sequences_merged = gait_sequences_merged.reset_index()
 
-        return gait_sequences_merged
+        self.gait_sequences_ = gait_sequences_merged
 
-    def gait_sequences_to_boolean(self):
+    def _gait_sequences_to_boolean(self):
         """Convert gait sequences to a boolean array or a dict of arrays (with sensor positions as keys).
 
         Array contains 0 / 1 for each signal sample for non-gait / gait.
@@ -496,7 +499,6 @@ def _gait_sequences_to_boolean_single(data_single, gait_sequences_single):
 
     Array contains 0 / 1 for each signal sample for non-gait / gait.
     """
-    # TODO shift the actual functionality as a general util function? Or simple enough and not necessary?
     gait_sequences_bool_array = np.zeros(len(data_single))
     gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
 
