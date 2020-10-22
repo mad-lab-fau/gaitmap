@@ -426,9 +426,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     def merge_gait_sequences_multi_sensor_data(self):
         """Merge gait sequences from different sensor positions for synced data."""
-        # In case all dataframes are empty, so no gait sequences were detected just return the original variable.
+        # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         if all([df.empty for df in self.gait_sequences_.values()]):
-            return self.gait_sequences_
+            return pd.DataFrame(columns=["gs_id", "start", "end"])
 
         gait_sequences_bool_df = pd.DataFrame(self.gait_sequences_to_boolean())
         # apply logical or by using any along the columns
