@@ -279,3 +279,4 @@ class TestUllrichGaitSequenceDetection:
         gsd = gsd.detect(synced_non_gait_df, 204.8)
 
         assert type(gsd.gait_sequences_) == pd.DataFrame
+        assert gsd.gait_sequences_.empty

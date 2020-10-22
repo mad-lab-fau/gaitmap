@@ -18,6 +18,8 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     RegionsOfInterestList,
     is_dataset,
+    SingleSensorDataset,
+    SingleSensorRegionsOfInterestList,
 )
 
 
@@ -425,18 +427,21 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     def _merge_gait_sequences_multi_sensor_data(self):
         """Merge gait sequences from different sensor positions for synced data.
 
-        Gait sequences from individual sensors are merged by converting the start and end information to a boolean
-        array for each sensor and then applying a logical OR operation.
+        Gait sequences from individual sensors are merged by 1) converting the start and end information to a boolean
+        array for each sensor and 2) applying a logical OR operation. 3) Finally the gait sequences are returned as
+        one DataFrame with start and end samples of the merged gait sequences.
         """
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         if all([df.empty for df in self.gait_sequences_.values()]):
             self.gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
             return
 
+        # 1) convert to boolean array
         gait_sequences_bool_df = pd.DataFrame(self._gait_sequences_to_boolean())
-        # apply logical or by using any along the columns
+        # 2) apply logical or by using any along the columns
         gait_sequences_bool_array = np.array(gait_sequences_bool_df.any(axis="columns").astype(int))
 
+        # 3) convert back to dataframe with start and end
         gait_sequences_merged = pd.DataFrame(
             bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
         )
@@ -445,10 +450,19 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         self.gait_sequences_ = gait_sequences_merged
 
-    def _gait_sequences_to_boolean(self):
+    def _gait_sequences_to_boolean(self) -> np.ndarray:
         """Convert gait sequences to a boolean array or a dict of arrays (with sensor positions as keys).
 
-        Array contains 0 / 1 for each signal sample for non-gait / gait.
+        Usually gait sequences are stored in a pandas DataFrame with their id and their start and end samples. The
+        purpose of this method is to provide a boolean array that contains 0 / 1 for each signal sample for non-gait /
+        gait.
+
+        Returns
+        -------
+        gait_sequences_bool
+            A numpy array or a dict of such where for each imu data sample there is either a 1 (gait) or a 0 (
+            non-gait) according to the input gait sequences.
+
         """
         dataset_type = is_dataset(self.data)
         if dataset_type == "single":
@@ -494,15 +508,21 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     return np.array(gait_sequences_start_corrected)
 
 
-def _gait_sequences_to_boolean_single(data_single, gait_sequences_single):
+def _gait_sequences_to_boolean_single(
+    data_single: SingleSensorDataset, gait_sequences_single: SingleSensorRegionsOfInterestList
+) -> np.ndarray:
     """Convert gait sequences from a single sensor from a dataframe to boolean array.
 
-    Array contains 0 / 1 for each signal sample for non-gait / gait.
+    Returns
+    -------
+    gait_sequences_bool_array
+        A numpy array of gait sequences where for each imu data sample there is either a 1 (gait) or a 0 (non-gait).
+
     """
-    gait_sequences_bool_array = np.zeros(len(data_single))
+    gait_sequences_bool_array = np.zeros(len(data_single), dtype=int)
     gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
 
-    for gait_sequences_tuple in gait_sequences_start_end_tuples:
-        gait_sequences_bool_array[gait_sequences_tuple[0] : gait_sequences_tuple[1] + 1] = 1
+    for sequence_start, sequence_end in gait_sequences_start_end_tuples:
+        gait_sequences_bool_array[sequence_start : sequence_end + 1] = 1
 
-    return gait_sequences_bool_array.astype(int)
+    return gait_sequences_bool_array
