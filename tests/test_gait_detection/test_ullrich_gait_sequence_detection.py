@@ -255,7 +255,7 @@ class TestUllrichGaitSequenceDetection:
 
         assert type(gsd.gait_sequences_) == pd.DataFrame
 
-    def test_on_signal_with_only_nongait(self, snapshot):
+    def test_merging_on_signal_with_only_nongait(self):
         """Test to see if the merging is working if the signal contains only non-gait activity"""
 
         data_columns = BF_COLS
