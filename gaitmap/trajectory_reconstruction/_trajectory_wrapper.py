@@ -149,6 +149,7 @@ def _initial_orientation_from_start(data: SingleSensorDataset, start: int, align
     align_window_width
         The size of the window around start that is considered for the alignment.
         The window is centered around start.
+        If the value is 0 only the start sample is considered.
 
     Returns
     -------
@@ -167,6 +168,6 @@ def _initial_orientation_from_start(data: SingleSensorDataset, start: int, align
     else:
         end_sample = len(data) - 1
         warnings.warn("Could not use complete window length for initializing orientation.")
-    acc = (data[SF_ACC].iloc[start_sample:end_sample]).median()
+    acc = (data[SF_ACC].iloc[start_sample : end_sample + 1]).median()
     # get_gravity_rotation assumes [0, 0, 1] as gravity
     return get_gravity_rotation(acc)

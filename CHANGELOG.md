@@ -52,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internal restructuring of the evaluation utils module.
   In case you used direct imports of the functions from the submodule, you need to update these.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
+- The initial orientation for the Stride and Region Level trajectory now uses the correct number of samples as input.
+  This might change the output of the integration method slightly!
+  However, it also allows to pass 0 for `align_window_length` and hence, just use the first sample of the integration
+  region to estimate the initial orientation.
 
 ### Deprecated
 

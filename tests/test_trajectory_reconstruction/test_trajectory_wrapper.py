@@ -160,3 +160,8 @@ class TestInitCalculation:
             _initial_orientation_from_start(dummy_data, start, 8)
 
         assert "complete window length" in str(w[0])
+
+    def test_only_single_value(self):
+        dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 20, axis=0), columns=SF_COLS)
+        start_ori = _initial_orientation_from_start(dummy_data, 10, 0)
+        assert_array_equal(start_ori.as_quat(), Rotation.identity().as_quat())
