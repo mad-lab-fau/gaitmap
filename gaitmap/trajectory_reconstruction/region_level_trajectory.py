@@ -181,6 +181,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     """
 
+    # We overwrite the action method, as `estimate_intersect` is the one that returns the expected stride level values.
+    _action_method = "estimate_intersect"
+
     align_window_width: int
 
     regions_of_interest: RegionsOfInterestList
@@ -291,7 +294,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self.stride_event_list = stride_event_list
 
         self.estimate(data=data, regions_of_interest=regions_of_interest, sampling_rate_hz=sampling_rate_hz)
-        self.orientation_, self.position_, self.velocity_ = self.intersect(
+        self.orientation_, self.position_, self.velocity_ = self.intersect(  # noqa: unbalanced-tuple-unpacking
             stride_event_list=stride_event_list, return_data=("orientation", "position", "velocity")
         )
         return self
@@ -379,7 +382,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
             return_vals.append(data)
         return tuple(return_vals)
 
-    def _intersect(
+    def _intersect(  # noqa: no-self-use
         self,
         data: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
         regions_of_interest: SingleSensorRegionsOfInterestList,

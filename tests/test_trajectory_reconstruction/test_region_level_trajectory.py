@@ -25,9 +25,10 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         trajectory = RegionLevelTrajectory()
-        trajectory.estimate(
+        trajectory.estimate_intersect(
             healthy_example_imu_data["left_sensor"],
             healthy_example_stride_events["left_sensor"].rename(columns={"s_id": "roi_id"}).iloc[:2],
+            healthy_example_stride_events["left_sensor"].iloc[:2],
             sampling_rate_hz=1,
         )
         return trajectory
