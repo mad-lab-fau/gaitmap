@@ -4,7 +4,13 @@ import pytest
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.region_level_trajectory import RegionLevelTrajectory
-from gaitmap.utils.consts import GF_POS
+from gaitmap.utils.consts import GF_POS, SF_COLS
+from gaitmap.utils.dataset_helper import (
+    is_single_sensor_position_list,
+    is_single_sensor_orientation_list,
+    is_single_sensor_velocity_list,
+    is_multi_sensor_position_list,
+)
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -25,6 +31,48 @@ class TestMetaFunctionality(TestAlgorithmMixin):
             sampling_rate_hz=1,
         )
         return trajectory
+
+
+class TestEstimateIntersect:
+    @pytest.mark.parametrize("sl_type, roi_type", (("single", "multi"), ("multi", "single")))
+    def test_datatypes_mismatch(self, sl_type, roi_type):
+        roi_list = pd.DataFrame({"start": [0], "end": [8]}).rename_axis("roi_id")
+        stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
+        if roi_type == "multi":
+            roi_list = {"s1": roi_list}
+        if sl_type == "multi":
+            stride_list = {"s1": stride_list}
+
+        rlt = RegionLevelTrajectory()
+
+        with pytest.raises(ValidationError) as e:
+            rlt.estimate_intersect({}, roi_list, stride_list, sampling_rate_hz=1)
+
+        assert "The stride list is {} sensor and the stride list is {} sensor.".format(sl_type, roi_type) in str(e)
+
+    def test_simple(self):
+        acc_xy = pd.Series([0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0])
+        acc_z = pd.Series([9.81] * len(acc_xy))
+        gyr = pd.Series([0.0] * len(acc_xy))
+        data = pd.concat([acc_xy, acc_xy, acc_z, gyr, gyr, gyr], axis=1)
+        data.columns = SF_COLS
+        starts, ends = [0, 5, 10], [5, 10, 15]
+        stride_list = pd.DataFrame({"start": starts, "end": ends}).rename_axis("s_id")
+        roi_list = pd.DataFrame({"start": [0], "end": [len(data)]}).rename_axis("roi_id")
+
+        rlt = RegionLevelTrajectory(align_window_width=0)
+        rlt.estimate_intersect(data, roi_list, stride_list, sampling_rate_hz=1)
+
+        # Output should pass stride pos list test
+        assert is_single_sensor_position_list(rlt.position_, "stride")
+        assert is_single_sensor_orientation_list(rlt.orientation_, "stride")
+        assert is_single_sensor_velocity_list(rlt.velocity_, "stride")
+
+        assert len(rlt.position_.groupby("s_id")) == len(starts)
+        assert len(rlt.position_) == len(starts) * 6
+
+        for _, s in rlt.velocity_.groupby("s_id"):
+            np.testing.assert_array_equal(s["vel_x"].to_numpy(), [0, 0, 0.5, 1, 0.5, 0])
 
 
 class TestIntersect:
@@ -53,6 +101,9 @@ class TestIntersect:
         assert len(intersected_pos.groupby("s_id")) == len(starts)
         for i, (start, end) in enumerate(zip(starts, ends)):
             np.testing.assert_array_equal(intersected_pos["pos_x"].loc[i].to_numpy(), position[start : end + 1])
+
+        # Output should pass stride pos list test
+        assert is_single_sensor_position_list(intersected_pos, "stride")
 
     def test_strides_outside_region(self):
         # Strides outside regions should simply be ignored
@@ -201,3 +252,5 @@ class TestIntersect:
         assert len(intersected_pos["s1"].groupby("s_id")) == 2
         assert len(intersected_pos["s2"].groupby("s_id")) == 2
 
+        # Output should pass stride pos list test
+        assert is_multi_sensor_position_list(intersected_pos, "stride")

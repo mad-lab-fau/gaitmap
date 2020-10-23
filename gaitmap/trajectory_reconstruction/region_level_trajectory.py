@@ -67,16 +67,22 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         The first orientation is obtained by aligning the acceleration data at the start of each region with gravity.
         This contains `len(data) + 1` orientations for each region, as the initial orientation is included in the
         output.
+        In case `estimate_intersect` is used, this will not be per region, but per stride.
+        Note, that the initial values are not reset per stride.
     position_
         Output of the selected position method applied per region.
-        The initial value of the postion is assumed to be [0, 0, 0].
+        The initial value of each region is assumed to be [0, 0, 0].
         This contains `len(data) + 1` values for each region, as the initial position is included in the
         output.
+        In case `estimate_intersect` is used, this will not be per region, but per stride.
+        Note, that the initial values are not reset per stride.
     velocity_
         The velocity as provided by the selected position method applied per region.
         The initial value of the velocity is assumed to be [0, 0, 0].
         This contains `len(data) + 1` values for each region, as the initial velocity is included in the
         output.
+        In case `estimate_intersect` is used, this will not be per region, but per stride.
+        Note, that the initial values are not reset per stride.
 
     Parameters
     ----------
@@ -109,9 +115,11 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     Other Parameters
     ----------------
     data
-        The data passed to the `estimate` method.
+        The data passed to the `estimate` or `estimate_intersect` method.
     regions_of_interest
-        The list of regions passed to the `estimate` method.
+        The list of regions passed to the `estimate` or `estimate_intersect` method.
+    stride_event_list
+        The list of strides passed to the `estimate_intersect`
     sampling_rate_hz
         The sampling rate of the data.
 
@@ -135,6 +143,33 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     ...                                            sampling_rate_hz=sampling_rate_hz
     ... )
     >>> per_region_traj.position_
+    <Dataframe or dict with all the positions per region>
+    >>> per_region_traj.orientation_
+    <Dataframe or dict with all the orientations per region>
+
+    If you want to have the trajectory per stride but still use integration methods that could benefit from
+    performing the integration on entire regions, you can use `estimate_intersect` to cut out the per-stride
+    trajectories.
+
+    >>> from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
+    >>> from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration
+    >>> # Create custom instances of the methods you want to use
+    >>> ori_method = SimpleGyroIntegration()
+    >>> pos_method = ForwardBackwardIntegration()
+    >>> # Create an instance of the wrapper
+    >>> per_region_traj = RegionLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
+    >>> # Apply the method
+    >>> data = ...
+    >>> sampling_rate_hz = 204.8
+    >>> roi_list = ...
+    >>> stride_list = ...
+    >>> per_region_traj = per_region_traj.estimate_intersect(
+    ...                                                      data,
+    ...                                                      regions_of_interest=roi_list,
+    ...                                                      stride_event_list=stride_list,
+    ...                                                      sampling_rate_hz=sampling_rate_hz
+    ... )
+    >>> per_region_traj.position_
     <Dataframe or dict with all the positions per stride>
     >>> per_region_traj.orientation_
     <Dataframe or dict with all the orientations per stride>
@@ -149,6 +184,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     align_window_width: int
 
     regions_of_interest: RegionsOfInterestList
+    stride_event_list: StrideList
 
     def __init__(
         self,
@@ -170,12 +206,12 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         Parameters
         ----------
         data
-            At least must contain 3D-gyroscope data.
+            At least must contain 3D-gyroscope and 3D-accelerometer data.
         regions_of_interest
             List of regions for one or multiple sensors.
             For each region, the orientation and position will be calculated separately.
         sampling_rate_hz
-            Sampling rate with which gyroscopic data was recorded.
+            Sampling rate with which IMU data was recorded.
 
         """
         self.data = data
@@ -204,22 +240,41 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         stride_event_list: StrideList,
         sampling_rate_hz: float,
     ) -> BaseType:
-        """
-        Notes:
-        - This ignores roi of the stride list
-        - This cuts out the sample before the start of each stride as initial value (in case stride starts at start
-        of region, this will be the estimated initial value)
-        -
+        """Estimate the trajectory for all regions and then cut out the trajectory of individual strides.
+
+        This basically calls `estimate` and then `intersect` and stores the results in the object.
+        This means that the results (`position_`, ...) will be on stride level and not on region level.
+        Calculated values outside of strides will simply be dropped.
+
+        See the Notes sections for some caveats.
 
         Parameters
         ----------
         data
+            At least must contain 3D-gyroscope and 3D-accelerometer data.
         regions_of_interest
+            List of regions for one or multiple sensors.
+            For each region, the orientation and position will be calculated separately.
         stride_event_list
+            List of strides within the provided regions.
+            The trajectories of these strides will be cut out of the trajectories calculated for the respective region.
         sampling_rate_hz
+            Sampling rate with which IMU data was recorded.
 
-        Returns
-        -------
+        Notes
+        -----
+        Make sure you follow the these tips to avoid errors:
+
+        - The stride list must have information for all the sensors that are also in the roi list
+        - The method cuts out the sample before the start of each stride as initial value (in case stride starts at
+          start of region, this will be the estimated initial value).
+          This makes the output structure equivalent to `StrideLevelTrajectory`, however, the initial values are not
+          reset per stride.
+          This means, that for example the position of each stride will not start at [0, 0, 0]
+        - If you provide ROI lists that have overlaps (THIS SHOULD BE AVOIDED!) the stride trajectory from the last ROI
+          is used.
+        - Strides are considered to be part of an ROI, if they are fully contained (start >= roi_start, end <= roi_end).
+        - Strides that have only partial or now overlap with a ROI are omitted from the output.
 
         """
         roi_list_type = is_regions_of_interest_list(regions_of_interest)
@@ -232,6 +287,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
                     stride_event_list_type, roi_list_type
                 )
             )
+
+        self.stride_event_list = stride_event_list
+
         self.estimate(data=data, regions_of_interest=regions_of_interest, sampling_rate_hz=sampling_rate_hz)
         self.orientation_, self.position_, self.velocity_ = self.intersect(
             stride_event_list=stride_event_list, return_data=("orientation", "position", "velocity")
@@ -247,6 +305,27 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
             "velocity",
         ),
     ) -> Tuple[Union[PositionList, OrientationList, VelocityList], ...]:
+        """Cut out the trajectory of individual strides from the region trajectories.
+
+        This method can only be used after `estimate` was called.
+        Calling `estimate_intersect` before, does **not** work!
+
+        For more information about how the intersect works, see `estimate_intersect`.
+
+        Parameters
+        ----------
+        stride_event_list
+            List of strides within the provided regions.
+            The trajectories of these strides will be cut out of the trajectories calculated for the respective region.
+        return_data
+            Which results should be returned per stride
+
+        Returns
+        -------
+        result_tuple
+            A tuple with the outputs, following the order provided in `return_data`.
+
+        """
         if self._action_is_applied is False:
             raise ValidationError("You first need to call the `estimate` method before using `intersect`")
         allowed_return_data = ("orientation", "position", "velocity")
@@ -283,7 +362,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
                     raise ValidationError(
                         "The calculated trajectory is already on a per stride level. "
                         "Most likely, you called `estimate_intersect` before. "
-                        "In this case there is no need of using intersect again."
+                        "In this case there is no need to use intersect again."
                     ) from e
             if data_type != stride_list_type:
                 raise ValidationError(

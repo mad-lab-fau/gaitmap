@@ -149,12 +149,12 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         Parameters
         ----------
         data
-            At least must contain 3D-gyroscope data.
+            At least must contain 3D-gyroscope and 3D-accelerometer data.
         stride_event_list
             List of events for one or multiple sensors.
             For each stride, the orientation and position will be calculated separately.
         sampling_rate_hz
-            Sampling rate with which gyroscopic data was recorded.
+            Sampling rate with which IMU data was recorded.
 
         """
         self.data = data
