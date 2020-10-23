@@ -22,7 +22,7 @@ If you need an introduction to trajectory reconstruction in general, have a look
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from gaitmap.example_data import get_healthy_example_imu_data
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_events
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
@@ -54,19 +54,22 @@ trajectory = RegionLevelTrajectory(trajectory_method=trajectory_method)
 sampling_frequency_hz = 204.8
 trajectory.estimate(data=imu_data, regions_of_interest=dummy_regions_list, sampling_rate_hz=sampling_frequency_hz)
 
-# select the position of the first (and only) gait sequence
-first_stride_position = trajectory.position_["left_sensor"].loc[0]
+stride_list = get_healthy_example_stride_events()
+ori, pos, vel = trajectory.intersect(stride_list)
 
-first_stride_position.plot()
+# select the position of the first (and only) gait sequence
+first_region_position = trajectory.position_["left_sensor"].loc[0]
+
+first_region_position.plot()
 plt.title("Left Foot Trajectory per axis")
 plt.xlabel("sample")
 plt.ylabel("position [m]")
 plt.show()
 
 # select the orientation of the first (and only) gait sequence
-first_stride_orientation = trajectory.orientation_["left_sensor"].loc[0]
+first_region_orientation = trajectory.orientation_["left_sensor"].loc[0]
 
-first_stride_orientation.plot()
+first_region_orientation.plot()
 plt.title("Left Foot Orientation per axis")
 plt.xlabel("sample")
 plt.ylabel("orientation [a.u.]")

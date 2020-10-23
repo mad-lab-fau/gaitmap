@@ -249,6 +249,13 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     ) -> Tuple[Union[PositionList, OrientationList, VelocityList], ...]:
         if self._action_is_applied is False:
             raise ValidationError("You first need to call the `estimate` method before using `intersect`")
+        allowed_return_data = ("orientation", "position", "velocity")
+        if (
+            not isinstance(return_data, (tuple, list))
+            or len(return_data) == 0
+            or not all(a in ("orientation", "position", "velocity") for a in return_data)
+        ):
+            raise ValueError("`return_data` must be {} or a subset of it.".format(allowed_return_data))
         validation_methods = {
             "orientation": is_orientation_list,
             "position": is_position_list,
@@ -258,7 +265,26 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         stride_list_type = is_stride_list(stride_event_list)
         for data_name in return_data:
             data = getattr(self, data_name + "_")
-            data_type = validation_methods[data_name](data, "any_roi")
+            try:
+                data_type = validation_methods[data_name](data, "any_roi")
+            except ValidationError as e:
+                # This should not happen, as we validate result value from our own object.
+                # Either, the user has manipulated the values, or called estimate_intersect instead of estimate before.
+                # We will check this here.
+                try:
+                    validation_methods[data_name](data, "stride")
+                except ValidationError:
+                    raise ValueError(
+                        "The existing results do not pass internal validation. "
+                        "This can only happen, if you manipulated the outputs of the trajectory before "
+                        "calling intersect!"
+                    ) from e
+                else:
+                    raise ValidationError(
+                        "The calculated trajectory is already on a per stride level. "
+                        "Most likely, you called `estimate_intersect` before. "
+                        "In this case there is no need of using intersect again."
+                    ) from e
             if data_type != stride_list_type:
                 raise ValidationError(
                     "You are trying to intersect the results from a {} sensor dataset with a {} "
@@ -287,7 +313,8 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         regions_of_interest = set_correct_index(regions_of_interest, [id_col])
         data = set_correct_index(data, [id_col, "sample"])
         # TODO: This might be slow, but lets see before we optimize
-        # One way to optimize might be to use search sorted. But this would only work with non overlapping regions.
+        #       One way to optimize might be to use search sorted. But this would only work with non overlapping
+        #       regions.
         output = {}
         for region_id, region in regions_of_interest.iterrows():
             for s_id, stride in stride_event_list.iterrows():
@@ -297,7 +324,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
                     # This is the equivalent to the "initial" position/orientation
                     output[s_id] = (
                         data.loc[region_id]
-                        .iloc[stride["start"] - region["start"] : stride["end"] - region["start"] + 1]
+                        .iloc[int(stride["start"] - region["start"]) : int(stride["end"] - region["start"] + 1)]
                         .reset_index(drop=True)
                     )
         output = pd.concat(output, names=["s_id", "sample"])
