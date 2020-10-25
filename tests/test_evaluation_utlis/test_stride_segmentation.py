@@ -5,13 +5,8 @@ from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import (
     match_stride_lists,
-    match_segmented_stride_lists,
-    match_ic_stride_lists,
-    match_min_vel_stride_lists,
     evaluate_stride_list,
-    evaluate_ic_stride_list,
     evaluate_segmented_stride_list,
-    evaluate_min_vel_stride_list,
 )
 
 from gaitmap.evaluation_utils.scores import _get_match_type_dfs
@@ -268,74 +263,34 @@ class TestSpecialMatchStrideList:
         df.index.name = "s_id"
         return df
 
-    def test_too_many_column_names(self):
+    def test_too_many_wrong_column_names(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            match_min_vel_stride_lists(sl, sl, ["1", "2", "3"])
+            match_stride_lists(sl, sl, ["1", "2", "3"])
 
-        assert "match_cols needs to be one" in str(e.value)
+        assert "not in inputted stride lists" in str(e.value)
 
-        with pytest.raises(ValueError) as e:
-            match_ic_stride_lists(sl, sl, ["1", "2", "3"])
+    def test_too_many_correct_column_names(self):
+        sl = self._create_valid_list([[0, 1, 10, 11, 12], [1, 2, 20, 21, 22]], ["ic", "min_vel", "tc"])
 
-        assert "match_cols needs to be one" in str(e.value)
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(sl, sl, ["ic", "min_vel", "tc"])
 
-        with pytest.raises(ValueError) as e:
-            match_segmented_stride_lists(sl, sl, ["1", "2", "3"])
-
-        assert "match_cols needs to be one" in str(e.value)
+        assert "Can not compare more than 2 columns at a time" in str(e.value)
 
     def test_invalid_column_name(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            match_min_vel_stride_lists(sl, sl, "wrong_column")
+            match_stride_lists(sl, sl, "wrong_column")
 
-        assert "match_cols needs to be one" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            match_ic_stride_lists(sl, sl, "wrong_column")
-
-        assert "match_cols needs to be one" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            match_segmented_stride_lists(sl, sl, "wrong_column")
-
-        assert "match_cols needs to be one" in str(e.value)
-
-    def test_no_column_name(self):
-        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
-
-        with pytest.raises(ValueError) as e:
-            match_min_vel_stride_lists(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            match_ic_stride_lists(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            match_segmented_stride_lists(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
+        assert "not in inputted stride lists" in str(e.value)
 
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
-        out = match_min_vel_stride_lists(sl, sl, "ic", tolerance=0)
-
-        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2])
-        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2])
-
-        out = match_ic_stride_lists(sl, sl, "ic", tolerance=0)
-
-        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2])
-        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2])
-
-        out = match_segmented_stride_lists(sl, sl, "ic", tolerance=0)
+        out = match_stride_lists(sl, sl, "ic", tolerance=0)
 
         assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2])
         assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2])
@@ -344,17 +299,7 @@ class TestSpecialMatchStrideList:
         sl1 = self._create_valid_list([[0, 1, 0], [1, 2, 20], [2, 3, 30]], "ic")
         sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
-        out = match_min_vel_stride_lists(sl1, sl2, "ic", tolerance=0)
-
-        assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
-        assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
-
-        out = match_ic_stride_lists(sl1, sl2, "ic", tolerance=0)
-
-        assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
-        assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
-
-        out = match_segmented_stride_lists(sl1, sl2, "ic", tolerance=0)
+        out = match_stride_lists(sl1, sl2, "ic", tolerance=0)
 
         assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
         assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
@@ -675,32 +620,12 @@ class TestSpecialEvaluateStrideList:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            evaluate_min_vel_stride_list(sl, sl, ["1", "2", "3"])
-
-        assert "match_cols needs to be one" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            evaluate_ic_stride_list(sl, sl, ["1", "2", "3"])
-
-        assert "match_cols needs to be one" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
             evaluate_segmented_stride_list(sl, sl, ["1", "2", "3"])
 
         assert "match_cols needs to be one" in str(e.value)
 
     def test_invalid_column_name(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
-
-        with pytest.raises(ValueError) as e:
-            evaluate_min_vel_stride_list(sl, sl, "wrong_column")
-
-        assert "match_cols needs to be one" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            evaluate_ic_stride_list(sl, sl, "wrong_column")
-
-        assert "match_cols needs to be one" in str(e.value)
 
         with pytest.raises(ValueError) as e:
             evaluate_segmented_stride_list(sl, sl, "wrong_column")
@@ -711,40 +636,12 @@ class TestSpecialEvaluateStrideList:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            evaluate_min_vel_stride_list(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
-            evaluate_ic_stride_list(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
-
-        with pytest.raises(ValueError) as e:
             evaluate_segmented_stride_list(sl, sl, "")
 
         assert "match_cols can not be none" in str(e.value)
 
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
-
-        out = evaluate_min_vel_stride_list(sl, sl, "ic", tolerance=0)
-        out = _get_match_type_dfs(out)
-
-        assert_array_equal(out["tp"]["s_id"].to_numpy(), [0, 1, 2])
-        assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [0, 1, 2])
-        assert len(out["fp"]) == 0
-        assert len(out["fn"]) == 0
-        assert len(out) == (len(out["tp"]) + len(out["fn"]))
-
-        out = evaluate_ic_stride_list(sl, sl, "ic", tolerance=0)
-        out = _get_match_type_dfs(out)
-
-        assert_array_equal(out["tp"]["s_id"].to_numpy(), [0, 1, 2])
-        assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [0, 1, 2])
-        assert len(out["fp"]) == 0
-        assert len(out["fn"]) == 0
-        assert len(out) == (len(out["tp"]) + len(out["fn"]))
 
         out = evaluate_segmented_stride_list(sl, sl, "ic", tolerance=0)
         out = _get_match_type_dfs(out)
@@ -758,28 +655,6 @@ class TestSpecialEvaluateStrideList:
     def test_match(self):
         sl1 = self._create_valid_list([[0, 1, 0], [1, 2, 20], [2, 3, 30]], "ic")
         sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
-
-        out = evaluate_min_vel_stride_list(sl1, sl2, "ic", tolerance=0)
-        out = _get_match_type_dfs(out)
-
-        assert_array_equal(out["tp"]["s_id"].to_numpy(), [1, 2])
-        assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [1, 2])
-        assert_array_equal(out["fp"]["s_id"].to_numpy(), [0])
-        assert_array_equal(out["fp"]["s_id_ground_truth"].to_numpy().astype(np.float), [np.nan])
-        assert_array_equal(out["fn"]["s_id"].to_numpy().astype(np.float), [np.nan])
-        assert_array_equal(out["fn"]["s_id_ground_truth"].to_numpy(), [0])
-        assert len(out) == (len(out["tp"]) + len(out["fn"]))
-
-        out = evaluate_ic_stride_list(sl1, sl2, "ic", tolerance=0)
-        out = _get_match_type_dfs(out)
-
-        assert_array_equal(out["tp"]["s_id"].to_numpy(), [1, 2])
-        assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [1, 2])
-        assert_array_equal(out["fp"]["s_id"].to_numpy(), [0])
-        assert_array_equal(out["fp"]["s_id_ground_truth"].to_numpy().astype(np.float), [np.nan])
-        assert_array_equal(out["fn"]["s_id"].to_numpy().astype(np.float), [np.nan])
-        assert_array_equal(out["fn"]["s_id_ground_truth"].to_numpy(), [0])
-        assert len(out) == (len(out["tp"]) + len(out["fn"]))
 
         out = evaluate_segmented_stride_list(sl1, sl2, "ic", tolerance=0)
         out = _get_match_type_dfs(out)

@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable
+from typing import Union, Tuple, Dict, Hashable, List
 from typing_extensions import Literal
 
 import numpy as np
@@ -43,8 +43,6 @@ def evaluate_stride_list(
         The ground truth stride list.
     segmented_stride_list
         The list of segmented strides.
-    what_to_match
-        A string or a list of strings that describe what you want to match. If empty default is ["start", "end"].
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -127,134 +125,6 @@ def evaluate_stride_list(
     )
 
 
-def evaluate_min_vel_stride_list(
-    ground_truth: StrideList,
-    segmented_stride_list: StrideList,
-    match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
-    one_to_one: bool = True,
-    segmented_postfix: str = "",
-    ground_truth_postfix: str = "_ground_truth",
-) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
-
-    This compares a min_vel segmented stride list with a ground truth min_vel stride list and returns True Positives,
-    False Positives and True Negatives matches.
-    The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", "tc").
-    Two strides are considered a positive match, if both their start and their end values differ by less than the
-    threshold.
-    If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
-    with the lowest combined distance is considered.
-    This might still lead to unexpected results in certain cases.
-    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
-    method to get reliable results.
-
-    Parameters
-    ----------
-    ground_truth
-        The ground truth stride list.
-    segmented_stride_list
-        The list of segmented strides.
-    match_cols
-        A string that describe what you want to match.
-        Must be one of pre_ic, ic, min_vel or tc.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the stride lists.
-    one_to_one
-        If True, only a single unique match will be returned per stride.
-        If False, multiple matches are possible.
-        If this is set to False, some calculated metrics from these matches might not be well defined!
-    segmented_postfix
-        A postfix that will be append to the index name of the segmented stride list in the output.
-    ground_truth_postfix
-        A postfix that will be append to the index name of the ground truth in the output.
-
-    Returns
-    -------
-    matches
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-        `match_type`.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        The `match_type` column indicates the type of match.
-        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-        Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-        positives)
-        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
-
-
-    Examples
-    --------
-    >>> stride_list_ground_truth = pd.DataFrame(
-    ...     [[10,21, 10],[20,34, 30],[31,40, 20]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_seg = pd.DataFrame(
-    ...     [[10,20, 10],[21,30, 30],[31,40, 22]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> matches = evaluate_min_vel_stride_list(stride_list_ground_truth, stride_list_seg, match_cols="ic", tolerance=3)
-    >>> matches
-       s_id  s_id_ground_truth match_type
-    0     0                  0         tp
-    1     1                  1         tp
-    2     2                  2         tp
-
-    >>> stride_list_ground_truth_left = pd.DataFrame(
-    ...     [[10,21,30],[20,34,20],[31,40,10], [10, 30 ,60]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_ground_truth_right = pd.DataFrame(
-    ...     [[10,21,1],[20,34,2],[31,40,3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> stride_list_seg_left = pd.DataFrame(
-    ...     [[10,20, 30],[21,30,20],[31,40,13]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_seg_right = pd.DataFrame(
-    ...     [[10,21, 1],[20,34, 2],[31,40, 3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> matches_multi = evaluate_min_vel_stride_list(
-    ...     {"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
-    ...     {"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
-    ...     match_cols="ic",
-    ...     tolerance=2
-    ... )
-    >>> matches_multi["left_sensor"]
-      s_id s_id_ground_truth match_type
-    0    0                 0         tp
-    1    1                 1         tp
-    2    2               NaN         fp
-    3  NaN                 2         fn
-    4  NaN                 3         fn
-
-    See Also
-    --------
-    match_stride_lists : Find matching strides between stride lists.
-
-    """
-    if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["pre_ic", "ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of pre_ic, ic, min_vel or tc")
-
-    return _evaluate_stride_list(
-        ground_truth,
-        segmented_stride_list,
-        match_cols=match_cols,
-        tolerance=tolerance,
-        one_to_one=one_to_one,
-        segmented_postfix=segmented_postfix,
-        ground_truth_postfix=ground_truth_postfix,
-    )
-
-
 def evaluate_segmented_stride_list(
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
@@ -284,7 +154,7 @@ def evaluate_segmented_stride_list(
     segmented_stride_list
         The list of segmented strides.
     match_cols
-        A string that describe what you want to match.
+        A string that describes what you want to match.
         Must be one of ic, min_vel or tc.
     tolerance
         The allowed tolerance between labels.
@@ -384,134 +254,6 @@ def evaluate_segmented_stride_list(
     )
 
 
-def evaluate_ic_stride_list(
-    ground_truth: StrideList,
-    segmented_stride_list: StrideList,
-    match_cols: Literal["ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
-    one_to_one: bool = True,
-    segmented_postfix: str = "",
-    ground_truth_postfix: str = "_ground_truth",
-) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
-
-    This compares a segmented ic stride list with a ground truth ic stride list and returns True Positives,
-    False Positives and True Negatives matches.
-    The comparison is based on the chosen column ("ic", "min_vel", "tc").
-    Two strides are considered a positive match, if both their start and their end values differ by less than the
-    threshold.
-    If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
-    with the lowest combined distance is considered.
-    This might still lead to unexpected results in certain cases.
-    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
-    method to get reliable results.
-
-    Parameters
-    ----------
-    ground_truth
-        The ground truth stride list.
-    segmented_stride_list
-        The list of segmented strides.
-    match_cols
-        A string that describe what you want to match.
-        Must be one of ic, min_vel or tc.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the stride lists.
-    one_to_one
-        If True, only a single unique match will be returned per stride.
-        If False, multiple matches are possible.
-        If this is set to False, some calculated metrics from these matches might not be well defined!
-    segmented_postfix
-        A postfix that will be append to the index name of the segmented stride list in the output.
-    ground_truth_postfix
-        A postfix that will be append to the index name of the ground truth in the output.
-
-    Returns
-    -------
-    matches
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
-        `match_type`.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        The `match_type` column indicates the type of match.
-        For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
-        Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
-        positives)
-        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
-
-
-    Examples
-    --------
-    >>> stride_list_ground_truth = pd.DataFrame(
-    ...     [[10,21, 10],[20,34, 30],[31,40, 20]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_seg = pd.DataFrame(
-    ...     [[10,20, 10],[21,30, 30],[31,40, 22]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> matches = evaluate_ic_stride_list(stride_list_ground_truth, stride_list_seg, match_cols="ic", tolerance=3)
-    >>> matches
-       s_id  s_id_ground_truth match_type
-    0     0                  0         tp
-    1     1                  1         tp
-    2     2                  2         tp
-
-    >>> stride_list_ground_truth_left = pd.DataFrame(
-    ...     [[10,21,30],[20,34,20],[31,40,10], [10, 30 ,60]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_ground_truth_right = pd.DataFrame(
-    ...     [[10,21,1],[20,34,2],[31,40,3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> stride_list_seg_left = pd.DataFrame(
-    ...     [[10,20, 30],[21,30,20],[31,40,13]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_seg_right = pd.DataFrame(
-    ...     [[10,21, 1],[20,34, 2],[31,40, 3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> matches_multi = evaluate_ic_stride_list(
-    ...     {"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
-    ...     {"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
-    ...     match_cols="ic",
-    ...     tolerance=2
-    ... )
-    >>> matches_multi["left_sensor"]
-      s_id s_id_ground_truth match_type
-    0    0                 0         tp
-    1    1                 1         tp
-    2    2               NaN         fp
-    3  NaN                 2         fn
-    4  NaN                 3         fn
-
-    See Also
-    --------
-    match_stride_lists : Find matching strides between stride lists.
-
-    """
-    if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of ic, min_vel or tc")
-
-    return _evaluate_stride_list(
-        ground_truth,
-        segmented_stride_list,
-        match_cols=match_cols,
-        tolerance=tolerance,
-        one_to_one=one_to_one,
-        segmented_postfix=segmented_postfix,
-        ground_truth_postfix=ground_truth_postfix,
-    )
-
-
 def _evaluate_stride_list(
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
@@ -534,6 +276,8 @@ def _evaluate_stride_list(
     if is_single:
         segmented_stride_list = {"__dummy__": segmented_stride_list}
         ground_truth = {"__dummy__": ground_truth}
+
+    match_cols = [match_cols] if isinstance(match_cols, str) else list(match_cols)
 
     matches = _match_stride_lists(
         stride_list_a=segmented_stride_list,
@@ -561,6 +305,7 @@ def _evaluate_stride_list(
 def match_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
+    match_cols: Union[str, List[str]] = None,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -593,6 +338,9 @@ def match_stride_lists(
         The first stride list used for comparison
     stride_list_b
         The second stride list used for comparison
+    match_cols
+        A string or a list of strings that describes what you want to match.
+        Default is ["start", "end"].
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
@@ -659,420 +407,10 @@ def match_stride_lists(
         lists.
 
     """
-    return _match_stride_lists(
-        stride_list_a,
-        stride_list_b,
-        tolerance=tolerance,
-        one_to_one=one_to_one,
-        postfix_a=postfix_a,
-        postfix_b=postfix_b,
-    )
-
-
-def match_min_vel_stride_lists(
-    stride_list_a: StrideList,
-    stride_list_b: StrideList,
-    match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
-    one_to_one: bool = True,
-    postfix_a: str = "_a",
-    postfix_b: str = "_b",
-) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find matching strides in two stride lists with a certain tolerance.
-
-    This function will find matching strides in two min_vel stride lists as long as both start and end of a stride
-    and its matching stride differ by less than the selected tolerance.
-    This can be helpful to compare a the result of a segmentation to a ground truth.
-    In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
-    the stride lists.
-    Additional sensors are simply ignored,
-
-    Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
-    right stride list (and vise-versa) are returned.
-    For a stride that has no valid match, it will be mapped to a NaN.
-    If `one_to_one` is False, multiple matches for each stride can be found.
-    This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
-    If `one_to_one` is True (the default) only a single match will be returned per stride.
-    This will be the match with the lowest combined difference between the start and the end label.
-    In case multiple strides have the same combined difference, the one that occurs first in the list is chosen.
-    This might still lead to unexpected results in certain cases.
-    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
-    method to get reliable results.
-
-    Parameters
-    ----------
-    stride_list_a
-        The first stride list used for comparison
-    stride_list_b
-        The second stride list used for comparison
-    match_cols
-        A string that describe what you want to match.
-        Must be one of pre_ic, ic, min_vel or tc.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the stride lists.
-    one_to_one
-        If True, only a single unique match will be returned per stride.
-        If False, multiple matches are possible.
-    postfix_a
-        A postfix that will be append to the index name of the left stride list in the output.
-    postfix_b
-        A postfix that will be append to the index name of the left stride list in the output.
-
-    Returns
-    -------
-    matches
-        A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        Strides that do not have a match will be mapped to a NaN.
-        The list is sorted by the index values of the left stride list.
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
-
-    Examples
-    --------
-    Single Sensor:
-
-    >>> stride_list_left = pd.DataFrame(
-    ...     [[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right = pd.DataFrame(
-    ...     [[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    >>> match_min_vel_stride_lists(
-    ...     stride_list_left,
-    ...     stride_list_right,
-    ...     "pre_ic",
-    ...     tolerance=2,
-    ...     postfix_a="_left",
-    ...     postfix_b="_right"
-    ... )
-       s_id_left  s_id_right
-    0          0           0
-    1          1           1
-    2          2           2
-    3          3           3
-
-    Multi Sensor:
-
-    >>> stride_list_left_11 = pd.DataFrame(
-    ...     [[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_12 = pd.DataFrame(
-    ...     [[10,21, 30],[20,34, 35],[31,40, 40]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> stride_list_left_21 = pd.DataFrame(
-    ...     [[10,20,70],[21,30,60],[31,40,50],[50,60,40]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_22 = pd.DataFrame(
-    ...     [[10,22, 1],[31, 41, 2],[20, 36, 3]],
-    ...     columns=["start", "end", "pre_ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> test_output = match_min_vel_stride_lists(
-    ...     {"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
-    ...     {"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
-    ...     "pre_ic",
-    ...     tolerance=1
-    ... )
-    >>> test_output["left_sensor"]
-       s_id_a  s_id_b
-    0       0       3
-    1       1       2
-    2       2       1
-    3       3       0
-
-
-    See Also
-    --------
-    evaluate_segmented_stride_list : Find True positive, True negatives and False positives from comparing two stride
-        lists.
-
-    """
     if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["pre_ic", "ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of pre_ic, ic, min_vel or tc")
-
-    return _match_stride_lists(
-        stride_list_a,
-        stride_list_b,
-        match_cols=match_cols,
-        tolerance=tolerance,
-        one_to_one=one_to_one,
-        postfix_a=postfix_a,
-        postfix_b=postfix_b,
-    )
-
-
-def match_segmented_stride_lists(
-    stride_list_a: StrideList,
-    stride_list_b: StrideList,
-    match_cols: Literal["ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
-    one_to_one: bool = True,
-    postfix_a: str = "_a",
-    postfix_b: str = "_b",
-) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find matching strides in two stride lists with a certain tolerance.
-
-    This function will find matching strides in two segmented stride lists as long as both start and end of a stride
-    and its matching stride differ by less than the selected tolerance.
-    This can be helpful to compare a the result of a segmentation to a ground truth.
-    In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
-    the stride lists.
-    Additional sensors are simply ignored,
-
-    Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
-    right stride list (and vise-versa) are returned.
-    For a stride that has no valid match, it will be mapped to a NaN.
-    If `one_to_one` is False, multiple matches for each stride can be found.
-    This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
-    If `one_to_one` is True (the default) only a single match will be returned per stride.
-    This will be the match with the lowest combined difference between the start and the end label.
-    In case multiple strides have the same combined difference, the one that occurs first in the list is chosen.
-    This might still lead to unexpected results in certain cases.
-    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
-    method to get reliable results.
-
-    Parameters
-    ----------
-    stride_list_a
-        The first stride list used for comparison
-    stride_list_b
-        The second stride list used for comparison
-    match_cols
-        A string that describe what you want to match.
-        Must be one of ic, min_vel or tc.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the stride lists.
-    one_to_one
-        If True, only a single unique match will be returned per stride.
-        If False, multiple matches are possible.
-    postfix_a
-        A postfix that will be append to the index name of the left stride list in the output.
-    postfix_b
-        A postfix that will be append to the index name of the left stride list in the output.
-
-    Returns
-    -------
-    matches
-        A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        Strides that do not have a match will be mapped to a NaN.
-        The list is sorted by the index values of the left stride list.
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
-
-    Examples
-    --------
-    Single Sensor:
-
-    >>> stride_list_left = pd.DataFrame([[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ... columns=["start", "end", "ic"]).rename_axis('s_id')
-    >>> stride_list_right = pd.DataFrame([[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ... columns=["start", "end", "ic"]).rename_axis('s_id')
-    >>> match_segmented_stride_lists(
-    ...     stride_list_left,
-    ...     stride_list_right,
-    ...     "ic",
-    ...     tolerance=2,
-    ...     postfix_a="_left",
-    ...     postfix_b="_right"
-    ... )
-       s_id_left  s_id_right
-    0          0           0
-    1          1           1
-    2          2           2
-    3          3           3
-
-    Multi Sensor:
-
-    >>> stride_list_left_11 = pd.DataFrame(
-    ...     [[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_12 = pd.DataFrame(
-    ...     [[10,21, 30],[20,34, 35],[31,40, 40]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> stride_list_left_21 = pd.DataFrame(
-    ...     [[10,20,70],[21,30,60],[31,40,50],[50,60,40]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_22 = pd.DataFrame(
-    ...     [[10,22, 1],[31, 41, 2],[20, 36, 3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> test_output = match_segmented_stride_lists(
-    ...     {"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
-    ...     {"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
-    ...     "ic",
-    ...     tolerance=1
-    ... )
-    >>> test_output["left_sensor"]
-       s_id_a  s_id_b
-    0       0       3
-    1       1       2
-    2       2       1
-    3       3       0
-
-    See Also
-    --------
-    evaluate_segmented_stride_list : Find True positive, True negatives and False positives from comparing two stride
-        lists.
-
-    """
-    if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of ic, min_vel or tc")
-
-    return _match_stride_lists(
-        stride_list_a,
-        stride_list_b,
-        match_cols=match_cols,
-        tolerance=tolerance,
-        one_to_one=one_to_one,
-        postfix_a=postfix_a,
-        postfix_b=postfix_b,
-    )
-
-
-def match_ic_stride_lists(
-    stride_list_a: StrideList,
-    stride_list_b: StrideList,
-    match_cols: Literal["ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
-    one_to_one: bool = True,
-    postfix_a: str = "_a",
-    postfix_b: str = "_b",
-) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find matching strides in two stride lists with a certain tolerance.
-
-    This function will find matching strides in two ic stride lists as long as both start and end of a stride and its
-    matching stride differ by less than the selected tolerance.
-    This can be helpful to compare a the result of a segmentation to a ground truth.
-    In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
-    the stride lists.
-    Additional sensors are simply ignored,
-
-    Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
-    right stride list (and vise-versa) are returned.
-    For a stride that has no valid match, it will be mapped to a NaN.
-    If `one_to_one` is False, multiple matches for each stride can be found.
-    This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
-    If `one_to_one` is True (the default) only a single match will be returned per stride.
-    This will be the match with the lowest combined difference between the start and the end label.
-    In case multiple strides have the same combined difference, the one that occurs first in the list is chosen.
-    This might still lead to unexpected results in certain cases.
-    It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
-    method to get reliable results.
-
-    Parameters
-    ----------
-    stride_list_a
-        The first stride list used for comparison
-    stride_list_b
-        The second stride list used for comparison
-    match_cols
-        A string that describe what you want to match.
-        Must be one of ic, min_vel or tc.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the stride lists.
-    one_to_one
-        If True, only a single unique match will be returned per stride.
-        If False, multiple matches are possible.
-    postfix_a
-        A postfix that will be append to the index name of the left stride list in the output.
-    postfix_b
-        A postfix that will be append to the index name of the left stride list in the output.
-
-    Returns
-    -------
-    matches
-        A 2 column dataframe with the column names `s_id{postfix_a}` and `s_id{postfix_b}`.
-        Each row is a match containing the index value of the left and the right list, that belong together.
-        Strides that do not have a match will be mapped to a NaN.
-        The list is sorted by the index values of the left stride list.
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
-
-    Examples
-    --------
-    Single Sensor:
-
-    >>> stride_list_left = pd.DataFrame([[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ... columns=["start", "end", "ic"]).rename_axis('s_id')
-    >>> stride_list_right = pd.DataFrame([[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ... columns=["start", "end", "ic"]).rename_axis('s_id')
-    >>> match_segmented_stride_lists(
-    ...     stride_list_left,
-    ...     stride_list_right,
-    ...     "ic",
-    ...     tolerance=2,
-    ...     postfix_a="_left",
-    ...     postfix_b="_right"
-    ... )
-       s_id_left  s_id_right
-    0          0           0
-    1          1           1
-    2          2           2
-    3          3           3
-
-    Multi Sensor:
-
-    >>> stride_list_left_11 = pd.DataFrame(
-    ...     [[10,20,40],[21,30,50],[31,40,60],[50,60,70]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_12 = pd.DataFrame(
-    ...     [[10,21, 30],[20,34, 35],[31,40, 40]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> stride_list_left_21 = pd.DataFrame(
-    ...     [[10,20,70],[21,30,60],[31,40,50],[50,60,40]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_22 = pd.DataFrame(
-    ...     [[10,22, 1],[31, 41, 2],[20, 36, 3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
-    >>> test_output = match_segmented_stride_lists(
-    ...     {"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
-    ...     {"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
-    ...     "ic",
-    ...     tolerance=1
-    ... )
-    >>> test_output["left_sensor"]
-       s_id_a  s_id_b
-    0       0       3
-    1       1       2
-    2       2       1
-    3       3       0
-
-    See Also
-    --------
-    evaluate_segmented_stride_list : Find True positive, True negatives and False positives from comparing two stride
-        lists.
-
-    """
-    if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of ic, min_vel or tc")
+        match_cols = ["start", "end"]
+    elif isinstance(match_cols, str):
+        match_cols = [match_cols]
 
     return _match_stride_lists(
         stride_list_a,
@@ -1088,7 +426,7 @@ def match_ic_stride_lists(
 def _match_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
-    match_cols: Union[str, Tuple[str, str]] = ("start", "end"),
+    match_cols: List[str],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -1109,6 +447,9 @@ def _match_stride_lists(
     matches = {}
 
     if stride_list_a_type == "single":
+        if not set(match_cols).issubset(stride_list_a.columns):
+            raise ValueError("The columns used to match are not in inputted stride lists")
+
         matches = _match_single_stride_lists(
             stride_list_a,
             stride_list_b,
@@ -1120,6 +461,7 @@ def _match_stride_lists(
         )
 
     if stride_list_a_type == "multi":
+
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
             list(
@@ -1132,7 +474,11 @@ def _match_stride_lists(
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")
 
+        if not set(match_cols).issubset(stride_list_a[sensor_names_list[0]].columns):
+            raise ValueError("The columns used to match are not in inputted stride lists")
+
         for sensor_name in sensor_names_list:
+
             matches[sensor_name] = _match_single_stride_lists(
                 stride_list_a[sensor_name],
                 stride_list_b[sensor_name],
@@ -1149,7 +495,7 @@ def _match_stride_lists(
 def _match_single_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
-    match_cols: Union[str, Tuple[str, str]] = ("start", "end"),
+    match_cols: List[str],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -1157,8 +503,6 @@ def _match_single_stride_lists(
 ) -> pd.DataFrame:
     stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
     stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
-
-    match_cols = list(match_cols) if isinstance(match_cols, tuple) else [match_cols]
 
     left_indices, right_indices = _match_start_end_label_lists(
         stride_list_a[match_cols].to_numpy(),
