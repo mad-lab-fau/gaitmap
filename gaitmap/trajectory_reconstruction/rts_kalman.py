@@ -96,19 +96,22 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
 def _rts_kalman_forward_pass(
     accel, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
 ):
-    prior_covariances = np.empty((accel.shape[0], 9, 9))
-    posterior_covariances = np.empty((accel.shape[0], 9, 9))
-    prior_error_states = np.empty((accel.shape[0], 9))
-    posterior_error_states = np.empty((accel.shape[0], 9))
-    positions = np.empty((accel.shape[0], 3))
-    velocities = np.empty((accel.shape[0], 3))
-    orientations = np.empty((accel.shape[0], 4))
+    prior_covariances = np.empty((accel.shape[0]+1, 9, 9))
+    posterior_covariances = np.empty((accel.shape[0]+1, 9, 9))
+    prior_error_states = np.empty((accel.shape[0]+1, 9))
+    posterior_error_states = np.empty((accel.shape[0]+1, 9))
+    positions = np.empty((accel.shape[0]+1, 3))
+    velocities = np.empty((accel.shape[0]+1, 3))
+    orientations = np.empty((accel.shape[0]+1, 4))
     state_transitions = np.empty((accel.shape[0], 9, 9))
 
-    position = np.zeros(3)
-    velocity = np.zeros(3)
-    orientation = np.copy(initial_orientation)
-    error_state = np.zeros(9)
+    positions[0, :] = np.zeros(3)
+    velocities[0, :] = np.zeros(3)
+    orientations[0, :] = np.copy(initial_orientation)
+    prior_error_states[0, :] = np.zeros(9)
+    posterior_error_states[0, :] = np.zeros(9)
+    prior_covariances[0, :, :] = covariance
+    posterior_covariances[0, :, :] = covariance
     transition_matrix = np.eye(9)
     transition_matrix[:3, 3:6] = np.eye(3) / sampling_rate_hz
 
@@ -121,37 +124,34 @@ def _rts_kalman_forward_pass(
 
         # predict the new nominal position, velocity and orientation by integrating the acc and gyro measurement
         position, velocity, orientation = _rts_kalman_motion_update(
-            acc, omega, orientation, position, velocity, sampling_rate_hz
+            acc, omega, orientations[i], positions[i], velocities[i], sampling_rate_hz
         )
-        positions[i, :] = position
-        velocities[i, :] = velocity
-        orientations[i, :] = orientation
+        positions[i+1, :] = position
+        velocities[i+1, :] = velocity
+        orientations[i+1, :] = orientation
 
         # predict the new error state, based on the old error state and the new nominal orientation
         rotated_acc = rotate_vector(orientation, acc)
         transition_matrix[3:6, 6:] = -cross_product_matrix(rotated_acc) / sampling_rate_hz
-
-        error_state = transition_matrix @ error_state
-        covariance = transition_matrix @ covariance @ transition_matrix.T + process_noise
-
         state_transitions[i, :, :] = transition_matrix
-        prior_error_states[i, :] = error_state
-        prior_covariances[i, :, :] = covariance
+
+        prior_error_states[i+1, :] = transition_matrix @ posterior_error_states[i]
+        prior_covariances[i+1, :, :] = transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
 
         # correct the error state if the current sample is marked as a zupt
         if zupt:
-            innovation = error_state[3:6] - velocity
-            innovation_cov = meas_matrix @ covariance @ meas_matrix.T + meas_noise
+            innovation = prior_error_states[i+1, 3:6] - velocity
+            innovation_cov = meas_matrix @ prior_covariances[i+1] @ meas_matrix.T + meas_noise
             inv = np.linalg.inv(innovation_cov)
-            gain = covariance @ meas_matrix.T @ inv
-            error_state = error_state - gain @ innovation
+            gain = prior_covariances[i+1] @ meas_matrix.T @ inv
+            posterior_error_states[i+1, :] = prior_error_states[i+1] - gain @ innovation
 
             factor = np.eye(covariance.shape[0]) - gain @ meas_matrix
-            covariance_adj = factor @ covariance @ factor.T
-            covariance = covariance_adj + gain @ meas_noise @ gain.T
-
-        posterior_error_states[i, :] = error_state
-        posterior_covariances[i, :, :] = covariance
+            covariance_adj = factor @ prior_covariances[i+1] @ factor.T
+            posterior_covariances[i+1, :, :] = covariance_adj + gain @ meas_noise @ gain.T
+        else:
+            posterior_error_states[i+1, :] = prior_error_states[i+1]
+            posterior_covariances[i+1, :, :] = prior_covariances[i+1]
 
     return (
         (prior_covariances, posterior_covariances, prior_error_states, posterior_error_states, state_transitions),
@@ -199,7 +199,6 @@ def _rts_kalman_update_series(
     forward_eskf_results, forward_nominal_states = _rts_kalman_forward_pass(
         acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
     )
-
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
     corrected_states = _rts_kalman_correction_pass(*forward_nominal_states, corrected_error_states)
     return corrected_states, corrected_covariances

@@ -584,7 +584,7 @@ def is_multi_sensor_regions_of_interest_list(
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object does not seem to be a MultiSensorStrideList. "
+                "The passed object does not seem to be a MultiSensorRegionsOfInterestList. "
                 "The validation failed with the following error:\n\n{}".format(str(e))
             ) from e
         return False

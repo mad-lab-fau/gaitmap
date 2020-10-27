@@ -63,7 +63,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         An instance of any available orientation method with the desired parameters set.
         This method is called with the data of each region to actually calculate the orientation.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
-        per-stride initial orientations based on the mid-stance assumption.
+        per-roi initial orientations.
     pos_method
         An instance of any available position method with the desired parameters set.
         This method is called with the data of each region to actually calculate the position.
@@ -75,7 +75,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         This method is called with the data of each region.
         If a `trajectory_method` is provided the values for `ori_method` and `pos_method` are ignored.
         Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
-        per-stride initial orientations based on the mid-stance assumption.
+        per-roi initial orientations.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each region with
         gravity. To do so, half the window size before and half the window size after the start of the region will
@@ -173,7 +173,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         if dataset_type != roi_list_type:
             raise ValidationError(
                 "An invalid combination of ROI list and dataset was provided."
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, roi_list_type)
+                "The dataset is {} sensor and the ROI list is {} sensor.".format(dataset_type, roi_list_type)
             )
 
         self._estimate(dataset_type=dataset_type)
