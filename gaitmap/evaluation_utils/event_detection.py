@@ -11,7 +11,7 @@ from gaitmap.utils.dataset_helper import StrideList
 
 def evaluate_stride_event_list(
     ground_truth: StrideList,
-    segmented_stride_list: StrideList,
+    stride_event_list: StrideList,
     match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
@@ -23,7 +23,7 @@ def evaluate_stride_event_list(
     This compares an event segmented stride list with a ground truth event stride list and returns True Positives,
     False Positives and True Negatives matches.
     The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", "tc").
-    Two strides are considered a positive match, if both their start and their end values differ by less than the
+    Two strides are considered a positive match, if the selected event differs by less than the
     threshold.
     If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
     with the lowest combined distance is considered.
@@ -35,7 +35,7 @@ def evaluate_stride_event_list(
     ----------
     ground_truth
         The ground truth stride list.
-    segmented_stride_list
+    stride_event_list
         The list of segmented strides.
     match_cols
         A string that describes what you want to match.
@@ -128,7 +128,7 @@ def evaluate_stride_event_list(
 
     return _evaluate_stride_list(
         ground_truth,
-        segmented_stride_list,
+        stride_event_list,
         match_cols=match_cols,
         tolerance=tolerance,
         one_to_one=one_to_one,

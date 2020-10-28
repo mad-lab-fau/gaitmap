@@ -1,7 +1,6 @@
 """Helper functions to evaluate the output of algorithms."""
 
 from gaitmap.evaluation_utils.stride_segmentation import (
-    evaluate_stride_list,
     evaluate_segmented_stride_list,
     match_stride_lists,
 )
@@ -16,7 +15,6 @@ from gaitmap.evaluation_utils.scores import (
 from gaitmap.evaluation_utils.event_detection import evaluate_stride_event_list
 
 __all__ = [
-    "evaluate_stride_list",
     "evaluate_segmented_stride_list",
     "match_stride_lists",
     "precision_score",
