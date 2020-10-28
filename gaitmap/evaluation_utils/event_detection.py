@@ -15,7 +15,7 @@ def evaluate_stride_event_list(
     match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
-    segmented_postfix: str = "",
+    stride_event_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[DataFrame, Dict[Hashable, DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
@@ -25,7 +25,7 @@ def evaluate_stride_event_list(
     The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", "tc").
     Two strides are considered a positive match, if the selected event differs by less than the
     threshold.
-    If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
+    If multiple strides of the stride event list would match to the ground truth (or vise-versa) only the stride
     with the lowest combined distance is considered.
     This might still lead to unexpected results in certain cases.
     It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
@@ -36,7 +36,7 @@ def evaluate_stride_event_list(
     ground_truth
         The ground truth stride event list.
     stride_event_list
-        A stride event list.
+        The stride event list.
     match_cols
         A string that describes what you want to match.
         Must be one of pre_ic, ic, min_vel or tc.
@@ -47,8 +47,8 @@ def evaluate_stride_event_list(
         If True, only a single unique match will be returned per stride.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
-    segmented_postfix
-        A postfix that will be append to the index name of the segmented stride list in the output.
+    stride_event_postfix
+        A postfix that will be append to the index name of the stride event list in the output.
     ground_truth_postfix
         A postfix that will be append to the index name of the ground truth in the output.
 
@@ -132,6 +132,6 @@ def evaluate_stride_event_list(
         match_cols=match_cols,
         tolerance=tolerance,
         one_to_one=one_to_one,
-        segmented_postfix=segmented_postfix,
+        segmented_postfix=stride_event_postfix,
         ground_truth_postfix=ground_truth_postfix,
     )
