@@ -20,7 +20,7 @@ def evaluate_stride_event_list(
 ) -> Union[DataFrame, Dict[Hashable, DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
 
-    This compares an event segmented stride list with a ground truth event stride list and returns True Positives,
+    This compares a stride event list with a ground truth stride event list and returns True Positives,
     False Positives and True Negatives matches.
     The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", "tc").
     Two strides are considered a positive match, if the selected event differs by less than the
@@ -34,9 +34,9 @@ def evaluate_stride_event_list(
     Parameters
     ----------
     ground_truth
-        The ground truth stride list.
+        The ground truth stride event list.
     stride_event_list
-        The list of segmented strides.
+        A stride event list.
     match_cols
         A string that describes what you want to match.
         Must be one of pre_ic, ic, min_vel or tc.
@@ -62,7 +62,7 @@ def evaluate_stride_event_list(
         For all segmented strides that have a match in the ground truth list, this will be "tp" (true positive).
         Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
         positives)
-        All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
+        All ground truth strides that do not have a counterpart are marked as "fn" (false negative).
         In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
 
 
