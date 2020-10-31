@@ -1,0 +1,149 @@
+"""Estimate the IMU position with dedrifting using Forward-Backwards integration."""
+
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+from scipy.integrate import cumtrapz
+
+from gaitmap.base import BasePositionMethod, BaseType
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, GF_VEL, GF_POS
+from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
+
+
+class ForwardIntegration(BasePositionMethod):
+    """Use forward integration of acc to estimate velocity and position.
+
+    .. warning::
+       We assume that the acc signal is already converted into the global/world frame!
+       Refer to the :ref:`Coordinate System Guide <coordinate_systems>` for details.
+
+    This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a direct-and-reverse (DRI) or
+    forward-backward integration.
+    This means we assume no movement (zero velocity and zero acceleration except gravity) at the beginning and end of
+    the signal.
+
+    Further drift correction is applied using a level-assumption (i.e. we assume that the sensor starts and ends its
+    movement at the same z-position/height).
+    If this assumption is not true for your usecase, you can disable it using the `level_assumption` parameter.
+
+    Implementation based on the paper by Hannink et al. [1]_.
+
+    Parameters
+    ----------
+    turning_point
+        The point at which the sigmoid weighting function has a value of 0.5 and therefore forward and backward
+        integrals are weighted 50/50. Specified as percentage of the signal length (0.0 < turning_point <= 1.0).
+    steepness
+        Steepness of the sigmoid function to weight forward and backward integral.
+    level_assumption
+        If True, it is assumed that the stride starts and ends at z=0 and dedrifting in that direction is applied
+        accordingly.
+    gravity : Optional (3,) array, or None
+        The value of gravity that will be subtracted from each Acc sample before integration.
+        If this is `None`, no gravity subtraction will be performed.
+        By default 9.81 m/s^2 will be subtracted from the z-Axis.
+
+    Attributes
+    ----------
+    velocity_
+        The velocity estimated by direct-and-reverse / forward-backward integration. See Examples for format hints.
+    position_
+        The position estimated by forward integration in the ground plane and by direct-and-reverse /
+        forward-backward integration for the vertical axis. See Examples for format hints.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the estimate method.
+    sampling_rate_hz
+        The sampling rate of the data.
+
+    Notes
+    -----
+    .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
+       Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
+       https://doi.org/10.3390/s17091940
+
+    Examples
+    --------
+    Your data must be a pd.DataFrame with at least columns defined by :obj:`~gaitmap.utils.consts.SF_ACC`.
+    Remember, that this method does not transform your data into another coordinate frame, but just integrates it.
+    If you want to use this method to calculate e.g. a stride length, make sure to cenvert your data into the global
+    frame using any of the implemented orientation estimation methods.
+
+    >>> import pandas as pd
+    >>> from gaitmap.utils.consts import SF_ACC
+    >>> data = pd.DataFrame(..., columns=SF_ACC)
+    >>> sampling_rate_hz = 100
+    >>> # Create an algorithm instance
+    >>> fbi = ForwardBackwardIntegration(level_assumption=True, gravity=np.array([0, 0, 9.81]))
+    >>> # Apply the algorithm
+    >>> fbi = fbi.estimate(data, sampling_rate_hz=sampling_rate_hz)
+    >>> # Inspect the results
+    >>> fbi.position_
+    <pd.Dataframe with resulting positions>
+    >>> fbi.velocity_
+    <pd.Dataframe with resulting velocities>
+
+    See Also
+    --------
+    gaitmap.trajectory_reconstruction: Other implemented algorithms for orientation and position estimation
+    gaitmap.trajectory_reconstruction.StrideLevelTrajectory: Apply the method for each stride of a stride list.
+
+    """
+
+    gravity: Optional[np.ndarray]
+
+    data: SingleSensorDataset
+    sampling_rate_hz: float
+
+    def __init__(
+        self, gravity: Optional[np.ndarray] = GRAV_VEC,
+    ):
+        self.gravity = gravity
+
+    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+        """Estimate the position of the sensor based on the provided global frame data.
+
+        Parameters
+        ----------
+        data
+            Continuous sensor data that includes at least a Acc with all values in the global world frame
+        sampling_rate_hz
+            The sampling rate of the data in Hz
+
+        Returns
+        -------
+        self
+            The class instance with all result attributes populated
+
+        """
+        if not is_single_sensor_dataset(data, check_gyr=False, frame="sensor"):
+            raise ValueError("Data is not a single sensor dataset.")
+        self.sampling_rate_hz = sampling_rate_hz
+        self.data = data
+
+        acc_data = data[SF_ACC].to_numpy()
+        if self.gravity is not None:
+            acc_data -= self.gravity
+
+        # Add an implicit 0 to the beginning of the acc data
+        padded_acc = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
+        velocity = self._forward_integration(padded_acc)
+        position_xy = cumtrapz(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
+
+        position_z = self._forward_integration(velocity[:, [2]])
+
+        position = np.hstack((position_xy, position_z))
+
+        self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
+        self.velocity_.index.name = "sample"
+        self.position_ = pd.DataFrame(position, columns=GF_POS)
+        self.position_.index.name = "sample"
+
+        return self
+
+    def _forward_integration(self, data: np.ndarray) -> np.ndarray:
+        # TODO: different steepness and turning point for velocity and position?
+        return cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
