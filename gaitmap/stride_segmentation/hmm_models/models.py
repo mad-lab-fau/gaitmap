@@ -76,7 +76,7 @@ def centered_window_view(arr, window_size_samples, pad_value=0.0):
     return sliding_window_view(arr, window_size_samples, window_size_samples - 1)
 
 
-def calculate_features_for_axis(data, window_size_samples, features=["raw", "gradient"], standardization=False):
+def calculate_features_for_axis(data, window_size_samples, features, standardization=False):
     """Calculate feature matrix on a single sensor axis. For feature calculation a centered sliding window with shift
     of one sample per window is used.
 
@@ -87,13 +87,15 @@ def calculate_features_for_axis(data, window_size_samples, features=["raw", "gra
     - 'var': variance of each window
     - 'mean': mean of each window
 
-    TODO: Add multidimensional feature extraction
     """
     if window_size_samples > 0:
         window_view = centered_window_view(data, window_size_samples)
 
     feature_matrix = []
     columns = []
+
+    if not isinstance(features, list):
+        features = [features]
 
     if "raw" in features:
         raw = data.copy()
@@ -136,8 +138,12 @@ def calculate_features_for_axis(data, window_size_samples, features=["raw", "gra
 
 
 def _calculate_features_single_dataset(dataset, axis, features, window_size_samples, standardization):
+    if not isinstance(axis, list):
+        axis = [axis]
+
     axis_feature_dict = {}
 
+    # TODO: Add a check if the requested axis are actually within the given dataset
     for axis in axis:
         # extract features from data
         feature_axis = calculate_features_for_axis(
@@ -271,7 +277,7 @@ class HiddenMarkovModel(_BaseSerializable):
         self._n_states_transition = self._model_transition.state_count() - 2
 
     def transform(self, dataset, sampling_rate_hz):
-
+        """Perform a feature transformation according the the given model requirements."""
         downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_hz))
         dataset = preprocess(dataset, sampling_rate_hz, self.low_pass_cutoff_hz, self.low_pass_order, downsample_factor)
 
