@@ -45,14 +45,19 @@ stride_list["left_sensor"].head(3)
 # parameter.
 # Here, we use simple gyroscopic integration for orientation estimation and forward-backward integration for position
 # estimation.
-# You can replace them by any of the methods in :mod:`~gaitmap.trajectory_reconstruction.orientation_methods`
-# and :mod:`~gaitmap.trajectory_reconstruction.position_methods`.
+# Note that this assumes the sensor to be aligned with your world coordinate system at the beginning of
+# the stride.
+# If you want to pass a starting orientation that is not aligned with your world coordinate system, you can
+# do so by passing `initial_orientation` to the initialization `ori_method`.
+# However, in this example, it will be overwritten in :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory`.
+# You can replace the orientation- or position-estimation methods by any of the methods in
+# :mod:`~gaitmap.trajectory_reconstruction.orientation_methods` and
+# :mod:`~gaitmap.trajectory_reconstruction.position_methods`.
 #
 # Be aware of the assumptions the used methods make.
 # For example the :class:`~gaitmap.trajectory_reconstruction.ForwardBackwardIntegration` assumes that the start and
 # end of each stride is a resting period.
-# Note that this assumes the sensor to be aligned with your world coordinate system. If you want to pass a
-# starting orientation you can do so by passing `initial_orientation` to the initialization of `trajectory`.
+
 # The same assumption is used by the :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` itself to
 # estimate the initial orientation at the beginning of each stride.
 
