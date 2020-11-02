@@ -11,13 +11,13 @@ from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 class TestEvaluateStrideEventList:
     def _create_valid_list(self, labels, extra_columns=None):
         columns = ["start", "end"]
-        
+
         if extra_columns:
             columns += [extra_columns] if isinstance(extra_columns, str) else extra_columns
-            
+
         df = pd.DataFrame(labels, columns=columns)
         df.index.name = "s_id"
-        
+
         return df
 
     def test_too_many_column_names(self):
