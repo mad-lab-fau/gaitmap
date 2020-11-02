@@ -37,6 +37,26 @@ Further rules:
 - Time is either specified in seconds (s) for user facing durations (e.g. stride time), but time points in intermediate
   results (e.g. biomechanical events) are typically specified in samples since the start of the measurement (#).
 
+Start End Indices
+=================
+
+Many of the datatypes contain information about the start or the end of a certain time-period (e.g. a stride).
+Start and end values are (whenever possible) provided in samples from the start of a dataset.
+The respective time-period is then defined as [start, end), meaning starting with the start sample (inclusive) until the
+end sample (exclusive).
+This follows the Python convention for indices and therefore, you can extract a region from the dataset as follows:
+
+>>> dataset[start : end]
+
+Note that `dataset[end]` refers to the first value **after** the region!
+To get the last sample of a region you must use `end-1`
+
+For edge cases this means:
+
+- A region that starts on the first sample of a dataset has `start=0`
+- A region that ends with the dataset (i.e. inclusive the last sample) has `end=len(dataset)`.
+- If two regions are directly adjacent to each other, the end index of the first, is the start index of the second.
+
 Datasets
 ========
 
