@@ -28,7 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
 - Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/93)
-      
+- New evaluation functions to compare the results of event detection methods with ground truth
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
 
 ### Changed
 
@@ -43,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Meaning if the respective region should be extracted from a dataarray, you can simply do `data[start:end]`.
   All functions that used different assumptions are changed.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/97~)
+- Internal restructuring of the evaluation utils module.
+  In case you used direct imports of the functions from the submodule, you need to update these.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
 
 ### Deprecated
 
