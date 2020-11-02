@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable, List, Sequence
+from typing import Union, Tuple, Dict, Hashable, Sequence
 
 import numpy as np
 import pandas as pd
