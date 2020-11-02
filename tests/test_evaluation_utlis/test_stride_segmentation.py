@@ -182,7 +182,7 @@ class TestMatchStrideList:
 
         out = match_stride_lists({"left": empty}, {"left": empty})
 
-        for dataframe in list(out.values()):
+        for dataframe in out.values():
             assert dataframe.empty
 
     def test_empty_multi_stride_lists(self):
@@ -239,11 +239,8 @@ class TestMatchStrideList:
             "wrong_sensor": stride_list_right_a,
         }
 
-        try:
-            print(match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)["wrong_sensor"])
-            assert False
-        except KeyError:
-            assert True
+        with pytest.raises(KeyError):
+            match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)["wrong_sensor"]
 
 
 class TestSpecialMatchStrideList:

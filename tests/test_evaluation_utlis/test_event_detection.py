@@ -9,6 +9,7 @@ from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 
 
 class TestEvaluateStrideEventList:
+    # For more tests see the TestStrideSegmentation
     def _create_valid_list(self, labels, extra_columns=None):
         columns = ["start", "end"]
 
@@ -20,29 +21,14 @@ class TestEvaluateStrideEventList:
 
         return df
 
-    def test_too_many_column_names(self):
+    @pytest.mark.parametrize("value", (["1", "2", "3"], "wrong_column", ""))
+    def test_invalid_column_values(self, value):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            evaluate_stride_event_list(sl, sl, ["1", "2", "3"])
+            evaluate_stride_event_list(sl, sl, value)
 
         assert "match_cols needs to be one" in str(e.value)
-
-    def test_invalid_column_name(self):
-        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
-
-        with pytest.raises(ValueError) as e:
-            evaluate_stride_event_list(sl, sl, "wrong_column")
-
-        assert "match_cols needs to be one" in str(e.value)
-
-    def test_no_column_name(self):
-        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
-
-        with pytest.raises(ValueError) as e:
-            evaluate_stride_event_list(sl, sl, "")
-
-        assert "match_cols can not be none" in str(e.value)
 
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
