@@ -8,7 +8,7 @@ from gaitmap.evaluation_utils import evaluate_stride_event_list
 from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 
 
-class TestSpecialEvaluateStrideList:
+class TestEvaluateStrideEventList:
     def _create_valid_list(self, labels, extra_columns=None):
         columns = ["start", "end"]
         
