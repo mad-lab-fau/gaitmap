@@ -23,10 +23,10 @@ def evaluate_segmented_stride_list(
     segmented_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
-    """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
+    """Find True Positives, False Positives and True Negatives by comparing a segmented stride list with ground truth.
 
-    This compares a segmented stride list with a ground truth stride list and returns True Positives, False Positives
-    and True Negatives matches.
+    This compares a segmented stride list with a ground truth segmented stride list and returns True Positives,
+    False Positives and True Negatives matches.
     The comparison is purely based on the start and end values of each stride in the lists.
     Two strides are considered a positive match, if both their start and their end values differ by less than the
     threshold.

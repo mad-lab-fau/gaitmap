@@ -18,7 +18,7 @@ def evaluate_stride_event_list(
     stride_event_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[DataFrame, Dict[Hashable, DataFrame]]:
-    """Find True Positives, False Positives and True Negatives by comparing a stride list with ground truth.
+    """Find True Positives, False Positives and True Negatives by comparing an stride event list with ground truth.
 
     This compares a stride event list with a ground truth stride event list and returns True Positives,
     False Positives and True Negatives matches.
