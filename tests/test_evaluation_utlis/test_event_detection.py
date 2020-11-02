@@ -28,7 +28,8 @@ class TestEvaluateStrideEventList:
         with pytest.raises(ValueError) as e:
             evaluate_stride_event_list(sl, sl, value)
 
-        assert "match_cols needs to be one" in str(e.value)
+        assert "One or more selected columns" in str(e.value)
+        assert str(value) in str(e.value)
 
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")

@@ -259,13 +259,15 @@ class TestSpecialMatchStrideList:
         df.index.name = "s_id"
         return df
 
-    def test_too_many_wrong_column_names(self):
+    @pytest.mark.parametrize("value", ("wrong_column", ["1", "2", "3"]))
+    def test_invalid_match_cols(self, value):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            match_stride_lists(sl, sl, ["1", "2", "3"])
+            match_stride_lists(sl, sl, value)
 
-        assert "not in inputted stride lists" in str(e.value)
+        assert "One or more selected columns" in str(e.value)
+        assert str(value) in str(e.value)
 
     def test_too_many_correct_column_names(self):
         sl = self._create_valid_list([[0, 1, 10, 11, 12], [1, 2, 20, 21, 22]], ["ic", "min_vel", "tc"])
@@ -274,14 +276,6 @@ class TestSpecialMatchStrideList:
             match_stride_lists(sl, sl, ["ic", "min_vel", "tc"])
 
         assert "Can not compare more than 2 columns at a time" in str(e.value)
-
-    def test_invalid_column_name(self):
-        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
-
-        with pytest.raises(ValueError) as e:
-            match_stride_lists(sl, sl, "wrong_column")
-
-        assert "not in inputted stride lists" in str(e.value)
 
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")

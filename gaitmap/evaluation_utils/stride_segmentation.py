@@ -133,7 +133,7 @@ def evaluate_segmented_stride_list(
 def _evaluate_stride_list(
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
-    match_cols: Union[str, Tuple[str, str]] = ("start", "end"),
+    match_cols: Union[str, Sequence[str]] = ("start", "end"),
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     stride_list_postfix: str = "",
@@ -152,8 +152,6 @@ def _evaluate_stride_list(
     if is_single:
         segmented_stride_list = {"__dummy__": segmented_stride_list}
         ground_truth = {"__dummy__": ground_truth}
-
-    match_cols = [match_cols] if isinstance(match_cols, str) else list(match_cols)
 
     matches = _match_stride_lists(
         stride_list_a=segmented_stride_list,
@@ -283,10 +281,6 @@ def match_stride_lists(
         lists.
 
     """
-    if isinstance(match_cols, str):
-        match_cols = (match_cols,)
-    match_cols = list(match_cols)
-
     return _match_stride_lists(
         stride_list_a,
         stride_list_b,
@@ -301,7 +295,7 @@ def match_stride_lists(
 def _match_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
-    match_cols: List[str],
+    match_cols: Union[str, Sequence[str]],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -312,6 +306,8 @@ def _match_stride_lists(
 
     if tolerance < 0:
         raise ValueError("The tolerance must be larger 0.")
+
+    match_cols = [match_cols] if isinstance(match_cols, str) else list(match_cols)
 
     stride_list_a_type = is_stride_list(stride_list_a)
     stride_list_b_type = is_stride_list(stride_list_b)
@@ -359,14 +355,18 @@ def _match_stride_lists(
 def _match_single_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
-    match_cols: List[str],
+    match_cols: Union[str, Sequence[str]],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
     postfix_b: str = "_b",
 ) -> pd.DataFrame:
     if not (set(match_cols).issubset(stride_list_a.columns) and set(match_cols).issubset(stride_list_b.columns)):
-        raise ValueError("The columns used to match are not in inputted stride lists")
+        raise ValueError(
+            "One or more selected columns ({}) are missing in at least one of the provided stride lists".format(
+                match_cols
+            )
+        )
     stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
     stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
 
