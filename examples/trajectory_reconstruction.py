@@ -51,8 +51,11 @@ stride_list["left_sensor"].head(3)
 # Be aware of the assumptions the used methods make.
 # For example the :class:`~gaitmap.trajectory_reconstruction.ForwardBackwardIntegration` assumes that the start and
 # end of each stride is a resting period.
+# Note that this assumes the sensor to be aligned with your world coordinate system. If you want to pass a
+# starting orientation you can do so by passing `initial_orientation` to the initialization of `trajectory`.
 # The same assumption is used by the :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` itself to
 # estimate the initial orientation at the beginning of each stride.
+
 
 ori_method = SimpleGyroIntegration()
 pos_method = ForwardBackwardIntegration()
@@ -64,6 +67,7 @@ trajectory = StrideLevelTrajectory(ori_method, pos_method)
 # -----------------------------
 sampling_frequency_hz = 204.8
 trajectory.estimate(data=imu_data, stride_event_list=stride_list, sampling_rate_hz=sampling_frequency_hz)
+
 
 # select the position of the first stride
 first_stride_position = trajectory.position_["left_sensor"].loc[0]
