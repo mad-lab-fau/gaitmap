@@ -126,13 +126,9 @@ def evaluate_stride_event_list(
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Find matching strides between segmented stride lists.
 
     """
-    # TODO: Expand this to allow all columns that are in the provided stride lists.
-    if not match_cols:
-        raise ValueError("match_cols can not be none")
-
-    if match_cols not in ["pre_ic", "ic", "min_vel", "tc"]:
-        raise ValueError("match_cols needs to be one of pre_ic, ic, min_vel or tc")
-
+    # We do not check here if a valid event col is passed.
+    # We later check if the selected column is in all the dataframes.
+    # This is actually all we care about, even, if the user selects an event, we would not expect.
     return _evaluate_stride_list(
         ground_truth,
         stride_event_list,

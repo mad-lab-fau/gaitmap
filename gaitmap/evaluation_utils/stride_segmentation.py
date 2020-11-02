@@ -322,9 +322,6 @@ def _match_stride_lists(
     matches = {}
 
     if stride_list_a_type == "single":
-        if not set(match_cols).issubset(stride_list_a.columns):
-            raise ValueError("The columns used to match are not in inputted stride lists")
-
         matches = _match_single_stride_lists(
             stride_list_a,
             stride_list_b,
@@ -334,9 +331,7 @@ def _match_stride_lists(
             postfix_a=postfix_a,
             postfix_b=postfix_b,
         )
-
-    if stride_list_a_type == "multi":
-
+    else:
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
             list(
@@ -345,15 +340,9 @@ def _match_stride_lists(
                 )
             )
         )
-
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")
-
-        if not set(match_cols).issubset(stride_list_a[sensor_names_list[0]].columns):
-            raise ValueError("The columns used to match are not in inputted stride lists")
-
         for sensor_name in sensor_names_list:
-
             matches[sensor_name] = _match_single_stride_lists(
                 stride_list_a[sensor_name],
                 stride_list_b[sensor_name],
@@ -376,6 +365,8 @@ def _match_single_stride_lists(
     postfix_a: str = "_a",
     postfix_b: str = "_b",
 ) -> pd.DataFrame:
+    if not (set(match_cols).issubset(stride_list_a.columns) and set(match_cols).issubset(stride_list_b.columns)):
+        raise ValueError("The columns used to match are not in inputted stride lists")
     stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
     stride_list_b = set_correct_index(stride_list_b, SL_INDEX)
 
