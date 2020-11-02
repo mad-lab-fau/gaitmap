@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable, List
+from typing import Union, Tuple, Dict, Hashable, List, Sequence
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ def evaluate_segmented_stride_list(
     segmented_stride_list: StrideList,
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
-    segmented_postfix: str = "",
+    stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing a segmented stride list with ground truth.
@@ -30,9 +30,14 @@ def evaluate_segmented_stride_list(
     The comparison is purely based on the start and end values of each stride in the lists.
     Two strides are considered a positive match, if both their start and their end values differ by less than the
     threshold.
-    If multiple strides of the segmented stride list would match to the ground truth (or vise-versa) only the stride
-    with the lowest combined distance is considered.
-    This might still lead to unexpected results in certain cases.
+
+    By default (controlled by the one-to-one parameter), if multiple strides of the segmented stride list would match to
+    a single ground truth stride (or vise-versa), only the stride with the lowest distance is considered an actual
+    match.
+    If `one_to_one` is set to False, all matches would be considered True positives.
+    This might lead to unexpected results in certain cases and should not be used to calculate traditional metrics like
+    precision and recall.
+
     It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
     method to get reliable results.
 
@@ -46,10 +51,10 @@ def evaluate_segmented_stride_list(
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
     one_to_one
-        If True, only a single unique match will be returned per stride.
+        If True, only a single unique match per stride is considered.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
-    segmented_postfix
+    stride_list_postfix
         A postfix that will be append to the index name of the segmented stride list in the output.
     ground_truth_postfix
         A postfix that will be append to the index name of the ground truth in the output.
@@ -57,7 +62,7 @@ def evaluate_segmented_stride_list(
     Returns
     -------
     matches
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         The `match_type` column indicates the type of match.
@@ -65,7 +70,7 @@ def evaluate_segmented_stride_list(
         Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
         positives)
         All ground truth strides that do not have a segmented counterpart are marked as "fn" (false negative).
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
+        In case MultiSensorStrideLists were used as inputs, a dictionary of such dataframes is returned.
 
 
     Examples
@@ -111,7 +116,8 @@ def evaluate_segmented_stride_list(
 
     See Also
     --------
-    match_stride_lists : Find matching strides between stride lists.
+    gaitmap.evaluation_utils.match_stride_lists: Find matching strides between stride lists.
+    gaitmap.evaluation_utils.evaluate_stride_event_list: Find matching strides between stride event lists.
 
     """
     return _evaluate_stride_list(
@@ -119,7 +125,7 @@ def evaluate_segmented_stride_list(
         segmented_stride_list,
         tolerance=tolerance,
         one_to_one=one_to_one,
-        segmented_postfix=segmented_postfix,
+        stride_list_postfix=stride_list_postfix,
         ground_truth_postfix=ground_truth_postfix,
     )
 
@@ -130,7 +136,7 @@ def _evaluate_stride_list(
     match_cols: Union[str, Tuple[str, str]] = ("start", "end"),
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
-    segmented_postfix: str = "",
+    stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     segmented_stride_list_type = is_stride_list(segmented_stride_list)
@@ -155,12 +161,12 @@ def _evaluate_stride_list(
         match_cols=match_cols,
         tolerance=tolerance,
         one_to_one=one_to_one,
-        postfix_a=segmented_postfix,
+        postfix_a=stride_list_postfix,
         postfix_b=ground_truth_postfix,
     )
 
     for sensor_name in get_multi_sensor_dataset_names(matches):
-        segmented_index_name = segmented_stride_list[sensor_name].index.name + segmented_postfix
+        segmented_index_name = segmented_stride_list[sensor_name].index.name + stride_list_postfix
         ground_truth_index_name = ground_truth[sensor_name].index.name + ground_truth_postfix
         matches[sensor_name].loc[~matches[sensor_name].isna().any(axis=1), "match_type"] = "tp"
         matches[sensor_name].loc[matches[sensor_name][ground_truth_index_name].isna(), "match_type"] = "fp"
@@ -175,7 +181,7 @@ def _evaluate_stride_list(
 def match_stride_lists(
     stride_list_a: StrideList,
     stride_list_b: StrideList,
-    match_cols: Union[str, List[str]] = None,
+    match_cols: Union[str, Sequence[str]] = ("start", "end"),
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
     postfix_a: str = "_a",
@@ -183,12 +189,12 @@ def match_stride_lists(
 ) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
     """Find matching strides in two stride lists with a certain tolerance.
 
-    This function will find matching strides in two stride lists as long as both start and end of a stride and its
-    matching stride differ by less than the selected tolerance.
-    This can be helpful to compare a the result of a segmentation to a ground truth.
+    This function will find matching strides in two stride lists as long as all selected columns/event of a stride
+    and its matching stride differ by less than the selected tolerance.
+    This can be helpful to compare the result of a segmentation or event detection to a ground truth.
     In case both stride lists are multi-sensor stride lists, matching will be performed between all common sensors of
     the stride lists.
-    Additional sensors are simply ignored,
+    Additional sensors are simply ignored.
 
     Matches will be found in both directions and mapping from the `s_id` of the left stride list to the `s_id` of the
     right stride list (and vise-versa) are returned.
@@ -196,7 +202,7 @@ def match_stride_lists(
     If `one_to_one` is False, multiple matches for each stride can be found.
     This might happen, if the tolerance value is set very high or strides in the stride lists overlap.
     If `one_to_one` is True (the default) only a single match will be returned per stride.
-    This will be the match with the lowest combined difference between the start and the end label.
+    This will be the match with the lowest combined difference over all the selected columns/events.
     In case multiple strides have the same combined difference, the one that occurs first in the list is chosen.
     This might still lead to unexpected results in certain cases.
     It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
@@ -277,10 +283,9 @@ def match_stride_lists(
         lists.
 
     """
-    if not match_cols:
-        match_cols = ["start", "end"]
-    elif isinstance(match_cols, str):
-        match_cols = [match_cols]
+    if isinstance(match_cols, str):
+        match_cols = (match_cols,)
+    match_cols = list(match_cols)
 
     return _match_stride_lists(
         stride_list_a,
@@ -429,21 +434,33 @@ def _match_label_lists(
         list_left = np.array([[x[0], x[0]] for x in list_left])
         list_right = np.array([[x[0], x[0]] for x in list_right])
 
+    # Calculate the all distances between all start and all end values of both lists.
     distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
     distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
 
     distance = np.abs(distance)
     valid_matches = distance <= tolerance
 
+    # Valid matches must have a match in all considered dimensions (e.g. start and end values)
     valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
 
     if one_to_one is True:
+        # So far it was possible that multiple values from one list were matched to a single value of the other.
+        # In case `one_to_one` is True, we only want to consider the once with the smallest combined distance over all
+        # dimensions
+        combined_distance = distance.sum(axis=-1)
+        # Calculate the matches with the minimal distance in all columns
+        left_indices = combined_distance.argmin(axis=0)
+        # Calculate the matches with the minimal distance in all rows
+        right_indices = combined_distance.argmin(axis=1)
+        # Create a two matrices (one for rows and one for cols) that only contain True at the positions of the
+        # respective argmins.
         argmin_array_left = np.zeros(valid_matches.shape).astype(bool)
-        left_indices = distance.sum(axis=-1).argmin(axis=0)
         argmin_array_left[left_indices, np.arange(distance.shape[1])] = True
-        right_indices = distance.sum(axis=-1).argmin(axis=1)
         argmin_array_right = np.zeros(valid_matches.shape).astype(bool)
         argmin_array_right[np.arange(distance.shape[0]), right_indices] = True
+        # valid matches are only valid, if they are also in positions where the matches correspond to the respective
+        # argmins.
         valid_matches &= argmin_array_left & argmin_array_right
     left_indices, right_indices = np.where(valid_matches)
 

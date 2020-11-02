@@ -15,19 +15,24 @@ def evaluate_stride_event_list(
     match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,
-    stride_event_postfix: str = "",
+    stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
 ) -> Union[DataFrame, Dict[Hashable, DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing an stride event list with ground truth.
 
     This compares a stride event list with a ground truth stride event list and returns True Positives,
     False Positives and True Negatives matches.
-    The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", "tc").
+    The comparison is based on the chosen column ("pre_ic", "ic", "min_vel", or "tc").
     Two strides are considered a positive match, if the selected event differs by less than the
     threshold.
-    If multiple strides of the stride event list would match to the ground truth (or vise-versa) only the stride
-    with the lowest combined distance is considered.
-    This might still lead to unexpected results in certain cases.
+
+    By default (controlled by the one-to-one parameter), if multiple strides of the stride event list would match to
+    a single ground truth stride (or vise-versa), only the stride with the lowest distance is considered an actual
+    match.
+    If `one_to_one` is set to False, all matches would be considered True positives.
+    This might lead to unexpected results in certain cases and should not be used to calculate traditional metrics like
+    precision and recall.
+
     It is highly recommended to order the stride lists and remove strides with large overlaps before applying this
     method to get reliable results.
 
@@ -44,10 +49,10 @@ def evaluate_stride_event_list(
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
     one_to_one
-        If True, only a single unique match will be returned per stride.
+        If True, only a single unique match per stride is considered.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
-    stride_event_postfix
+    stride_list_postfix
         A postfix that will be append to the index name of the stride event list in the output.
     ground_truth_postfix
         A postfix that will be append to the index name of the ground truth in the output.
@@ -55,7 +60,7 @@ def evaluate_stride_event_list(
     Returns
     -------
     matches
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         The `match_type` column indicates the type of match.
@@ -63,7 +68,7 @@ def evaluate_stride_event_list(
         Segmented strides that do not have a match will be mapped to a NaN and the match-type will be "fp" (false
         positives)
         All ground truth strides that do not have a counterpart are marked as "fn" (false negative).
-        In case MultiSensorStrideLists were used as inputs, a dictionary of such values are returned.
+        In case MultiSensorStrideLists were used as inputs, a dictionary of such dataframes is returned.
 
 
     Examples
@@ -117,9 +122,11 @@ def evaluate_stride_event_list(
 
     See Also
     --------
-    match_stride_lists : Find matching strides between stride lists.
+    gaitmap.evaluation_utils.match_stride_lists: Find matching strides between stride lists.
+    gaitmap.evaluation_utils.evaluate_segmented_stride_list: Find matching strides between segmented stride lists.
 
     """
+    # TODO: Expand this to allow all columns that are in the provided stride lists.
     if not match_cols:
         raise ValueError("match_cols can not be none")
 
@@ -132,6 +139,6 @@ def evaluate_stride_event_list(
         match_cols=match_cols,
         tolerance=tolerance,
         one_to_one=one_to_one,
-        segmented_postfix=stride_event_postfix,
+        stride_list_postfix=stride_list_postfix,
         ground_truth_postfix=ground_truth_postfix,
     )

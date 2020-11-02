@@ -1,6 +1,7 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
 from typing import Union, Tuple, Dict, Hashable
+
 from pandas import DataFrame
 
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
@@ -17,7 +18,7 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
     Parameters
     ----------
     matches_df
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type` or a dictionary of such dataframes.
         Each row is a match containing the index value of the left and the corresponding right one.
         The `match_type` column indicates the type of match:
@@ -66,7 +67,7 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
     Parameters
     ----------
     matches_df
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type` or a dictionary of such dataframes.
         Each row is a match containing the index value of the left and the corresponding right one.
         The `match_type` column indicates the type of match:
@@ -114,7 +115,7 @@ def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[D
     Parameters
     ----------
     matches_df
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type` or a dictionary of such dataframes.
         Each row is a match containing the index value of the left and the corresponding right one.
         The `match_type` column indicates the type of match:
@@ -168,7 +169,7 @@ def precision_recall_f1_score(
     Parameters
     ----------
     matches_df
-        A 3 column dataframe with the column names `s_id{segmented_postfix}`, `s_id{ground_truth_postfix}` and
+        A 3 column dataframe with the column names `s_id{stride_list_postfix}`, `s_id{ground_truth_postfix}` and
         `match_type` or a dictionary of such dataframes.
         Each row is a match containing the index value of the left and the corresponding right one.
         The `match_type` column indicates the type of match:
