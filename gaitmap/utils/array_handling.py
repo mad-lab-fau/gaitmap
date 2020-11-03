@@ -197,7 +197,7 @@ def find_extrema_in_radius(
         raise ValueError("`extrema_type` must be one of {}, not {}".format(list(extrema_funcs.keys()), extrema_type))
     extrema_func = extrema_funcs[extrema_type]
     if radius == 0:
-        # In case the serach radius is 0 samples, we can just return the input.
+        # In case the search radius is 0 samples, we can just return the input.
         return indices
     # Search region is twice the radius centered around each index
     d = 2 * radius + 1
