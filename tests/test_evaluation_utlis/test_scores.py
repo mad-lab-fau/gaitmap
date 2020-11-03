@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils.scores import precision_score, recall_score, f1_score, precision_recall_f1_score
@@ -132,3 +133,34 @@ class TestEvaluationScores:
         eval_metrics = precision_recall_f1_score({"sensor": matches_df})
 
         assert_array_equal(eval_metrics["sensor"], [1.0, 1.0, 1.0])
+
+
+class TestDivisionByZero:
+    def _create_valid_matches_df(self, tp, fp, fn):
+        tp_df = pd.DataFrame(
+            np.column_stack([tp, tp, np.repeat("tp", len(tp))]), columns=["s_id", "s_id_ground_truth", "match_type"]
+        )
+        fp_df = pd.DataFrame(
+            np.column_stack([fp, np.repeat(np.nan, len(fp)), np.repeat("fp", len(fp))]),
+            columns=["s_id", "s_id_ground_truth", "match_type"],
+        )
+        fn_df = pd.DataFrame(
+            np.column_stack([np.repeat(np.nan, len(fn)), fn, np.repeat("fn", len(fn))]),
+            columns=["s_id", "s_id_ground_truth", "match_type"],
+        )
+
+        return pd.concat([tp_df, fp_df, fn_df])
+
+    @pytest.fixture(
+        autouse=True,
+        params=([recall_score, [[], [1, 2, 3], []]], [precision_score, [[], [], [1, 2, 3]]], [f1_score, [[], [], []]]),
+    )
+    def make_methods(self, request):
+        self.func, self.arguments = request.param
+
+    def test_division_by_zero(self):
+        matches_df = self._create_valid_matches_df(*self.arguments)
+
+        eval_metrics = self.func(matches_df)
+
+        assert_array_equal(np.array(eval_metrics).astype(float), np.nan)

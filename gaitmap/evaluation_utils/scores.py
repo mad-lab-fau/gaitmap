@@ -4,6 +4,8 @@ from typing import Union, Tuple, Dict, Hashable
 
 from pandas import DataFrame
 
+from numpy import nan
+
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
 
@@ -47,7 +49,7 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
         tp = len(matches_dict[sensor_name]["tp"])
         fn = len(matches_dict[sensor_name]["fn"])
 
-        output[sensor_name] = tp / (tp + fn)
+        output[sensor_name] = _calculate_score(tp, tp + fn)
 
     if is_not_dict:
         output = output["__dummy__"]
@@ -95,7 +97,7 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
         tp = len(matches_dict[sensor_name]["tp"])
         fp = len(matches_dict[sensor_name]["fp"])
 
-        output[sensor_name] = tp / (tp + fp)
+        output[sensor_name] = _calculate_score(tp, tp + fp)
 
     if is_not_dict:
         output = output["__dummy__"]
@@ -141,8 +143,8 @@ def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[D
     recall = recall_score(matches_df.copy())
     precision = precision_score(matches_df.copy())
     for sensor_name in list(recall.keys()):
-        output[sensor_name] = (
-            2 * (precision[sensor_name] * recall[sensor_name]) / (precision[sensor_name] + recall[sensor_name])
+        output[sensor_name] = _calculate_score(
+            2 * (precision[sensor_name] * recall[sensor_name]), precision[sensor_name] + recall[sensor_name]
         )
 
     if is_not_dict:
@@ -226,3 +228,12 @@ def _get_match_type_dfs(
         match_results = match_results["__dummy__"]
 
     return match_results
+
+
+def _calculate_score(a, b):
+    try:
+        output = a / b
+    except ZeroDivisionError:
+        output = nan
+
+    return output
