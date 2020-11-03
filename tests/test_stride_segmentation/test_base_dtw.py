@@ -163,7 +163,7 @@ class TestSimpleSegment(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_ == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_,
             [
@@ -182,7 +182,7 @@ class TestSimpleSegment(DtwTestBase):
         dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
         np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
 
         np.testing.assert_array_equal(dtw.data, sequence)
@@ -203,7 +203,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_1d_dataframe_inputs(self):
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
@@ -213,7 +213,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_no_matches_found(self):
         """Test that no errors are raised when no matches are found."""
@@ -249,7 +249,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     @pytest.mark.parametrize("input_type", (np.array, pd.DataFrame))
     def test_data_has_more_cols_than_template(self, input_type):
@@ -273,7 +273,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_data_has_less_cols_than_template_array(self):
         """In case the data has more cols, only the first m cols of the data is used."""
@@ -365,7 +365,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor1"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -379,7 +379,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor2"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 2), (1, 3), (2, 4)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 4]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 5]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -434,7 +434,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor1"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -448,7 +448,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor2"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 2), (1, 2), (2, 3)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 3]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 4]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [

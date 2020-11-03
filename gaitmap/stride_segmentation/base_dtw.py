@@ -263,8 +263,9 @@ class BaseDtw(BaseAlgorithm):
         This will not be effected by potential changes of the postprocessing.
         """
         if isinstance(self.acc_cost_mat_, dict):
-            return {s: np.array([[p[0][-1], p[-1][-1]] for p in path]) for s, path in self.paths_.items()}
-        return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
+            # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
+            return {s: np.array([[p[0][-1], p[-1][-1] + 1] for p in path]) for s, path in self.paths_.items()}
+        return np.array([[p[0][-1], p[-1][-1] + 1] for p in self.paths_])
 
     def __init__(
         self,
@@ -402,9 +403,10 @@ class BaseDtw(BaseAlgorithm):
             matches_start_end_ = []
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
-            matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
+            # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
+            matches_start_end_ = np.array([[p[0][-1], p[-1][-1] + 1] for p in paths_])
             # Calculate cost before potential modifications are made to start and end
-            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1] - 1])
             to_keep = np.ones(len(matches_start_end_)).astype(bool)
             matches_start_end_, to_keep = self._postprocess_matches(
                 data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep

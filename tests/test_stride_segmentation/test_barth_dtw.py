@@ -55,7 +55,7 @@ class TestRegressionOnRealData:
         out_without_snapping = dtw.matches_start_end_["left_sensor"]
 
         assert dtw.stride_list_["left_sensor"]["start"][0] == 365
-        assert dtw.stride_list_["left_sensor"]["end"][0] == 571
+        assert dtw.stride_list_["left_sensor"]["end"][0] == 572
         assert_array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
 
         # on
@@ -99,6 +99,7 @@ class DtwTestBaseBarth:
 
 
 class TestBarthDtwAdditions(DtwTestBaseBarth):
+    # TODO: Add a test were a stride ends at the last sample before snapping
     def test_stride_list(self):
         """Test that the output of the stride list is correct."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
@@ -107,7 +108,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 
         expected_stride_list = pd.DataFrame(columns=["s_id", "start", "end"])
         expected_stride_list["start"] = [5, 18]
-        expected_stride_list["end"] = [7, 20]
+        expected_stride_list["end"] = [8, 21]
         expected_stride_list["s_id"] = [0, 1]
         expected_stride_list = expected_stride_list.set_index("s_id")
         assert_frame_equal(dtw.stride_list_.astype(np.int64), expected_stride_list.astype(np.int64))
@@ -128,11 +129,11 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
         assert_frame_equal(
             dtw.stride_list_["sensor1"].astype(np.int64),
-            pd.DataFrame([[0, 5, 7]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
+            pd.DataFrame([[0, 5, 8]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
         )
         assert_frame_equal(
             dtw.stride_list_["sensor2"].astype(np.int64),
-            pd.DataFrame([[0, 2, 4]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
+            pd.DataFrame([[0, 2, 5]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
         )
 
     def test_stride_list_passes_test_func(self):
@@ -161,7 +162,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 class TestPostProcessing:
     """The postprocessing can get quite complex. This tries to split it in a couple of unit tests.
 
-    Snapping is not tested here as it is well covered by the regression tests
+    Snapping is not tested here (fully) as it is well covered by the regression tests
     """
 
     def test_simple_stride_time(self):
@@ -319,6 +320,29 @@ class TestPostProcessing:
             dtw.segment(data, sampling_rate_hz=204.8)
 
         assert len(w) == 0
+
+    def test_snapping_edge_case(self):
+        """Testing if snapping works, even if one of the strides ends inclusive the last sample.
+
+        This is a special case, as we add 1 to the end of all matches, so that the end is exclusive.
+        This means that snapping needs to be performed with an index, that is officially out ouf bounds.
+        Therefore, this is handled separately.
+        """
+        sequence = pd.DataFrame([*np.ones(5) * 2, 0, 1.0, 0], columns=["col"])
+        template = create_dtw_template(pd.DataFrame([0, 1.0, 0], columns=["col"]), sampling_rate_hz=1000.0)
+        dtw = BarthDtw(
+            max_cost=1,
+            min_match_length_s=None,
+            conflict_resolution=False,
+            snap_to_min_win_ms=3,
+            template=template,
+            snap_to_min_axis="col",
+            find_matches_method="min_under_thres",
+        )
+
+        dtw = dtw.segment(sequence, sampling_rate_hz=1000.0,)
+
+        assert_array_equal(dtw.stride_list_, [[5, 8]])
 
 
 # Add all the tests of base dtw, as they should pass here as well
