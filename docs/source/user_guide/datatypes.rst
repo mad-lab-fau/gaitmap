@@ -191,7 +191,7 @@ A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least have th
 :obj:`~gaitmap.utils.consts.SL_COLS`.
 The index is expected to have one level with the name `s_id`.
 Instead of being part of the index, it can also be a column with the same name.
-All algorithms that take a stride list as input support both formats (index or column)
+All algorithms that take a stride list as input support both formats (index or column).
 Independent of that, `s_id` index or column should contain a unique identifier for each stride in the stride list.
 All other columns should provide values in samples since the start of the recording (not the start of the stride!)
 
@@ -258,8 +258,8 @@ This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
 }
 
 Like the dataset validation function, all stride list methods also support the `raise_exception` parameter.
-If it is True, the method will raise a descriptive error instead of returning `False`.
-Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, were single and
+If it is `True`, the method will raise a descriptive error instead of returning `False`.
+Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, where single and
 multi sensor stride lists are allowed as inputs.
 
 The normal format check shown above does not check if the values in the stride list follow this order.
