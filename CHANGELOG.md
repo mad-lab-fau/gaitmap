@@ -54,6 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed possible `ZeroDivisionError` when using `evaluation_utils.scores`. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/104)
+
 ### Migration Guide
 
 - In case your algorithm uses `is_{single,multi}_sensor_{position, velocity, orientation}_list` all usages must be 
