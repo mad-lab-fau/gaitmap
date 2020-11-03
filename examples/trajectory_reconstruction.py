@@ -47,7 +47,7 @@ stride_list["left_sensor"].head(3)
 # estimation.
 # Note that this assumes the sensor to be aligned with your world coordinate system at the beginning of
 # the stride.
-# If you want to pass a starting orientation that is not aligned with your world coordinate system, you can
+# If you need to modify the starting orientation or position, you need to call the orientation and position methods directly for each each stride without the use of the `StrideLevelTrajectory` wrapper.
 # do so by passing `initial_orientation` to the initialization `ori_method`.
 # However, in this example, it will be overwritten in :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory`.
 # You can replace the orientation- or position-estimation methods by any of the methods in
