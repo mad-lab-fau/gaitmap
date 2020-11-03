@@ -65,6 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  If you were using the function with `s_id=False`, you can update to `{position, velocity, orientation}_list_type=None`
  to get the same behaviour.
 
+### Scientific Changes
+
+- All Dtw based methods now produce outputs that follow our index guidelines.
+  This means that they correctly produce matches, which end index is **exclusive**.
+  In some cases this might change existing results by adding 1 to the end index.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/103)
+
 ## [1.1.1] - 
 
 ### Added
