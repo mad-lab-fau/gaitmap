@@ -4,7 +4,7 @@ from typing import Union, Tuple, Dict, Hashable
 
 from pandas import DataFrame
 
-from numpy import nan
+import numpy as np
 
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
@@ -234,6 +234,6 @@ def _calculate_score(a, b):
     try:
         output = a / b
     except ZeroDivisionError:
-        output = nan
+        output = np.nan
 
     return output
