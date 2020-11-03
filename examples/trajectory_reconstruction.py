@@ -59,7 +59,7 @@ stride_list["left_sensor"].head(3)
 # If this is not True in your case and you need to modify the starting orientation or position, you need to call the
 # orientation and position methods directly for each each stride without the use of the `StrideLevelTrajectory` wrapper.
 # Do so by passing `initial_orientation` to the initialization of the `ori_method`.
-# However, in :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` this initial orientation will be 
+# However, in :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` this initial orientation will be
 # overwritten by an initial orientation estimated from gravity.
 
 ori_method = SimpleGyroIntegration()
