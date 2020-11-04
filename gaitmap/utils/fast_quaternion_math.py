@@ -42,6 +42,9 @@ def rotate_vector(q: np.ndarray, v: np.ndarray) -> np.ndarray:
 @njit()
 def quat_from_rotvec(sigma: np.ndarray) -> np.ndarray:
     """Construct a quaternion from a rotation vector."""
-    a_c = np.cos(np.linalg.norm(sigma) / 2)
-    a_s = np.sin(np.linalg.norm(sigma) / 2) / np.linalg.norm(sigma)
+    angle = np.linalg.norm(sigma)
+    if angle == 0.0:
+        return np.array([0.0, 0.0, 0.0, 1.0])
+    a_c = np.cos(angle / 2)
+    a_s = np.sin(angle / 2) / angle
     return np.append(a_s * sigma, a_c)
