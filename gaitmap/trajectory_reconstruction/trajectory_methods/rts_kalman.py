@@ -43,13 +43,13 @@ class RtsKalman(BaseTrajectoryMethod):
         It looks at the maximum energy in windows of 10 gyro samples and decides for a ZUPT, if this energy is
         smaller than `zupt_threshold_dps`.
         You can also override the `find_zupts` method to implement your own ZUPT detection.
-    zupt_variance_m2ps2
+    zupt_variance
         The variance of the noise of the measured velocity during a ZUPT in (m/s)^2.
         As we are typically pretty sure, that the velocity should be zero then, this should be very small.
-    velocity_error_variance_m2ps2
+    velocity_error_variance
         The variance of the noise present in the velocity error in (m/s)^2.
         Should be based on the sensor accelerometer noise.
-    orientation_error_variance_r2
+    orientation_error_variance
         The variance of the noise present in the orientation error in rad^2.
         Should be based on the sensor gyroscope noise.
         The orientation error is internally not represented as quaternion, but as axis-angle representation,
@@ -57,6 +57,15 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking
         Flag to control if the level walking assumptions should be used during ZUPTs.
         If this is True, additionally to the velocity, the z position is reset to zero during a ZUPT.
+    level_walking_variance
+        The variance of the noise of the measured position during a level walking update.
+        Should typically be very small.
+    zupt_window_length_s
+        Length of the window used in the default method to find ZUPTs.
+        Given in seconds.
+    zupt_window_overlap_s
+        Length of the window overlap used in the default method to find ZUPTs.
+        It is given in seconds and if not given it defaults to half the window length.
 
     Attributes
     ----------
@@ -108,9 +117,9 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> # Create an algorithm instance
     >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
     ...                    zupt_threshold_dps=34.0,
-    ...                    zupt_variance_m2ps2=10e-8,
-    ...                    velocity_error_variance_m2ps2=10e5,
-    ...                    orientation_error_variance_r2=10e-2)
+    ...                    zupt_variance=10e-8,
+    ...                    velocity_error_variance=10e5,
+    ...                    orientation_error_variance=10e-2)
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -134,10 +143,13 @@ class RtsKalman(BaseTrajectoryMethod):
 
     initial_orientation: Union[np.ndarray, Rotation]
     zupt_threshold_dps: float
-    zupt_variance_m2ps2: float
-    velocity_error_variance_m2ps2: float
-    orientation_error_variance_r2: float
+    zupt_variance: float
+    velocity_error_variance: float
+    orientation_error_variance: float
     level_walking: bool
+    level_walking_variance: float
+    zupt_window_length_s: float
+    zupt_window_overlap_s: float
     data: SingleSensorDataset
     sampling_rate_hz: float
     covariance_: pd.DataFrame
@@ -146,17 +158,25 @@ class RtsKalman(BaseTrajectoryMethod):
         self,
         initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
         zupt_threshold_dps: float = 34.0,
-        zupt_variance_m2ps2: float = 10e-8,
-        velocity_error_variance_m2ps2: float = 10e5,
-        orientation_error_variance_r2: float = 10e-2,
+        zupt_variance: float = 10e-8,
+        velocity_error_variance: float = 10e5,
+        orientation_error_variance: float = 10e-2,
         level_walking: bool = True,
+        level_walking_variance: float = 10e-8,
+        zupt_window_length_s: float = 0.05,
+        zupt_window_overlap_s: float = None,
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
-        self.zupt_variance_m2ps2 = zupt_variance_m2ps2
-        self.velocity_error_variance_m2ps2 = velocity_error_variance_m2ps2
-        self.orientation_error_variance_r2 = orientation_error_variance_r2
+        self.zupt_variance = zupt_variance
+        self.velocity_error_variance = velocity_error_variance
+        self.orientation_error_variance = orientation_error_variance
         self.level_walking = level_walking
+        self.level_walking_variance = level_walking_variance
+        self.zupt_window_length_s = zupt_window_length_s
+        if zupt_window_overlap_s is None:
+            zupt_window_overlap_s = zupt_window_length_s / 2.0
+        self.zupt_window_overlap_s = zupt_window_overlap_s
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position, velocity and orientation of the sensor.
@@ -185,12 +205,12 @@ class RtsKalman(BaseTrajectoryMethod):
         initial_orientation = initial_orientation.copy()
 
         process_noise = np.zeros((9, 9))
-        process_noise[3:6, 3:6] = self.velocity_error_variance_m2ps2 * np.eye(3)
-        process_noise[6:, 6:] = self.orientation_error_variance_r2 * np.eye(3)
+        process_noise[3:6, 3:6] = self.velocity_error_variance * np.eye(3)
+        process_noise[6:, 6:] = self.orientation_error_variance * np.eye(3)
         covariance = np.copy(process_noise)
 
         # measure noise
-        meas_noise = self.zupt_variance_m2ps2 * np.eye(4)
+        meas_noise = self.zupt_variance * np.eye(4)
         if not self.level_walking:
             meas_noise[3, 3] = 0.0
 
@@ -234,7 +254,11 @@ class RtsKalman(BaseTrajectoryMethod):
 
     def find_zupts(self, gyro):
         """Find the ZUPT samples based on the gyro measurements."""
-        return find_static_samples(gyro, 10, self.zupt_threshold_dps * (np.pi / 180), "maximum", 5)
+        window_length = max(2, round(self.sampling_rate_hz * self.zupt_window_length_s))
+        window_overlap = round(self.sampling_rate_hz * self.zupt_window_overlap_s)
+        return find_static_samples(
+            gyro, window_length, self.zupt_threshold_dps * (np.pi / 180), "maximum", window_overlap
+        )
 
 
 @njit()

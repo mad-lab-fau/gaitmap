@@ -101,7 +101,7 @@ class TestTrajectoryMethodMixin:
         test_data = np.vstack((accel_data, break_data))
         test_data = pd.DataFrame(test_data, columns=SF_COLS)
 
-        test = test.estimate(test_data, 1)
+        test = test.estimate(test_data, 10)
         expected = np.zeros(3)
 
         assert_array_almost_equal(test.velocity_.to_numpy()[0], expected, decimal=10)

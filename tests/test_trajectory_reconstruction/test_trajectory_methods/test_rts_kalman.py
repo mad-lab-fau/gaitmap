@@ -45,7 +45,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
     def test_corrects_velocity_drift(self):
         """Check that ZUPTs correct a velocity drift and set velocity to zero."""
-        test = RtsKalman(level_walking=False)
+        test = RtsKalman(level_walking=False, zupt_window_length_s=0.2)
         acc = np.array([5.0, 5.0, 12.81])
         accel_data = np.repeat(np.concatenate((acc, [0.0, 0.0, 40.0]))[None, :], 5, axis=0)
         zupt_data = np.repeat(np.concatenate((acc, [0.0, 0.0, 0.0]))[None, :], 10, axis=0)
