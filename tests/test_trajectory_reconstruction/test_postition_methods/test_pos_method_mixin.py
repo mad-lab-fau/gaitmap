@@ -14,7 +14,6 @@ from gaitmap.utils.rotations import rotate_dataset_series
 
 
 class TestPositionMethodNoGravityMixin:
-    algorithm_class = None
     __test__ = False
 
     def init_algo_class(self) -> BasePositionMethod:

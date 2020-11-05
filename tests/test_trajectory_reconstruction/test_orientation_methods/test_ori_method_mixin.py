@@ -9,7 +9,6 @@ from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
 
 
 class TestOrientationMethodMixin:
-    algorithm_class = None
     __test__ = False
 
     def init_algo_class(self) -> BaseOrientationMethod:
