@@ -92,7 +92,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
     >>> import pandas as pd
     >>> from gaitmap.utils.consts import SF_COLS
-    >>> from gaitmap.trajectory_reconstruction.rts_kalman import RtsKalman
+    >>> from gaitmap.trajectory_reconstruction import RtsKalman
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
