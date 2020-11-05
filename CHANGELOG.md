@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `RegionLevelTrajectory` class that calculates trajectories for entire ROIs/gait sequences.
   Otherwise the interface is very similar to `StrideLevelTrajectory`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
+- An Error-State-Kalman-Filter with rts smoothing (`RtsKalman`) was added that can be used to estimate orientation and
+  position over longer regions by detecting its own ZUPTs.
+  This can (should) be used in combination with `RegionLevelTrajectory`.
+  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/85)
 - Added a new example for `RegionLevelTrajectory`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
 - Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
