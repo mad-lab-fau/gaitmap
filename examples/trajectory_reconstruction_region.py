@@ -23,12 +23,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from gaitmap.example_data import get_healthy_example_imu_data
-from gaitmap.trajectory_reconstruction import (
-    SimpleGyroIntegration,
-    ForwardBackwardIntegration,
-    RegionLevelTrajectory,
-    MadgwickAHRS,
-)
+from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
 imu_data = get_healthy_example_imu_data()
@@ -42,18 +37,15 @@ dummy_regions_list["left_sensor"]
 # ------------------------------------
 #
 # Like for the stride level method we need to choose a orientation and a position algorithm.
-# As we will perform the integration over a longer time period, we will use the Madgwick algorithm for the orientation,
-# which is expected to perform better than just naive Gyro integration.
-#
-# For the spatial integration, we will use the forward-backward integration to compensate for drift.
-# This is only possible, because our gait sequence starts and ends in a resting period.
+# However, as we want to perform integration over a long time period, methods that can take advatage over the multiple
+# regions of zero velocity (ZUPTs) to perform corrections are preferable.
+# Therefore, the best choice for such region is a Kalman Filter.
+# As this takes care of both position and orientation estimation in one go, we can pass it as a `trajectory_method`.
 #
 # The initial orientation will automatically be estimated by the `RegionLevelTrajectory` class using the first
 # n-samples.
-
-ori_method = MadgwickAHRS(beta=0.02)
-pos_method = ForwardBackwardIntegration()
-trajectory = RegionLevelTrajectory(ori_method, pos_method)
+trajectory_method = RtsKalman()
+trajectory = RegionLevelTrajectory(trajectory_method=trajectory_method)
 
 
 # %%

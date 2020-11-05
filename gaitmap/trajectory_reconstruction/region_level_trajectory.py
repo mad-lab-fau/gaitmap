@@ -37,7 +37,12 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     regions of interest or gait sequences provided.
     Note that this class assumes that each gait sequence starts with a static resting period and certain methods might
     require the integration regions to end in a static region as well.
-    Check the documentation of the individual ori and pos methods for details.
+    Check the documentation of the individual methods for details.
+
+    Note, that by default this wrapper uses simple integration methods.
+    These will not provide the best results under most scenarios, but as they do not have any tunable parameters,
+    it is a good start.
+    However, it is advisable to chose a more suffisticated method and tune the parameter to your specific usecase.
 
     Attributes
     ----------
@@ -96,18 +101,14 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     Examples
     --------
-    You can pick any orientation and any position estimation method that is implemented for this wrapper.
+    You can pick any orientation, position, or trajectory estimation method that is implemented for this wrapper.
     However, simple integrations might lead to significant drift if the integration regions are longer.
 
-    # TODO: Change to Kalmann filter if available
-
-    >>> from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
-    >>> from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration
+    >>> from gaitmap.trajectory_reconstruction import RtsKalman
     >>> # Create custom instances of the methods you want to use
-    >>> ori_method = SimpleGyroIntegration()
-    >>> pos_method = ForwardBackwardIntegration()
+    >>> trajectory_method = RtsKalman()
     >>> # Create an instance of the wrapper
-    >>> per_region_traj = RegionLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
+    >>> per_region_traj = RegionLevelTrajectory(trajectory_method=trajectory_method)
     >>> # Apply the method
     >>> data = ...
     >>> sampling_rate_hz = 204.8
@@ -136,6 +137,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def __init__(
         self,
         ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
+        # TODO: Change default so simple forward integration once this is implemented
         pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
