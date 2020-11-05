@@ -15,16 +15,17 @@ from gaitmap.utils.consts import GRAV_VEC
 
 
 class RtsKalman(BaseTrajectoryMethod):
-    """An ESKF with RTS smoothing for trajectory estimation.
+    """An Error-State-Kalman-Filter (ESKF) with Rauch-Tung-Striebel (RTS) smoothing for trajectory estimation.
 
-    This algorithm employs an Error State Extended Kalman Filter to estimate a trajectory and velocity profile
+    This algorithm employs an ESKF to estimate a trajectory and velocity profile
     from acceleration and gyroscope data.
     It does three passes over the data, where in the first one the data is integrated and the current error in position,
     velocity and orientation is tracked with an extended kalman filter.
-    This filter uses a linearized transition matrix in the prediction phase and ZUPT- measurements in its update phase.
-    In the second pass Rauch-Tung-Striebel smoothing is applied to the previously estimated error states and error
-    covariances and in the thrid pass the smoothed error states are applied as correction to the integrated nominal
-    states from the first pass.
+    This filter uses a linearized transition matrix in the prediction phase and Zero-Velocity-Updates (ZUPT) in its
+    update phase.
+    In the second pass RTS smoothing is applied to the previously estimated error states and error covariances and in
+    the thrid pass the smoothed error states are applied as correction to the integrated nominal states from the first
+    pass.
 
     This method is expected to be run on long sections of data including multiple strides.
 

@@ -14,6 +14,20 @@ TrajectoryWrapperClasses
     StrideLevelTrajectory
     RegionLevelTrajectory
 
+Trajectory Estimation Methods
+-----------------------------
+.. automodule:: gaitmap.trajectory_reconstruction.trajectory_methods
+    :no-members:
+    :no-inherited-members:
+
+.. currentmodule:: gaitmap.trajectory_reconstruction
+.. autosummary::
+   :toctree: generated/trajectory_reconstruction
+   :template: class.rst
+
+    RtsKalman
+
+
 Orientation Estimation Methods
 ------------------------------
 .. automodule:: gaitmap.trajectory_reconstruction.orientation_methods
