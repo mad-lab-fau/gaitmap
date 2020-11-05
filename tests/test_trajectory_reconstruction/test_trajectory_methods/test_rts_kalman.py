@@ -6,7 +6,9 @@ from gaitmap.base import BaseType, BaseOrientationMethod
 from gaitmap.trajectory_reconstruction import RtsKalman
 from gaitmap.utils.consts import SF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
-from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajectory_method_mixin import TestTrajectoryMethodMixin
+from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajectory_method_mixin import (
+    TestTrajectoryMethodMixin,
+)
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):

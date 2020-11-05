@@ -3,4 +3,3 @@
 from gaitmap.trajectory_reconstruction.trajectory_methods.rts_kalman import RtsKalman
 
 __all__ = ["RtsKalman"]
-
