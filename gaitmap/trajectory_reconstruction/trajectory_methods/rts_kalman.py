@@ -54,6 +54,9 @@ class RtsKalman(BaseTrajectoryMethod):
         Should be based on the sensor gyroscope noise.
         The orientation error is internally not represented as quaternion, but as axis-angle representation,
         which also explains the unit of rad^2 for this variance.
+    level_walking
+        Flag to control if the level walking assumptions should be used during ZUPTs.
+        If this is True, additionally to the velocity, the z position is reset to zero during a ZUPT.
 
     Attributes
     ----------
@@ -134,6 +137,7 @@ class RtsKalman(BaseTrajectoryMethod):
     zupt_variance_m2ps2: float
     velocity_error_variance_m2ps2: float
     orientation_error_variance_r2: float
+    level_walking: bool
     data: SingleSensorDataset
     sampling_rate_hz: float
     covariance_: pd.DataFrame
@@ -145,12 +149,14 @@ class RtsKalman(BaseTrajectoryMethod):
         zupt_variance_m2ps2: float = 10e-8,
         velocity_error_variance_m2ps2: float = 10e5,
         orientation_error_variance_r2: float = 10e-2,
+        level_walking: bool = True,
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
         self.zupt_variance_m2ps2 = zupt_variance_m2ps2
         self.velocity_error_variance_m2ps2 = velocity_error_variance_m2ps2
         self.orientation_error_variance_r2 = orientation_error_variance_r2
+        self.level_walking = level_walking
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position, velocity and orientation of the sensor.
@@ -184,14 +190,24 @@ class RtsKalman(BaseTrajectoryMethod):
         covariance = np.copy(process_noise)
 
         # measure noise
-        meas_noise = self.zupt_variance_m2ps2 * np.eye(3)
+        meas_noise = self.zupt_variance_m2ps2 * np.eye(4)
+        if not self.level_walking:
+            meas_noise[3, 3] = 0.0
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
         zupts = self.find_zupts(gyro_data)
 
         states, covariances = _rts_kalman_update_series(
-            acc_data, gyro_data, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
+            acc_data,
+            gyro_data,
+            initial_orientation,
+            sampling_rate_hz,
+            meas_noise,
+            covariance,
+            process_noise,
+            zupts,
+            self.level_walking,
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
@@ -241,7 +257,7 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
 
 @njit()
 def _rts_kalman_forward_pass(
-    accel, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
+    accel, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
 ):
     prior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     posterior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
@@ -263,8 +279,10 @@ def _rts_kalman_forward_pass(
     transition_matrix = np.eye(9)
     transition_matrix[:3, 3:6] = np.eye(3) / sampling_rate_hz
 
-    meas_matrix = np.zeros((3, 9))
-    meas_matrix[:, 3:6] = np.eye(3)
+    meas_matrix = np.zeros((4, 9))
+    meas_matrix[:3, 3:6] = np.eye(3)
+    if level_walking:
+        meas_matrix[3, 2] = 1.0
 
     for i, zupt in enumerate(zupts):
         acc = np.ascontiguousarray(accel[i])
@@ -290,11 +308,15 @@ def _rts_kalman_forward_pass(
 
         # correct the error state if the current sample is marked as a zupt, this is the update step
         if zupt:
-            innovation = prior_error_states[i + 1, 3:6] - velocity
+            innovation = np.append(velocity, position[2]) - meas_matrix @ prior_error_states[i + 1]
             innovation_cov = meas_matrix @ prior_covariances[i + 1] @ meas_matrix.T + meas_noise
-            inv = np.linalg.inv(innovation_cov)
+            inv = np.zeros((4, 4))
+            if level_walking:
+                inv[:, :] = np.linalg.inv(innovation_cov)
+            else:
+                inv[:3, :3] = np.linalg.inv(innovation_cov[:3, :3])
             gain = prior_covariances[i + 1] @ meas_matrix.T @ inv
-            posterior_error_states[i + 1, :] = prior_error_states[i + 1] - gain @ innovation
+            posterior_error_states[i + 1, :] = prior_error_states[i + 1] + gain @ innovation
 
             factor = np.eye(covariance.shape[0]) - gain @ meas_matrix
             covariance_adj = factor @ prior_covariances[i + 1] @ factor.T
@@ -344,10 +366,10 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
 
 @njit(cache=True)
 def _rts_kalman_update_series(
-    acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
+    acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
 ):
     forward_eskf_results, forward_nominal_states = _rts_kalman_forward_pass(
-        acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
+        acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
     )
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
 
