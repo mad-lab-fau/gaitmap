@@ -16,12 +16,13 @@ from gaitmap.utils.consts import GRAV_VEC
 
 class RtsKalman(BaseTrajectoryMethod):
     """An ESKF with RTS smoothing for trajectory estimation.
+
     This algorithm employs an Error State Extended Kalman Filter to estimate
     a trajectory and velocity profile from acceleration and gyroscope data.
     It does three passes over the data, where in the first one the data is integrated and the current error in
     position, velocity and orientation is tracked with an extended kalman filter. This filter uses a linearized
     transition matrix in the prediction phase and ZUPT- measurements in its update phase.
-    In the second pass Rauch-Tung_Striebel smoothing is applied to the previously estimated error states
+    In the second pass Rauch-Tung-Striebel smoothing is applied to the previously estimated error states
     ands error covariances and in the thrid pass the smoothed error states are applied as correction to the integrated
     nominal states from the first pass.
 
@@ -35,7 +36,7 @@ class RtsKalman(BaseTrajectoryMethod):
         It is critical that this value is close to the actual orientation.
         If you pass an array, remember that the order of elements must be x, y, z, w.
     zupt_threshold
-        The threshold used in the defult method for ZUPT detection. 
+        The threshold used in the defult method for ZUPT detection.
         It looks at the maximum energy in windows of 10 gyro samples and decides for a ZUPT, if this energy is
         smaller than zupt_threshold.
         You can also override the find_zupts method to implement your own ZUPT detection.
@@ -61,7 +62,7 @@ class RtsKalman(BaseTrajectoryMethod):
     velocity_
         The calculated velocities
     covariance_
-        The covariance matrices of the kalman filter after smoothing. 
+        The covariance matrices of the kalman filter after smoothing.
         They can be used as a measure of how good the filter worked and how
         accurate the results are.
 
@@ -90,7 +91,8 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
-    >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]), zupt_threshold=34.0, zupt_variance=10e-8, velocity_error_variance=10e5, orientation_error_variance=10e-2)
+    >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
+        ..  zupt_threshold=34.0, zupt_variance=10e-8, velocity_error_variance=10e5, orientation_error_variance=10e-2)
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -195,7 +197,7 @@ class RtsKalman(BaseTrajectoryMethod):
         ]
         self.covariance_ = pd.concat(
             [pd.DataFrame(cov, columns=covariance_cols, index=covariance_cols) for cov in covariances],
-            keys=range(covariances.shape[0]),
+            keys=range(len(covariances)),
         )
         return self
 
@@ -210,7 +212,7 @@ def cross_product_matrix(vec):
     return np.array([[0.0, -vec[2], vec[1]], [vec[2], 0.0, -vec[0]], [-vec[1], vec[0], 0.0]])
 
 
-# @njit()
+@njit()
 def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampling_rate_hz):
     sigma = gyro / sampling_rate_hz
     r = quat_from_rotvec(sigma)
@@ -222,7 +224,7 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
     return new_position, new_velocity, new_orientation
 
 
-# @njit()
+@njit()
 def _rts_kalman_forward_pass(
     accel, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
 ):
@@ -271,7 +273,7 @@ def _rts_kalman_forward_pass(
             transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
         )
 
-        # correct the error state if the current sample is marked as a zupt, this is the update step in the kalman filter
+        # correct the error state if the current sample is marked as a zupt, this is the update step
         if zupt:
             innovation = prior_error_states[i + 1, 3:6] - velocity
             innovation_cov = meas_matrix @ prior_covariances[i + 1] @ meas_matrix.T + meas_noise
@@ -292,7 +294,7 @@ def _rts_kalman_forward_pass(
     )
 
 
-# @njit()
+@njit()
 def _rts_kalman_backward_pass(
     prior_covariances, posterior_covariances, prior_error_states, posterior_error_states, state_transitions
 ):
@@ -314,7 +316,7 @@ def _rts_kalman_backward_pass(
     return corrected_error_states, corrected_covariances
 
 
-# @njit()
+@njit()
 def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_error_states):
     for i, state in enumerate(corrected_error_states):
         positions[i] -= state[:3]
@@ -325,7 +327,7 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
     return positions, velocities, orientations
 
 
-# @njit(cache=True)
+@njit(cache=True)
 def _rts_kalman_update_series(
     acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
 ):
@@ -333,5 +335,6 @@ def _rts_kalman_update_series(
         acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts
     )
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
+
     corrected_states = _rts_kalman_correction_pass(*forward_nominal_states, corrected_error_states)
     return corrected_states, corrected_covariances
