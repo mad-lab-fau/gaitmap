@@ -38,20 +38,22 @@ class RtsKalman(BaseTrajectoryMethod):
         The initial orientation of the sensor that is assumed.
         It is critical that this value is close to the actual orientation.
         If you pass an array, remember that the order of elements must be x, y, z, w.
-    zupt_threshold
-        The threshold used in the defult method for ZUPT detection.
+    zupt_threshold_dps
+        The threshold used in the default method for ZUPT detection in degree per second.
         It looks at the maximum energy in windows of 10 gyro samples and decides for a ZUPT, if this energy is
-        smaller than `zupt_threshold`.
+        smaller than `zupt_threshold_dps`.
         You can also override the `find_zupts` method to implement your own ZUPT detection.
-    zupt_variance
-        The variance of the noise of the measured velocity during a ZUPT.
+    zupt_variance_m2ps2
+        The variance of the noise of the measured velocity during a ZUPT in (m/s)^2.
         As we are typically pretty sure, that the velocity should be zero then, this should be very small.
-    velocity_error_variance
-        The variance of the noise present in the velocity error.
+    velocity_error_variance_m2ps2
+        The variance of the noise present in the velocity error in (m/s)^2.
         Should be based on the sensor accelerometer noise.
-    orientation_error_variance
-        The variance of the noise present in the orientation error.
+    orientation_error_variance_r2
+        The variance of the noise present in the orientation error in rad^2.
         Should be based on the sensor gyroscope noise.
+        The orientation error is internally not represented as quaternion, but as axis-angle representation,
+        which also explains the unit of rad^2 for this variance.
 
     Attributes
     ----------
@@ -77,9 +79,13 @@ class RtsKalman(BaseTrajectoryMethod):
 
     Notes
     -----
-    The default values chosen for the nopise parameters and the ZUPT-threshold are optimized based on NilsPod recordings
+    The default values chosen for the noise parameters and the ZUPT-threshold are optimized based on NilsPod recordings
     with healthy subjects.
     If you are using a different sensor system or other cohorts, it is advisable to readjust these parameter values.
+    When adjusting the variance of the three different noises for velocity error, orientation error and zupts,
+    the relation between those values is much more important, than the absolute values assigned.
+    As long as the quotient between them is kept about the same and `zupt_threshold_dps` is not changed,
+    similar results are expected.
 
     This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
@@ -98,10 +104,10 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
     >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
-    ...                    zupt_threshold=34.0,
-    ...                    zupt_variance=10e-8,
-    ...                    velocity_error_variance=10e5,
-    ...                    orientation_error_variance=10e-2)
+    ...                    zupt_threshold_dps=34.0,
+    ...                    zupt_variance_m2ps2=10e-8,
+    ...                    velocity_error_variance_m2ps2=10e5,
+    ...                    orientation_error_variance_r2=10e-2)
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -124,10 +130,10 @@ class RtsKalman(BaseTrajectoryMethod):
     """
 
     initial_orientation: Union[np.ndarray, Rotation]
-    zupt_threshold: float
-    zupt_variance: float
-    velocity_error_variance: float
-    orientation_error_variance: float
+    zupt_threshold_dps: float
+    zupt_variance_m2ps2: float
+    velocity_error_variance_m2ps2: float
+    orientation_error_variance_r2: float
     data: SingleSensorDataset
     sampling_rate_hz: float
     covariance_: pd.DataFrame
@@ -135,16 +141,16 @@ class RtsKalman(BaseTrajectoryMethod):
     def __init__(
         self,
         initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
-        zupt_threshold: float = 34.0,
-        zupt_variance: float = 10e-8,
-        velocity_error_variance: float = 10e5,
-        orientation_error_variance: float = 10e-2,
+        zupt_threshold_dps: float = 34.0,
+        zupt_variance_m2ps2: float = 10e-8,
+        velocity_error_variance_m2ps2: float = 10e5,
+        orientation_error_variance_r2: float = 10e-2,
     ):
         self.initial_orientation = initial_orientation
-        self.zupt_threshold = zupt_threshold
-        self.zupt_variance = zupt_variance
-        self.velocity_error_variance = velocity_error_variance
-        self.orientation_error_variance = orientation_error_variance
+        self.zupt_threshold_dps = zupt_threshold_dps
+        self.zupt_variance_m2ps2 = zupt_variance_m2ps2
+        self.velocity_error_variance_m2ps2 = velocity_error_variance_m2ps2
+        self.orientation_error_variance_r2 = orientation_error_variance_r2
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
         """Estimate the position, velocity and orientation of the sensor.
@@ -173,12 +179,12 @@ class RtsKalman(BaseTrajectoryMethod):
         initial_orientation = initial_orientation.copy()
 
         process_noise = np.zeros((9, 9))
-        process_noise[3:6, 3:6] = self.velocity_error_variance * np.eye(3)
-        process_noise[6:, 6:] = self.orientation_error_variance * np.eye(3)
+        process_noise[3:6, 3:6] = self.velocity_error_variance_m2ps2 * np.eye(3)
+        process_noise[6:, 6:] = self.orientation_error_variance_r2 * np.eye(3)
         covariance = np.copy(process_noise)
 
         # measure noise
-        meas_noise = self.zupt_variance * np.eye(3)
+        meas_noise = self.zupt_variance_m2ps2 * np.eye(3)
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
@@ -200,9 +206,9 @@ class RtsKalman(BaseTrajectoryMethod):
             "x_vel_cov",
             "y_vel_cov",
             "z_vel_cov",
-            "roll_cov",
-            "pitch_cov",
-            "yaw_cov",
+            "x_ori_cov",
+            "y_ori_cov",
+            "z_ori_cov",
         ]
         self.covariance_ = pd.concat(
             [pd.DataFrame(cov, columns=covariance_cols, index=covariance_cols) for cov in covariances],
@@ -212,7 +218,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
     def find_zupts(self, gyro):
         """Find the ZUPT samples based on the gyro measurements."""
-        return find_static_samples(gyro, 10, self.zupt_threshold * (np.pi / 180), "maximum", 5)
+        return find_static_samples(gyro, 10, self.zupt_threshold_dps * (np.pi / 180), "maximum", 5)
 
 
 @njit()
