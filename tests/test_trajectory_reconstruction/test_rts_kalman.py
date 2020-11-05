@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from gaitmap.base import BaseType, BaseOrientationMethod
-from gaitmap.trajectory_reconstruction.rts_kalman import RtsKalman
+from gaitmap.trajectory_reconstruction import RtsKalman
 from gaitmap.utils.consts import SF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_trajectory_reconstruction.test_trajectory_method_mixin import TestTrajectoryMethodMixin

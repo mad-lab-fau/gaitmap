@@ -16,7 +16,6 @@ from gaitmap.utils.rotations import find_shortest_rotation, rotate_dataset
 
 
 class TestTrajectoryMethodMixin:
-    algorithm_class = None
     __test__ = False
 
     def init_algo_class(self) -> BaseTrajectoryMethod:
@@ -108,11 +107,11 @@ class TestTrajectoryMethodMixin:
         assert_array_almost_equal(test.velocity_.to_numpy()[0], expected, decimal=10)
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], expected, decimal=10)
 
-    def test_stride_sequence_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
+    def test_full_trajectory_regression(self, healthy_example_imu_data, snapshot):
         """Simple regression test with default parameters."""
         test = self.init_algo_class()
         fs = 204.8
-        data = healthy_example_imu_data["left_sensor"]
+        data = healthy_example_imu_data["left_sensor"].iloc[:3000]
 
         initial_g = np.median(data.to_numpy()[:100, :3], axis=0)
         initial_rotation = find_shortest_rotation(initial_g / np.linalg.norm(initial_g), np.array([0, 0, 1]))
