@@ -17,14 +17,16 @@ from gaitmap.utils.consts import GRAV_VEC
 class RtsKalman(BaseTrajectoryMethod):
     """An ESKF with RTS smoothing for trajectory estimation.
 
-    This algorithm employs an Error State Extended Kalman Filter to estimate
-    a trajectory and velocity profile from acceleration and gyroscope data.
-    It does three passes over the data, where in the first one the data is integrated and the current error in
-    position, velocity and orientation is tracked with an extended kalman filter. This filter uses a linearized
-    transition matrix in the prediction phase and ZUPT- measurements in its update phase.
-    In the second pass Rauch-Tung-Striebel smoothing is applied to the previously estimated error states
-    ands error covariances and in the thrid pass the smoothed error states are applied as correction to the integrated
-    nominal states from the first pass.
+    This algorithm employs an Error State Extended Kalman Filter to estimate a trajectory and velocity profile
+    from acceleration and gyroscope data.
+    It does three passes over the data, where in the first one the data is integrated and the current error in position,
+    velocity and orientation is tracked with an extended kalman filter.
+    This filter uses a linearized transition matrix in the prediction phase and ZUPT- measurements in its update phase.
+    In the second pass Rauch-Tung-Striebel smoothing is applied to the previously estimated error states and error
+    covariances and in the thrid pass the smoothed error states are applied as correction to the integrated nominal
+    states from the first pass.
+
+    This method is expected to be run on long sections of data including multiple strides.
 
     The implementation of the RTS smoothing is based on the paper [1]_.
     The error state kalman filter part itself is based on the paper [2]_.
@@ -38,11 +40,11 @@ class RtsKalman(BaseTrajectoryMethod):
     zupt_threshold
         The threshold used in the defult method for ZUPT detection.
         It looks at the maximum energy in windows of 10 gyro samples and decides for a ZUPT, if this energy is
-        smaller than zupt_threshold.
-        You can also override the find_zupts method to implement your own ZUPT detection.
+        smaller than `zupt_threshold`.
+        You can also override the `find_zupts` method to implement your own ZUPT detection.
     zupt_variance
-        The variance of the noise of the measured velocity during a ZUPT. As we are typically pretty sure, that
-        the velocity should be zero then, this should be very small.
+        The variance of the noise of the measured velocity during a ZUPT.
+        As we are typically pretty sure, that the velocity should be zero then, this should be very small.
     velocity_error_variance
         The variance of the noise present in the velocity error.
         Should be based on the sensor accelerometer noise.
@@ -63,8 +65,7 @@ class RtsKalman(BaseTrajectoryMethod):
         The calculated velocities
     covariance_
         The covariance matrices of the kalman filter after smoothing.
-        They can be used as a measure of how good the filter worked and how
-        accurate the results are.
+        They can be used as a measure of how good the filter worked and how accurate the results are.
 
     Other Parameters
     ----------------
@@ -75,6 +76,10 @@ class RtsKalman(BaseTrajectoryMethod):
 
     Notes
     -----
+    The default values chosen for the nopise parameters and the ZUPT-threshold are optimized based on NilsPod recordings
+    with healthy subjects.
+    If you are using a different sensor system or other cohorts, it is advisable to readjust these parameter values.
+
     This class uses *Numba* as a just-in-time-compiler to achieve fast run times.
     In result, the first execution of the algorithm will take longer as the methods need to be compiled first.
 
@@ -92,19 +97,22 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
     >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
-        ..  zupt_threshold=34.0, zupt_variance=10e-8, velocity_error_variance=10e5, orientation_error_variance=10e-2)
+    ...                    zupt_threshold=34.0,
+    ...                    zupt_variance=10e-8,
+    ...                    velocity_error_variance=10e5,
+    ...                    orientation_error_variance=10e-2)
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
     >>> kalman.orientation_
     <pd.Dataframe with resulting quaternions>
-    >>> kalman.orientation_object
+    >>> kalman.orientation_object_
     <scipy.Rotation object>
     >>> kalman.position_
     <pd.Dataframe with resulting positions>
     >>> kalman.velocity_
     <pd.Dataframe with resulting velocities>
-    >>> kalman.covariances
+    >>> kalman.covariances_
     <pd.Dataframe with resulting covariances>
 
     See Also
