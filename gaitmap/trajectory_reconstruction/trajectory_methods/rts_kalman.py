@@ -62,6 +62,7 @@ class RtsKalman(BaseTrajectoryMethod):
         Should typically be very small.
     zupt_window_length_s
         Length of the window used in the default method to find ZUPTs.
+        If the value is too small at least a window of 2 samples is used.
         Given in seconds.
     zupt_window_overlap_s
         Length of the window overlap used in the default method to find ZUPTs.
@@ -174,8 +175,6 @@ class RtsKalman(BaseTrajectoryMethod):
         self.level_walking = level_walking
         self.level_walking_variance = level_walking_variance
         self.zupt_window_length_s = zupt_window_length_s
-        if zupt_window_overlap_s is None:
-            zupt_window_overlap_s = zupt_window_length_s / 2.0
         self.zupt_window_overlap_s = zupt_window_overlap_s
 
     def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
@@ -255,7 +254,11 @@ class RtsKalman(BaseTrajectoryMethod):
     def find_zupts(self, gyro):
         """Find the ZUPT samples based on the gyro measurements."""
         window_length = max(2, round(self.sampling_rate_hz * self.zupt_window_length_s))
-        window_overlap = round(self.sampling_rate_hz * self.zupt_window_overlap_s)
+        zupt_window_overlap_s = self.zupt_window_overlap_s
+        if zupt_window_overlap_s is None:
+            window_overlap = int(window_length // 2)
+        else:
+            window_overlap = round(self.sampling_rate_hz * zupt_window_overlap_s)
         return find_static_samples(
             gyro, window_length, self.zupt_threshold_dps * (np.pi / 180), "maximum", window_overlap
         )
