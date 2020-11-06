@@ -96,11 +96,15 @@ def test_trajectory_reconstruction(snapshot):
 
 
 def test_region_trajectory_reconstruction(snapshot):
-    from examples.trajectory_reconstruction_region import trajectory
+    from examples.trajectory_reconstruction_region import trajectory_full
+    from examples.trajectory_reconstruction_region import trajectory_per_stride
 
     # look at some random values in the center to test
-    snapshot.assert_match(trajectory.position_["left_sensor"].iloc[5000:5020])
-    snapshot.assert_match(trajectory.orientation_["left_sensor"].iloc[5000:5020])
+    snapshot.assert_match(trajectory_full.position_["left_sensor"].iloc[5000:5020])
+    snapshot.assert_match(trajectory_full.orientation_["left_sensor"].iloc[5000:5020])
+
+    snapshot.assert_match(trajectory_per_stride.position_["left_sensor"].loc[4].tail(20))
+    snapshot.assert_match(trajectory_per_stride.orientation_["left_sensor"].loc[4].tail(20))
 
 
 def test_mad_pipeline(snapshot):

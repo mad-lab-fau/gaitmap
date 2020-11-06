@@ -2,9 +2,9 @@ r"""
 Region Level Trajectory reconstruction
 ======================================
 
-This example shows how to calculate a IMU/foot trajectory over an entire gait sequence using
+This example shows how to calculate a IMU/foot trajectory_full over an entire gait sequence using
 :class:`~gaitmap.trajectory_reconstruction.RegionLevelTrajectory`.
-If you need an introduction to trajectory reconstruction in general, have a look at:ref`this example
+If you need an introduction to trajectory_full reconstruction in general, have a look at:ref`this example
 <trajectory_stride>`.
 """
 
@@ -45,17 +45,17 @@ dummy_regions_list["left_sensor"]
 # The initial orientation will automatically be estimated by the `RegionLevelTrajectory` class using the first
 # n-samples.
 trajectory_method = RtsKalman()
-trajectory = RegionLevelTrajectory(trajectory_method=trajectory_method)
+trajectory_full = RegionLevelTrajectory(trajectory_method=trajectory_method)
 
 
 # %%
 # Calculate and inspect results
 # -----------------------------
 sampling_frequency_hz = 204.8
-trajectory.estimate(data=imu_data, regions_of_interest=dummy_regions_list, sampling_rate_hz=sampling_frequency_hz)
+trajectory_full.estimate(data=imu_data, regions_of_interest=dummy_regions_list, sampling_rate_hz=sampling_frequency_hz)
 
 # select the position of the first (and only) gait sequence
-first_region_position = trajectory.position_["left_sensor"].loc[0]
+first_region_position = trajectory_full.position_["left_sensor"].loc[0]
 
 first_region_position.plot()
 plt.title("Left Foot Trajectory per axis")
@@ -64,7 +64,7 @@ plt.ylabel("position [m]")
 plt.show()
 
 # select the orientation of the first (and only) gait sequence
-first_region_orientation = trajectory.orientation_["left_sensor"].loc[0]
+first_region_orientation = trajectory_full.orientation_["left_sensor"].loc[0]
 
 first_region_orientation.plot()
 plt.title("Left Foot Orientation per axis")
@@ -75,17 +75,18 @@ plt.show()
 # %%
 # Calculate results per stride
 # ----------------------------
-# However, usually we are not interested in the full trajectory of a region, but the we want to know the trajectory of
+# However, usually we are not interested in the full trajectory_full of a region, but the we want to know the trajectory_full of
 # the strides within it.
-# We can do that by first calculating the trajectory for the entire region and then cutting out the parts of each
+# We can do that by first calculating the trajectory_full for the entire region and then cutting out the parts of each
 # stride.
 # This can be done in a single step using `estimate_intersect`, which takes an additional stride list as input.
 # After using this method, the result contains the stride level trajectories.
 # Note, that compared to the results `StrideLevelTrajectory`, the initial position and orientation of each stride is
-# different and simply taken from the calculated trajectory.
+# different and simply taken from the calculated trajectory_full.
 stride_list = get_healthy_example_stride_events()
 
-trajectory.estimate_intersect(
+trajectory_per_stride = trajectory_full.clone()
+trajectory_per_stride.estimate_intersect(
     data=imu_data,
     regions_of_interest=dummy_regions_list,
     stride_event_list=stride_list,
@@ -93,7 +94,7 @@ trajectory.estimate_intersect(
 )
 
 # select the position of the first stride
-first_region_position = trajectory.position_["left_sensor"].loc[0]
+first_region_position = trajectory_per_stride.position_["left_sensor"].loc[0]
 
 first_region_position.plot()
 plt.title("Left Foot Trajectory per axis")
@@ -102,7 +103,7 @@ plt.ylabel("position [m]")
 plt.show()
 
 # select the orientation of the first stride
-first_region_orientation = trajectory.orientation_["left_sensor"].loc[0]
+first_region_orientation = trajectory_per_stride.orientation_["left_sensor"].loc[0]
 
 first_region_orientation.plot()
 plt.title("Left Foot Orientation per axis")
