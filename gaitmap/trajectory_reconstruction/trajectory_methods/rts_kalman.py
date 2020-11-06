@@ -44,13 +44,13 @@ class RtsKalman(BaseTrajectoryMethod):
         smaller than `zupt_threshold_dps`.
         You can also override the `find_zupts` method to implement your own ZUPT detection.
     zupt_variance
-        The variance of the noise of the measured velocity during a ZUPT in (m/s)^2.
+        The variance of the noise of the measured velocity during a ZUPT.
         As we are typically pretty sure, that the velocity should be zero then, this should be very small.
     velocity_error_variance
-        The variance of the noise present in the velocity error in (m/s)^2.
+        The variance of the noise present in the velocity error.
         Should be based on the sensor accelerometer noise.
     orientation_error_variance
-        The variance of the noise present in the orientation error in rad^2.
+        The variance of the noise present in the orientation error.
         Should be based on the sensor gyroscope noise.
         The orientation error is internally not represented as quaternion, but as axis-angle representation,
         which also explains the unit of rad^2 for this variance.
