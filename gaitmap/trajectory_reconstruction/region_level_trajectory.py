@@ -154,10 +154,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     >>> from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
     >>> from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration
     >>> # Create custom instances of the methods you want to use
-    >>> ori_method = SimpleGyroIntegration()
-    >>> pos_method = ForwardBackwardIntegration()
+    >>> trajectory_method = RtsKalman()
     >>> # Create an instance of the wrapper
-    >>> per_region_traj = RegionLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
+    >>> per_region_traj = RegionLevelTrajectory(trajectory_method=trajectory_method)
     >>> # Apply the method
     >>> data = ...
     >>> sampling_rate_hz = 204.8
