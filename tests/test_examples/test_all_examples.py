@@ -98,9 +98,9 @@ def test_trajectory_reconstruction(snapshot):
 def test_region_trajectory_reconstruction(snapshot):
     from examples.trajectory_reconstruction_region import trajectory
 
-    # just look at last values to see if final result is correct and save runtime
-    snapshot.assert_match(trajectory.position_["left_sensor"].tail(20))
-    snapshot.assert_match(trajectory.orientation_["left_sensor"].tail(20))
+    # look at some random values in the center to test
+    snapshot.assert_match(trajectory.position_["left_sensor"].iloc[5000:5020])
+    snapshot.assert_match(trajectory.orientation_["left_sensor"].iloc[5000:5020])
 
 
 def test_mad_pipeline(snapshot):
