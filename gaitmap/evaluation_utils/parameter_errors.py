@@ -39,8 +39,8 @@ def calculate_parameter_errors(
         A Dataframe that has 2 column levels per sensor if there was a multi-sensor input
         or if not it has only 1 level. The 2nd level has as many columns as the number of common sensors between the
         input and the ground truth. The 1st level is always made out of 5 columns. These are
-        the calculated error metrics (error, absolute error, standard mean error, mean absolute error, and the maximal error).
-        The 0th column level contains the calculated errors. The error and absolute error
+        the calculated error metrics (error, absolute error, standard mean error, mean absolute error,
+        and the maximal error). The 0th column level contains the calculated errors. The error and absolute error
         will use all rows for output whereas the standard mean error, mean absolute error,
         and the maximal error only use the 0st row after which every row will be `np.NaN`.
         For clarification see examples below.
@@ -126,10 +126,10 @@ def _calculate_error(
     error_dicts = [{} for _ in range(len(error_names))]
 
     for key in input_parameter.keys():
-        
+
         if len(input_parameter[key]) == 0:
-            raise ValidationError("The \"{}\" column does not contain any data!".format(key))
-        
+            raise ValidationError('The "{}" column does not contain any data!'.format(key))
+
         error = input_parameter[key] - ground_truth_parameter[key]
         abs_error = np.abs(error)
 
