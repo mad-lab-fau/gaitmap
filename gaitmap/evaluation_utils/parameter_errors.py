@@ -77,8 +77,8 @@ def calculate_parameter_errors(
 
     See Also
     --------
-    gaitmap.parameters.spatial_parameters
-    gaitmap.parameters.temporal_parameters
+    gaitmap.parameters.TemporalParameterCalculation
+    gaitmap.parameters.SpatialParameterCalculation
 
     """
     input_is_not_dict = not isinstance(input_parameter, dict)
