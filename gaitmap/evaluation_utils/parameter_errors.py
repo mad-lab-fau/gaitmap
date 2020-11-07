@@ -85,7 +85,7 @@ def calculate_parameter_errors(
     ground_truth_is_not_dict = not isinstance(ground_truth_parameter, dict)
 
     if input_is_not_dict != ground_truth_is_not_dict:
-        raise ValidationError("The inputted parameters are of not of same type!")
+        raise ValidationError("The inputted parameters are not of same type!")
 
     if input_is_not_dict:
         input_parameter = {"__dummy__": input_parameter}
@@ -126,6 +126,10 @@ def _calculate_error(
     error_dicts = [{} for _ in range(len(error_names))]
 
     for key in input_parameter.keys():
+        
+        if len(input_parameter[key]) == 0:
+            raise ValidationError("The \"{}\" column does not contain any data!".format(key))
+        
         error = input_parameter[key] - ground_truth_parameter[key]
         abs_error = np.abs(error)
 
