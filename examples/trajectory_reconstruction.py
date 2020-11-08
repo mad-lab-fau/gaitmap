@@ -64,7 +64,7 @@ stride_list["left_sensor"].head(3)
 
 ori_method = SimpleGyroIntegration()
 pos_method = ForwardBackwardIntegration()
-trajectory = StrideLevelTrajectory(ori_method, pos_method)
+trajectory = StrideLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
 
 # %%
 # Calculate and inspect results

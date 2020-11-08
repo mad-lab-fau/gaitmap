@@ -134,6 +134,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     def __init__(
         self,
+        *,
         ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
         pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,

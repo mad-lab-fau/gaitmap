@@ -37,6 +37,7 @@ class _TrajectoryReconstructionWrapperMixin:
 
     def __init__(
         self,
+        *,
         ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
         pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
@@ -55,6 +56,17 @@ class _TrajectoryReconstructionWrapperMixin:
                 raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
             if self.pos_method and not isinstance(self.pos_method, BasePositionMethod):
                 raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
+            if not (self.ori_method and self.pos_method):
+                raise ValueError(
+                    "You need to pass either a `ori` and a `pos` method or a single trajectory method. "
+                    "You did forget to pass either an `ori` or an `pos` method."
+                )
+            if isinstance(self.ori_method, BaseTrajectoryMethod) or isinstance(self.pos_method, BaseTrajectoryMethod):
+                warnings.warn(
+                    "You passed a trajectory method as ori or pos method."
+                    "This will still work, but only the orientation or position of the results will be used."
+                    "Did you mean to pass it as `trajectory_method`?"
+                )
             self._combined_algo_mode = False
 
     def _estimate(self, dataset_type: Literal["single", "multi"]):
