@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 from typing_extensions import Literal
 
 from gaitmap.base import BaseTrajectoryReconstructionWrapper
-from gaitmap.trajectory_reconstruction import RegionLevelTrajectory
+from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orientation_from_start
 from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
 from gaitmap.utils.consts import SF_COLS
@@ -57,17 +57,29 @@ class TestIODataStructures:
         with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor "):
             gyr_int.estimate(data, fake_stride_list, 204.8)
 
-    def test_invalid_input_method(self, healthy_example_imu_data):
+    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
+    def test_invalid_input_method(self, healthy_example_imu_data, method):
         """Test if correct errors are raised for invalid pos and ori methods."""
-        instance = self.wrapper_class(ori_method="wrong")
+        instance = self.wrapper_class(**{method: "wrong"})
         with pytest.raises(ValueError) as e:
             instance.estimate(healthy_example_imu_data, self.example_region, 204.8)
-        assert "ori_method" in str(e)
+        assert method in str(e)
 
-        instance = self.wrapper_class(pos_method="wrong")
+    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
+    def test_only_pos_or_ori_provided(self, healthy_example_imu_data, method):
+        instance = self.wrapper_class(**{method: None})
         with pytest.raises(ValueError) as e:
             instance.estimate(healthy_example_imu_data, self.example_region, 204.8)
-        assert "pos_method" in str(e)
+        assert "either a `ori` and a `pos` method" in str(e)
+
+    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
+    def test_trajectory_warning(self, healthy_example_imu_data, method):
+        instance = self.wrapper_class(**{method: RtsKalman()})
+        with pytest.warns(UserWarning) as w:
+            instance.estimate(
+                healthy_example_imu_data["left_sensor"], self.example_region["left_sensor"].loc[[0]], 204.8
+            )
+        assert "trajectory method as ori or pos method" in str(w[0])
 
     def test_single_sensor_output(self, healthy_example_imu_data, snapshot):
         test_stride_events = self.example_region["left_sensor"].iloc[:3]
