@@ -180,9 +180,6 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     """
 
-    # We overwrite the action method, as `estimate_intersect` is the one that returns the expected stride level values.
-    _action_method = "estimate_intersect"
-
     align_window_width: int
 
     regions_of_interest: RegionsOfInterestList
