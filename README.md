@@ -17,21 +17,16 @@ Its API is designed to mimic `sklearn` to provide you a familiar and elegant int
 First, install a compatible version of Python.
 Then install the package using pip.
 
-The latest stable version:
-```
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
-```
-
-The current development version:
-```
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@develop --upgrade
-```
-
-A specific version (e.g. 1.0.0):
+For a stable experience install one of our releases (e.g. 1.2.0):
 
 For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
 ```
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.0.0 --upgrade
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.2.0 --upgrade
+```
+
+The latest git (bleeding edge) version:
+```
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
 ```
 
 If you are planning to make any changes to the library, please refer to the developer section below.
