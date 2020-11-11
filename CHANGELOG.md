@@ -1,13 +1,25 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ the Migration Guide section),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ the Migration Guide and 
+Scientific Changes section), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [1.2.0] - 
+# [1.2.0] - 2020-11-11
 
 ### Added
 
+- An Error-State-Kalman-Filter with rts smoothing (`RtsKalman`) was added that can be used to estimate orientation and
+  position over longer regions by detecting its own ZUPTs.
+  This can (should) be used in combination with `RegionLevelTrajectory`.
+- A `RegionLevelTrajectory` class that calculates trajectories for entire ROIs/gait sequences.
+  Otherwise the interface is very similar to `StrideLevelTrajectory`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87,
+  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98) 
+  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/85)
+- Added a new example for `RegionLevelTrajectory`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
+- Support for trajectory methods that can calculate orientation and position in one go is added for 
+  `StrideLevelTrajectory` (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87)
 - Implemented local warping constraints for DTW. This should help in cases were only parts of a sequence are matched
   instead of the entire sequence.
   These constraints are available for `BaseDTW` and `BarthDTW`, but are **off** by default.
@@ -19,44 +31,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global validation errors for orientation/position/velocity lists
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88, 
   https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/95)
-- Support for trajectory methods that can calculate orientation and position in one go is added for 
-  `StrideLevelTrajectory` (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87)
-- A `RegionLevelTrajectory` class that calculates trajectories for entire ROIs/gait sequences.
-  Otherwise the interface is very similar to `StrideLevelTrajectory`.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87,
-  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98) 
-- An Error-State-Kalman-Filter with rts smoothing (`RtsKalman`) was added that can be used to estimate orientation and
-  position over longer regions by detecting its own ZUPTs.
-  This can (should) be used in combination with `RegionLevelTrajectory`.
-  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/85)
-- Added a new example for `RegionLevelTrajectory`.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
-- Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/93)
 - New evaluation functions to compare the results of event detection methods with ground truth
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
+- Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/93)
 
 ### Changed
 
-- The default check for orientation/position/velocity lists now only expects a "sample" column and not a "sample" and a
- "s_id" column by default.
- The `s_id` parameter was removed and replaced with a more generic `{position, velocity, orientation}_list_type`
- parameter than can be used to check for either stride or region based lists.
- See the migration guide for more information.
- (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
+- The initial orientation for the Stride and Region Level trajectory now uses the correct number of samples as input.
+  This might change the output of the integration method slightly!
+  However, it also allows to pass 0 for `align_window_length` and hence, just use the first sample of the integration
+  region to estimate the initial orientation.
 - It is now ensured that in **all** in gaitmap where a start and an end sample is provided, the end sample is
   **exclusive**.
   Meaning if the respective region should be extracted from a dataarray, you can simply do `data[start:end]`.
   All functions that used different assumptions are changed.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/97~,
   https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/103)
+- The default check for orientation/position/velocity lists now only expects a "sample" column and not a "sample" and a
+  "s_id" column by default.
+  The `s_id` parameter was removed and replaced with a more generic `{position, velocity, orientation}_list_type`
+  parameter than can be used to check for either stride or region based lists.
+  See the migration guide for more information.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/88)
 - Internal restructuring of the evaluation utils module.
   In case you used direct imports of the functions from the submodule, you need to update these.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
-- The initial orientation for the Stride and Region Level trajectory now uses the correct number of samples as input.
-  This might change the output of the integration method slightly!
-  However, it also allows to pass 0 for `align_window_length` and hence, just use the first sample of the integration
-  region to estimate the initial orientation.
 
 ### Deprecated
 
@@ -64,15 +64,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed possible `ZeroDivisionError` when using `evaluation_utils.scores`. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/104)
+- Fixed possible `ZeroDivisionError` when using `evaluation_utils.scores`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/104)
 
 ### Migration Guide
 
 - In case your algorithm uses `is_{single,multi}_sensor_{position, velocity, orientation}_list` all usages must be 
- updated to include `{position, velocity, orientation}_list_type="stride"` to restore the default behaviour before the
- update.
- If you were using the function with `s_id=False`, you can update to `{position, velocity, orientation}_list_type=None`
- to get the same behaviour.
+  updated to include `{position, velocity, orientation}_list_type="stride"` to restore the default behaviour before the
+  update.
+  If you were using the function with `s_id=False`, you can update to `{position, velocity, orientation}_list_type=None`
+  to get the same behaviour.
 
 ### Scientific Changes
 
@@ -80,21 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This means that they correctly produce matches, which end index is **exclusive**.
   In some cases this might change existing results by adding 1 to the end index.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/103)
-
-## [1.1.1] - 
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Migration Guide
-
 
 
 ## [1.1.0] - 2020-10-04
