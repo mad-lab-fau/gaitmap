@@ -75,7 +75,7 @@ plt.show()
 # %%
 # Calculate results per stride
 # ----------------------------
-# However, usually we are not interested in the full trajectory_full of a region, but the we want to know the trajectory_full of
+# However, usually we are not interested in the full trajectory of a region, but the we want to know the trajectory of
 # the strides within it.
 # We can do that by first calculating the trajectory_full for the entire region and then cutting out the parts of each
 # stride.
