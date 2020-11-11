@@ -216,16 +216,17 @@ Gaitmap follows typically semantic visioning: A.B.C (e.g. 1.3.5)
 - `B` is the minor version, which will be updated whenever new features are added
 - `C` is the patch version, which will be updated for bugfixes
 
-As long as no new minor or major version is released, all changes must be interface compatible.
+As long as no new minor or major version is released, all changes should be interface compatible.
 This means that the user can update to a new patch version without changing any user code!
 
 This means at any given time we need to support and work with two versions:
 The last minor release, which will get further patch releases until its end of life.
 The upcoming minor release for which new features are developed at the moment.
+However, in most cases we will also not create proper patch releases, but expect users to update to the newest git 
+version, unless it was an important and major bug that got fixed.
 
 Note that we will not support old minor releases after the release of the next minor release to keep things simple.
 We expect users to update to the new minor release, if they want to get new features and bugfixes.
-In some rare cases we might consider backporting certain bug fixes/small features.
 
 To make such a update model go smoothly for all users, we keep an active changelog, that should be modified a feature
 is merged or a bug fixed.
@@ -235,9 +236,6 @@ section.
 There is no fixed timeline for a release, but rather a list of features we will plan to include in every release.
 Releases can happen often and even with small added features.
 
-In most cases we will also not create proper patch releases, but expect users to update to the newest git version,
-unless it was an important and major bug that got fixed.
-
 
 ## Git Workflow
 
@@ -245,17 +243,11 @@ As multiple people are expected to work on the project at the same time, we need
 
 ### Branching structure
 
-As we need to support two versions at any given time (see previous section), we need a model with at least two main
-branches: master and develop.
-
-- The master branch is there to support the current release.
-  This means all bugfixes and patches will be committed here
-- The develop branch is there to plan and create the next release.
-  All new features should be committed here.
-  The develop branch will get all patch releases committed to master either by cherry-picking or by rebase.
-  As rebasing a shared branch is "dangerous" all developers should be informed when this happens (see more below).
+This project uses (as of version 1.2.0) a master + feature branches.
+This workflow is well explained [here](https://www.atlassian.com/blog/git/simple-git-workflow-is-simple).
   
-All changes to these two main branches should be performed using feature branches.
+All changes to the master branch should be performed using feature branches.
+Before merging, the feature branches should be rebased onto the current master.
 
 Remember, Feature branchs...:
 
@@ -274,7 +266,7 @@ Remember, Feature branchs...:
 Workflow
 
 ```bash
-# Create a new branch (master for bug fixes, develop for features)
+# Create a new branch
 git checkout master
 git pull origin master
 git checkout -b new-branch-name
@@ -290,11 +282,7 @@ git rebase origin/master
 # resolve potential conflicts
 git push origin new-branch-name --force-with-lease
 
-# If rebase is not feasible, merge
-git fetch origin master
-git merge origin/master
-# resolve potential conflicts
-git push origin new-branch-name
+# Create a merge request and merge via web interface
 
 # Once branch is merged, delete it locally, start a new branch
 git checkout master
@@ -303,33 +291,14 @@ git branch -D new-branch-name
 # Start at top!
 ```
 
-### Rebasing Develop
+### For large features
 
-If develop is rebased onto master and feature branches exist, that were started in an old version of develop, the
-following can happen:
-
-```
-master ---A---B------------------------C
-           \                            \
-            D---E---F develop(old)       D---E---F develop
-                     \
-                      G---H feature
-```
-
-To solve this situation, the developer of `feature` should take the following steps:
-
-```
-git checkout develop  # You current version
-git pull origin develop  # Get the most up to date version of develop
-git checkout feature
-git log  # Find the last commit before you started you feature (the last commit on develop(old)) and copy it
-git rebase --onto develop <commit-hash> feature
-git push origin feature --force-with-lease
-```
-
-This will not rebase D-G onto develop, but only the commits between `<commit-hash>` and `feature` (aka G and H).
-For more info you can also check this
-[stack overflow post](https://stackoverflow.com/questions/31881885/how-to-rebase-a-branch-off-a-rebased-branch)
+When implementing large features it sometimes makes sense to split it into individual merge requests/sub-features.
+If each of these features are useful on their own, they should be merged directly into master.
+If the large feature requires multiple merge requests to be usable, it might make sense to create a long-lived feature
+branch, from which new branches for the sub-features can be created.
+It will act as a develop branch for just this feature.
+Remember, to rebase this temporary dev branch onto master from time to time.
 
 ### General Git Tips
 
