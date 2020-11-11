@@ -187,6 +187,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     def __init__(
         self,
+        *,
         ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
         # TODO: Change default so simple forward integration once this is implemented
         pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
