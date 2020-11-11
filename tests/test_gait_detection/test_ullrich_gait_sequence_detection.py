@@ -217,3 +217,66 @@ class TestUllrichGaitSequenceDetection:
         with pytest.raises(ValueError, match=r".* synchronized data sets."):
             gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
             gsd.detect(data_dict, 204.8)
+
+    def test_merging_gait_sequences(self, healthy_example_imu_data):
+        """Check if merging of gait sequences works for synchronized data."""
+
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+
+        # if merging is turned off, result will be a dict
+        merge_gait_sequences_from_sensors = False
+        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd.detect(data, 204.8)
+        assert type(gsd.gait_sequences_) == dict
+
+        # if merging is turned on, result will be a pd.DataFrame
+        merge_gait_sequences_from_sensors = True
+        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd.detect(data, 204.8)
+        assert type(gsd.gait_sequences_) == pd.DataFrame
+
+    def test_merging_for_no_activity(self):
+        """Test to see if the merging is working if the signal contains no activity at all"""
+
+        data_columns = BF_COLS
+
+        # induce rest
+        rest_df = pd.DataFrame([[0] * 6], columns=data_columns)
+        rest_df = pd.concat([rest_df] * 2048)
+
+        dict_of_df = {"left_sensor": rest_df, "right_sensor": rest_df}
+        synced_rest_df = pd.concat(dict_of_df, axis=1)
+
+        merge_gait_sequences_from_sensors = True
+        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd = gsd.detect(synced_rest_df, 204.8)
+
+        assert type(gsd.gait_sequences_) == pd.DataFrame
+
+    def test_merging_on_signal_with_only_nongait(self):
+        """Test to see if the merging is working if the signal contains only non-gait activity"""
+
+        data_columns = BF_COLS
+
+        # induce non-gait cyclic activity
+        # create a sine signal to mimic non-gait
+        sampling_rate = 204.8
+        samples = 2048
+        t = np.arange(samples) / sampling_rate
+        freq = 1
+        test_signal = np.sin(2 * np.pi * freq * t) * 200
+
+        test_signal_reshaped = np.tile(test_signal, (6, 1)).T
+        non_gait_df = pd.DataFrame(test_signal_reshaped, columns=data_columns)
+
+        dict_of_df = {"left_sensor": non_gait_df, "right_sensor": non_gait_df}
+        synced_non_gait_df = pd.concat(dict_of_df, axis=1)
+
+        merge_gait_sequences_from_sensors = True
+        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd = gsd.detect(synced_non_gait_df, 204.8)
+
+        assert type(gsd.gait_sequences_) == pd.DataFrame
+        assert gsd.gait_sequences_.empty

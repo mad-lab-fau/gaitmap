@@ -55,7 +55,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     >>> # Inspect the results
     >>> sgi.orientation_
     <pd.Dataframe with resulting quaternions>
-    >>> sgi.orientation_object
+    >>> sgi.orientation_object_
     <scipy.Rotation object>
 
     See Also

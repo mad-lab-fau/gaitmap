@@ -4,8 +4,9 @@ from typing import Optional, Sequence, List, Tuple, Union, Dict
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_path, subsequence_cost_matrix
+from tslearn.metrics import subsequence_path, subsequence_cost_matrix, _local_squared_dist
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
@@ -39,7 +40,7 @@ def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_dista
 
     See Also
     --------
-    gaitmap.stride_segmentation.utils.find_local_minima_with_distance: Details on the function call to `find_peaks`.
+    gaitmap.utils.array_handling.find_local_minima_with_distance: Details on the function call to `find_peaks`.
     scipy.signal.find_peaks: The actual `find_peaks` method.
 
     """
@@ -55,7 +56,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
         Accumulated cost matrix as derived from a DTW
     max_cost
         The max_cost is used to cut the signal into enclosed segments.
-        More details at :func:`~gaitmap.stride_segmentation.utils.find_local_minima_below_threshold`.
+        More details at :func:`~gaitmap.utils.array_handling.find_local_minima_below_threshold`.
 
     Returns
     -------
@@ -64,7 +65,7 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
 
     See Also
     --------
-    gaitmap.stride_segmentation.utils.find_local_minima_below_threshold: Implementation details.
+    gaitmap.utils.array_handling.find_local_minima_below_threshold: Implementation details.
 
     """
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
@@ -140,6 +141,16 @@ class BaseDtw(BaseAlgorithm):
         The maximal length of a sequence in seconds to be considered a match.
         Matches that result in longer sequences will be ignored.
         This exclusion is performed as a post-processing step after the matching.
+    max_template_stretch_ms
+        A local warping constraint for the DTW.
+        It describes how many ms of the template are allowed to be mapped to just a single datapoint of the signal.
+        The ms value will internally be converted to samples using the template sampling-rate (or the signal
+        sampling-rate, if `resample_template=True`).
+        If no template sampling-rate is provided, this constrain can not be used.
+    max_signal_stretch_ms
+        A local warping constraint for the DTW.
+        It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
+        The ms value will internally be converted to samples using the data sampling-rate
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -220,6 +231,8 @@ class BaseDtw(BaseAlgorithm):
     resample_template: bool
     min_match_length_s: Optional[float]
     max_match_length_s: Optional[float]
+    max_template_stretch_ms: Optional[float]
+    max_signal_stretch_ms: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
@@ -233,6 +246,8 @@ class BaseDtw(BaseAlgorithm):
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
     _min_sequence_length: Optional[float]
     _max_sequence_length: Optional[float]
+    _max_template_stretch: Optional[int]
+    _max_signal_stretch: Optional[int]
 
     @property
     def cost_function_(self):
@@ -248,8 +263,9 @@ class BaseDtw(BaseAlgorithm):
         This will not be effected by potential changes of the postprocessing.
         """
         if isinstance(self.acc_cost_mat_, dict):
-            return {s: np.array([[p[0][-1], p[-1][-1]] for p in path]) for s, path in self.paths_.items()}
-        return np.array([[p[0][-1], p[-1][-1]] for p in self.paths_])
+            # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
+            return {s: np.array([[p[0][-1], p[-1][-1] + 1] for p in path]) for s, path in self.paths_.items()}
+        return np.array([[p[0][-1], p[-1][-1] + 1] for p in self.paths_])
 
     def __init__(
         self,
@@ -259,11 +275,15 @@ class BaseDtw(BaseAlgorithm):
         max_cost: Optional[float] = None,
         min_match_length_s: Optional[float] = None,
         max_match_length_s: Optional[float] = None,
+        max_template_stretch_ms: Optional[float] = None,
+        max_signal_stretch_ms: Optional[float] = None,
     ):
         self.template = template
         self.max_cost = max_cost
         self.min_match_length_s = min_match_length_s
         self.max_match_length_s = max_match_length_s
+        self.max_template_stretch_ms = max_template_stretch_ms
+        self.max_signal_stretch_ms = max_signal_stretch_ms
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
@@ -288,16 +308,14 @@ class BaseDtw(BaseAlgorithm):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # Validate and transform inputs
-        if self.template is None:
-            raise ValueError("A `template` must be specified.")
+        self._validate_basic_inputs()
 
-        if self.find_matches_method not in self._allowed_methods_map:
-            raise ValueError(
-                'Invalid value for "find_matches_method". Must be one of {}'.format(
-                    list(self._allowed_methods_map.keys())
-                )
-            )
+        self._min_sequence_length = self.min_match_length_s
+        if self._min_sequence_length is not None:
+            self._min_sequence_length *= self.sampling_rate_hz
+        self._max_sequence_length = self.max_match_length_s
+        if self._max_sequence_length is not None:
+            self._max_sequence_length *= self.sampling_rate_hz
 
         if isinstance(data, np.ndarray):
             dataset_type = "array"
@@ -366,12 +384,7 @@ class BaseDtw(BaseAlgorithm):
         else:
             final_template = template_array
 
-        self._min_sequence_length = self.min_match_length_s
-        if self._min_sequence_length not in (None, 0, 0.0):
-            self._min_sequence_length *= self.sampling_rate_hz
-        self._max_sequence_length = self.max_match_length_s
-        if self._max_sequence_length not in (None, 0, 0.0):
-            self._max_sequence_length *= self.sampling_rate_hz
+        self._validate_constrains(template)
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
 
@@ -390,9 +403,10 @@ class BaseDtw(BaseAlgorithm):
             matches_start_end_ = []
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
-            matches_start_end_ = np.array([[p[0][-1], p[-1][-1]] for p in paths_])
+            # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
+            matches_start_end_ = np.array([[p[0][-1], p[-1][-1] + 1] for p in paths_])
             # Calculate cost before potential modifications are made to start and end
-            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1]])
+            costs_ = np.sqrt(acc_cost_mat_[-1, :][matches_start_end_[:, 1] - 1])
             to_keep = np.ones(len(matches_start_end_)).astype(bool)
             matches_start_end_, to_keep = self._postprocess_matches(
                 data=dataset, paths=paths_, cost=costs_, matches_start_end=matches_start_end_, to_keep=to_keep
@@ -400,11 +414,19 @@ class BaseDtw(BaseAlgorithm):
             matches_start_end_ = matches_start_end_[to_keep]
             self._post_postprocess_check(matches_start_end_)
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
-            # TODO: Add warning in case there are still overlapping matches after the conflict resolution
         return acc_cost_mat_, paths_, costs_, matches_start_end_
 
-    def _calculate_cost_matrix(self, template, matching_data):  # noqa: no-self-use
-        return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+    def _calculate_cost_matrix(self, template, matching_data):
+        # In case we don't have local constrains, we can use the simple dtw implementation
+        if self._max_template_stretch == np.inf and self._max_signal_stretch == np.inf:
+            return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+        # ... otherwise, we use our custom cost matrix. This is slower. Therefore, we only want to use when we need it.
+        return _subsequence_cost_matrix_with_constrains(
+            to_time_series(template),
+            to_time_series(matching_data),
+            self._max_template_stretch,
+            self._max_signal_stretch,
+        )[..., 0]
 
     def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
         return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
@@ -536,3 +558,99 @@ class BaseDtw(BaseAlgorithm):
             path_array = np.array(path)
             paths.append(path_array)
         return paths
+
+    def _validate_basic_inputs(self):
+        if self.template is None:
+            raise ValueError("A `template` must be specified.")
+
+        if self.find_matches_method not in self._allowed_methods_map:
+            raise ValueError(
+                "Invalid value for `find_matches_method`. Must be one of {}".format(
+                    list(self._allowed_methods_map.keys())
+                )
+            )
+
+        if self.max_template_stretch_ms is not None and self.max_template_stretch_ms <= 0:
+            raise ValueError(
+                "Invalid value for `max_template_stretch_ms`."
+                "The value must be a number larger than 0 and not {}".format(self.max_template_stretch_ms)
+            )
+        if self.max_signal_stretch_ms is not None and self.max_signal_stretch_ms <= 0:
+            raise ValueError(
+                "Invalid value for `max_signal_stretch_ms`."
+                "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
+            )
+
+    def _validate_constrains(self, template):
+        self._max_template_stretch = self.max_template_stretch_ms
+        self._max_signal_stretch = self.max_signal_stretch_ms
+        if self._max_signal_stretch and template.sampling_rate_hz is None:
+            raise ValueError(
+                "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
+                "the template."
+            )
+
+        if self._max_template_stretch is None:
+            self._max_template_stretch = np.inf
+        else:
+            # Use the correct template sampling rate
+            sampling_rate = self.sampling_rate_hz
+            if self.resample_template is False:
+                sampling_rate = template.sampling_rate_hz
+            self._max_template_stretch = np.round(self._max_template_stretch / 1000 * sampling_rate)
+        if self._max_signal_stretch is None:
+            self._max_signal_stretch = np.inf
+        else:
+            self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
+
+
+@njit(cache=True)
+def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
+    """Create a costmatrix using local warping constrains.
+
+    This works, by tracking for each step, how many consecutive vertical (subseq) and how many horizontal (longseq)
+    steps have been taken to reach a certain point in the cost matrix.
+    Whenever, a step in another direction is taken, all other counters are reset to 0.
+    If more or equal than `max_subseq_steps` consecutive vertical or `max_longseq_steps` consecutive horizontal steps
+    have been taken, it is not possible to take another vertical or horizontal, respectively, unless at least one
+    step in any other direction is taken.
+
+    The returned cost-matrix has 3 "layers".
+    The first layer is the actual warping cost.
+    The second layer is the count of vertical steps and the third layer the count of horizontal steps.
+    """
+    l1 = subseq.shape[0]
+    l2 = longseq.shape[0]
+    cum_sum = np.full((l1 + 1, l2 + 1, 3), np.inf)
+    cum_sum[0, :] = 0.0
+    cum_sum[0:] = 0
+
+    for i in range(l1):
+        for j in range(l2):
+            cum_sum[i + 1, j + 1, 0] = _local_squared_dist(subseq[i], longseq[j])
+            vals = np.empty((3, 3))
+            shifts = [(1, 0), (0, 1), (0, 0)]
+            for index in range(3):
+                shift = shifts[index]
+                vals[index, :] = cum_sum[i + shift[0], j + shift[1]]
+                # Check if either the number vertical or horizontal step exceed the threshold.
+                # In this case set the distance to infinite, so that this direction can not be picked.
+                # vertical step
+                if index == 0 and vals[index, 1] >= max_longseq_steps:
+                    vals[index, 0] = np.inf
+                # horizontal step
+                elif index == 1 and vals[index, 2] >= max_subseq_steps:
+                    vals[index, 0] = np.inf
+
+            smallest_cost = np.argmin(vals[:, 0])
+            # update the step counter based on what step is taken (smallest cost)
+            if smallest_cost == 0:
+                # Vertical step is take, update verticals tep counter, reset horizontal
+                cum_sum[i + 1, j + 1, 1] = vals[0, 1] + 1
+                cum_sum[i + 1, j + 1, 2] = 0
+            elif smallest_cost == 1:
+                # Horizontal step is take, update horizontal tep counter, reset vertical
+                cum_sum[i + 1, j + 1, 2] = vals[1, 2] + 1
+                cum_sum[i + 1, j + 1, 1] = 0
+            cum_sum[i + 1, j + 1, 0] += vals[smallest_cost, 0]
+    return cum_sum[1:, 1:]

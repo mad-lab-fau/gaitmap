@@ -76,7 +76,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     >>> # Inspect the results
     >>> mad.orientation_
     <pd.Dataframe with resulting quaternions>
-    >>> mad.orientation_object
+    >>> mad.orientation_object_
     <scipy.Rotation object>
 
     See Also

@@ -6,12 +6,9 @@ from numpy.testing import assert_array_equal
 from gaitmap.evaluation_utils import (
     match_stride_lists,
     evaluate_segmented_stride_list,
-    precision_score,
-    recall_score,
-    f1_score,
-    precision_recall_f1_score,
 )
-from gaitmap.evaluation_utils.stride_segmentation import _get_match_type_dfs
+
+from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -27,12 +24,12 @@ class TestMatchStrideList:
         with pytest.raises(ValidationError) as e:
             match_stride_lists([], sl)
 
-        assert "SingleSensorStrideList" in str(e)
+        assert "SingleSensorStrideList" in str(e.value)
 
         with pytest.raises(ValidationError) as e:
             match_stride_lists(sl, [])
 
-        assert "SingleSensorStrideList" in str(e)
+        assert "SingleSensorStrideList" in str(e.value)
 
     def test_invalid_postfix(self):
         sl = self._create_valid_list([[0, 1], [1, 2]])
@@ -145,6 +142,157 @@ class TestMatchStrideList:
         out = match_stride_lists(empty, empty)
 
         assert len(out) == 0
+
+    def test_multi_stride_lists_no_tolerance(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 1], [4, 5], [6, 7], [8, 9]])
+        stride_list_right_b = self._create_valid_list([[3, 4], [1, 2], [5, 6]])
+        multi_stride_list_b = {"left_sensor": stride_list_left_b, "right_sensor": stride_list_right_b}
+
+        out = match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)
+
+        assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+        assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, np.nan, 1, 2, 3])
+
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [1, 0, 2])
+
+    def test_multi_stride_lists_with_tolerance(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 2], [2, 4], [4, 6], [6, 9]])
+        stride_list_right_b = self._create_valid_list([[0, 2], [2, 4], [3, 5]])
+        multi_stride_list_b = {"left_sensor": stride_list_left_b, "right_sensor": stride_list_right_b}
+
+        out = match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=1)
+
+        assert_array_equal(out["left_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan])
+        assert_array_equal(out["left_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, np.nan, 3])
+
+        assert_array_equal(out["right_sensor"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan])
+        assert_array_equal(out["right_sensor"]["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2])
+
+    def test_empty_multi_stride_lists_both(self):
+        empty = self._create_valid_list([])
+
+        out = match_stride_lists({"left": empty}, {"left": empty})
+
+        for dataframe in out.values():
+            assert dataframe.empty
+
+    def test_empty_multi_stride_lists(self):
+        full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        empty = self._create_valid_list([])
+
+        out = match_stride_lists({"left": full}, {"left": empty})
+
+        assert_array_equal(out["left"]["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3])
+        assert_array_equal(out["left"]["s_id_b"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
+
+        out = match_stride_lists({"left": empty}, {"left": full})
+
+        assert_array_equal(out["left"]["s_id_a"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan])
+        assert_array_equal(out["left"]["s_id_b"].to_numpy().astype(float), [0, 1, 2, 3])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists({}, {})
+
+        assert "object does not contain any data/contains no sensors" in str(e.value)
+
+    def test_one_multi_one_single_list(self):
+        multi = {"sensor": self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])}
+        single = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(multi, single)
+
+        assert "not of same type" in str(e)
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(single, multi)
+
+        assert "not of same type" in str(e)
+
+    def test_no_common_sensors_multi_stride_lists(self):
+        full = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists({"left": full}, {"right": full})
+
+        assert "do not have any common sensors" in str(e)
+
+    def test_some_common_sensors_multi_stride_lists(self):
+        stride_list_left_a = self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])
+        stride_list_right_a = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+        multi_stride_list_a = {"left_sensor": stride_list_left_a, "right_sensor": stride_list_right_a}
+
+        stride_list_left_b = self._create_valid_list([[0, 1], [4, 5], [6, 7], [8, 9]])
+        stride_list_right_b = self._create_valid_list([[3, 4], [1, 2], [5, 6]])
+        multi_stride_list_b = {
+            "left_sensor": stride_list_left_b,
+            "right_sensor": stride_list_right_b,
+            "wrong_sensor": stride_list_right_a,
+        }
+
+        with pytest.raises(KeyError):
+            match_stride_lists(multi_stride_list_a, multi_stride_list_b, tolerance=0)["wrong_sensor"]
+
+
+class TestSpecialMatchStrideList:
+    def _create_valid_list(self, labels, extra_columns=None):
+        if extra_columns:
+            if isinstance(extra_columns, str):
+                df = pd.DataFrame(labels, columns=["start", "end", extra_columns])
+            else:
+                columns = ["start", "end"]
+                for extra_column in extra_columns:
+                    columns.append(extra_column)
+
+                df = pd.DataFrame(labels, columns=columns)
+        else:
+            df = pd.DataFrame(labels, columns=["start", "end"])
+        df.index.name = "s_id"
+        return df
+
+    @pytest.mark.parametrize("value", ("wrong_column", ["1", "2", "3"]))
+    def test_invalid_match_cols(self, value):
+        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
+
+        with pytest.raises(ValueError) as e:
+            match_stride_lists(sl, sl, value)
+
+        assert "One or more selected columns" in str(e.value)
+        assert str(value) in str(e.value)
+
+    def test_too_many_correct_column_names(self):
+        sl = self._create_valid_list([[0, 1, 10, 11, 12], [1, 2, 20, 21, 22]], ["ic", "min_vel", "tc"])
+
+        with pytest.raises(ValidationError) as e:
+            match_stride_lists(sl, sl, ["ic", "min_vel", "tc"])
+
+        assert "Can not compare more than 2 columns at a time" in str(e.value)
+
+    def test_perfect_match(self):
+        sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
+
+        out = match_stride_lists(sl, sl, "ic", tolerance=0)
+
+        assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2])
+        assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2])
+
+    def test_match(self):
+        sl1 = self._create_valid_list([[0, 1, 0], [1, 2, 20], [2, 3, 30]], "ic")
+        sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
+
+        out = match_stride_lists(sl1, sl2, "ic", tolerance=0)
+
+        assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
 
 
 class TestEvaluateSegmentedStrideList:
@@ -266,75 +414,177 @@ class TestEvaluateSegmentedStrideList:
 
         assert len(list_ground_truth) == (len(matches["tp"]) + len(matches["fn"]))
 
+    def test_segmented_multi_stride_list_perfect_match(self):
+        list_ground_truth_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        list_predicted_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
 
-class TestEvaluationScores:
-    def _create_valid_matches_df(self, tp, fp, fn):
-        tp_df = pd.DataFrame(
-            np.column_stack([tp, tp, np.repeat("tp", len(tp))]), columns=["s_id", "s_id_ground_truth", "match_type"]
-        )
-        fp_df = pd.DataFrame(
-            np.column_stack([fp, np.repeat(np.nan, len(fp)), np.repeat("fp", len(fp))]),
-            columns=["s_id", "s_id_ground_truth", "match_type"],
-        )
-        fn_df = pd.DataFrame(
-            np.column_stack([np.repeat(np.nan, len(fn)), fn, np.repeat("fn", len(fn))]),
-            columns=["s_id", "s_id_ground_truth", "match_type"],
+        list_ground_truth_right = self._create_valid_list([[3, 4], [2, 3], [1, 2], [0, 1]])
+        list_predicted_right = self._create_valid_list([[3, 4], [2, 3], [1, 2], [0, 1]])
+
+        matches = evaluate_segmented_stride_list(
+            {"left_sensor": list_ground_truth_left, "right_sensor": list_ground_truth_right},
+            {"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
         )
 
-        return pd.concat([tp_df, fp_df, fn_df])
+        assert np.all(matches["left_sensor"]["match_type"] == "tp")
+        assert np.all(matches["right_sensor"]["match_type"] == "tp")
 
-    def test_precision(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+    def test_segmented_multi_stride_list_empty_ground_truth(self):
+        list_ground_truth_left = self._create_valid_list([])
+        list_predicted_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
 
-        precision = precision_score(matches_df)
+        list_ground_truth_right = self._create_valid_list([])
+        list_predicted_right = self._create_valid_list([[3, 4], [2, 3], [1, 2], [0, 1]])
 
-        assert_array_equal(precision, 0.6)
+        matches = evaluate_segmented_stride_list(
+            {"left_sensor": list_ground_truth_left, "right_sensor": list_ground_truth_right},
+            {"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
+        )
 
-    def test_perfect_precision(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [10, 11, 12, 13])
+        matches = _get_match_type_dfs(matches)
 
-        precision = precision_score(matches_df)
+        assert matches["left_sensor"]["tp"].empty
+        assert matches["left_sensor"]["fn"].empty
+        assert len(matches["left_sensor"]["fp"]) == len(list_predicted_left)
+        assert_array_equal(matches["left_sensor"]["fp"]["s_id"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(
+            matches["left_sensor"]["fp"]["s_id_ground_truth"].to_numpy().astype(float),
+            np.array([np.nan, np.nan, np.nan, np.nan]),
+        )
+        assert len(list_ground_truth_left) == (len(matches["right_sensor"]["tp"]) + len(matches["right_sensor"]["fn"]))
 
-        assert_array_equal(precision, 1.0)
+        assert matches["right_sensor"]["tp"].empty
+        assert matches["right_sensor"]["fn"].empty
+        assert len(matches["right_sensor"]["fp"]) == len(list_predicted_left)
+        assert_array_equal(matches["right_sensor"]["fp"]["s_id"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(
+            matches["right_sensor"]["fp"]["s_id_ground_truth"].to_numpy().astype(float),
+            np.array([np.nan, np.nan, np.nan, np.nan]),
+        )
+        assert len(list_ground_truth_right) == (len(matches["right_sensor"]["tp"]) + len(matches["right_sensor"]["fn"]))
 
-    def test_recall(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+    def test_segmented_multi_stride_list_empty_prediction(self):
+        list_predicted_left = self._create_valid_list([])
+        list_ground_truth_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
 
-        recall = recall_score(matches_df)
+        list_predicted_right = self._create_valid_list([])
+        list_ground_truth_right = self._create_valid_list([[3, 4], [2, 3], [1, 2], [0, 1]])
 
-        assert_array_equal(recall, 0.6)
+        matches = evaluate_segmented_stride_list(
+            {"left_sensor": list_ground_truth_left, "right_sensor": list_ground_truth_right},
+            {"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
+        )
 
-    def test_perfect_recall(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [])
+        matches = _get_match_type_dfs(matches)
 
-        recall = recall_score(matches_df)
+        assert matches["left_sensor"]["tp"].empty
+        assert matches["left_sensor"]["fp"].empty
+        assert len(matches["left_sensor"]["fn"]) == len(list_ground_truth_left)
+        assert_array_equal(matches["left_sensor"]["fn"]["s_id_ground_truth"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(
+            matches["left_sensor"]["fn"]["s_id"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan]
+        )
+        assert len(list_ground_truth_left) == (len(matches["left_sensor"]["tp"]) + len(matches["left_sensor"]["fn"]))
 
-        assert_array_equal(recall, 1.0)
+        assert matches["right_sensor"]["tp"].empty
+        assert matches["right_sensor"]["fp"].empty
+        assert len(matches["right_sensor"]["fn"]) == len(list_ground_truth_left)
+        assert_array_equal(matches["right_sensor"]["fn"]["s_id_ground_truth"].to_numpy(), [0, 1, 2, 3])
+        assert_array_equal(
+            matches["right_sensor"]["fn"]["s_id"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan]
+        )
+        assert len(list_ground_truth_right) == (len(matches["right_sensor"]["tp"]) + len(matches["right_sensor"]["fn"]))
 
-    def test_f1_score(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+    def test_segmented_multi_stride_list_match(self):
+        list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50], [50, 60]])
+        list_predicted = self._create_valid_list([[0, 10], [11, 19], [19, 30], [30, 41], [70, 80], [80, 90]])
 
-        f1 = f1_score(matches_df)
+        matches = evaluate_segmented_stride_list({"left": list_ground_truth}, {"left": list_predicted}, tolerance=1)
 
-        assert_array_equal(f1, 0.6)
+        matches = _get_match_type_dfs(matches)
 
-    def test_perfect_f1_score(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [])
+        assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [2, 3])
+        assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 1])
 
-        f1 = f1_score(matches_df)
+        assert_array_equal(matches["left"]["fp"]["s_id"].to_numpy(), [0, 1, 4, 5])
+        assert_array_equal(
+            matches["left"]["fp"]["s_id_ground_truth"].to_numpy().astype(float),
+            np.array([np.nan, np.nan, np.nan, np.nan]),
+        )
 
-        assert_array_equal(f1, 1.0)
+        assert_array_equal(matches["left"]["fn"]["s_id"].to_numpy().astype(float), [np.nan, np.nan])
+        assert_array_equal(matches["left"]["fn"]["s_id_ground_truth"].to_numpy(), [2, 3])
 
-    def test_precision_recall_f1(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
+        assert len(list_ground_truth) == (len(matches["left"]["tp"]) + len(matches["left"]["fn"]))
 
-        eval_metrics = precision_recall_f1_score(matches_df)
+    def test_segmented_multi_stride_list_no_match(self):
+        list_ground_truth = self._create_valid_list([[20, 30], [30, 40], [40, 50]])
+        list_predicted = self._create_valid_list([[60, 70], [70, 80], [90, 100]])
 
-        assert_array_equal(eval_metrics, [0.6, 0.6, 0.6])
+        matches = evaluate_segmented_stride_list({"left": list_ground_truth}, {"left": list_predicted}, tolerance=0)
 
-    def test_perfect_precision_recall_f1(self):
-        matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [])
+        matches = _get_match_type_dfs(matches)
 
-        eval_metrics = precision_recall_f1_score(matches_df)
+        assert matches["left"]["tp"].empty
 
-        assert_array_equal(eval_metrics, [1.0, 1.0, 1.0])
+        assert_array_equal(matches["left"]["fn"]["s_id"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan]))
+        assert_array_equal(matches["left"]["fn"]["s_id_ground_truth"].to_numpy(), [0, 1, 2])
+
+        assert_array_equal(matches["left"]["fp"]["s_id"].to_numpy(), [0, 1, 2])
+        assert_array_equal(
+            matches["left"]["fp"]["s_id_ground_truth"].to_numpy().astype(float), np.array([np.nan, np.nan, np.nan])
+        )
+
+        assert len(list_ground_truth) == (len(matches["left"]["tp"]) + len(matches["left"]["fn"]))
+
+    def test_segmented_multi_stride_list_double_match_predicted_many_to_one(self):
+        list_ground_truth = self._create_valid_list([[20, 30]])
+        list_predicted = self._create_valid_list([[18, 30], [20, 28]])
+
+        matches = evaluate_segmented_stride_list(
+            {"left": list_ground_truth}, {"left": list_predicted}, tolerance=2, one_to_one=False
+        )
+
+        matches = _get_match_type_dfs(matches)
+
+        assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [0, 1])
+        assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 0])
+
+        assert matches["left"]["fp"].empty
+        assert matches["left"]["fn"].empty
+
+        assert len(list_ground_truth) != (len(matches["left"]["tp"]) + len(matches["left"]["fn"]))
+
+    def test_segmented_multi_stride_list_double_match_predicted_one_to_one(self):
+        list_ground_truth = self._create_valid_list([[20, 30]])
+        list_predicted = self._create_valid_list([[18, 30], [20, 28]])
+
+        matches = evaluate_segmented_stride_list(
+            {"left": list_ground_truth}, {"left": list_predicted}, tolerance=2, one_to_one=True
+        )
+
+        matches = _get_match_type_dfs(matches)
+
+        assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), 0)
+        assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0])
+
+        assert_array_equal(matches["left"]["fp"]["s_id"].to_numpy(), 1)
+        assert_array_equal(matches["left"]["fp"]["s_id_ground_truth"].to_numpy().astype(float), np.array(np.nan))
+
+        assert matches["left"]["fn"].empty
+
+        assert len(list_ground_truth) == (len(matches["left"]["tp"]) + len(matches["left"]["fn"]))
+
+    def test_one_multi_one_single_list(self):
+        multi = {"sensor": self._create_valid_list([[0, 1], [2, 3], [4, 5], [6, 7]])}
+        single = self._create_valid_list([[1, 2], [3, 4], [5, 6]])
+
+        with pytest.raises(ValidationError) as e:
+            evaluate_segmented_stride_list(multi, single)
+
+        assert "not of same type" in str(e)
+
+        with pytest.raises(ValidationError) as e:
+            evaluate_segmented_stride_list(single, multi)
+
+        assert "not of same type" in str(e)

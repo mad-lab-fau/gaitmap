@@ -1,6 +1,6 @@
-===========================
-Common Datatypes in Gaitmap
-===========================
+================
+Common Datatypes
+================
 
 Gaitmap tries to stick to common data-containers - namely `np.arrays`, `pd.DataFrames`, `dict` - to store all in- and
 outputs of the used algorithm.
@@ -36,6 +36,28 @@ Further rules:
   `windowsize_ms` would expect a value in milliseconds).
 - Time is either specified in seconds (s) for user facing durations (e.g. stride time), but time points in intermediate
   results (e.g. biomechanical events) are typically specified in samples since the start of the measurement (#).
+
+Start End Indices
+=================
+
+Many of the datatypes contain information about the start or the end of a certain time-period (e.g. a stride).
+Start and end values are (whenever possible) provided in samples from the start of a dataset.
+The respective time-period is then defined as [start, end), meaning starting with the start sample (inclusive) until the
+end sample (exclusive).
+This follows the Python convention for indices and therefore, you can extract a region from the dataset as follows:
+
+>>> dataset[start : end]
+
+Note that `dataset[end]` refers to the first value **after** the region!
+To get the last sample of a region you must use `end-1`.
+
+The length of a region (in samples) is simply `end - start`.
+
+For edge cases this means:
+
+- A region that starts on the first sample of a dataset has `start=0`
+- A region that ends with the dataset (i.e. inclusive the last sample) has `end=len(dataset)`.
+- If two regions are directly adjacent to each other, the end index of the first, is the start index of the second.
 
 Datasets
 ========
@@ -191,7 +213,7 @@ A *SingleSensorStrideList* is just a `pd.DataFrame` that should at least have th
 :obj:`~gaitmap.utils.consts.SL_COLS`.
 The index is expected to have one level with the name `s_id`.
 Instead of being part of the index, it can also be a column with the same name.
-All algorithms that take a stride list as input support both formats (index or column)
+All algorithms that take a stride list as input support both formats (index or column).
 Independent of that, `s_id` index or column should contain a unique identifier for each stride in the stride list.
 All other columns should provide values in samples since the start of the recording (not the start of the stride!)
 
@@ -258,8 +280,8 @@ This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
 }
 
 Like the dataset validation function, all stride list methods also support the `raise_exception` parameter.
-If it is True, the method will raise a descriptive error instead of returning `False`.
-Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, were single and
+If it is `True`, the method will raise a descriptive error instead of returning `False`.
+Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, where single and
 multi sensor stride lists are allowed as inputs.
 
 The normal format check shown above does not check if the values in the stride list follow this order.

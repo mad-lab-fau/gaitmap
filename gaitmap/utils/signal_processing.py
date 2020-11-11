@@ -1,8 +1,8 @@
 """A set of signal processing functions."""
 
-from scipy.signal import butter, lfilter
 import numpy as np
 from numba import njit
+from scipy.signal import butter, lfilter
 
 
 def butter_lowpass_filter_1d(data: np.ndarray, sampling_rate_hz: float, cutoff_freq_hz: float, order: int = 4):

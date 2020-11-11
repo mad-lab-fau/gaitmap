@@ -14,6 +14,7 @@ from gaitmap.example_data import (
     get_healthy_example_stride_events,
     get_healthy_example_orientation,
     get_healthy_example_position,
+    get_ms_example_imu_data,
 )
 from tests._regression_utils import PyTestSnapshotTest
 
@@ -38,6 +39,7 @@ def pytest_addoption(parser):
 
 
 healthy_example_imu_data = pytest.fixture()(get_healthy_example_imu_data)
+ms_example_imu_data = pytest.fixture()(get_ms_example_imu_data)
 healthy_example_stride_borders = pytest.fixture()(get_healthy_example_stride_borders)
 healthy_example_mocap_data = pytest.fixture()(get_healthy_example_mocap_data)
 healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)

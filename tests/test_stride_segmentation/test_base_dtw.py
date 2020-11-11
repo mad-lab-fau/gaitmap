@@ -96,6 +96,54 @@ class TestIOErrors(DtwTestBase):
 
         assert "find_matches_method" in str(e)
 
+    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
+    @pytest.mark.parametrize("value", (-2, 0))
+    def test_invalid_stretch_larger_zero(self, para, value):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        with pytest.raises(ValueError) as e:
+            dtw = self.init_dtw(template=template, **{para: value})
+            dtw.segment(data=np.array([]), sampling_rate_hz=100)
+
+        assert para in str(e)
+        assert str(value) in str(e)
+
+    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
+    def test_none_constrain_is_inf(self, para):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, **{para: None})
+        dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert getattr(dtw, "_" + para.rsplit("_", 1)[0]) == np.inf
+
+    def test_constrains_without_template_sampling_rate(self):
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=None)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=3)
+
+        with pytest.raises(ValueError) as e:
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "sampling_rate_hz" in str(e)
+
+    def test_constrains_correct_sampling_rate_used(self):
+        template_sampling_rate = 100
+        signal_sampling_rate = 10
+        template = create_dtw_template(np.ones(30), sampling_rate_hz=template_sampling_rate)
+        data = np.array([*np.ones(50) * 2, 0, 1.0, 0, *np.ones(50) * 2])
+
+        # With resampling
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=1000)
+        dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+        assert dtw._max_template_stretch == 10
+
+        # Without resampling
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=1000, resample_template=False)
+        dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+        assert dtw._max_template_stretch == 100
+
 
 class TestSimpleSegment(DtwTestBase):
     """Simple Tests with toy examples for matching."""
@@ -115,7 +163,7 @@ class TestSimpleSegment(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_ == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_,
             [
@@ -134,7 +182,7 @@ class TestSimpleSegment(DtwTestBase):
         dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
         np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
 
         np.testing.assert_array_equal(dtw.data, sequence)
@@ -155,7 +203,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_1d_dataframe_inputs(self):
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
@@ -165,7 +213,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_no_matches_found(self):
         """Test that no errors are raised when no matches are found."""
@@ -201,7 +249,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     @pytest.mark.parametrize("input_type", (np.array, pd.DataFrame))
     def test_data_has_more_cols_than_template(self, input_type):
@@ -225,7 +273,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data, sampling_rate_hz=100.0)
 
-        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 7], [18, 20]])
+        np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
     def test_data_has_less_cols_than_template_array(self):
         """In case the data has more cols, only the first m cols of the data is used."""
@@ -317,7 +365,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor1"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -331,7 +379,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor2"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 2), (1, 3), (2, 4)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 4]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 5]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -386,7 +434,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor1"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 7]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[5, 8]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -400,7 +448,7 @@ class TestMultiSensorInputs(DtwTestBase):
         sensor = "sensor2"
         np.testing.assert_array_equal(dtw.paths_[sensor], [[(0, 2), (1, 2), (2, 3)]])
         assert dtw.costs_[sensor] == [0.0]
-        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 3]])
+        np.testing.assert_array_equal(dtw.matches_start_end_[sensor], [[2, 4]])
         np.testing.assert_array_equal(
             dtw.acc_cost_mat_[sensor],
             [
@@ -513,3 +561,58 @@ class TestTemplateResampling(DtwTestBase):
             dtw.segment(test_data, 20)
 
         assert len(w) == 0
+
+
+class TestDtwConstrains(DtwTestBase):
+    """Test that the local warping constrains work as expected."""
+
+    def test_signal_constrained(self):
+        template = np.array([0, 1, 0])
+        sequence = [*np.ones(5) * 2, *np.repeat(template, 5), *np.ones(5) * 2, *np.repeat(template, 3), *np.ones(5) * 2]
+        template = create_dtw_template(template, sampling_rate_hz=1)
+
+        # Without constrain
+        dtw = self.init_dtw(template=template, resample_template=True)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 2
+        assert len(dtw.paths_[0]) == 7
+        assert len(dtw.paths_[1]) == 5
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+
+        # Allow a maximum of 3 signal samples matched with the same template sample
+        # At a fake samplingrate of 1 Hz this means 3000 ms
+        # This means only the second match should remain
+
+        dtw = self.init_dtw(template=template, resample_template=True, max_signal_stretch_ms=3000.0)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 1
+        assert dtw.costs_[0] == 0.0
+        assert len(dtw.paths_[0]) == 5
+
+    def test_template_constrained(self):
+        template = np.array([0, 1, 0])
+        sequence = [*np.ones(5) * 2, *template, *np.ones(5) * 2, *np.repeat(template, 2), *np.ones(5) * 2]
+        template = np.repeat(template, 6)
+        template = create_dtw_template(template, sampling_rate_hz=1)
+
+        # Without constrain
+        dtw = self.init_dtw(template=template, resample_template=True)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 2
+        assert len(dtw.paths_[0]) == 18
+        assert len(dtw.paths_[1]) == 18
+        np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
+
+        # Allow a maximum of 3 template samples matched with the same template sample
+        # At a fake samplingrate of 1 Hz this means 3000 ms
+        # This means only the second match should remain
+
+        dtw = self.init_dtw(template=template, resample_template=True, max_template_stretch_ms=3000.0)
+        dtw = dtw.segment(np.array(sequence), sampling_rate_hz=1)
+
+        assert len(dtw.matches_start_end_) == 1
+        assert dtw.costs_[0] == 0.0
+        assert len(dtw.paths_[0]) == 18

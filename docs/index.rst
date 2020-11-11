@@ -10,17 +10,10 @@ gaitmap Docu Overview
    :maxdepth: 1
    :caption: Content:
 
-   Readme <README.md>
-   guides/Project-Structure.md
-   guides/Development-Guide.md
-   guides/Coordinate-Systems.rst
-   guides/Gaitmap-Datatypes.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Code Reference:
-
-   modules/classes.rst
+   Getting Started <README.md>
+   source/development/index
+   source/user_guide/index
+   modules/index.rst
    auto_examples/index.rst
 
 Indices and tables

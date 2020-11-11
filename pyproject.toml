@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gaitmap"
-version = "1.0.1"
+version = "1.2.0"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 authors = [
     "Arne Küderle <arne.kuederle@fau.de>",
@@ -8,6 +8,8 @@ authors = [
     "Nils Roth <nils.roth@fau.de>",
     "Malte Ollenschläger <Malte.Ollenschlaeger@fau.de>",
     "Alzhraa Ahmed <alzhraa.ahmed@fau.de>",
+    "Raul C. Sîmpetru <raul.simpetru@fau.de>",
+    "Dominik Prossel <dominik.prossel@fau.de>",
     "Felix Kluge <felix.kluge@fau.de>"
 ]
 
@@ -29,14 +31,15 @@ sphinx = "^3.0.1"
 numpydoc = "^0.9.2"
 sphinx_gallery = "^0.5.0"
 sphinx_issues = "^1.2.0"
+pydata-sphinx-theme = "^0.4.1"
 recommonmark = "^0.6.0"
 coverage = "^4.5.4"
-sphinx_bootstrap_theme = "^0.7.1"
 doit = "^0.32.0"
 ipykernel = "^5.2.0"
 IPython = "^7.13.0"
 ipympl = "^0.5.6"
 memory_profiler = "^0.57.0"
+toml = "^0.10.1"
 
 [tool.black]
 line-length = 120

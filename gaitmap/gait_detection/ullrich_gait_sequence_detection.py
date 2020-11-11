@@ -10,7 +10,7 @@ from scipy.signal import peak_prominences
 
 from gaitmap.base import BaseGaitDetection, BaseType
 from gaitmap.utils import signal_processing
-from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius
+from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
     is_multi_sensor_dataset,
@@ -18,6 +18,8 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     RegionsOfInterestList,
     is_dataset,
+    SingleSensorDataset,
+    SingleSensorRegionsOfInterestList,
 )
 
 
@@ -26,7 +28,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     UllrichGaitSequenceDetection uses signal processing approaches to find gait sequences by searching for
     characteristic features in the power spectral density of the imu raw signals as described in Ullrich et al. (
-    2020)  [  1]_.
+    2020)  [1]_.
     For more details refer to the `Notes` section.
 
     Parameters
@@ -56,7 +58,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         the window must show more activity to be passed to the frequency analysis.
     locomotion_band
         The `locomotion_band` defines the region within the frequency spectrum of each window to identify the dominant
-        frequency. According to literature [  2]_ typical signals measured during locomotion have their dominant
+        frequency. According to literature [2]_ typical signals measured during locomotion have their dominant
         frequency within a locomotion band of 0.5 - 3 Hz. This is set as the default value. For very slow or very
         fast gait these borders might have to be adapted. Please note that the signal to be analyzed is going to be
         lowpass filtered with cut-off frequency of 6 Hz. Therefore, values for the upper limit of the locomotion band
@@ -170,10 +172,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO implement merging of gait sequences for synced data
-        if self.merge_gait_sequences_from_sensors and is_multi_sensor_dataset(data) and isinstance(data, pd.DataFrame):
-            raise NotImplementedError("Merging of gait sequences from several sensors is not yet supported.")
-
         self._assert_input_data(data)
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
@@ -185,12 +183,16 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             self.gait_sequences_ = dict()
             self.start_ = dict()
             self.end_ = dict()
-            # TODO merge the gait sequences from both feet? with logical or?
-            # TODO check if dataframe (=synced) or dict of dataframes, if synced set merge flat to true
             for sensor in get_multi_sensor_dataset_names(data):
                 (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
                     data[sensor], window_size
                 )
+
+            if self.merge_gait_sequences_from_sensors:
+                self._merge_gait_sequences_multi_sensor_data()
+                self.start_ = np.array(self.gait_sequences_["start"])
+                self.end_ = np.array(self.gait_sequences_["end"])
+
         return self
 
     def _detect_single_dataset(
@@ -422,6 +424,58 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
+    def _merge_gait_sequences_multi_sensor_data(self):
+        """Merge gait sequences from different sensor positions for synced data.
+
+        Gait sequences from individual sensors are merged by 1) converting the start and end information to a boolean
+        array for each sensor and 2) applying a logical OR operation. 3) Finally the gait sequences are returned as
+        one DataFrame with start and end samples of the merged gait sequences.
+        """
+        # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
+        if all([df.empty for df in self.gait_sequences_.values()]):
+            self.gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
+            return
+
+        # 1) convert to boolean array
+        gait_sequences_bool_df = pd.DataFrame(self._gait_sequences_to_boolean())
+        # 2) apply logical or by using any along the columns
+        gait_sequences_bool_array = np.array(gait_sequences_bool_df.any(axis="columns").astype(int))
+
+        # 3) convert back to dataframe with start and end
+        gait_sequences_merged = pd.DataFrame(
+            bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
+        )
+        gait_sequences_merged.index.name = "gs_id"
+        gait_sequences_merged = gait_sequences_merged.reset_index()
+
+        self.gait_sequences_ = gait_sequences_merged
+
+    def _gait_sequences_to_boolean(self) -> np.ndarray:
+        """Convert gait sequences to a boolean array or a dict of arrays (with sensor positions as keys).
+
+        Usually gait sequences are stored in a pandas DataFrame with their id and their start and end samples. The
+        purpose of this method is to provide a boolean array that contains 0 / 1 for each signal sample for non-gait /
+        gait.
+
+        Returns
+        -------
+        gait_sequences_bool
+            A numpy array or a dict of such where for each imu data sample there is either a 1 (gait) or a 0 (
+            non-gait) according to the input gait sequences.
+
+        """
+        dataset_type = is_dataset(self.data)
+        if dataset_type == "single":
+            gait_sequences_bool = _gait_sequences_to_boolean_single(self.data, self.gait_sequences_)
+        else:  # Multisensor
+            gait_sequences_bool = dict()
+            for sensor in get_multi_sensor_dataset_names(self.data):
+                gait_sequences_bool[sensor] = _gait_sequences_to_boolean_single(
+                    self.data[sensor], self.gait_sequences_[sensor]
+                )
+
+        return gait_sequences_bool
+
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     """Concat consecutive gait sequences to a single one."""
@@ -452,3 +506,23 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
         gait_sequences_start_corrected.append([start, end])
 
     return np.array(gait_sequences_start_corrected)
+
+
+def _gait_sequences_to_boolean_single(
+    data_single: SingleSensorDataset, gait_sequences_single: SingleSensorRegionsOfInterestList
+) -> np.ndarray:
+    """Convert gait sequences from a single sensor from a dataframe to boolean array.
+
+    Returns
+    -------
+    gait_sequences_bool_array
+        A numpy array of gait sequences where for each imu data sample there is either a 1 (gait) or a 0 (non-gait).
+
+    """
+    gait_sequences_bool_array = np.zeros(len(data_single), dtype=int)
+    gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
+
+    for sequence_start, sequence_end in gait_sequences_start_end_tuples:
+        gait_sequences_bool_array[sequence_start:sequence_end] = 1
+
+    return gait_sequences_bool_array

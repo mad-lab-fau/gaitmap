@@ -48,7 +48,7 @@ class DtwTemplate(_BaseSerializable):
 
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
-    use_cols: Optional[Tuple[Union[str, int]]]
+    use_cols: Optional[Tuple[Union[str, int], ...]]
     scaling: Optional[float]
     data: Optional[Union[np.ndarray, pd.DataFrame]]
 
@@ -126,7 +126,7 @@ class BarthOriginalTemplate(DtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(self, scaling=500.0, use_cols: Optional[Tuple[Union[str, int]]] = None):
+    def __init__(self, scaling=500.0, use_cols: Optional[Tuple[Union[str, int], ...]] = None):
         super().__init__(
             use_cols=use_cols,
             template_file_name=self.template_file_name,

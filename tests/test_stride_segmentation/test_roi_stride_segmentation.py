@@ -74,14 +74,14 @@ class TestParameterValidation:
     )
     def test_invalid_roi_single_dataset(self, roi):
         """Test that an error is raised if an invalid roi is provided."""
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             self.instance.segment(pd.DataFrame(), sampling_rate_hz=10.0, regions_of_interest=roi)
 
-        assert "Invalid object passed for `regions_of_interest`" in str(e)
+        assert "neither a single- or a multi-sensor regions of interest list" in str(e)
 
     def test_multi_roi_single_sensor(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             self.instance.segment(
                 pd.DataFrame(), sampling_rate_hz=10.0, regions_of_interest=create_dummy_multi_sensor_roi()
@@ -91,14 +91,14 @@ class TestParameterValidation:
 
     def test_invalid_roi_multiple_dataset(self):
         """Test that an error is raised if an invalid roi is provided."""
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             self.instance.segment({"sensor": pd.DataFrame()}, sampling_rate_hz=10.0, regions_of_interest=pd.DataFrame())
 
-        assert "Invalid object passed for `regions_of_interest`" in str(e)
+        assert "neither a single- or a multi-sensor regions of interest list" in str(e)
 
     def test_single_roi_unsync_multi(self):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
             # error.

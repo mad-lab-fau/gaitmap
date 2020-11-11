@@ -14,7 +14,6 @@ from gaitmap.utils.rotations import rotate_dataset_series
 
 
 class TestPositionMethodNoGravityMixin:
-    algorithm_class = None
     __test__ = False
 
     def init_algo_class(self) -> BasePositionMethod:
@@ -42,7 +41,7 @@ class TestPositionMethodNoGravityMixin:
 
         test = test.estimate(sensor_data, 1)
 
-        assert is_single_sensor_position_list(test.position_, s_id=False)
+        assert is_single_sensor_position_list(test.position_, position_list_type=None)
         assert len(test.position_) == len(sensor_data) + 1
         assert len(test.velocity_) == len(sensor_data) + 1
 

@@ -95,7 +95,6 @@ stride_list_left
 # This is simply because the DTW was applied separately to the two regions.
 # To plot the outputs together, we need to loop all dtw instances.
 import numpy as np
-from itertools import chain
 
 # Create combined outputs
 sensor = "left_sensor"

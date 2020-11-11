@@ -368,6 +368,10 @@ class BasePositionMethod(BaseAlgorithm):
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
+class BaseTrajectoryMethod(BasePositionMethod, BaseOrientationMethod):
+    """Base class for methods that can compute orientation and position in one pass."""
+
+
 class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
     """Base class for method that wrap position and orientation methods to be usable with default datatypes."""
 
@@ -376,10 +380,6 @@ class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
     orientation_: OrientationList
     position_: PositionList
     velocity_: VelocityList
-
-    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
-        """Estimate the combined orientation and position of the IMU."""
-        raise NotImplementedError("Needs to be implemented by child class.")
 
 
 class BaseTemporalParameterCalculation(BaseAlgorithm):
@@ -404,7 +404,7 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
         orientations: OrientationList,
         sampling_rate_hz: float,
     ) -> BaseType:
-        """Find spatial parameters in in strides after segmentation and detecting events of each stride."""
+        """Find spatial parameters in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 

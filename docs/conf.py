@@ -18,10 +18,9 @@ from importlib import import_module
 from inspect import getsourcelines, getsourcefile
 from pathlib import Path
 
-import sphinx_bootstrap_theme
+import toml
 
 import gaitmap
-from gaitmap.base import BaseAlgorithm
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -29,20 +28,14 @@ URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/
 
 # -- Project information -----------------------------------------------------
 
+# Info from poetry config:
+info = toml.load("../pyproject.toml")["tool"]["poetry"]
 
-project = "gaitmap"
+project = info["name"]
+author = ", ".join(info["authors"])
+release = info["version"]
+
 copyright = "2020 - {}, MaD-Lab FAU, Digital Health and Gait-Analysis Group".format(datetime.now().year)
-author = (
-    "Arne Küderle <arne.kuederle@fau.de>, "
-    "Martin Ullrich <martin.ullrich@fau.de>, "
-    "Nils Roth <nils.roth@fau.de>, "
-    "Malte Ollenschläger <Malte.Ollenschlaeger@fau.de>, "
-    "Alzhraa Ahmed <alzhraa.ahmed@fau.de>, "
-    "Felix Kluge <felix.kluge@fau.de>"
-)
-
-# The full version, including alpha/beta/rc tags
-release = "0.1.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -106,8 +99,8 @@ add_function_parentheses = False
 # a list of builtin themes.
 #
 # Activate the theme.
-html_theme = "bootstrap"
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+html_theme = "pydata_sphinx_theme"
+html_theme_options = {"show_prev_next": False}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -140,8 +133,8 @@ sphinx_gallery_conf = {
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
     "filename_pattern": re.escape(os.sep),
-    'remove_config_comments': True,
-    'show_memory': True,
+    "remove_config_comments": True,
+    "show_memory": True,
 }
 
 # Linkcode
@@ -164,7 +157,7 @@ def linkcode_resolve(domain, info):
     module = import_module(info["module"])
     obj = get_nested_attr(module, info["fullname"])
     code_line = None
-    filename = ''
+    filename = ""
     try:
         filename = str(Path(getsourcefile(obj)).relative_to(Path(getsourcefile(gaitmap)).parent.parent))
     except:

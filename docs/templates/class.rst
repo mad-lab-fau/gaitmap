@@ -1,4 +1,4 @@
-:mod:`{{module}}`.{{objname}}
+{{module}}.{{objname}}
 {{ underline }}==============
 
 .. currentmodule:: {{ module }}
@@ -9,4 +9,4 @@
    .. automethod:: __init__
    {% endblock %}
 
-.. include:: backreferences/{{module}}.{{objname}}.examples
+.. include:: /modules/generated/backreferences/{{module}}.{{objname}}.examples

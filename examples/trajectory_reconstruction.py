@@ -1,4 +1,6 @@
 r"""
+.. _trajectory_stride:
+
 Stride Level Trajectory reconstruction
 ======================================
 
@@ -43,19 +45,26 @@ stride_list["left_sensor"].head(3)
 # parameter.
 # Here, we use simple gyroscopic integration for orientation estimation and forward-backward integration for position
 # estimation.
-# You can replace them by any of the methods in :mod:`~gaitmap.trajectory_reconstruction.orientation_methods`
-# and :mod:`~gaitmap.trajectory_reconstruction.position_methods`.
-#
+# You can replace the orientation- or position-estimation methods by any of the methods in
+# :mod:`~gaitmap.trajectory_reconstruction.orientation_methods` and
+# :mod:`~gaitmap.trajectory_reconstruction.position_methods`.
 # Be aware of the assumptions the used methods make.
 # For example the :class:`~gaitmap.trajectory_reconstruction.ForwardBackwardIntegration` assumes that the start and
 # end of each stride is a resting period.
+#
 # The same assumption is used by the :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` itself to
 # estimate the initial orientation at the beginning of each stride.
+# Note that this method further assumes the sensor to be aligned with your world coordinate system at the beginning
+# of the stride (z-axis in direction of gravity).
+# If this is not True in your case and you need to modify the starting orientation or position, you need to call the
+# orientation and position methods directly for each each stride without the use of the `StrideLevelTrajectory` wrapper.
+# Do so by passing `initial_orientation` to the initialization of the `ori_method`.
+# However, in :class:`~gaitmap.trajectory_reconstruction.StrideLevelTrajectory` this initial orientation will be
+# overwritten by an initial orientation estimated from gravity.
 
 ori_method = SimpleGyroIntegration()
 pos_method = ForwardBackwardIntegration()
-trajectory = StrideLevelTrajectory(ori_method, pos_method)
-
+trajectory = StrideLevelTrajectory(ori_method=ori_method, pos_method=pos_method)
 
 # %%
 # Calculate and inspect results
@@ -63,7 +72,8 @@ trajectory = StrideLevelTrajectory(ori_method, pos_method)
 sampling_frequency_hz = 204.8
 trajectory.estimate(data=imu_data, stride_event_list=stride_list, sampling_rate_hz=sampling_frequency_hz)
 
-# select the postion of the first stride
+
+# select the position of the first stride
 first_stride_position = trajectory.position_["left_sensor"].loc[0]
 
 first_stride_position.plot()

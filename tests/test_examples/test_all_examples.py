@@ -22,6 +22,19 @@ def test_barth_dtw_example(snapshot):
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
+def test_constrained_barth_dtw_example(snapshot):
+    from examples.constrained_barth_dtw_stride_segmentation import dtw, cdtw, default_cdtw
+
+    assert len(dtw.matches_start_end_["left_sensor"]) == 74
+    snapshot.assert_match(dtw.matches_start_end_["left_sensor"], "dtw")
+
+    assert len(cdtw.matches_start_end_["left_sensor"]) == 75
+    snapshot.assert_match(cdtw.matches_start_end_["left_sensor"], "cdtw")
+
+    assert len(default_cdtw.matches_start_end_["left_sensor"]) == 75
+    snapshot.assert_match(default_cdtw.matches_start_end_["left_sensor"], "default_cdtw")
+
+
 def test_roi(snapshot):
     from examples.barth_dtw_stride_segmentation_roi import roi_seg
 
@@ -80,6 +93,18 @@ def test_trajectory_reconstruction(snapshot):
     # just look at last values to see if final result is correct and save runtime
     snapshot.assert_match(trajectory.position_["left_sensor"].tail(20))
     snapshot.assert_match(trajectory.orientation_["left_sensor"].tail(20))
+
+
+def test_region_trajectory_reconstruction(snapshot):
+    from examples.trajectory_reconstruction_region import trajectory_full
+    from examples.trajectory_reconstruction_region import trajectory_per_stride
+
+    # look at some random values in the center to test
+    snapshot.assert_match(trajectory_full.position_["left_sensor"].iloc[5000:5020])
+    snapshot.assert_match(trajectory_full.orientation_["left_sensor"].iloc[5000:5020])
+
+    snapshot.assert_match(trajectory_per_stride.position_["left_sensor"].loc[4].tail(20))
+    snapshot.assert_match(trajectory_per_stride.orientation_["left_sensor"].loc[4].tail(20))
 
 
 def test_mad_pipeline(snapshot):

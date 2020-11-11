@@ -50,6 +50,22 @@ def get_healthy_example_imu_data():
     return data
 
 
+def get_ms_example_imu_data():
+    """Get example IMU data from a MS subject performing a longer uninterrupted walking sequence.
+
+    The sampling rate is 102.4 Hz and the data is not synchronised
+    """
+    data = {}
+    for s in ["left", "right"]:
+        test_data_path = _get_data("imu_sample_ms_{}.csv".format(s))
+        sensor_data = pd.read_csv(test_data_path, header=0, index_col=0)
+
+        # Get index in seconds
+        sensor_data.index /= 102.4
+        data[s + "_sensor"] = sensor_data
+    return data
+
+
 def get_healthy_example_imu_data_not_rotated():
     """Get example IMU data from a healthy subject doing a 2x20m gait test.
 

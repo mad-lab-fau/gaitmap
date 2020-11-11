@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
+from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.static_moment_detection import (
     find_static_samples,
     find_static_sequences,
@@ -95,7 +96,7 @@ class TestFindStaticSequences:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
-        expected_output = np.array([[0, 5], [16, 20]])
+        expected_output = np.array([[0, 6], [16, 21]])
 
         window_length = 4
         test_output = find_static_sequences(
@@ -107,7 +108,7 @@ class TestFindStaticSequences:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0.1, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
-        expected_output = np.array([[0, 5], [16, 20]])
+        expected_output = np.array([[0, 6], [16, 21]])
 
         window_length = 4
         test_output = find_static_sequences(
