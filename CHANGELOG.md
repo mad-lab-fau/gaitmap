@@ -42,6 +42,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   This might change the output of the integration method slightly!
   However, it also allows to pass 0 for `align_window_length` and hence, just use the first sample of the integration
   region to estimate the initial orientation.
+  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98)
 - It is now ensured that in **all** in gaitmap where a start and an end sample is provided, the end sample is
   **exclusive**.
   Meaning if the respective region should be extracted from a dataarray, you can simply do `data[start:end]`.
@@ -81,6 +82,10 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   This means that they correctly produce matches, which end index is **exclusive**.
   In some cases this might change existing results by adding 1 to the end index.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/103)
+- The initial orientation in the StrideLevelTrajectory now has a window with exactly the number of samples specified
+  (instead of one less due to Python indexing).
+  This will lead to very small changes in the calculated trajectory.
+  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98)
 
 
 ## [1.1.0] - 2020-10-04
