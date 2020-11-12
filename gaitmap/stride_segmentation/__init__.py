@@ -43,6 +43,7 @@ from gaitmap.stride_segmentation.hmm_models.models import (
     HiddenMarkovModel,
     HiddenMarkovModelStairs,
 )
+from gaitmap.stride_segmentation.roth_hmm import RothHMM
 
 
 __all__ = [
@@ -59,4 +60,5 @@ __all__ = [
     "find_matches_min_under_threshold",
     "HiddenMarkovModel",
     "HiddenMarkovModelStairs",
+    "RothHMM",
 ]
