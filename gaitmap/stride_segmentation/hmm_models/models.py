@@ -286,7 +286,7 @@ class HiddenMarkovModel(_BaseSerializable):
 
         feature_data = self.transform(dataset, sampling_rate_hz)
 
-        hidden_state_sequence = predict_hidden_states(
+        hidden_state_sequence = self._predict_hidden_states(
             self._model_combined, np.ascontiguousarray(feature_data.to_numpy()), algorithm
         )
 
