@@ -12,12 +12,7 @@ import warnings
 import numpy.polynomial.polynomial as poly
 from sklearn import preprocessing
 
-from gaitmap.utils.dataset_helper import (
-    Dataset,
-    is_single_sensor_dataset,
-    get_multi_sensor_dataset_names,
-    is_dataset,
-)
+from gaitmap.utils.dataset_helper import is_dataset
 
 from gaitmap.utils.array_handling import sliding_window_view
 
@@ -198,8 +193,8 @@ class HiddenMarkovModel(_BaseSerializable):
     ----------
     model_file_name
         Path to a valid pre-trained and serialized model-json
-    sampling_rate_hz
-        The sampling rate that was used to record the template data
+    sampling_rate_hz_model
+        The sampling rate of the data the model was trained with
     low_pass_cutoff_hz
         Cutoff frequency of low-pass filter for preprocessing
     low_pass_order
@@ -220,7 +215,7 @@ class HiddenMarkovModel(_BaseSerializable):
     """
 
     model_file_name: Optional[str]
-    sampling_rate_hz: Optional[float]
+    sampling_rate_hz_model: Optional[float]
     low_pass_cutoff_hz: Optional[float]
     low_pass_order: Optional[int]
     axis: Optional[List[str]]
@@ -237,7 +232,7 @@ class HiddenMarkovModel(_BaseSerializable):
     def __init__(
         self,
         model_file_name: Optional[str] = None,
-        sampling_rate_hz: Optional[float] = None,
+        sampling_rate_hz_model: Optional[float] = None,
         low_pass_cutoff_hz: Optional[float] = None,
         low_pass_order: Optional[int] = None,
         axis: Optional[List[str]] = None,
@@ -246,7 +241,7 @@ class HiddenMarkovModel(_BaseSerializable):
         standardization: Optional[bool] = None,
     ):
         self.model_file_name = model_file_name
-        self.sampling_rate_hz = sampling_rate_hz
+        self.sampling_rate_hz_model = sampling_rate_hz_model
         self.low_pass_cutoff_hz = low_pass_cutoff_hz
         self.low_pass_order = low_pass_order
         self.axis = axis
@@ -278,10 +273,45 @@ class HiddenMarkovModel(_BaseSerializable):
 
     def transform(self, dataset, sampling_rate_hz):
         """Perform a feature transformation according the the given model requirements."""
-        downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_hz))
+
+        # check if dataset is in body frame notation
+        is_dataset(dataset, check_acc=True, check_gyr=True, frame="body")
+
+        downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_hz_model))
         dataset = preprocess(dataset, sampling_rate_hz, self.low_pass_cutoff_hz, self.low_pass_order, downsample_factor)
 
         return calculate_features(dataset, self.axis, self.features, self.window_size_samples, self.standardization)
+
+    def predict(self, dataset, sampling_rate_hz, algorithm="viterbi"):
+
+        feature_data = self.transform(dataset, sampling_rate_hz)
+
+        hidden_state_sequence = predict_hidden_states(
+            self._model_combined, np.ascontiguousarray(feature_data.to_numpy()), algorithm
+        )
+
+        # tranform prediction back to original sampling rate!
+        downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_hz_model))
+        return np.repeat(hidden_state_sequence, downsample_factor)
+
+    @property
+    def stride_states_(self):
+        return np.arange(self._n_states_transition, self._n_states_stride + self._n_states_transition)
+
+    @property
+    def transition_states_(self):
+        return np.arange(self._n_states_transition)
+
+    def _predict_hidden_states(self, model, feature_data, algorithm):
+        """Perform prediction based on given data and given model."""
+        # need to check if memory layout of given data is
+        # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
+        if not np.array(feature_data).flags["C_CONTIGUOUS"]:
+            raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
+
+        labels_predicted = np.asarray(model.predict(feature_data, algorithm=algorithm))
+        # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+        return np.asarray(labels_predicted[1:-1])
 
 
 class HiddenMarkovModelStairs(HiddenMarkovModel):
@@ -299,7 +329,7 @@ class HiddenMarkovModelStairs(HiddenMarkovModel):
 
     model_file_name = "hmm_stairs.json"
     # preprocessing settings
-    sampling_rate_hz = 51.2
+    sampling_rate_hz_model = 51.2
     low_pass_cutoff_hz = 10.0
     low_pass_order = 4
     # feature settings
@@ -311,7 +341,7 @@ class HiddenMarkovModelStairs(HiddenMarkovModel):
     def __init__(self):
         super().__init__(
             model_file_name=self.model_file_name,
-            sampling_rate_hz=self.sampling_rate_hz,
+            sampling_rate_hz_model=self.sampling_rate_hz_model,
             low_pass_cutoff_hz=self.low_pass_cutoff_hz,
             low_pass_order=self.low_pass_order,
             axis=self.axis,

@@ -127,20 +127,15 @@ class RothHMM(BaseAlgorithm):
         # TODO do magic
         return self
 
-    def _segment_single_dataset(self, dataset, template):
-        # TODO do magic
-        return 0
+    def _segment_single_dataset(self, dataset, sampling_rate_hz):
 
-    def _predict(self, model, data, algorithm="viterbi"):
-        """Perform prediction based on given data and given model."""
-        # need to check if memory layout of given data is
-        # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-        if not np.array(data).flags["C_CONTIGUOUS"]:
-            raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
+        hidden_state_sequence = self.model.predict(dataset, sampling_rate_hz)
 
-        labels_predicted = np.asarray(model.predict(data, algorithm=algorithm))
-        # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
-        return np.asarray(labels_predicted[1:-1])
+        borders = self._hidden_states_to_stride_borders(
+            dataset[self.snap_to_min_axis].to_numpy(), hidden_state_sequence, self.model.stride_states_
+        )
+
+        return borders
 
     def _hidden_states_to_stride_borders(self, data_to_snap_to, hidden_states_predicted, stride_states):
         """This function converts the output of a hmm prediction aka the resulting hidden-state sequence to meaningful stride borders.
@@ -186,7 +181,7 @@ class RothHMM(BaseAlgorithm):
         potential_start_window = []
         for l in adjacent_labels_starts:
             potential_start_window.extend(
-                self.binary_array_to_start_stop_list(
+                self._binary_array_to_start_stop_list(
                     np.logical_or(hidden_states_predicted == stride_states[0], hidden_states_predicted == l).astype(int)
                 )
             )
@@ -200,7 +195,7 @@ class RothHMM(BaseAlgorithm):
         for w in potential_start_window:
             bin_array_starts[w[0] : w[1] + 1] = 1
 
-        start_windows = self.binary_array_to_start_stop_list(bin_array_starts)
+        start_windows = self._binary_array_to_start_stop_list(bin_array_starts)
         start_borders = [np.argmin(data_to_snap_to[w[0] : w[1] + 1]) + w[0] for w in start_windows]
 
         # END-Window
@@ -209,7 +204,7 @@ class RothHMM(BaseAlgorithm):
         potential_end_window = []
         for l in adjacent_labels_ends:
             potential_end_window.extend(
-                self.binary_array_to_start_stop_list(
+                self._binary_array_to_start_stop_list(
                     np.logical_or(hidden_states_predicted == stride_states[-1], hidden_states_predicted == l).astype(
                         int
                     )
