@@ -3,9 +3,12 @@ from typing import Optional, Union, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from gaitmap.base import BaseAlgorithm, BaseType
-from gaitmap.utils.dataset_helper import Dataset
 from gaitmap.stride_segmentation.hmm_models import HiddenMarkovModel
-
+from gaitmap.utils.dataset_helper import (
+    Dataset,
+    get_multi_sensor_dataset_names,
+    is_dataset,
+)
 
 class RothHMM(BaseAlgorithm):
     """Segment strides using a pre-trained Hidden Markov Model.
@@ -65,15 +68,18 @@ class RothHMM(BaseAlgorithm):
     data: Union[np.ndarray, Dataset]
     sampling_rate_hz: float
 
+    matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
+    hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
+
     def __init__(
-        self,
-        model: Optional[HiddenMarkovModel] = None,
-        snap_to_min: Optional[bool] = True,
-        snap_to_min_axis: Optional[str] = "gyr_ml",
-    ):
-        self.snap_to_min = snap_to_min
-        self.snap_to_min_axis = snap_to_min_axis
-        self.model = model
+            self,
+            model: Optional[HiddenMarkovModel] = None,
+            snap_to_min: Optional[bool] = True,
+            snap_to_min_axis: Optional[str] = "gyr_ml",
+        ):
+            self.snap_to_min = snap_to_min
+            self.snap_to_min_axis = snap_to_min_axis
+            self.model = model
 
     @property
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
@@ -124,18 +130,33 @@ class RothHMM(BaseAlgorithm):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO do magic
+        dataset_type = is_dataset(data, check_gyr=False, check_acc=False)
+
+        if dataset_type in ("single", "array"):
+            # Single template single sensor: easy
+            self.hidden_state_sequence_, self.matches_start_end_ = self._segment_single_dataset(
+                data, sampling_rate_hz
+            )
+        else:  # Multisensor
+            self.hidden_state_sequence_, self.matches_start_end_ = dict(), dict()
+            for sensor in get_multi_sensor_dataset_names(data):
+                hidden_state_sequence, matches_start_end = self._segment_single_dataset(
+                    data[sensor], sampling_rate_hz
+                )
+                self.hidden_state_sequence_[sensor] = hidden_state_sequence
+                self.matches_start_end_[sensor] = matches_start_end
+
         return self
 
     def _segment_single_dataset(self, dataset, sampling_rate_hz):
 
         hidden_state_sequence = self.model.predict(dataset, sampling_rate_hz)
 
-        borders = self._hidden_states_to_stride_borders(
+        matches_start_end_ = self._hidden_states_to_stride_borders(
             dataset[self.snap_to_min_axis].to_numpy(), hidden_state_sequence, self.model.stride_states_
         )
 
-        return borders
+        return hidden_state_sequence, matches_start_end_
 
     def _hidden_states_to_stride_borders(self, data_to_snap_to, hidden_states_predicted, stride_states):
         """This function converts the output of a hmm prediction aka the resulting hidden-state sequence to meaningful stride borders.
