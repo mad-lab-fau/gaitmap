@@ -56,13 +56,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["stride"], [1, 2, 3]),
                 _create_valid_input(["stride"], [1, 2, 3]),
-                {
-                    "mean_error": 0,
-                    "std_error": 0,
-                    "abs_mean_error": 0,
-                    "abs_std_error": 0,
-                    "max_abs_error": 0,
-                },
+                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
             ),
             (
                 _create_valid_input(["stride"], [7, 3, 5]),
@@ -101,13 +95,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["stride"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
                 _create_valid_input(["stride"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                {
-                    "mean_error": 0,
-                    "std_error": 0,
-                    "abs_mean_error": 0,
-                    "abs_std_error": 0,
-                    "max_abs_error": 0,
-                },
+                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
             ),
             (
                 _create_valid_input(["stride"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),

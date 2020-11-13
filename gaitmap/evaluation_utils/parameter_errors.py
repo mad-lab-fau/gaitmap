@@ -158,12 +158,7 @@ def _calculate_error(
     # sets the indices to "mean", "std" and "amax". This makes it impossible to do the renaming in one
     # go so I had to create 2 different dicts for renaming.
     error_names_1 = (
-        {"mean": "mean_error", "std": "std_error"}
-        if not pretty
-        else {
-            "mean": "mean error",
-            "std": "standard error",
-        }
+        {"mean": "mean_error", "std": "std_error"} if not pretty else {"mean": "mean error", "std": "standard error"}
     )
 
     error_names_2 = (
