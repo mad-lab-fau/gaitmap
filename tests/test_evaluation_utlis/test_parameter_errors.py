@@ -21,15 +21,11 @@ class TestCalculateParameterErrors:
     @pytest.mark.parametrize(
         "input_param,ground_truth,expected_error",
         [
-            (
-                _create_valid_input(["param"], []),
-                _create_valid_input(["param"], []),
-                "One or more columns are empty!",
-            ),
+            (_create_valid_input(["param"], []), _create_valid_input(["param"], []), "One or more columns are empty!",),
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
-                "The dataframe is expected to have exactly the following index columns ([\'s_id\']), but it has None",
+                "The dataframe is expected to have exactly the following index columns (['s_id']), but it has None",
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["1"]),
@@ -60,13 +56,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [1, 2, 3]),
                 _create_valid_input(["param"], [1, 2, 3]),
-                {
-                    "mean_error": 0,
-                    "std_error": 0,
-                    "abs_mean_error": 0,
-                    "abs_std_error": 0,
-                    "max_abs_error": 0,
-                },
+                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
             ),
             (
                 _create_valid_input(["param"], [7, 3, 5]),
@@ -105,13 +95,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                {
-                    "mean_error": 0,
-                    "std_error": 0,
-                    "abs_mean_error": 0,
-                    "abs_std_error": 0,
-                    "max_abs_error": 0,
-                },
+                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
             ),
             (
                 _create_valid_input(["param"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),
