@@ -5,6 +5,7 @@ from typing import Union, Dict, Hashable
 import numpy as np
 import pandas as pd
 
+from gaitmap.utils._datatype_validation_helper import _assert_has_index_columns
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -20,6 +21,7 @@ def calculate_parameter_errors(
         absolute standard error, and maximal absolute error.
 
         By default, the output is not pretty but this can be selected by setting `pretty_output` to `True`.
+        `pretty_output` need to be set to `True` if you are using pretty input.
         Also by default if a multi-senors input is given, the metrics will be calculatet per sensor. If
         you wish to calculate the metrics as if the data was comming from only one sensor set
         `calculate_per_sensor` to `False`.
@@ -47,16 +49,16 @@ def calculate_parameter_errors(
         (mean error, standard error, absolute mean error, absolute standard error,
         and maximal absolute error). The Dataframe has 2 column levels if there was
         a multi-sensor input or if not it has only 1 level.
-        The 2nd level has as many columns as the number of common sensors between
-        the input and the ground truth. The 1st level is made out of as many columns
-        as the number of features the respective sensor has.
+        The top level has as many columns as the number of common sensors between
+        the input and the ground truth. The bottom level is made out of as many columns
+        as the number of parameter the respective sensor has.
 
     Examples
     --------
-    >>> input_param = pd.DataFrame({"stride1": [7, 3, 5], "stride2": [7, -1, 7]})
-    >>> ground_truth = pd.DataFrame({"stride1": [3, 6, 7], "stride2": [-7, -0, 6]})
+    >>> input_param = pd.DataFrame({"para1": [7, 3, 5], "para2": [7, -1, 7]}).rename_axis("stride id")
+    >>> ground_truth = pd.DataFrame({"para1": [3, 6, 7], "para2": [-7, -0, 6]}).rename_axis("stride id")
     >>> print(calculate_parameter_errors(input_param, ground_truth, pretty_output=True)) #doctest: +NORMALIZE_WHITESPACE
-                              stride1    stride2
+                                para1      para2
     mean error              -0.333333   4.666667
     standard error           3.785939   8.144528
     absolute mean error      3.000000   5.333333
@@ -66,17 +68,17 @@ def calculate_parameter_errors(
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
     ...
-    >>> input_sensor_left = pd.DataFrame(columns=["stride"], data=[23, 82, 42])
-    >>> ground_truth_sensor_left = pd.DataFrame(columns=["stride"], data=[21, 86, 65])
-    >>> input_sensor_right = pd.DataFrame(columns=["stride"], data=[26, -58, -3])
-    >>> ground_truth_sensor_right = pd.DataFrame(columns=["stride"], data=[96, -78, 86])
+    >>> input_sensor_left = pd.DataFrame(columns=["para"], data=[23, 82, 42]).rename_axis("s_id")
+    >>> ground_truth_sensor_left = pd.DataFrame(columns=["para"], data=[21, 86, 65]).rename_axis("s_id")
+    >>> input_sensor_right = pd.DataFrame(columns=["para"], data=[26, -58, -3]).rename_axis("s_id")
+    >>> ground_truth_sensor_right = pd.DataFrame(columns=["para"], data=[96, -78, 86]).rename_axis("s_id")
     ...
     >>> print(calculate_parameter_errors(
     ...         {"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
     ...         {"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right}
     ... )) #doctest: +NORMALIZE_WHITESPACE
                    left_sensor right_sensor
-                        stride       stride
+                          para         para
     mean_error       -8.333333   -46.333333
     std_error        13.051181    58.226569
     abs_mean_error    9.666667    59.666667
@@ -88,7 +90,7 @@ def calculate_parameter_errors(
     ...         {"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right},
     ...         calculate_per_sensor=False
     ... )) #doctest: +NORMALIZE_WHITESPACE
-                       stride
+                         para
     mean_error     -27.333333
     std_error       43.098337
     abs_mean_error  34.666667
@@ -154,45 +156,60 @@ def _calculate_error(
     ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
     pretty: bool,
 ) -> pd.DataFrame:
-    # Absolutely necessary to do this like that because when the aggregate function is used it
-    # sets the indices to "mean", "std" and "amax". This makes it impossible to do the renaming in one
-    # go so I had to create 2 different dicts for renaming.
-    error_names_1 = (
-        {"mean": "mean_error", "std": "std_error"} if not pretty else {"mean": "mean error", "std": "standard error"}
-    )
+    if pretty:
+        _assert_has_index_columns(input_parameter, index_cols=["stride id"])
+        _assert_has_index_columns(ground_truth_parameter, index_cols=["stride id"])
+    else:
+        _assert_has_index_columns(input_parameter, index_cols=["s_id"])
+        _assert_has_index_columns(ground_truth_parameter, index_cols=["s_id"])
 
-    error_names_2 = (
-        {"mean": "abs_mean_error", "std": "abs_std_error", "amax": "max_abs_error"}
+    error_names = (
+        {
+            "mean": "mean_error",
+            "std": "std_error",
+            "_abs_mean_error": "abs_mean_error",
+            "_abs_std_error": "abs_std_error",
+            "_max_abs_error": "max_abs_error",
+        }
         if not pretty
-        else {"mean": "absolute mean error", "std": "absolute standard error", "amax": "maximal absolute error"}
+        else {
+            "mean": "mean error",
+            "std": "standard error",
+            "_abs_mean_error": "absolute mean error",
+            "_abs_std_error": "absolute standard error",
+            "_max_abs_error": "maximal absolute error",
+        }
     )
 
     common_features = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
     if not common_features:
         raise ValidationError("The passed parameters do not have any common features!")
 
-    error_dfs = []
+    error_df = (
+        input_parameter[common_features]
+        .subtract(ground_truth_parameter[common_features])
+        .dropna()
+        .reset_index(drop=True)
+    )
 
-    for feature in common_features:
-        if len(input_parameter[feature]) == 0:
-            raise ValidationError('The "{}" column does not contain any data!'.format(feature))
+    if error_df.empty:
+        raise ValidationError("One or more columns are empty!")
 
-        error = input_parameter[feature].sort_index() - ground_truth_parameter[feature].sort_index()
+    # the usage of np.NamedAgg for multiple columns is still in development
+    # (https://github.com/pandas-dev/pandas/pull/37627)
+    # The implementation should be change to that when it is done
+    error_df = error_df.agg([np.mean, np.std, _abs_mean_error, _abs_std_error, _max_abs_error], axis=0)
 
-        error_df = pd.DataFrame(error).dropna().reset_index(drop=True)
-        error_df[feature + "_abs"] = np.abs(error_df[feature])
-        error_df = error_df.aggregate([np.mean, np.std, np.max], axis=0)
-        error_df = (
-            error_df[feature]
-            .drop(index="amax")
-            .rename(index=error_names_1)
-            .append(error_df[feature + "_abs"].rename(index=error_names_2))
-        )
-        error_df = pd.DataFrame(error_df, columns=[feature])
+    return error_df.rename(index=error_names)
 
-        if len(error) == 0:
-            raise ValidationError('No "s_id"s match for the "{}" column!'.format(feature))
 
-        error_dfs.append(error_df)
+def _abs_mean_error(x):
+    return np.mean(np.abs(x.values))
 
-    return pd.concat(error_dfs, axis=1)
+
+def _abs_std_error(x):
+    return np.std(np.abs(x.values), ddof=1)
+
+
+def _max_abs_error(x):
+    return np.max(np.abs(x.values))

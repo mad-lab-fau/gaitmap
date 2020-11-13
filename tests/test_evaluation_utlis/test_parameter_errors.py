@@ -11,10 +11,9 @@ def _create_valid_input(columns, data, is_dict=False, sensor_names=None):
     if is_dict:
         output = {}
         for i, sensor_name in enumerate(sensor_names):
-            output[sensor_name] = pd.DataFrame(columns=columns, data=data[i])
+            output[sensor_name] = pd.DataFrame(columns=columns, data=data[i]).rename_axis("s_id")
     else:
-        output = pd.DataFrame(columns=columns, data=data)
-        output.index.name = "s_id"
+        output = pd.DataFrame(columns=columns, data=data).rename_axis("s_id")
     return output
 
 
@@ -23,23 +22,28 @@ class TestCalculateParameterErrors:
         "input_param,ground_truth,expected_error",
         [
             (
-                _create_valid_input(["stride"], []),
-                _create_valid_input(["stride"], []),
-                'The "stride" column does not contain any data!',
+                _create_valid_input(["param"], []),
+                _create_valid_input(["param"], []),
+                "One or more columns are empty!",
             ),
             (
-                _create_valid_input(["stride"], [[1]], is_dict=True, sensor_names=["1"]),
-                _create_valid_input(["stride"], [[1]], is_dict=True, sensor_names=["2"]),
+                pd.DataFrame(columns=["param"], data=[]),
+                pd.DataFrame(columns=["param"], data=[]),
+                "The dataframe is expected to have exactly the following index columns ([\'s_id\']), but it has None",
+            ),
+            (
+                _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["1"]),
+                _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["2"]),
                 "The passed parameters do not have any common sensors!",
             ),
             (
-                _create_valid_input(["stride"], []),
-                _create_valid_input(["stride"], [[1]], is_dict=True, sensor_names=["2"]),
+                _create_valid_input(["param"], []),
+                _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["2"]),
                 "The inputted parameters are not of same type!",
             ),
             (
-                _create_valid_input(["stride"], [[1]], is_dict=True, sensor_names=["1"]),
-                _create_valid_input(["not_stride"], [[1]], is_dict=True, sensor_names=["1"]),
+                _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["1"]),
+                _create_valid_input(["not_param"], [[1]], is_dict=True, sensor_names=["1"]),
                 "The passed parameters do not have any common features!",
             ),
         ],
@@ -54,13 +58,19 @@ class TestCalculateParameterErrors:
         "input_param,ground_truth,expectation",
         [
             (
-                _create_valid_input(["stride"], [1, 2, 3]),
-                _create_valid_input(["stride"], [1, 2, 3]),
-                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
+                _create_valid_input(["param"], [1, 2, 3]),
+                _create_valid_input(["param"], [1, 2, 3]),
+                {
+                    "mean_error": 0,
+                    "std_error": 0,
+                    "abs_mean_error": 0,
+                    "abs_std_error": 0,
+                    "max_abs_error": 0,
+                },
             ),
             (
-                _create_valid_input(["stride"], [7, 3, 5]),
-                _create_valid_input(["stride"], [3, 6, 7]),
+                _create_valid_input(["param"], [7, 3, 5]),
+                _create_valid_input(["param"], [3, 6, 7]),
                 {
                     "mean_error": -0.33333,
                     "std_error": 3.78594,
@@ -70,8 +80,8 @@ class TestCalculateParameterErrors:
                 },
             ),
             (
-                _create_valid_input(["stride"], [168, 265, 278.4]),
-                _create_valid_input(["stride"], [99, 223, 282]),
+                _create_valid_input(["param"], [168, 265, 278.4]),
+                _create_valid_input(["param"], [99, 223, 282]),
                 {
                     "mean_error": 35.8,
                     "std_error": 36.69496,
@@ -87,19 +97,25 @@ class TestCalculateParameterErrors:
         output = calculate_parameter_errors(input_param, ground_truth)
 
         for error_type in error_types:
-            assert_array_equal(np.round(output["stride"].loc[error_type], 5), expectation[error_type])
+            assert_array_equal(np.round(output["param"].loc[error_type], 5), expectation[error_type])
 
     @pytest.mark.parametrize(
         "input_param,ground_truth,expectation",
         [
             (
-                _create_valid_input(["stride"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                _create_valid_input(["stride"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
+                _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
+                _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
+                {
+                    "mean_error": 0,
+                    "std_error": 0,
+                    "abs_mean_error": 0,
+                    "abs_std_error": 0,
+                    "max_abs_error": 0,
+                },
             ),
             (
-                _create_valid_input(["stride"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),
-                _create_valid_input(["stride"], [[-9, 50, 15], [4, -38, -34]], is_dict=True, sensor_names=["1", "2"]),
+                _create_valid_input(["param"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),
+                _create_valid_input(["param"], [[-9, 50, 15], [4, -38, -34]], is_dict=True, sensor_names=["1", "2"]),
                 {
                     "mean_error": -12.0,
                     "std_error": 28.75413,
