@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from gaitmap.utils._datatype_validation_helper import _assert_has_index_columns
+from gaitmap.utils.dataset_helper import set_correct_index
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -20,9 +21,8 @@ def calculate_parameter_errors(
     The metrics are: mean error, standard error, absolute mean error,
     absolute standard error, and maximal absolute error.
 
-    By default, the output is not pretty but this can be selected by setting `pretty_output` to `True`.
-    `pretty_output` need to be set to `True` if you are using pretty input.
-    Also by default if a multi-senors input is given, the metrics will be calculatet per sensor. If
+    By default, the output is not pretty, but this can be selected by setting `pretty_output` to `True`.
+    Also by default, if a multi-senors input is given, the metrics will be calculated per sensor. If
     you wish to calculate the metrics as if the data was comming from only one sensor set
     `calculate_per_sensor` to `False`.
 
@@ -156,12 +156,15 @@ def _calculate_error(
     ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
     pretty: bool,
 ) -> pd.DataFrame:
-    if pretty:
-        _assert_has_index_columns(input_parameter, index_cols=["stride id"])
-        _assert_has_index_columns(ground_truth_parameter, index_cols=["stride id"])
-    else:
-        _assert_has_index_columns(input_parameter, index_cols=["s_id"])
-        _assert_has_index_columns(ground_truth_parameter, index_cols=["s_id"])
+    try:
+        input_parameter_correct = set_correct_index(input_parameter, index_cols=["s_id"])
+        ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["s_id"])
+    except ValidationError:
+        try:
+            input_parameter_correct = set_correct_index(input_parameter, index_cols=["stride id"])
+            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["stride id"])
+        except ValidationError as e:
+            raise ValidationError('Both inputs need to have either "s_id" or "stride id" as the index column!') from e
 
     error_names = (
         {
@@ -181,13 +184,15 @@ def _calculate_error(
         }
     )
 
-    common_features = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
+    common_features = sorted(
+        list(set(input_parameter_correct.keys()).intersection(ground_truth_parameter_correct.keys()))
+    )
     if not common_features:
         raise ValidationError("The passed parameters do not have any common features!")
 
     error_df = (
-        input_parameter[common_features]
-        .subtract(ground_truth_parameter[common_features])
+        input_parameter_correct[common_features]
+        .subtract(ground_truth_parameter_correct[common_features])
         .dropna()
         .reset_index(drop=True)
     )

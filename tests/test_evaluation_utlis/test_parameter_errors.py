@@ -29,7 +29,7 @@ class TestCalculateParameterErrors:
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
-                "The dataframe is expected to have exactly the following index columns (['s_id']), but it has None",
+                'Both inputs need to have either "s_id" or "stride id" as the index column!',
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensor_names=["1"]),
