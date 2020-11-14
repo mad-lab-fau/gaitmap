@@ -5,7 +5,6 @@ from typing import Union, Dict, Hashable
 import numpy as np
 import pandas as pd
 
-from gaitmap.utils._datatype_validation_helper import _assert_has_index_columns
 from gaitmap.utils.dataset_helper import set_correct_index
 from gaitmap.utils.exceptions import ValidationError
 
