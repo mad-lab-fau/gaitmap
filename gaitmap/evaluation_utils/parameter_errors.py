@@ -117,27 +117,27 @@ def calculate_parameter_errors(
     if not sensor_names_list:
         raise ValidationError("The passed parameters do not have any common sensors!")
 
-    if not calculate_per_sensor:
-        input_parameter = {
-            "__calculate_not_per_sensor__": pd.concat(
-                [input_parameter[sensor_name] for sensor_name in sensor_names_list]
-            )
-        }
-
-        ground_truth_parameter = {
-            "__calculate_not_per_sensor__": pd.concat(
-                [ground_truth_parameter[sensor_name] for sensor_name in sensor_names_list]
-            )
-        }
-
-        sensor_names_list = ["__calculate_not_per_sensor__"]
-
     sensor_df = {}
 
-    for sensor_name in sensor_names_list:
-        sensor_df[sensor_name] = _calculate_error(
-            input_parameter[sensor_name], ground_truth_parameter[sensor_name], pretty_output
+    if not calculate_per_sensor:
+        input_parameter = pd.concat(
+            [
+                input_parameter[sensor_name]
+                .subtract(ground_truth_parameter[sensor_name])
+                .dropna()
+                .reset_index(drop=True)
+                for sensor_name in sensor_names_list
+            ]
         )
+
+        sensor_df["__calculate_not_per_sensor__"] = _calculate_error(
+            input_parameter, None, pretty_output, calculate_per_sensor
+        )
+    else:
+        for sensor_name in sensor_names_list:
+            sensor_df[sensor_name] = _calculate_error(
+                input_parameter[sensor_name], ground_truth_parameter[sensor_name], pretty_output, calculate_per_sensor
+            )
 
     output = pd.concat(sensor_df, axis=1)
 
@@ -152,19 +152,10 @@ def calculate_parameter_errors(
 
 def _calculate_error(
     input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame], None],
     pretty: bool,
+    calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
-    try:
-        input_parameter_correct = set_correct_index(input_parameter, index_cols=["s_id"])
-        ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["s_id"])
-    except ValidationError:
-        try:
-            input_parameter_correct = set_correct_index(input_parameter, index_cols=["stride id"])
-            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["stride id"])
-        except ValidationError as e:
-            raise ValidationError('Both inputs need to have either "s_id" or "stride id" as the index column!') from e
-
     error_names = (
         {
             "mean": "mean_error",
@@ -183,18 +174,35 @@ def _calculate_error(
         }
     )
 
-    common_features = sorted(
-        list(set(input_parameter_correct.keys()).intersection(ground_truth_parameter_correct.keys()))
-    )
-    if not common_features:
-        raise ValidationError("The passed parameters do not have any common features!")
+    if calculate_per_sensor:
 
-    error_df = (
-        input_parameter_correct[common_features]
-        .subtract(ground_truth_parameter_correct[common_features])
-        .dropna()
-        .reset_index(drop=True)
-    )
+        try:
+            input_parameter_correct = set_correct_index(input_parameter, index_cols=["s_id"])
+            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["s_id"])
+        except ValidationError:
+            try:
+                input_parameter_correct = set_correct_index(input_parameter, index_cols=["stride id"])
+                ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["stride id"])
+            except ValidationError as e:
+                raise ValidationError(
+                    'Both inputs need to have either "s_id" or "stride id" as the index column!'
+                ) from e
+
+        common_features = sorted(
+            list(set(input_parameter_correct.keys()).intersection(ground_truth_parameter_correct.keys()))
+        )
+        if not common_features:
+            raise ValidationError("The passed parameters do not have any common features!")
+
+        error_df = (
+            input_parameter_correct[common_features]
+            .subtract(ground_truth_parameter_correct[common_features])
+            .dropna()
+            .reset_index(drop=True)
+        )
+
+    else:
+        error_df = input_parameter
 
     if error_df.empty:
         raise ValidationError("One or more columns are empty!")
