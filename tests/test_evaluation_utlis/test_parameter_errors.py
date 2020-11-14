@@ -21,7 +21,11 @@ class TestCalculateParameterErrors:
     @pytest.mark.parametrize(
         "input_param,ground_truth,expected_error",
         [
-            (_create_valid_input(["param"], []), _create_valid_input(["param"], []), "One or more columns are empty!",),
+            (
+                _create_valid_input(["param"], []),
+                _create_valid_input(["param"], []),
+                "One or more columns are empty!",
+            ),
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
@@ -56,16 +60,16 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [1, 2, 3]),
                 _create_valid_input(["param"], [1, 2, 3]),
-                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
+                {"mean_error": 0, "error_std": 0, "abs_mean_error": 0, "abs_error_std": 0, "max_abs_error": 0},
             ),
             (
                 _create_valid_input(["param"], [7, 3, 5]),
                 _create_valid_input(["param"], [3, 6, 7]),
                 {
                     "mean_error": -0.33333,
-                    "std_error": 3.78594,
+                    "error_std": 3.78594,
                     "abs_mean_error": 3.0,
-                    "abs_std_error": 1.0,
+                    "abs_error_std": 1.0,
                     "max_abs_error": 4.0,
                 },
             ),
@@ -74,16 +78,16 @@ class TestCalculateParameterErrors:
                 _create_valid_input(["param"], [99, 223, 282]),
                 {
                     "mean_error": 35.8,
-                    "std_error": 36.69496,
+                    "error_std": 36.69496,
                     "abs_mean_error": 38.2,
-                    "abs_std_error": 32.86518,
+                    "abs_error_std": 32.86518,
                     "max_abs_error": 69.0,
                 },
             ),
         ],
     )
     def test_valid_input(self, input_param, ground_truth, expectation):
-        error_types = ["mean_error", "std_error", "abs_mean_error", "abs_std_error", "max_abs_error"]
+        error_types = ["mean_error", "error_std", "abs_mean_error", "abs_error_std", "max_abs_error"]
         output = calculate_parameter_errors(input_param, ground_truth)
 
         for error_type in error_types:
@@ -95,23 +99,29 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                {"mean_error": 0, "std_error": 0, "abs_mean_error": 0, "abs_std_error": 0, "max_abs_error": 0,},
+                {
+                    "mean_error": 0,
+                    "error_std": 0,
+                    "abs_mean_error": 0,
+                    "abs_error_std": 0,
+                    "max_abs_error": 0,
+                },
             ),
             (
                 _create_valid_input(["param"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),
                 _create_valid_input(["param"], [[-9, 50, 15], [4, -38, -34]], is_dict=True, sensor_names=["1", "2"]),
                 {
                     "mean_error": -12.0,
-                    "std_error": 28.75413,
+                    "error_std": 28.75413,
                     "abs_mean_error": 26.0,
-                    "abs_std_error": 13.72589,
+                    "abs_error_std": 13.72589,
                     "max_abs_error": 38,
                 },
             ),
         ],
     )
     def test_calculate_not_per_sensor_input(self, input_param, ground_truth, expectation):
-        error_types = ["mean_error", "std_error", "abs_mean_error", "abs_std_error", "max_abs_error"]
+        error_types = ["mean_error", "error_std", "abs_mean_error", "abs_error_std", "max_abs_error"]
         output = calculate_parameter_errors(input_param, ground_truth, calculate_per_sensor=False)
 
         for error_type in error_types:

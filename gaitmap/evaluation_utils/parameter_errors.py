@@ -17,14 +17,14 @@ def calculate_parameter_errors(
 ) -> pd.DataFrame:
     """Calculate 5 error metrics between a parameter input and a given ground truth.
 
-        The metrics are: mean error, standard error, absolute mean error,
-        absolute standard error, and maximal absolute error.
+    The metrics are: mean error, standard error, absolute mean error,
+    absolute standard error, and maximal absolute error.
 
-        By default, the output is not pretty but this can be selected by setting `pretty_output` to `True`.
-        `pretty_output` need to be set to `True` if you are using pretty input.
-        Also by default if a multi-senors input is given, the metrics will be calculatet per sensor. If
-        you wish to calculate the metrics as if the data was comming from only one sensor set
-        `calculate_per_sensor` to `False`.
+    By default, the output is not pretty but this can be selected by setting `pretty_output` to `True`.
+    `pretty_output` need to be set to `True` if you are using pretty input.
+    Also by default if a multi-senors input is given, the metrics will be calculatet per sensor. If
+    you wish to calculate the metrics as if the data was comming from only one sensor set
+    `calculate_per_sensor` to `False`.
 
     Parameters
     ----------
@@ -58,12 +58,12 @@ def calculate_parameter_errors(
     >>> input_param = pd.DataFrame({"para1": [7, 3, 5], "para2": [7, -1, 7]}).rename_axis("stride id")
     >>> ground_truth = pd.DataFrame({"para1": [3, 6, 7], "para2": [-7, -0, 6]}).rename_axis("stride id")
     >>> print(calculate_parameter_errors(input_param, ground_truth, pretty_output=True)) #doctest: +NORMALIZE_WHITESPACE
-                                para1      para2
-    mean error              -0.333333   4.666667
-    standard error           3.785939   8.144528
-    absolute mean error      3.000000   5.333333
-    absolute standard error  1.000000   7.505553
-    maximal absolute error   4.000000  14.000000
+                                          para1      para2
+    mean error                        -0.333333   4.666667
+    error standard deviation           3.785939   8.144528
+    absolute mean error                3.000000   5.333333
+    absolute error standard deviation  1.000000   7.505553
+    maximal absolute error             4.000000  14.000000
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
@@ -80,9 +80,9 @@ def calculate_parameter_errors(
                    left_sensor right_sensor
                           para         para
     mean_error       -8.333333   -46.333333
-    std_error        13.051181    58.226569
+    error_std        13.051181    58.226569
     abs_mean_error    9.666667    59.666667
-    abs_std_error    11.590226    35.641736
+    abs_error_std    11.590226    35.641736
     max_abs_error    23.000000    89.000000
 
     >>> print(calculate_parameter_errors(
@@ -92,9 +92,9 @@ def calculate_parameter_errors(
     ... )) #doctest: +NORMALIZE_WHITESPACE
                          para
     mean_error     -27.333333
-    std_error       43.098337
+    error_std       43.098337
     abs_mean_error  34.666667
-    abs_std_error   36.219700
+    abs_error_std   36.219700
     max_abs_error   89.000000
 
     See Also
@@ -166,17 +166,17 @@ def _calculate_error(
     error_names = (
         {
             "mean": "mean_error",
-            "std": "std_error",
+            "std": "error_std",
             "_abs_mean_error": "abs_mean_error",
-            "_abs_std_error": "abs_std_error",
+            "_abs_error_std": "abs_error_std",
             "_max_abs_error": "max_abs_error",
         }
         if not pretty
         else {
             "mean": "mean error",
-            "std": "standard error",
+            "std": "error standard deviation",
             "_abs_mean_error": "absolute mean error",
-            "_abs_std_error": "absolute standard error",
+            "_abs_error_std": "absolute error standard deviation",
             "_max_abs_error": "maximal absolute error",
         }
     )
@@ -198,7 +198,7 @@ def _calculate_error(
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)
     # The implementation should be change to that when it is done
-    error_df = error_df.agg([np.mean, np.std, _abs_mean_error, _abs_std_error, _max_abs_error], axis=0)
+    error_df = error_df.agg([np.mean, np.std, _abs_mean_error, _abs_error_std, _max_abs_error], axis=0)
 
     return error_df.rename(index=error_names)
 
@@ -207,7 +207,7 @@ def _abs_mean_error(x):
     return np.mean(np.abs(x.values))
 
 
-def _abs_std_error(x):
+def _abs_error_std(x):
     return np.std(np.abs(x.values), ddof=1)
 
 
