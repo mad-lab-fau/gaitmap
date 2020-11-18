@@ -4,6 +4,7 @@ from typing import Union, Tuple, Dict, Hashable, Sequence
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.ckdtree import cKDTree
 
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
@@ -411,48 +412,23 @@ def _match_label_lists(
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
 
-    nr_of_cols_left = list_left.shape[1]
-    nr_of_cols_right = list_left.shape[1]
+    distance_matrix = cKDTree(list_left).sparse_distance_matrix(cKDTree(list_right), tolerance, p=2).items()
 
-    if nr_of_cols_left > 2 or nr_of_cols_right > 2:
-        raise ValidationError("Can not compare more than 2 columns at a time")
+    if len(distance_matrix) == 0:
+        return np.array([]), np.array([])
 
-    both_1d = nr_of_cols_left == 1 and nr_of_cols_right == 1
+    output_left = []
+    output_right = []
 
-    distance = np.empty((len(list_left), len(list_right), 2))
+    sorted_distance_matrix = (
+        sorted(distance_matrix, key=lambda x: x[1]) if one_to_one else sorted(distance_matrix, key=lambda x: x[0])
+    )
 
-    if both_1d:
-        list_left = np.array([[x[0], x[0]] for x in list_left])
-        list_right = np.array([[x[0], x[0]] for x in list_right])
+    for item in sorted_distance_matrix:
+        if one_to_one and (item[0][0] in output_left or item[0][1] in output_right):
+            continue
 
-    # Calculate the all distances between all start and all end values of both lists.
-    distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
-    distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
+        output_left.append(item[0][0])
+        output_right.append(item[0][1])
 
-    distance = np.abs(distance)
-    valid_matches = distance <= tolerance
-
-    # Valid matches must have a match in all considered dimensions (e.g. start and end values)
-    valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
-
-    if one_to_one is True:
-        # So far it was possible that multiple values from one list were matched to a single value of the other.
-        # In case `one_to_one` is True, we only want to consider the once with the smallest combined distance over all
-        # dimensions
-        combined_distance = distance.sum(axis=-1)
-        # Calculate the matches with the minimal distance in all columns
-        left_indices = combined_distance.argmin(axis=0)
-        # Calculate the matches with the minimal distance in all rows
-        right_indices = combined_distance.argmin(axis=1)
-        # Create a two matrices (one for rows and one for cols) that only contain True at the positions of the
-        # respective argmins.
-        argmin_array_left = np.zeros(valid_matches.shape).astype(bool)
-        argmin_array_left[left_indices, np.arange(distance.shape[1])] = True
-        argmin_array_right = np.zeros(valid_matches.shape).astype(bool)
-        argmin_array_right[np.arange(distance.shape[0]), right_indices] = True
-        # valid matches are only valid, if they are also in positions where the matches correspond to the respective
-        # argmins.
-        valid_matches &= argmin_array_left & argmin_array_right
-    left_indices, right_indices = np.where(valid_matches)
-
-    return left_indices, right_indices
+    return np.array(output_left), np.array(output_right)
