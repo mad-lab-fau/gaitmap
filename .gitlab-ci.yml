@@ -9,10 +9,6 @@ stages:
   image: python:3.7
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  cache:
-    paths:
-      - .cache/pip
-    key: global-cache-key
   before_script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
