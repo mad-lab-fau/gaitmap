@@ -12,7 +12,6 @@ stages:
   cache:
     paths:
       - .cache/pip
-      - .venv
     key: global-cache-key
   before_script:
     - git config --global credential.helper store
