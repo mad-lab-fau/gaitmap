@@ -21,11 +21,7 @@ class TestCalculateParameterErrors:
     @pytest.mark.parametrize(
         "input_param,ground_truth,expected_error",
         [
-            (
-                _create_valid_input(["param"], []),
-                _create_valid_input(["param"], []),
-                "One or more columns are empty!",
-            ),
+            (_create_valid_input(["param"], []), _create_valid_input(["param"], []), "One or more columns are empty!",),
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
@@ -99,13 +95,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensor_names=["1", "2"]),
-                {
-                    "mean_error": 0,
-                    "error_std": 0,
-                    "abs_mean_error": 0,
-                    "abs_error_std": 0,
-                    "max_abs_error": 0,
-                },
+                {"mean_error": 0, "error_std": 0, "abs_mean_error": 0, "abs_error_std": 0, "max_abs_error": 0,},
             ),
             (
                 _create_valid_input(["param"], [[-47, 18, 7], [-32, -5, -25]], is_dict=True, sensor_names=["1", "2"]),
