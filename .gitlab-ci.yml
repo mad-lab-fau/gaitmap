@@ -7,13 +7,14 @@ stages:
   tags:
     - docker
   image: python:3.7
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   before_script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
+    - pip install pip --upgrade
     - pip install poetry
-    - poetry config virtualenvs.in-project true
+    - poetry config virtualenvs.in-project false
+    - poetry cache clear pypi --all
+    - poetry run pip install psutil
     - poetry install
 
 test:
