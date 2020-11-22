@@ -22,12 +22,12 @@ class TestMatchStrideList:
         sl = self._create_valid_list([[0, 1], [1, 2]])
 
         with pytest.raises(ValidationError) as e:
-            match_stride_lists([], sl)
+            match_stride_lists(dict(), sl)
 
         assert "SingleSensorStrideList" in str(e.value)
 
         with pytest.raises(ValidationError) as e:
-            match_stride_lists(sl, [])
+            match_stride_lists(sl, dict())
 
         assert "SingleSensorStrideList" in str(e.value)
 
