@@ -412,7 +412,7 @@ def _match_label_lists(
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
 
-    distance_matrix = cKDTree(list_left).sparse_distance_matrix(cKDTree(list_right), tolerance, p=2).items()
+    distance_matrix = cKDTree(list_left).sparse_distance_matrix(cKDTree(list_right), tolerance, p=2)
 
     if len(distance_matrix) == 0:
         return np.array([]), np.array([])
@@ -420,8 +420,13 @@ def _match_label_lists(
     output_left = []
     output_right = []
 
+    # The distance_matrix is not sorted as one would expect it to be so:
+    #   If the distances between the points is the same OR one_to_one is false sort by the keys
+    #   If one_to_one is True sort by the distance between the points
     sorted_distance_matrix = (
-        sorted(distance_matrix, key=lambda x: x[1]) if one_to_one else sorted(distance_matrix, key=lambda x: x[0])
+        sorted(distance_matrix.items(), key=lambda x: x[0])
+        if len(set(distance_matrix.values())) == 1 or not one_to_one
+        else sorted(distance_matrix.items(), key=lambda x: x[1])
     )
 
     for item in sorted_distance_matrix:
