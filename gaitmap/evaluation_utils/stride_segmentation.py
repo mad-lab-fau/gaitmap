@@ -5,6 +5,7 @@ from typing import Union, Tuple, Dict, Hashable, Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial.ckdtree import cKDTree
+from scipy.spatial.distance import chebyshev
 
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
@@ -412,28 +413,33 @@ def _match_label_lists(
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
 
-    distance_matrix = cKDTree(list_left).sparse_distance_matrix(cKDTree(list_right), tolerance, p=2)
+    right_tree = cKDTree(list_right)
+    left_tree = cKDTree(list_left)
 
-    if len(distance_matrix) == 0:
-        return np.array([]), np.array([])
+    if one_to_one is False:
+        # p = np.inf is used to select the Chebyshev distance
+        keys = list(zip(*right_tree.sparse_distance_matrix(left_tree, tolerance, p=np.inf).keys()))
 
-    output_left = []
-    output_right = []
+        return (np.array([]), np.array([])) if len(keys) == 0 else (np.array(keys[1]), np.array(keys[0]))
 
-    # The distance_matrix is not sorted as one would expect it to be so:
-    #   If the distances between the points is the same OR one_to_one is false sort by the keys
-    #   If one_to_one is True sort by the distance between the points
-    sorted_distance_matrix = (
-        sorted(distance_matrix.items(), key=lambda x: x[0])
-        if len(set(distance_matrix.values())) == 1 or not one_to_one
-        else sorted(distance_matrix.items(), key=lambda x: x[1])
-    )
+    # p = 1 is used to select the Manhatten distance
+    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, n_jobs=-1)
+    _, r_nearest_neighbor = left_tree.query(list_right, p=1, n_jobs=-1)
 
-    for item in sorted_distance_matrix:
-        if one_to_one and (item[0][0] in output_left or item[0][1] in output_right):
-            continue
+    l_indices = np.arange(len(list_left))
+    combined_indices = np.vstack([l_indices, l_nearest_neighbor]).T
+    boolean_map = r_nearest_neighbor[l_nearest_neighbor] == l_indices
+    valid_matches = combined_indices[boolean_map]
 
-        output_left.append(item[0][0])
-        output_right.append(item[0][1])
+    valid_matches_distance = l_nearest_distance[boolean_map]
+    index_large_matches = np.where(valid_matches_distance > tolerance)[0]
+    if index_large_matches.size > 0:
+        output = (
+            chebyshev(list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]]) > tolerance
+        )
 
-    return np.array(output_left), np.array(output_right)
+        valid_matches = np.delete(valid_matches, index_large_matches[output], axis=0)
+
+    valid_matches = valid_matches.T
+
+    return valid_matches[0], valid_matches[1]
