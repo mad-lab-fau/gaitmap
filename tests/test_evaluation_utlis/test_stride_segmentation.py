@@ -7,7 +7,6 @@ from gaitmap.evaluation_utils import (
     match_stride_lists,
     evaluate_segmented_stride_list,
 )
-
 from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 from gaitmap.evaluation_utils.stride_segmentation import _match_label_lists
 from gaitmap.utils.exceptions import ValidationError
@@ -286,6 +285,46 @@ class TestSpecialMatchStrideList:
 
         assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
         assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
+
+    @pytest.mark.parametrize(
+        "input_param, ground_truth, tolerance, one_to_one, expectation",
+        [
+            (
+                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
+                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
+                0,
+                True,
+                [[0, 1, 2], [0, 1, 2]],
+            ),
+            (
+                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
+                np.array([[30, 40, 50], [10, 20, 30], [0, 1, 2]]),
+                0,
+                True,
+                [[0, 1, 2], [2, 1, 0]],
+            ),
+            (
+                np.array([[0, 1, 2, 3], [10, 20, 30, 40], [101, 200, 300, 400]]),
+                np.array([[0, 1, 2, 4], [101, 201, 300, 400], [10, 20, 31, 40]]),
+                1,
+                True,
+                [[0, 1, 2], [0, 2, 1]],
+            ),
+            (
+                np.array([[0, 1, 2, 3], [10, 20, 30, 40], [101, 200, 300, 400], [0, 1, 2, 3]]),
+                np.array([[0, 1, 2, 4], [101, 201, 300, 400], [10, 20, 31, 40], [0, 1, 2, 4]]),
+                1,
+                False,
+                [[0, 0, 1, 2, 3, 3], [0, 3, 2, 1, 0, 3]],
+            ),
+            (np.array([[1], [2], [3], [4], [5]]), np.array([[6], [7], [8], [9], [10]]), 0, True, [[], []],),
+        ],
+    )
+    def test_match_label_lists_edgecases(self, input_param, ground_truth, tolerance, one_to_one, expectation):
+        output1, output2 = _match_label_lists(input_param, ground_truth, tolerance, one_to_one)
+
+        assert_array_equal(output1, expectation[0])
+        assert_array_equal(output2, expectation[1])
 
 
 class TestEvaluateSegmentedStrideList:
@@ -581,45 +620,3 @@ class TestEvaluateSegmentedStrideList:
             evaluate_segmented_stride_list(single, multi)
 
         assert "not of same type" in str(e)
-
-
-class TestMatchLabelLists:
-    @pytest.mark.parametrize(
-        "input_param, ground_truth, tolerance, one_to_one, expectation",
-        [
-            (
-                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
-                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
-                0,
-                True,
-                [[0, 1, 2], [0, 1, 2]],
-            ),
-            (
-                np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),
-                np.array([[30, 40, 50], [10, 20, 30], [0, 1, 2]]),
-                0,
-                True,
-                [[0, 1, 2], [2, 1, 0]],
-            ),
-            (
-                np.array([[0, 1, 2, 3], [10, 20, 30, 40], [101, 200, 300, 400]]),
-                np.array([[0, 1, 2, 4], [101, 201, 300, 400], [10, 20, 31, 40]]),
-                1,
-                True,
-                [[0, 1, 2], [0, 2, 1]],
-            ),
-            (
-                np.array([[0, 1, 2, 3], [10, 20, 30, 40], [101, 200, 300, 400], [0, 1, 2, 3]]),
-                np.array([[0, 1, 2, 4], [101, 201, 300, 400], [10, 20, 31, 40], [0, 1, 2, 4]]),
-                1,
-                False,
-                [[0, 0, 1, 2, 3, 3], [0, 3, 2, 1, 0, 3]],
-            ),
-            (np.array([[1], [2], [3], [4], [5]]), np.array([[6], [7], [8], [9], [10]]), 0, True, [[], []],),
-        ],
-    )
-    def test_match_label_lists(self, input_param, ground_truth, tolerance, one_to_one, expectation):
-        output1, output2 = _match_label_lists(input_param, ground_truth, tolerance, one_to_one)
-
-        assert_array_equal(output1, expectation[0])
-        assert_array_equal(output2, expectation[1])
