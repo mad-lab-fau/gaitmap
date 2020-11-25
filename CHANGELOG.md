@@ -58,7 +58,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - Internal restructuring of the evaluation utils module.
   In case you used direct imports of the functions from the submodule, you need to update these.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
-- `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D. 
+- `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D and should be faster for large stride length 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
 
 ### Deprecated
