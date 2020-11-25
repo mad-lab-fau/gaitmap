@@ -4,6 +4,8 @@ from typing import Union, Tuple, Dict, Hashable, Sequence
 
 import numpy as np
 import pandas as pd
+from scipy.spatial.ckdtree import cKDTree
+from scipy.spatial.distance import chebyshev
 
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.dataset_helper import (
@@ -408,51 +410,88 @@ def _match_single_stride_lists(
 def _match_label_lists(
     list_left: np.ndarray, list_right: np.ndarray, tolerance: Union[int, float], one_to_one: bool
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Find matches in two lists based on the distance between their vectors.
+
+    Parameters
+    ----------
+    list_left : array with shape (n, d)
+        An n long array of d-dimensional vectors
+    list_right : array with shape (m, d)
+        An m long array of d-dimensional vectors
+    tolerance
+        Max allowed Chebyshev distance between matches
+    one_to_one
+        If True only valid one-to-one matches are returned (see more below)
+
+    Returns
+    -------
+    left_indices
+        Indices from the left list that have a match in the right list.
+        If `one_to_one` is False, indices might repeat.
+    right_indices
+        Indices from the right list that have a match in the left list.
+        If `one_to_one` is False, indices might repeat.
+        A valid match pare is then `(left_indices[i], right_indices[i]) for all i.
+
+    Notes
+    -----
+    This function supports 2 modes:
+
+    `one_to_one` = False:
+        In this mode every match is returned as long the distance in all dimensions between the matches is at most
+        tolerance.
+        This is equivalent to the Chebyshev distance between the matches
+        (aka `np.max(np.abs(left_match - right_match)) < tolerance`).
+        This means multiple matches for each vector will be returned.
+        This means the respective indices will occur multiple times in the output vectors.
+    `one_to_one` = True:
+        In this mode only a single match per index is allowed in both directions.
+        This means that every index will only occur once in the output arrays.
+        If multiple matches are possible based on the tolerance of the Chebyshev distance, the closest match will be
+        selected based on the Manhatten distance (aka `np.sum(np.abs(left_match - right_match`).
+        Only this match will be returned.
+        Note, that in the implementation, we first get the closest match based on the Manhatten distance and check in a
+        second step if this closed match is also valid based on the Chebyshev distance.
+
+    """
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
 
-    nr_of_cols_left = list_left.shape[1]
-    nr_of_cols_right = list_left.shape[1]
+    right_tree = cKDTree(list_right)
+    left_tree = cKDTree(list_left)
 
-    if nr_of_cols_left > 2 or nr_of_cols_right > 2:
-        raise ValidationError("Can not compare more than 2 columns at a time")
+    if one_to_one is False:
+        # p = np.inf is used to select the Chebyshev distance
+        keys = list(zip(*right_tree.sparse_distance_matrix(left_tree, tolerance, p=np.inf).keys()))
+        # All values are returned that have a valid match
+        return (np.array([]), np.array([])) if len(keys) == 0 else (np.array(keys[1]), np.array(keys[0]))
 
-    both_1d = nr_of_cols_left == 1 and nr_of_cols_right == 1
+    # one_to_one is True
+    # We calculate the closest neighbor based on the Manhatten distance in both directions and then find only the cases
+    # were the right side closest neighbor resulted in the same pairing as the left side closest neighbor ensuring
+    # that we have true one-to-one-matches
 
-    distance = np.empty((len(list_left), len(list_right), 2))
+    # p = 1 is used to select the Manhatten distance
+    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, n_jobs=-1)
+    _, r_nearest_neighbor = left_tree.query(list_right, p=1, n_jobs=-1)
 
-    if both_1d:
-        list_left = np.array([[x[0], x[0]] for x in list_left])
-        list_right = np.array([[x[0], x[0]] for x in list_right])
+    # Filter the once that are true one-to-one matches
+    l_indices = np.arange(len(list_left))
+    combined_indices = np.vstack([l_indices, l_nearest_neighbor]).T
+    boolean_map = r_nearest_neighbor[l_nearest_neighbor] == l_indices
+    valid_matches = combined_indices[boolean_map]
 
-    # Calculate the all distances between all start and all end values of both lists.
-    distance[..., 0] = np.subtract.outer(list_left[:, 0], list_right[:, 0])
-    distance[..., 1] = np.subtract.outer(list_left[:, 1], list_right[:, 1])
+    # Check if the remaining matches are inside our Chebyshev tolerance distance.
+    # If not, delete them.
+    valid_matches_distance = l_nearest_distance[boolean_map]
+    index_large_matches = np.where(valid_matches_distance > tolerance)[0]
+    if index_large_matches.size > 0:
+        output = (
+            chebyshev(list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]]) > tolerance
+        )
 
-    distance = np.abs(distance)
-    valid_matches = distance <= tolerance
+        valid_matches = np.delete(valid_matches, index_large_matches[output], axis=0)
 
-    # Valid matches must have a match in all considered dimensions (e.g. start and end values)
-    valid_matches = valid_matches[..., 0] & valid_matches[..., 1]
+    valid_matches = valid_matches.T
 
-    if one_to_one is True:
-        # So far it was possible that multiple values from one list were matched to a single value of the other.
-        # In case `one_to_one` is True, we only want to consider the once with the smallest combined distance over all
-        # dimensions
-        combined_distance = distance.sum(axis=-1)
-        # Calculate the matches with the minimal distance in all columns
-        left_indices = combined_distance.argmin(axis=0)
-        # Calculate the matches with the minimal distance in all rows
-        right_indices = combined_distance.argmin(axis=1)
-        # Create a two matrices (one for rows and one for cols) that only contain True at the positions of the
-        # respective argmins.
-        argmin_array_left = np.zeros(valid_matches.shape).astype(bool)
-        argmin_array_left[left_indices, np.arange(distance.shape[1])] = True
-        argmin_array_right = np.zeros(valid_matches.shape).astype(bool)
-        argmin_array_right[np.arange(distance.shape[0]), right_indices] = True
-        # valid matches are only valid, if they are also in positions where the matches correspond to the respective
-        # argmins.
-        valid_matches &= argmin_array_left & argmin_array_right
-    left_indices, right_indices = np.where(valid_matches)
-
-    return left_indices, right_indices
+    return valid_matches[0], valid_matches[1]
