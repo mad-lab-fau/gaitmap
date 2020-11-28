@@ -1,4 +1,4 @@
-"""A helper function to evaluate output of the temporal or spatial parameter calculation against ground truth."""
+"""A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
 from typing import Union, Dict, Hashable
 
@@ -112,40 +112,10 @@ def calculate_parameter_errors(
         input_parameter = {"__dummy__": input_parameter}
         ground_truth_parameter = {"__dummy__": ground_truth_parameter}
 
-    sensor_names_list = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
-
-    if not sensor_names_list:
-        raise ValidationError("The passed parameters do not have any common sensors!")
-
-    sensor_df = {}
-
-    if not calculate_per_sensor:
-        input_parameter = pd.concat(
-            [
-                input_parameter[sensor_name]
-                .subtract(ground_truth_parameter[sensor_name])
-                .dropna()
-                .reset_index(drop=True)
-                for sensor_name in sensor_names_list
-            ]
-        )
-
-        sensor_df["__calculate_not_per_sensor__"] = _calculate_error(
-            input_parameter, None, pretty_output, calculate_per_sensor
-        )
-    else:
-        for sensor_name in sensor_names_list:
-            sensor_df[sensor_name] = _calculate_error(
-                input_parameter[sensor_name], ground_truth_parameter[sensor_name], pretty_output, calculate_per_sensor
-            )
-
-    output = pd.concat(sensor_df, axis=1)
+    output = _calculate_error(input_parameter, ground_truth_parameter, pretty_output, calculate_per_sensor)
 
     if input_is_not_dict:
         output = output["__dummy__"]
-
-    if not calculate_per_sensor:
-        output = output["__calculate_not_per_sensor__"]
 
     return output
 
@@ -153,9 +123,14 @@ def calculate_parameter_errors(
 def _calculate_error(
     input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
     ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame], None],
-    pretty: bool,
+    pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
+    sensor_names_list = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
+
+    if len(sensor_names_list) == 0:
+        raise ValidationError("The passed parameters do not have any common sensors!")
+
     error_names = (
         {
             "mean": "mean_error",
@@ -164,7 +139,7 @@ def _calculate_error(
             "_abs_error_std": "abs_error_std",
             "_max_abs_error": "max_abs_error",
         }
-        if not pretty
+        if pretty_output is False
         else {
             "mean": "mean error",
             "std": "error standard deviation",
@@ -174,15 +149,19 @@ def _calculate_error(
         }
     )
 
-    if calculate_per_sensor:
+    error_df = {}
+
+    for sensor in sensor_names_list:
 
         try:
-            input_parameter_correct = set_correct_index(input_parameter, index_cols=["s_id"])
-            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["s_id"])
+            input_parameter_correct = set_correct_index(input_parameter[sensor], index_cols=["s_id"])
+            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter[sensor], index_cols=["s_id"])
         except ValidationError:
             try:
-                input_parameter_correct = set_correct_index(input_parameter, index_cols=["stride id"])
-                ground_truth_parameter_correct = set_correct_index(ground_truth_parameter, index_cols=["stride id"])
+                input_parameter_correct = set_correct_index(input_parameter[sensor], index_cols=["stride id"])
+                ground_truth_parameter_correct = set_correct_index(
+                    ground_truth_parameter[sensor], index_cols=["stride id"]
+                )
             except ValidationError as e:
                 raise ValidationError(
                     'Both inputs need to have either "s_id" or "stride id" as the index column!'
@@ -191,18 +170,18 @@ def _calculate_error(
         common_features = sorted(
             list(set(input_parameter_correct.keys()).intersection(ground_truth_parameter_correct.keys()))
         )
-        if not common_features:
+
+        if len(common_features) == 0:
             raise ValidationError("The passed parameters do not have any common features!")
 
-        error_df = (
+        error_df[sensor] = (
             input_parameter_correct[common_features]
             .subtract(ground_truth_parameter_correct[common_features])
             .dropna()
             .reset_index(drop=True)
         )
 
-    else:
-        error_df = input_parameter
+    error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
 
     if error_df.empty:
         raise ValidationError("One or more columns are empty!")
@@ -210,9 +189,7 @@ def _calculate_error(
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)
     # The implementation should be change to that when it is done
-    error_df = error_df.agg([np.mean, np.std, _abs_mean_error, _abs_error_std, _max_abs_error], axis=0)
-
-    return error_df.rename(index=error_names)
+    return error_df.agg([np.mean, np.std, _abs_mean_error, _abs_error_std, _max_abs_error]).rename(index=error_names)
 
 
 def _abs_mean_error(x):
