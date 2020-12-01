@@ -6,6 +6,7 @@ import pandas as pd
 from numba import njit
 from scipy.spatial.transform import Rotation
 
+<<<<<<< HEAD
 from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
@@ -14,6 +15,19 @@ from gaitmap.utils.fast_quaternion_math import quat_from_rotvec, multiply, rotat
 from gaitmap.utils.static_moment_detection import find_static_samples
 
 Self = TypeVar("Self", bound="RtsKalman")
+=======
+from gaitmap.base import BaseTrajectoryMethod, BaseType
+from gaitmap.utils.consts import GRAV_VEC
+from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
+from gaitmap.utils.dataset_helper import is_single_sensor_dataset, SingleSensorDataset
+from gaitmap.utils.fast_quaternion_math import (
+    quat_from_rotvec,
+    multiply,
+    rotate_vector,
+    normalize,
+)
+from gaitmap.utils.static_moment_detection import find_static_samples
+>>>>>>> 48a8b94 (Implemented first version that uses quaternion correction)
 
 
 class RtsKalman(BaseTrajectoryMethod):
@@ -153,6 +167,9 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking_variance: float
     zupt_window_length_s: float
     zupt_window_overlap_s: Optional[float]
+    zupt_orientation_update: bool
+    zupt_orientation_error_variance: float
+
     data: SingleSensorData
     sampling_rate_hz: float
     covariance_: pd.DataFrame
@@ -166,6 +183,8 @@ class RtsKalman(BaseTrajectoryMethod):
         orientation_error_variance: float = 10e-2,
         level_walking: bool = True,
         level_walking_variance: float = 10e-8,
+        zupt_orientation_update: bool = True,
+        zupt_orientation_error_variance: float = 10e-1,
         zupt_window_length_s: float = 0.05,
         zupt_window_overlap_s: Optional[float] = None,
     ):
@@ -176,6 +195,8 @@ class RtsKalman(BaseTrajectoryMethod):
         self.orientation_error_variance = orientation_error_variance
         self.level_walking = level_walking
         self.level_walking_variance = level_walking_variance
+        self.zupt_orientation_update = zupt_orientation_update
+        self.zupt_orientation_error_variance = zupt_orientation_error_variance
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
 
@@ -211,9 +232,13 @@ class RtsKalman(BaseTrajectoryMethod):
         covariance = np.copy(process_noise)
 
         # measure noise
-        meas_noise = self.zupt_variance * np.eye(4)
-        if not self.level_walking:
-            meas_noise[3, 3] = 0.0
+        # TODO: Set different zupt noises for ori and vel?
+        meas_noise = np.zeros((6, 6))
+        meas_noise[0:3, 0:3] = np.eye(3) * self.zupt_variance
+        if self.level_walking is True:
+            meas_noise[3, 3] = self.level_walking_variance
+        if self.zupt_orientation_update:
+            meas_noise[4:6, 4:6] = np.eye(2) * self.zupt_orientation_error_variance
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
@@ -229,6 +254,7 @@ class RtsKalman(BaseTrajectoryMethod):
             process_noise,
             zupts,
             self.level_walking,
+            self.zupt_orientation_update,
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
@@ -284,9 +310,18 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
     return new_position, new_velocity, new_orientation
 
 
-@njit()
+# @njit()
 def _rts_kalman_forward_pass(
-    accel, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
+    accel,
+    gyro,
+    initial_orientation,
+    sampling_rate_hz,
+    meas_noise,
+    covariance,
+    process_noise,
+    zupts,
+    level_walking,
+    orientation_correction,
 ):
     prior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     posterior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
@@ -308,10 +343,38 @@ def _rts_kalman_forward_pass(
     transition_matrix = np.eye(9)
     transition_matrix[:3, 3:6] = np.eye(3) / sampling_rate_hz
 
-    meas_matrix = np.zeros((4, 9))
-    meas_matrix[:3, 3:6] = np.eye(3)
-    if level_walking:
-        meas_matrix[3, 2] = 1.0
+    gravity = normalize(GRAV_VEC)
+
+    # During zupt we measure 6 values:
+    # 1-3: v_{x,y,z} = 0
+    # 4 : p_z = 0
+    # 5 : angle(global_z, local_z) around x-axis = 0
+    # 6 : angle(global_z, local_z) around y-axis = 0
+    #
+    # The values 1-4 are directly part of the stater space.
+    # This means we have a trivial measurement function h and jacobian H
+    # Value 5 is the angle between the local z-axis and the global z-axis.
+    # This can be represented as the second euler angle in a 3-1-3 euler angel configuration.
+    # Hence we can calculate it from the quaternion components.
+    # See notes on the full calculation in the ZUPT update code.
+    zupt_measurement = np.zeros(6)
+    # meas_jacob dh/d(\delta x) maps from measurement space into the error space
+    # Because we directly observe the values from our error vector without any conversion, it just consists of 1 in the
+    # right places.
+    meas_jacob = np.zeros((6, 9))
+    # The meas_func is used to mask only the correction values we want to have.
+    meas_func = np.zeros(6)
+    # Zero Velocity update
+    meas_func[0:3] = 1
+    meas_jacob[0:3, 3:6] = np.eye(3)
+    if level_walking is True:
+        # Zero elevation update
+        meas_jacob[3, 2] = 1
+        meas_func[3] = 1
+    if orientation_correction is True:
+        # Angle error update
+        meas_func[4:6] = 1
+        meas_jacob[4:6, 7:9] = np.eye(2)
 
     for i, zupt in enumerate(zupts):
         acc = np.ascontiguousarray(accel[i])
@@ -332,22 +395,42 @@ def _rts_kalman_forward_pass(
 
         prior_error_states[i + 1, :] = transition_matrix @ posterior_error_states[i]
         prior_covariances[i + 1, :, :] = (
-            transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
+                transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
         )
 
         # correct the error state if the current sample is marked as a zupt, this is the update step
+        # Note, that the error state is not used to correct the nominal state at this point.
+        # We are just correcting the error state.
+        # Fusing with the nominal state is performed in the correction step of the smoothing.
         if zupt:
-            innovation = np.append(velocity, position[2]) - meas_matrix @ prior_error_states[i + 1]
-            innovation_cov = meas_matrix @ prior_covariances[i + 1] @ meas_matrix.T + meas_noise
-            inv = np.zeros((4, 4))
-            if level_walking:
-                inv[:, :] = np.linalg.inv(innovation_cov)
-            else:
-                inv[:3, :3] = np.linalg.inv(innovation_cov[:3, :3])
-            gain = prior_covariances[i + 1] @ meas_matrix.T @ inv
-            posterior_error_states[i + 1, :] = prior_error_states[i + 1] + gain @ innovation
+            meas_space_error = meas_jacob @ prior_error_states[i + 1]
 
-            factor = np.eye(covariance.shape[0]) - gain @ meas_matrix
+            # velocity error
+            zupt_measurement[0:3] = velocity
+            if level_walking:
+                # z-position error
+                zupt_measurement[3] = position[2]
+            # orientation error
+            if orientation_correction:
+                # Find the angles between rotated acc and gravity
+                norm_acc = normalize(rotated_acc)
+                cross = np.cross(norm_acc, gravity)
+                dot = np.dot(norm_acc, gravity)
+                zupt_measurement[4] = np.arctan2(np.dot(cross, np.array([1., 0, 0])), dot)
+                zupt_measurement[5] = np.arctan2(np.dot(cross, np.array([0, 1., 0])), dot)
+
+            innovation = meas_func.copy()
+            # Instead of using the calculated error, we calculate how much the error has increased since the last time
+            # step.
+            # This value is than used to calculate the change in covariance.
+            # This is needed, because we do not apply the innovation to the actual state as we would do in a regular
+            # kalman filter.
+            # The error is just summed up and only applied to the state in the final smoothing pass.
+            innovation *= zupt_measurement - meas_space_error
+            innovation_cov = meas_jacob @ prior_covariances[i + 1] @ meas_jacob.T + meas_noise
+            gain = prior_covariances[i + 1] @ meas_jacob.T @ np.linalg.pinv(innovation_cov)
+            posterior_error_states[i + 1, :] = prior_error_states[i + 1] + gain @ innovation
+            factor = np.eye(covariance.shape[0]) - gain @ meas_jacob
             covariance_adj = factor @ prior_covariances[i + 1] @ factor.T
             posterior_covariances[i + 1, :, :] = covariance_adj + gain @ meas_noise @ gain.T
         else:
@@ -393,12 +476,30 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
     return positions, velocities, orientations
 
 
-@njit(cache=True)
+# @njit(cache=True)
 def _rts_kalman_update_series(
-    acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
+    acc,
+    gyro,
+    initial_orientation,
+    sampling_rate_hz,
+    meas_noise,
+    covariance,
+    process_noise,
+    zupts,
+    level_walking,
+    orientation_correction,
 ):
     forward_eskf_results, forward_nominal_states = _rts_kalman_forward_pass(
-        acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
+        acc,
+        gyro,
+        initial_orientation,
+        sampling_rate_hz,
+        meas_noise,
+        covariance,
+        process_noise,
+        zupts,
+        level_walking,
+        orientation_correction,
     )
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
 

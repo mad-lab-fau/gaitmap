@@ -29,6 +29,18 @@ def multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 @njit()
+def normalize(v: np.ndarray) -> np.ndarray:
+    """Normalize a vector or a quaternion.
+
+    In case the vector has a length of 0, the vector is returned without modification.
+    """
+    norm = np.sqrt(np.sum(v ** 2))
+    if norm == 0:
+        return v
+    return v / norm
+
+
+@njit()
 def rotate_vector(q: np.ndarray, v: np.ndarray) -> np.ndarray:
     """Rotate a vector by a quaternion.
 
@@ -48,3 +60,17 @@ def quat_from_rotvec(sigma: np.ndarray) -> np.ndarray:
     a_c = np.cos(angle / 2)
     a_s = np.sin(angle / 2) / angle
     return np.append(a_s * sigma, a_c)
+
+
+@njit()
+def quat_from_angle(axis: np.ndarray, angle: float) -> np.ndarray:
+    return quat_from_rotvec(angle * axis)
+
+
+@njit()
+def find_shortest_rotation_quat(v1, v2):
+    rot = np.empty((4))
+    rot[:3] = np.cross(v1, v2)
+    rot[3] = np.linalg.norm(v1) * np.linalg.norm(v2) + np.dot(v1, v2)
+    rot /= np.linalg.norm(rot)
+    return rot
