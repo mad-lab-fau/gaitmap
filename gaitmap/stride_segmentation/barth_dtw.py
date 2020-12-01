@@ -204,8 +204,8 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         paths: List,
         cost: np.ndarray,
         matches_start_end: np.ndarray,
-        to_keep: np.ndarray,
         acc_cost_mat: np.ndarray,
+        to_keep: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:

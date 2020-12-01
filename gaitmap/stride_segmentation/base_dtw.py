@@ -442,8 +442,8 @@ class BaseDtw(BaseAlgorithm):
         paths: List,  # noqa: unused-argument
         cost: np.ndarray,  # noqa: unused-argument
         matches_start_end: np.ndarray,
+        acc_cost_mat: np.ndarray,  # noqa: unused-argument
         to_keep: np.array,
-        acc_cost_mat: np.ndarray,
     ) -> Tuple[np.ndarray, np.array]:
         """Apply postprocessing.
 
