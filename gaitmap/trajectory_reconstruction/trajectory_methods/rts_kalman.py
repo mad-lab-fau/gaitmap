@@ -310,7 +310,7 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
     return new_position, new_velocity, new_orientation
 
 
-# @njit()
+@njit()
 def _rts_kalman_forward_pass(
     accel,
     gyro,
@@ -395,7 +395,7 @@ def _rts_kalman_forward_pass(
 
         prior_error_states[i + 1, :] = transition_matrix @ posterior_error_states[i]
         prior_covariances[i + 1, :, :] = (
-                transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
+            transition_matrix @ posterior_covariances[i] @ transition_matrix.T + process_noise
         )
 
         # correct the error state if the current sample is marked as a zupt, this is the update step
@@ -416,8 +416,8 @@ def _rts_kalman_forward_pass(
                 norm_acc = normalize(rotated_acc)
                 cross = np.cross(norm_acc, gravity)
                 dot = np.dot(norm_acc, gravity)
-                zupt_measurement[4] = np.arctan2(np.dot(cross, np.array([1., 0, 0])), dot)
-                zupt_measurement[5] = np.arctan2(np.dot(cross, np.array([0, 1., 0])), dot)
+                zupt_measurement[4] = np.arctan2(np.dot(cross, np.array([1.0, 0, 0])), dot)
+                zupt_measurement[5] = np.arctan2(np.dot(cross, np.array([0, 1.0, 0])), dot)
 
             innovation = meas_func.copy()
             # Instead of using the calculated error, we calculate how much the error has increased since the last time
@@ -476,7 +476,7 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
     return positions, velocities, orientations
 
 
-# @njit(cache=True)
+@njit(cache=True)
 def _rts_kalman_update_series(
     acc,
     gyro,
