@@ -81,6 +81,9 @@ class RtsKalman(BaseTrajectoryMethod):
         ZUPT.
         If True, the direction of gravity is guessed based on the direction of the acc-vector.
         This direction is then aligned with the expected gravity direction.
+        This is disabled by default, as it can lead to unexpected results, if there is a lot of movement during the
+        mid stance.
+        However, depending on the dataset, this can be very benifical.
     zupt_orientation_error_variance
         The variance of the noise of the measured orientation during the ZUPT.
         This might be comparably high, because we still expcet some variation in the accelerometer.
