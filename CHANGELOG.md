@@ -32,8 +32,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - A `RegionLevelTrajectory` class that calculates trajectories for entire ROIs/gait sequences.
   Otherwise the interface is very similar to `StrideLevelTrajectory`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87,
-  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98) 
-  (mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/85)
+  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/98,
+  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/85)
 - Added a new example for `RegionLevelTrajectory`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/87) 
 - Support for trajectory methods that can calculate orientation and position in one go is added for 
