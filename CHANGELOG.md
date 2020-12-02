@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ the Migration Guide and 
 Scientific Changes section), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [1.3.0] - 
+
+### Added
+
+### Changed
+
+- `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D and should be faster for large stride 
+  length. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Scientific Changes
+
+
 # [1.2.0] - 2020-11-11
 
 ### Added
@@ -58,8 +76,6 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - Internal restructuring of the evaluation utils module.
   In case you used direct imports of the functions from the submodule, you need to update these.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
-- `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D and should be faster for large stride length 
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
 
 ### Deprecated
 
