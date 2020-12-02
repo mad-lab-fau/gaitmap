@@ -76,6 +76,14 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking_variance
         The variance of the noise of the measured position during a level walking update.
         Should typically be very small.
+    zupt_orientation_update
+        Flag to control, if the orientation of the IMU should be actively corrected using accelertion information during
+        ZUPT.
+        If True, the direction of gravity is guessed based on the direction of the acc-vector.
+        This direction is then aligned with the expected gravity direction.
+    zupt_orientation_error_variance
+        The variance of the noise of the measured orientation during the ZUPT.
+        This might be comparably high, because we still expcet some variation in the accelerometer.
     zupt_window_length_s
         Length of the window used in the default method to find ZUPTs.
         If the value is too small at least a window of 2 samples is used.
