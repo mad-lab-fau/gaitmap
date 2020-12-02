@@ -191,7 +191,7 @@ class RtsKalman(BaseTrajectoryMethod):
         orientation_error_variance: float = 10e-2,
         level_walking: bool = True,
         level_walking_variance: float = 10e-8,
-        zupt_orientation_update: bool = True,
+        zupt_orientation_update: bool = False,
         zupt_orientation_error_variance: float = 10e-1,
         zupt_window_length_s: float = 0.05,
         zupt_window_overlap_s: Optional[float] = None,

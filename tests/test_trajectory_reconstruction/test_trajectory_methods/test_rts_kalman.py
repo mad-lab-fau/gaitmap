@@ -30,7 +30,16 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestTrajectoryMethod(TestTrajectoryMethodMixin):
     __test__ = True
 
+    default_kwargs = {}
+
+    @pytest.fixture(autouse=True, params=(True, False), ids=("ori_correction", "no_ori_correction"))
+    def ori_correction(self, request):
+        if "noori" in request.keywords and request.param is False:
+            pytest.skip()
+        self.default_kwargs = {"zupt_orientation_update": request.param}
+
     def init_algo_class(self, **kwargs) -> RtsKalman:
+        kwargs = {**self.default_kwargs, **kwargs}
         return RtsKalman(**kwargs)
 
     def test_covariance_output_format(self):
@@ -56,10 +65,9 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         assert norm(test.velocity_) > 1.0
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
-    @pytest.mark.parametrize("ori_update", (True, False))
-    def test_corrects_z_position(self, ori_update):
+    def test_corrects_z_position(self):
         """Check that level walking reset position to zero during ZUPTs."""
-        test = self.init_algo_class(zupt_orientation_update=ori_update)
+        test = self.init_algo_class()
         accel_data = np.repeat(np.concatenate(([0.0, 0.0, 100], [0.0, 0.0, 40.0]))[None, :], 5, axis=0)
         zupt_data = np.repeat(np.concatenate(([0.0, 0.0, 9.81], [0.0, 0.0, 0.0]))[None, :], 10, axis=0)
         sensor_data = np.vstack((accel_data, zupt_data))
@@ -68,6 +76,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         assert test.position_.to_numpy()[4][2] < -0.8
         assert_array_almost_equal(test.position_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
+    @pytest.mark.noori
     def test_corrects_ori(self):
         """Check that small errors in the orientation are correctly fixed."""
         test = self.init_algo_class(zupt_orientation_update=True, level_walking=False)
