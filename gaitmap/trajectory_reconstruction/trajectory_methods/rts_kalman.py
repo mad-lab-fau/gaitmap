@@ -348,8 +348,8 @@ def _rts_kalman_forward_pass(
     # During zupt we measure 6 values:
     # 1-3: v_{x,y,z} = 0
     # 4 : p_z = 0
-    # 5 : angle(global_z, local_z) around x-axis = 0
-    # 6 : angle(global_z, local_z) around y-axis = 0
+    # 5 : angle(global_acc, global_grav) around x-axis = 0
+    # 6 : angle(global_acc, global_grav) around y-axis = 0
     #
     # The values 1-4 are directly part of the stater space.
     # This means we have a trivial measurement function h and jacobian H
