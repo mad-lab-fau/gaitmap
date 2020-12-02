@@ -133,16 +133,16 @@ def _calculate_error(
 
     error_names = (
         {
-            "mean": "mean_error",
-            "std": "error_std",
+            "nanmean": "mean_error",
+            "nanstd": "error_std",
             "_abs_mean_error": "abs_mean_error",
             "_abs_error_std": "abs_error_std",
             "_max_abs_error": "max_abs_error",
         }
         if pretty_output is False
         else {
-            "mean": "mean error",
-            "std": "error standard deviation",
+            "nanmean": "mean error",
+            "nanstd": "error standard deviation",
             "_abs_mean_error": "absolute mean error",
             "_abs_error_std": "absolute error standard deviation",
             "_max_abs_error": "maximal absolute error",
@@ -184,23 +184,23 @@ def _calculate_error(
         if error_df[sensor].empty:
             raise ValidationError('One or more columns are empty for sensor "{}"!'.format(sensor))
 
-    error_df = (
-        pd.concat(error_df, axis=1).dropna() if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
-    )
+    error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
 
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)
     # The implementation should be change to that when it is done
-    return error_df.agg([np.mean, np.std, _abs_mean_error, _abs_error_std, _max_abs_error]).rename(index=error_names)
+    return error_df.agg([np.nanmean, np.nanstd, _abs_mean_error, _abs_error_std, _max_abs_error]).rename(
+        index=error_names
+    )
 
 
 def _abs_mean_error(x):
-    return np.mean(np.abs(x.values))
+    return np.nanmean(np.abs(x.values))
 
 
 def _abs_error_std(x):
-    return np.std(np.abs(x.values), ddof=1)
+    return np.nanstd(np.abs(x.values), ddof=1)
 
 
 def _max_abs_error(x):
-    return np.max(np.abs(x.values))
+    return np.nanmax(np.abs(x.values))
