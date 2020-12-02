@@ -1,9 +1,16 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform.rotation import Rotation
-from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_almost_equal
 
-from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro, multiply, rotate_vector, quat_from_rotvec
+from gaitmap.utils.fast_quaternion_math import (
+    rate_of_change_from_gyro,
+    multiply,
+    rotate_vector,
+    quat_from_rotvec,
+    normalize,
+)
+from tests.test_utils.test_vector_math import TestNormalize
 
 
 class TestRateOfChangeFromGyro:
@@ -68,3 +75,12 @@ class TestQuatFromRotvec:
         """Test quat_from_rotation_vector`."""
         v = np.array(v)
         assert_array_almost_equal(quat_from_rotvec(v), Rotation.from_rotvec(v).as_quat())
+
+
+class TestFindNormalize(TestNormalize):
+    def func(self, x):
+        return normalize(x)
+
+    def test_normalize_all_zeros(self):
+        """Test vector [0, 0, 0]."""
+        assert_array_almost_equal(self.func(np.array([0., 0, 0])), [0., 0, 0])
