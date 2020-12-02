@@ -181,7 +181,7 @@ class TestPostProcessing:
         dtw._max_sequence_length = 1.4
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], np.array([]), matches_start_end=example_stride_list, to_keep=to_keep
+            None, [], np.array([]), matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
         )
 
         # Check that start-end is unmodified
@@ -213,7 +213,7 @@ class TestPostProcessing:
         dtw._max_sequence_length = None
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
         )
 
         # Check that start-end is unmodified
@@ -253,7 +253,7 @@ class TestPostProcessing:
         dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
         )
 
         # Check that start-end is unmodified
@@ -293,7 +293,7 @@ class TestPostProcessing:
         dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep
+            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
         )
 
         # Check that start-end is unmodified

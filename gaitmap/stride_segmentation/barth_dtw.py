@@ -199,7 +199,13 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         return as_df
 
     def _postprocess_matches(
-        self, data, paths: List, cost: np.ndarray, matches_start_end: np.ndarray, to_keep: np.ndarray
+        self,
+        data,
+        paths: List,
+        cost: np.ndarray,
+        matches_start_end: np.ndarray,
+        acc_cost_mat: np.ndarray,
+        to_keep: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
@@ -226,7 +232,12 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         # Apply any postprocessing steps of the parent class.
         # This is done after the snapping, as the snapping might modify the stride time.
         matches_start_end, to_keep = super()._postprocess_matches(
-            data=data, matches_start_end=matches_start_end, paths=paths, cost=cost, to_keep=to_keep
+            data=data,
+            matches_start_end=matches_start_end,
+            paths=paths,
+            cost=cost,
+            to_keep=to_keep,
+            acc_cost_mat=acc_cost_mat,
         )
 
         # Resolve strides that have the same start point
