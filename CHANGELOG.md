@@ -7,6 +7,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 # [1.3.0] - 
 
 ### Added
+- New evaluation function to compare the output of temporal or spatial parameter calculation with ground truth 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/105)
 
 ### Changed
 
@@ -55,8 +57,6 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/92)
 - Added the functionality to merge gait sequences from individual sensors in `UllrichGaitSequenceDetection` 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/93)
-- New evaluation function to compare the output of temporal or spatial parameter calculation with ground truth 
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/105)
 
 ### Changed
 
