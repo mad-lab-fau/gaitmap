@@ -42,7 +42,8 @@ class TestIsAlmostParallelOrAntiprallel:
 class TestNormalize:
     """Test the function `normalize`."""
 
-    func = normalize
+    def func(self, x):
+        return normalize(x)
 
     def test_normalize_1d_array(self):
         """Test 1D array."""

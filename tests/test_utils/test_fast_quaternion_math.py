@@ -83,4 +83,4 @@ class TestFindNormalize(TestNormalize):
 
     def test_normalize_all_zeros(self):
         """Test vector [0, 0, 0]."""
-        assert_array_almost_equal(self.func(np.array([0., 0, 0])), [0., 0, 0])
+        assert_array_almost_equal(self.func(np.array([0.0, 0, 0])), [0.0, 0, 0])
