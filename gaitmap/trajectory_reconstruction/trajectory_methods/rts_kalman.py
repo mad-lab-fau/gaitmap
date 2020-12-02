@@ -382,7 +382,7 @@ def _rts_kalman_forward_pass(
     if orientation_correction is True:
         # Angle error update
         meas_func[4:6] = 1
-        meas_jacob[4:6, 7:9] = np.eye(2)
+        meas_jacob[4:6, 6:8] = np.eye(2)
 
     for i, zupt in enumerate(zupts):
         acc = np.ascontiguousarray(accel[i])
