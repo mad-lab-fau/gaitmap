@@ -181,10 +181,12 @@ def _calculate_error(
             .reset_index(drop=True)
         )
 
-    error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
+        if error_df[sensor].empty:
+            raise ValidationError('One or more columns are empty for sensor "{}"!'.format(sensor))
 
-    if error_df.empty:
-        raise ValidationError("One or more columns are empty!")
+    error_df = (
+        pd.concat(error_df, axis=1).dropna() if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
+    )
 
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)
