@@ -219,9 +219,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             if sensor_name:
                 # The reverse of what we did above.
                 # For this method a single sensor dataset should be a real single sensor dataset
-                combined_stride_list[index] = per_roi_algo.stride_list_[sensor_name]
+                combined_stride_list[index] = stride_list[sensor_name] # per_roi_algo.stride_list_[sensor_name]
             else:
-                combined_stride_list[index] = per_roi_algo.stride_list_
+                combined_stride_list[index] = stride_list # per_roi_algo.stride_list_
 
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
         return combined_stride_list, instances_per_roi
