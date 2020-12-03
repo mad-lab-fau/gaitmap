@@ -322,7 +322,7 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
 
 
 @njit()
-def _rts_kalman_forward_pass(
+def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     accel,
     gyro,
     initial_orientation,
