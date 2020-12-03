@@ -1,3 +1,6 @@
+from copy import deepcopy
+from typing import Union, Dict
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -147,12 +150,16 @@ class MockStrideSegmentation(BaseStrideSegmentation):
             for sensor in get_multi_sensor_dataset_names(data):
                 tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype(int)
                 stride_list[sensor] = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
-            self.stride_list_ = stride_list
+            self._stride_list_ = stride_list
         else:
             tmp = np.linspace(0, len(data), self.n + 1).astype(int)
-            self.stride_list_ = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
+            self._stride_list_ = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
 
         return self
+
+    @property
+    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+        return deepcopy(self._stride_list_)
 
 
 class TestCombinedStridelist:
@@ -181,6 +188,12 @@ class TestCombinedStridelist:
             assert roi_seg.stride_list_.index[0] == "0_0"
             assert roi_seg.stride_list_.index.name == "s_id"
 
+        # test if the stride starts are actually greater or equal to the roi starts
+        for r in roi.iterrows():
+            for stride in roi_seg.stride_list_.iterrows():
+                if r[1]["roi_id"] == stride[1]["roi_id"]:
+                    assert stride[1]["start"] >= r[1]["start"]
+
     def test_multi_sensor(self):
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = {"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}
@@ -202,6 +215,13 @@ class TestCombinedStridelist:
                 assert roi_seg.stride_list_[sensor].index[0] == "0_0"
                 assert roi_seg.stride_list_[sensor].index.name == "s_id"
 
+        # test if the stride starts are actually greater or equal to the roi starts
+        for sensor in get_multi_sensor_dataset_names(data):
+            for r in roi[sensor].iterrows():
+                for stride in roi_seg.stride_list_[sensor].iterrows():
+                    if r[1]["roi_id"] == stride[1]["roi_id"]:
+                        assert stride[1]["start"] >= r[1]["start"]
+
     def test_multi_sensor_sync(self):
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = pd.concat({"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}, axis=1)
@@ -220,3 +240,10 @@ class TestCombinedStridelist:
             else:
                 assert roi_seg.stride_list_[sensor].index[0] == "0_0"
                 assert roi_seg.stride_list_[sensor].index.name == "s_id"
+
+        # test if the stride starts are actually greater or equal to the roi starts
+        for sensor in get_multi_sensor_dataset_names(data):
+            for r in roi.iterrows():
+                for stride in roi_seg.stride_list_[sensor].iterrows():
+                    if r[1]["roi_id"] == stride[1]["roi_id"]:
+                        assert stride[1]["start"] >= r[1]["start"]

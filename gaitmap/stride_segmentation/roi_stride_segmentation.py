@@ -1,4 +1,5 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
+from copy import deepcopy
 from typing import Dict, Hashable, Optional, TypeVar, Generic, Union
 
 import pandas as pd
@@ -209,7 +210,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 roi_data = {sensor_name: roi_data}
             per_roi_algo.segment(data=roi_data, sampling_rate_hz=sampling_rate_hz, **kwargs)
             instances_per_roi[index] = per_roi_algo
-            stride_list = per_roi_algo.stride_list_
+            stride_list = deepcopy(per_roi_algo.stride_list_)
             if isinstance(stride_list, dict):
                 for strides in stride_list.values():
                     # This is an inplace modification!
@@ -219,9 +220,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             if sensor_name:
                 # The reverse of what we did above.
                 # For this method a single sensor dataset should be a real single sensor dataset
-                combined_stride_list[index] = stride_list[sensor_name] # per_roi_algo.stride_list_[sensor_name]
+                combined_stride_list[index] = stride_list[sensor_name]
             else:
-                combined_stride_list[index] = stride_list # per_roi_algo.stride_list_
+                combined_stride_list[index] = stride_list
 
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
         return combined_stride_list, instances_per_roi
