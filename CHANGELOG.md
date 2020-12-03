@@ -18,6 +18,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 ### Removed
 
 ### Fixed
+- In `stride_segmentation.roi_stride_segmentation` the assignment of the offset corrected strides to the
+ `combined_stride_list` was fixed.
 
 ### Scientific Changes
 
