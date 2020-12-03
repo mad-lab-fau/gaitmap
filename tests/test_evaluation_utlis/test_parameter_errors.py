@@ -7,13 +7,13 @@ from gaitmap.evaluation_utils import calculate_parameter_errors
 from gaitmap.utils.exceptions import ValidationError
 
 
-def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=False):
+def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=-1):
     if is_dict:
         output = {}
         for i, sensor_name in enumerate(sensors):
             output[sensor_name] = pd.DataFrame(columns=columns, data=data[i]).rename_axis("s_id")
-            if mix:
-                output[sensor_name] = output[sensor_name].sample(frac=1)
+            if mix > -1:
+                output[sensor_name] = output[sensor_name].sample(frac=1, random_state=mix)
     else:
         output = pd.DataFrame(columns=columns, data=data).rename_axis("s_id")
     return output
@@ -131,10 +131,10 @@ class TestCalculateParameterErrors:
             ),
             (
                 _create_valid_input(
-                    ["param"], [np.arange(0, 10), [4, 5, 6]], is_dict=True, sensors=["1", "2"], mix=True
+                    ["param"], [np.arange(0, 10), [4, 5, 6]], is_dict=True, sensors=["1", "2"], mix=9149
                 ),
                 _create_valid_input(
-                    ["param"], [np.arange(0, 10), [4, 6, 5]], is_dict=True, sensors=["1", "2"], mix=True
+                    ["param"], [np.arange(0, 10), [4, 6, 5]], is_dict=True, sensors=["1", "2"], mix=1516
                 ),
                 ["1", "2"],
                 [
