@@ -170,7 +170,6 @@ def _calculate_error(
     error_df = {}
 
     for sensor in sensor_names_list:
-
         try:
             input_parameter_correct = set_correct_index(input_parameter[sensor], index_cols=["s_id"])
             ground_truth_parameter_correct = set_correct_index(ground_truth_parameter[sensor], index_cols=["s_id"])
@@ -222,12 +221,12 @@ def _calculate_error(
 
 
 def _mean_abs_error(x):
-    return np.nanmean(np.abs(x.values))
+    return np.nanmean(np.abs(x.to_numpy()))
 
 
 def _abs_error_std(x):
-    return np.nanstd(np.abs(x.values), ddof=1)
+    return np.nanstd(np.abs(x.to_numpy()), ddof=1)
 
 
 def _max_abs_error(x):
-    return np.nanmax(np.abs(x.values))
+    return np.nanmax(np.abs(x.to_numpy()))
