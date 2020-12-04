@@ -7,6 +7,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 # [1.3.0] - 
 
 ### Added
+
 - New evaluation function to compare the output of temporal or spatial parameter calculation with ground truth 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/105)
 
