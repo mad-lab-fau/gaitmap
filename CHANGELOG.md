@@ -8,6 +8,9 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 
 ### Added
 
+- New evaluation function to compare the output of temporal or spatial parameter calculation with ground truth 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/105)
+
 ### Changed
 
 - `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D and should be faster for large stride 
