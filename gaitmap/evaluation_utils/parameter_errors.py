@@ -116,6 +116,7 @@ def calculate_parameter_errors(
     gaitmap.parameters.SpatialParameterCalculation
 
     """
+    # TODO: Add proper parameter validation (see issue #150)
     input_is_not_dict = not isinstance(input_parameter, dict)
     ground_truth_is_not_dict = not isinstance(ground_truth_parameter, dict)
 
