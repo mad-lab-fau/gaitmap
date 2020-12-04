@@ -74,7 +74,7 @@ def calculate_parameter_errors(
                                           para1      para2
     mean error                        -0.333333   4.666667
     error standard deviation           3.785939   8.144528
-    absolute mean error                3.000000   5.333333
+    mean absolute error                3.000000   5.333333
     absolute error standard deviation  1.000000   7.505553
     maximal absolute error             4.000000  14.000000
 
@@ -106,7 +106,7 @@ def calculate_parameter_errors(
                          para
     mean_error     -27.333333
     error_std       43.098337
-    abs_mean_error  34.666667
+    mean_abs_error  34.666667
     abs_error_std   36.219700
     max_abs_error   89.000000
 
@@ -149,7 +149,7 @@ def _calculate_error(
         {
             "nanmean": "mean_error",
             "nanstd": "error_std",
-            "_abs_mean_error": "abs_mean_error",
+            "_mean_abs_error": "mean_abs_error",
             "_abs_error_std": "abs_error_std",
             "_max_abs_error": "max_abs_error",
         }
@@ -157,7 +157,7 @@ def _calculate_error(
         else {
             "nanmean": "mean error",
             "nanstd": "error standard deviation",
-            "_abs_mean_error": "absolute mean error",
+            "_mean_abs_error": "mean absolute error",
             "_abs_error_std": "absolute error standard deviation",
             "_max_abs_error": "maximal absolute error",
         }
@@ -203,12 +203,12 @@ def _calculate_error(
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)
     # The implementation should be change to that when it is done
-    return error_df.agg([np.nanmean, np.nanstd, _abs_mean_error, _abs_error_std, _max_abs_error]).rename(
+    return error_df.agg([np.nanmean, np.nanstd, _mean_abs_error, _abs_error_std, _max_abs_error]).rename(
         index=error_names
     )
 
 
-def _abs_mean_error(x):
+def _mean_abs_error(x):
     return np.nanmean(np.abs(x.values))
 
 
