@@ -26,37 +26,37 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], []),
                 _create_valid_input(["param"], []),
-                'One or more columns are empty for sensor "__dummy__"!',
+                "No common strides are found between input and reference!",
             ),
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
-                'Both inputs need to have either "s_id" or "stride id" as the index column!',
+                'Inputs and reference need to have either an index or a column named "s_id" or "stride id"',
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["1"]),
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["2"]),
-                "The passed parameters do not have any common sensors!",
+                "The input and reference do not have any common sensors",
             ),
             (
                 _create_valid_input(["param"], []),
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["2"]),
-                "The inputted parameters are not of same type!",
+                "Input and reference must be of the same type.",
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["1"]),
                 _create_valid_input(["not_param"], [[1]], is_dict=True, sensors=["1"]),
-                "The passed parameters do not have any common features!",
+                "For sensor 1 no common parameter columns are found between input and reference.",
             ),
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], [4, 6, 5]], is_dict=True, sensors=["1", "2"]),
-                'One or more columns are empty for sensor "2"!',
+                "For sensor 2 no common strides are found between input and reference!",
             ),
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
-                'One or more columns are empty for sensor "2"!',
+                "For sensor 2 no common strides are found between input and reference!",
             ),
         ],
     )

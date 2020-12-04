@@ -120,7 +120,10 @@ def calculate_parameter_errors(
     ground_truth_is_not_dict = not isinstance(ground_truth_parameter, dict)
 
     if input_is_not_dict != ground_truth_is_not_dict:
-        raise ValidationError("The inputted parameters are not of same type!")
+        raise ValidationError(
+            "Input and reference must be of the same type. "
+            "Both need to be either single or multi-sensor parameter lists."
+        )
 
     if input_is_not_dict:
         input_parameter = {"__dummy__": input_parameter}
@@ -143,7 +146,7 @@ def _calculate_error(
     sensor_names_list = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
 
     if len(sensor_names_list) == 0:
-        raise ValidationError("The passed parameters do not have any common sensors!")
+        raise ValidationError("The input and reference do not have any common sensors!")
 
     error_names = (
         {
@@ -178,7 +181,8 @@ def _calculate_error(
                 )
             except ValidationError as e:
                 raise ValidationError(
-                    'Both inputs need to have either "s_id" or "stride id" as the index column!'
+                    'Inputs and reference need to have either an index or a column named "s_id" or "stride id". '
+                    "Note, that inputs and reference must both use the same name for the id-column."
                 ) from e
 
         common_features = sorted(
@@ -186,7 +190,11 @@ def _calculate_error(
         )
 
         if len(common_features) == 0:
-            raise ValidationError("The passed parameters do not have any common features!")
+            if sensor == "__dummy__":
+                msg_start = "No "
+            else:
+                msg_start = "For sensor {} no ".format(sensor)
+            raise ValidationError(msg_start + "common parameter columns are found between input and reference.")
 
         error_df[sensor] = (
             input_parameter_correct[common_features]
@@ -196,7 +204,11 @@ def _calculate_error(
         )
 
         if error_df[sensor].empty:
-            raise ValidationError('One or more columns are empty for sensor "{}"!'.format(sensor))
+            if sensor == "__dummy__":
+                msg_start = "No "
+            else:
+                msg_start = "For sensor {} no ".format(sensor)
+            raise ValidationError(msg_start + "common strides are found between input and reference!".format(sensor))
 
     error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
 
