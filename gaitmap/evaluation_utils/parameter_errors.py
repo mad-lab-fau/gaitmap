@@ -15,27 +15,45 @@ def calculate_parameter_errors(
     pretty_output: bool = False,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
-    """Calculate 5 error metrics between a parameter input and a given ground truth.
+    """Calculate various error metrics between a parameter input and a given ground truth.
 
-    The metrics are: mean error, standard error, absolute mean error,
-    absolute standard error, and maximal absolute error.
+    The metrics currently implemented are:
+    - mean error
+    - standard deviation of the error
+    - mean absolute error
+    - standard deviation of the absolute error
+    - maximal absolute error
 
-    By default, the output is not pretty, but this can be selected by setting `pretty_output` to `True`.
-    Also by default, if a multi-senors input is given, the metrics will be calculated per sensor. If
-    you wish to calculate the metrics as if the data was comming from only one sensor set
-    `calculate_per_sensor` to `False`.
+    All metrics are calculated for all columns that are available in both, the input parameters and the reference.
+    It is up to you, to decide if a specific error metric makes sense for a given parameter.
+
+    Strides between the input and the reference are matched based on the `s_id`/`stride id` column/index.
+    Error metrics are only calculated for strides that are available in input and reference.
+
+    The metrics can either be calculated per sensor or for all sensors combined (see the `calculate_per_sensor`
+    parameter).
+    In the latter case, the error per stride is calculated and then all strides of all sensors combined before
+    calculating the summary metrics (mean, std, ...).
+    This might be desired, if you have one sensor per foot, but want to have statistics over all strides independent of
+    the foot.
 
     Parameters
     ----------
     input_parameter
         The output of the temporal or spatial parameter calculation (both `.parameters_` and `.parameters_pretty_`
-        are accepted). This can be a Dataframe or a dict of such Dataframes.
+        are accepted).
+        This can be a Dataframe or a dict of such Dataframes.
     ground_truth_parameter
         The ground truth the input should be compared against.
         This must be the same type as the input is.
+        Further, sensor names, column names, and stride ids must match with the `input_parameters`.
     pretty_output
-        A bool that can be set to `True` if pretty output is preferred.
+        If `False` the output contains "code" friendly variable/column names.
+        If `True` the names are formatted for print/plotting.
         Default is `False`.
+        Note, that the name of the parameters is not affected by this setting.
+        Use the `parameters_pretty_` output of the parameter calculation methods to control the formatting of the
+        parameter names.
     calculate_per_sensor
         A bool that can be set to `False` if you wish to calculate error metrics as if the
         strides were all taken by one sensor.
@@ -44,13 +62,9 @@ def calculate_parameter_errors(
     Returns
     -------
     output
-        A Dataframe that has exactly 5 rows. These are the calculated error metrics
-        (mean error, standard error, absolute mean error, absolute standard error,
-        and maximal absolute error). The Dataframe has 2 column levels if there was
-        a multi-sensor input or if not it has only 1 level.
-        The top level has as many columns as the number of common sensors between
-        the input and the ground truth. The bottom level is made out of as many columns
-        as the number of parameter the respective sensor has.
+        A Dataframe with one row per error metric and one column per parameter.
+        In case of a multi-sensor input (and `calculate_per_sensor=True`), the dataframe has 2 column levels.
+        The first level is the sensor name and the second one the parameter name.
 
     Examples
     --------
