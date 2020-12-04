@@ -19,6 +19,18 @@ def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=-1):
     return output
 
 
+def _get_pretty_counterpart(normal_error):
+    temp = {
+        "mean_error": "mean error",
+        "error_std": "error standard deviation",
+        "mean_abs_error": "mean absolute error",
+        "abs_error_std": "absolute error standard deviation",
+        "max_abs_error": "maximal absolute error",
+    }
+
+    return temp[normal_error]
+
+
 class TestCalculateParameterErrors:
     @pytest.mark.parametrize(
         "input_param,ground_truth,expected_error",
@@ -100,10 +112,14 @@ class TestCalculateParameterErrors:
     )
     def test_valid_single_sensor_input(self, input_param, ground_truth, expectation):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output = calculate_parameter_errors(input_param, ground_truth)
+        output_normal = calculate_parameter_errors(input_param, ground_truth)
+        output_pretty = calculate_parameter_errors(input_param, ground_truth, pretty_output=True)
 
         for error_type in error_types:
-            assert_array_equal(np.round(output["param"].loc[error_type], 5), expectation[error_type])
+            assert_array_equal(np.round(output_normal["param"].loc[error_type], 5), expectation[error_type])
+            assert_array_equal(
+                np.round(output_pretty["param"].loc[_get_pretty_counterpart(error_type)], 5), expectation[error_type]
+            )
 
     @pytest.mark.parametrize(
         "input_param,ground_truth,sensor_names,expectations",
@@ -152,11 +168,18 @@ class TestCalculateParameterErrors:
     )
     def test_valid_multi_sensor_input(self, input_param, ground_truth, sensor_names, expectations):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output = calculate_parameter_errors(input_param, ground_truth)
+        output_normal = calculate_parameter_errors(input_param, ground_truth)
+        output_pretty = calculate_parameter_errors(input_param, ground_truth, pretty_output=True)
 
         for sensor_name, expectation in zip(sensor_names, expectations):
             for error_type in error_types:
-                assert_array_equal(np.round(output[sensor_name]["param"].loc[error_type], 5), expectation[error_type])
+                assert_array_equal(
+                    np.round(output_normal[sensor_name]["param"].loc[error_type], 5), expectation[error_type]
+                )
+                assert_array_equal(
+                    np.round(output_pretty[sensor_name]["param"].loc[_get_pretty_counterpart(error_type)], 5),
+                    expectation[error_type],
+                )
 
     @pytest.mark.parametrize(
         "input_param,ground_truth,expectation",
@@ -181,7 +204,13 @@ class TestCalculateParameterErrors:
     )
     def test_calculate_not_per_sensor_input(self, input_param, ground_truth, expectation):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output = calculate_parameter_errors(input_param, ground_truth, calculate_per_sensor=False)
+        output_normal = calculate_parameter_errors(input_param, ground_truth, calculate_per_sensor=False)
+        output_pretty = calculate_parameter_errors(
+            input_param, ground_truth, calculate_per_sensor=False, pretty_output=True
+        )
 
         for error_type in error_types:
-            assert_array_equal(np.round(output.loc[error_type], 5), expectation[error_type])
+            assert_array_equal(np.round(output_normal.loc[error_type], 5), expectation[error_type])
+            assert_array_equal(
+                np.round(output_pretty.loc[_get_pretty_counterpart(error_type)], 5), expectation[error_type]
+            )
