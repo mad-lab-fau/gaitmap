@@ -5,7 +5,6 @@ import json
 import types
 from collections import defaultdict
 from typing import Callable, Dict, TypeVar, Any, List, Type
-from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -51,25 +50,9 @@ def _custom_deserialize(json_obj):
             return Rotation.from_quat(json_obj["quat"])
         if json_obj["_obj_type"] == "Array":
             return np.array(json_obj["array"])
-        # ToDo: remove deprecation in future version
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
-            try:
-                return pd.read_json(json_obj["df"], orient="split", typ=typ)
-            except ValueError:
-                if json_obj["_obj_type"] == "Series":
-                    obj = pd.read_json(json_obj["df"], typ="series")
-                else:
-                    obj = pd.read_json(json_obj["df"], orient="columns")
-                warn(
-                    DeprecationWarning(
-                        "Your dataobject used an old format to store DataFrames in json, which might causes issues "
-                        "with index sorting. Double check the loaded objects and save them again. This will save "
-                        "them in a new format without issues.\n"
-                        "Future versions of the gaitmap will not be able to load the outdated format."
-                    )
-                )
-                return obj
+            return pd.read_json(json_obj["df"], orient="split", typ=typ)
     return json_obj
 
 

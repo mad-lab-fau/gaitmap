@@ -18,6 +18,9 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 
 ### Deprecated
 
+- Removed old serialization format for DTW templates that was deprecated a couple of releases ago.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/127)
+
 ### Removed
 
 ### Fixed
