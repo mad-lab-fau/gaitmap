@@ -134,7 +134,12 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         that some of them are matched on occasion.
         If this is an issue for your analysis, you should try to develop further post-processing steps to exclude these
         strides as part of your pipeline.
-
+    Differences to implementation by Barth et al [1]_
+        In the original paper, the distance matrix for each of the selected axis was calculated individually and then
+        summed up to create the final matrix.
+        The resulting distance function is therefore the Manhatten distance between two samples.
+        This implementation calculates only a single distance matrix using the Euclidian distance.
+        The Euclidian distance is always a little smaller than the Manhatten distance, but captures the same similarity.
 
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life

@@ -23,6 +23,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 ### Fixed
 - In `stride_segmentation.roi_stride_segmentation` the assignment of the offset corrected strides to the
  `combined_stride_list` was fixed.
+- Added a note to BarthDTW to clarify the calculation of the distance matrix.
 
 ### Scientific Changes
 
