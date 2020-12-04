@@ -138,7 +138,7 @@ def calculate_parameter_errors(
     return output
 
 
-def _calculate_error(
+def _calculate_error(  # noqa: MC0001
     input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
     ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame], None],
     pretty_output: bool,
@@ -208,7 +208,7 @@ def _calculate_error(
                 msg_start = "No "
             else:
                 msg_start = "For sensor {} no ".format(sensor)
-            raise ValidationError(msg_start + "common strides are found between input and reference!".format(sensor))
+            raise ValidationError(msg_start + "common strides are found between input and reference!")
 
     error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
 
