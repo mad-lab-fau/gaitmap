@@ -5,7 +5,7 @@ from typing import Union, Tuple, Dict, Hashable, Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial.ckdtree import cKDTree
-from scipy.spatial.distance import chebyshev
+from scipy.spatial import minkowski_distance
 
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -482,8 +482,12 @@ def _match_label_lists(
     valid_matches_distance = l_nearest_distance[boolean_map]
     index_large_matches = np.where(valid_matches_distance > tolerance)[0]
     if index_large_matches.size > 0:
+        # Minkowski with p = np.inf uses the Chebyshev distance
         output = (
-            chebyshev(list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]]) > tolerance
+            minkowski_distance(
+                list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]], p=np.inf
+            )
+            > tolerance
         )
 
         valid_matches = np.delete(valid_matches, index_large_matches[output], axis=0)
