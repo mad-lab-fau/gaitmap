@@ -195,5 +195,5 @@ class TestCreateInterpolatedTemplate:
 
         dataset = {"left_sensor": template_data1, "right_sensor": template_data2}
 
-        with pytest.raises(ValidationError, match=r".* SingleSensorDataset*"):
+        with pytest.raises(ValidationError, match=r".* SingleSensorData*"):
             create_interpolated_dtw_template(dataset, kind="linear", n_samples=None)

@@ -6,7 +6,7 @@ from pandas._testing import assert_frame_equal
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
-from gaitmap.utils.dataset_helper import MultiSensorDataset, get_multi_sensor_dataset_names
+from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
     rotation_from_angle,
@@ -75,7 +75,7 @@ def _compare_cyclic(data, rotated_data, cycles=1):
 
 class TestRotateDfDataset:
     sample_sensor_data: pd.DataFrame
-    sample_sensor_dataset: MultiSensorDataset
+    sample_sensor_dataset: MultiSensorData
 
     @pytest.fixture(autouse=True)
     def _sample_sensor_data(self):
@@ -137,7 +137,7 @@ class TestRotateDataset:
     """Test the functions `rotate_dataset` and `_rotate_sensor`."""
 
     sample_sensor_data: pd.DataFrame
-    sample_sensor_dataset: MultiSensorDataset
+    sample_sensor_dataset: MultiSensorData
 
     @pytest.fixture(autouse=True, params=("dict", "frame"))
     def _sample_sensor_data(self, request):
@@ -221,7 +221,7 @@ class TestRotateDataset:
 
         assert rotated_data is not self.sample_sensor_dataset
         # sample_sensor_dataset is unchanged
-        for k in get_multi_sensor_dataset_names(org_data):
+        for k in get_multi_sensor_names(org_data):
             assert_frame_equal(org_data[k], self.sample_sensor_dataset[k])
 
     @pytest.mark.parametrize("ascending", (True, False))
@@ -247,7 +247,7 @@ class TestRotateDatasetSeries:
         with pytest.raises(ValidationError) as e:
             rotate_dataset_series("bla", Rotation.identity(3))
 
-        assert "SingleSensorDataset" in str(e)
+        assert "SingleSensorData" in str(e)
 
     def test_invalid_input_length(self):
         data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)

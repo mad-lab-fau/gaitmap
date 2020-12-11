@@ -13,12 +13,12 @@ from gaitmap.utils import signal_processing
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
 from gaitmap.utils.consts import BF_ACC, BF_GYR
-from gaitmap.utils.dataset_helper import (
-    is_multi_sensor_dataset,
-    Dataset,
-    get_multi_sensor_dataset_names,
+from gaitmap.utils.datatype_helper import (
+    is_multi_sensor_data,
+    SensorData,
+    get_multi_sensor_names,
     RegionsOfInterestList,
-    is_dataset,
+    is_sensor_data,
     SingleSensorRegionsOfInterestList,
 )
 
@@ -130,7 +130,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     gait_sequences_: RegionsOfInterestList
 
-    data: Dataset
+    data: SensorData
     sampling_rate_hz: float
 
     def __init__(
@@ -151,7 +151,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.harmonic_tolerance_hz = harmonic_tolerance_hz
         self.merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
+    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences in data.
 
         Parameters
@@ -174,12 +174,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         window_size = int(self.window_size_s * self.sampling_rate_hz)
 
-        dataset_type = is_dataset(self.data)
+        dataset_type = is_sensor_data(self.data)
         if dataset_type == "single":
             results = self._detect_single_dataset(data, window_size)
         else:  # Multisensor
             results = {}
-            for sensor in get_multi_sensor_dataset_names(data):
+            for sensor in get_multi_sensor_names(data):
                 results[sensor] = self._detect_single_dataset(data[sensor], window_size)
             results = invert_result_dictionary(results)
 
@@ -386,11 +386,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         return valid_windows
 
     def _assert_input_data(self, data):
-        if (
-            self.merge_gait_sequences_from_sensors
-            and is_multi_sensor_dataset(data)
-            and not isinstance(data, pd.DataFrame)
-        ):
+        if self.merge_gait_sequences_from_sensors and is_multi_sensor_data(data) and not isinstance(data, pd.DataFrame):
             raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
         # check for correct input value for sensor_channel_config

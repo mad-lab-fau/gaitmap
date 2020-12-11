@@ -8,10 +8,10 @@ from scipy.spatial.ckdtree import cKDTree
 from scipy.spatial.distance import chebyshev
 
 from gaitmap.utils.consts import SL_INDEX
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     StrideList,
     set_correct_index,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_names,
     is_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
@@ -165,7 +165,7 @@ def _evaluate_stride_list(
         postfix_b=ground_truth_postfix,
     )
 
-    for sensor_name in get_multi_sensor_dataset_names(matches):
+    for sensor_name in get_multi_sensor_names(matches):
         segmented_index_name = segmented_stride_list[sensor_name].index.name + stride_list_postfix
         ground_truth_index_name = ground_truth[sensor_name].index.name + ground_truth_postfix
         matches[sensor_name].loc[~matches[sensor_name].isna().any(axis=1), "match_type"] = "tp"
@@ -332,11 +332,7 @@ def _match_stride_lists(
     else:
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
-            list(
-                set(get_multi_sensor_dataset_names(stride_list_a)).intersection(
-                    get_multi_sensor_dataset_names(stride_list_b)
-                )
-            )
+            list(set(get_multi_sensor_names(stride_list_a)).intersection(get_multi_sensor_names(stride_list_b)))
         )
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")

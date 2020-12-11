@@ -19,10 +19,10 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
-from gaitmap.utils.dataset_helper import (
-    Dataset,
-    SingleSensorDataset,
-    is_dataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    SingleSensorData,
+    is_sensor_data,
     RegionsOfInterestList,
     is_regions_of_interest_list,
     SingleSensorRegionsOfInterestList,
@@ -35,7 +35,7 @@ from gaitmap.utils.dataset_helper import (
     is_orientation_list,
     is_position_list,
     is_velocity_list,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_names,
     SingleSensorStrideList,
     SingleSensorPositionList,
     SingleSensorOrientationList,
@@ -199,7 +199,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self.align_window_width = align_window_width
 
     def estimate(
-        self: BaseType, data: Dataset, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
+        self: BaseType, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
     ) -> BaseType:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
@@ -221,7 +221,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
         self._validate_methods()
 
-        dataset_type = is_dataset(data, frame="sensor")
+        dataset_type = is_sensor_data(data, frame="sensor")
         roi_list_type = is_regions_of_interest_list(regions_of_interest)
 
         if dataset_type != roi_list_type:
@@ -235,7 +235,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     def estimate_intersect(
         self,
-        data: Dataset,
+        data: SensorData,
         regions_of_interest: RegionsOfInterestList,
         stride_event_list: StrideList,
         sampling_rate_hz: float,
@@ -374,7 +374,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
             else:
                 data = {
                     k: self._intersect(data[k], self.regions_of_interest[k], stride_event_list[k])
-                    for k in get_multi_sensor_dataset_names(data)
+                    for k in get_multi_sensor_names(data)
                 }
             return_vals.append(data)
         return tuple(return_vals)
@@ -410,7 +410,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         return output
 
     def _estimate_single_sensor(
-        self, data: SingleSensorDataset, integration_regions: SingleSensorRegionsOfInterestList
+        self, data: SingleSensorData, integration_regions: SingleSensorRegionsOfInterestList
     ) -> Dict[str, pd.DataFrame]:
         # Set the class variable to determine the correct index values per dataset.
         self._expected_integration_region_index = [
@@ -418,6 +418,6 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         ]
         return super()._estimate_single_sensor(data, integration_regions)
 
-    def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
+    def _calculate_initial_orientation(self, data: SingleSensorData, start: int) -> Rotation:
         # TODO: Does this way of getting the initial orientation makes sense for longer sequences?
         return _initial_orientation_from_start(data, start, align_window_width=self.align_window_width)

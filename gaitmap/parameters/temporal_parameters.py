@@ -5,7 +5,7 @@ import pandas as pd
 
 from gaitmap.base import BaseType, BaseTemporalParameterCalculation
 from gaitmap.utils.consts import SL_INDEX
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,

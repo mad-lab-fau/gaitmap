@@ -59,14 +59,14 @@ For edge cases this means:
 - A region that ends with the dataset (i.e. inclusive the last sample) has `end=len(dataset)`.
 - If two regions are directly adjacent to each other, the end index of the first, is the start index of the second.
 
-Datasets
-========
+Sensor Data
+===========
 
-The term Dataset is used to describe the data-container that holds the raw IMU data.
+The term Sensor Data  is used to describe the data-container that holds the raw IMU data.
 Six different versions of this container exist aimed at combination of different use cases.
 
-Single-Sensor Datasets
-----------------------
+Single-Sensor Data
+------------------
 
 The base container structure is a `pd.DataFrame` with a preset name of columns (:obj:`~gaitmap.utils.consts.SF_COLS`),
 which are defined in the `consts` module.
@@ -76,12 +76,12 @@ The names (shown below) should be self explanatory.
 >>> SF_COLS
 ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z']
 
-Every pandas dataframe that has at least these columns is considered a *SingleSensorDataset* in gaitmap.
-To check the compliance with this rule :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` can be used.
+Every pandas dataframe that has at least these columns is considered *SingleSensorData* in gaitmap.
+To check the compliance with this rule :func:`~gaitmap.utils.datatype_helper.is_single_sensor_data` can be used.
 
->>> from gaitmap.utils.dataset_helper import is_single_sensor_dataset
->>> dataset = ...
->>> is_single_sensor_dataset(dataset, frame="sensor")
+>>> from gaitmap.utils.datatype_helper import is_single_sensor_data
+>>> sensor_data = ...
+>>> is_single_sensor_data(sensor_data, frame="sensor")
 True
 
 The above set of columns describes a dataset in the Sensor Frame.
@@ -95,28 +95,28 @@ For the concept of Sensor and Body Frame and how to convert between these frames
 >>> BF_COLS
 ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si']
 
-Alternatively, all dataset check method can raise an optional error, providing additional information about potential
-failed assessments.
+Alternatively, all datatype validation method can raise an optional error, providing additional information about
+potential failed assessments.
 These can be triggered by setting `raise_exception=True`.
-Below we can see the error message that will be raised, if a sensor-frame dataset is expected, but a body-frame dataset
-is provided:
+Below we can see the error message that will be raised, if sensor-frame data is expected, but body-frame data is
+provided:
 
->>> from gaitmap.utils.dataset_helper import is_single_sensor_dataset
->>> bf_dataset = ...
->>> is_single_sensor_dataset(bf_dataset, frame="sensor", raise_exception=True)
+>>> from gaitmap.utils.datatype_helper import is_single_sensor_data
+>>> bf_sensor_data = ...
+>>> is_single_sensor_data(bf_sensor_data, frame="sensor", raise_exception=True)
 Traceback (most recent call last):
     ...
-ValidationError: The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+ValidationError: The passed object does not seem to be SingleSensorData. The validation failed with the following error:
 The dataframe is expected to have columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'].
 Instead it has the following columns: ['acc_pa', 'acc_ml', 'acc_si', 'gyr_pa', 'gyr_ml', 'gyr_si']
 
 This method can be used to validate, if the right type of input data is passed.
 In case a method requires a single or a multi-sensor dataset, see below for efficient checking.
 
-Multi-Sensor Datasets
----------------------
+Multi-Sensor Data
+-----------------
 
-*MultiSensorDatasets* are combinations of multiple *SingleSensorDatasets*.
+*MultiSensorData* are combinations of multiple *SingleSensorData* objects.
 Hence, they need to carry the data of each sensor and a unique sensor name to address the data of each sensor.
 Gaitmap supports two types of data-containers for this use-case:
 
@@ -125,8 +125,8 @@ of samples), gaitmap uses a `pd.DataFrame` with a :class:`~pandas.MultiIndex` as
 The first level (`level=0`) provides the sensor name and the second level the typical columns for the sensor data.
 
 >>> from gaitmap.example_data import get_healthy_example_imu_data
->>> multi_dataset = get_healthy_example_imu_data()
->>> multi_dataset.head(1).sort_index(axis=1)
+>>> multi_data = get_healthy_example_imu_data()
+>>> multi_data.head(1).sort_index(axis=1)
 sensor left_sensor                         right_sensor
 axis         acc_x     acc_y    ...        acc_x    acc_y     ...
 0.0       0.880811  2.762208    ...        0.311553 -2.398646 ...
@@ -137,35 +137,35 @@ Instead of a single dataframe with `MultiIndex` it consists of a dictionary with
 
 For both types simply indexing with the sensor name should return a valid *SingleSensorDatasets*.
 
->>> is_single_sensor_dataset(multi_dataset["left_sensor"])
+>>> is_single_sensor_data(multi_data["left_sensor"])
 True
 
 To allow for consistent iteration over all sensors the following function can be used to obtain the sensor names
 independent of the format of the dataset:
 
->>> from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
->>> get_multi_sensor_dataset_names(multi_dataset)
+>>> from gaitmap.utils.datatype_helper import get_multi_sensor_names
+>>> get_multi_sensor_names(multi_data)
 ["left_sensor", "right_sensor"]
 
-All core methods support a *MultiSensorDataset* as input.
+All core methods support *MultiSensorData* as input.
 This usually means that the method simply iterates over all sensors and provides a separate output for each sensor.
 The sensor names can be chosen arbitrarily.
 For the future, methods are planned that make active use of multiple sensors at the same time.
 These might handle multi-sensor input differently.
 
-Like *SingleSensorDatasets*, *MultiSensorDatasets* can exist in the Body or the Sensor Frame.
+Like *SingleSensorData*, *MultiSensorData* can exist in the Body or the Sensor Frame.
 However, all single-sensor datasets in a *MultiSensorDataset* must be in the same frame.
-This can be checked using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
+This can be checked using :func:`~gaitmap.utils.datatype_helper.is_multi_sensor_data`.
 
->>> from gaitmap.utils.dataset_helper import is_multi_sensor_dataset
->>> is_multi_sensor_dataset(multi_dataset, frame="sensor")
+>>> from gaitmap.utils.datatype_helper import is_multi_sensor_data
+>>> is_multi_sensor_data(multi_data, frame="sensor")
 True
->>> is_multi_sensor_dataset(multi_dataset, frame="body")
+>>> is_multi_sensor_data(multi_data, frame="body")
 False
 
 Like the single-sensor methods, these functions support exception raising in case the validation fails:
 
->>> is_multi_sensor_dataset(multi_dataset, frame="body", raise_exception=True)
+>>> is_multi_sensor_data(multi_data, frame="body", raise_exception=True)
 Traceback (most recent call last):
     ...
 ValidationError: The passed object appears to be a MultiSensorDataset, but for the sensor with the name "left_sensor",
@@ -176,28 +176,28 @@ Instead it has the following columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_
 
 This can be used to validate the input to method that expects a *MultiSensorDataset*.
 However, often methods can take either a *SingleSensorDataset* or a *MultiSensorDataset* as input.
-In these cases one should use the generic `is_dataset` method to check.
+In these cases one should use the generic `is_sensor_data` method to check.
 This will only fail (and raise an exception) if the single- and the multi-sensor checks fail.
 Otherwise, it will return a string, indicating what type of dataset was passed (and None if the check failed):
 
->>> from gaitmap.utils.dataset_helper import is_dataset
->>> is_dataset(multi_dataset, frame="sensor")
+>>> from gaitmap.utils.datatype_helper import is_sensor_data
+>>> is_sensor_data(multi_dataset, frame="sensor")
 'multi'
->>> is_dataset(multi_dataset["left_sensor"], frame="sensor")
+>>> is_sensor_data(multi_dataset["left_sensor"], frame="sensor")
 'single'
->>> is_dataset(pd.DataFrame(), frame="sensor")
+>>> is_sensor_data(pd.DataFrame(), frame="sensor")
 Traceback (most recent call last):
     ...
-ValidationError: The passed object appears to be neither a single- or a multi-sensor dataset.
+ValidationError: The passed object appears to be neither single- or multi-sensor data.
 Below you can find the errors raised for both checks:
 Single-Sensor
 =============
-The passed object does not seem to be a SingleSensorDataset. The validation failed with the following error:
+The passed object does not seem to be SingleSensorData. The validation failed with the following error:
 The dataframe is expected to have columns: ['acc_x', 'acc_y', 'acc_z', 'gyr_x', 'gyr_y', 'gyr_z'].
 Instead it has the following columns: []
-Single-Sensor
+Multi-Sensor
 =============
-The passed object does not seem to be a MultiSensorDataset. The validation failed with the following error:
+The passed object does not seem to be MultiSensorData. The validation failed with the following error:
 The dataframe is expected to have a MultiIndex with 2 levels as columns. It has just a single normal column level.
 
 .. _stride_list_guide:
@@ -225,7 +225,7 @@ All other columns should provide values in samples since the start of the record
 >>> SL_INDEX
 ['s_id']
 
-Developers can use :py:func:`~gaitmap.utils.dataset_helper.set_correct_index` to unify the format of a stride list and
+Developers can use :py:func:`~gaitmap.utils.datatype_helper.set_correct_index` to unify the format of a stride list and
 easily support `s_id` as index or column.
 
 Depending of the type of stride list, more columns are expected.
@@ -246,9 +246,9 @@ The `segmented` stride list expects that the start and the end of each stride co
 For more details on the `min_vel` strides see :class:`~gaitmap.event_detection.RamppEventDetection` and for the
 `segmented` strides see :class:`~gaitmap.stride_segmentation.BarthDtw`.
 
-The format of a stride list can be checked using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_stride_list`.
+The format of a stride list can be checked using :func:`~gaitmap.utils.datatype_helper.is_single_sensor_stride_list`.
 
->>> from gaitmap.utils.dataset_helper import is_single_sensor_stride_list
+>>> from gaitmap.utils.datatype_helper import is_single_sensor_stride_list
 >>> simple_stride_list = ...
 >>> is_single_sensor_stride_list(simple_stride_list, stride_type="any")
 True
@@ -261,9 +261,9 @@ As for the dataset types, a multi-sensor of the *StrideList* exists, too.
 Because even two synchronised sensors can contain a different amount of strides, only a dictionary based version of the
 *MultiSensorStrideList* is supported.
 It consists of a dictionary with the sensor names as keys and valid *SingleSensorStrideLists* as values.
-Its format can be validated using :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_stride_list`.
+Its format can be validated using :func:`~gaitmap.utils.datatype_helper.is_multi_sensor_stride_list`.
 
->>> from gaitmap.utils.dataset_helper import is_multi_sensor_stride_list
+>>> from gaitmap.utils.datatype_helper import is_multi_sensor_stride_list
 >>> multi_sensor_stride_list = {"sensor1": ..., "sensor2": ...}
 >>> is_multi_sensor_stride_list(multi_sensor_stride_list, stride_type="any")
 True
@@ -281,7 +281,7 @@ This order is documented in :obj:`~gaitmap.utils.consts.SL_EVENT_ORDER`.
 
 Like the dataset validation function, all stride list methods also support the `raise_exception` parameter.
 If it is `True`, the method will raise a descriptive error instead of returning `False`.
-Furthermore, the `is_stride_list` method can be used analogous to the `is_dataset` method in cases, where single and
+Furthermore, the `is_stride_list` method can be used analogous to the `is_sensor_data` method in cases, where single and
 multi sensor stride lists are allowed as inputs.
 
 The normal format check shown above does not check if the values in the stride list follow this order.
@@ -324,10 +324,10 @@ s_id sample
 ...               ...       ...       ...       ...
 
 Alternatively to being part of the index, `s_id` and `sample` can also be regular columns.
-Methods that take Orientation and Postion lists as inputs can use :func:`~gaitmap.utils.dataset_helper.set_correct_index`
+Methods that take Orientation and Postion lists as inputs can use :func:`~gaitmap.utils.datatype_helper.set_correct_index`
 to unify both formats.
 
->>> from gaitmap.utils.dataset_helper import set_correct_index
+>>> from gaitmap.utils.datatype_helper import set_correct_index
 >>> orientation_list = ...
 >>> unified_format_orientation_list = set_correct_index(orientation_list, ["s_id", "sample"])
 
@@ -335,7 +335,6 @@ Orientation and Position lists only differ based on their expected columns.
 Orientation lists are expected to have all columns specified in :obj:`~gaitmap.utils.consts.GF_ORI` and Position lists
 all columns specified in :obj:`~gaitmap.utils.consts.GF_POS`.
 
-# TODO: Add for Orientation
 >>> from gaitmap.utils.consts import GF_POS
 >>> GF_POS
 ['pos_x', 'pos_y', 'pos_z']
@@ -344,22 +343,22 @@ all columns specified in :obj:`~gaitmap.utils.consts.GF_POS`.
 >>> GF_ORI
 ['q_x', 'q_y', 'q_z', 'q_w']
 
-To validate the correctness of these data objectes, :func:`~gaitmap.utils.dataset_helper.is_single_sensor_position_list`
-and :func:`~gaitmap.utils.dataset_helper.is_single_sensor_orientation_list` can be used, respectively.
-These functions call `:func:`~gaitmap.utils.dataset_helper.set_correct_index` internally and hence, support both
+To validate the correctness of these data objectes, :func:`~gaitmap.utils.datatype_helper.is_single_sensor_position_list`
+and :func:`~gaitmap.utils.datatype_helper.is_single_sensor_orientation_list` can be used, respectively.
+These functions call `:func:`~gaitmap.utils.datatype_helper.set_correct_index` internally and hence, support both
 possible dataframe formats that are described above.
 
->>> from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
+>>> from gaitmap.utils.datatype_helper import is_single_sensor_orientation_list
 >>> orientation_list = ...
 >>> is_single_sensor_orientation_list(orientation_list)
 True
 
 Additionally, a multi-sensor version exists for both types of lists.
 They follow the dictionary structure introduced for the stride list.
-:func:`~gaitmap.utils.dataset_helper.is_multi_sensor_position_list` and
-:func:`~gaitmap.utils.dataset_helper.is_multi_sensor_orientation_list` can be used to validate these formats.
+:func:`~gaitmap.utils.datatype_helper.is_multi_sensor_position_list` and
+:func:`~gaitmap.utils.datatype_helper.is_multi_sensor_orientation_list` can be used to validate these formats.
 
->>> from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
+>>> from gaitmap.utils.datatype_helper import is_single_sensor_orientation_list
 >>> multi_sensor_orientation_list = {"sensor1": ..., "sensor2": ...}
 >>> is_single_sensor_orientation_list(multi_sensor_orientation_list, stride_type="any")
 True

@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod, BaseType
 from gaitmap.utils.consts import SF_GYR, SF_ACC
-from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
+from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
 
 
@@ -89,7 +89,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
 
-    data: SingleSensorDataset
+    data: SingleSensorData
     sampling_rate_hz: float
 
     def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0])):
@@ -97,7 +97,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.beta = beta
 
     # TODO: Allow to continue the integration
-    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor.
 
         Parameters
@@ -118,7 +118,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
 
-        is_single_sensor_dataset(self.data, check_acc=False, frame="sensor", raise_exception=True)
+        is_single_sensor_data(self.data, check_acc=False, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()

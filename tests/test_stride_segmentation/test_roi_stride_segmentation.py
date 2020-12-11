@@ -9,10 +9,10 @@ from numpy.testing import assert_array_equal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.stride_segmentation import create_dtw_template, BarthDtw
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
-from gaitmap.utils.dataset_helper import (
-    Dataset,
-    is_multi_sensor_dataset,
-    get_multi_sensor_dataset_names,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    is_multi_sensor_data,
+    get_multi_sensor_names,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
 )
@@ -62,7 +62,7 @@ class TestParameterValidation:
 
     @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
     def test_unsuitable_datatype(self, data):
-        """No proper Dataset provided."""
+        """No proper Sensordata provided."""
         with pytest.raises(ValidationError) as e:
             self.instance.segment(
                 data=data,
@@ -70,7 +70,7 @@ class TestParameterValidation:
                 regions_of_interest=pd.DataFrame([[0, 3, 0]], columns=["start", "end", "gs_id"]),
             )
 
-        assert "neither a single- or a multi-sensor dataset" in str(e)
+        assert "neither single- or multi-sensor data" in str(e)
 
     @pytest.mark.parametrize(
         "roi", (pd.DataFrame(), None),
@@ -139,15 +139,15 @@ class MockStrideSegmentation(BaseStrideSegmentation):
     def __init__(self, n=3):
         self.n = 3
 
-    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **kwargs) -> BaseType:
+    def segment(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         # For testing we will save the kwargs
         self._kwargs = kwargs
         # We will just detect a n-strides in the data
-        if is_multi_sensor_dataset(data, check_gyr=False, check_acc=False):
+        if is_multi_sensor_data(data, check_gyr=False, check_acc=False):
             stride_list = {}
-            for sensor in get_multi_sensor_dataset_names(data):
+            for sensor in get_multi_sensor_names(data):
                 tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype(int)
                 stride_list[sensor] = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
             self._stride_list_ = stride_list
@@ -216,7 +216,7 @@ class TestCombinedStridelist:
                 assert roi_seg.stride_list_[sensor].index.name == "s_id"
 
         # test if the stride starts are actually greater or equal to the roi starts
-        for sensor in get_multi_sensor_dataset_names(data):
+        for sensor in get_multi_sensor_names(data):
             for r in roi[sensor].iterrows():
                 for stride in roi_seg.stride_list_[sensor].iterrows():
                     if r[1]["roi_id"] == stride[1]["roi_id"]:
@@ -242,7 +242,7 @@ class TestCombinedStridelist:
                 assert roi_seg.stride_list_[sensor].index.name == "s_id"
 
         # test if the stride starts are actually greater or equal to the roi starts
-        for sensor in get_multi_sensor_dataset_names(data):
+        for sensor in get_multi_sensor_names(data):
             for r in roi.iterrows():
                 for stride in roi_seg.stride_list_[sensor].iterrows():
                     if r[1]["roi_id"] == stride[1]["roi_id"]:

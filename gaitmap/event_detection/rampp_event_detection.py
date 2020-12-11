@@ -9,12 +9,12 @@ from gaitmap.base import BaseEventDetection, BaseType
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     StrideList,
-    Dataset,
-    get_multi_sensor_dataset_names,
+    SensorData,
+    get_multi_sensor_names,
     set_correct_index,
-    is_dataset,
+    is_sensor_data,
     is_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
@@ -154,7 +154,7 @@ class RamppEventDetection(BaseEventDetection):
     min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
     segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
-    data: Dataset
+    data: SensorData
     sampling_rate_hz: float
     stride_list: pd.DataFrame
 
@@ -162,7 +162,7 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: Dataset, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -180,7 +180,7 @@ class RamppEventDetection(BaseEventDetection):
             The class instance with all result attributes populated
 
         """
-        dataset_type = is_dataset(data, frame="body")
+        dataset_type = is_sensor_data(data, frame="body")
         stride_list_type = is_stride_list(stride_list, stride_type="any")
 
         if dataset_type != stride_list_type:
@@ -204,7 +204,7 @@ class RamppEventDetection(BaseEventDetection):
             results = self._detect_single_dataset(data, stride_list, ic_search_region, min_vel_search_win_size)
         else:
             results = dict()
-            for sensor in get_multi_sensor_dataset_names(data):
+            for sensor in get_multi_sensor_names(data):
                 results[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )

@@ -10,12 +10,12 @@ from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
-from gaitmap.utils.dataset_helper import (
-    get_multi_sensor_dataset_names,
-    is_single_sensor_dataset,
-    Dataset,
-    SingleSensorDataset,
-    is_dataset,
+from gaitmap.utils.datatype_helper import (
+    get_multi_sensor_names,
+    is_single_sensor_data,
+    SensorData,
+    SingleSensorData,
+    is_sensor_data,
 )
 from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 
@@ -63,9 +63,7 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
 
 
-def _rotate_sensor(
-    data: SingleSensorDataset, rotation: Optional[Rotation], inplace: bool = False
-) -> SingleSensorDataset:
+def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: bool = False) -> SingleSensorData:
     """Rotate the data of a single sensor with acc and gyro."""
     if inplace is False:
         data = data.copy()
@@ -76,7 +74,7 @@ def _rotate_sensor(
     return data
 
 
-def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotation]]) -> Dataset:
+def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]]) -> SensorData:
     """Apply a rotation to acc and gyro data of a dataset.
 
     Parameters
@@ -100,13 +98,13 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     --------
     This will apply the same rotation to the left and the right foot
 
-    >>> dataset = ...  # Dataset with a left and a right foot sensor
+    >>> dataset = ...  # Sensordata with a left and a right foot sensor
     >>> rotate_dataset(dataset, rotation=rotation_from_angle(np.array([0, 0, 1]), np.pi))
     <copy of dataset with all axis rotated>
 
     This will apply different rotations to the left and the right foot
 
-    >>> dataset = ...  # Dataset with a left and a right foot sensor (sensors called "left" and "right")
+    >>> dataset = ...  # Sensordata with a left and a right foot sensor (sensors called "left" and "right")
     >>> rotate_dataset(dataset, rotation={'left': rotation_from_angle(np.array([0, 0, 1]), np.pi),
     ...     'right':rotation_from_angle(np.array([0, 0, 1]), np.pi / 2))
     <copy of dataset with all axis rotated>
@@ -116,7 +114,7 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     gaitmap.utils.rotations.rotate_dataset_series: Apply a series of rotations to a dataset
 
     """
-    dataset_type = is_dataset(dataset, frame="sensor")
+    dataset_type = is_sensor_data(dataset, frame="sensor")
     if dataset_type == "single":
         if isinstance(rotation, dict):
             raise ValueError(
@@ -127,7 +125,7 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
 
     rotation_dict = rotation
     if not isinstance(rotation_dict, dict):
-        rotation_dict = {k: rotation for k in get_multi_sensor_dataset_names(dataset)}
+        rotation_dict = {k: rotation for k in get_multi_sensor_names(dataset)}
 
     if isinstance(dataset, dict):
         rotated_dataset = {**dataset}
@@ -145,7 +143,7 @@ def rotate_dataset(dataset: Dataset, rotation: Union[Rotation, Dict[str, Rotatio
     return rotated_dataset
 
 
-def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> pd.DataFrame:
+def rotate_dataset_series(dataset: SingleSensorData, rotations: Rotation) -> pd.DataFrame:
     """Rotate data of a single sensor using a series of rotations.
 
     This will apply a different rotation to each sample of the dataset.
@@ -167,7 +165,7 @@ def rotate_dataset_series(dataset: SingleSensorDataset, rotations: Rotation) -> 
     gaitmap.utils.rotations.rotate_dataset: Apply a single rotation to the entire dataset
 
     """
-    is_single_sensor_dataset(dataset, frame="sensor", raise_exception=True)
+    is_single_sensor_data(dataset, frame="sensor", raise_exception=True)
     if len(dataset) != len(rotations):
         raise ValueError("The number of rotations must fit the number of samples in the dataset!")
 

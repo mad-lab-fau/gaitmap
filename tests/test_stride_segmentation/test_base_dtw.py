@@ -18,7 +18,7 @@ from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
-from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
+from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -55,13 +55,13 @@ class TestIOErrors(DtwTestBase):
 
     @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
     def test_unsuitable_datatype(self, data):
-        """No proper Dataset provided."""
+        """No proper Sensordata provided."""
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValidationError) as e:
             dtw = self.init_dtw(template=template)
             dtw.segment(data=data, sampling_rate_hz=100)
 
-        assert "neither a single- or a multi-sensor dataset" in str(e)
+        assert "neither single- or multi-sensor data" in str(e)
 
     def test_invalid_template_combination(self):
         """Invalid combinations of template and dataset format"""
@@ -396,7 +396,7 @@ class TestMultiSensorInputs(DtwTestBase):
         template = create_dtw_template(template, sampling_rate_hz=100.0)
         dtw = self.init_dtw(template=template)
         data = self.data
-        for c in get_multi_sensor_dataset_names(data):
+        for c in get_multi_sensor_names(data):
             if isinstance(data, pd.DataFrame):
                 data.loc[:, c] = np.ones(13)[:, None]
             else:

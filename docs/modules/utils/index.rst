@@ -7,7 +7,7 @@ Various internal and external utility functions.
     :maxdepth: 1
 
     Coordinate Conversion <coordinate_conversion>
-    Dataset Helper <dataset_helper>
+    Datatype Helper <datatype_helper>
     Stride List Conversion <stride_list_conversion>
     Static Moment Detection <static_moment_detection>
     Array Handling <array_handling>

@@ -12,11 +12,11 @@ from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroInte
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.consts import GF_ORI, GF_VEL, GF_POS, SF_ACC
-from gaitmap.utils.dataset_helper import (
-    Dataset,
-    SingleSensorDataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    SingleSensorData,
     set_correct_index,
-    get_multi_sensor_dataset_names,
+    get_multi_sensor_names,
 )
 from gaitmap.utils.rotations import rotate_dataset_series, get_gravity_rotation
 
@@ -29,7 +29,7 @@ class _TrajectoryReconstructionWrapperMixin:
     pos_method: Optional[BasePositionMethod]
     trajectory_method: Optional[BaseTrajectoryMethod]
 
-    data: Dataset
+    data: SensorData
     sampling_rate_hz: float
 
     _combined_algo_mode: bool
@@ -75,14 +75,14 @@ class _TrajectoryReconstructionWrapperMixin:
             results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
             results = dict()
-            for sensor in get_multi_sensor_dataset_names(self.data):
+            for sensor in get_multi_sensor_names(self.data):
                 results[sensor] = self._estimate_single_sensor(self.data[sensor], self._integration_regions[sensor])
             results = invert_result_dictionary(results)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
     def _estimate_single_sensor(
-        self, data: SingleSensorDataset, integration_regions: RegionTypeSingle,
+        self, data: SingleSensorData, integration_regions: RegionTypeSingle,
     ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = tuple((*self._expected_integration_region_index, "sample"))
@@ -111,7 +111,7 @@ class _TrajectoryReconstructionWrapperMixin:
         return {"orientation": orientation, "velocity": velocity, "position": position}
 
     def _estimate_region(
-        self, data: SingleSensorDataset, start: int, end: int
+        self, data: SingleSensorData, start: int, end: int
     ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
         stride_data = data.iloc[start:end].copy()
         initial_orientation = self._calculate_initial_orientation(data, start)
@@ -134,11 +134,11 @@ class _TrajectoryReconstructionWrapperMixin:
             position = trajectory_method.position_
         return orientation, velocity, position
 
-    def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
+    def _calculate_initial_orientation(self, data: SingleSensorData, start: int) -> Rotation:
         raise NotImplementedError()
 
 
-def _initial_orientation_from_start(data: SingleSensorDataset, start: int, align_window_width: int) -> Rotation:
+def _initial_orientation_from_start(data: SingleSensorData, start: int, align_window_width: int) -> Rotation:
     """Calculate the initial orientation for a section of data using a gravity alignment on the first n samples.
 
     Parameters

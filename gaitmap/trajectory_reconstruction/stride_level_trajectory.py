@@ -17,11 +17,11 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import SL_INDEX
-from gaitmap.utils.dataset_helper import (
-    Dataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
     StrideList,
-    SingleSensorDataset,
-    is_dataset,
+    SingleSensorData,
+    is_sensor_data,
     is_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
@@ -144,7 +144,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
 
-    def estimate(self: BaseType, data: Dataset, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SensorData, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
@@ -165,7 +165,7 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
         self._validate_methods()
 
-        dataset_type = is_dataset(data, frame="sensor")
+        dataset_type = is_sensor_data(data, frame="sensor")
         stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
 
         if dataset_type != stride_list_type:
@@ -177,5 +177,5 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self._estimate(dataset_type=dataset_type)
         return self
 
-    def _calculate_initial_orientation(self, data: SingleSensorDataset, start: int) -> Rotation:
+    def _calculate_initial_orientation(self, data: SingleSensorData, start: int) -> Rotation:
         return _initial_orientation_from_start(data, start, align_window_width=self.align_window_width)

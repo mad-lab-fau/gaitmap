@@ -16,10 +16,10 @@ from gaitmap.utils.consts import (
     GF_VEL,
     GF_ORI,
 )
-from gaitmap.utils.dataset_helper import (
-    is_single_sensor_dataset,
-    is_multi_sensor_dataset,
-    get_multi_sensor_dataset_names,
+from gaitmap.utils.datatype_helper import (
+    is_single_sensor_data,
+    is_multi_sensor_data,
+    get_multi_sensor_names,
     is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
     set_correct_index,
@@ -31,7 +31,7 @@ from gaitmap.utils.dataset_helper import (
     is_multi_sensor_orientation_list,
     is_single_sensor_regions_of_interest_list,
     is_multi_sensor_regions_of_interest_list,
-    is_dataset,
+    is_sensor_data,
     is_stride_list,
     is_regions_of_interest_list,
     is_position_list,
@@ -76,10 +76,10 @@ class TestIsSingleSensorDataset:
         ({"test": pd.DataFrame}, list(range(6)), "test", np.arange(6), pd.DataFrame(columns=_create_test_multiindex())),
     )
     def test_wrong_datatype(self, value):
-        assert not is_single_sensor_dataset(value, check_acc=False, check_gyr=False)
+        assert not is_single_sensor_data(value, check_acc=False, check_gyr=False)
 
     def test_correct_datatype(self):
-        assert is_single_sensor_dataset(pd.DataFrame(), check_acc=False, check_gyr=False)
+        assert is_single_sensor_data(pd.DataFrame(), check_acc=False, check_gyr=False)
 
     @pytest.mark.parametrize(
         "cols, frame_valid, col_check_valid",
@@ -95,7 +95,7 @@ class TestIsSingleSensorDataset:
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame):
         """Test all possible combinations of inputs."""
         col_check, check_acc, check_gyro = combinations
-        output = is_single_sensor_dataset(
+        output = is_single_sensor_data(
             pd.DataFrame(columns=cols), check_acc=check_acc, check_gyr=check_gyro, frame=frame
         )
 
@@ -107,15 +107,13 @@ class TestIsSingleSensorDataset:
 
     def test_invalid_frame_argument(self):
         with pytest.raises(ValueError):
-            is_single_sensor_dataset(pd.DataFrame(), frame="invalid_value")
+            is_single_sensor_data(pd.DataFrame(), frame="invalid_value")
 
     def test_error_raising(self):
         with pytest.raises(ValidationError) as e:
-            is_single_sensor_dataset(
-                pd.DataFrame(), frame="body", check_acc=True, check_gyr=False, raise_exception=True
-            )
+            is_single_sensor_data(pd.DataFrame(), frame="body", check_acc=True, check_gyr=False, raise_exception=True)
 
-        assert "The passed object does not seem to be a SingleSensorDataset." in str(e)
+        assert "The passed object does not seem to be SingleSensorData." in str(e)
         assert str(BF_ACC) in str(e.value)
 
 
@@ -124,10 +122,10 @@ class TestIsMultiSensorDataset:
         "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
-        assert not is_multi_sensor_dataset(value, check_acc=False, check_gyr=False)
+        assert not is_multi_sensor_data(value, check_acc=False, check_gyr=False)
 
     def test_correct_datatype(self):
-        assert is_multi_sensor_dataset(
+        assert is_multi_sensor_data(
             pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()), check_acc=False, check_gyr=False
         )
 
@@ -145,7 +143,7 @@ class TestIsMultiSensorDataset:
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame):
         """Test all possible combinations of inputs."""
         col_check, check_acc, check_gyro = combinations
-        output = is_multi_sensor_dataset(
+        output = is_multi_sensor_data(
             pd.DataFrame([[*range(len(cols) * 2)]], columns=pd.MultiIndex.from_product((("a", "b"), cols))),
             check_acc=check_acc,
             check_gyr=check_gyro,
@@ -160,24 +158,22 @@ class TestIsMultiSensorDataset:
 
     def test_invalid_frame_argument(self):
         with pytest.raises(ValueError):
-            is_multi_sensor_dataset(
-                pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()), frame="invalid_value"
-            )
+            is_multi_sensor_data(pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()), frame="invalid_value")
 
     def test_error_raising(self):
         with pytest.raises(ValidationError) as e:
-            is_multi_sensor_dataset(pd.DataFrame(), raise_exception=True)
+            is_multi_sensor_data(pd.DataFrame(), raise_exception=True)
 
-        assert "The passed object does not seem to be a MultiSensorDataset." in str(e)
+        assert "The passed object does not seem to be MultiSensorData." in str(e)
         assert "MultiIndex" in str(e)
 
     def test_nested_error_raising(self):
         with pytest.raises(ValidationError) as e:
-            is_multi_sensor_dataset(
+            is_multi_sensor_data(
                 {"s1": pd.DataFrame()}, frame="body", check_acc=True, check_gyr=False, raise_exception=True
             )
 
-        assert "The passed object appears to be a MultiSensorDataset" in str(e.value)
+        assert "The passed object appears to be MultiSensorData" in str(e.value)
         assert 'for the sensor with the name "s1"' in str(e.value)
         assert str(BF_ACC) in str(e.value)
 
@@ -185,21 +181,21 @@ class TestIsMultiSensorDataset:
 class TestIsDataset:
     def test_raises_error_correctly(self):
         with pytest.raises(ValidationError) as e:
-            is_dataset(pd.DataFrame(), frame="body", check_acc=True, check_gyr=False)
+            is_sensor_data(pd.DataFrame(), frame="body", check_acc=True, check_gyr=False)
 
-        assert "The passed object appears to be neither a single- or a multi-sensor dataset." in str(e)
+        assert "The passed object appears to be neither single- or multi-sensor data." in str(e)
         assert str(BF_ACC) in str(e.value)
         assert "MultiIndex" in str(e.value)
 
     @pytest.mark.parametrize(("obj", "out"), ((pd.DataFrame(), "single"), ({"s1": pd.DataFrame()}, "multi")))
     def test_basic_function(self, obj, out):
-        assert is_dataset(obj, check_gyr=False, check_acc=False) == out
+        assert is_sensor_data(obj, check_gyr=False, check_acc=False) == out
 
 
 class TestGetMultiSensorDatasetNames:
     @pytest.mark.parametrize("obj", ({"a": [], "b": [], "c": []}, pd.DataFrame(columns=_create_test_multiindex())))
     def test_names_simple(self, obj):
-        assert set(get_multi_sensor_dataset_names(obj)) == {"a", "b", "c"}
+        assert set(get_multi_sensor_names(obj)) == {"a", "b", "c"}
 
 
 class TestIsSingleSensorStrideList:
