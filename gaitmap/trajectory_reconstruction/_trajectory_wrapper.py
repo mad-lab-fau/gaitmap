@@ -10,6 +10,7 @@ from typing_extensions import Literal
 from gaitmap.base import BasePositionMethod, BaseOrientationMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.consts import GF_ORI, GF_VEL, GF_POS, SF_ACC
 from gaitmap.utils.dataset_helper import (
     Dataset,
@@ -71,55 +72,43 @@ class _TrajectoryReconstructionWrapperMixin:
 
     def _estimate(self, dataset_type: Literal["single", "multi"]):
         if dataset_type == "single":
-            self.orientation_, self.velocity_, self.position_ = self._estimate_single_sensor(
-                self.data, self._integration_regions
-            )
+            results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
-            self.orientation_, self.velocity_, self.position_ = self._estimate_multi_sensor()
-
+            results = dict()
+            for sensor in get_multi_sensor_dataset_names(self.data):
+                results[sensor] = self._estimate_single_sensor(self.data[sensor], self._integration_regions[sensor])
+            results = invert_result_dictionary(results)
+        set_params_from_dict(self, results, result_formatting=True)
         return self
-
-    def _estimate_multi_sensor(
-        self,
-    ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
-        orientation = dict()
-        velocity = dict()
-        position = dict()
-        for i_sensor in get_multi_sensor_dataset_names(self.data):
-            out = self._estimate_single_sensor(self.data[i_sensor], self._integration_regions[i_sensor])
-            orientation[i_sensor] = out[0]
-            velocity[i_sensor] = out[1]
-            position[i_sensor] = out[2]
-        return orientation, velocity, position
 
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, integration_regions: RegionTypeSingle,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = tuple((*self._expected_integration_region_index, "sample"))
-        rotation = dict()
+        orientation = dict()
         velocity = dict()
         position = dict()
         if len(integration_regions) == 0:
             index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=full_index)
-            return (
-                pd.DataFrame(columns=GF_ORI, index=index.copy()),
-                pd.DataFrame(columns=GF_VEL, index=index.copy()),
-                pd.DataFrame(columns=GF_POS, index=index.copy()),
-            )
+            return {
+                "orientation": pd.DataFrame(columns=GF_ORI, index=index.copy()),
+                "velocity": pd.DataFrame(columns=GF_VEL, index=index.copy()),
+                "position": pd.DataFrame(columns=GF_POS, index=index.copy()),
+            }
         for r_id, i_region in integration_regions.iterrows():
             i_start, i_end = (int(i_region["start"]), int(i_region["end"]))
-            i_rotation, i_velocity, i_position = self._estimate_region(data, i_start, i_end)
-            rotation[r_id] = pd.DataFrame(i_rotation.as_quat(), columns=GF_ORI)
+            i_orientation, i_velocity, i_position = self._estimate_region(data, i_start, i_end)
+            orientation[r_id] = pd.DataFrame(i_orientation.as_quat(), columns=GF_ORI)
             velocity[r_id] = pd.DataFrame(i_velocity, columns=GF_VEL)
             position[r_id] = pd.DataFrame(i_position, columns=GF_POS)
-        rotation = pd.concat(rotation)
-        rotation.index = rotation.index.rename(full_index)
+        orientation = pd.concat(orientation)
+        orientation.index = orientation.index.rename(full_index)
         velocity = pd.concat(velocity)
         velocity.index = velocity.index.rename(full_index)
         position = pd.concat(position)
         position.index = position.index.rename(full_index)
-        return rotation, velocity, position
+        return {"orientation": orientation, "velocity": velocity, "position": position}
 
     def _estimate_region(
         self, data: SingleSensorDataset, start: int, end: int

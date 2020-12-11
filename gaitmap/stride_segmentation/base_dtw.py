@@ -12,6 +12,7 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseType, BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.dataset_helper import (
     Dataset,
@@ -325,9 +326,7 @@ class BaseDtw(BaseAlgorithm):
         template = self.template
         if dataset_type in ("single", "array"):
             # Single template single sensor: easy
-            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = self._segment_single_dataset(
-                data, template
-            )
+            results = self._segment_single_dataset(data, template)
         else:  # Multisensor
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
@@ -345,15 +344,11 @@ class BaseDtw(BaseAlgorithm):
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
-            self.acc_cost_mat_, self.paths_, self.costs_, self.matches_start_end_ = dict(), dict(), dict(), dict()
-            for sensor, r in results.items():
-                self.acc_cost_mat_[sensor] = r[0]
-                self.paths_[sensor] = r[1]
-                self.costs_[sensor] = r[2]
-                self.matches_start_end_[sensor] = r[3]
+            results = invert_result_dictionary(results)
+        set_params_from_dict(self, results, result_formatting=True)
         return self
 
-    def _segment_single_dataset(self, dataset, template):
+    def _segment_single_dataset(self, dataset, template) -> Dict[str, np.ndarray]:
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -419,7 +414,12 @@ class BaseDtw(BaseAlgorithm):
             matches_start_end_ = matches_start_end_[to_keep]
             self._post_postprocess_check(matches_start_end_)
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
-        return acc_cost_mat_, paths_, costs_, matches_start_end_
+        return {
+            "acc_cost_mat": acc_cost_mat_,
+            "paths": paths_,
+            "costs": costs_,
+            "matches_start_end": matches_start_end_,
+        }
 
     def _calculate_cost_matrix(self, template, matching_data):
         # In case we don't have local constrains, we can use the simple dtw implementation
