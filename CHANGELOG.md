@@ -15,6 +15,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 
 - `evaluation_utils.stride_segmentation._match_label_lists` now works for n-D and should be faster for large stride 
   length. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
+- Internal refactoring of how the algorithms combine the results of the single sensors to the final output.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/116)
 
 ### Deprecated
 
