@@ -31,10 +31,13 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 ### Removed
 
 ### Fixed
+
 - In `stride_segmentation.roi_stride_segmentation` the assignment of the offset corrected strides to the
  `combined_stride_list` was fixed.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/114)
 - Added a note to BarthDTW to clarify the calculation of the distance matrix.
+- Changed the Chebyshev distance function in `evaluation_utils.stride_segmentation._match_label_lists` to a general one 
+  that can use n-D input. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/115)
 
 ### Migration Guide
 

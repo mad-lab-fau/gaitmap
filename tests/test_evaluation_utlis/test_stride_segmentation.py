@@ -318,6 +318,15 @@ class TestSpecialMatchStrideList:
                 [[0, 0, 1, 2, 3, 3], [0, 3, 2, 1, 0, 3]],
             ),
             (np.array([[1], [2], [3], [4], [5]]), np.array([[6], [7], [8], [9], [10]]), 0, True, [[], []],),
+            (np.array([[0, 10]]), np.array([[0, 10], [1, 11]]), 2, True, [[0], [0]],),
+            (np.array([[0, 10], [1, 11]]), np.array([[0, 10]]), 2, True, [[0], [0]],),
+            (
+                np.array([[0, 10], [1, 11], [20, 30]]),
+                np.array([[0, 10], [20, 30], [20, 31]]),
+                2,
+                True,
+                [[0, 2], [0, 1]],
+            ),
         ],
     )
     def test_match_label_lists_edgecases(self, input_param, ground_truth, tolerance, one_to_one, expectation):
