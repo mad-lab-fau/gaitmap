@@ -3,7 +3,21 @@ from typing import Hashable, Dict, Any
 
 
 def invert_result_dictionary(nested_dict: Dict[Hashable, Dict[str, Any]]) -> Dict[Hashable, Dict[Hashable, Any]]:
-    """Invert result dictionaries that are obtained from multi sensor results."""
+    """Invert result dictionaries that are obtained from multi sensor results.
+
+    This method expects a two level dictionary and flips the levels.
+    This means that if a value can be accessed as `nested_dict[k1][k2] = v` in the input, it can be accessed as
+    `output_dict[k2][k1] = v`.
+
+    Examples
+    --------
+    >>> in_dict = {"level_1_1": {"level_2_1": "val_2_1", "level_2_2": "val_2_2"}, "level_1_2": {"level_2_3": "val_2_3"}}
+    >>> from pprint import pprint
+    >>> pprint(invert_result_dictionary(in_dict))
+    {'level_2_1': {'level_1_1': 'val_2_1'},
+     'level_2_2': {'level_1_1': 'val_2_2'},
+     'level_2_3': {'level_1_2': 'val_2_3'}}
+    """
     out = dict()
     for ok, ov in nested_dict.items():
         for k, v in ov.items():
