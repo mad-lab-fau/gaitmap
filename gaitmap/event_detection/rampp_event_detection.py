@@ -6,6 +6,7 @@ import pandas as pd
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection, BaseType
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.dataset_helper import (
@@ -200,17 +201,15 @@ class RamppEventDetection(BaseEventDetection):
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         if dataset_type == "single":
-            self.min_vel_event_list_, self.segmented_event_list_ = self._detect_single_dataset(
-                data, stride_list, ic_search_region, min_vel_search_win_size
-            )
+            results = self._detect_single_dataset(data, stride_list, ic_search_region, min_vel_search_win_size)
         else:
-            self.min_vel_event_list_ = dict()
-            self.segmented_event_list_ = dict()
+            results = dict()
             for sensor in get_multi_sensor_dataset_names(data):
-                self.min_vel_event_list_[sensor], self.segmented_event_list_[sensor] = self._detect_single_dataset(
+                results[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
-
+            results = invert_result_dictionary(results)
+        set_params_from_dict(self, results, result_formatting=True)
         return self
 
     def _detect_single_dataset(
@@ -219,7 +218,7 @@ class RamppEventDetection(BaseEventDetection):
         stride_list: pd.DataFrame,
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> Dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
@@ -251,7 +250,7 @@ class RamppEventDetection(BaseEventDetection):
 
         min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
 
-        return min_vel_event_list, segmented_event_list
+        return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 
     @staticmethod
     def _find_all_events(

@@ -1,6 +1,6 @@
 """The gait sequence detection algorithm by Ullrich et al. 2020."""
 import itertools
-from typing import Optional, Tuple, Union, Dict
+from typing import Tuple, Union, Dict, Hashable
 
 import numpy as np
 import pandas as pd
@@ -10,6 +10,7 @@ from scipy.signal import peak_prominences
 
 from gaitmap.base import BaseGaitDetection, BaseType
 from gaitmap.utils import signal_processing
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.dataset_helper import (
@@ -18,7 +19,6 @@ from gaitmap.utils.dataset_helper import (
     get_multi_sensor_dataset_names,
     RegionsOfInterestList,
     is_dataset,
-    SingleSensorDataset,
     SingleSensorRegionsOfInterestList,
 )
 
@@ -128,8 +128,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
     peak_prominence: float
     window_size_s: float
 
-    start_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
-    end_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
     gait_sequences_: RegionsOfInterestList
 
     data: Dataset
@@ -178,26 +176,34 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         dataset_type = is_dataset(self.data)
         if dataset_type == "single":
-            (self.gait_sequences_, self.start_, self.end_,) = self._detect_single_dataset(data, window_size)
+            results = self._detect_single_dataset(data, window_size)
         else:  # Multisensor
-            self.gait_sequences_ = dict()
-            self.start_ = dict()
-            self.end_ = dict()
+            results = {}
             for sensor in get_multi_sensor_dataset_names(data):
-                (self.gait_sequences_[sensor], self.start_[sensor], self.end_[sensor],) = self._detect_single_dataset(
-                    data[sensor], window_size
-                )
+                results[sensor] = self._detect_single_dataset(data[sensor], window_size)
+            results = invert_result_dictionary(results)
 
             if self.merge_gait_sequences_from_sensors:
-                self._merge_gait_sequences_multi_sensor_data()
-                self.start_ = np.array(self.gait_sequences_["start"])
-                self.end_ = np.array(self.gait_sequences_["end"])
+                results["gait_sequences"] = self._merge_gait_sequences_multi_sensor_data(results["gait_sequences"])
 
+        set_params_from_dict(self, results, result_formatting=True)
         return self
 
-    def _detect_single_dataset(
-        self, data: pd.DataFrame, window_size: float,
-    ) -> Tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+    @property
+    def start_(self) -> Union[np.ndarray, Dict[Hashable, np.ndarray]]:
+        """Just the start values of all gait sequences."""
+        if isinstance(self.gait_sequences_, dict):
+            return {k: np.array(v["start"]) for k, v in self.gait_sequences_.items()}
+        return np.array(self.gait_sequences_["start"])
+
+    @property
+    def end_(self) -> Union[np.ndarray, Dict[Hashable, np.ndarray]]:
+        """Just the end values of all gait sequences."""
+        if isinstance(self.gait_sequences_, dict):
+            return {k: np.array(k["end"]) for k, v in self.gait_sequences_.items()}
+        return np.array(self.gait_sequences_["end"])
+
+    def _detect_single_dataset(self, data: pd.DataFrame, window_size: float,) -> Dict[str, pd.DataFrame]:
         """Detect gait sequences for a single sensor data set."""
         s_3d, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
 
@@ -235,10 +241,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         if s_1d.size == 0:
             gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
-            start_ = np.array(gait_sequences_["start"])
-            end_ = np.array(gait_sequences_["end"])
-
-            return gait_sequences_, start_, end_
+            return {"gait_sequences": gait_sequences_}
 
         # dominant frequency via autocorrelation
         dominant_frequency = self._get_dominant_frequency(s_1d)
@@ -267,10 +270,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         # add a column for the gs_id
         gait_sequences_ = gait_sequences_.reset_index().rename(columns={"index": "gs_id"})
-        start_ = np.array(gait_sequences_["start"])
-        end_ = np.array(gait_sequences_["end"])
 
-        return gait_sequences_, start_, end_
+        return {"gait_sequences": gait_sequences_}
 
     def _signal_extraction(self, data):
         """Extract the relevant signals and set required parameters from the data."""
@@ -424,7 +425,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
-    def _merge_gait_sequences_multi_sensor_data(self):
+    def _merge_gait_sequences_multi_sensor_data(self, gait_sequences: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Merge gait sequences from different sensor positions for synced data.
 
         Gait sequences from individual sensors are merged by 1) converting the start and end information to a boolean
@@ -432,14 +433,16 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         one DataFrame with start and end samples of the merged gait sequences.
         """
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
-        if all([df.empty for df in self.gait_sequences_.values()]):
-            self.gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
-            return
+        if all([df.empty for df in gait_sequences.values()]):
+            gait_sequences = pd.DataFrame(columns=["gs_id", "start", "end"])
+            return gait_sequences
 
         # 1) convert to boolean array
-        gait_sequences_bool_df = pd.DataFrame(self._gait_sequences_to_boolean())
+        gait_sequences_bool = np.column_stack(
+            [_gait_sequences_to_boolean_single(len(self.data), gs) for gs in gait_sequences.values()]
+        )
         # 2) apply logical or by using any along the columns
-        gait_sequences_bool_array = np.array(gait_sequences_bool_df.any(axis="columns").astype(int))
+        gait_sequences_bool_array = gait_sequences_bool.any(axis=1)
 
         # 3) convert back to dataframe with start and end
         gait_sequences_merged = pd.DataFrame(
@@ -448,33 +451,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_merged.index.name = "gs_id"
         gait_sequences_merged = gait_sequences_merged.reset_index()
 
-        self.gait_sequences_ = gait_sequences_merged
-
-    def _gait_sequences_to_boolean(self) -> np.ndarray:
-        """Convert gait sequences to a boolean array or a dict of arrays (with sensor positions as keys).
-
-        Usually gait sequences are stored in a pandas DataFrame with their id and their start and end samples. The
-        purpose of this method is to provide a boolean array that contains 0 / 1 for each signal sample for non-gait /
-        gait.
-
-        Returns
-        -------
-        gait_sequences_bool
-            A numpy array or a dict of such where for each imu data sample there is either a 1 (gait) or a 0 (
-            non-gait) according to the input gait sequences.
-
-        """
-        dataset_type = is_dataset(self.data)
-        if dataset_type == "single":
-            gait_sequences_bool = _gait_sequences_to_boolean_single(self.data, self.gait_sequences_)
-        else:  # Multisensor
-            gait_sequences_bool = dict()
-            for sensor in get_multi_sensor_dataset_names(self.data):
-                gait_sequences_bool[sensor] = _gait_sequences_to_boolean_single(
-                    self.data[sensor], self.gait_sequences_[sensor]
-                )
-
-        return gait_sequences_bool
+        return gait_sequences_merged
 
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
@@ -509,9 +486,13 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
 
 
 def _gait_sequences_to_boolean_single(
-    data_single: SingleSensorDataset, gait_sequences_single: SingleSensorRegionsOfInterestList
+    data_length: int, gait_sequences_single: SingleSensorRegionsOfInterestList
 ) -> np.ndarray:
     """Convert gait sequences from a single sensor from a dataframe to boolean array.
+
+    Usually gait sequences are stored in a pandas DataFrame with their id and their start and end samples. The
+    purpose of this method is to provide a boolean array that contains 0 / 1 for each signal sample for non-gait /
+    gait.
 
     Returns
     -------
@@ -519,7 +500,7 @@ def _gait_sequences_to_boolean_single(
         A numpy array of gait sequences where for each imu data sample there is either a 1 (gait) or a 0 (non-gait).
 
     """
-    gait_sequences_bool_array = np.zeros(len(data_single), dtype=int)
+    gait_sequences_bool_array = np.zeros(data_length, dtype=int)
     gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
 
     for sequence_start, sequence_end in gait_sequences_start_end_tuples:

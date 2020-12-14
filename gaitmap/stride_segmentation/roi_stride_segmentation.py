@@ -6,6 +6,7 @@ import pandas as pd
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
+from gaitmap.utils._algo_helper import set_params_from_dict, invert_result_dictionary
 from gaitmap.utils.consts import ROI_ID_COLS
 from gaitmap.utils.dataset_helper import (
     Dataset,
@@ -164,24 +165,16 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
         if self._multi_roi:
             # Apply the segmentation to a single dataset in case a multi - sensor roi list is provided
-            stride_list = {}
-            instances = {}
+            results = dict()
             for sensor, roi in self.regions_of_interest.items():
                 sensor_data = self.data[sensor]
-                combined_stride_list, instances_per_roi = self._segment_single_sensor(
+                results[sensor] = self._segment_single_sensor(
                     sensor_data, self.sampling_rate_hz, roi, sensor_name=sensor, **kwargs
                 )
-                stride_list[sensor] = combined_stride_list
-                instances[sensor] = instances_per_roi
-            self.stride_list_ = stride_list
-            self.instances_per_roi_ = instances
+            results = invert_result_dictionary(results)
         else:
-            combined_stride_list, instances_per_roi = self._segment_single_sensor(
-                self.data, self.sampling_rate_hz, self.regions_of_interest, **kwargs
-            )
-
-            self.stride_list_ = combined_stride_list
-            self.instances_per_roi_ = instances_per_roi
+            results = self._segment_single_sensor(self.data, self.sampling_rate_hz, self.regions_of_interest, **kwargs)
+        set_params_from_dict(self, results, result_formatting=True)
 
         return self
 
@@ -192,7 +185,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         rois: SingleSensorRegionsOfInterestList,
         sensor_name: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> Dict[str, Union[pd.DataFrame, Dict[Hashable, StrideSegmentationAlgorithm]]]:
         """Call the the segmentation algorithm for each region of interest and store the instance."""
         rois = rois.reset_index()
         index_col = ROI_ID_COLS[get_single_sensor_regions_of_interest_types(rois)]
@@ -225,7 +218,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 combined_stride_list[index] = stride_list
 
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
-        return combined_stride_list, instances_per_roi
+        return {"stride_list": combined_stride_list, "instances_per_roi": instances_per_roi}
 
     def _merge_stride_lists(self, stride_lists: Dict[str, StrideList], index_name: str) -> StrideList:
         """Merge either single or multisensor stride lists.

@@ -1,5 +1,5 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
@@ -411,7 +411,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
 
     def _estimate_single_sensor(
         self, data: SingleSensorDataset, integration_regions: SingleSensorRegionsOfInterestList
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Dict[str, pd.DataFrame]:
         # Set the class variable to determine the correct index values per dataset.
         self._expected_integration_region_index = [
             ROI_ID_COLS[get_single_sensor_regions_of_interest_types(integration_regions)]

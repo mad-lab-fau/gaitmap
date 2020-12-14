@@ -2,9 +2,8 @@
 
 from typing import Union, Tuple, Dict, Hashable
 
-from pandas import DataFrame
-
 import numpy as np
+from pandas import DataFrame
 
 from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
 
