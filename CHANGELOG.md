@@ -17,6 +17,11 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   length. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
 - Internal refactoring of how the algorithms combine the results of the single sensors to the final output.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/116)
+- Starting from this release the name "sensor data" instead of "dataset" is used to refer to data from multiple sensors
+  within one recording.
+  The term "dataset" will be used in the future to describe entire sets of multiple recordings potentially including
+  multiple participants and further information besides raw IMU data.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/117)
 
 ### Deprecated
 
