@@ -26,10 +26,9 @@ def butter_lowpass_filter_1d(data: np.ndarray, sampling_rate_hz: float, cutoff_f
     Examples
     --------
     >>> data = np.arange(0,100)
-    >>> data_filtered = butter_lowpass_filter_1d(data = data, sampling_rate_hz = 10, cutoff_freq_hz = 1,
-    >>> order = 4)
+    >>> data_filtered = butter_lowpass_filter_1d(data = data, sampling_rate_hz = 10, cutoff_freq_hz = 1, order = 4)
     >>> data_filtered
-    np.array([0.00000000e+00, 4.82434336e-03, 4.03774045e-02, 1.66525148e-01,...])
+    array([0.00000000e+00, 4.82434336e-03, 4.03774045e-02, 1.66525148e-01,...])
 
     """
     b, a = butter(order, cutoff_freq_hz, btype="low", analog=False, fs=sampling_rate_hz)
