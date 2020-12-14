@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation
 from gaitmap.base import BaseType, BaseSpatialParameterCalculation
 from gaitmap.parameters.temporal_parameters import _calc_stride_time
 from gaitmap.utils.consts import GF_POS, GF_ORI, SL_INDEX, GF_INDEX
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,

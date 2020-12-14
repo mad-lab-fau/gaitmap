@@ -8,13 +8,13 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.utils._algo_helper import set_params_from_dict, invert_result_dictionary
 from gaitmap.utils.consts import ROI_ID_COLS
-from gaitmap.utils.dataset_helper import (
-    Dataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
     RegionsOfInterestList,
     SingleSensorRegionsOfInterestList,
     StrideList,
-    get_multi_sensor_dataset_names,
-    is_dataset,
+    get_multi_sensor_names,
+    is_sensor_data,
     is_regions_of_interest_list,
     get_single_sensor_regions_of_interest_types,
 )
@@ -121,7 +121,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     ]
     stride_list_: StrideList
 
-    data: Dataset
+    data: SensorData
     sampling_rate_hz: float
     regions_of_interest: RegionsOfInterestList
 
@@ -137,7 +137,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         self.s_id_naming = s_id_naming
 
     def segment(  # noqa: arguments-differ
-        self: BaseType, data: Dataset, sampling_rate_hz: float, regions_of_interest: RegionsOfInterestList, **kwargs
+        self: BaseType, data: SensorData, sampling_rate_hz: float, regions_of_interest: RegionsOfInterestList, **kwargs
     ) -> BaseType:
         """Run the segmentation on each region of interest.
 
@@ -260,7 +260,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             raise ValueError("Invalid value for `s_id_naming`")
 
     def _validate_other_parameters(self):
-        self._multi_dataset = is_dataset(self.data, check_acc=False, check_gyr=False) == "multi"
+        self._multi_dataset = is_sensor_data(self.data, check_acc=False, check_gyr=False) == "multi"
         self._multi_roi = is_regions_of_interest_list(self.regions_of_interest, region_type="any") == "multi"
         if self._multi_roi and not self._multi_dataset:
             raise ValidationError(
@@ -271,7 +271,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 "You can not use a single-sensor regions of interest list with an unsynchronised multi-sensor dataset."
             )
         if self._multi_roi and self._multi_dataset:
-            sensor_names = get_multi_sensor_dataset_names(self.data)
+            sensor_names = get_multi_sensor_names(self.data)
             missing_sensors = [key for key in self.regions_of_interest.keys() if key not in sensor_names]
             if len(missing_sensors) > 0:
                 raise KeyError(

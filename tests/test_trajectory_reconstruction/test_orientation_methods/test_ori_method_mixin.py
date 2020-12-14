@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_COLS
-from gaitmap.utils.dataset_helper import is_single_sensor_orientation_list
+from gaitmap.utils.datatype_helper import is_single_sensor_orientation_list
 
 
 class TestOrientationMethodMixin:

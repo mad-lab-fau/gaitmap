@@ -14,11 +14,11 @@ from gaitmap.base import BaseType, BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
-from gaitmap.utils.dataset_helper import (
-    Dataset,
-    is_single_sensor_dataset,
-    get_multi_sensor_dataset_names,
-    is_dataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    is_single_sensor_data,
+    get_multi_sensor_names,
+    is_sensor_data,
 )
 
 
@@ -241,7 +241,7 @@ class BaseDtw(BaseAlgorithm):
     paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
     costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
 
-    data: Union[np.ndarray, Dataset]
+    data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
     _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
@@ -288,7 +288,7 @@ class BaseDtw(BaseAlgorithm):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
 
-    def segment(self: BaseType, data: Union[np.ndarray, Dataset], sampling_rate_hz: float, **_) -> BaseType:
+    def segment(self: BaseType, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.
 
         Parameters
@@ -321,7 +321,7 @@ class BaseDtw(BaseAlgorithm):
         if isinstance(data, np.ndarray):
             dataset_type = "array"
         else:
-            dataset_type = is_dataset(data, check_gyr=False, check_acc=False)
+            dataset_type = is_sensor_data(data, check_gyr=False, check_acc=False)
 
         template = self.template
         if dataset_type in ("single", "array"):
@@ -334,10 +334,10 @@ class BaseDtw(BaseAlgorithm):
                 results = dict()
                 for sensor, single_template in template.items():
                     results[sensor] = self._segment_single_dataset(data[sensor], single_template)
-            elif is_single_sensor_dataset(template.get_data(), check_gyr=False, check_acc=False):
+            elif is_single_sensor_data(template.get_data(), check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 results = dict()
-                for sensor in get_multi_sensor_dataset_names(data):
+                for sensor in get_multi_sensor_names(data):
                     results[sensor] = self._segment_single_dataset(data[sensor], template)
             else:
                 raise ValueError(

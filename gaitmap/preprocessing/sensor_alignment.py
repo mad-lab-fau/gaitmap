@@ -8,10 +8,10 @@ from scipy.spatial.transform import Rotation
 from gaitmap.utils import rotations
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
-from gaitmap.utils.dataset_helper import (
-    get_multi_sensor_dataset_names,
-    Dataset,
-    is_dataset,
+from gaitmap.utils.datatype_helper import (
+    get_multi_sensor_names,
+    SensorData,
+    is_sensor_data,
 )
 from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
 from gaitmap.utils.static_moment_detection import find_static_samples, METRIC_FUNCTION_NAMES
@@ -19,13 +19,13 @@ from gaitmap.utils.vector_math import normalize
 
 
 def align_dataset_to_gravity(
-    dataset: Dataset,
+    dataset: SensorData,
     sampling_rate_hz: float,
     window_length_s: float = 0.7,
     static_signal_th: float = 2.5,
     metric: str = "median",
     gravity: np.ndarray = GRAV_VEC,
-) -> Dataset:
+) -> SensorData:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
 
     Median accelerometer vector will be extracted form static windows which will be classified by a sliding window
@@ -34,7 +34,7 @@ def align_dataset_to_gravity(
 
     Parameters
     ----------
-    dataset : gaitmap.utils.dataset_helper.Dataset
+    dataset : gaitmap.utils.dataset_helper.Sensordata
         dataframe representing a single or multiple sensors.
         In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
         and the second level the axis names (all sensor frame axis must be present)
@@ -86,7 +86,7 @@ def align_dataset_to_gravity(
         for this method.
 
     """
-    dataset_type = is_dataset(dataset)
+    dataset_type = is_sensor_data(dataset)
 
     window_length = int(round(window_length_s * sampling_rate_hz))
 
@@ -99,12 +99,11 @@ def align_dataset_to_gravity(
         # build dict with static acc vectors for each sensor in dataset
         acc_vector = {
             name: _get_static_acc_vector(dataset[name], window_length, static_signal_th, metric)
-            for name in get_multi_sensor_dataset_names(dataset)
+            for name in get_multi_sensor_names(dataset)
         }
         # build rotation dict for each dataset from acc dict and gravity
         rotation = {
-            name: rotations.get_gravity_rotation(acc_vector[name], gravity)
-            for name in get_multi_sensor_dataset_names(dataset)
+            name: rotations.get_gravity_rotation(acc_vector[name], gravity) for name in get_multi_sensor_names(dataset)
         }
 
     return rotations.rotate_dataset(dataset, rotation)

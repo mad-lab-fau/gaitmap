@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.utils.consts import SF_COLS, GF_VEL, GF_POS, GF_ORI
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     is_single_sensor_orientation_list,
     is_single_sensor_position_list,
     is_single_sensor_velocity_list,

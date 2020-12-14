@@ -5,7 +5,7 @@ import pytest
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction.region_level_trajectory import RegionLevelTrajectory
 from gaitmap.utils.consts import GF_POS, SF_COLS
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     is_single_sensor_position_list,
     is_single_sensor_orientation_list,
     is_single_sensor_velocity_list,

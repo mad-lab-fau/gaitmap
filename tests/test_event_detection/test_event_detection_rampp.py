@@ -8,7 +8,7 @@ from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel, _detect_tc
-from gaitmap.utils import coordinate_conversion, dataset_helper
+from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -62,8 +62,8 @@ class TestEventDetectionRampp:
         ed = RamppEventDetection()
         ed.detect(data_dict, stride_list_dict, 204.8)
 
-        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.min_vel_event_list_)) == dict_keys
-        assert list(dataset_helper.get_multi_sensor_dataset_names(ed.segmented_event_list_)) == dict_keys
+        assert list(datatype_helper.get_multi_sensor_names(ed.min_vel_event_list_)) == dict_keys
+        assert list(datatype_helper.get_multi_sensor_names(ed.segmented_event_list_)) == dict_keys
 
     def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if output is similar for input dicts or regular multisensor data sets"""
@@ -94,7 +94,7 @@ class TestEventDetectionRampp:
         with pytest.raises(ValidationError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
 
-        assert "The passed object appears to be neither a single- or a multi-sensor dataset" in str(e)
+        assert "The passed object appears to be neither single- or multi-sensor data" in str(e)
 
     def test_min_vel_search_win_size_ms_dummy_data(self):
         """Test if error is raised correctly if windows size matches the size of the input data"""

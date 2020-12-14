@@ -30,9 +30,9 @@ from gaitmap.utils.consts import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
-SingleSensorDataset = pd.DataFrame
-MultiSensorDataset = Union[pd.DataFrame, Dict[Hashable, SingleSensorDataset]]
-Dataset = Union[SingleSensorDataset, MultiSensorDataset]
+SingleSensorData = pd.DataFrame
+MultiSensorData = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
+SensorData = Union[SingleSensorData, MultiSensorData]
 
 SingleSensorStrideList = pd.DataFrame
 MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
@@ -55,8 +55,8 @@ MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
-def is_single_sensor_dataset(
-    dataset: SingleSensorDataset,
+def is_single_sensor_data(
+    data: SingleSensorData,
     check_acc: bool = True,
     check_gyr: bool = True,
     frame: _ALLOWED_FRAMES_TYPE = "any",
@@ -79,7 +79,7 @@ def is_single_sensor_dataset(
 
     Parameters
     ----------
-    dataset
+    data
         Object that should be checked
     check_acc
         If the existence of the correct acc columns should be checked
@@ -97,61 +97,60 @@ def is_single_sensor_dataset(
 
     See Also
     --------
-    gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
+    gaitmap.utils.dataset_helper.is_multi_sensor_data: Explanation and checks for multi sensor datasets
 
     """
     if frame not in _ALLOWED_FRAMES:
         raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
     try:
-        _assert_is_dtype(dataset, pd.DataFrame)
-        _assert_has_multindex_cols(dataset, expected=False)
+        _assert_is_dtype(data, pd.DataFrame)
+        _assert_has_multindex_cols(data, expected=False)
 
         if frame == "any":
             _assert_has_columns(
-                dataset,
+                data,
                 [
                     _get_expected_dataset_cols("sensor", check_acc=check_acc, check_gyr=check_gyr),
                     _get_expected_dataset_cols("body", check_acc=check_acc, check_gyr=check_gyr),
                 ],
             )
         else:
-            _assert_has_columns(dataset, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr)])
+            _assert_has_columns(data, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr)])
 
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object does not seem to be a SingleSensorDataset. "
+                "The passed object does not seem to be SingleSensorData. "
                 "The validation failed with the following error:\n\n{}".format(str(e))
             ) from e
         return False
     return True
 
 
-def is_multi_sensor_dataset(
-    dataset: MultiSensorDataset,
+def is_multi_sensor_data(
+    data: MultiSensorData,
     check_acc: bool = True,
     check_gyr: bool = True,
     frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> bool:
-    """Check if an object is a valid multi-sensor dataset.
+    """Check if an object is a valid multi-sensor data object.
 
-    A valid multi sensor dataset is:
+    Valid multi sensor data is:
 
     - is either a :class:`pandas.DataFrame` with 2 level multi-index as columns or a dictionary of single sensor
-      datasets (see :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset`)
+      datasets (see :func:`~gaitmap.utils.dataset_helper.is_single_sensor_data`)
 
-    In case the dataset is a :class:`pandas.DataFrame` with two levels, the first level is expected to be the names
+    In case the data is a :class:`pandas.DataFrame` with two levels, the first level is expected to be the names
     of the used sensors.
     In both cases (dataframe or dict), `dataset[<sensor_name>]` is expected to return a valid single sensor
     dataset.
-    On each of the these single-sensor datasets,
-    :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` is used with the same
-    parameters that are used to call this function.
+    On each of the these single-sensor datasets, :func:`~gaitmap.utils.dataset_helper.is_single_sensor_data` is used
+    with the same parameters that are used to call this function.
 
     Parameters
     ----------
-    dataset
+    data
         Object that should be checked
     check_acc
         If the existence of the correct acc columns should be checked
@@ -169,31 +168,29 @@ def is_multi_sensor_dataset(
 
     See Also
     --------
-    gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
+    gaitmap.utils.dataset_helper.is_single_sensor_data: Explanation and checks for single sensor data
 
     """
     try:
-        _assert_is_dtype(dataset, (pd.DataFrame, dict))
-        if isinstance(dataset, pd.DataFrame):
-            _assert_has_multindex_cols(dataset, expected=True, nlevels=2)
-        _assert_multisensor_is_not_empty(dataset)
+        _assert_is_dtype(data, (pd.DataFrame, dict))
+        if isinstance(data, pd.DataFrame):
+            _assert_has_multindex_cols(data, expected=True, nlevels=2)
+        _assert_multisensor_is_not_empty(data)
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object does not seem to be a MultiSensorDataset. "
+                "The passed object does not seem to be MultiSensorData. "
                 "The validation failed with the following error:\n\n{}".format(str(e))
             ) from e
         return False
 
     try:
-        for k in get_multi_sensor_dataset_names(dataset):
-            is_single_sensor_dataset(
-                dataset[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True
-            )
+        for k in get_multi_sensor_names(data):
+            is_single_sensor_data(data[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object appears to be a MultiSensorDataset, "
+                "The passed object appears to be MultiSensorData, "
                 'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
                     k, str(e)
                 )
@@ -202,19 +199,19 @@ def is_multi_sensor_dataset(
     return True
 
 
-def is_dataset(
-    dataset: Dataset, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any",
+def is_sensor_data(
+    data: SensorData, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any",
 ) -> Literal["single", "multi"]:
-    """Check if an object is a valid multi-sensor or single-sensor dataset.
+    """Check if an object is valid multi-sensor or single-sensor data.
 
-    This function will try to check the input using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_dataset` and
-    :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_dataset`.
+    This function will try to check the input using :func:`~gaitmap.utils.dataset_helper.is_single_sensor_data` and
+    :func:`~gaitmap.utils.dataset_helper.is_multi_sensor_data`.
     In case one of the two checks is successful, a string is returned, which type of dataset the input is.
     Otherwise a descriptive error is raised
 
     Parameters
     ----------
-    dataset
+    data
         Object that should be checked
     check_acc
         If the existence of the correct acc columns should be checked
@@ -229,32 +226,32 @@ def is_dataset(
 
     Returns
     -------
-    dataset_type
-        "single" in case of a single-sensor dataset, "multi" in case of a multi-sensor dataset.
+    data_type
+        "single" in case of single-sensor data, "multi" in case of multi-sensor data.
         In case it is neither, a ValidationError is raised.
 
     See Also
     --------
-    gaitmap.utils.dataset_helper.is_single_sensor_dataset: Explanation and checks for single sensor datasets
-    gaitmap.utils.dataset_helper.is_multi_sensor_dataset: Explanation and checks for multi sensor datasets
+    gaitmap.utils.dataset_helper.is_single_sensor_data: Explanation and checks for single sensor data
+    gaitmap.utils.dataset_helper.is_multi_sensor_data: Explanation and checks for multi sensor data
 
     """
     try:
-        is_single_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        is_single_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
     except ValidationError as e:
         single_error = e
     else:
         return "single"
 
     try:
-        is_multi_sensor_dataset(dataset, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        is_multi_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
     except ValidationError as e:
         multi_error = e
     else:
         return "multi"
 
     raise ValidationError(
-        "The passed object appears to be neither a single- or a multi-sensor dataset. "
+        "The passed object appears to be neither single- or multi-sensor data. "
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"
         "=============\n"
@@ -661,7 +658,7 @@ def is_regions_of_interest_list(
     )
 
 
-def get_multi_sensor_dataset_names(dataset: MultiSensorDataset) -> Sequence[str]:
+def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[str]:
     """Get the list of sensor names from a multi-sensor dataset.
 
     .. warning:

@@ -7,7 +7,7 @@ import pandas as pd
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import interpolate1d
-from gaitmap.utils.dataset_helper import is_single_sensor_dataset
+from gaitmap.utils.datatype_helper import is_single_sensor_data
 
 
 class DtwTemplate(_BaseSerializable):
@@ -228,7 +228,7 @@ def create_interpolated_dtw_template(
         signal_sequence = [signal_sequence]
 
     for df in signal_sequence:
-        is_single_sensor_dataset(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
+        is_single_sensor_data(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
 
     if n_samples is None:
         # get mean stride length over given strides

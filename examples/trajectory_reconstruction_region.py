@@ -24,11 +24,11 @@ import pandas as pd
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_events
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
-from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
+from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 imu_data = get_healthy_example_imu_data()
 dummy_regions_list = pd.DataFrame([[0, len(imu_data["left_sensor"])]], columns=["start", "end"]).rename_axis("gs_id")
-dummy_regions_list = {k: dummy_regions_list for k in get_multi_sensor_dataset_names(imu_data)}
+dummy_regions_list = {k: dummy_regions_list for k in get_multi_sensor_names(imu_data)}
 dummy_regions_list["left_sensor"]
 
 

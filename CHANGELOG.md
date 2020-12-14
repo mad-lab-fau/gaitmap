@@ -17,6 +17,11 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   length. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/110)
 - Internal refactoring of how the algorithms combine the results of the single sensors to the final output.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/116)
+- Starting from this release the name "sensor data" instead of "dataset" is used to refer to data from multiple sensors
+  within one recording.
+  The term "dataset" will be used in the future to describe entire sets of multiple recordings potentially including
+  multiple participants and further information besides raw IMU data.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/117)
 
 ### Deprecated
 
@@ -30,6 +35,15 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
  `combined_stride_list` was fixed.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/114)
 - Added a note to BarthDTW to clarify the calculation of the distance matrix.
+
+### Migration Guide
+
+- Due to the renaming of dataset to sensordata, a couple of names and import path are changed:
+  - All imports from `gaitmap.utils.dataset_helper` should be changed to `gaitmap.utils.datatype_helper`
+  - `SingleSensorDataset`, `MultiSensorDataset` and `Dataset` are now called, `SingleSensorData`, `MultiSensorData` and
+    `SensorData`, respectively.
+  - The functions `is_single_sensor_dataset`, `is_multi_sensor_dataset`, and `is_dataset` are renamed to 
+    `is_single_sensor_data`, `is_multi_sensor_data`, and `is_sensor_data` 
 
 ### Scientific Changes
 

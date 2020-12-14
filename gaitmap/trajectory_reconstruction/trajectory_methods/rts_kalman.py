@@ -8,7 +8,7 @@ import pandas as pd
 
 from gaitmap.base import BaseTrajectoryMethod, BaseType
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
-from gaitmap.utils.dataset_helper import is_single_sensor_dataset, SingleSensorDataset
+from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
 from gaitmap.utils.fast_quaternion_math import quat_from_rotvec, multiply, rotate_vector
 from gaitmap.utils.static_moment_detection import find_static_samples
 from gaitmap.utils.consts import GRAV_VEC
@@ -151,7 +151,7 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking_variance: float
     zupt_window_length_s: float
     zupt_window_overlap_s: float
-    data: SingleSensorDataset
+    data: SingleSensorData
     sampling_rate_hz: float
     covariance_: pd.DataFrame
 
@@ -177,7 +177,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
 
-    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
         """Estimate the position, velocity and orientation of the sensor.
 
         Parameters
@@ -198,7 +198,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
 
-        is_single_sensor_dataset(self.data, frame="sensor", raise_exception=True)
+        is_single_sensor_data(self.data, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()

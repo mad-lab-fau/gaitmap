@@ -11,13 +11,13 @@ import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import GF_ORI
-from gaitmap.utils.dataset_helper import (
-    Dataset,
+from gaitmap.utils.datatype_helper import (
+    SensorData,
     StrideList,
     PositionList,
     VelocityList,
     OrientationList,
-    SingleSensorDataset,
+    SingleSensorData,
     SingleSensorOrientationList,
 )
 
@@ -303,7 +303,7 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     stride_list_: StrideList
 
-    def segment(self: BaseType, data: Dataset, sampling_rate_hz: float, **kwargs,) -> BaseType:
+    def segment(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs,) -> BaseType:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -313,7 +313,7 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_method = "detect"
 
-    def detect(self: BaseType, data: Dataset, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -331,7 +331,7 @@ class BaseOrientationMethod(BaseAlgorithm):
         df.index.name = "sample"
         return df
 
-    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
         """Estimate the orientation of the sensor based on the input data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -343,7 +343,7 @@ class BasePositionMethod(BaseAlgorithm):
     velocity_: VelocityList
     position_: PositionList
 
-    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
         """Estimate the position of the sensor based on the input data.
 
         Note that the data is assumed to be in the global-frame (i.e. already rotated)
@@ -396,6 +396,6 @@ class BaseGaitDetection(BaseAlgorithm):
 
     _action_method = "detect"
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float) -> BaseType:
+    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences or other regions of interest in data."""
         raise NotImplementedError("Needs to be implemented by child class.")

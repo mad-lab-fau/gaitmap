@@ -8,7 +8,7 @@ from scipy.integrate import cumtrapz
 
 from gaitmap.base import BasePositionMethod, BaseType
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, GF_VEL, GF_POS
-from gaitmap.utils.dataset_helper import SingleSensorDataset, is_single_sensor_dataset
+from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 
 
 class ForwardBackwardIntegration(BasePositionMethod):
@@ -98,7 +98,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
     level_assumption: bool
     gravity: Optional[np.ndarray]
 
-    data: SingleSensorDataset
+    data: SingleSensorData
     sampling_rate_hz: float
 
     def __init__(
@@ -113,7 +113,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.level_assumption = level_assumption
         self.gravity = gravity
 
-    def estimate(self: BaseType, data: SingleSensorDataset, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
         """Estimate the position of the sensor based on the provided global frame data.
 
         Parameters
@@ -134,7 +134,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
 
         if not 0.0 <= self.turning_point <= 1.0:
             raise ValueError("`turning_point` must be in the rage of 0.0 to 1.0")
-        is_single_sensor_dataset(self.data, check_gyr=False, frame="sensor", raise_exception=True)
+        is_single_sensor_data(self.data, check_gyr=False, frame="sensor", raise_exception=True)
 
         acc_data = data[SF_ACC].to_numpy()
         if self.gravity is not None:

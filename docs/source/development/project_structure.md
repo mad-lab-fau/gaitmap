@@ -144,7 +144,7 @@ Also review the actual implementation of the other algorithms for further inspir
 import numpy as np
 from gaitmap.base import BaseEventDetection, BaseType
 from typing import Optional, Tuple, Union, Dict
-from gaitmap.utils.dataset_helper import Dataset, is_multi_sensor_dataset, is_single_sensor_dataset
+from gaitmap.utils.datatype_helper import SensorData, is_multi_sensor_data, is_single_sensor_data
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -200,7 +200,7 @@ class RamppEventDetection(BaseEventDetection):
     pre_ic_: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
     stride_events_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
-    data: Dataset
+    data: SensorData
     sampling_rate_hz: float
     segmented_stride_list: pd.DataFrame
 
@@ -209,7 +209,8 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: Dataset, sampling_rate_hz: float, segmented_stride_list: pd.DataFrame) -> BaseType:
+    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float,
+               segmented_stride_list: pd.DataFrame) -> BaseType:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -247,10 +248,10 @@ class RamppEventDetection(BaseEventDetection):
 
         # Potential validation of parameters should be performed here
 
-        if is_single_sensor_dataset(data):
+        if is_single_sensor_data(data):
             # Handle single sensors
             ...
-        elif is_multi_sensor_dataset(data):
+        elif is_multi_sensor_data(data):
             # Handle multiple sensors
             ...
         else:

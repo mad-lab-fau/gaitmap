@@ -6,7 +6,7 @@ from numpy.testing import assert_almost_equal
 
 from gaitmap.preprocessing.sensor_alignment import align_dataset_to_gravity, align_heading_of_sensors
 from gaitmap.utils.consts import SF_ACC, SF_COLS
-from gaitmap.utils.dataset_helper import MultiSensorDataset
+from gaitmap.utils.datatype_helper import MultiSensorData
 from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
 
 
@@ -14,7 +14,7 @@ class TestAlignToGravity:
     """Test the function `align_to_gravity`."""
 
     sample_sensor_data: pd.DataFrame
-    sample_sensor_dataset: MultiSensorDataset
+    sample_sensor_dataset: MultiSensorData
 
     @pytest.fixture(autouse=True, params=("dict", "frame"))
     def _sample_sensor_data(self, request):

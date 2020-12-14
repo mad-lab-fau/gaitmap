@@ -5,7 +5,7 @@ import numpy as np
 from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     StrideList,
     SingleSensorStrideList,
     is_single_sensor_stride_list,

@@ -12,7 +12,7 @@ from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orientation_from_start
 from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
 from gaitmap.utils.consts import SF_COLS
-from gaitmap.utils.dataset_helper import (
+from gaitmap.utils.datatype_helper import (
     is_single_sensor_orientation_list,
     is_single_sensor_position_list,
     is_multi_sensor_orientation_list,
@@ -52,7 +52,7 @@ class TestIODataStructures:
         }
 
         gyr_int = self.wrapper_class(align_window_width=8)
-        with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor dataset"):
+        with pytest.raises(ValidationError, match=r".*neither single- or multi-sensor data"):
             gyr_int.estimate(fake_data, stride_list, 204.8)
         with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor "):
             gyr_int.estimate(data, fake_stride_list, 204.8)

@@ -8,16 +8,16 @@ from typing import Optional, List
 import pandas as pd
 
 from gaitmap.utils.consts import SF_COLS, BF_COLS, FSF_FBF_CONVERSION_LEFT, FSF_FBF_CONVERSION_RIGHT
-from gaitmap.utils.dataset_helper import (
-    is_multi_sensor_dataset,
-    SingleSensorDataset,
-    MultiSensorDataset,
-    get_multi_sensor_dataset_names,
-    is_single_sensor_dataset,
+from gaitmap.utils.datatype_helper import (
+    is_multi_sensor_data,
+    SingleSensorData,
+    MultiSensorData,
+    get_multi_sensor_names,
+    is_single_sensor_data,
 )
 
 
-def convert_left_foot_to_fbf(data: SingleSensorDataset):
+def convert_left_foot_to_fbf(data: SingleSensorData):
     """Convert the axes from the left foot sensor frame to the foot body frame (FBF).
 
     This function assumes that your dataset is already aligned to the gaitmap FSF.
@@ -33,11 +33,11 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
 
     See Also
     --------
-    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorData
     gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
-    is_single_sensor_dataset(data, check_acc=False, frame="sensor", raise_exception=True)
+    is_single_sensor_data(data, check_acc=False, frame="sensor", raise_exception=True)
 
     result = pd.DataFrame(columns=BF_COLS)
 
@@ -48,7 +48,7 @@ def convert_left_foot_to_fbf(data: SingleSensorDataset):
     return result
 
 
-def convert_right_foot_to_fbf(data: SingleSensorDataset):
+def convert_right_foot_to_fbf(data: SingleSensorData):
     """Convert the axes from the right foot sensor frame to the foot body frame (FBF).
 
     This function assumes that your dataset is already aligned to the gaitmap FSF.
@@ -64,11 +64,11 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
 
     See Also
     --------
-    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorData
     gaitmap.utils.coordinate_conversion.convert_to_fbf: convert multiple sensors at the same time
 
     """
-    is_single_sensor_dataset(data, check_acc=False, frame="sensor", raise_exception=True)
+    is_single_sensor_data(data, check_acc=False, frame="sensor", raise_exception=True)
 
     result = pd.DataFrame(columns=BF_COLS)
 
@@ -80,7 +80,7 @@ def convert_right_foot_to_fbf(data: SingleSensorDataset):
 
 
 def convert_to_fbf(
-    data: MultiSensorDataset,
+    data: MultiSensorData,
     left: Optional[List[str]] = None,
     right: Optional[List[str]] = None,
     right_like: str = None,
@@ -120,7 +120,7 @@ def convert_to_fbf(
     --------
     These examples assume that your dataset has two sensors called `left_sensor` and `right_sensor`.
 
-    >>> dataset = ... # Dataset in FSF
+    >>> dataset = ... # Sensordata in FSF
     >>> fbf_dataset = convert_to_fbf(dataset, left_like="left_", right_like="right_")
 
     Alternatively, you can specify the full sensor names.
@@ -129,11 +129,11 @@ def convert_to_fbf(
 
     See Also
     --------
-    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorDataset
-    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorDataset
+    gaitmap.utils.coordinate_conversion.convert_left_foot_to_fbf: conversion of left foot SingleSensorData
+    gaitmap.utils.coordinate_conversion.convert_right_foot_to_fbf: conversion of right foot SingleSensorData
 
     """
-    if not is_multi_sensor_dataset(data, frame="sensor"):
+    if not is_multi_sensor_data(data, frame="sensor"):
         raise ValueError("No valid FSF MultiSensorDataset supplied.")
 
     if (left and left_like) or (right and right_like) or not any((left, left_like, right, right_like)):
@@ -145,7 +145,7 @@ def convert_to_fbf(
     left_foot = _handle_foot(left, left_like, data, rot_func=convert_left_foot_to_fbf)
     right_foot = _handle_foot(right, right_like, data, rot_func=convert_right_foot_to_fbf)
 
-    sensor_names = get_multi_sensor_dataset_names(data)
+    sensor_names = get_multi_sensor_names(data)
     result = {k: data[k] for k in sensor_names}
     result = {**result, **left_foot, **right_foot}
 
@@ -161,16 +161,16 @@ def convert_to_fbf(
 def _handle_foot(foot, foot_like, data, rot_func):
     result = dict()
     if foot_like:
-        foot = [sensor for sensor in get_multi_sensor_dataset_names(data) if foot_like in sensor]
+        foot = [sensor for sensor in get_multi_sensor_names(data) if foot_like in sensor]
         if not foot:
             warnings.warn(
                 "The substring {} is not contained in any sensor name. Available sensor names are: {}".format(
-                    foot_like, get_multi_sensor_dataset_names(data)
+                    foot_like, get_multi_sensor_names(data)
                 )
             )
     foot = foot or []
     for s in foot:
         if s not in data:
-            raise KeyError("Dataset contains no sensor with name " + s)
+            raise KeyError("Sensordata contains no sensor with name " + s)
         result[s] = rot_func(data[s])
     return result

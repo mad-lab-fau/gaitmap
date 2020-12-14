@@ -6,7 +6,7 @@ from pandas import DataFrame
 from typing_extensions import Literal
 
 from gaitmap.evaluation_utils.stride_segmentation import _evaluate_stride_list
-from gaitmap.utils.dataset_helper import StrideList
+from gaitmap.utils.datatype_helper import StrideList
 
 
 def evaluate_stride_event_list(

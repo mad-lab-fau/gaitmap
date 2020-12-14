@@ -5,7 +5,7 @@ from typing import Union, Tuple, Dict, Hashable
 import numpy as np
 from pandas import DataFrame
 
-from gaitmap.utils.dataset_helper import get_multi_sensor_dataset_names
+from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 
 def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[Dict[Hashable, float], float]:
@@ -44,7 +44,7 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
 
     output = {}
     matches_dict = _get_match_type_dfs(matches_df)
-    for sensor_name in get_multi_sensor_dataset_names(matches_dict):
+    for sensor_name in get_multi_sensor_names(matches_dict):
         tp = len(matches_dict[sensor_name]["tp"])
         fn = len(matches_dict[sensor_name]["fn"])
 
@@ -92,7 +92,7 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
 
     output = {}
     matches_dict = _get_match_type_dfs(matches_df)
-    for sensor_name in get_multi_sensor_dataset_names(matches_dict):
+    for sensor_name in get_multi_sensor_names(matches_dict):
         tp = len(matches_dict[sensor_name]["tp"])
         fp = len(matches_dict[sensor_name]["fp"])
 
@@ -213,7 +213,7 @@ def _get_match_type_dfs(
     if is_not_dict:
         match_results = {"__dummy__": match_results}
 
-    for dataframe_name in get_multi_sensor_dataset_names(match_results):
+    for dataframe_name in get_multi_sensor_names(match_results):
         matches_types = match_results[dataframe_name].groupby("match_type")
         matches_types_dict = dict()
         for group in ["tp", "fp", "fn"]:

@@ -1,22 +1,22 @@
-gaitmap.utils.dataset_helper: Helper to perform validation of the default datatypes
+gaitmap.utils.datatype_helper: Helper to perform validation of the default datatypes
 ==========================================================================================
 
-.. automodule:: gaitmap.utils.dataset_helper
+.. automodule:: gaitmap.utils.datatype_helper
     :no-members:
     :no-inherited-members:
 
 Functions
 ---------
-.. currentmodule:: gaitmap.utils.dataset_helper
+.. currentmodule:: gaitmap.utils.datatype_helper
 
 .. autosummary::
-   :toctree: ../generated/utils/dataset_helper
+   :toctree: ../generated/utils/datatype_helper
    :template: function.rst
 
-    is_single_sensor_dataset
-    is_multi_sensor_dataset
-    is_dataset
-    get_multi_sensor_dataset_names
+    is_single_sensor_data
+    is_multi_sensor_data
+    is_sensor_data
+    get_multi_sensor_names
     is_single_sensor_stride_list
     is_multi_sensor_stride_list
     is_stride_list
