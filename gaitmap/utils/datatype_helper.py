@@ -3,7 +3,7 @@ from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Ca
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeAlias
 
 from gaitmap.utils._datatype_validation_helper import (
     _ALLOWED_FRAMES,
@@ -30,29 +30,29 @@ from gaitmap.utils.consts import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
-SingleSensorData = pd.DataFrame
-MultiSensorData = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
-SensorData = Union[SingleSensorData, MultiSensorData]
+SingleSensorData: TypeAlias = pd.DataFrame
+MultiSensorData: TypeAlias = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
+SensorData: TypeAlias = Union[SingleSensorData, MultiSensorData]
 
-SingleSensorStrideList = pd.DataFrame
-MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
-StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
+SingleSensorStrideList: TypeAlias = pd.DataFrame
+MultiSensorStrideList: TypeAlias = Dict[Hashable, pd.DataFrame]
+StrideList: TypeAlias = Union[SingleSensorStrideList, MultiSensorStrideList]
 
-SingleSensorRegionsOfInterestList = pd.DataFrame
-MultiSensorRegionsOfInterestList = Dict[Hashable, pd.DataFrame]
-RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
+SingleSensorRegionsOfInterestList: TypeAlias = pd.DataFrame
+MultiSensorRegionsOfInterestList: TypeAlias = Dict[Hashable, pd.DataFrame]
+RegionsOfInterestList: TypeAlias = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
-SingleSensorPositionList = pd.DataFrame
-MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
-PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
+SingleSensorPositionList: TypeAlias = pd.DataFrame
+MultiSensorPositionList: TypeAlias = Dict[Hashable, pd.DataFrame]
+PositionList: TypeAlias = Union[SingleSensorPositionList, MultiSensorPositionList]
 
-SingleSensorVelocityList = pd.DataFrame
-MultiSensorVelocityList = Dict[str, pd.DataFrame]
-VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
+SingleSensorVelocityList: TypeAlias = pd.DataFrame
+MultiSensorVelocityList: TypeAlias = Dict[str, pd.DataFrame]
+VelocityList: TypeAlias = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
-SingleSensorOrientationList = pd.DataFrame
-MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
-OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
+SingleSensorOrientationList: TypeAlias = pd.DataFrame
+MultiSensorOrientationList: TypeAlias = Dict[Hashable, pd.DataFrame]
+OrientationList: TypeAlias = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
 def is_single_sensor_data(
