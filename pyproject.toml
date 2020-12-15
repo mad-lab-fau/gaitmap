@@ -40,6 +40,7 @@ IPython = "^7.13.0"
 ipympl = "^0.5.6"
 memory_profiler = "^0.57.0"
 toml = "^0.10.1"
+mypy = "^0.790"
 
 [tool.black]
 line-length = 120

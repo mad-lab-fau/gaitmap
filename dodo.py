@@ -30,6 +30,11 @@ def task_lint():
     return {"actions": [["prospector"]], "verbosity": 1}
 
 
+def task_type_check():
+    """Type check with mypy."""
+    return {"actions": [["mypy", "-p", "gaitmap"]], "verbosity": 1}
+
+
 def task_docs():
     """Build the html docs using Sphinx."""
     # Copy the README into the docs folder
