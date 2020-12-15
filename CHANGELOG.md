@@ -22,6 +22,15 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   The term "dataset" will be used in the future to describe entire sets of multiple recordings potentially including
   multiple participants and further information besides raw IMU data.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/117)
+- Internal refactoring that should improve typing. `mypy` now only returns a couple of issues that are not easily
+  fixable or actual `mypy` bugs.
+  They will be resolved step by step in the future.
+  mypy checking can be done using the new command `dodo type_check` and developer should try to not introduce further
+  typing issues.
+  The refactoring also required some small user facing changes:
+  - The `regions_of_interest` parameter of `RoiStrideSegmentation.segment` is now keyword only to be compatible with the
+    `StrideSegmentation` base class.
+  
 
 ### Deprecated
 
