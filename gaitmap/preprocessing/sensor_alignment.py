@@ -23,7 +23,7 @@ def align_dataset_to_gravity(
     sampling_rate_hz: float,
     window_length_s: float = 0.7,
     static_signal_th: float = 2.5,
-    metric: str = "median",
+    metric: METRIC_FUNCTION_NAMES = "median",
     gravity: np.ndarray = GRAV_VEC,
 ) -> SensorData:
     """Align dataset, so that each sensor z-axis (if multiple present in dataset) will be parallel to gravity.
@@ -49,7 +49,7 @@ def align_dataset_to_gravity(
        Threshold to decide whether a window should be considered as static or active. Window will be classified on
        <= threshold on gyro norm
 
-    metric : str, optional
+    metric
         Metric which will be calculated per window, one of the following strings
 
         'maximum' (default)
@@ -183,7 +183,7 @@ def align_heading_of_sensors(
     reference_magnitude = np.sqrt(gyro_signal_ref[:, 0] ** 2 + gyro_signal_ref[:, 1] ** 2)
     sensor_magnitude = np.sqrt(gyro_signal_sensor[:, 0] ** 2 + gyro_signal_sensor[:, 1] ** 2)
 
-    angle_diff = find_signed_3d_angle(gyro_signal_ref[:, :2], gyro_signal_sensor[:, :2], gravity)
+    angle_diff = np.asarray(find_signed_3d_angle(gyro_signal_ref[:, :2], gyro_signal_sensor[:, :2], gravity))
 
     mags = np.max(np.stack([reference_magnitude, sensor_magnitude]), axis=0)
 

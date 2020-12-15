@@ -234,7 +234,7 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         return self
 
     def estimate_intersect(
-        self,
+        self: BaseType,
         data: SensorData,
         regions_of_interest: RegionsOfInterestList,
         stride_event_list: StrideList,

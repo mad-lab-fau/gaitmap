@@ -10,6 +10,7 @@ from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
 from gaitmap.utils.array_handling import find_extrema_in_radius
+from gaitmap.utils.datatype_helper import StrideList
 
 
 class BarthDtw(BaseDtw, BaseStrideSegmentation):
@@ -187,7 +188,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         )
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> StrideList:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
@@ -196,9 +197,10 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     @staticmethod
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
+        tmp: Optional[np.ndarray] = array
         if len(array) == 0:
-            array = None
-        as_df = pd.DataFrame(array, columns=["start", "end"])
+            tmp = None
+        as_df = pd.DataFrame(tmp, columns=["start", "end"])
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df

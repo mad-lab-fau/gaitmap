@@ -51,8 +51,7 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
         output[sensor_name] = _calculate_score(tp, tp + fn)
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
@@ -99,8 +98,7 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
         output[sensor_name] = _calculate_score(tp, tp + fp)
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
@@ -147,8 +145,7 @@ def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[D
         )
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
@@ -201,8 +198,7 @@ def precision_recall_f1_score(
         output[sensor_name] = (precision[sensor_name], recall[sensor_name], f1_score_value[sensor_name])
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
@@ -224,8 +220,7 @@ def _get_match_type_dfs(
         match_results[dataframe_name] = matches_types_dict
 
     if is_not_dict:
-        match_results = match_results["__dummy__"]
-
+        return match_results["__dummy__"]
     return match_results
 
 

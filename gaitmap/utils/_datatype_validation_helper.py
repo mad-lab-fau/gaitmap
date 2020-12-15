@@ -1,5 +1,5 @@
 """Internal helpers for dataset validation."""
-from typing import List, Union, Iterable, Hashable, Dict, Sequence
+from typing import List, Union, Iterable, Hashable, Dict, Sequence, cast, Tuple
 
 import pandas as pd
 from typing_extensions import Literal
@@ -32,7 +32,7 @@ def _get_expected_dataset_cols(
     return expected_cols
 
 
-def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
+def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]):
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
         raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))

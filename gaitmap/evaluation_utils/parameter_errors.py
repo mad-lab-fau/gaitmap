@@ -140,7 +140,7 @@ def calculate_parameter_errors(
 
 def _calculate_error(  # noqa: MC0001
     input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame], None],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
     pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:

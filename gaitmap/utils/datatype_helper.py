@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable
+from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable, cast
 
 import numpy as np
 import pandas as pd
@@ -30,29 +30,29 @@ from gaitmap.utils.consts import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
-SingleSensorData: TypeAlias = pd.DataFrame
-MultiSensorData: TypeAlias = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
-SensorData: TypeAlias = Union[SingleSensorData, MultiSensorData]
+SingleSensorData = pd.DataFrame
+MultiSensorData = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
+SensorData = Union[SingleSensorData, MultiSensorData]
 
-SingleSensorStrideList: TypeAlias = pd.DataFrame
-MultiSensorStrideList: TypeAlias = Dict[Hashable, pd.DataFrame]
-StrideList: TypeAlias = Union[SingleSensorStrideList, MultiSensorStrideList]
+SingleSensorStrideList = pd.DataFrame
+MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
+StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
 
-SingleSensorRegionsOfInterestList: TypeAlias = pd.DataFrame
-MultiSensorRegionsOfInterestList: TypeAlias = Dict[Hashable, pd.DataFrame]
-RegionsOfInterestList: TypeAlias = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
+SingleSensorRegionsOfInterestList = pd.DataFrame
+MultiSensorRegionsOfInterestList = Dict[Hashable, pd.DataFrame]
+RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
-SingleSensorPositionList: TypeAlias = pd.DataFrame
-MultiSensorPositionList: TypeAlias = Dict[Hashable, pd.DataFrame]
-PositionList: TypeAlias = Union[SingleSensorPositionList, MultiSensorPositionList]
+SingleSensorPositionList = pd.DataFrame
+MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
+PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
-SingleSensorVelocityList: TypeAlias = pd.DataFrame
-MultiSensorVelocityList: TypeAlias = Dict[str, pd.DataFrame]
-VelocityList: TypeAlias = Union[SingleSensorVelocityList, MultiSensorVelocityList]
+SingleSensorVelocityList = pd.DataFrame
+MultiSensorVelocityList = Dict[str, pd.DataFrame]
+VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
-SingleSensorOrientationList: TypeAlias = pd.DataFrame
-MultiSensorOrientationList: TypeAlias = Dict[Hashable, pd.DataFrame]
-OrientationList: TypeAlias = Union[SingleSensorOrientationList, MultiSensorOrientationList]
+SingleSensorOrientationList = pd.DataFrame
+MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
+OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
 def is_single_sensor_data(
@@ -475,7 +475,9 @@ def get_single_sensor_regions_of_interest_types(roi_list: SingleSensorRegionsOfI
             "The region of interest list is expected to have one of {} either as a column or in the "
             "index".format(list(valid_index_dict.values()))
         )
-    region_type = list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+    region_type = cast(
+        Literal["roi", "gs"], list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+    )
     return region_type
 
 
@@ -547,7 +549,7 @@ def is_single_sensor_regions_of_interest_list(
 
 def is_multi_sensor_regions_of_interest_list(
     roi_list: MultiSensorRegionsOfInterestList,
-    region_type: Literal["any", "roi", "gsd"] = "any",
+    region_type: Literal["any", "roi", "gs"] = "any",
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
@@ -600,7 +602,7 @@ def is_multi_sensor_regions_of_interest_list(
 
 
 def is_regions_of_interest_list(
-    roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gsd"] = "any",
+    roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any",
 ) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor regions of interest list.
 
@@ -684,14 +686,17 @@ def get_single_sensor_trajectory_list_types(
             "The trajectory (orientation, position, velocity) list is expected to have one of {} either as a column or "
             "in the index".format(list(valid_index_dict.values()))
         )
-    list_type = list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+    list_type = cast(
+        Literal["roi", "gs", "stride"],
+        list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])],
+    )
     return list_type
 
 
 def _is_single_sensor_trajectory_list(
     input_prefix: str,
     input_datatype: str,
-    expected_cols: List[Hashable],
+    expected_cols: List[str],
     traj_list: Union[SingleSensorOrientationList, SingleSensorVelocityList, SingleSensorOrientationList],
     traj_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
     raise_exception: bool = False,

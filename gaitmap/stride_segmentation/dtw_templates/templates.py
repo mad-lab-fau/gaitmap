@@ -1,6 +1,6 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, Tuple, List, cast
 
 import numpy as np
 import pandas as pd
@@ -58,7 +58,7 @@ class DtwTemplate(_BaseSerializable):
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
         scaling: Optional[float] = None,
-        use_cols: Optional[Tuple[Union[str, int]]] = None,
+        use_cols: Optional[Tuple[Union[str, int], ...]] = None,
     ):
         self.data = data
         self.template_file_name = template_file_name
@@ -74,7 +74,9 @@ class DtwTemplate(_BaseSerializable):
         if self.data is None and self.template_file_name is None:
             raise ValueError("Neither a template array nor a template file is provided.")
         if self.data is None:
-            with open_text("gaitmap.stride_segmentation.dtw_templates", self.template_file_name) as test_data:
+            with open_text(
+                "gaitmap.stride_segmentation.dtw_templates", cast(str, self.template_file_name)
+            ) as test_data:
                 self.data = pd.read_csv(test_data, header=0)
         template = self.data
 

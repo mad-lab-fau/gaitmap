@@ -141,7 +141,7 @@ class _BaseSerializable:
 
         """
         # Basically copied from sklearn
-        out = dict()
+        out: Dict[str, Any] = dict()
         for key in self._get_param_names():
             value = getattr(self, key)
             if deep and isinstance(value, _BaseSerializable):

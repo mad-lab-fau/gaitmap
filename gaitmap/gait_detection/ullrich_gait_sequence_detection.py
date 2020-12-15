@@ -203,7 +203,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             return {k: np.array(k["end"]) for k, v in self.gait_sequences_.items()}
         return np.array(self.gait_sequences_["end"])
 
-    def _detect_single_dataset(self, data: pd.DataFrame, window_size: float,) -> Dict[str, pd.DataFrame]:
+    def _detect_single_dataset(self, data: pd.DataFrame, window_size: int) -> Dict[str, pd.DataFrame]:
         """Detect gait sequences for a single sensor data set."""
         s_3d, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
 

@@ -227,7 +227,7 @@ class BaseDtw(BaseAlgorithm):
 
     _action_method = "segment"
 
-    template: Optional[DtwTemplate]
+    template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]]
     max_cost: Optional[float]
     resample_template: bool
     min_match_length_s: Optional[float]
@@ -238,8 +238,8 @@ class BaseDtw(BaseAlgorithm):
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[str, np.ndarray]]
-    paths_: Union[Sequence[Sequence[tuple]], Dict[str, Sequence[Sequence[tuple]]]]
-    costs_: Union[Sequence[float], Dict[str, Sequence[float]]]
+    paths_: Union[List[np.ndarray], Dict[str, List[np.ndarray]]]
+    costs_: Union[np.ndarray, Dict[str, np.ndarray]]
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
@@ -263,7 +263,7 @@ class BaseDtw(BaseAlgorithm):
 
         This will not be effected by potential changes of the postprocessing.
         """
-        if isinstance(self.acc_cost_mat_, dict):
+        if isinstance(self.paths_, dict):
             # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
             return {s: np.array([[p[0][-1], p[-1][-1] + 1] for p in path]) for s, path in self.paths_.items()}
         return np.array([[p[0][-1], p[-1][-1] + 1] for p in self.paths_])
@@ -394,8 +394,8 @@ class BaseDtw(BaseAlgorithm):
         )
         if len(matches) == 0:
             paths_ = []
-            costs_ = []
-            matches_start_end_ = []
+            costs_ = np.array([])
+            matches_start_end_ = np.array([])
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
@@ -421,7 +421,7 @@ class BaseDtw(BaseAlgorithm):
             "matches_start_end": matches_start_end_,
         }
 
-    def _calculate_cost_matrix(self, template, matching_data):
+    def _calculate_cost_matrix(self, template, matching_data) -> np.ndarray:
         # In case we don't have local constrains, we can use the simple dtw implementation
         if self._max_template_stretch == np.inf and self._max_signal_stretch == np.inf:
             return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
@@ -443,8 +443,8 @@ class BaseDtw(BaseAlgorithm):
         cost: np.ndarray,  # noqa: unused-argument
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,  # noqa: unused-argument
-        to_keep: np.array,
-    ) -> Tuple[np.ndarray, np.array]:
+        to_keep: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 
         This can be overwritten by subclasses to filter and modify the matches further.

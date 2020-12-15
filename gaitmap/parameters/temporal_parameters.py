@@ -1,5 +1,5 @@
 """Calculate temporal parameters algorithm."""
-from typing import Union, Dict
+from typing import Union, Dict, Hashable
 
 import pandas as pd
 
@@ -147,7 +147,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     def _calculate_multiple_sensor(
         self: BaseType, stride_event_list: MultiSensorStrideList, sampling_rate_hz: float
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> Dict[Hashable, pd.DataFrame]:
         """Find temporal parameters of each stride in case of multiple sensors.
 
         Parameters
@@ -189,9 +189,9 @@ def _calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rat
     return (ic_event - pre_ic_event) / sampling_rate_hz
 
 
-def _calc_swing_time(ic_event: float, tc_event: float, sampling_rate_hz: float) -> float:
+def _calc_swing_time(ic_event: pd.Series, tc_event: pd.Series, sampling_rate_hz: float) -> pd.Series:
     return (ic_event - tc_event) / sampling_rate_hz
 
 
-def _calc_stance_time(stride_time: float, swing_time: float) -> float:
+def _calc_stance_time(stride_time: pd.Series, swing_time: pd.Series) -> pd.Series:
     return stride_time - swing_time
