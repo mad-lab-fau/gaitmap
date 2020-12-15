@@ -1,5 +1,5 @@
 """A version of BarthDTW that used local warping constrains by default."""
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, Hashable
 
 from typing_extensions import Literal
 
@@ -122,7 +122,7 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4,

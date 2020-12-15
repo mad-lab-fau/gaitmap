@@ -167,7 +167,7 @@ def _calculate_error(  # noqa: MC0001
         }
     )
 
-    error_df = {}
+    error_dict = {}
 
     for sensor in sensor_names_list:
         try:
@@ -196,21 +196,21 @@ def _calculate_error(  # noqa: MC0001
                 msg_start = "For sensor {} no ".format(sensor)
             raise ValidationError(msg_start + "common parameter columns are found between input and reference.")
 
-        error_df[sensor] = (
+        error_dict[sensor] = (
             input_parameter_correct[common_features]
             .subtract(ground_truth_parameter_correct[common_features])
             .dropna()
             .reset_index(drop=True)
         )
 
-        if error_df[sensor].empty:
+        if error_dict[sensor].empty:
             if sensor == "__dummy__":
                 msg_start = "No "
             else:
                 msg_start = "For sensor {} no ".format(sensor)
             raise ValidationError(msg_start + "common strides are found between input and reference!")
 
-    error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
+    error_df = pd.concat(error_dict, axis=1) if calculate_per_sensor is True else pd.concat(error_dict).droplevel(0)
 
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)

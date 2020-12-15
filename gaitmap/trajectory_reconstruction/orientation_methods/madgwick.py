@@ -1,14 +1,16 @@
 """Implementation of the MadgwickAHRS."""
-from typing import Union
+from typing import Union, TypeVar
 
 import numpy as np
 from numba import njit
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseOrientationMethod, BaseType
+from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
+
+Self = TypeVar("Self", bound="MadgwickAHRS")
 
 
 class MadgwickAHRS(BaseOrientationMethod):
@@ -96,8 +98,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.initial_orientation = initial_orientation
         self.beta = beta
 
-    # TODO: Allow to continue the integration
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor.
 
         Parameters

@@ -1,6 +1,6 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 import warnings
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Optional, Union, Dict, List, Tuple, Hashable
 
 import numpy as np
 import pandas as pd
@@ -161,7 +161,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4.0,
@@ -194,6 +194,14 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         if isinstance(start_ends, dict):
             return {k: self._format_stride_list(v) for k, v in start_ends.items()}
         return self._format_stride_list(start_ends)
+
+    @stride_list_.setter
+    def stride_list_(self, arg: StrideList):  # noqa: no-self-use
+        """Fake setter for the stride list.
+
+        This is required to be type compatible with the base class.
+        """
+        raise ValueError("The argument `stride_list_` is readonly.")
 
     @staticmethod
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:

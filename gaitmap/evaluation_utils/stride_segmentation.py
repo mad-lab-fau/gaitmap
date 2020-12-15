@@ -4,8 +4,8 @@ from typing import Union, Tuple, Dict, Hashable, Sequence
 
 import numpy as np
 import pandas as pd
-from scipy.spatial.ckdtree import cKDTree
 from scipy.spatial import minkowski_distance
+from scipy.spatial.ckdtree import cKDTree
 
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -13,6 +13,7 @@ from gaitmap.utils.datatype_helper import (
     set_correct_index,
     get_multi_sensor_names,
     is_stride_list,
+    SingleSensorStrideList,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -351,8 +352,8 @@ def _match_stride_lists(
 
 
 def _match_single_stride_lists(
-    stride_list_a: StrideList,
-    stride_list_b: StrideList,
+    stride_list_a: SingleSensorStrideList,
+    stride_list_b: SingleSensorStrideList,
     match_cols: Union[str, Sequence[str]],
     tolerance: Union[int, float] = 0,
     one_to_one: bool = True,

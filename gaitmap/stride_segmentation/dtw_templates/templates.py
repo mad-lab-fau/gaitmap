@@ -80,7 +80,7 @@ class DtwTemplate(_BaseSerializable):
                 self.data = pd.read_csv(test_data, header=0)
         template = self.data
 
-        if getattr(self, "use_cols", None) is None:
+        if self.use_cols is None:
             return template
         use_cols = list(self.use_cols)
         if isinstance(template, np.ndarray):

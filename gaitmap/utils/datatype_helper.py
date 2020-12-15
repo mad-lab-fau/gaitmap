@@ -1,9 +1,9 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable, cast
+from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable, cast, TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal
 
 from gaitmap.utils._datatype_validation_helper import (
     _ALLOWED_FRAMES,
@@ -30,27 +30,36 @@ from gaitmap.utils.consts import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
-SingleSensorData = pd.DataFrame
+if TYPE_CHECKING:
+    SingleSensorData = Any
+    SingleSensorStrideList = Any
+    SingleSensorRegionsOfInterestList = Any
+    SingleSensorPositionList = Any
+    SingleSensorVelocityList = Any
+    SingleSensorOrientationList = Any
+else:
+    SingleSensorData = pd.DataFrame
+    SingleSensorStrideList = pd.DataFrame
+    SingleSensorRegionsOfInterestList = pd.DataFrame
+    SingleSensorPositionList = pd.DataFrame
+    SingleSensorVelocityList = pd.DataFrame
+    SingleSensorOrientationList = pd.DataFrame
+
 MultiSensorData = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
 SensorData = Union[SingleSensorData, MultiSensorData]
 
-SingleSensorStrideList = pd.DataFrame
 MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
 StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
 
-SingleSensorRegionsOfInterestList = pd.DataFrame
 MultiSensorRegionsOfInterestList = Dict[Hashable, pd.DataFrame]
 RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
-SingleSensorPositionList = pd.DataFrame
 MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
 PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
-SingleSensorVelocityList = pd.DataFrame
-MultiSensorVelocityList = Dict[str, pd.DataFrame]
+MultiSensorVelocityList = Dict[Hashable, pd.DataFrame]
 VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
-SingleSensorOrientationList = pd.DataFrame
 MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
@@ -660,7 +669,7 @@ def is_regions_of_interest_list(
     )
 
 
-def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[str]:
+def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[Hashable]:
     """Get the list of sensor names from a multi-sensor dataset.
 
     .. warning:
@@ -712,12 +721,12 @@ def _is_single_sensor_trajectory_list(
         _assert_has_multindex_cols(traj_list, expected=False)
         traj_list = set_correct_index(traj_list, ["sample"], drop_false_index_cols=False)
         if traj_list_type == "any_roi":
-            expected_cols = [[*expected_cols, TRAJ_TYPE_COLS["roi"]], [*expected_cols, TRAJ_TYPE_COLS["gs"]]]
+            nested_expected_cols = [[*expected_cols, TRAJ_TYPE_COLS["roi"]], [*expected_cols, TRAJ_TYPE_COLS["gs"]]]
         elif traj_list_type:
-            expected_cols = [[*expected_cols, TRAJ_TYPE_COLS[traj_list_type]]]
+            nested_expected_cols = [[*expected_cols, TRAJ_TYPE_COLS[traj_list_type]]]
         else:
-            expected_cols = [expected_cols]
-        _assert_has_columns(traj_list, expected_cols)
+            nested_expected_cols = [expected_cols]
+        _assert_has_columns(traj_list, nested_expected_cols)
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(

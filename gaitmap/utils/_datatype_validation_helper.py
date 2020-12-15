@@ -1,5 +1,5 @@
 """Internal helpers for dataset validation."""
-from typing import List, Union, Iterable, Hashable, Dict, Sequence, cast, Tuple
+from typing import List, Union, Iterable, Hashable, Dict, Sequence, Tuple
 
 import pandas as pd
 from typing_extensions import Literal
@@ -70,7 +70,7 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
             )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[Hashable]]):
+def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[Hashable], List[str]]]):
     """Check if the dataframe has at least all columns sets.
 
     Examples

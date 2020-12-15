@@ -1,6 +1,6 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Optional, Tuple, Dict, Sequence
+from typing import Optional, Tuple, Dict, Sequence, TypeVar, Hashable
 
 import numpy as np
 import pandas as pd
@@ -21,6 +21,8 @@ from gaitmap.utils.datatype_helper import (
     RegionsOfInterestList,
 )
 from gaitmap.utils.rotations import rotate_dataset_series, get_gravity_rotation
+
+Self = TypeVar("Self", bound="_TrajectoryReconstructionWrapperMixin")
 
 
 class _TrajectoryReconstructionWrapperMixin:
@@ -69,14 +71,16 @@ class _TrajectoryReconstructionWrapperMixin:
                 )
             self._combined_algo_mode = False
 
-    def _estimate(self, dataset_type: Literal["single", "multi"]):
+    def _estimate(self: Self, dataset_type: Literal["single", "multi"]) -> Self:
         if dataset_type == "single":
             results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
-            results = dict()
+            results_dict: Dict[Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(self.data):
-                results[sensor] = self._estimate_single_sensor(self.data[sensor], self._integration_regions[sensor])
-            results = invert_result_dictionary(results)
+                results_dict[sensor] = self._estimate_single_sensor(
+                    self.data[sensor], self._integration_regions[sensor]
+                )
+            results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
@@ -101,13 +105,13 @@ class _TrajectoryReconstructionWrapperMixin:
             orientation[r_id] = pd.DataFrame(i_orientation.as_quat(), columns=GF_ORI)
             velocity[r_id] = pd.DataFrame(i_velocity, columns=GF_VEL)
             position[r_id] = pd.DataFrame(i_position, columns=GF_POS)
-        orientation = pd.concat(orientation)
-        orientation.index = orientation.index.rename(full_index)
-        velocity = pd.concat(velocity)
-        velocity.index = velocity.index.rename(full_index)
-        position = pd.concat(position)
-        position.index = position.index.rename(full_index)
-        return {"orientation": orientation, "velocity": velocity, "position": position}
+        orientation_df = pd.concat(orientation)
+        orientation_df.index = orientation_df.index.rename(full_index)
+        velocity_df = pd.concat(velocity)
+        velocity_df.index = velocity_df.index.rename(full_index)
+        position_df = pd.concat(position)
+        position_df.index = position_df.index.rename(full_index)
+        return {"orientation": orientation_df, "velocity": velocity_df, "position": position_df}
 
     def _estimate_region(
         self, data: SingleSensorData, start: int, end: int
@@ -116,6 +120,9 @@ class _TrajectoryReconstructionWrapperMixin:
         initial_orientation = self._calculate_initial_orientation(data, start)
 
         if self._combined_algo_mode is False:
+            # For the type-checker
+            assert self.ori_method is not None
+            assert self.pos_method is not None
             # Apply the orientation method
             ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
             orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_object_
@@ -126,6 +133,8 @@ class _TrajectoryReconstructionWrapperMixin:
             velocity = pos_method.velocity_
             position = pos_method.position_
         else:
+            # For the type-checker
+            assert self.trajectory_method is not None
             trajectory_method = self.trajectory_method.clone().set_params(initial_orientation=initial_orientation)
             trajectory_method = trajectory_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz)
             orientation = trajectory_method.orientation_object_
