@@ -15,6 +15,10 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - Added some utils to simplify caching algorithms with `joblib`.
   There is also a new example explaining caching in more detail.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/126)
+- Experimental support for ZUPT based orientation updates in the `RtsKalman` filter.
+  This approach is not fully validated and should be used with care.
+  If the feature is turned on, a runtime warning will indicate that as well.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/113)
 
 ### Changed
 
