@@ -110,7 +110,7 @@ def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable])
 
 
 # This function exists to avoid cyclic imports in this module
-def _get_multi_sensor_dataset_names(dataset: Union[dict, pd.DataFrame]) -> Sequence[str]:
+def _get_multi_sensor_data_names(dataset: Union[dict, pd.DataFrame]) -> Sequence[str]:
     if isinstance(dataset, pd.DataFrame):
         keys = dataset.columns.unique(level=0)
     else:
@@ -121,6 +121,6 @@ def _get_multi_sensor_dataset_names(dataset: Union[dict, pd.DataFrame]) -> Seque
 
 
 def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]):
-    sensors = _get_multi_sensor_dataset_names(obj)
+    sensors = _get_multi_sensor_data_names(obj)
     if len(sensors) == 0:
         raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")

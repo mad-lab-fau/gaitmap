@@ -15,7 +15,7 @@ from gaitmap.utils._datatype_validation_helper import (
     _assert_has_index_columns,
     _assert_multisensor_is_not_empty,
     _ALLOWED_STRIDE_TYPE,
-    _get_multi_sensor_dataset_names,
+    _get_multi_sensor_data_names,
     _ALLOWED_TRAJ_LIST_TYPES,
 )
 from gaitmap.utils._types import _DataFrame, _Hashable
@@ -673,7 +673,7 @@ def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[_Hashable]:
     The keys are not guaranteed to be ordered.
 
     """
-    return _get_multi_sensor_dataset_names(dataset=dataset)
+    return _get_multi_sensor_data_names(dataset=dataset)
 
 
 def get_single_sensor_trajectory_list_types(

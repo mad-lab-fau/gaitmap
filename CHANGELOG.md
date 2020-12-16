@@ -55,8 +55,9 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   - All imports from `gaitmap.utils.dataset_helper` should be changed to `gaitmap.utils.datatype_helper`
   - `SingleSensorDataset`, `MultiSensorDataset` and `Dataset` are now called, `SingleSensorData`, `MultiSensorData` and
     `SensorData`, respectively.
-  - The functions `is_single_sensor_dataset`, `is_multi_sensor_dataset`, and `is_dataset` are renamed to 
-    `is_single_sensor_data`, `is_multi_sensor_data`, and `is_sensor_data` 
+  - The functions `is_single_sensor_dataset`, `is_multi_sensor_dataset`, `is_dataset`, and 
+    `get_multi_sensor_dataset_names` are renamed to `is_single_sensor_data`, `is_multi_sensor_data`, `is_sensor_data`, 
+    and `get_multi_sensor_names`.
 
 ### Scientific Changes
 
