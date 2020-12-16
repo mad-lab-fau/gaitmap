@@ -27,6 +27,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   They will be resolved step by step in the future.
   mypy checking can be done using the new command `dodo type_check` and developer should try to not introduce further
   typing issues.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/118)
   The refactoring also required some small user facing changes:
   - The `regions_of_interest` parameter of `RoiStrideSegmentation.segment` is now keyword only to be compatible with the
     `StrideSegmentation` base class.
