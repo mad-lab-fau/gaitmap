@@ -77,8 +77,8 @@ class RtsKalman(BaseTrajectoryMethod):
         The variance of the noise of the measured position during a level walking update.
         Should typically be very small.
     zupt_orientation_update
-        Flag to control, if the orientation of the IMU should be actively corrected using accelertion information during
-        ZUPT.
+        Flag to control, if the orientation of the IMU should be actively corrected using acceleration information
+        during ZUPT.
         If True, the direction of gravity is guessed based on the direction of the acc-vector.
         This direction is then aligned with the expected gravity direction.
         This is disabled by default, as it can lead to unexpected results, if there is a lot of movement during the
