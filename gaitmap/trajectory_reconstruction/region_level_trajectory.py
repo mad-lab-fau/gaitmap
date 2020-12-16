@@ -1,5 +1,5 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
-from typing import Optional, Tuple, Union, Dict
+from typing import Optional, Tuple, Union, Dict, TypeVar
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
@@ -7,7 +7,6 @@ from typing_extensions import Literal
 
 from gaitmap.base import (
     BaseOrientationMethod,
-    BaseType,
     BasePositionMethod,
     BaseTrajectoryReconstructionWrapper,
     BaseTrajectoryMethod,
@@ -44,6 +43,8 @@ from gaitmap.utils.datatype_helper import (
     get_single_sensor_trajectory_list_types,
 )
 from gaitmap.utils.exceptions import ValidationError
+
+Self = TypeVar("Self", bound="RegionLevelTrajectory")
 
 
 class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReconstructionWrapperMixin):
@@ -199,8 +200,8 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         self.align_window_width = align_window_width
 
     def estimate(
-        self: BaseType, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
-    ) -> BaseType:
+        self: Self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
+    ) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
@@ -234,12 +235,12 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         return self
 
     def estimate_intersect(
-        self,
+        self: Self,
         data: SensorData,
         regions_of_interest: RegionsOfInterestList,
         stride_event_list: StrideList,
         sampling_rate_hz: float,
-    ) -> BaseType:
+    ) -> Self:
         """Estimate the trajectory for all regions and then cut out the trajectory of individual strides.
 
         This basically calls `estimate` and then `intersect` and stores the results in the object.

@@ -36,6 +36,7 @@ pylint:
     max-line-length: 120
     variable-rgx: "[a-z_][a-z0-9_]{0,30}$"  # Allow for single letter variable names
     argument-rgx: "[a-z_][a-z0-9_]{0,30}$"  # Allow for single letter argument names
+    class-rgx: "[A-Z_][a-zA-Z0-9]*$" # Allow for single letter class names
   disable:
     - too-many-ancestors
     - too-few-public-methods

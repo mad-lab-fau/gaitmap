@@ -1,14 +1,16 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
-from typing import Union
+from typing import Union, TypeVar
 
 import numpy as np
 from numba import njit
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseType, BaseOrientationMethod
+from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
+
+Self = TypeVar("Self", bound="SimpleGyroIntegration")
 
 
 class SimpleGyroIntegration(BaseOrientationMethod):
@@ -75,8 +77,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     def __init__(self, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0])):
         self.initial_orientation = initial_orientation
 
-    # TODO: Allow to continue the integration
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.
 
         Parameters

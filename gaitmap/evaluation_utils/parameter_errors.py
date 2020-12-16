@@ -1,17 +1,18 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
-from typing import Union, Dict, Hashable
+from typing import Union, Dict
 
 import numpy as np
 import pandas as pd
 
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import set_correct_index
 from gaitmap.utils.exceptions import ValidationError
 
 
 def calculate_parameter_errors(
-    input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool = False,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
@@ -139,8 +140,8 @@ def calculate_parameter_errors(
 
 
 def _calculate_error(  # noqa: MC0001
-    input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame], None],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
@@ -167,7 +168,7 @@ def _calculate_error(  # noqa: MC0001
         }
     )
 
-    error_df = {}
+    error_dict = {}
 
     for sensor in sensor_names_list:
         try:
@@ -196,21 +197,21 @@ def _calculate_error(  # noqa: MC0001
                 msg_start = "For sensor {} no ".format(sensor)
             raise ValidationError(msg_start + "common parameter columns are found between input and reference.")
 
-        error_df[sensor] = (
+        error_dict[sensor] = (
             input_parameter_correct[common_features]
             .subtract(ground_truth_parameter_correct[common_features])
             .dropna()
             .reset_index(drop=True)
         )
 
-        if error_df[sensor].empty:
+        if error_dict[sensor].empty:
             if sensor == "__dummy__":
                 msg_start = "No "
             else:
                 msg_start = "For sensor {} no ".format(sensor)
             raise ValidationError(msg_start + "common strides are found between input and reference!")
 
-    error_df = pd.concat(error_df, axis=1) if calculate_per_sensor is True else pd.concat(error_df).droplevel(0)
+    error_df = pd.concat(error_dict, axis=1) if calculate_per_sensor is True else pd.concat(error_dict).droplevel(0)
 
     # the usage of np.NamedAgg for multiple columns is still in development
     # (https://github.com/pandas-dev/pandas/pull/37627)

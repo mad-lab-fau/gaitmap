@@ -1,14 +1,25 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable
+from typing import Union, Tuple, Dict, overload
 
 import numpy as np
-from pandas import DataFrame
+import pandas as pd
 
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 
-def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[Dict[Hashable, float], float]:
+@overload
+def recall_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+    ...
+
+
+@overload
+def recall_score(matches_df: pd.DataFrame) -> float:
+    ...
+
+
+def recall_score(matches_df):
     """Compute the recall.
 
     The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
@@ -51,12 +62,21 @@ def recall_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Uni
         output[sensor_name] = _calculate_score(tp, tp + fn)
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
-def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[Dict[Hashable, float], float]:
+@overload
+def precision_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+    ...
+
+
+@overload
+def precision_score(matches_df: pd.DataFrame) -> float:
+    ...
+
+
+def precision_score(matches_df):
     """Compute the precision.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -99,12 +119,21 @@ def precision_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> 
         output[sensor_name] = _calculate_score(tp, tp + fp)
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
-def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[Dict[Hashable, float], float]:
+@overload
+def f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+    ...
+
+
+@overload
+def f1_score(matches_df: pd.DataFrame) -> float:
+    ...
+
+
+def f1_score(matches_df):
     """Compute the F1 score, also known as balanced F-score or F-measure.
 
     The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
@@ -147,14 +176,21 @@ def f1_score(matches_df: Union[Dict[Hashable, DataFrame], DataFrame]) -> Union[D
         )
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
-def precision_recall_f1_score(
-    matches_df: Union[Dict[Hashable, DataFrame], DataFrame]
-) -> Union[Dict[Hashable, Tuple[float, float, float]], Tuple[float, float, float]]:
+@overload
+def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, Tuple[float, float, float]]:
+    ...
+
+
+@overload
+def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, float]:
+    ...
+
+
+def precision_recall_f1_score(matches_df):
     """Compute precision, recall and F1-score.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -201,14 +237,13 @@ def precision_recall_f1_score(
         output[sensor_name] = (precision[sensor_name], recall[sensor_name], f1_score_value[sensor_name])
 
     if is_not_dict:
-        output = output["__dummy__"]
-
+        return output["__dummy__"]
     return output
 
 
 def _get_match_type_dfs(
-    match_results: Union[DataFrame, Dict[Hashable, DataFrame]]
-) -> Union[Dict[Hashable, Dict[str, DataFrame]], Dict[str, DataFrame]]:
+    match_results: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
+) -> Union[Dict[_Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
     is_not_dict = not isinstance(match_results, dict)
     if is_not_dict:
         match_results = {"__dummy__": match_results}
@@ -220,12 +255,11 @@ def _get_match_type_dfs(
             if group in matches_types.groups:
                 matches_types_dict[group] = matches_types.get_group(group)
             else:
-                matches_types_dict[group] = DataFrame(columns=match_results[dataframe_name].columns.copy())
+                matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
         match_results[dataframe_name] = matches_types_dict
 
     if is_not_dict:
-        match_results = match_results["__dummy__"]
-
+        return match_results["__dummy__"]
     return match_results
 
 

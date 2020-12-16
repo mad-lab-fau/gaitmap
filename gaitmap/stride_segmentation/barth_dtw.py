@@ -9,7 +9,9 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
+from gaitmap.utils.datatype_helper import StrideList
 
 
 class BarthDtw(BaseDtw, BaseStrideSegmentation):
@@ -160,7 +162,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[str, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4.0,
@@ -187,18 +189,27 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         )
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> StrideList:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
             return {k: self._format_stride_list(v) for k, v in start_ends.items()}
         return self._format_stride_list(start_ends)
 
+    @stride_list_.setter
+    def stride_list_(self, arg: StrideList):  # noqa: no-self-use
+        """Fake setter for the stride list.
+
+        This is required to be type compatible with the base class.
+        """
+        raise ValueError("The argument `stride_list_` is readonly.")
+
     @staticmethod
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
+        tmp: Optional[np.ndarray] = array
         if len(array) == 0:
-            array = None
-        as_df = pd.DataFrame(array, columns=["start", "end"])
+            tmp = None
+        as_df = pd.DataFrame(tmp, columns=["start", "end"])
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df

@@ -56,7 +56,11 @@ class TestParameterValidation:
     def test_empty_algorithm_raises_error(self):
         instance = RoiStrideSegmentation()
         with pytest.raises(ValueError) as e:
-            instance.segment(pd.DataFrame([0, 0, 0]), 1, pd.DataFrame([[0, 3, 0]], columns=["start", "end", "gs_id"]))
+            instance.segment(
+                pd.DataFrame([0, 0, 0]),
+                1,
+                regions_of_interest=pd.DataFrame([[0, 3, 0]], columns=["start", "end", "gs_id"]),
+            )
 
         assert "`segmentation_algorithm` must be a valid instance of a StrideSegmentation algorithm"
 

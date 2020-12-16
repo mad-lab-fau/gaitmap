@@ -1,17 +1,19 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
-from typing import Union
+from typing import Union, TypeVar, Optional
 
 import numpy as np
+import pandas as pd
 from numba import njit
 from scipy.spatial.transform import Rotation
-import pandas as pd
 
-from gaitmap.base import BaseTrajectoryMethod, BaseType
+from gaitmap.base import BaseTrajectoryMethod
+from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
 from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
 from gaitmap.utils.fast_quaternion_math import quat_from_rotvec, multiply, rotate_vector
 from gaitmap.utils.static_moment_detection import find_static_samples
-from gaitmap.utils.consts import GRAV_VEC
+
+Self = TypeVar("Self", bound="RtsKalman")
 
 
 class RtsKalman(BaseTrajectoryMethod):
@@ -150,7 +152,7 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking: bool
     level_walking_variance: float
     zupt_window_length_s: float
-    zupt_window_overlap_s: float
+    zupt_window_overlap_s: Optional[float]
     data: SingleSensorData
     sampling_rate_hz: float
     covariance_: pd.DataFrame
@@ -165,7 +167,7 @@ class RtsKalman(BaseTrajectoryMethod):
         level_walking: bool = True,
         level_walking_variance: float = 10e-8,
         zupt_window_length_s: float = 0.05,
-        zupt_window_overlap_s: float = None,
+        zupt_window_overlap_s: Optional[float] = None,
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
@@ -177,7 +179,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
 
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
 
         Parameters

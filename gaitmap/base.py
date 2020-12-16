@@ -4,7 +4,7 @@ import inspect
 import json
 import types
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Type
+from typing import Callable, Dict, TypeVar, Any, List, Type, DefaultDict, Union
 
 import numpy as np
 import pandas as pd
@@ -119,7 +119,7 @@ class _BaseSerializable:
         return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
 
     def _to_json_dict(self) -> Dict[str, Any]:
-        json_dict = dict()
+        json_dict: Dict[str, Union[str, Dict[str, Any]]] = dict()
         json_dict["_gaitmap_obj"] = self.__class__.__name__
         json_dict["params"] = self.get_params(deep=False)
         return json_dict
@@ -141,7 +141,7 @@ class _BaseSerializable:
 
         """
         # Basically copied from sklearn
-        out = dict()
+        out: Dict[str, Any] = dict()
         for key in self._get_param_names():
             value = getattr(self, key)
             if deep and isinstance(value, _BaseSerializable):
@@ -161,7 +161,7 @@ class _BaseSerializable:
             return self
         valid_params = self.get_params(deep=True)
 
-        nested_params = defaultdict(dict)  # grouped by prefix
+        nested_params: DefaultDict[str, Any] = defaultdict(dict)  # grouped by prefix
         for key, value in params.items():
             key, delim, sub_key = key.partition("__")
             if key not in valid_params:

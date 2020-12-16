@@ -24,7 +24,7 @@ def _is_manual_installed() -> bool:
 
 def _get_data(filename: str) -> str:
     if _is_manual_installed():
-        return LOCAL_EXAMPLE_PATH / filename
+        return str(LOCAL_EXAMPLE_PATH / filename)
     if (PC_EXAMPLE_PATH / filename).is_file():
         return str(PC_EXAMPLE_PATH / filename)
     gitlab_path = GITLAB_FOLDER_PATH.format(filename)

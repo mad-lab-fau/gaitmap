@@ -1,9 +1,10 @@
 """Internal helpers for dataset validation."""
-from typing import List, Union, Iterable, Hashable, Dict, Sequence
+from typing import List, Union, Iterable, Dict, Sequence, Tuple
 
 import pandas as pd
 from typing_extensions import Literal
 
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_ACC, BF_GYR
 from gaitmap.utils.exceptions import ValidationError
 
@@ -32,7 +33,7 @@ def _get_expected_dataset_cols(
     return expected_cols
 
 
-def _assert_is_dtype(obj, dtype: Union[type, Iterable[type]]):
+def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]):
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
         raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
@@ -70,7 +71,7 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
             )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[Hashable]]):
+def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Hashable], List[str]]]):
     """Check if the dataframe has at least all columns sets.
 
     Examples
@@ -98,7 +99,7 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: List[List[Hashable]]):
         )
 
 
-def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[Hashable]):
+def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable]):
     ex_index_cols = list(index_cols)
     ac_index_cols = list(df.index.names)
     if ex_index_cols != ac_index_cols:

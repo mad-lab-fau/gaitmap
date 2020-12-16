@@ -1,8 +1,12 @@
 """A set of helper functions to make developing algorithms easier."""
-from typing import Hashable, Dict, Any
+from typing import Dict, Any
+
+from gaitmap.utils._types import _Hashable, _HashableVar
 
 
-def invert_result_dictionary(nested_dict: Dict[Hashable, Dict[str, Any]]) -> Dict[Hashable, Dict[Hashable, Any]]:
+def invert_result_dictionary(
+    nested_dict: Dict[_Hashable, Dict[_HashableVar, Any]]
+) -> Dict[_HashableVar, Dict[_Hashable, Any]]:
     """Invert result dictionaries that are obtained from multi sensor results.
 
     This method expects a two level dictionary and flips the levels.
@@ -19,7 +23,7 @@ def invert_result_dictionary(nested_dict: Dict[Hashable, Dict[str, Any]]) -> Dic
      'level_2_3': {'level_1_2': 'val_2_3'}}
 
     """
-    out = dict()
+    out: Dict[_HashableVar, Dict[_Hashable, Any]] = dict()
     for ok, ov in nested_dict.items():
         for k, v in ov.items():
             nested = out.setdefault(k, dict())

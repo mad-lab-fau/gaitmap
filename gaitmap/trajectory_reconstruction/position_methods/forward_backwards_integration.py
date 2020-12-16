@@ -1,14 +1,16 @@
 """Estimate the IMU position with dedrifting using Forward-Backwards integration."""
 
-from typing import Optional
+from typing import Optional, TypeVar
 
 import numpy as np
 import pandas as pd
 from scipy.integrate import cumtrapz
 
-from gaitmap.base import BasePositionMethod, BaseType
+from gaitmap.base import BasePositionMethod
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, GF_VEL, GF_POS
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
+
+Self = TypeVar("Self", bound="ForwardBackwardIntegration")
 
 
 class ForwardBackwardIntegration(BasePositionMethod):
@@ -113,7 +115,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.level_assumption = level_assumption
         self.gravity = gravity
 
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.
 
         Parameters

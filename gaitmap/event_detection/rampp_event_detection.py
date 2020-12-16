@@ -1,12 +1,13 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union, Dict
+from typing import Optional, Tuple, Union, Dict, TypeVar, cast
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 
-from gaitmap.base import BaseEventDetection, BaseType
+from gaitmap.base import BaseEventDetection
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -22,6 +23,8 @@ from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
 )
+
+Self = TypeVar("Self", bound="RamppEventDetection")
 
 
 class RamppEventDetection(BaseEventDetection):
@@ -162,7 +165,7 @@ class RamppEventDetection(BaseEventDetection):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
 
-    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -193,7 +196,9 @@ class RamppEventDetection(BaseEventDetection):
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_list = stride_list
 
-        ic_search_region = tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+        ic_search_region = cast(
+            Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+        )
         if all(v == 0 for v in ic_search_region):
             raise ValueError(
                 "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
@@ -203,12 +208,12 @@ class RamppEventDetection(BaseEventDetection):
         if dataset_type == "single":
             results = self._detect_single_dataset(data, stride_list, ic_search_region, min_vel_search_win_size)
         else:
-            results = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(data):
-                results[sensor] = self._detect_single_dataset(
+                results_dict[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
                 )
-            results = invert_result_dictionary(results)
+            results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
