@@ -1,6 +1,6 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Optional, Tuple, Dict, Sequence, TypeVar, Hashable
+from typing import Optional, Tuple, Dict, Sequence, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ from gaitmap.base import BasePositionMethod, BaseOrientationMethod, BaseTrajecto
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_ORI, GF_VEL, GF_POS, SF_ACC
 from gaitmap.utils.datatype_helper import (
     SensorData,
@@ -75,7 +76,7 @@ class _TrajectoryReconstructionWrapperMixin:
         if dataset_type == "single":
             results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
-            results_dict: Dict[Hashable, Dict[str, pd.DataFrame]] = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(self.data):
                 results_dict[sensor] = self._estimate_single_sensor(
                     self.data[sensor], self._integration_regions[sensor]

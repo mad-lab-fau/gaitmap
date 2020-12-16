@@ -1,10 +1,11 @@
 """A version of BarthDTW that used local warping constrains by default."""
-from typing import Optional, Union, Dict, Hashable
+from typing import Optional, Union, Dict
 
 from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, BarthOriginalTemplate
+from gaitmap.utils._types import _Hashable
 
 
 class ConstrainedBarthDtw(BarthDtw):
@@ -122,7 +123,7 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4,

@@ -1,6 +1,6 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 import warnings
-from typing import Optional, List, Tuple, Union, Dict, TypeVar, Hashable
+from typing import Optional, List, Tuple, Union, Dict, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import (
     SensorData,
@@ -229,7 +230,7 @@ class BaseDtw(BaseAlgorithm):
 
     _action_method = "segment"
 
-    template: Optional[Union[DtwTemplate, Dict[Hashable, DtwTemplate]]]
+    template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]]
     max_cost: Optional[float]
     resample_template: bool
     min_match_length_s: Optional[float]
@@ -238,10 +239,10 @@ class BaseDtw(BaseAlgorithm):
     max_signal_stretch_ms: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
 
-    matches_start_end_: Union[np.ndarray, Dict[Hashable, np.ndarray]]
-    acc_cost_mat_: Union[np.ndarray, Dict[Hashable, np.ndarray]]
-    paths_: Union[List[np.ndarray], Dict[Hashable, List[np.ndarray]]]
-    costs_: Union[np.ndarray, Dict[Hashable, np.ndarray]]
+    matches_start_end_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
+    acc_cost_mat_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
+    paths_: Union[List[np.ndarray], Dict[_Hashable, List[np.ndarray]]]
+    costs_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
@@ -260,7 +261,7 @@ class BaseDtw(BaseAlgorithm):
         return np.sqrt(self.acc_cost_mat_[-1, :])
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, Dict[Hashable, np.ndarray]]:
+    def matches_start_end_original_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
         """Return the starts and end directly from the paths.
 
         This will not be effected by potential changes of the postprocessing.
@@ -272,7 +273,7 @@ class BaseDtw(BaseAlgorithm):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[Hashable, DtwTemplate]]] = None,
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
@@ -333,7 +334,7 @@ class BaseDtw(BaseAlgorithm):
             # Single template single sensor: easy
             results = self._segment_single_dataset(data, template)
         else:  # Multisensor
-            result_dict: Dict[Hashable, Dict[str, np.ndarray]] = dict()
+            result_dict: Dict[_Hashable, Dict[str, np.ndarray]] = dict()
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest

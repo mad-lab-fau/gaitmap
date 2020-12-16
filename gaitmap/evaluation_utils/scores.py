@@ -1,15 +1,16 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Hashable, overload
+from typing import Union, Tuple, Dict, overload
 
 import numpy as np
 import pandas as pd
 
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 
 @overload
-def recall_score(matches_df: Dict[Hashable, pd.DataFrame]) -> Dict[Hashable, float]:
+def recall_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
     ...
 
 
@@ -66,7 +67,7 @@ def recall_score(matches_df):
 
 
 @overload
-def precision_score(matches_df: Dict[Hashable, pd.DataFrame]) -> Dict[Hashable, float]:
+def precision_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
     ...
 
 
@@ -123,7 +124,7 @@ def precision_score(matches_df):
 
 
 @overload
-def f1_score(matches_df: Dict[Hashable, pd.DataFrame]) -> Dict[Hashable, float]:
+def f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
     ...
 
 
@@ -180,7 +181,7 @@ def f1_score(matches_df):
 
 
 @overload
-def precision_recall_f1_score(matches_df: Dict[Hashable, pd.DataFrame]) -> Dict[Hashable, Tuple[float, float, float]]:
+def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, Tuple[float, float, float]]:
     ...
 
 
@@ -241,8 +242,8 @@ def precision_recall_f1_score(matches_df):
 
 
 def _get_match_type_dfs(
-    match_results: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
-) -> Union[Dict[Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
+    match_results: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
+) -> Union[Dict[_Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
     is_not_dict = not isinstance(match_results, dict)
     if is_not_dict:
         match_results = {"__dummy__": match_results}

@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Sequence, Iterable, Hashable, Optional, List, Callable, cast, TYPE_CHECKING, Any
+from typing import Union, Dict, Sequence, Iterable, Optional, List, Callable, cast
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from gaitmap.utils._datatype_validation_helper import (
     _get_multi_sensor_dataset_names,
     _ALLOWED_TRAJ_LIST_TYPES,
 )
+from gaitmap.utils._types import _DataFrame, _Hashable
 from gaitmap.utils.consts import (
     SL_COLS,
     SL_ADDITIONAL_COLS,
@@ -30,37 +31,29 @@ from gaitmap.utils.consts import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
-if TYPE_CHECKING:
-    SingleSensorData = Any
-    SingleSensorStrideList = Any
-    SingleSensorRegionsOfInterestList = Any
-    SingleSensorPositionList = Any
-    SingleSensorVelocityList = Any
-    SingleSensorOrientationList = Any
-else:
-    SingleSensorData = pd.DataFrame
-    SingleSensorStrideList = pd.DataFrame
-    SingleSensorRegionsOfInterestList = pd.DataFrame
-    SingleSensorPositionList = pd.DataFrame
-    SingleSensorVelocityList = pd.DataFrame
-    SingleSensorOrientationList = pd.DataFrame
+SingleSensorData = _DataFrame
+SingleSensorStrideList = _DataFrame
+SingleSensorRegionsOfInterestList = _DataFrame
+SingleSensorPositionList = _DataFrame
+SingleSensorVelocityList = _DataFrame
+SingleSensorOrientationList = _DataFrame
 
-MultiSensorData = Union[pd.DataFrame, Dict[Hashable, SingleSensorData]]
+MultiSensorData = Union[pd.DataFrame, Dict[_Hashable, SingleSensorData]]
 SensorData = Union[SingleSensorData, MultiSensorData]
 
-MultiSensorStrideList = Dict[Hashable, pd.DataFrame]
+MultiSensorStrideList = Dict[_Hashable, pd.DataFrame]
 StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
 
-MultiSensorRegionsOfInterestList = Dict[Hashable, pd.DataFrame]
+MultiSensorRegionsOfInterestList = Dict[_Hashable, pd.DataFrame]
 RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
-MultiSensorPositionList = Dict[Hashable, pd.DataFrame]
+MultiSensorPositionList = Dict[_Hashable, pd.DataFrame]
 PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
-MultiSensorVelocityList = Dict[Hashable, pd.DataFrame]
+MultiSensorVelocityList = Dict[_Hashable, pd.DataFrame]
 VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
-MultiSensorOrientationList = Dict[Hashable, pd.DataFrame]
+MultiSensorOrientationList = Dict[_Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
@@ -669,7 +662,7 @@ def is_regions_of_interest_list(
     )
 
 
-def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[Hashable]:
+def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[_Hashable]:
     """Get the list of sensor names from a multi-sensor dataset.
 
     .. warning:
@@ -1173,7 +1166,7 @@ def is_orientation_list(
 
 
 def set_correct_index(
-    df: pd.DataFrame, index_cols: Iterable[Hashable], drop_false_index_cols: bool = True
+    df: pd.DataFrame, index_cols: Iterable[_Hashable], drop_false_index_cols: bool = True
 ) -> pd.DataFrame:
     """Set the correct columns as index, or leave them if they are already in the index.
 

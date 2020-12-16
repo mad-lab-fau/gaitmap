@@ -1,17 +1,18 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
-from typing import Union, Dict, Hashable
+from typing import Union, Dict
 
 import numpy as np
 import pandas as pd
 
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import set_correct_index
 from gaitmap.utils.exceptions import ValidationError
 
 
 def calculate_parameter_errors(
-    input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool = False,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
@@ -139,8 +140,8 @@ def calculate_parameter_errors(
 
 
 def _calculate_error(  # noqa: MC0001
-    input_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
-    ground_truth_parameter: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:

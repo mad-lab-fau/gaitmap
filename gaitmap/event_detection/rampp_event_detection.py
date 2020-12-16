@@ -1,5 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union, Dict, TypeVar, Hashable, cast
+from typing import Optional, Tuple, Union, Dict, TypeVar, cast
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -207,7 +208,7 @@ class RamppEventDetection(BaseEventDetection):
         if dataset_type == "single":
             results = self._detect_single_dataset(data, stride_list, ic_search_region, min_vel_search_win_size)
         else:
-            results_dict: Dict[Hashable, Dict[str, pd.DataFrame]] = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size

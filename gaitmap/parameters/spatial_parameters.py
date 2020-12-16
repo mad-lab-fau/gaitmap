@@ -1,5 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
-from typing import Union, Dict, Tuple, Hashable, TypeVar
+from typing import Union, Dict, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseSpatialParameterCalculation
 from gaitmap.parameters.temporal_parameters import _calc_stride_time
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_POS, GF_ORI, SL_INDEX, GF_INDEX
 from gaitmap.utils.datatype_helper import (
     StrideList,
@@ -129,7 +130,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
-    parameters_: Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]
+    parameters_: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
     sole_angle_course_: PositionList
 
     stride_event_list: StrideList
@@ -138,7 +139,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     sampling_rate_hz: float
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[Hashable, pd.DataFrame]]:
+    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -279,7 +280,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         positions: MultiSensorPositionList,
         orientations: MultiSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> Tuple[Dict[Hashable, pd.DataFrame], Dict[Hashable, pd.Series]]:
+    ) -> Tuple[Dict[_Hashable, pd.DataFrame], Dict[_Hashable, pd.Series]]:
         """Find spatial parameters of each stride in case of multiple sensors.
 
         Parameters

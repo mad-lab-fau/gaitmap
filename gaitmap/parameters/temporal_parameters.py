@@ -1,9 +1,10 @@
 """Calculate temporal parameters algorithm."""
-from typing import Union, Dict, Hashable, TypeVar
+from typing import Union, Dict, TypeVar
 
 import pandas as pd
 
 from gaitmap.base import BaseTemporalParameterCalculation
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
     StrideList,
@@ -149,7 +150,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     def _calculate_multiple_sensor(
         self, stride_event_list: MultiSensorStrideList, sampling_rate_hz: float
-    ) -> Dict[Hashable, pd.DataFrame]:
+    ) -> Dict[_Hashable, pd.DataFrame]:
         """Find temporal parameters of each stride in case of multiple sensors.
 
         Parameters
