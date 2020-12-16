@@ -22,6 +22,12 @@ class TestUllrichGaitSequenceDetection:
         gsd = gsd.detect(data, 204.8)
 
         assert len(gsd.gait_sequences_) == 1
+        assert len(gsd.start_) == 1
+        assert len(gsd.end_) == 1
+
+        assert type(gsd.gait_sequences_) == pd.DataFrame
+        assert type(gsd.start_) == np.ndarray
+        assert type(gsd.end_) == np.ndarray
 
     def test_multi_sensor_input(self, healthy_example_imu_data, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -34,6 +40,14 @@ class TestUllrichGaitSequenceDetection:
 
         assert len(gsd.gait_sequences_["left_sensor"]) == 1
         assert len(gsd.gait_sequences_["right_sensor"]) == 1
+
+        assert type(gsd.gait_sequences_) == dict
+        assert type(gsd.gait_sequences_["left_sensor"]) == pd.DataFrame
+        assert type(gsd.start_) == dict
+        assert type(gsd.start_["left_sensor"]) == np.ndarray
+        assert type(gsd.end_) == dict
+        assert type(gsd.end_["left_sensor"]) == np.ndarray
+
 
     @pytest.mark.parametrize(
         "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), ("acc", 13), ("gyr", 11))
@@ -67,6 +81,9 @@ class TestUllrichGaitSequenceDetection:
         gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config, peak_prominence=peak_prominence)
         gsd = gsd.detect(test_data_df, 204.8)
 
+        assert all(gsd.start_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["start"])
+        assert all(gsd.end_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["end"])
+
         filename = sensor_channel_config
         if isinstance(filename, (tuple, list)):
             filename = "_".join(filename)
@@ -89,6 +106,8 @@ class TestUllrichGaitSequenceDetection:
         gsd = gsd.detect(data, 204.8)
 
         assert len(gsd.gait_sequences_) == 1
+        assert len(gsd.start_) == 1
+        assert len(gsd.end_) == 1
 
     def test_on_signal_without_activity(self, snapshot):
         """Test to see if the algorithm is working if the signal contains no activity at all"""
@@ -103,6 +122,8 @@ class TestUllrichGaitSequenceDetection:
         gsd = gsd.detect(rest_df, 204.8)
 
         assert len(gsd.gait_sequences_) == 0
+        assert len(gsd.start_) == 0
+        assert len(gsd.end_) == 0
 
     def test_on_signal_with_only_nongait(self, snapshot):
         """Test to see if the algorithm is working if the signal contains only non-gait activity"""
@@ -124,6 +145,8 @@ class TestUllrichGaitSequenceDetection:
         gsd = gsd.detect(non_gait_df, 204.8)
 
         assert len(gsd.gait_sequences_) == 0
+        assert len(gsd.start_) == 0
+        assert len(gsd.end_) == 0
 
     def test_invalid_sensor_channel_config_type(self, healthy_example_imu_data):
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
