@@ -1,25 +1,17 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
-from typing import Union, TypeVar, Optional
+import warnings
+from typing import TypeVar, Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.spatial.transform import Rotation
 
-<<<<<<< HEAD
 from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
 from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
-from gaitmap.utils.fast_quaternion_math import quat_from_rotvec, multiply, rotate_vector
-from gaitmap.utils.static_moment_detection import find_static_samples
-
-Self = TypeVar("Self", bound="RtsKalman")
-=======
-from gaitmap.base import BaseTrajectoryMethod, BaseType
-from gaitmap.utils.consts import GRAV_VEC
-from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
-from gaitmap.utils.dataset_helper import is_single_sensor_dataset, SingleSensorDataset
 from gaitmap.utils.fast_quaternion_math import (
     quat_from_rotvec,
     multiply,
@@ -27,7 +19,8 @@ from gaitmap.utils.fast_quaternion_math import (
     normalize,
 )
 from gaitmap.utils.static_moment_detection import find_static_samples
->>>>>>> 48a8b94 (Implemented first version that uses quaternion correction)
+
+Self = TypeVar("Self", bound="RtsKalman")
 
 
 class RtsKalman(BaseTrajectoryMethod):
@@ -84,6 +77,9 @@ class RtsKalman(BaseTrajectoryMethod):
         This is disabled by default, as it can lead to unexpected results, if there is a lot of movement during the
         mid stance.
         However, depending on the dataset, this can be very benifical.
+
+        .. warning:: The support for orientation updates is still experimental and not fully validated on real data.
+
     zupt_orientation_error_variance
         The variance of the noise of the measured orientation during the ZUPT.
         This might be comparably high, because we still expcet some variation in the accelerometer.
@@ -231,6 +227,12 @@ class RtsKalman(BaseTrajectoryMethod):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
+
+        if self.zupt_orientation_update is True:
+            warnings.warn(
+                "Support for zupt orientation updates (`zupt_orientation_update=True`) is still "
+                "experimental and not properly validated on large datasets."
+            )
 
         is_single_sensor_data(self.data, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):

@@ -26,6 +26,18 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         )
         return kalman_filter
 
+    def test_experimental_warning(self):
+        fs = 10
+        sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+
+        rts = RtsKalman(zupt_orientation_update=True)
+
+        with pytest.warns(UserWarning) as w:
+            rts.estimate(sensor_data, fs)
+
+        assert "experimental" in str(w[0])
+
 
 class TestTrajectoryMethod(TestTrajectoryMethodMixin):
     __test__ = True
