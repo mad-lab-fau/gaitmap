@@ -12,7 +12,7 @@ from gaitmap.base import BaseGaitDetection
 from gaitmap.utils import signal_processing
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, bool_array_to_start_end_array
+from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, merge_intervals
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.datatype_helper import (
     is_multi_sensor_data,
@@ -20,7 +20,6 @@ from gaitmap.utils.datatype_helper import (
     get_multi_sensor_names,
     RegionsOfInterestList,
     is_sensor_data,
-    SingleSensorRegionsOfInterestList,
 )
 
 Self = TypeVar("Self", bound="UllrichGaitSequenceDetection")
@@ -424,87 +423,40 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
-    def _merge_gait_sequences_multi_sensor_data(self, gait_sequences: Dict[_Hashable, pd.DataFrame]) -> pd.DataFrame:
+    @staticmethod
+    def _merge_gait_sequences_multi_sensor_data(gait_sequences: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Merge gait sequences from different sensor positions for synced data.
 
-        Gait sequences from individual sensors are merged by 1) converting the start and end information to a boolean
-        array for each sensor and 2) applying a logical OR operation. 3) Finally the gait sequences are returned as
-        one DataFrame with start and end samples of the merged gait sequences.
+        Gait sequences from individual sensors are merged using gaitmap.utils.array_handling.merge_intervals.
+        The gait sequences are returned as one DataFrame with start and end samples of the merged gait
+        sequences.
         """
-        sensor_names = list(get_multi_sensor_names(self.data))
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         if all([df.empty for df in gait_sequences.values()]):
-            gait_sequences_merged_df = pd.DataFrame(columns=["gs_id", "start", "end"])
-        else:
-            # 1) convert to boolean array
-            gait_sequences_bool = np.column_stack(
-                [_gait_sequences_to_boolean_single(len(self.data), gs) for gs in gait_sequences.values()]
-            )
-            # 2) apply logical or by using any along the columns
-            gait_sequences_bool_array = gait_sequences_bool.any(axis=1)
+            return pd.DataFrame(columns=["gs_id", "start", "end"])
 
-            # 3) convert back to dataframe with start and end
-            gait_sequences_merged_df = pd.DataFrame(
-                bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
-            )
-            gait_sequences_merged_df.index.name = "gs_id"
-            gait_sequences_merged_df = gait_sequences_merged_df.reset_index()
+        gait_sequences_merged = pd.DataFrame(
+            merge_intervals(np.array([gs.to_numpy()[0][1:] for gs in gait_sequences.values()])),
+            columns=["start", "end"],
+        )
 
-        gait_sequences_merged = {sensor_name: gait_sequences_merged_df for sensor_name in sensor_names}
+        gait_sequences_merged.index.name = "gs_id"
+        gait_sequences_merged = gait_sequences_merged.reset_index()
 
         return gait_sequences_merged
 
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     """Concat consecutive gait sequences to a single one."""
-    # empty list for result
-    gait_sequences_start_corrected = []
-
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
-        return np.array(gait_sequences_start_corrected)
+        return np.array([])
 
-    # first derivative of walking bout samples to get their relative distances
-    gait_sequences_start_diff = np.diff(gait_sequences_start, axis=0)
-    # compute those indices in the derivative where it is higher than the window size, these are the
-    # non-consecutive bouts
-    diff_jumps = np.where(gait_sequences_start_diff > window_size)[0]
-    # split up the walking bout samples in the locations where they are not consecutive
-    split_jumps = np.split(gait_sequences_start, diff_jumps + 1)
-    # iterate over the single splits
-    for jump in split_jumps:
-        # start of the corrected walking bout is the first index of the jump
-        start = jump[0]
-        # length of the corrected walking bout is computed
-        end = jump[-1] + window_size
-        # if start+length exceeds the signal length correct the bout length
-        if end > sig_length:
-            end = sig_length
-        # append list with start and length to the corrected walking bout samples
-        gait_sequences_start_corrected.append([start, end])
+    merged_intervals = merge_intervals(
+        np.column_stack((gait_sequences_start, gait_sequences_start)), window_size
+    ).astype(np.int32)
 
-    return np.array(gait_sequences_start_corrected)
+    for interval in merged_intervals:
+        interval[1] = sig_length if (interval[1] + window_size) > sig_length else interval[1] + window_size
 
-
-def _gait_sequences_to_boolean_single(
-    data_length: int, gait_sequences_single: SingleSensorRegionsOfInterestList
-) -> np.ndarray:
-    """Convert gait sequences from a single sensor from a dataframe to boolean array.
-
-    Usually gait sequences are stored in a pandas DataFrame with their id and their start and end samples. The
-    purpose of this method is to provide a boolean array that contains 0 / 1 for each signal sample for non-gait /
-    gait.
-
-    Returns
-    -------
-    gait_sequences_bool_array
-        A numpy array of gait sequences where for each imu data sample there is either a 1 (gait) or a 0 (non-gait).
-
-    """
-    gait_sequences_bool_array = np.zeros(data_length, dtype=int)
-    gait_sequences_start_end_tuples = list(zip(gait_sequences_single.start, gait_sequences_single.end))
-
-    for sequence_start, sequence_end in gait_sequences_start_end_tuples:
-        gait_sequences_bool_array[sequence_start:sequence_end] = 1
-
-    return gait_sequences_bool_array
+    return merged_intervals
