@@ -20,3 +20,4 @@ Functions
     find_extrema_in_radius
     split_array_at_nan
     interpolate1d
+    merge_intervals
