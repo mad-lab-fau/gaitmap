@@ -268,7 +268,7 @@ def merge_intervals(input_array: np.ndarray, gap_size: int = 0) -> np.ndarray:
 
     Parameters
     ----------
-    input_array : (n, 2) array
+    input_array : (n, 2) np.ndarray
         The np.ndarray containing the intervals that should be merged
     gap_size : int
         Integer that sets the allowed gap between intervals.
@@ -278,7 +278,7 @@ def merge_intervals(input_array: np.ndarray, gap_size: int = 0) -> np.ndarray:
     Returns
     -------
     merged intervals array
-        np.ndarray containing the merged intervals
+        (n, 2) np.ndarray containing the merged intervals
 
     Examples
     --------
@@ -292,10 +292,6 @@ def merge_intervals(input_array: np.ndarray, gap_size: int = 0) -> np.ndarray:
     >>> merge_intervals(test, 2)
     array([[ 1, 15],
            [18, 20]])
-
-    See Also
-    --------
-    gaitmap.utlis.array_handling._solve_overlap: The wrapped function.
 
     """
     return np.array(_solve_overlap(np.sort(input_array, axis=0, kind="stable"), gap_size))
