@@ -435,22 +435,20 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         if all([df.empty for df in gait_sequences.values()]):
             gait_sequences_merged_df = pd.DataFrame(columns=["gs_id", "start", "end"])
-            gait_sequences_merged = {sensor_name: gait_sequences_merged_df for sensor_name in sensor_names}
-            return gait_sequences_merged
+        else:
+            # 1) convert to boolean array
+            gait_sequences_bool = np.column_stack(
+                [_gait_sequences_to_boolean_single(len(self.data), gs) for gs in gait_sequences.values()]
+            )
+            # 2) apply logical or by using any along the columns
+            gait_sequences_bool_array = gait_sequences_bool.any(axis=1)
 
-        # 1) convert to boolean array
-        gait_sequences_bool = np.column_stack(
-            [_gait_sequences_to_boolean_single(len(self.data), gs) for gs in gait_sequences.values()]
-        )
-        # 2) apply logical or by using any along the columns
-        gait_sequences_bool_array = gait_sequences_bool.any(axis=1)
-
-        # 3) convert back to dataframe with start and end
-        gait_sequences_merged_df = pd.DataFrame(
-            bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
-        )
-        gait_sequences_merged_df.index.name = "gs_id"
-        gait_sequences_merged_df = gait_sequences_merged_df.reset_index()
+            # 3) convert back to dataframe with start and end
+            gait_sequences_merged_df = pd.DataFrame(
+                bool_array_to_start_end_array(gait_sequences_bool_array), columns=["start", "end"]
+            )
+            gait_sequences_merged_df.index.name = "gs_id"
+            gait_sequences_merged_df = gait_sequences_merged_df.reset_index()
 
         gait_sequences_merged = {sensor_name: gait_sequences_merged_df for sensor_name in sensor_names}
 
