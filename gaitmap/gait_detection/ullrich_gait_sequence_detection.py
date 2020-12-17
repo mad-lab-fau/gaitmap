@@ -436,7 +436,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             return pd.DataFrame(columns=["gs_id", "start", "end"])
 
         gait_sequences_merged = pd.DataFrame(
-            merge_intervals(np.array([gs.to_numpy()[0][1:] for gs in gait_sequences.values()])),
+            merge_intervals(pd.concat(gait_sequences, ignore_index=True)[["start", "end"]].to_numpy()),
             columns=["start", "end"],
         )
 
@@ -452,11 +452,6 @@ def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
     if len(gait_sequences_start) == 0:
         return np.array([])
 
-    merged_intervals = merge_intervals(
-        np.column_stack((gait_sequences_start, gait_sequences_start)), window_size
-    ).astype(np.int32)
+    gait_sequence_ends = np.clip(gait_sequences_start + window_size, a_min=0, a_max=sig_length)
 
-    for interval in merged_intervals:
-        interval[1] = sig_length if (interval[1] + window_size) > sig_length else interval[1] + window_size
-
-    return merged_intervals
+    return merge_intervals(np.column_stack((gait_sequences_start, gait_sequence_ends))).astype(np.int32)
