@@ -101,14 +101,9 @@ class TestUllrichGaitSequenceDetection:
         )
         gsd = gsd.detect(test_data_df, 204.8)
 
-        filename = sensor_channel_config
-        if isinstance(filename, (tuple, list)):
-            filename = "_".join(filename)
-        filename = filename + "_" + str(peak_prominence) + str(merge_gait_sequences_from_sensors)
-
         assert all(gsd.start_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["start"])
         assert all(gsd.end_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["end"])
-        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], filename, check_dtype=False)
+        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], check_dtype=False)
 
     def test_signal_length_one_window_size(self, healthy_example_imu_data, snapshot):
         """Test to see if the algorithm is working if the signal length equals to one window size"""
