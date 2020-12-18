@@ -423,17 +423,20 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
                 )
             )
 
-    @staticmethod
-    def _merge_gait_sequences_multi_sensor_data(gait_sequences: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def _merge_gait_sequences_multi_sensor_data(
+        self, gait_sequences: Dict[str, pd.DataFrame]
+    ) -> Dict[str, pd.DataFrame]:
         """Merge gait sequences from different sensor positions for synced data.
 
         Gait sequences from individual sensors are merged using gaitmap.utils.array_handling.merge_intervals.
-        The gait sequences are returned as one DataFrame with start and end samples of the merged gait
+        The gait sequences are returned as a dictionary of pd.Dataframes with start and end samples of the merged gait
         sequences.
         """
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
+        sensor_names = list(get_multi_sensor_names(self.data))
+
         if all([df.empty for df in gait_sequences.values()]):
-            return pd.DataFrame(columns=["gs_id", "start", "end"])
+            return {sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"]) for sensor_name in sensor_names}
 
         gait_sequences_merged = pd.DataFrame(
             merge_intervals(pd.concat(gait_sequences, ignore_index=True)[["start", "end"]].to_numpy()),
@@ -443,7 +446,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_merged.index.name = "gs_id"
         gait_sequences_merged = gait_sequences_merged.reset_index()
 
-        return gait_sequences_merged
+        return {sensor_name: gait_sequences_merged for sensor_name in sensor_names}
 
 
 def _gait_sequence_concat(sig_length, gait_sequences_start, window_size):
