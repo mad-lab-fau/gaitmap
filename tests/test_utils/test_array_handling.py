@@ -9,6 +9,7 @@ from gaitmap.utils.array_handling import (
     find_local_minima_below_threshold,
     find_extrema_in_radius,
     interpolate1d,
+    merge_intervals,
 )
 
 
@@ -344,3 +345,25 @@ class TestInterpolate1D:
         data_interpolated = interpolate1d(data, n_samples=4, kind="linear")
 
         assert_array_equal(len(data_interpolated), 4)
+
+
+class TestMergeIntervals:
+    @pytest.mark.parametrize(
+        "input_array, output_array, gap_size",
+        [
+            (
+                np.array([[1, 3], [2, 4], [6, 8], [5, 7], [10, 12], [11, 15], [18, 20]]),
+                np.array([[1, 4], [5, 8], [10, 15], [18, 20]]),
+                0,
+            ),
+            (
+                np.array([[1, 3], [2, 4], [6, 8], [5, 7], [10, 12], [11, 15], [18, 20]]),
+                np.array([[1, 15], [18, 20]]),
+                2,
+            ),
+            (np.array([[-1, 1], [-2, 2], [3, 3], [5, 5], [4, 4]]), np.array([[-2, 5]]), 1,),
+            (np.array([[]]), np.array([[]]), 0,),
+        ],
+    )
+    def test_merge_intervals(self, input_array, output_array, gap_size):
+        assert_array_equal(output_array, merge_intervals(input_array, gap_size))
