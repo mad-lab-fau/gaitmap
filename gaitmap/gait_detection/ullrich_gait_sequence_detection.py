@@ -449,7 +449,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         return {sensor_name: gait_sequences_merged for sensor_name in sensor_names}
 
 
-def _gait_sequence_concat(sig_length, gait_sequences_start: np.ndarray, window_size):
+def _gait_sequence_concat(sig_length: int, gait_sequences_start: np.ndarray, window_size: int) -> np.ndarray:
     """Concat consecutive gait sequences to a single one."""
     # if there are no samples in the gait_sequences_start return the input
     if len(gait_sequences_start) == 0:
