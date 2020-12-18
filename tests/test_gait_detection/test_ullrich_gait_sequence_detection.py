@@ -356,7 +356,7 @@ class TestUllrichGaitSequenceDetection:
 
         sig_length = 95
         window_size = 10
-        gait_sequences_start = [0, 10, 20, 40, 50, 70, 80, 90]
+        gait_sequences_start = np.array([0, 10, 20, 40, 50, 70, 80, 90])
         # We expect intervals with subsequent starts to be concatenated, ending with the last start + window size and
         # if the last sequence would be longer than the signal, the signal size should be set
         out_expected = [[0, 30], [40, 60], [70, 95]]
