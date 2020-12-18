@@ -33,12 +33,12 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   The refactoring also required some small user facing changes:
   - The `regions_of_interest` parameter of `RoiStrideSegmentation.segment` is now keyword only to be compatible with the
     `StrideSegmentation` base class.
-  - The `UllrichGaitSequenceDetection` now returns a dict also in the case of merged gait sequences. The gait
-   sequences stored for all sensor are set equal. 
-   https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/121
+  - The `UllrichGaitSequenceDetection` now returns a dict also in the case of merged gait sequences. 
+    The gait sequences stored for all sensor are set equal. 
+    (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/121)
 - `gait_detection.ullrich_gait_sequence_detection` now uses `utils.array_handling.merge_intervals` and should therefore
-  be able to merge sequences faster. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
-  
+  be able to merge sequences faster. 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
 
 ### Deprecated
 
@@ -50,6 +50,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - `gait_detection.ullrich_gait_sequence_detection._gait_sequences_to_boolean_single` has been made redundant by 
   `utils.array_handling.merge_intervals` and was therefore removed. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
+
 ### Fixed
 
 - In `stride_segmentation.roi_stride_segmentation` the assignment of the offset corrected strides to the
