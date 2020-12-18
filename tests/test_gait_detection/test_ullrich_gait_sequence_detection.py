@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pandas._testing import assert_frame_equal
 
 from gaitmap.gait_detection import UllrichGaitSequenceDetection
+from gaitmap.gait_detection.ullrich_gait_sequence_detection import _gait_sequence_concat
 from gaitmap.utils import coordinate_conversion
 from gaitmap.utils.consts import BF_COLS
 
@@ -49,10 +51,25 @@ class TestUllrichGaitSequenceDetection:
         assert isinstance(gsd.end_["left_sensor"], np.ndarray)
 
     @pytest.mark.parametrize(
-        "sensor_channel_config,peak_prominence", (("gyr_ml", 17), ("acc_si", 8), ("acc", 13), ("gyr", 11))
+        "sensor_channel_config,peak_prominence,merge_gait_sequences_from_sensors",
+        (
+            ("gyr_ml", 17, False),
+            ("gyr_ml", 17, True),
+            ("acc_si", 8, False),
+            ("acc_si", 8, True),
+            ("acc", 13, False),
+            ("acc", 13, True),
+            ("gyr", 11, False),
+            ("gyr", 11, True),
+        ),
     )
     def test_different_activities_different_configs(
-        self, healthy_example_imu_data, sensor_channel_config, peak_prominence, snapshot
+        self,
+        healthy_example_imu_data,
+        sensor_channel_config,
+        peak_prominence,
+        merge_gait_sequences_from_sensors,
+        snapshot,
     ):
         """Test if the algorithm is generally working with different sensor channel configs and their respective
                 optimal peak prominence thresholds."""
@@ -77,17 +94,16 @@ class TestUllrichGaitSequenceDetection:
 
         test_data_df = pd.concat([rest_df, data, non_gait_df, data, rest_df], ignore_index=True)
 
-        gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config, peak_prominence=peak_prominence)
+        gsd = UllrichGaitSequenceDetection(
+            sensor_channel_config=sensor_channel_config,
+            peak_prominence=peak_prominence,
+            merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors,
+        )
         gsd = gsd.detect(test_data_df, 204.8)
 
         assert all(gsd.start_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["start"])
         assert all(gsd.end_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["end"])
-
-        filename = sensor_channel_config
-        if isinstance(filename, (tuple, list)):
-            filename = "_".join(filename)
-        filename = filename + "_" + str(peak_prominence)
-        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], filename, check_dtype=False)
+        snapshot.assert_match(gsd.gait_sequences_["left_sensor"], check_dtype=False)
 
     def test_signal_length_one_window_size(self, healthy_example_imu_data, snapshot):
         """Test to see if the algorithm is working if the signal length equals to one window size"""
@@ -247,17 +263,21 @@ class TestUllrichGaitSequenceDetection:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        # if merging is turned off, result will be a dict
+        # if merging is turned off, result will be a dict with different pd.DataFrames as entries
         merge_gait_sequences_from_sensors = False
-        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
-        gsd.detect(data, 204.8)
-        assert isinstance(gsd.gait_sequences_, dict)
+        gsd_unmerged = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd_unmerged.detect(data, 204.8)
 
-        # if merging is turned on, result will be a pd.DataFrame
+        not assert_frame_equal(
+            gsd_unmerged.gait_sequences_["left_sensor"], gsd_unmerged.gait_sequences_["right_sensor"]
+        )
+
+        # if merging is turned on, result will be a dict with identical pd.DataFrames as entries
         merge_gait_sequences_from_sensors = True
-        gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
-        gsd.detect(data, 204.8)
-        assert isinstance(gsd.gait_sequences_, pd.DataFrame)
+        gsd_merged = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
+        gsd_merged.detect(data, 204.8)
+
+        assert_frame_equal(gsd_merged.gait_sequences_["left_sensor"], gsd_merged.gait_sequences_["right_sensor"])
 
     def test_merging_for_no_activity(self):
         """Test to see if the merging is working if the signal contains no activity at all"""
@@ -275,7 +295,10 @@ class TestUllrichGaitSequenceDetection:
         gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
         gsd = gsd.detect(synced_rest_df, 204.8)
 
-        assert isinstance(gsd.gait_sequences_, pd.DataFrame)
+        assert isinstance(gsd.gait_sequences_, dict)
+        assert list(gsd.gait_sequences_.keys()) == ["left_sensor", "right_sensor"]
+        for sensor in ["left_sensor", "right_sensor"]:
+            assert gsd.gait_sequences_[sensor].empty
 
     def test_merging_on_signal_with_only_nongait(self):
         """Test to see if the merging is working if the signal contains only non-gait activity"""
@@ -300,5 +323,44 @@ class TestUllrichGaitSequenceDetection:
         gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
         gsd = gsd.detect(synced_non_gait_df, 204.8)
 
-        assert isinstance(gsd.gait_sequences_, pd.DataFrame)
-        assert gsd.gait_sequences_.empty
+        assert isinstance(gsd.gait_sequences_, dict)
+        assert list(gsd.gait_sequences_.keys()) == ["left_sensor", "right_sensor"]
+        for sensor in ["left_sensor", "right_sensor"]:
+            assert gsd.gait_sequences_[sensor].empty
+
+    def test_merge_gait_sequences_multi_sensor_data(self):
+        """Test the pure functionality of the merging with dummy data."""
+        data_columns = BF_COLS
+
+        # create dummy data
+        data_df = pd.DataFrame([[1] * 6], columns=data_columns)
+        data_df = pd.concat([data_df] * 30)
+        dummy_multisensor_data = pd.concat({"left_sensor": data_df, "right_sensor": data_df}, axis=1)
+
+        # create dummy result
+        left_output = pd.DataFrame({"gs_id": [0, 1, 2, 3], "start": [1, 6, 10, 15], "end": [3, 8, 12, 17]})
+        right_output = pd.DataFrame({"gs_id": [0, 1, 3], "start": [0, 5, 17], "end": [2, 9, 20]})
+        expected_merged = pd.DataFrame({"gs_id": [0, 1, 2, 3], "start": [0, 5, 10, 15], "end": [3, 9, 12, 20]})
+        gait_sequences_ = {"left_sensor": left_output, "right_sensor": right_output}
+
+        gsd = UllrichGaitSequenceDetection()
+        gsd.data = dummy_multisensor_data
+
+        out = gsd._merge_gait_sequences_multi_sensor_data(gait_sequences_)
+
+        for sensor in ["left_sensor", "right_sensor"]:
+            assert_frame_equal(out[sensor], expected_merged, check_dtype=False)
+
+    def test_gait_sequence_concat(self):
+        """Test the concatenation of subsequent gait sequences"""
+
+        sig_length = 95
+        window_size = 10
+        gait_sequences_start = [0, 10, 20, 40, 50, 70, 80, 90]
+        # We expect intervals with subsequent starts to be concatenated, ending with the last start + window size and
+        # if the last sequence would be longer than the signal, the signal size should be set
+        out_expected = [[0, 30], [40, 60], [70, 95]]
+
+        out = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
+
+        np.testing.assert_array_equal(out, out_expected)
