@@ -65,6 +65,28 @@ class Dataset(_BaseSerializable):
     def index_as_dataframe(self):
         return self.index
 
+    def _is_single(self):
+        not_zero = 0
+
+        for value in self.columns.values():
+            not_zero += 1 if len(value) > 0 else 0
+
+        return not_zero <= 1
+
+    def __iter__(self):
+        self.__n = 0  # noqa: attribute-defined-outside-init
+        return self
+
+    def __next__(self):
+        categories_to_search = self.index[self.select_lvl].cat.categories
+
+        if self._is_single() or self.__n == len(categories_to_search):
+            raise StopIteration
+
+        to_return = self.__getitem__(categories_to_search[self.__n])
+        self.__n += 1
+        return to_return
+
     @staticmethod
     def _create_index():
         raise NotImplementedError
