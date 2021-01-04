@@ -38,15 +38,15 @@ This means you are expected to pick and use individual algorithms.
 A good way to get an overview over the available algorithms and possibilities is to look at the
 [Examples](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/auto_examples/index.html).
 It is also highly advisable to read through the guides on
-[Coordinate Systems](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Coordinate-Systems.html)
+[Coordinate Systems](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/user_guide/coordinate_systems.html)
 and the
-[Default Datatypes](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Gaitmap-Datatypes.html).
+[Common Datatypes](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/user_guide/datatypes.html).
 
 ## For Developers
 
-The [Developer Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Development-Guide.html)
+The [Development Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/development/development_guide.html)
 and the
-[Project Structure Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/guides/Project-Structure.html)
+[Project Structure Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/development/project_structure.html)
 have detailed information for all new developers.
 Below, we included some very basic information as a quick reference here in the README.
 
