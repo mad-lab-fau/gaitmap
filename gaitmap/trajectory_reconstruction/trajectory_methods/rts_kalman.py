@@ -9,6 +9,7 @@ from numba import njit
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod
+from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
 from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
@@ -105,6 +106,8 @@ class RtsKalman(BaseTrajectoryMethod):
     covariance_
         The covariance matrices of the kalman filter after smoothing.
         They can be used as a measure of how good the filter worked and how accurate the results are.
+    zupts_
+        2D array indicating the start and the end samples of the detected ZUPTs for debug porpuses.
 
     Other Parameters
     ----------------
@@ -179,7 +182,9 @@ class RtsKalman(BaseTrajectoryMethod):
 
     data: SingleSensorData
     sampling_rate_hz: float
+
     covariance_: pd.DataFrame
+    zupts_: np.ndarray
 
     def __init__(
         self,
@@ -255,7 +260,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
-        zupts = self.find_zupts(gyro_data)
+        zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
         states, covariances = _rts_kalman_update_series(
             acc_data,
@@ -290,19 +295,35 @@ class RtsKalman(BaseTrajectoryMethod):
             [pd.DataFrame(cov, columns=covariance_cols, index=covariance_cols) for cov in covariances],
             keys=range(len(covariances)),
         )
+        self.zupts_ = bool_array_to_start_end_array(zupts)
         return self
 
-    def find_zupts(self, gyro):
-        """Find the ZUPT samples based on the gyro measurements."""
-        window_length = max(2, round(self.sampling_rate_hz * self.zupt_window_length_s))
+    def find_zupts(self, gyro, sampling_rate_hz: float):
+        """Find the ZUPT samples based on the gyro measurements.
+
+        Parameters
+        ----------
+        gyro
+            gyro in rad/s
+        sampling_rate_hz
+            sampling rate of the gyro data
+
+        Returns
+        -------
+        zupt_array
+            array of length gyro with True and False indicating a ZUPT.
+
+        """
+        window_length = max(2, round(sampling_rate_hz * self.zupt_window_length_s))
         zupt_window_overlap_s = self.zupt_window_overlap_s
         if zupt_window_overlap_s is None:
             window_overlap = int(window_length // 2)
         else:
-            window_overlap = round(self.sampling_rate_hz * zupt_window_overlap_s)
-        return find_static_samples(
+            window_overlap = round(sampling_rate_hz * zupt_window_overlap_s)
+        zupts = find_static_samples(
             gyro, window_length, self.zupt_threshold_dps * (np.pi / 180), "maximum", window_overlap
         )
+        return zupts
 
 
 @njit()

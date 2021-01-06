@@ -65,6 +65,18 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         assert len(test.covariance_.columns) == 9
         assert test.covariance_.index.levshape == (len(sensor_data) + 1, 9)
 
+    def test_zupt_output(self):
+        test = self.init_algo_class(zupt_threshold_dps=10, zupt_window_length_s=0.01)
+        fs = 15
+        sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 100.0])[None, :], 100, axis=0)
+        expected_zupts = [[0, 10], [30, 55], [85, 90]]
+        for z in expected_zupts:
+            sensor_data[slice(*z), -1] = 0
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+        test.estimate(sensor_data, fs)
+
+        assert_array_almost_equal(expected_zupts, test.zupts_)
+
     def test_corrects_velocity_drift(self):
         """Check that ZUPTs correct a velocity drift and set velocity to zero."""
         test = RtsKalman(level_walking=False, zupt_window_length_s=0.2)
