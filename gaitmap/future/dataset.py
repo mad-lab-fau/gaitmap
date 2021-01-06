@@ -13,9 +13,7 @@ class Dataset(_BaseSerializable):
 
     @property
     def index(self):
-        if self.__subset_index is None:
-            return self._create_index()
-        return self.__subset_index
+        return self._create_index() if self.__subset_index is None else self.__subset_index
 
     @property
     def select_lvl(self):
@@ -75,15 +73,14 @@ class Dataset(_BaseSerializable):
 
     def __iter__(self):
         self.__n = 0  # noqa: attribute-defined-outside-init
+        self.__categories_to_search = self.index[self.select_lvl].cat.categories  # noqa: attribute-defined-outside-init
         return self
 
     def __next__(self):
-        categories_to_search = self.index[self.select_lvl].cat.categories
-
-        if self._is_single() or self.__n == len(categories_to_search):
+        if self._is_single() or self.__n == len(self.__categories_to_search):
             raise StopIteration
 
-        to_return = self.__getitem__(categories_to_search[self.__n])
+        to_return = self.__getitem__(self.__categories_to_search[self.__n])
         self.__n += 1
         return to_return
 
