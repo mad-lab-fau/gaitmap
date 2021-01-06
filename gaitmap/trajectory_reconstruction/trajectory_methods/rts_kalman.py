@@ -291,10 +291,10 @@ class RtsKalman(BaseTrajectoryMethod):
             "y_ori_cov",
             "z_ori_cov",
         ]
-        self.covariance_ = pd.concat(
-            [pd.DataFrame(cov, columns=covariance_cols, index=covariance_cols) for cov in covariances],
-            keys=range(len(covariances)),
-        )
+        covariance_cols = pd.MultiIndex.from_product((covariance_cols, covariance_cols))
+        covariances = covariances.reshape((covariances.shape[0], -1))
+        self.covariance_ = pd.DataFrame(covariances, columns=covariance_cols)
+
         self.zupts_ = bool_array_to_start_end_array(zupts)
         return self
 

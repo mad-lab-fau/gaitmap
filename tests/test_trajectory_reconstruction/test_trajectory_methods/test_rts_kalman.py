@@ -61,9 +61,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
 
-        assert len(test.covariance_) == (len(sensor_data) + 1) * 9
-        assert len(test.covariance_.columns) == 9
-        assert test.covariance_.index.levshape == (len(sensor_data) + 1, 9)
+        assert test.covariance_.shape == (len(sensor_data) + 1, 9 * 9)
 
     def test_zupt_output(self):
         test = self.init_algo_class(zupt_threshold_dps=10, zupt_window_length_s=0.01)

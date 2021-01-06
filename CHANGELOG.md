@@ -48,6 +48,11 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - `gait_detection.ullrich_gait_sequence_detection` now uses `utils.array_handling.merge_intervals` and should therefore
   be able to merge sequences faster. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
+- The `regions_of_interest` parameter of `RoiStrideSegmentation.segment` is now keyword only to be compatible with the
+  `StrideSegmentation` base class.
+- `RtsKalman.covariance` now has the shape `(len(data), 9 * 9)` instead of `(len(data) * 9, 9)` which should make it 
+  easier to plot.
+  
 
 ### Deprecated
 
