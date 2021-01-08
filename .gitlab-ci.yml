@@ -1,44 +1,75 @@
 stages:
+  - create_env
   - testing
   - deploy
   - pages
+
+variables:
+  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
 
 .python_base: &python_base
   tags:
     - docker
   image: python:3.7
+
+.cached_python_base: &cached_python_base
+  <<: *python_base
   before_script:
+    - find ${CI_PROJECT_DIR}/.venv/ -xtype l -delete
+    - python -m venv ${CI_PROJECT_DIR}/.venv/
+    - . ${CI_PROJECT_DIR}/.venv/bin/activate
+  dependencies:
+    - create_env
+
+create_env:
+  stage: create_env
+  <<: *python_base
+  script:
     - git config --global credential.helper store
     - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
     - pip install pip --upgrade
     - pip install poetry
-    - poetry config virtualenvs.in-project false
-    - poetry cache clear pypi --all
     - poetry run pip install psutil
-    - poetry install
+    - poetry update --lock
+    - poetry install  --remove-untracked
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - ${CI_PROJECT_DIR}/.venv
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+      - .venv
+      - poetry.lock
+
 
 test:
   stage: testing
-  <<: *python_base
+  <<: *cached_python_base
   script:
-    - poetry run doit test
+    - doit test -p "-n 4"
 
 lint:
   stage: testing
-  <<: *python_base
+  <<: *cached_python_base
   script:
-    - poetry run doit -v 0 --continue format_check lint
+    - doit -v 0 --continue format_check lint
 
 docs:
   stage: deploy
-  <<: *python_base
+  <<: *cached_python_base
   script:
-    - poetry run doit docs
+    - doit docs
     - mv docs/_build/html ./html_docs
   artifacts:
     paths:
       - html_docs
     expire_in: 2 month
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - docs
 
 pages:
   stage: pages
