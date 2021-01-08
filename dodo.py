@@ -22,7 +22,11 @@ def task_format_check():
 
 def task_test():
     """Run Pytest with coverage."""
-    return {"actions": [["pytest", "--cov=gaitmap"]], "verbosity": 2}
+    return {
+        "actions": ["pytest --cov=gaitmap %(paras)s"],
+        "params": [{"name": "paras", "short": "p", "long": "paras", "default": ""}],
+        "verbosity": 2,
+    }
 
 
 def task_lint():
