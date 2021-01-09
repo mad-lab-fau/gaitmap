@@ -13,7 +13,10 @@ class Dataset(_BaseSerializable):
 
     @property
     def index(self):
-        return self._create_index() if self.__subset_index is None else self.__subset_index
+        if hasattr(self, "__cached_index"):
+            return self.__cached_index
+
+        return self.__create_index() if self.__subset_index is None else self.__subset_index
 
     @property
     def select_lvl(self):
@@ -63,7 +66,7 @@ class Dataset(_BaseSerializable):
     def index_as_dataframe(self):
         return self.index
 
-    def _is_single(self):
+    def __is_single(self):
         not_zero = 0
 
         for value in self.columns.values():
@@ -77,7 +80,7 @@ class Dataset(_BaseSerializable):
         return self
 
     def __next__(self):
-        if self._is_single() or self.__n == len(self.__categories_to_search):
+        if self.__is_single() or self.__n == len(self.__categories_to_search):
             raise StopIteration
 
         to_return = self.__getitem__(self.__categories_to_search[self.__n])
@@ -85,5 +88,5 @@ class Dataset(_BaseSerializable):
         return to_return
 
     @staticmethod
-    def _create_index():
+    def __create_index():
         raise NotImplementedError
