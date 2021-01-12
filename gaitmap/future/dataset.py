@@ -1,5 +1,4 @@
 """Base class for all datasets."""
-
 from typing import Optional
 
 import numpy as np
@@ -99,7 +98,7 @@ class Dataset(_BaseSerializable):
     def select_lvl(self, value: Optional[str]):
         """Set select_lvl."""
         if value is None:
-            self._select_lvl = list(self.index.columns)[0]
+            self._select_lvl = self.index.columns[0]
         elif value in self.index.columns:
             self._select_lvl = value
         else:
@@ -113,28 +112,27 @@ class Dataset(_BaseSerializable):
     @property
     def shape(self):
         """Get shape."""
-        return (len(np.concatenate(list(self.columns.values()))),)
+        return (len(self.index.index),)
 
     def __getitem__(self, subscript):
         """Return a dataset object."""
-        to_concat = []
-
         if isinstance(subscript, (tuple, list, np.ndarray)):
             if isinstance(subscript[0], str):
-                for string in subscript:
-                    to_concat.append(self.index.loc[self.columns[string]])
-            else:
-                to_concat.append(
-                    self.index.iloc[list(filter(lambda x: x in np.concatenate(list(self.columns.values())), subscript))]
+                return Dataset(
+                    pd.concat([self.index.loc[self.columns[string]] for string in subscript]).reset_index(drop=True),
+                    self.select_lvl,
                 )
 
-        elif isinstance(subscript, str):
-            to_concat.append(self.index.loc[self.columns[subscript]])
+            possible_indices = list(self.index.index)
+            return Dataset(
+                self.index.iloc[list(filter(lambda i: i in possible_indices, subscript))].reset_index(drop=True),
+                self.select_lvl,
+            )
 
-        if len(to_concat) == 0:
-            raise IndexError("Subscript {} not applicable to this dataset!".format(subscript))
+        if isinstance(subscript, str):
+            return Dataset(self.index.loc[self.columns[subscript]].reset_index(drop=True), self.select_lvl)
 
-        return Dataset(pd.concat(to_concat).reset_index(drop=True), self.select_lvl)
+        raise IndexError("Subscript {} not applicable to this dataset!".format(subscript))
 
     def __repr__(self):
         """Return string representation of the dataset object."""
@@ -148,12 +146,9 @@ class Dataset(_BaseSerializable):
         """Return the dataset as a pd.Dataframe."""
         return self.index
 
-    def __is_single(self):
-        return len([v for v in self.columns.values() if len(v) > 0]) <= 1
-
     def __iter__(self):
         """Return generator object containing subset of every category from the selected level."""
-        return (self.__getitem__(category) for category in self.index[self.select_lvl].cat.categories)
+        return (self.__getitem__(category) for category in self.columns)
 
     @staticmethod
     def __create_index():
