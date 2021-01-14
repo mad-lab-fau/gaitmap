@@ -119,8 +119,9 @@ However, because we trained and optimized this instance using our overall approa
 expect another instance of our algorithm to be when it is trained with the same approach on different (but similar)
 data.
 
-In real-life applications, we would actually **not** use the algorithm instance we created during evaluation and deploy it
-in our production setting. More information on that in the final section of this guide (TODO: add link)
+In real-life applications, we would actually **not** use the algorithm instance we created during evaluation and deploy
+it in our production setting.
+More information on that in the :ref:`final section of this guide <putting_everything_together>`.
 
 
 Algorithm Optimization
@@ -438,7 +439,7 @@ The final performance we will report the mean over all cross-validation folds.
     Explaining it that way, it is clearer that one cross-validation is an integral part of our approach (even outside
     the concept of evaluation) and the other one is added to perform the evaluation.
 
-.. _p
+.. _putting_everything_together:
 
 Putting everything together
 ===========================
