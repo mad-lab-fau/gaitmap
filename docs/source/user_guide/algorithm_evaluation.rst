@@ -178,7 +178,7 @@ With Hyper-Parameter Optimization
 In basically all cases it is advisable to adjust available hyper-parameters of your model.
 They influence the training and control, for example, how well your model will be able to fit to your data or prevent
 your model from overwriting.
-However, as no intrinsic method exist to optimize these parameters (in most cases), we usually have to try different
+However, as no intrinsic method exists to optimize these parameters (in most cases), we usually have to try different
 value combinations and see how well they perform.
 Instead of doing that by hand - or as someone on twitter called it: "graduate student decent" -, we usually use
 brute-force methods (grid search, random search, ...) to test out various parameter combinations.
