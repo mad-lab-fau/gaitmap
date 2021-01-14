@@ -529,7 +529,49 @@ Group 3
 
 For all of these approaches you can retrain/reoptimize on all of you data to generate your production model.
 
+A note on ...
+=============
 
-TODO: A note on brute-force methods.
-TODO: A note on cross validation
-TODO: A note on cumputation time
+... brute-force methods
+-----------------------
+In this guide we used brute-force methods basically synonymously with Grid Search.
+This is not correct.
+There exist multiple approaches to "just trying our multiple parameter combinations".
+There are random search methods, adaptive grid search methods, and methods like Bayes Optimization, that can be much
+faster than naive Grid Search in certain cases.
+All of these methods are suitable substitutes to Grid Search and can be used in the same way.
+
+Further, we sometimes just say that parameters can only be optimized by brute-force methods, because we are lazy do not
+want to do the math.
+If you want the best results for one of your parameters (in particular in the Group 1 methods), think about if it is
+possible to calculate a gradient over your entire algorithm.
+Basically, can you find a mathematically formulation for the question "How does my performance parameter change if I
+make a small change of my parameter?".
+If this appears feasible, you can use traditional optimization methods to find the optimal parameter values.
+Tools that can automatically calculate gradients over complicated functions (like
+`jax <https://github.com/google/jax>`__) can help with that.
+
+... cross-validation
+--------------------
+In this guide we used cross-validation, whenever we performed an evaluation multiple time, because we feared that a
+single split might be to unstable.
+There exist other methods besides cross-validation to do that and even within the realm of cross-validation, different
+types of cross-validation exist.
+Depending on your data and your application other methods (like repeated random splits) might be better than simple
+cross-validation.
+Such methods can be used equivalently to cross-validation in the context of this guide.
+
+... computation time
+--------------------
+Using cross-validation and grid search requires our algorithms to be trained over and over again (sometimes even on the
+same data).
+This is expensive and can take a loooooooong time.
+The reality is that real live constrains on computational power sometimes prevent us to follow all the "ideal world"
+guidelines.
+In particular in the deep learning community where datasets are large and training times long, cross validation is often
+substituted with a single train-test split and instead of grid search parameters are often optimized based on
+experience.
+While this might be less robust, or even might lead to accidental train-test leaks in the hyper-parameter selection, it
+is better than not being able to do an experiment at all.
+This should absolutely not insensitive you to do the same, if you are annoyed by your computer needs to work for 5 min,
+but it should simply show you that this guide, assumes an "ideal world", which is not always expect.
