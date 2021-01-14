@@ -190,7 +190,7 @@ We can not use the *test* set in the context of evaluation.
 As we established, this is complete off-limits.
 However, we can also not use the same data we used for training.
 Otherwise, we would promote models that heavily overfit.
-The solution is to split of an additional part of the data that we can use for performance evaluation during
+The solution is to split off an additional part of the data that we can use for performance evaluation during
 hyper-parameter optimization.
 We call this the *validation* set to avoid confusion with the *test* set.
 
