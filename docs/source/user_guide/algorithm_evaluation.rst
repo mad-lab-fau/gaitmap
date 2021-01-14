@@ -91,7 +91,7 @@ Evaluating an Algorithm (Part 1)
     However, as soon as you start to make changes to your algorithms, because you are not happy with the performance you
     saw, you are optimizing parameters, and should make sure that you follow the procedures explained here.
 
-Independent of which group your algorithm belongs, you must never evaluate its performance on the same data you trained/
+Independent of which group your algorithm belongs to, you must never evaluate its performance on the same data you trained/
 optimized parameters on.
 Otherwise, we have a *train-test* leak that results in a far to optimistic evaluation of your algorithm and the
 performance of the algorithm in the "real world" (aka on unlabeled data in the future) will be much worse than you
