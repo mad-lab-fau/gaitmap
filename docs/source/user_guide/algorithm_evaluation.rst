@@ -110,7 +110,7 @@ But for now we will assume we just sectioned of a small part of our labeled data
 
 What are we evaluating?
 -----------------------
-This might be a stupid question, but it is important to understand that in the context of algorithms that have parts
+This might seem like a stupid question, but it is important to understand that in the context of algorithms that have parts
 that can be trained or optimized, we do not evaluate a specific instance of an algorithm (algorithm + model + parameter
 set), but rather our entire approach (algorithm + training method + parameter optimization method).
 Yes, the final performance parameter, that we get when applying our optimized algorithm to the *test* data, tells us how
