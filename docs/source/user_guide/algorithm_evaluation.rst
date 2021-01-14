@@ -17,7 +17,7 @@ of gait analysis algorithms.
 In particular, we will discuss when and how to use cross validation.
 
 While this concept of evaluation and labeled data (and the related naming) is heavily influenced by machine learning,
-the concepts discussed here apply or rather need to be applied for all "non-machine-learning" algorithms as well.
+the concepts discussed here apply, or rather need to be applied, for all "non-machine-learning" algorithms as well.
 In the following we will provide guides for specific "groups" of algorithms, depending if they contain data-driven
 learning or not.
 
