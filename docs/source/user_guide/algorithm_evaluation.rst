@@ -220,7 +220,7 @@ hyper-parameters and then retrained the model on all the data we had available d
 This ensures that our model can make use of as much data as possible.
 
 This is actually a critical point.
-In many situation, we don't have sufficient data available to create a *validation* set without risking that our
+In many situations, we don't have sufficient data available to create a *validation* set without risking that our
 hyper-parameter optimization will heavily depend on which data ends up in the *validation* set.
 As this split usually occurs randomly, we do not want to take the chance that our entire model fails, because of a bad
 random split.
