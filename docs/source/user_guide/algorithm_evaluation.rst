@@ -271,7 +271,7 @@ a training step.
 
 Let's understand why with two explanation approaches:
 
-Let's look at our brute-force method as a black-box that - given some data - provides an optimal set of parameters.
+Let's look at our brute-force method as a black-box provides an optimal set of parameters given some "training" data.
 If we now simply replace the word "parameters" with "weights" we actually described the concept of a machine
 learning algorithm.
 A poor one - yes.
@@ -375,27 +375,30 @@ All combinations of the regular parameters can then again be tested based on a c
 
 Group 3 is kind of strange ...
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When reading this, you might ask yourselves, which algorithms (beside template matching), could actually considered
+When reading this, you might ask yourselves, which algorithms (besides template matching), could actually be considered
 *Group 3*.
-Actually, there are a couple.
-In general, all algorithms where the *trainable* part of the algorithm doesn't get us all the way, and post processing
+The special requirement is that it needs to be possible to train the trainable components of the algorithm, even though
+we only have ground truth available for the final output.
+But there are a couple of algorithms that fulfil this requirement!
+In general, all algorithms where the *trainable* part of the algorithm doesn’t get us all the way, and post processing
 steps are required to calculate the final output, can be considered *Group 3*.
-This would be for example stride detection algorithms that only provide stride candidates that are selected based on
-further criteria that can be optimized.
-This could machine learning algorithms for trajectory estimation that need smoothing of the final output.
-In all this cases, I can train just the machine learning part on my ideal expected output.
-But, I never expect the algorithm to perfectly reproduce that ideal output.
+For example, this could be stride detection algorithms that only provide stride candidates that then are selected based
+on further criteria.
+If these criteria have adjustable parameters, we have a *Group3* situation..
+This could be machine learning algorithms for trajectory estimation that need smoothing of the final output.
+In both cases, we can train just the machine learning part on the provided training data.
+But we never expect the algorithm to perfectly reproduce that ideal output.
 Hence, post processing steps are required that can for various reasons not directly be implemented in the model itself.
 
-But, in the grand scheme of things, it is right to say that not many algorithms that fall in into *Group 3*, as it needs
-to be possible to train the trainable components, even though we only have ground truth available for the final output
-of the algorithm.
-This is rare and in most cases we need to find a way to produce ground truth for the intermediate output of model.
-But even in these case, we should follow the optimization concept outlined above.
+But, in the grand scheme of things, it is right to say that few algorithms fall in into *Group 3*, as they not
+fulfill the requirement stated above.
+For most complicated and chained algorithms, we need to produce ground truth for the intermediate outputs so that parts
+of the algorithm can be trained/optimized independently.
+But even in these cases, we should follow the optimization concept outlined above.
 If we first train our model based on the intermediate ground truth and then optimize the parameters of the remaining
-steps independently, but on the same data pool, we still risk overfitting these parameters as explained above.
-Simply speaking, we expect the output of our model to be better on our training data as on unseen data.
-This means that we optimize our remaining parameters based on this "best case" output (btw. the same would be true if we
+steps independently, but on the same data pool, we still risk over-fitting these parameters as explained above.
+Simply, we expect the output of our model to be better on our training data as on unseen data.
+This means we optimize our remaining parameters based on this “best case” output (btw. the same would be true if we
 use the intermediate ground truth as input for the parameter optimization).
 Depending on the exact model and algorithm, this might not generalize well to unseen data, where the output of model
 component is less ideal.
@@ -412,20 +415,20 @@ and optimization approaches.
 Our general approach we introduced so far is as follows:
 
 1. Split the data into train and test data
-2. Perform parameter optimization and algorithm training on the *training* data
+2. Perform parameter optimization and algorithm training on the *train* data
 3. Apply the optimized algorithm instance to the *test* data and calculate performance parameters.
 
 Note that this is a **general** approach and Step 2 can be substituted with any of the optimization approaches we
 learned about above.
 
 In general this way of evaluating is totally fine, but, like with the *validation* set before, if we do not have enough
-data, our reported performance might depend on the random split we performed.
+data, our reported performance might depend on the random split we performed in step 1.
 In return, our approach could actually be better or worse on real world data.
-Therefore, to get a more robust (but in general slightly pessimistic) performance value, we can repeat the evaluation
+Therefore, to get a more robust (but in general slightly pessimistic) performance estimate, we can repeat the evaluation
 multiple times with different train-test splits.
 Aka, we perform a cross-validation.
-This simply means, we repeat our evaluation workflow in a loop while changing out the train and test split in Step 1
-in each loop.
+This simply means, we repeat our evaluation workflow in a loop while changing out the train and test split in step 1
+in each iteration.
 The final performance we will report the mean over all cross-validation folds.
 
 .. note::
@@ -445,22 +448,22 @@ Putting everything together
 ===========================
 
 In real life applications, evaluating the performance of an algorithmic approach is not where things end.
-Usually, our overarching goal is to create an algorithms instance (a "production model") that can be used on future unseen
-(and unlabeled) data to serve our application.
+Usually, our overarching goal is to create an algorithms instance (a "production model") that can be used on future
+unseen (and unlabeled) data to serve our application.
 Evaluation is there to tell us if our approach will be good enough for the application we want to accomplish in the
 real world.
 
-But how to we generate this final algorithms instance?
+But how do we generate this final algorithms instance?
 Remember, that our evaluation actually evaluates our **approach** and not an individual algorithm instance.
 This means we can confidently use our approach to optimize and train an algorithm instance on **all** labeled
 data we have (train and test data), **without** performing any final evaluation.
 This seems a little bit risky, but if our prior evaluation was thorough, we can expect our final algorithmic instance
 to be at least as good as what we saw during the evaluation process.
 
-Before we go through the final workflow to do that, let's step back for a second and answer the question, why we want to
-do that.
-During the evaluation we already created multiple algorithmic instances (one per CV fold) that appeared to be very
-capable.
+Before we go through the final workflow to do that, let's step back for a second and answer the question, why we would
+want to do that.
+During the evaluation we already created multiple algorithmic instances (one per cross-validation fold) that ideally
+were already very capable.
 Why shouldn't we use one of these models in production?
 The issue with each of these models is that it was trained only on a portion of all available labeled data we have,
 as we needed to hold back some data for testing in each fold.
@@ -474,8 +477,8 @@ So with all of that in mind, our full workflow (from idea to production model) w
 
 1. Do some experimenting with data and the algorithm to get a better understanding on potential pitfalls and narrow down
    parameter ranges for potential brute-force optimization.
-   In an ideal world, you would do that *after* you put some data away, which could serve as some sort of "ultimate" test
-   set, which would even be free from human bias.
+   In an ideal world, you would do that *after* you put some data away, which could serve as some sort of "ultimate"
+   test set, which would even be free from human biases.
    But, in reality this is rarely done...
 2. Evaluate your approach using cross-validation.
    In each fold you run your *entire* approach including your chosen method for parameter optimization and/or training.
@@ -484,7 +487,7 @@ So with all of that in mind, our full workflow (from idea to production model) w
    If yes, continue with Step 4.
    If not, go back to the drawing board.
    Again in an ideal world, you should not reuse your dataset, as you now have seen the performance results on the test
-   sets and now change/optimize your approach based on this knowledge.
+   sets and now change/optimize your approach based on this knowledge and hence, risking over-fitting to human biases.
    But again, this is unrealistic in the real world.
 4. Create a production model by taking **all** your available labeled data.
    Use the production model for all future unlabeled data.
@@ -492,12 +495,19 @@ So with all of that in mind, our full workflow (from idea to production model) w
    the same patient population, measured in the same context, ...).
    If they are not, you would need to obtain labeled data for the new use case and run through the evaluation again and
    potentially adapt your production model.
+   Further, it is common to update your production model once further labeled data becomes available.
+   This makes sure that your production model always performs as good as possible.
+   It is also common practice to define certain benchmark datasets that can be used to track your changes in performance
+   over multiple iterations of your approach (in this case you would perform the described evaluation process on the
+   data), or your production model (in this case the benchmark dataset is used as "ultimate" test set that is excluded
+   from training, even in the production model. This become feasible if you have a lot of data and tracking your
+   performance in production is important)
 
 Summary Table
 =============
 
 .. warning::
-    Read the text before using this table!
+    Read the entire guide before using this table!
 
 Here is a quick summary of how implement the full approach for each of our algorithm Groups:
 
@@ -506,7 +516,7 @@ Group 1
         - Grid Search
     Evaluation
         - cross-validation were you perform a grid search in each fold and select an optimal parameter set per fold.
-          **This is different from `GridSearchCV` in sklearn!**
+          **This is different from `GridSearchCV` in `sklearn`!**
 Group 2 (without hyper-parameters)
     Optimization
         - Algorithm specific training
@@ -517,11 +527,11 @@ Group 2 (with hyper-parameters)
         - Grid Search with an embedded cross-validation for hyper-parameter optimization.
           You obtain one performance value per parameter combination and fold.
           Pick the parameter combination that has the best *average* performance over all folds.
-          **This is `GridSearchCV` in sklearn.`**
+          **This is `GridSearchCV` in `sklearn`.**
         - Take the best parameter combination and retrain on all the optimization data with the algorithm specific
           training method.
     Evaluation
-        - cross-validation and perform the entire optimization step per fold.
+        - cross-validation, where you perform the entire optimization and retrain step per fold.
 Group 3
     Optimization
         - Identical to Group 2, but with optional caching to speed up the process.
@@ -542,9 +552,9 @@ There are random search methods, adaptive grid search methods, and methods like 
 faster than naive Grid Search in certain cases.
 All of these methods are suitable substitutes to Grid Search and can be used in the same way.
 
-Further, we sometimes just say that parameters can only be optimized by brute-force methods, because we are lazy and do not
-want to do the math.
-If you want the best results for one of your parameters (in particular in the Group 1 methods), think about if it is
+Further, we sometimes just say that parameters can only be optimized by brute-force methods, because we are lazy and do
+not want to do the math.
+If you want the best results for one of your parameters (in particular in the *Group 1* methods), think about if it is
 possible to calculate a gradient over your entire algorithm.
 Basically, can you find a mathematical formulation for the question "How does my performance parameter change if I
 make a small change of my parameter?".
@@ -555,7 +565,7 @@ Tools that can automatically calculate gradients over complicated functions (lik
 ... cross-validation
 --------------------
 In this guide we used cross-validation whenever we performed an evaluation multiple time, because we feared that a
-single split might be too unstable.
+single *train*-*validation/test* split might be too unstable.
 There exist other methods besides cross-validation to do that and even within the realm of cross-validation, different
 types of cross-validation exist.
 Depending on your data and your application other methods (like repeated random splits) might be better than simple
@@ -569,10 +579,10 @@ same data).
 This is expensive and can take a loooooooong time.
 The reality is that real-life constrains on computational power sometimes prevent us to follow all the "ideal world"
 guidelines.
-In particular in the deep learning community where datasets are large and training times are long, cross-validation is often
-substituted with a single train-test split and, instead of grid search, parameters are often optimized based on
+In particular in the deep learning community where datasets are large and training times are long, cross-validation is
+often substituted with a single train-test split and - instead of grid search - parameters are often optimized based on
 experience.
-While this might be less robust, or even might lead to accidental train-test leaks in the hyper-parameter selection, it
-is better than not being able to do an experiment at all.
-This should absolutely not incentivize you to do the same, if you are annoyed by your computer needs to work for 5 min,
-but it should simply show you that this guide assumes an "ideal world" which is not always expect.
+While this might be less robust, or even might lead to accidental train-test leaks in the hyper-parameter selection due
+to human biases, it is better than not being able to do an experiment at all.
+This should absolutely not incentivize you to do the same, if you are annoyed by your computer needing to work for
+5 min, but it should simply show you that this guide assumes an "ideal world", which you can not always expect.
