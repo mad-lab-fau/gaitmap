@@ -12,6 +12,9 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/105)
 - New function for merging intervals that are overlapping and that are within a specific distance from each other in
   `utils.array_handling`. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
+- Added some utils to simplify caching algorithms with `joblib`.
+  There is also a new example explaining caching in more detail.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/126)
 
 ### Changed
 
