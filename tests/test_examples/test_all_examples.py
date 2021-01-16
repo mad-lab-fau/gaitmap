@@ -9,21 +9,21 @@ matplotlib.use("Agg")
 
 
 def test_base_dtw_generic(snapshot):
-    from examples.base_dtw_generic import dtw
+    from examples.generic_algorithms.base_dtw_generic import dtw
 
     assert len(dtw.matches_start_end_) == 5
     snapshot.assert_match(dtw.matches_start_end_)
 
 
 def test_barth_dtw_example(snapshot):
-    from examples.barth_dtw_stride_segmentation import dtw
+    from examples.stride_segmentation.barth_dtw_stride_segmentation import dtw
 
     assert len(dtw.matches_start_end_["left_sensor"]) == 28
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
 def test_constrained_barth_dtw_example(snapshot):
-    from examples.constrained_barth_dtw_stride_segmentation import dtw, cdtw, default_cdtw
+    from examples.stride_segmentation.constrained_barth_dtw_stride_segmentation import dtw, cdtw, default_cdtw
 
     assert len(dtw.matches_start_end_["left_sensor"]) == 74
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"], "dtw")
@@ -36,13 +36,13 @@ def test_constrained_barth_dtw_example(snapshot):
 
 
 def test_roi(snapshot):
-    from examples.barth_dtw_stride_segmentation_roi import roi_seg
+    from examples.stride_segmentation.barth_dtw_stride_segmentation_roi import roi_seg
 
     snapshot.assert_match(roi_seg.stride_list_["left_sensor"])
 
 
 def test_preprocessing_example(snapshot):
-    from examples.preprocessing_example import dataset_sf_aligned_to_gravity
+    from examples.preprocessing.preprocessing_example import dataset_sf_aligned_to_gravity
 
     desired_acc_vec = np.array([0.0, 0.0, 9.81])
 
@@ -59,19 +59,19 @@ def test_preprocessing_example(snapshot):
 
 
 def test_temporal_parameters(snapshot):
-    from examples.temporal_parameters import p
+    from examples.parameters.temporal_parameters import p
 
     snapshot.assert_match(p.parameters_["left_sensor"])
 
 
 def test_spatial_parameters(snapshot):
-    from examples.spatial_parameters import p
+    from examples.parameters.spatial_parameters import p
 
     snapshot.assert_match(p.parameters_["left_sensor"])
 
 
 def test_rampp_event_detection(snapshot):
-    from examples.rampp_event_detection import ed
+    from examples.event_detection.rampp_event_detection import ed
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
@@ -80,7 +80,7 @@ def test_rampp_event_detection(snapshot):
 
 
 def test_json_example(snapshot):
-    from examples.algo_serialize import json_str, slt, loaded_slt
+    from examples.advanced_features.algo_serialize import json_str, slt, loaded_slt
 
     snapshot.assert_match(json_str)
 
@@ -88,7 +88,7 @@ def test_json_example(snapshot):
 
 
 def test_trajectory_reconstruction(snapshot):
-    from examples.trajectory_reconstruction import trajectory
+    from examples.trajectory_reconstruction.trajectory_reconstruction import trajectory
 
     # just look at last values to see if final result is correct and save runtime
     snapshot.assert_match(trajectory.position_["left_sensor"].tail(20))
@@ -96,8 +96,10 @@ def test_trajectory_reconstruction(snapshot):
 
 
 def test_region_trajectory_reconstruction(snapshot):
-    from examples.trajectory_reconstruction_region import trajectory_full
-    from examples.trajectory_reconstruction_region import trajectory_per_stride
+    from examples.trajectory_reconstruction.trajectory_reconstruction_region import (
+        trajectory_full,
+        trajectory_per_stride,
+    )
 
     # look at some random values in the center to test
     snapshot.assert_match(trajectory_full.position_["left_sensor"].iloc[5000:5020])
@@ -108,7 +110,7 @@ def test_region_trajectory_reconstruction(snapshot):
 
 
 def test_mad_pipeline(snapshot):
-    from examples.mad_gait_pipeline import ed, spatial_paras, temporal_paras
+    from examples.full_pipelines.mad_gait_pipeline import ed, spatial_paras, temporal_paras
 
     snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left")
     snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right")
@@ -119,7 +121,7 @@ def test_mad_pipeline(snapshot):
 
 
 def test_ullrich_gait_sequence_detection(snapshot):
-    from examples.ullrich_gait_sequence_detection import gsd
+    from examples.gait_detection.ullrich_gait_sequence_detection import gsd
 
     assert len(gsd.gait_sequences_) == 2
     snapshot.assert_match(gsd.gait_sequences_.astype(np.int64))

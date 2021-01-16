@@ -19,6 +19,7 @@ from inspect import getsourcelines, getsourcefile
 from pathlib import Path
 
 import toml
+from sphinx_gallery.sorting import ExplicitOrder
 
 import gaitmap
 
@@ -135,6 +136,19 @@ sphinx_gallery_conf = {
     "filename_pattern": re.escape(os.sep),
     "remove_config_comments": True,
     "show_memory": True,
+    "subsection_order": ExplicitOrder(
+        [
+            "../examples/full_pipelines",
+            "../examples/preprocessing",
+            "../examples/gait_detection",
+            "../examples/stride_segmentation",
+            "../examples/event_detection",
+            "../examples/trajectory_reconstruction",
+            "../examples/parameters",
+            "../examples/advanced_features",
+            "../examples/generic_algorithms",
+        ]
+    ),
 }
 
 # Linkcode
