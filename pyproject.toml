@@ -21,6 +21,7 @@ scipy = "^1"
 typing_extensions = "^3.7.4"
 numba = "^0"
 numpy = "^1"
+joblib = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"
