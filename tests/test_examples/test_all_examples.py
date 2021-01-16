@@ -129,7 +129,7 @@ def test_ullrich_gait_sequence_detection(snapshot):
 
 
 def test_caching(snapshot):
-    from examples.caching import result_dtw_1, result_dtw_2
+    from examples.advanced_features.caching import result_dtw_1, result_dtw_2
 
     # We will not store the actual ouputs, but just check if they are actually idential
     for sensor, s_list in result_dtw_1.stride_list_.items():
