@@ -62,11 +62,11 @@ class Dataset(_BaseSerializable):
     >>> dataset = Dataset(test_index, "tests")
     >>> dataset.columns
     {'test_1': [0, 1, 4, 5, 6, 7], 'test_2': [2, 3, 8, 9], 'test_3': [10, 11]}
-    
+
     >>> dataset.select_lvl = "patients"
     >>> dataset.columns
     {'patient_1': [0, 1, 2, 3], 'patient_2': [4, 5], 'patient_3': [6, 7, 8, 9, 10, 11]}
-    
+
     >>> dataset["patient_2"]
         patients   tests extra
     0  patient_2  test_1     0
