@@ -88,10 +88,7 @@ class Dataset(_BaseSerializable):
     @property
     def index(self):
         """Get index."""
-        if hasattr(self, "__cached_index"):
-            return self.__cached_index
-
-        return self.__create_index() if self._subset_index is None else self._subset_index
+        return self._create_index() if self._subset_index is None else self._subset_index
 
     @property
     def select_lvl(self):
@@ -122,19 +119,19 @@ class Dataset(_BaseSerializable):
         """Return a dataset object."""
         if isinstance(subscript, (tuple, list, np.ndarray)):
             if isinstance(subscript[0], str):
-                return Dataset(
+                return self.__class__(
                     pd.concat([self.index.loc[self.columns[string]] for string in subscript]).reset_index(drop=True),
                     self.select_lvl,
                 )
 
             possible_indices = list(self.index.index)
-            return Dataset(
+            return self.__class__(
                 self.index.iloc[list(filter(lambda i: i in possible_indices, subscript))].reset_index(drop=True),
                 self.select_lvl,
             )
 
         if isinstance(subscript, str):
-            return Dataset(self.index.loc[self.columns[subscript]].reset_index(drop=True), self.select_lvl)
+            return self.__class__(self.index.loc[self.columns[subscript]].reset_index(drop=True), self.select_lvl)
 
         raise IndexError("Subscript {} not applicable to this dataset!".format(subscript))
 
@@ -154,6 +151,5 @@ class Dataset(_BaseSerializable):
         """Return generator object containing subset of every category from the selected level."""
         return (self.__getitem__(category) for category in self.columns)
 
-    @staticmethod
-    def __create_index():
+    def _create_index(self):
         raise NotImplementedError
