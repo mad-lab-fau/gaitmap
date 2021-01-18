@@ -20,9 +20,10 @@ class Dataset(_BaseSerializable):
         to represent every possible state of that column.
         For examples see below.
     select_lvl : Optional[str]
-        The level of the index which should be used for indexing. This must be a string corresponding
-        to one of the columns of the index.
+        The level that should be interpreted as categories which will be used for indexing the dataset.
+        This must be a string corresponding to one of the columns of the index.
         If left empty the first column is set as indexing level.
+        For examples see below.
 
     Parameters
     ----------
@@ -61,8 +62,11 @@ class Dataset(_BaseSerializable):
     >>> dataset = Dataset(test_index, "tests")
     >>> dataset.columns
     {'test_1': [0, 1, 4, 5, 6, 7], 'test_2': [2, 3, 8, 9], 'test_3': [10, 11]}
-
+    
     >>> dataset.select_lvl = "patients"
+    >>> dataset.columns
+    {'patient_1': [0, 1, 2, 3], 'patient_2': [4, 5], 'patient_3': [6, 7, 8, 9, 10, 11]}
+    
     >>> dataset["patient_2"]
         patients   tests extra
     0  patient_2  test_1     0
