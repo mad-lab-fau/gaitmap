@@ -10,7 +10,7 @@ def cached_call_method(_algo: BaseAlgorithm, _method_name: str, _memory: Memory,
     Repeated calls to this function with the same algorithm and the same args, and kwargs, will return cached results
     saved on disk.
 
-    ..warning ::
+    .. warning ::
         This method will clone the algorithm object before calling the method.
         This ensures that the cache is not invalidated because of results stored on the object.
 
@@ -34,7 +34,7 @@ def cached_call_method(_algo: BaseAlgorithm, _method_name: str, _memory: Memory,
 
     See Also
     --------
-    gaitmap.utils.caching.cached_call_method
+    gaitmap.utils.caching.cached_call_action
 
     """
 
@@ -51,7 +51,7 @@ def cached_call_action(_algo: BaseAlgorithm, _memory: Memory, *args, **kwargs):
     Repeated calls to this function with the same algorithm and the same args, and kwargs, will return cached results
     saved on disk.
 
-    ..warning ::
+    .. warning ::
         This method will clone the algorithm object before calling the method.
         This ensures that the cache is not invalidated because of results stored on the object.
 
