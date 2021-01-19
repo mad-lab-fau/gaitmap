@@ -5,10 +5,10 @@ r"""
 Caching algorithm outputs
 =========================
 
-Many algorithm implemented in gaitmap have a runtime of multiple seconds on larger datasets.
-In the context of algorithm evaluation, for example when performing a cross-validation, algorithms are sometime
+Many algorithms implemented in gaitmap have a runtime of multiple seconds on larger datasets.
+In the context of algorithm evaluation, for example when performing a cross-validation, algorithms are sometimes
 repeatedly called on the same data and even with the same parameters.
-In these cases, it can be helpful to cache results to ensure that you do not need recalculate values.
+In these cases, it can be helpful to cache results to ensure that you do not need to recalculate values.
 
 The `joblib` Python package makes cashing extremely easy and you should read their
 `guide <https://joblib.readthedocs.io/en/latest/memory.html>`__ first, before continuing with this example.
@@ -42,7 +42,7 @@ dtw = BarthDtw()
 # %%
 # Caching the method call
 # -----------------------
-# Normally we would not call `dtw.segment(...)` with the data we have loaded.
+# Normally we would now call `dtw.segment(...)` with the data we have loaded.
 # But, in this example we want to cache the result of this method call.
 # This means, we need to wrap the method in a `joblib.Memory` object.
 #
@@ -79,10 +79,12 @@ joblib.hash(dtw.clone())
 joblib.hash(BarthDtw(max_cost=100))
 
 # %%
-# It is important to note that the hash always changes, if **any** of the attributes are modified, not just the once
+# It is important to note that the hash always changes, if **any** of the attributes are modified, not just the ones
 # accessible through the init.
-# This means, if the object results stored (after the segment call) or you have added custom attributes to the instance,
-# the hash will change and the cache would be invalidated.
+# This means, if e.g. after you call `segment` and the algorithm object will have all results stored, the hash will
+# change.
+# The same will happen, if you add custom attributes to the instance.
+# The hash will change and the cache would be invalidated.
 test_dtw = BarthDtw()
 test_dtw.custom_value = 4
 joblib.hash(test_dtw)
@@ -93,15 +95,16 @@ joblib.hash(test_dtw)
 # Creating a Disk Cache
 # ---------------------
 # We can create a cache in any directory on our hard-drive.
-# In will stay there until we delete it or it becomes invalid because we updated our code.
+# It will stay there until we delete it or it becomes invalid because we updated our code.
 # Note, that this directory can grow quite large and you should be mindful of what you cache and clean the cache
 # directory.
-# Further, it is a good idea to clean the cache when you made changes to your code that might effect the algorithm you
+# Further, it is a good idea to clean the cache when you made changes to your code that might affect the algorithm you
 # are using.
 # There is no way for joblib to check if you changed the implementation, if you changed how the algorithm works in the
 # background, which would require a recalculation of all results.
 #
 # In this example we will store the cache in a tempfile to make sure we don't leave any traces.
+# In you code, you will just pick a folder that you wouldn't accidentally change or delete (e.g. your-project/.cache).
 import tempfile
 
 cache_dir = tempfile.TemporaryDirectory()
@@ -156,6 +159,14 @@ mem.clear()
 
 result_dtw_1 = cached_call_action(dtw, mem, data=data, sampling_rate_hz=sampling_rate_hz)
 result_dtw_2 = cached_call_action(dtw, mem, data=data, sampling_rate_hz=sampling_rate_hz)
+
+# %%
+# Some Note
+# ---------
+# - If you want to get specific values from the cache, just call the cached function with the same arguments as before
+# - Do **not** use you cache as permanent storage of results. It is way to easy to delete it.
+# - Clear your cache, before you do your final calculations for a publication!
+# - Make sure you add you cache dir to your ".gitignore" file.
 
 # %%
 # Finally remove the tempdir
