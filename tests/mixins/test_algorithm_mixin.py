@@ -1,6 +1,7 @@
 """A mixin for all common tests that should be run on all algorithm classes."""
 import inspect
 
+import joblib
 import pytest
 from numpydoc.docscrape import NumpyDocString
 
@@ -91,3 +92,9 @@ class TestAlgorithmMixin:
         instance_from_json = self.algorithm_class.from_json(json_str)
 
         compare_algo_objects(instance, instance_from_json)
+
+    def test_hashing(self, after_action_instance):
+        """This checks if caching with joblib will work as expected."""
+        instance = after_action_instance.clone()
+
+        assert joblib.hash(instance) == joblib.hash(instance.clone())

@@ -1,10 +1,11 @@
 import matplotlib
 import numpy as np
+from pandas.testing import assert_frame_equal
 
-# This is needed to avoid plots to open
 from gaitmap.utils.consts import SF_ACC
 from tests.conftest import compare_algo_objects
 
+# This is needed to avoid plots to open
 matplotlib.use("Agg")
 
 
@@ -125,6 +126,14 @@ def test_ullrich_gait_sequence_detection(snapshot):
 
     assert len(gsd.gait_sequences_) == 2
     snapshot.assert_match(gsd.gait_sequences_.astype(np.int64))
+
+
+def test_caching(snapshot):
+    from examples.advanced_features.caching import result_dtw_1, result_dtw_2
+
+    # We will not store the actual ouputs, but just check if they are actually idential
+    for sensor, s_list in result_dtw_1.stride_list_.items():
+        assert_frame_equal(s_list, result_dtw_2.stride_list_[sensor])
 
 
 def test_multi_process():
