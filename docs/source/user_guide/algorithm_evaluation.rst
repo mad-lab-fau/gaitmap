@@ -4,9 +4,9 @@
 Algorithm Evaluation and Parameter Optimization
 ===============================================
 
-When ever we want to apply an algorithm in a new scenario (e.g. different sensors, different patient cohorts, different
-movement patterns, ...), it is important to perform a evaluation study during which ground truth information is captured
-(e.g. motion capture, manual labeling, ...).
+Whenever we want to apply an algorithm in a new scenario (e.g. different sensors, different patient cohorts, different
+movement patterns, ...), it is important to perform an evaluation study during which ground truth information is
+captured (e.g. motion capture, manual labeling, ...).
 Based on this ground truth data we can estimate the performance of our algorithms on future unlabeled data.
 Further, we can use such a labeled dataset to optimize parameters of our algorithms (this could be training a
 machine-learning model or just optimizing a threshold).
@@ -18,8 +18,8 @@ In particular, we will discuss when and how to use cross-validation.
 
 While this concept of evaluation and labeled data (and the related naming) is heavily influenced by machine learning,
 the concepts discussed here apply, or rather need to be applied, for all "non-machine-learning" algorithms as well.
-In the following we will provide guides for specific "groups" of algorithms, depending if they contain data-driven
-learning or not.
+In the following we will provide guides for specific "groups" of algorithms, depending on whether they contain
+data-driven learning or not.
 
 Categories of Algorithms
 ========================
@@ -110,18 +110,16 @@ But for now we will assume we just sectioned of a small part of our labeled data
 
 What are we evaluating?
 -----------------------
-This might seem like a stupid question, but it is important to understand that in the context of algorithms that have parts
-that can be trained or optimized, we do not evaluate a specific instance of an algorithm (algorithm + model + parameter
-set), but rather our *entire approach* (algorithm + training method + parameter optimization method).
+This might seem like a stupid question, but it is important to understand that in the context of algorithms that have
+parts that can be trained or optimized, we do not evaluate a specific instance of an algorithm (algorithm + model +
+parameter set), but rather our *entire approach* (algorithm + training method + parameter optimization method).
 Yes, the final performance parameter, that we get when applying our optimized algorithm to the *test* data, tells us how
 good a specific instance of our algorithm is.
 However, because we trained and optimized this instance using our overall approach, it also tells us how good we can
 expect another instance of our algorithm to be when it is trained with the same approach on different (but similar)
 data.
 
-In real-life applications, we would actually **not** use the algorithm instance we created during evaluation and deploy
-it in our production setting.
-More information on that in the :ref:`final section of this guide <putting_everything_together>`.
+
 
 
 Algorithm Optimization
@@ -131,11 +129,11 @@ As mentioned in the previous chapter, algorithm optimization and training must o
 the context of the evaluation.
 However, it is important to understand that algorithm optimization/training also exists outside the context of
 evaluation.
-To facilitate this idea, we will just use the term data and not *train* set in this section to refer to all the data
+To facilitate this idea, we will just use the term "data" and not "*train*-set" in this section to refer to all the data
 "we are allowed to use".
 
 .. warning::
-    In the context of evaluation, the term *data* in this chapter should be read as *train data*.
+    In the context of evaluation, the term "*data*" in this chapter should be read as "*train set*".
     And if the text tells you to use **all** your data, I mean that you should use all the data you want to use for
     training and optimization.
     If you are currently performing an algorithm evaluation, this means your *train data*.
@@ -148,8 +146,8 @@ For evaluation we concluded that we evaluated an *approach* that contains the al
 algorithm optimization.
 This chapter now describes the potential approaches for algorithm optimization methods.
 So as the name suggests, we are actually optimizing the algorithm or rather its adjustable components.
-This can be weights describing a machine learning model or neural network, parameters like thresholds or cutoffs that
-are used in other parts of the algorithm, and hyper-parameter that change how our weights are adjusted based on our
+These can be weights describing a machine learning model or neural network, parameters like thresholds or cutoffs that
+are used in other parts of the algorithm, and hyper-parameters that change how our weights are adjusted based on our
 data during training.
 We want to set all of them to values that lead to the best possible performance on our *test* data or our future data
 in production.
@@ -204,6 +202,8 @@ With that we can use the following workflow (represented as pseudo code): ::
     # Optimize hyper-parameter
     # We are using the term `inner_train_...` here to avoid confusion with the train set we established during
     # evaluation. However, the procedure remains the same, even if we are not in the context of an evaluation.
+    #
+    # Note: "..._gt" is the ground truth information in the respective part of the data.
     inner_train_data, inner_train_gt, validation_data, validation_gt = split_validation_set(data, ground_truth)
 
     best_parameter = None
@@ -283,17 +283,18 @@ a training step.
 
 Let's understand why with two explanation approaches:
 
-Let's look at our brute-force method as a black-box provides an optimal set of parameters given some "training" data.
+Let's look at our brute-force method as a black-box that provides an optimal set of parameters given some "training"
+data.
 If we now simply replace the word "parameters" with "weights" we actually described the concept of a machine
 learning algorithm.
 A poor one - yes.
-But this means we can actually treat out simple algorithm analogous to a machine learning algorithm without
+But this means we can actually treat our simple algorithm analogous to a machine learning algorithm without
 hyper-parameters.
 And as we learned in the previous section for such algorithms, we (simply) try to minimize the loss on all available
 data and hope that the solution generalizes well to unseen data.
 
-A different way to understand, why we shouldn't use a validation set to perform a simple brute force optimization of a
-single algorithms, is to simple try it and see what happens:
+A different way to understand, why we shouldn't use a validation set to perform a brute force optimization of a simple
+algorithms, is to just try it and see what happens:
 So let's consider the pseudo code for the simple validation split introduced above.
 Because we don't have a train step, we directly `call` predict on the algorithm with the given parameter set.
 Effectively, we just ignored the inner training set entirely.
@@ -302,9 +303,9 @@ If we would perform a cross-validation, we wouldn't throw away any data, but in 
 training data.
 This means that the cross-validation would be equivalent to performing the grid search on batches of the data and
 averaging at the end.
-In case of a leave-one-out cross-validation this would lead to the exact same result as without a validation set and
-otherwise the result would slightly different (because the mean of batch-means is not equal to the mean over all data),
-but not better in any way.
+In case of a leave-one-out cross-validation (only a single sample/subject is in the train set each fold) this would lead
+to the exact same result as a Grid Search on all of our data and otherwise the result would be slightly different
+(because the mean of batch-means is not equal to the mean over all data), but not better in any way.
 
 So, no validation set it is! And we can just perform a simple grid search: ::
 
@@ -320,10 +321,10 @@ So, no validation set it is! And we can just perform a simple grid search: ::
 
     final_algorithm = algorithm(best_parameter)
 
-But doesn't that lead to overfitting? Maybe...
+But doesn't that lead to over-fitting? Maybe...
 But, with a brute-force approach we can not do anything about it as we have no ways to optimize hyper-parameters or
-apply regularisation.
-The only thing we can do is to evaluate our approach thoroughly and see if we the results are still sufficient for our
+apply regularisation to conquer over-fitting, like we could for *Group 2* algorithms.
+The only thing we can do is to evaluate our approach thoroughly and see if the results are sufficient for our
 application.
 
 Group 3 - The Hybrid
@@ -332,12 +333,12 @@ The remaining group describes complicated algorithms that are basically hybrids 
 parameters that do not effect training, but the final performance.
 These systems can further have hyper-parameters.
 However, we will see that this does not change our approach to parameter optimization.
-But to build a understanding of the approach, let's start with an algorithm for which we do not want to optimize
+But to build an understanding of the approach, let's start with an algorithm for which we do not want to optimize
 hyper-parameters.
 
 Without Hyper-Parameter Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-There are (or at least there were for me) two approaches that seem plausible on first glance:
+There are (or at least there were for me) two approaches that seem plausible at first glance:
 First, we could consider the parameter optimization as part of the training.
 This means, in the train step of our algorithm, we first train the actual model component and then, using the predicted
 outcome on the same data, we use a simple grid search to optimize the remaining parameters.
@@ -377,7 +378,7 @@ As our parameters do not effect the training, it is sufficient to call `train` o
 perform the grid search on the *validation* data.
 A elegant solution to this, could be to cache the calls to `train` internally in the model to avoid repeated
 calculations.
-To gain further performance, the part of `predict` method that just belongs to the model could also be cached.
+To gain further performance, the part of the `predict` method that just belongs to the model could also be cached.
 
 With Hyper-Parameter Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -523,8 +524,10 @@ So with all of that in mind, our full workflow (from idea to production model) w
    application.
    If yes, continue with Step 4.
    If not, go back to the drawing board.
-   Again in an ideal world, you should not reuse your dataset, as you now have seen the performance results on the test
-   sets and now change/optimize your approach based on this knowledge and hence, risking over-fitting to human biases.
+   Again: in an ideal world, you should not reuse your dataset, as you now have seen the performance results on the test
+   sets.
+   If you then start to change/optimize your approach based on this knowledge you risk "over-fitting" because of your
+   human bias.
    But again, this is unrealistic in the real world.
 4. Create a production model by taking **all** your available labeled data.
    Use the production model for all future unlabeled data.
@@ -535,10 +538,11 @@ So with all of that in mind, our full workflow (from idea to production model) w
    Further, it is common to update your production model once further labeled data becomes available.
    This makes sure that your production model always performs as good as possible.
    It is also common practice to define certain benchmark datasets that can be used to track your changes in performance
-   over multiple iterations of your approach (in this case you would perform the described evaluation process on the
-   data), or your production model (in this case the benchmark dataset is used as "ultimate" test set that is excluded
-   from training, even in the production model. This become feasible if you have a lot of data and tracking your
-   performance in production is important)
+   over multiple iterations of your approach or your production model.
+   In the first case you would perform the entire described evaluation process on these benchmark datasets.
+   In the latter case, the benchmark dataset is used as "ultimate" test set that is excluded from training, even in the
+   production model.
+   This becomes feasible if you have a lot of data and tracking your performance in production is important.
 
 Summary Table
 =============
@@ -546,7 +550,7 @@ Summary Table
 .. warning::
     Read the entire guide before using this table!
 
-Here is a quick summary of how implement the full approach for each of our algorithm Groups:
+Here is a quick summary of how to implement the full approach for each of our algorithm Groups:
 
 Group 1
     Optimization
@@ -585,8 +589,8 @@ A note on ...
 ... brute-force methods
 -----------------------
 In this guide we used brute-force methods basically synonymously with Grid Search.
-This is not correct.
-There exist multiple approaches to "just trying our multiple parameter combinations".
+This is not entirely correct.
+There exist multiple approaches to "just trying out multiple parameter combinations".
 There are random search methods, adaptive grid search methods, and methods like Bayes Optimization, that can be much
 faster than naive Grid Search in certain cases.
 All of these methods are suitable substitutes to Grid Search and can be used in the same way.
@@ -608,29 +612,31 @@ single *train*-*validation/test* split might be too unstable.
 However, we did that in two very different scenarios with two different purposes:
 
 First, we learned to use cross-validation during parameter optimization.
-In this use case, cross-validation actively prevents overfitting of **hyper-parameters** (not the actual model btw.).
-By performing the hyper-parameter search on multiple validation-test splits, we ensure that our hyper parameter set
+In this use-case, cross-validation actively prevents over-fitting of **hyper-parameters** (not the actual model btw.).
+By performing the hyper-parameter search on multiple validation-test splits, we ensure that our hyper-parameter set
 would work well on multiple random subsets and not overfit to the validation data of a single split.
 
 The other context in which we learned about cross-validation is evaluation.
 In this scenario cross-validation can give us a slightly pessimistic generalisation performance.
-Note, that it does **not actively prevent** overfitting, as we must not modify our model based on the outcome of the
+Note, that it does **not actively prevent** over-fitting, as we must not modify our model based on the outcome of the
 evaluation.
-However, the evaluation can gives us information will generalize will.
+However, the evaluation can provide us insights in how well our approach will generalize.
 
-To summarize: In the first usecase cross-validation is actually a way to improve our model.
-It is just a "trick" we can use to prevent overfitting of the hyper-parameters ("overhyping").
+To summarize: In the first use-case cross-validation is actually a way to improve our model.
+It is just a "trick" we can use to prevent over-fitting of the hyper-parameters ("overhyping").
 If we are confident that our model would work without it, we could just stick to a single validation-test split.
 This would just be another approach to model training - maybe not optimal - but still correct.
+This might be something you want to do, if training is extremely expensive (= high computation time).
+
 If we use cross-validation for evaluation, it is used to give us an estimate of the actual real world performance.
 A single train-test split will often not represent this performance well (unless our dataset is really large).
-This means, not performing a cross-validation for evaluation could actually be considered a methodological error during
-und you should be highly skeptical of performance results produces on a single train-test split.
+This means, not performing a cross-validation for evaluation could actually be considered a methodological error
+and you should be highly skeptical of performance results produces on a single train-test split.
 
 The other important thing to note about cross-validation is that different types of cross-validation exist and that
 there are other algorithms that could fulfill the same function as cross-validation.
-Depending on your data and your application other methods (like repeated random splits, or Bayes search) might be better
-than simple cross-validation.
+Depending on your data and your application, other methods (like repeated random splits, or Bayes search) might be
+bette than simple cross-validation.
 Such methods can be used equivalently to cross-validation in the context of this guide.
 
 ... computation time
