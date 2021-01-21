@@ -581,7 +581,7 @@ Group 3
     Evaluation
         - Identical to Group 3
 
-For all of these approaches you can retrain/reoptimize on all of you data to generate your production model.
+For all of these approaches you can retrain/reoptimize on all of your data to generate your production model.
 
 A note on ...
 =============
