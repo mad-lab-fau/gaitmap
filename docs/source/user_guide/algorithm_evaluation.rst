@@ -136,6 +136,10 @@ To facilitate this idea, we will just use the term data and not *train* set in t
 
 .. warning::
     In the context of evaluation, the term *data* in this chapter should be read as *train data*.
+    And if the text tells you to use **all** your data, I mean that you should use all the data you want to use for
+    training and optimization.
+    If you are currently performing an algorithm evaluation, this means your *train data*.
+    **Don't touch your test data!**
 
 What are we optimizing?
 -----------------------
@@ -178,7 +182,7 @@ With Hyper-Parameter Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In basically all cases it is advisable to adjust available hyper-parameters of your model.
 They influence the training and control, for example, how well your model will be able to fit to your data or prevent
-your model from overwriting.
+your model from overfitting.
 However, as no intrinsic method exists to optimize these parameters (in most cases), we usually have to try different
 value combinations and see how well they perform.
 Instead of doing that by hand - or as someone on twitter called it: "graduate student decent" -, we usually use
@@ -217,18 +221,19 @@ With that we can use the following workflow (represented as pseudo code): ::
 
 
 Note, that after we optimized the hyper parameters, we didn't just take the best available model, but just the best
-hyper-parameters and then retrained the model on all the data we had available during optimization.
+hyper-parameters and then retrained the model on all the data we had available during optimization (aka all *train* data
+if we perform a evaluation).
 This ensures that our model can make use of as much data as possible.
 
 This is actually a critical point.
 In many situations, we don't have sufficient data available to create a *validation* set without risking that our
 hyper-parameter optimization will heavily depend on which data ends up in the *validation* set.
-As this split usually occurs randomly, we do not want to take the chance that our entire model fails, because of a bad
-random split.
+As this split is usually performed randomly, we do not want to take the chance that our entire model fails, because of a
+bad random split.
 The solution for that (and actually the recommended way in general) is to use a
 `cross-validation <https://scikit-learn.org/stable/modules/cross_validation.html>`__.
-This allows us to use all data during the hyper parameter optimization by creating multiple validation splits and
-averaging over all of them.::
+This allows us to use all (*train*) data during the hyper parameter optimization by creating multiple validation splits
+and averaging over all of them.::
 
     # Optimize hyper-parameter
     best_parameter = None
@@ -254,6 +259,13 @@ averaging over all of them.::
 Note, that we perform the exact same series of data-splits for each parameter combination and then calculate the
 **average** performance over all folds for each parameter combination.
 The combination with the best average performance can then be used to retrain our model.
+
+.. note::
+    When using Grid Search, we need to pick a metric we use for evaluation.
+    This depends on your very specific application.
+    But typical candidates are "accuracy", "F1-score", or the "Youden-index".
+    We can also calculate a combination of multiple values, but we need to have a way to decide on the best overall
+    result
 
 For further explanation and ways to implement that easily, see the
 `sklearn guide <https://scikit-learn.org/stable/modules/grid_search.html>`__
@@ -442,6 +454,28 @@ The final performance we will report the mean over all cross-validation folds.
     Explaining it that way, it is clearer that one cross-validation is an integral part of our approach (even outside
     the concept of evaluation) and the other one is added to perform the evaluation.
 
+Group 1 Caching
+---------------
+To aid understanding the similarities between the algorithm types, we described the Grid Search for *Group 1* equivalent
+to training a *Group 2* algorithm.
+However, if we break open that black-box abstraction we can increase the cross-validation performance for *Group 1*
+algorithms quite dramatically.
+
+Where training *Group 2* and *Group 3* algorithms requires complicated interplay of all the provided training data,
+the grid search to optimize a *Group 1* algorithm only involves calculating the performance for each training sample
+(e.g. one gait test or one patient) and then averaging the performance to get the estimate for each parameter
+combination.
+
+If we perform the training multiple times during cross-validation, we have a large overlap between the trainings data of
+the folds.
+This means we need to calculate the performance for the same trainings sample over and over again.
+Therefore, it can be very helpful to cache the output of the prediction step.
+This basically speeds up a k-fold cross validation by a factor of k-1.
+
+Alternatively to caching, you could also precalculate the performance of each sample in your dataset for all parameter
+combinations you want to test.
+Then you simply average over different parts of the calculated results in the different cross-validation folds.
+
 .. _putting_everything_together:
 
 Putting everything together
@@ -480,6 +514,9 @@ So with all of that in mind, our full workflow (from idea to production model) w
    In an ideal world, you would do that *after* you put some data away, which could serve as some sort of "ultimate"
    test set, which would even be free from human biases.
    But, in reality this is rarely done...
+   To learn more about this dilemma of biasing yourself and consequently over-fitting the hyper-parameters see for
+   example `this paper <https://www.sciencedirect.com/science/article/abs/pii/S0149763420305868>`__.
+   The authors suggest the term "over-hyping" to refer to any issues related to hyper-parameter over-fitting.
 2. Evaluate your approach using cross-validation.
    In each fold you run your *entire* approach including your chosen method for parameter optimization and/or training.
 3. Take the average performance result from your cross-validation and decide if the results are good enough for your
@@ -516,7 +553,9 @@ Group 1
         - Grid Search
     Evaluation
         - cross-validation were you perform a grid search in each fold and select an optimal parameter set per fold.
-          **This is different from `GridSearchCV` in `sklearn`!**
+          **This is different from `GridSearchCV` in `sklearn`!**.
+          Note, that the results for each individual train sample can be cached so that you effectively only have to
+          calculate a "single fold"
 Group 2 (without hyper-parameters)
     Optimization
         - Algorithm specific training
@@ -566,10 +605,32 @@ Tools that can automatically calculate gradients over complicated functions (lik
 --------------------
 In this guide we used cross-validation whenever we performed an evaluation multiple time, because we feared that a
 single *train*-*validation/test* split might be too unstable.
-There exist other methods besides cross-validation to do that and even within the realm of cross-validation, different
-types of cross-validation exist.
-Depending on your data and your application other methods (like repeated random splits) might be better than simple
-cross-validation.
+However, we did that in two very different scenarios with two different purposes:
+
+First, we learned to use cross-validation during parameter optimization.
+In this use case, cross-validation actively prevents overfitting of **hyper-parameters** (not the actual model btw.).
+By performing the hyper-parameter search on multiple validation-test splits, we ensure that our hyper parameter set
+would work well on multiple random subsets and not overfit to the validation data of a single split.
+
+The other context in which we learned about cross-validation is evaluation.
+In this scenario cross-validation can give us a slightly pessimistic generalisation performance.
+Note, that it does **not actively prevent** overfitting, as we must not modify our model based on the outcome of the
+evaluation.
+However, the evaluation can gives us information will generalize will.
+
+To summarize: In the first usecase cross-validation is actually a way to improve our model.
+It is just a "trick" we can use to prevent overfitting of the hyper-parameters ("overhyping").
+If we are confident that our model would work without it, we could just stick to a single validation-test split.
+This would just be another approach to model training - maybe not optimal - but still correct.
+If we use cross-validation for evaluation, it is used to give us an estimate of the actual real world performance.
+A single train-test split will often not represent this performance well (unless our dataset is really large).
+This means, not performing a cross-validation for evaluation could actually be considered a methodological error during
+und you should be highly skeptical of performance results produces on a single train-test split.
+
+The other important thing to note about cross-validation is that different types of cross-validation exist and that
+there are other algorithms that could fulfill the same function as cross-validation.
+Depending on your data and your application other methods (like repeated random splits, or Bayes search) might be better
+than simple cross-validation.
 Such methods can be used equivalently to cross-validation in the context of this guide.
 
 ... computation time
