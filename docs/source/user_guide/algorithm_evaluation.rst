@@ -636,7 +636,7 @@ and you should be highly skeptical of performance results produces on a single t
 The other important thing to note about cross-validation is that different types of cross-validation exist and that
 there are other algorithms that could fulfill the same function as cross-validation.
 Depending on your data and your application, other methods (like repeated random splits, or Bayes search) might be
-bette than simple cross-validation.
+better than simple cross-validation.
 Such methods can be used equivalently to cross-validation in the context of this guide.
 
 ... computation time
