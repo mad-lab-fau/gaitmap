@@ -9,6 +9,7 @@ the right thing.
 
 """
 from typing import Union, Dict
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ import pytest
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate
-from gaitmap.stride_segmentation.base_dtw import BaseDtw
+from gaitmap.stride_segmentation.base_dtw import BaseDtw, subsequence_cost_matrix_with_constrains
 from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
@@ -30,7 +31,11 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None,)
+        dtw = self.algorithm_class(
+            template=template,
+            max_cost=0.5,
+            min_match_length_s=None,
+        )
         data = np.array([0, 1.0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
@@ -107,14 +112,27 @@ class TestIOErrors(DtwTestBase):
         assert para in str(e)
         assert str(value) in str(e)
 
-    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
-    def test_none_constrain_is_inf(self, para):
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
-        dtw = self.init_dtw(template=template, **{para: None})
-        dtw.segment(data=data, sampling_rate_hz=100)
+    @pytest.mark.parametrize("paras", ((None, 100), (100, None)))
+    def test_none_constrain_is_inf(self, paras):
+        para_names = ("max_template_stretch_ms", "max_signal_stretch_ms")
+        func_names = ("max_subseq_steps", "max_longseq_steps")
+        none_index = list(paras).index(None)
+        paras = dict(zip(para_names, paras))
 
-        assert getattr(dtw, "_" + para.rsplit("_", 1)[0]) == np.inf
+        sampling_rate = 100
+        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=sampling_rate)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, **paras)
+
+        # To check if the calculation is correct we check the parameter used to call function that calculates the
+        # cost mat
+        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+            mock_func.side_effect = subsequence_cost_matrix_with_constrains
+            dtw.segment(data=data, sampling_rate_hz=sampling_rate)
+
+            args, kwargs = mock_func.call_args
+            assert kwargs[func_names[none_index]] == np.inf
+            assert kwargs[func_names[not none_index]] == paras[para_names[not none_index]] / 1000 * sampling_rate
 
     def test_constrains_without_template_sampling_rate(self):
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=None)
@@ -134,15 +152,28 @@ class TestIOErrors(DtwTestBase):
 
         # With resampling
         dtw = self.init_dtw(template=template, max_template_stretch_ms=1000)
-        dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
 
-        assert dtw._max_template_stretch == 10
+        # To check if the calculation is correct we check the parameter used to call function that calculates the
+        # cost mat
+        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+            mock_func.side_effect = subsequence_cost_matrix_with_constrains
+            dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+            args, kwargs = mock_func.call_args
+            assert kwargs["max_subseq_steps"] == 10
 
         # Without resampling
         dtw = self.init_dtw(template=template, max_template_stretch_ms=1000, resample_template=False)
         dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
 
-        assert dtw._max_template_stretch == 100
+        # To check if the calculation is correct we check the parameter used to call function that calculates the
+        # cost mat
+        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+            mock_func.side_effect = subsequence_cost_matrix_with_constrains
+            dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
+
+            args, kwargs = mock_func.call_args
+            assert kwargs["max_subseq_steps"] == 100
 
 
 class TestSimpleSegment(DtwTestBase):
@@ -152,14 +183,20 @@ class TestSimpleSegment(DtwTestBase):
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
     def _create_instance(self, request):
-        dtw = self.init_dtw(template=self.template, find_matches_method=request.param,)
+        dtw = self.init_dtw(
+            template=self.template,
+            find_matches_method=request.param,
+        )
         self.dtw = dtw
 
     def test_sdtw_simple_match(self):
         """Test dtw with single match and hand calculated outcomes."""
         sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
+        dtw = self.dtw.segment(
+            np.array(sequence),
+            sampling_rate_hz=100.0,
+        )
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_ == [0.0]
@@ -179,7 +216,10 @@ class TestSimpleSegment(DtwTestBase):
         """Test dtw with multiple matches and hand calculated outcomes."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
+        dtw = self.dtw.segment(
+            np.array(sequence),
+            sampling_rate_hz=100.0,
+        )
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])

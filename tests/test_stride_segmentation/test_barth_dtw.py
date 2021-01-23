@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from joblib import Memory
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
@@ -181,7 +182,13 @@ class TestPostProcessing:
         dtw._max_sequence_length = 1.4
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], np.array([]), matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
+            None,
+            [],
+            np.array([]),
+            matches_start_end=example_stride_list,
+            to_keep=to_keep,
+            acc_cost_mat=None,
+            memory=Memory(None),
         )
 
         # Check that start-end is unmodified
@@ -213,7 +220,13 @@ class TestPostProcessing:
         dtw._max_sequence_length = None
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
+            None,
+            [],
+            cost=cost,
+            matches_start_end=example_stride_list,
+            to_keep=to_keep,
+            acc_cost_mat=None,
+            memory=Memory(None),
         )
 
         # Check that start-end is unmodified
@@ -253,7 +266,13 @@ class TestPostProcessing:
         dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
+            None,
+            [],
+            cost=cost,
+            matches_start_end=example_stride_list,
+            to_keep=to_keep,
+            acc_cost_mat=None,
+            memory=Memory(None),
         )
 
         # Check that start-end is unmodified
@@ -293,7 +312,13 @@ class TestPostProcessing:
         dtw._max_sequence_length = 3.0
 
         start_end, to_keep = dtw._postprocess_matches(
-            None, [], cost=cost, matches_start_end=example_stride_list, to_keep=to_keep, acc_cost_mat=None
+            None,
+            [],
+            cost=cost,
+            matches_start_end=example_stride_list,
+            to_keep=to_keep,
+            acc_cost_mat=None,
+            memory=Memory(None),
         )
 
         # Check that start-end is unmodified
@@ -340,7 +365,10 @@ class TestPostProcessing:
             find_matches_method="min_under_thres",
         )
 
-        dtw = dtw.segment(sequence, sampling_rate_hz=1000.0,)
+        dtw = dtw.segment(
+            sequence,
+            sampling_rate_hz=1000.0,
+        )
 
         assert_array_equal(dtw.stride_list_, [[5, 8]])
 
