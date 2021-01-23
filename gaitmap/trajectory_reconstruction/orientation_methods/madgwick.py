@@ -1,7 +1,8 @@
 """Implementation of the MadgwickAHRS."""
-from typing import Union, TypeVar
+from typing import Union, TypeVar, Optional
 
 import numpy as np
+from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 
@@ -37,6 +38,8 @@ class MadgwickAHRS(BaseOrientationMethod):
         In some cases, the algorithm will not be able to converge if the initial orientation is too far off and the
         orientation will slowly oscillate.
         If you pass a array, remember that the order of elements must be x, y, z, w.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the calls to madgwick series.
 
     Attributes
     ----------
@@ -90,13 +93,20 @@ class MadgwickAHRS(BaseOrientationMethod):
 
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
+    memory: Optional[Memory]
 
     data: SingleSensorData
     sampling_rate_hz: float
 
-    def __init__(self, beta: float = 0.2, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0])):
+    def __init__(
+        self,
+        beta: float = 0.2,
+        initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
+        memory: Optional[Memory] = None,
+    ):
         self.initial_orientation = initial_orientation
         self.beta = beta
+        self.memory = memory
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor.
@@ -119,14 +129,18 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
 
+        memory = self.memory
+        if memory is None:
+            memory = Memory(None)
+
         is_single_sensor_data(self.data, check_acc=False, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
-
-        rots = _madgwick_update_series(
+        madgwick_update_series = memory.cache(_madgwick_update_series)
+        rots = madgwick_update_series(
             gyro=gyro_data,
             acc=acc_data,
             initial_orientation=initial_orientation,

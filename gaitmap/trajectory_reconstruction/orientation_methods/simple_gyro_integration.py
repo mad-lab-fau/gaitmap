@@ -1,7 +1,8 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
-from typing import Union, TypeVar
+from typing import Union, TypeVar, Optional
 
 import numpy as np
+from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 
@@ -21,6 +22,8 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     initial_orientation : Rotation or (1 x 4) quaternion array
         The initial orientation used.
         If you pass a array, remember that the order of elements must be x, y, z, w.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the results of the integration.
 
     Attributes
     ----------
@@ -68,14 +71,20 @@ class SimpleGyroIntegration(BaseOrientationMethod):
     """
 
     initial_orientation: Union[np.ndarray, Rotation]
+    memory: Optional[Memory]
 
     orientation_: Rotation
 
     data: SingleSensorData
     sampling_rate_hz: float
 
-    def __init__(self, initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0])):
+    def __init__(
+        self,
+        initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
+        memory: Optional[Memory] = None,
+    ):
         self.initial_orientation = initial_orientation
+        self.memory = memory
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.
@@ -98,14 +107,21 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
 
+        memory = self.memory
+        if memory is None:
+            memory = Memory(None)
+
         is_single_sensor_data(self.data, check_acc=False, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
+        simple_gyro_integration_series = memory.cache(_simple_gyro_integration_series)
 
-        rots = _simple_gyro_integration_series(
-            gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
+        rots = simple_gyro_integration_series(
+            gyro=gyro_data,
+            initial_orientation=initial_orientation,
+            sampling_rate_hz=sampling_rate_hz,
         )
         self.orientation_object_ = Rotation.from_quat(rots)
 
