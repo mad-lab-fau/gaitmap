@@ -1,9 +1,10 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 import warnings
-from typing import Optional, List, Tuple, Union, Dict, TypeVar
+from typing import Optional, List, Tuple, Union, Dict, TypeVar, Any, Callable
 
 import numpy as np
 import pandas as pd
+from joblib import Memory
 from numba import njit
 from scipy.interpolate import interp1d
 from tslearn.metrics import subsequence_path, subsequence_cost_matrix
@@ -165,6 +166,9 @@ class BaseDtw(BaseAlgorithm):
             Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes and the peak
+        detection.
 
     Attributes
     ----------
@@ -238,6 +242,7 @@ class BaseDtw(BaseAlgorithm):
     max_template_stretch_ms: Optional[float]
     max_signal_stretch_ms: Optional[float]
     find_matches_method: Literal["min_under_thres", "find_peaks"]
+    memory: Optional[Memory]
 
     matches_start_end_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
     acc_cost_mat_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
@@ -281,6 +286,7 @@ class BaseDtw(BaseAlgorithm):
         max_match_length_s: Optional[float] = None,
         max_template_stretch_ms: Optional[float] = None,
         max_signal_stretch_ms: Optional[float] = None,
+        memory: Optional[Memory] = None,
     ):
         self.template = template
         self.max_cost = max_cost
@@ -290,6 +296,7 @@ class BaseDtw(BaseAlgorithm):
         self.max_signal_stretch_ms = max_signal_stretch_ms
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
+        self.memory = memory
 
     def segment(self: Self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
         """Find matches by warping the provided template to the data.
@@ -312,14 +319,26 @@ class BaseDtw(BaseAlgorithm):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
+        # We seperate calculating everything from actually setting the results, to provide a better insert point for
+        # caching.
+        results = self._segment(data=self.data, sampling_rate_hz=self.sampling_rate_hz, memory=self.memory)
+        set_params_from_dict(self, results, result_formatting=True)
+        return self
+
+    def _segment(
+        self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, memory: Optional[Memory] = None
+    ) -> Dict[str, Any]:
+        if not memory:
+            memory = Memory(None)
+
         self._validate_basic_inputs()
 
         self._min_sequence_length = self.min_match_length_s
         if self._min_sequence_length is not None:
-            self._min_sequence_length *= self.sampling_rate_hz
+            self._min_sequence_length *= sampling_rate_hz
         self._max_sequence_length = self.max_match_length_s
         if self._max_sequence_length is not None:
-            self._max_sequence_length *= self.sampling_rate_hz
+            self._max_sequence_length *= sampling_rate_hz
 
         # For the typechecker
         assert self.template is not None
@@ -328,32 +347,31 @@ class BaseDtw(BaseAlgorithm):
             dataset_type = "array"
         else:
             dataset_type = is_sensor_data(data, check_gyr=False, check_acc=False)
-
         template = self.template
         if dataset_type in ("single", "array"):
             # Single template single sensor: easy
-            results = self._segment_single_dataset(data, template)
+            results = self._segment_single_dataset(data, template, memory=memory)
         else:  # Multisensor
             result_dict: Dict[_Hashable, Dict[str, np.ndarray]] = dict()
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
                 for sensor, single_template in template.items():
-                    result_dict[sensor] = self._segment_single_dataset(data[sensor], single_template)
+                    result_dict[sensor] = self._segment_single_dataset(data[sensor], single_template, memory=memory)
             elif is_single_sensor_data(template.get_data(), check_gyr=False, check_acc=False):
                 # single template, multiple sensors: Apply template to all sensors
                 for sensor in get_multi_sensor_names(data):
-                    result_dict[sensor] = self._segment_single_dataset(data[sensor], template)
+                    result_dict[sensor] = self._segment_single_dataset(data[sensor], template, memory=memory)
             else:
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
                     "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
             results = invert_result_dictionary(result_dict)
-        set_params_from_dict(self, results, result_formatting=True)
-        return self
 
-    def _segment_single_dataset(self, dataset, template) -> Dict[str, np.ndarray]:
+        return results
+
+    def _segment_single_dataset(self, dataset, template, memory: Memory) -> Dict[str, np.ndarray]:
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
@@ -384,13 +402,22 @@ class BaseDtw(BaseAlgorithm):
         else:
             final_template = template_array
 
-        self._validate_constrains(template)
+        max_template_strech, max_signal_strech = self._calculate_constrains(template)
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
+        cost_matrix_method, cost_matrix_kwargs = self._select_cost_matrix_method(max_template_strech, max_signal_strech)
+
+        # If we have smart cache enabled, this will cache the methods with the longest runtime
+        find_matches_method = memory.cache(find_matches_method)
+        cost_matrix_method = memory.cache(cost_matrix_method)
 
         # Calculate cost matrix
-        acc_cost_mat_ = self._calculate_cost_matrix(final_template, matching_data)
+        # We need to copy the result tho ensure that it is an actual array and not a view on an array.
+        acc_cost_mat_ = cost_matrix_method(
+            to_time_series(final_template), to_time_series(matching_data), **cost_matrix_kwargs
+        ).copy()
 
+        # Find matches and postprocess them
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,
             max_cost=self.max_cost,
@@ -415,6 +442,7 @@ class BaseDtw(BaseAlgorithm):
                 matches_start_end=matches_start_end_,
                 to_keep=to_keep,
                 acc_cost_mat=acc_cost_mat_,
+                memory=memory,
             )
             matches_start_end_ = matches_start_end_[to_keep]
             self._post_postprocess_check(matches_start_end_)
@@ -426,19 +454,31 @@ class BaseDtw(BaseAlgorithm):
             "matches_start_end": matches_start_end_,
         }
 
-    def _calculate_cost_matrix(self, template, matching_data) -> np.ndarray:
+    def _select_cost_matrix_method(  # noqa: no-self-use
+        self, max_template_stretch: float, max_signal_stretch: float
+    ) -> Tuple[Callable, Dict[str, Any]]:
+        """Select the correct function to calculate the cost matrix.
+
+        This is separate method to make it easy to overwrite by a subclass.
+        """
         # In case we don't have local constrains, we can use the simple dtw implementation
-        if self._max_template_stretch == np.inf and self._max_signal_stretch == np.inf:
-            return subsequence_cost_matrix(to_time_series(template), to_time_series(matching_data))
+        if max_template_stretch == np.inf and max_signal_stretch == np.inf:
+            return subsequence_cost_matrix, {}
         # ... otherwise, we use our custom cost matrix. This is slower. Therefore, we only want to use when we need it.
-        return _subsequence_cost_matrix_with_constrains(
-            to_time_series(template),
-            to_time_series(matching_data),
-            self._max_template_stretch,
-            self._max_signal_stretch,
-        )[..., 0]
+        return (
+            subsequence_cost_matrix_with_constrains,
+            {
+                "max_subseq_steps": max_template_stretch,
+                "max_longseq_steps": max_signal_stretch,
+                "return_only_cost": True,
+            },
+        )
 
     def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
+        """Find the matches in the cost matrix.
+
+        This is separate method to make it easy to overwrite by a subclass.
+        """
         return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
 
     def _postprocess_matches(
@@ -449,6 +489,7 @@ class BaseDtw(BaseAlgorithm):
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,  # noqa: unused-argument
         to_keep: np.ndarray,
+        memory: Memory,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 
@@ -473,6 +514,9 @@ class BaseDtw(BaseAlgorithm):
             This should either be modified or returned without modification.
         acc_cost_mat
             The accumulated cost matrix of the DTW algorithm.
+        memory
+            A joblib memory instance that can be used to cache slow parts of the calculation.
+            Note, that actually caching will only be performed, if smart caching is enabled.
 
         Returns
         -------
@@ -594,27 +638,28 @@ class BaseDtw(BaseAlgorithm):
                 "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
             )
 
-    def _validate_constrains(self, template):
-        self._max_template_stretch = self.max_template_stretch_ms
-        self._max_signal_stretch = self.max_signal_stretch_ms
-        if self._max_signal_stretch and template.sampling_rate_hz is None:
+    def _calculate_constrains(self, template):
+        _max_template_stretch = self.max_template_stretch_ms
+        _max_signal_stretch = self.max_signal_stretch_ms
+        if _max_signal_stretch and template.sampling_rate_hz is None:
             raise ValueError(
                 "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
                 "the template."
             )
 
-        if self._max_template_stretch is None:
-            self._max_template_stretch = np.inf
+        if _max_template_stretch is None:
+            _max_template_stretch = np.inf
         else:
             # Use the correct template sampling rate
             sampling_rate = self.sampling_rate_hz
             if self.resample_template is False:
                 sampling_rate = template.sampling_rate_hz
-            self._max_template_stretch = np.round(self._max_template_stretch / 1000 * sampling_rate)
-        if self._max_signal_stretch is None:
-            self._max_signal_stretch = np.inf
+            _max_template_stretch = np.round(_max_template_stretch / 1000 * sampling_rate)
+        if _max_signal_stretch is None:
+            _max_signal_stretch = np.inf
         else:
-            self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
+            _max_signal_stretch = np.round(_max_signal_stretch / 1000 * self.sampling_rate_hz)
+        return _max_template_stretch, _max_signal_stretch
 
 
 @njit()
@@ -630,8 +675,9 @@ def _local_squared_dist(x, y):
     return dist
 
 
-@njit(cache=True)
-def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
+def subsequence_cost_matrix_with_constrains(
+    subseq, longseq, max_subseq_steps, max_longseq_steps, return_only_cost=False
+):
     """Create a costmatrix using local warping constrains.
 
     This works, by tracking for each step, how many consecutive vertical (subseq) and how many horizontal (longseq)
@@ -645,6 +691,14 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
     The first layer is the actual warping cost.
     The second layer is the count of vertical steps and the third layer the count of horizontal steps.
     """
+    cum_sum = _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps)
+    if return_only_cost is True:
+        return cum_sum[..., 0]
+    return cum_sum
+
+
+@njit(cache=True)
+def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
     l1 = subseq.shape[0]
     l2 = longseq.shape[0]
     cum_sum = np.full((l1 + 1, l2 + 1, 3), np.inf)

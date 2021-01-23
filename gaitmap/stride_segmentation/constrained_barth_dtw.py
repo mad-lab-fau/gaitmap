@@ -1,6 +1,7 @@
 """A version of BarthDTW that used local warping constrains by default."""
 from typing import Optional, Union, Dict
 
+from joblib import Memory
 from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
@@ -79,6 +80,9 @@ class ConstrainedBarthDtw(BarthDtw):
         The following steps will be performed:
 
         - If multiple matches have the same start point, only the match with the lowest cost will be kept.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes and the peak
+        detection.
 
     Attributes
     ----------
@@ -134,6 +138,7 @@ class ConstrainedBarthDtw(BarthDtw):
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
+        memory: Optional[Memory] = None,
     ):
         super().__init__(
             template=template,
@@ -147,4 +152,5 @@ class ConstrainedBarthDtw(BarthDtw):
             snap_to_min_win_ms=snap_to_min_win_ms,
             snap_to_min_axis=snap_to_min_axis,
             conflict_resolution=conflict_resolution,
+            memory=memory,
         )
