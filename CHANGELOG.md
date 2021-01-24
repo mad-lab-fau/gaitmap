@@ -62,6 +62,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - Added a note to BarthDTW to clarify the calculation of the distance matrix.
 - Changed the Chebyshev distance function in `evaluation_utils.stride_segmentation._match_label_lists` to a general one 
   that can use n-D input. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/115)
+- Fixed bug in `utils.static_moment_detection.find_static_samples` where extremely short sequences, which would only fit
+  a single window, would fail.
 
 ### Migration Guide
 
