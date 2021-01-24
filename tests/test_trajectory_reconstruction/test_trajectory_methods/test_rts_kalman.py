@@ -9,14 +9,14 @@ from gaitmap.trajectory_reconstruction import RtsKalman
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.rotations import find_unsigned_3d_angle
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajectory_method_mixin import (
     TestTrajectoryMethodMixin,
 )
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = RtsKalman
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
@@ -37,6 +37,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
             rts.estimate(sensor_data, fs)
 
         assert "experimental" in str(w[0])
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
+
+
+class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
+    __test__ = True
 
 
 class TestTrajectoryMethod(TestTrajectoryMethodMixin):

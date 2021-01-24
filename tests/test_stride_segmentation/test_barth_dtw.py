@@ -10,6 +10,7 @@ from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 from gaitmap.utils.datatype_helper import is_single_sensor_stride_list, is_multi_sensor_stride_list
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_stride_segmentation.test_base_dtw import (
     TestSimpleSegment,
     TestMultiDimensionalArrayInputs,
@@ -17,17 +18,24 @@ from tests.test_stride_segmentation.test_base_dtw import (
 )
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = BarthDtw
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)
-        data = np.array([0, 1.0, 0])
+        data = np.array([0, 1.0, 0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
+
+
+class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
+    __test__ = True
 
 
 class TestRegressionOnRealData:
@@ -365,10 +373,7 @@ class TestPostProcessing:
             find_matches_method="min_under_thres",
         )
 
-        dtw = dtw.segment(
-            sequence,
-            sampling_rate_hz=1000.0,
-        )
+        dtw = dtw.segment(sequence, sampling_rate_hz=1000.0,)
 
         assert_array_equal(dtw.stride_list_, [[5, 8]])
 

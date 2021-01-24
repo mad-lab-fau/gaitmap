@@ -45,10 +45,6 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
 class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
     __test__ = True
 
-    def assert_after_action_instance(self, instance):
-        assert_array_equal(instance.cost_function_, [1.0, 1.0, 0.0, 0.0])
-
-
 
 class DtwTestBase:
     def init_dtw(self, template, **kwargs):
@@ -192,20 +188,14 @@ class TestSimpleSegment(DtwTestBase):
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
     def _create_instance(self, request):
-        dtw = self.init_dtw(
-            template=self.template,
-            find_matches_method=request.param,
-        )
+        dtw = self.init_dtw(template=self.template, find_matches_method=request.param,)
         self.dtw = dtw
 
     def test_sdtw_simple_match(self):
         """Test dtw with single match and hand calculated outcomes."""
         sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-        dtw = self.dtw.segment(
-            np.array(sequence),
-            sampling_rate_hz=100.0,
-        )
+        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)]])
         assert dtw.costs_ == [0.0]
@@ -225,10 +215,7 @@ class TestSimpleSegment(DtwTestBase):
         """Test dtw with multiple matches and hand calculated outcomes."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
-        dtw = self.dtw.segment(
-            np.array(sequence),
-            sampling_rate_hz=100.0,
-        )
+        dtw = self.dtw.segment(np.array(sequence), sampling_rate_hz=100.0,)
 
         np.testing.assert_array_equal(dtw.paths_, [[(0, 5), (1, 6), (2, 7)], [(0, 18), (1, 19), (2, 20)]])
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])

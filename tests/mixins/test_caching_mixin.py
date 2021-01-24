@@ -30,19 +30,16 @@ class TestCachingMixin:
         parameters = after_action_instance.get_other_params()
         algo = after_action_instance.clone()
 
-
-
         # Call everything without caching
         results = getattr(algo, after_action_instance._action_method)(**parameters)
 
         # We don't expect any print output from caching:
         assert capsys.readouterr().out.count("[Memory]") == 0
-        # Just make sure it actually works before testing
-        self.assert_after_action_instance(results)
 
         # Store some info to compare later:
         algo_id = id(results)
         algo_json = results.to_json()
+        # If the hash is the same the results must be the same
         algo_hash = joblib.hash(results)
 
         # Set up caching
@@ -53,7 +50,6 @@ class TestCachingMixin:
         # This time we expect the results to be method to be called and stored
         results = getattr(algo, after_action_instance._action_method)(**parameters)
         assert capsys.readouterr().out.count("[Memory] Calling") > 0
-        self.assert_after_action_instance(results)
 
         after_first_id = id(results)
         after_first_json = results.to_json()
@@ -67,7 +63,6 @@ class TestCachingMixin:
         # This time all results should be loaded from cache
         results = getattr(algo, after_action_instance._action_method)(**parameters)
         assert len(re.findall(r"[Memory].*: Loading", capsys.readouterr().out)) > 0
-        self.assert_after_action_instance(results)
 
         after_second_id = id(results)
         after_second_json = results.to_json()
@@ -91,6 +86,3 @@ class TestCachingMixin:
             instance.to_json()
 
         assert "joblib.Memory" in str(w[0])
-
-
-
