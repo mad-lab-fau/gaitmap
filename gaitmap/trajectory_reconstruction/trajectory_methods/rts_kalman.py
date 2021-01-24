@@ -274,7 +274,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
         rts_kalman_update_series = memory.cache(_rts_kalman_update_series)
 
-        states, covariances = _rts_kalman_update_series(
+        states, covariances = rts_kalman_update_series(
             acc_data,
             gyro_data,
             initial_orientation,
@@ -494,11 +494,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
 
     return (
         (prior_covariances, posterior_covariances, prior_error_states, posterior_error_states, state_transitions),
-        (
-            positions,
-            velocities,
-            orientations,
-        ),
+        (positions, velocities, orientations,),
     )
 
 
