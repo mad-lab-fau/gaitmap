@@ -119,9 +119,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         simple_gyro_integration_series = memory.cache(_simple_gyro_integration_series)
 
         rots = simple_gyro_integration_series(
-            gyro=gyro_data,
-            initial_orientation=initial_orientation,
-            sampling_rate_hz=sampling_rate_hz,
+            gyro=gyro_data, initial_orientation=initial_orientation, sampling_rate_hz=sampling_rate_hz,
         )
         self.orientation_object_ = Rotation.from_quat(rots)
 

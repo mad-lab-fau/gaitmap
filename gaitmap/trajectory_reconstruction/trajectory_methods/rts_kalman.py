@@ -272,9 +272,9 @@ class RtsKalman(BaseTrajectoryMethod):
         acc_data = data[SF_ACC].to_numpy()
         zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
-        rts_kalman_update_series = memory.cache(_rts_kalman_update_series)
+        cached_rts_kalman_update_series = memory.cache(_rts_kalman_update_series)
 
-        states, covariances = rts_kalman_update_series(
+        states, covariances = cached_rts_kalman_update_series(
             acc_data,
             gyro_data,
             initial_orientation,

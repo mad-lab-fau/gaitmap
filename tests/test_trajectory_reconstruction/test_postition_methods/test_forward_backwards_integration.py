@@ -24,8 +24,6 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
     __test__ = True
 
 
-
-
 class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     __test__ = True
 

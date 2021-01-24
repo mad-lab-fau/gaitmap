@@ -489,7 +489,7 @@ class BaseDtw(BaseAlgorithm):
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,  # noqa: unused-argument
         to_keep: np.ndarray,
-        memory: Memory,
+        memory: Memory,  # noqa: unused-argument
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 

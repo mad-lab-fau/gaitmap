@@ -275,7 +275,7 @@ class RamppEventDetection(BaseEventDetection):
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 
-    def _select_all_event_detection_method(self) -> Callable:
+    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
         """Select the function to calculate the all events.
 
         This is separate method to make it easy to overwrite by a subclass.
@@ -328,10 +328,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray,
-    acc_pa: np.ndarray,
-    gyr_ml_grad: np.ndarray,
-    ic_search_region: Tuple[float, float],
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float],
 ) -> float:
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
