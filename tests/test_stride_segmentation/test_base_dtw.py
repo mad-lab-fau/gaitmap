@@ -14,6 +14,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate
@@ -22,23 +23,31 @@ from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_caching_mixin import TestCachingMixin
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = BaseDtw
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.algorithm_class(
-            template=template,
-            max_cost=0.5,
-            min_match_length_s=None,
-        )
-        data = np.array([0, 1.0, 0])
+        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)
+        data = np.array([0, 1.0, 0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
+
+
+class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
+    __test__ = True
+
+    def assert_after_action_instance(self, instance):
+        assert_array_equal(instance.cost_function_, [1.0, 1.0, 0.0, 0.0])
+
 
 
 class DtwTestBase:
