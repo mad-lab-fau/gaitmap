@@ -3,11 +3,13 @@
 import inspect
 import json
 import types
+import warnings
 from collections import defaultdict
 from typing import Callable, Dict, TypeVar, Any, List, Type, DefaultDict, Union
 
 import numpy as np
 import pandas as pd
+from joblib import Memory
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import GF_ORI
@@ -38,6 +40,12 @@ class _CustomEncoder(json.JSONEncoder):
             return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
+        if isinstance(o, Memory):
+            warnings.warn("Exporting `joblib.Memory` objects to json is not supported. "
+                          "The value will be replaced by `None` and caching needs to be reactivated after loading the "
+                          "object again. "
+                          "This can be using `instance.set_params(memory=Memory(...))`")
+            return None
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
