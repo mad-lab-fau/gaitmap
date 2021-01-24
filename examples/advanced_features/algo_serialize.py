@@ -59,3 +59,34 @@ pprint(loaded_slt.get_params())
 # `StrideLevelTrajectory`.
 loaded_slt = StrideLevelTrajectory.from_json(json_str)
 pprint(loaded_slt.get_params())
+
+# %%
+# Caching Support
+# ---------------
+# Note that the json export does not cover `joblib.memory` objects that some algorithms use to cache results.
+# When you attempt to do this, you will get a warning with further information.
+from gaitmap.stride_segmentation import BarthDtw
+from joblib import Memory
+
+# Create a memory object. Usually you would pass the path to a cache dir.
+mem = Memory()
+
+instance = BarthDtw(memory=Memory())
+pprint(instance.get_params())
+
+# %%
+json_str_cached = instance.to_json()
+print(json_str_cached)
+
+# %%
+# If we now load the object again, the memory argument is empty.
+# We need to set it again.
+# If we use the same memory object or recreate a new memory object that points to the same cache-location, the same
+# cache will be used as before.
+loaded_instance = BarthDtw.from_json(json_str_cached)
+print(loaded_instance.memory)
+
+# %%
+# We can simply reactivate the memory.
+loaded_instance = loaded_instance.set_params(memory=mem)
+pprint(loaded_instance.get_params())
