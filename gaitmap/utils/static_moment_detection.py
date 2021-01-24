@@ -74,6 +74,13 @@ def find_static_samples(
     if metric not in _METRIC_FUNCTIONS:
         raise ValueError("Invalid metric passed! %s as metric is not supported." % metric)
 
+    # check if minimum signal length matches window length
+    if window_length > len(signal):
+        raise ValueError(
+            "Invalid window length, window must be smaller or equal than given signal length. Given signal length: "
+            "%d with given window_length: %d." % (len(signal), window_length)
+        )
+
     # add default overlap value
     if overlap is None:
         overlap = window_length - 1
@@ -87,12 +94,14 @@ def find_static_samples(
     mfunc = _METRIC_FUNCTIONS[metric]
 
     # Create windowed view of norm
-    windowed_norm = array_handling.sliding_window_view(signal_norm, window_length, overlap, nan_padding=False)
+    windowed_norm = np.atleast_2d(
+        array_handling.sliding_window_view(signal_norm, window_length, overlap, nan_padding=False)
+    )
     is_static = np.broadcast_to(mfunc(windowed_norm, axis=1) <= inactive_signal_th, windowed_norm.shape[::-1]).T
 
     # create the list of indices for sliding windows with overlap
-    windowed_indices = array_handling.sliding_window_view(
-        np.arange(0, len(signal)), window_length, overlap, nan_padding=False
+    windowed_indices = np.atleast_2d(
+        array_handling.sliding_window_view(np.arange(0, len(signal)), window_length, overlap, nan_padding=False)
     )
 
     # iterate over sliding windows

@@ -28,6 +28,24 @@ class TestFindStaticSamples:
                 test_input, window_length=4, overlap=3, inactive_signal_th=0, metric="some_invalid_metric"
             )
 
+    def test_invalid_window_length(self):
+        """Test if value error is raised correctly on invalid input dimensions."""
+        test_input = np.array([0, 0, 0, 0, 0, 0])
+        test_input = np.column_stack([test_input, test_input, test_input])
+        with pytest.raises(ValueError, match=r".*Invalid window length*"):
+            find_static_samples(test_input, window_length=10, overlap=3, inactive_signal_th=0, metric="maximum")
+
+    def test_single_window_fit(self):
+        """Test input where only a single window length fits within input signal."""
+        test_input = np.array([0, 0, 0, 0, 0, 1, 1, 1])
+        test_input = np.column_stack([test_input, test_input, test_input])
+        expected_output = np.array([1, 1, 1, 1, 1, 0, 0, 0])
+        window_length = 5
+        test_output = find_static_samples(
+            test_input, window_length=window_length, inactive_signal_th=0, metric="maximum", overlap=1
+        )
+        assert_array_equal(test_output, expected_output)
+
     def test_max_overlap_metric_max_w4_default_overlap(self):
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
