@@ -10,3 +10,4 @@ User Guide
 
     coordinate_systems
     datatypes
+    algorithm_evaluation
