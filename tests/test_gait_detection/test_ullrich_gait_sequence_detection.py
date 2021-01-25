@@ -72,7 +72,7 @@ class TestUllrichGaitSequenceDetection:
         snapshot,
     ):
         """Test if the algorithm is generally working with different sensor channel configs and their respective
-                optimal peak prominence thresholds."""
+        optimal peak prominence thresholds."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )

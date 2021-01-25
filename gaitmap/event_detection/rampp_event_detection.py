@@ -328,7 +328,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float],
+    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))

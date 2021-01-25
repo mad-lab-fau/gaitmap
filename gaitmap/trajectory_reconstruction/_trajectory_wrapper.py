@@ -86,7 +86,7 @@ class _TrajectoryReconstructionWrapperMixin:
         return self
 
     def _estimate_single_sensor(
-        self, data: SingleSensorData, integration_regions: SingleSensorRegionsOfInterestList,
+        self, data: SingleSensorData, integration_regions: SingleSensorRegionsOfInterestList
     ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = tuple((*self._expected_integration_region_index, "sample"))

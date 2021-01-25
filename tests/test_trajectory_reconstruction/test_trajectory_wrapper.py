@@ -147,9 +147,7 @@ class TestIODataStructures:
 
             first_last_stride = test_stride_events[sensor].iloc[[0, -1]][self.key]
             snapshot.assert_match(instance.orientation_[sensor].loc[first_last_stride], "ori_{}".format(sensor))
-            snapshot.assert_match(
-                instance.position_[sensor].loc[first_last_stride], "pos_{}".format(sensor),
-            )
+            snapshot.assert_match(instance.position_[sensor].loc[first_last_stride], "pos_{}".format(sensor))
 
 
 class TestInitCalculation:

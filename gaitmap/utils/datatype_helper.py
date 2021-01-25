@@ -202,7 +202,7 @@ def is_multi_sensor_data(
 
 
 def is_sensor_data(
-    data: SensorData, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any",
+    data: SensorData, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any"
 ) -> Literal["single", "multi"]:
     """Check if an object is valid multi-sensor or single-sensor data.
 
@@ -265,7 +265,7 @@ def is_sensor_data(
 
 
 def is_single_sensor_stride_list(
-    stride_list: SingleSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False,
+    stride_list: SingleSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
@@ -359,7 +359,7 @@ def is_single_sensor_stride_list(
 
 
 def is_multi_sensor_stride_list(
-    stride_list: MultiSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False,
+    stride_list: MultiSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
 
@@ -412,7 +412,7 @@ def is_multi_sensor_stride_list(
     return True
 
 
-def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any",) -> Literal["single", "multi"]:
+def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any") -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
     This function will try to check the input using
@@ -604,7 +604,7 @@ def is_multi_sensor_regions_of_interest_list(
 
 
 def is_regions_of_interest_list(
-    roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any",
+    roi_list: RegionsOfInterestList, region_type: Literal["any", "roi", "gs"] = "any"
 ) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor regions of interest list.
 

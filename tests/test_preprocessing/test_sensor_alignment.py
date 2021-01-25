@@ -89,7 +89,9 @@ class TestXYAlignment:
 
         assert_almost_equal(rot.apply(rot_signal), signal)
 
-    def test_xy_alignment_dummy(self,):
+    def test_xy_alignment_dummy(
+        self,
+    ):
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), 0).apply(signal)
         rot = align_heading_of_sensors(signal, rot_signal)

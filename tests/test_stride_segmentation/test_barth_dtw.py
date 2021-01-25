@@ -373,7 +373,7 @@ class TestPostProcessing:
             find_matches_method="min_under_thres",
         )
 
-        dtw = dtw.segment(sequence, sampling_rate_hz=1000.0,)
+        dtw = dtw.segment(sequence, sampling_rate_hz=1000.0)
 
         assert_array_equal(dtw.stride_list_, [[5, 8]])
 

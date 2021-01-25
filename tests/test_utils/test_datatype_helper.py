@@ -119,7 +119,8 @@ class TestIsSingleSensorDataset:
 
 class TestIsMultiSensorDataset:
     @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+        "value",
+        (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
         assert not is_multi_sensor_data(value, check_acc=False, check_gyr=False)
@@ -298,7 +299,8 @@ class TestIsSingleSensorStrideList:
 
 class TestIsMultiSensorStrideList:
     @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+        "value",
+        (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
         assert not is_multi_sensor_stride_list(value)
@@ -470,7 +472,8 @@ class TestIsMultiSensorTrajLikeList:
         self.func, self.dtype, self.valid_cols = request.param
 
     @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+        "value",
+        (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
         assert not self.func(value)
@@ -660,7 +663,8 @@ class TestIsSingleRegionsOfInterestList:
 
 class TestIsMultiSensorRegionsOfInterestList:
     @pytest.mark.parametrize(
-        "value", (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
+        "value",
+        (list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])),
     )
     def test_wrong_datatype(self, value):
         assert not is_multi_sensor_regions_of_interest_list(value)

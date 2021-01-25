@@ -114,11 +114,23 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
         ax.axvline(stride["end"], color="r")
 
     ax.scatter(
-        ic_idx, bf_data["left_sensor"][sensor].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
+        ic_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[ic_idx],
+        marker="*",
+        s=100,
+        color="r",
+        zorder=3,
+        label="ic",
     )
 
     ax.scatter(
-        tc_idx, bf_data["left_sensor"][sensor].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
+        tc_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[tc_idx],
+        marker="p",
+        s=50,
+        color="g",
+        zorder=3,
+        label="tc",
     )
 
     ax.scatter(
@@ -172,11 +184,23 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
     )
 
     ax.scatter(
-        ic_idx, bf_data["left_sensor"][sensor].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
+        ic_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[ic_idx],
+        marker="*",
+        s=100,
+        color="r",
+        zorder=3,
+        label="ic",
     )
 
     ax.scatter(
-        tc_idx, bf_data["left_sensor"][sensor].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
+        tc_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[tc_idx],
+        marker="p",
+        s=50,
+        color="g",
+        zorder=3,
+        label="tc",
     )
 
     ax.scatter(
@@ -212,7 +236,9 @@ from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
 ed2 = RamppEventDetection()
 segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
 ed2.detect(
-    data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, stride_list=segmented_stride_list,
+    data=bf_data["left_sensor"],
+    sampling_rate_hz=sampling_rate_hz,
+    stride_list=segmented_stride_list,
 )
 
 fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
@@ -248,11 +274,23 @@ ax2.scatter(
 )
 
 ax2.scatter(
-    ic_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
+    ic_idx,
+    bf_data["left_sensor"][sensor_axis].to_numpy()[ic_idx],
+    marker="*",
+    s=100,
+    color="r",
+    zorder=3,
+    label="ic",
 )
 
 ax2.scatter(
-    tc_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
+    tc_idx,
+    bf_data["left_sensor"][sensor_axis].to_numpy()[tc_idx],
+    marker="p",
+    s=50,
+    color="g",
+    zorder=3,
+    label="tc",
 )
 
 ax2.scatter(

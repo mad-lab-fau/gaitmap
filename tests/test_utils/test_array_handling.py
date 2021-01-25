@@ -86,7 +86,7 @@ class TestSlidingWindow:
 
     def test_sliding_window_1D_asym_without_padding(self):
         """Test windowed view is correct for 1D array with need for nan padding but padding disabled and asymetrical
-         overlap."""
+        overlap."""
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         expected_output = np.array([0, 1, 2, 3, 4, 5, 6])
         window_view = sliding_window_view(input_array, window_length=7, overlap=2, nan_padding=False)
@@ -361,8 +361,16 @@ class TestMergeIntervals:
                 np.array([[1, 15], [18, 20]]),
                 2,
             ),
-            (np.array([[-1, 1], [-2, 2], [3, 3], [5, 5], [4, 4]]), np.array([[-2, 5]]), 1,),
-            (np.array([[]]), np.array([[]]), 0,),
+            (
+                np.array([[-1, 1], [-2, 2], [3, 3], [5, 5], [4, 4]]),
+                np.array([[-2, 5]]),
+                1,
+            ),
+            (
+                np.array([[]]),
+                np.array([[]]),
+                0,
+            ),
         ],
     )
     def test_merge_intervals(self, input_array, output_array, gap_size):

@@ -93,7 +93,8 @@ class TestIntersect:
         # Note that the first value of position simulates the initial orientation calculated by the method.
         # The stride and roi list indices are relative to the data, which has one sample less.
         test_position = pd.DataFrame(
-            np.array([[0] * len(position), position, position, position]).T, columns=("roi_id", *GF_POS),
+            np.array([[0] * len(position), position, position, position]).T,
+            columns=("roi_id", *GF_POS),
         ).rename_axis("sample")
         test_roi_list = pd.DataFrame({"start": [0], "end": [len(position) - 1]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": starts, "end": ends}).rename_axis("s_id")
@@ -117,7 +118,7 @@ class TestIntersect:
         starts = [0, 3, 12, 18]
         ends = [3, 6, 15, 22]
         test_position = pd.DataFrame(
-            np.array([[0] * len(position), position, position, position]).T, columns=("roi_id", *GF_POS),
+            np.array([[0] * len(position), position, position, position]).T, columns=("roi_id", *GF_POS)
         ).rename_axis("sample")
         test_roi_list = pd.DataFrame({"start": [0], "end": [len(position) - 1]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": starts, "end": ends}).rename_axis("s_id")
@@ -186,7 +187,8 @@ class TestIntersect:
         # Simulate calling `estimate_intersect` by setting a stride-level pos list:
         position = [1, 1, 1]
         position_list = pd.DataFrame(
-            np.array([[0] * len(position), position, position, position]).T, columns=("s_id", *GF_POS),
+            np.array([[0] * len(position), position, position, position]).T,
+            columns=("s_id", *GF_POS),
         ).rename_axis("sample")
 
         stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
@@ -202,7 +204,8 @@ class TestIntersect:
     def test_datatypes_mismatch(self, sl_type, pos_type):
         position = [1, 1, 1]
         position_list = pd.DataFrame(
-            np.array([[0] * len(position), position, position, position]).T, columns=("roi_id", *GF_POS),
+            np.array([[0] * len(position), position, position, position]).T,
+            columns=("roi_id", *GF_POS),
         ).rename_axis("sample")
         roi_list = pd.DataFrame({"start": [0], "end": [len(position) - 1]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
@@ -244,7 +247,8 @@ class TestIntersect:
         starts = [0, 3]
         ends = [3, 6]
         test_position = pd.DataFrame(
-            np.array([[0] * len(position), position, position, position]).T, columns=("roi_id", *GF_POS),
+            np.array([[0] * len(position), position, position, position]).T,
+            columns=("roi_id", *GF_POS),
         ).rename_axis("sample")
         test_roi_list = pd.DataFrame({"start": [0], "end": [len(position) - 1]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": starts, "end": ends}).rename_axis("s_id")

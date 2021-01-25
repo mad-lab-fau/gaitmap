@@ -140,7 +140,9 @@ plot_dtw(cdtw)
 # Note that you still need to change the template columns to reproduce the results from above.
 
 default_cdtw = ConstrainedBarthDtw(
-    BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")), min_match_length_s=None, max_signal_stretch_ms=None,
+    BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")),
+    min_match_length_s=None,
+    max_signal_stretch_ms=None,
 )
 default_cdtw = default_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 

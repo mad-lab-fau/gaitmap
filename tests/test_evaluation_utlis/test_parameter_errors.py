@@ -125,7 +125,12 @@ class TestCalculateParameterErrors:
         "input_param,ground_truth,sensor_names,expectations",
         [
             (
-                _create_valid_input(["param"], [np.arange(0, 10), [4, 5, 6]], is_dict=True, sensors=["1", "2"],),
+                _create_valid_input(
+                    ["param"],
+                    [np.arange(0, 10), [4, 5, 6]],
+                    is_dict=True,
+                    sensors=["1", "2"],
+                ),
                 _create_valid_input(["param"], [np.arange(0, 10)[::-1], [4, 6, 5]], is_dict=True, sensors=["1", "2"]),
                 ["1", "2"],
                 [
@@ -154,7 +159,13 @@ class TestCalculateParameterErrors:
                 ),
                 ["1", "2"],
                 [
-                    {"mean_error": 0, "error_std": 0, "mean_abs_error": 0, "abs_error_std": 0, "max_abs_error": 0,},
+                    {
+                        "mean_error": 0,
+                        "error_std": 0,
+                        "mean_abs_error": 0,
+                        "abs_error_std": 0,
+                        "max_abs_error": 0,
+                    },
                     {
                         "mean_error": 0,
                         "error_std": 1,

@@ -248,7 +248,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         stride_length_ = _calc_stride_length(positions)
         gait_velocity_ = _calc_gait_velocity(
-            stride_length_, _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
+            stride_length_, _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
         )
         arc_length_ = _calc_arc_length(positions)
         turning_angle_ = _calc_turning_angle(orientations)

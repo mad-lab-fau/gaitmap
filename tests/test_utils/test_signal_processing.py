@@ -5,7 +5,7 @@ from gaitmap.utils.signal_processing import row_wise_autocorrelation
 
 def test_row_wise_autocorrelation():
     """Test if the manually implemented row wise autocorrelation function produces similar results than the numpy
-     implementation"""
+    implementation"""
 
     # create a test signal
     sampling_rate = 204.8

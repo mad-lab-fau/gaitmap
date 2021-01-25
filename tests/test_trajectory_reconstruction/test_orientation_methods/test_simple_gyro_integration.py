@@ -15,9 +15,7 @@ class MetaTestConfig:
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = SimpleGyroIntegration()
-        position.estimate(
-            healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1,
-        )
+        position.estimate(healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1)
         return position
 
 

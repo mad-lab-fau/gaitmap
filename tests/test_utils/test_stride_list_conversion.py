@@ -26,7 +26,8 @@ class TestEnforceStrideListConsistency:
         return pd.DataFrame(event_dict)
 
     @pytest.mark.parametrize(
-        "stride_type", ("segmented", "min_vel", "ic"),
+        "stride_type",
+        ("segmented", "min_vel", "ic"),
     )
     def test_all_good(self, stride_type):
         event_list = self._create_example_stride_list(stride_type)
@@ -35,7 +36,8 @@ class TestEnforceStrideListConsistency:
         assert len(removed_strides) == 0
 
     @pytest.mark.parametrize(
-        "stride_type", ("segmented", "min_vel", "ic"),
+        "stride_type",
+        ("segmented", "min_vel", "ic"),
     )
     def test_simple_error(self, stride_type):
         event_list = self._create_example_stride_list(stride_type)

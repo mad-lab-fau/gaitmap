@@ -60,7 +60,7 @@ class TestPositionMethodNoGravityMixin:
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
 
-    @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3],))
+    @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]))
     def test_all_axis(self, acc):
         """Test against the physics equation."""
         test = self.init_algo_class()

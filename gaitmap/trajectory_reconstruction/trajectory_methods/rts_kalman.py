@@ -512,7 +512,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
 
     return (
         (prior_covariances, posterior_covariances, prior_error_states, posterior_error_states, state_transitions),
-        (positions, velocities, orientations,),
+        (positions, velocities, orientations),
     )
 
 

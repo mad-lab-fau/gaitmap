@@ -50,7 +50,8 @@ class TestNormalize:
         assert_array_equal(self.func(np.array([2.0, 0, 0])), np.array([1.0, 0, 0]))
 
     @pytest.mark.parametrize(
-        "v1, v2", [([0, 2.0, 0], [0, 1, 0]), ([2.0, 0, 0], [1.0, 0, 0]), ([0.5, 0.5, 0], [0.707107, 0.707107, 0])],
+        "v1, v2",
+        [([0, 2.0, 0], [0, 1, 0]), ([2.0, 0, 0], [1.0, 0, 0]), ([0.5, 0.5, 0], [0.707107, 0.707107, 0])],
     )
     def test_normalize_2d_array(self, v1, v2):
         """Test 2D array."""

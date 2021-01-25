@@ -28,7 +28,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     def after_action_instance(self) -> RoiStrideSegmentation:
         # We use a simple dtw to create the instance
         template = create_dtw_template(pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None,)
+        dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None)
         data = pd.DataFrame(np.array([0, 1.0, 0]))
         instance = RoiStrideSegmentation(segmentation_algorithm=dtw)
         instance.segment(
@@ -76,9 +76,7 @@ class TestParameterValidation:
 
         assert "neither single- or multi-sensor data" in str(e)
 
-    @pytest.mark.parametrize(
-        "roi", (pd.DataFrame(), None),
-    )
+    @pytest.mark.parametrize("roi", (pd.DataFrame(), None))
     def test_invalid_roi_single_dataset(self, roi):
         """Test that an error is raised if an invalid roi is provided."""
         with pytest.raises(ValidationError) as e:
