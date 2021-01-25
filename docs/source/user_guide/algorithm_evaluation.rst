@@ -120,8 +120,6 @@ expect another instance of our algorithm to be when it is trained with the same 
 data.
 
 
-
-
 Algorithm Optimization
 ======================
 
@@ -220,7 +218,7 @@ With that we can use the following workflow (represented as pseudo code): ::
     final_model = algorithm(best_parameter).train(data, ground_truth)
 
 
-Note, that after we optimized the hyper parameters, we didn't just take the best available model, but just the best
+Note, that after we optimized the hyper-parameters, we didn't just take the best available model, but just the best
 hyper-parameters and then retrained the model on all the data we had available during optimization (aka all *train* data
 if we perform a evaluation).
 This ensures that our model can make use of as much data as possible.
@@ -265,7 +263,7 @@ The combination with the best average performance can then be used to retrain ou
     This depends on your very specific application.
     But typical candidates are "accuracy", "F1-score", or the "Youden-index".
     We can also calculate a combination of multiple values, but we need to have a way to decide on the best overall
-    result
+    result.
 
 For further explanation and ways to implement that easily, see the
 `sklearn guide <https://scikit-learn.org/stable/modules/grid_search.html>`__
@@ -382,7 +380,7 @@ To gain further performance, the part of the `predict` method that just belongs 
 
 With Hyper-Parameter Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If we now reintroduce hyper-parameter, we can stick to same approach.
+If we now reintroduce hyper-parameter, we can stick to the same approach.
 However, we have to repeat the training for all hyper-parameter combinations.
 All combinations of the regular parameters can then again be tested based on a cached model.
 
@@ -403,17 +401,17 @@ In both cases, we can train just the machine learning part on the provided train
 But we never expect the algorithm to perfectly reproduce that ideal output.
 Hence, post processing steps are required that can for various reasons not directly be implemented in the model itself.
 
-But, in the grand scheme of things, it is right to say that few algorithms fall in into *Group 3*, as they not
+But, in the grand scheme of things, it is right to say that few algorithms fall in into *Group 3*, as many do not
 fulfill the requirement stated above.
 For most complicated and chained algorithms, we need to produce ground truth for the intermediate outputs so that parts
 of the algorithm can be trained/optimized independently.
 But even in these cases, we should follow the optimization concept outlined above.
 If we first train our model based on the intermediate ground truth and then optimize the parameters of the remaining
 steps independently, but on the same data pool, we still risk over-fitting these parameters as explained above.
-Simply, we expect the output of our model to be better on our training data as on unseen data.
+Simply, we expect the output of our model to be better on our training data than on unseen data.
 This means we optimize our remaining parameters based on this “best case” output (btw. the same would be true if we
 use the intermediate ground truth as input for the parameter optimization).
-Depending on the exact model and algorithm, this might not generalize well to unseen data, where the output of model
+Depending on the exact model and algorithm, this might not generalize well to unseen data, where the output of the model
 component is less ideal.
 Therefore, it would be safer to tune these parameters based on the prediction on unseen data, as shown above in the
 cross-validation approach.
@@ -442,10 +440,10 @@ multiple times with different train-test splits.
 Aka, we perform a cross-validation.
 This simply means, we repeat our evaluation workflow in a loop while changing out the train and test split in step 1
 in each iteration.
-The final performance we will report the mean over all cross-validation folds.
+As final performance we will report the mean over all cross-validation folds.
 
 .. note::
-    When using a cross-validation to evaluate an trainable algorithm with additional (hyper-)parameters, we basically
+    When using a cross-validation to evaluate a trainable algorithm with additional (hyper-)parameters, we basically
     perform a cross-validation within a cross-validation.
     This is often called a *nested cross-validation*.
     I think, this is a bad term to describe the process.
@@ -607,7 +605,7 @@ Tools that can automatically calculate gradients over complicated functions (lik
 
 ... cross-validation
 --------------------
-In this guide we used cross-validation whenever we performed an evaluation multiple time, because we feared that a
+In this guide we used cross-validation whenever we performed an evaluation multiple times, because we feared that a
 single *train*-*validation/test* split might be too unstable.
 However, we did that in two very different scenarios with two different purposes:
 
@@ -631,7 +629,7 @@ This might be something you want to do, if training is extremely expensive (= hi
 If we use cross-validation for evaluation, it is used to give us an estimate of the actual real world performance.
 A single train-test split will often not represent this performance well (unless our dataset is really large).
 This means, not performing a cross-validation for evaluation could actually be considered a methodological error
-and you should be highly skeptical of performance results produces on a single train-test split.
+and you should be highly skeptical of performance results produced on a single train-test split.
 
 The other important thing to note about cross-validation is that different types of cross-validation exist and that
 there are other algorithms that could fulfill the same function as cross-validation.
@@ -644,7 +642,7 @@ Such methods can be used equivalently to cross-validation in the context of this
 Using cross-validation and grid search requires our algorithms to be trained over and over again (sometimes even on the
 same data).
 This is expensive and can take a loooooooong time.
-The reality is that real-life constrains on computational power sometimes prevent us to follow all the "ideal world"
+The reality is that real-life constraints on computational power sometimes prevent us to follow all the "ideal world"
 guidelines.
 In particular in the deep learning community where datasets are large and training times are long, cross-validation is
 often substituted with a single train-test split and - instead of grid search - parameters are often optimized based on
