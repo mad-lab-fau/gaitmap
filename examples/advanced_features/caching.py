@@ -21,7 +21,7 @@ hidden behind a method call.
 Therefore, many gaitmap algorithms have caching built-in.
 These algorithms support an additional keyword argument called `memory` in their init-function.
 If you pass a `joblib.Memory` object to these, it will be used to cache the most time consuming function calls.
-Note, that this will usually not cache all the calculations in a method, but only the once that are considered worth
+Note, that this will usually not cache all the calculations in a method, but only the ones that are considered worth
 caching by the algorithm developer.
 
 If you really want to cache the full method calls (on your own risk), see the last section of this example.
@@ -90,9 +90,9 @@ second_call_stride_list = second_call_results.stride_list_.copy()
 first_call_stride_list["left_sensor"].equals(second_call_stride_list["left_sensor"])
 
 # %%
-# Partial cached calls
-# --------------------
-# As you seen before, `BarthDtw` caches multiple steps individually.
+# Partially cached calls
+# ----------------------
+# As you have seen before, `BarthDtw` caches multiple steps individually.
 # This ensures that we can change some parameters while still making use of the some cached results.
 # For `BarthDtw` we cache the creation of the cost matrix and the identification of strides within the cost matrix
 # separatly.
@@ -112,7 +112,7 @@ new_instance.segment(data=data, sampling_rate_hz=204.8)
 # ---------
 # - Caching support will vary from algorithm to algorithm
 # - Caching supports multi-processing
-# - Do **not** use you cache as permanent storage of results. It is way to easy to delete it.
+# - Do **not** use you cache as permanent storage of results. It is way too easy to delete it.
 # - If you try a lot of things with a lot of data, your cache can become really large.
 # - Clear your cache, before you do your final calculations for a publication!
 # - Make sure you add you cache dir to your ".gitignore" file.
@@ -122,7 +122,7 @@ new_instance.segment(data=data, sampling_rate_hz=204.8)
 # Caching Full method calls
 # -------------------------
 # In some cases it might still be desirable to cache the entire output of an algorithm.
-# To do this safely you need aware of how cashing works under the hood.
+# To do this safely you need to be aware of how cashing works under the hood.
 # The `Memory` class calculates a hash of all inputs to a function and stores a pickeled version of the results together
 # with this input-hast.
 # If the function is called again, the hash of the input is compared with hashes stored on the disk.
@@ -160,11 +160,11 @@ joblib.hash(test_dtw)
 # This observation becomes an issue when caching class methods.
 # As python passes the class instance itself as the first argument to this method.
 # This means the input-hash used for caching will change whenever anything on the class instance changes, even if the
-# change might not effect the actual output of the method.
-# In many cases this is less of an issue with gaitmap, as we can reasonable assume that the main action method should
-# only depend on the params of an algorithm (`self.get_params()`) and the actional action method.
+# change might not affect the actual output of the method.
+# In many cases this is less of an issue with gaitmap, as we can reasonably assume that the main action method should
+# only depend on the params of an algorithm (`self.get_params()`) and the actual action method.
 #
-# Therefore, we can action methods reliably when cloning the algorithm before hand and using a wrapper method.
+# Therefore, we can cache action methods reliably when cloning the algorithm before hand and using a wrapper method.
 # Cloning the algorithm instance ensures that all instance data, except the params are reset.
 
 

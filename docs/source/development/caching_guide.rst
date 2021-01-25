@@ -40,7 +40,7 @@ At this point you should check, if the parameter is `None` and if yes, replace i
     if not memory:
         memory = Memory(None)
 
-An empty memory object is equivalent to not caching, but you do not need additional if checks to see if caching is
+An empty memory object is equivalent to not caching, but you do not need additional if-checks to see if caching is
 active later in your code.
 This local variable can then be passed to further methods down the line ideally using the call signature
 `memory: Memory` for consistency.

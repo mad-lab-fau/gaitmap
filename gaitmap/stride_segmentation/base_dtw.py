@@ -402,10 +402,12 @@ class BaseDtw(BaseAlgorithm):
         else:
             final_template = template_array
 
-        max_template_strech, max_signal_strech = self._calculate_constrains(template)
+        max_template_stretch, max_signal_stretch = self._calculate_constrains(template)
 
         find_matches_method = self._allowed_methods_map[self.find_matches_method]
-        cost_matrix_method, cost_matrix_kwargs = self._select_cost_matrix_method(max_template_strech, max_signal_strech)
+        cost_matrix_method, cost_matrix_kwargs = self._select_cost_matrix_method(
+            max_template_stretch, max_signal_stretch
+        )
 
         # If we have smart cache enabled, this will cache the methods with the longest runtime
         find_matches_method = memory.cache(find_matches_method)
