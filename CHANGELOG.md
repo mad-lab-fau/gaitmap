@@ -59,14 +59,13 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 
 ### Deprecated
 
-- Removed old serialization format for DTW templates that was deprecated a couple of releases ago.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/127)
-
 ### Removed
     
 - `gait_detection.ullrich_gait_sequence_detection._gait_sequences_to_boolean_single` has been made redundant by 
   `utils.array_handling.merge_intervals` and was therefore removed. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
+- Removed old serialization format for DTW templates that was deprecated a couple of releases ago.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/issues/127)  
 
 ### Fixed
 
@@ -78,6 +77,7 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   that can use n-D input. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/115)
 - Fixed bug in `utils.static_moment_detection.find_static_samples` where extremely short sequences, which would only fit
   a single window, would fail.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/109)
 
 ### Migration Guide
 
