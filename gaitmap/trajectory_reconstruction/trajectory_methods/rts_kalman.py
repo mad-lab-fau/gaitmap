@@ -272,7 +272,7 @@ class RtsKalman(BaseTrajectoryMethod):
         acc_data = data[SF_ACC].to_numpy()
         zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
-        cached_rts_kalman_update_series = memory.cache(_rts_kalman_update_series)
+        cached_rts_kalman_update_series = memory.cache(rts_kalman_update_series)
 
         states, covariances = cached_rts_kalman_update_series(
             acc_data,
@@ -339,11 +339,29 @@ class RtsKalman(BaseTrajectoryMethod):
 
 
 def rts_kalman_update_series(
-    acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
+    acc,
+    gyro,
+    initial_orientation,
+    sampling_rate_hz,
+    meas_noise,
+    covariance,
+    process_noise,
+    zupts,
+    level_walking,
+    orientation_correction,
 ):
     """Perform a forward and backwards kalman pass with smoothing over the entire series."""
     return _rts_kalman_update_series(
-        acc, gyro, initial_orientation, sampling_rate_hz, meas_noise, covariance, process_noise, zupts, level_walking
+        acc,
+        gyro,
+        initial_orientation,
+        sampling_rate_hz,
+        meas_noise,
+        covariance,
+        process_noise,
+        zupts,
+        level_walking,
+        orientation_correction,
     )
 
 
