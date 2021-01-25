@@ -5,6 +5,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 
@@ -91,6 +92,8 @@ class RtsKalman(BaseTrajectoryMethod):
     zupt_window_overlap_s
         Length of the window overlap used in the default method to find ZUPTs.
         It is given in seconds and if not given it defaults to half the window length.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the results of the kalman filter.
 
     Attributes
     ----------
@@ -179,6 +182,7 @@ class RtsKalman(BaseTrajectoryMethod):
     zupt_window_overlap_s: Optional[float]
     zupt_orientation_update: bool
     zupt_orientation_error_variance: float
+    memory: Optional[Memory]
 
     data: SingleSensorData
     sampling_rate_hz: float
@@ -199,6 +203,7 @@ class RtsKalman(BaseTrajectoryMethod):
         zupt_orientation_error_variance: float = 10e-1,
         zupt_window_length_s: float = 0.05,
         zupt_window_overlap_s: Optional[float] = None,
+        memory: Optional[Memory] = None,
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
@@ -211,6 +216,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupt_orientation_error_variance = zupt_orientation_error_variance
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
+        self.memory = memory
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
@@ -244,6 +250,10 @@ class RtsKalman(BaseTrajectoryMethod):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
 
+        memory = self.memory
+        if memory is None:
+            memory = Memory(None)
+
         process_noise = np.zeros((9, 9))
         process_noise[3:6, 3:6] = self.velocity_error_variance * np.eye(3)
         process_noise[6:, 6:] = self.orientation_error_variance * np.eye(3)
@@ -262,7 +272,9 @@ class RtsKalman(BaseTrajectoryMethod):
         acc_data = data[SF_ACC].to_numpy()
         zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
-        states, covariances = _rts_kalman_update_series(
+        cached_rts_kalman_update_series = memory.cache(rts_kalman_update_series)
+
+        states, covariances = cached_rts_kalman_update_series(
             acc_data,
             gyro_data,
             initial_orientation,
@@ -324,6 +336,33 @@ class RtsKalman(BaseTrajectoryMethod):
             gyro, window_length, self.zupt_threshold_dps * (np.pi / 180), "maximum", window_overlap
         )
         return zupts
+
+
+def rts_kalman_update_series(
+    acc,
+    gyro,
+    initial_orientation,
+    sampling_rate_hz,
+    meas_noise,
+    covariance,
+    process_noise,
+    zupts,
+    level_walking,
+    orientation_correction,
+):
+    """Perform a forward and backwards kalman pass with smoothing over the entire series."""
+    return _rts_kalman_update_series(
+        acc,
+        gyro,
+        initial_orientation,
+        sampling_rate_hz,
+        meas_noise,
+        covariance,
+        process_noise,
+        zupts,
+        level_walking,
+        orientation_correction,
+    )
 
 
 @njit()

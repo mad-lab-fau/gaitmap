@@ -12,11 +12,11 @@ from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_caching_mixin import TestCachingMixin
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = RamppEventDetection
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
@@ -27,6 +27,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         ed = RamppEventDetection()
         ed.detect(data_left, stride_list_left, 204.8)
         return ed
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
+
+
+class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
+    __test__ = True
 
 
 class TestEventDetectionRampp:

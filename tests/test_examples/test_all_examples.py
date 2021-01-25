@@ -129,11 +129,11 @@ def test_ullrich_gait_sequence_detection(snapshot):
 
 
 def test_caching(snapshot):
-    from examples.advanced_features.caching import result_dtw_1, result_dtw_2
+    from examples.advanced_features.caching import first_call_results, second_call_results
 
     # We will not store the actual ouputs, but just check if they are actually idential
-    for sensor, s_list in result_dtw_1.stride_list_.items():
-        assert_frame_equal(s_list, result_dtw_2.stride_list_[sensor])
+    for sensor, s_list in first_call_results.stride_list_.items():
+        assert_frame_equal(s_list, second_call_results.stride_list_[sensor])
 
 
 def test_multi_process():

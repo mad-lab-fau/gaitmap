@@ -8,9 +8,8 @@ from tests.test_trajectory_reconstruction.test_postition_methods.test_pos_method
 )
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = ForwardBackwardIntegration
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
@@ -19,6 +18,10 @@ class TestMetaFunctionality(TestAlgorithmMixin):
             healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1,
         )
         return position
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
 
 
 class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):

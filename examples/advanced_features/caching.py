@@ -17,7 +17,14 @@ not be used with methods.
 
 Unfortunately, gaitmap is mostly object oriented and all the computational expensive things you might want to do are
 hidden behind a method call.
-This example shows, how you can still use caching when keeping a couple of things in mind.
+
+Therefore, many gaitmap algorithms have caching built-in.
+These algorithms support an additional keyword argument called `memory` in their init-function.
+If you pass a `joblib.Memory` object to these, it will be used to cache the most time consuming function calls.
+Note, that this will usually not cache all the calculations in a method, but only the ones that are considered worth
+caching by the algorithm developer.
+
+If you really want to cache the full method calls (on your own risk), see the last section of this example.
 """
 
 # %%
@@ -34,40 +41,100 @@ sampling_rate_hz = 204.8
 data = convert_to_fbf(data, left_like="left_", right_like="right_")
 
 # %%
-# Here we initialize our algorithm.
+# Creating the cash
+# -----------------
+# First we will create a memory instance for our cash.
+# We can use the same cash to cash the output of multiple algorithms.
+# The cash stays valid even after you restart Python, if you didn't delete the folder.
+#
+# However, in this example, we will use a temp-directory that will be deleted at the end of the example.
+from tempfile import TemporaryDirectory
+from joblib import Memory
+
+tmp_dir = TemporaryDirectory()
+# We will activate some more debug output for this example
+mem = Memory(tmp_dir.name, verbose=2)
+
+# %%
+# Initialize algorithm
+# --------------------
+# We initialize our algorithm as normal, but pass the memory instance as an additional parameter.
 from gaitmap.stride_segmentation import BarthDtw
 
-dtw = BarthDtw()
+dtw = BarthDtw(memory=mem)
 
 # %%
-# Caching the method call
-# -----------------------
-# Normally we would now call `dtw.segment(...)` with the data we have loaded.
-# But, in this example we want to cache the result of this method call.
-# This means, we need to wrap the method in a `joblib.Memory` object.
+# Calling cached methods
+# ----------------------
+# The first time we call `segment` now, all calculation will run as normal, but the output of certain calculations will
+# be cached.
+# They are then reused when we call `segment` again with the same data and configuration.
 #
-# However, as mentioned above, we want to avoid caching methods, but rather cache functions.
-# Therefore, we will create a function that performs the method call and has all "dependencies" as parameters.
+# Observe the print output to see what happens.
+first_call_results = dtw.segment(data=data, sampling_rate_hz=204.8)
+first_call_stride_list = first_call_results.stride_list_.copy()
 
+# %%
+# According to the debug output, two internal functions of `BarthDtw` are cached.
+# Each twice with different value inputs, because our data had two sensors.
+# It depends on the actual algorithm, which and how internal components are cached.
+#
+# Independent of that if we call the method again, we can see in the debug output that the results of these methods
+# are now loaded from disk.
+# If we would use a larger dataset, we would see dramatic speed improvements.
+second_call_results = dtw.segment(data=data, sampling_rate_hz=204.8)
+second_call_stride_list = second_call_results.stride_list_.copy()
 
-def call_segment(algo, data, sampling_rate_hz):
-    return algo.segment(data=data, sampling_rate_hz=sampling_rate_hz)
+# %%
+# We can verify that the results are actually identical
+first_call_stride_list["left_sensor"].equals(second_call_stride_list["left_sensor"])
+
+# %%
+# Partially cached calls
+# ----------------------
+# As you have seen before, `BarthDtw` caches multiple steps individually.
+# This ensures that we can change some parameters while still making use of the some cached results.
+# For `BarthDtw` we cache the creation of the cost matrix and the identification of strides within the cost matrix
+# separatly.
+# As the cost-matrix only depends on the template and the constrains, we can reuse the cash, if we change any other
+# parameter.
+#
+# If we change the `max_cost` for example, only the stride detection part needs to be recalculated.
+new_instance = BarthDtw(max_cost=5.0, memory=mem)
+new_instance.segment(data=data, sampling_rate_hz=204.8)
+
+# %%
+# As you can see in the debug output, we loaded the results of `subsequence_cost_matrix`, but recalculated the second
+# step.
+
+# %%
+# Some Note
+# ---------
+# - Caching support will vary from algorithm to algorithm
+# - Caching supports multi-processing
+# - Do **not** use you cache as permanent storage of results. It is way too easy to delete it.
+# - If you try a lot of things with a lot of data, your cache can become really large.
+# - Clear your cache, before you do your final calculations for a publication!
+# - Make sure you add you cache dir to your ".gitignore" file.
 
 
 # %%
-# This function can now be cached and joblib will store a hash of all the input parameters.
-# If the hashes match in a future call, the result will simply be loaded from disk.
-# If the hashes don't match, the function will actually be called.
-#
-# Before we set up the caching, we should better understand the concept of hashing.
+# Caching Full method calls
+# -------------------------
+# In some cases it might still be desirable to cache the entire output of an algorithm.
+# To do this safely you need to be aware of how cashing works under the hood.
+# The `Memory` class calculates a hash of all inputs to a function and stores a pickeled version of the results together
+# with this input-hast.
+# If the function is called again, the hash of the input is compared with hashes stored on the disk.
+# Depending on this, a cached result can be selected.
 import joblib
 
 # %%
-# We can calculate the hash of our algorithm
+# We can calculate the hash of our algorithm.
 joblib.hash(dtw)
 
 # %%
-# If we recreate the object with the same parameters, the hash is identical
+# If we recreate the object with the same parameters, the hash is identical.
 joblib.hash(BarthDtw())
 
 # %%
@@ -75,7 +142,7 @@ joblib.hash(BarthDtw())
 joblib.hash(dtw.clone())
 
 # %%
-# However, if we change any parameters the hash of the object changes
+# However, if we change any parameters the hash of the object changes.
 joblib.hash(BarthDtw(max_cost=100))
 
 # %%
@@ -90,84 +157,106 @@ test_dtw.custom_value = 4
 joblib.hash(test_dtw)
 
 # %%
-# We will keep that in mind for the next step
+# This observation becomes an issue when caching class methods.
+# As python passes the class instance itself as the first argument to this method.
+# This means the input-hash used for caching will change whenever anything on the class instance changes, even if the
+# change might not affect the actual output of the method.
+# In many cases this is less of an issue with gaitmap, as we can reasonably assume that the main action method should
+# only depend on the params of an algorithm (`self.get_params()`) and the actual action method.
 #
-# Creating a Disk Cache
-# ---------------------
-# We can create a cache in any directory on our hard-drive.
-# It will stay there until we delete it or it becomes invalid because we updated our code.
-# Note, that this directory can grow quite large and you should be mindful of what you cache and clean the cache
-# directory.
-# Further, it is a good idea to clean the cache when you made changes to your code that might affect the algorithm you
-# are using.
-# There is no way for joblib to check if you changed the implementation, if you changed how the algorithm works in the
-# background, which would require a recalculation of all results.
+# Therefore, we can cache action methods reliably when cloning the algorithm before hand and using a wrapper method.
+# Cloning the algorithm instance ensures that all instance data, except the params are reset.
+
+
+def call_segment(algo, data, sampling_rate_hz):
+    return algo.segment(data=data, sampling_rate_hz=sampling_rate_hz)
+
+
+# Cache the wrapper:
+cached_call_segment = Memory(tmp_dir.name, verbose=2).cache(call_segment)
+
+# Then we need to clone the algorithm every time we call the cached wrapper, to reset the params:
+reset_dtw = dtw.clone()
+results = cached_call_segment(reset_dtw, data, sampling_rate_hz)
+
+# %%
+# On this first call, we can see that the cached call actually modified the `reset_dtw` object in place.
+id(reset_dtw) == id(results)
+
+# %%
+# However, on the second call, it will return a copy (loaded from the cache)
+reset_dtw = dtw.clone()
+results = cached_call_segment(reset_dtw, data, sampling_rate_hz)
+id(reset_dtw) == id(results)
+
+# %%
+# While it is possible to cache methods this way, this might be error prone.
+# The safest option (and remember, we are already in the unsafe territory), is to use a nested wrapper resolve potential
+# user errors.
 #
-# In this example we will store the cache in a tempfile to make sure we don't leave any traces.
-# In you code, you will just pick a folder that you wouldn't accidentally change or delete (e.g. your-project/.cache).
-import tempfile
-
-cache_dir = tempfile.TemporaryDirectory()
-mem = joblib.Memory(cache_dir.name)
-
-# %%
-# Now we can use `mem` as a decorator to wrap our function
-
-cached_call_segment = mem.cache(call_segment)
-
-# %%
-# Using the cache
-# ---------------
-# The cashed function can now be used like the normal function before.
-# However, repeated calls with the same argument, should be much faster.
+# In the general case you can use the recipe below.
+# It will always ensure that the algo object is cloned and will return a copy of the algorithm in any case.
 #
-# Note, by default joblib prints some information whenever, the function is actually called and not loaded from cache.
-# We can use that as indicator to see if caching works.
+# .. warning::
+#    While this expected to work, cashing an entire algorithm object as return value can take **a lot** of storage space
+#    as it usually stores a copy of the input data.
+#    Whenever possible you should only return the parts of the result you are really interested inside the cached
+#    function.
 
-result_dtw = cached_call_segment(dtw, data, sampling_rate_hz)
+
+def cached_call_method(_algo, _method_name: str, _memory: Memory, *args, **kwargs):
+    """Call a method on the algo object and cache the output.
+
+    Repeated calls to this function with the same algorithm and the same args, and kwargs, will return cached results
+    saved on disk.
+
+    .. warning ::
+        This method will clone the algorithm object before calling the method.
+        This ensures that the cache is not invalidated because of results stored on the object.
+
+    Parameters
+    ----------
+    _algo
+        The algorithm instance to use
+    _method_name
+        The name of the method to call
+    _memory
+        A instance of `joblib.memory` used for caching
+    args
+        Positional arguments passed to the called method
+    kwargs
+        Keyword arguments passed to the called method.
+
+    Returns
+    -------
+    method_return
+        The return value of the called methods either calculated or cached.
+
+    See Also
+    --------
+    gaitmap.utils.caching.cached_call_action
+
+    """
+
+    def _call_method(_algo, _method_name, *args, **kwargs):
+        return getattr(_algo, _method_name)(*args, **kwargs)
+
+    _algo = _algo.clone()
+    return _memory.cache(_call_method)(_algo, _method_name, *args, **kwargs)
+
+
+mem = Memory(tmp_dir.name, verbose=2)
+
+cached_result = cached_call_method(
+    BarthDtw(), _method_name="segment", _memory=mem, data=data, sampling_rate_hz=sampling_rate_hz
+)
 
 # %%
-# The second call
-# ^^^^^^^^^^^^^^^
-# We would assume that repeating the above line would load results from disk.
-# However, in this case it will **not**.
-# Calling `segment` on the `dtw` function has stored the results as attributes and hence, changed the cache.
-# To ensure that we actually get a cached call, we will create a clean copy of the dtw object without any results first.
-cloned_dtw = dtw.clone()
-result_dtw_2 = cached_call_segment(cloned_dtw, data, sampling_rate_hz)
-
-# %%
-# As you can see, the second call did not produce any debug output, indicating that the cashed result was used.
-#
-# Simplifying things
-# ------------------
-# To ensure that you don't accidentally call the function without cloning the algorithm before, gaitmap has some helper
-# functions.
-# Both versions below are identical to what we did before.
-from gaitmap.utils.caching import cached_call_method, cached_call_action
-
-result_dtw_1 = cached_call_method(dtw, "segment", mem, data=data, sampling_rate_hz=sampling_rate_hz)
-result_dtw_2 = cached_call_method(dtw, "segment", mem, data=data, sampling_rate_hz=sampling_rate_hz)
-
-# %%
-# Or if you only want to call the primary action method ("segment" in case of dtw), you can use the `cached_call_action`
-# function without specifying a method name.
-#
-# Note, that without clearing the cache before calling these functions, they would actually use the cached results from
-# `cached_call_method`, as `cached_call_action` is just a wrapper around it.
-mem.clear()
-
-result_dtw_1 = cached_call_action(dtw, mem, data=data, sampling_rate_hz=sampling_rate_hz)
-result_dtw_2 = cached_call_action(dtw, mem, data=data, sampling_rate_hz=sampling_rate_hz)
-
-# %%
-# Some Note
-# ---------
-# - If you want to get specific values from the cache, just call the cached function with the same arguments as before
-# - Do **not** use you cache as permanent storage of results. It is way to easy to delete it.
-# - Clear your cache, before you do your final calculations for a publication!
-# - Make sure you add you cache dir to your ".gitignore" file.
+# And the second call will load the results.
+cached_result = cached_call_method(
+    BarthDtw(), _method_name="segment", _memory=mem, data=data, sampling_rate_hz=sampling_rate_hz
+)
 
 # %%
 # Finally remove the tempdir
-cache_dir.cleanup()
+tmp_dir.cleanup()

@@ -5,14 +5,14 @@ from gaitmap.base import BaseType, BaseOrientationMethod
 from gaitmap.trajectory_reconstruction import MadgwickAHRS
 from gaitmap.trajectory_reconstruction.orientation_methods.madgwick import _madgwick_update
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_trajectory_reconstruction.test_orientation_methods.test_ori_method_mixin import (
     TestOrientationMethodMixin,
 )
 
 
-class TestMetaFunctionality(TestAlgorithmMixin):
+class MetaTestConfig:
     algorithm_class = MadgwickAHRS
-    __test__ = True
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
@@ -21,6 +21,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
             healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1,
         )
         return position
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
+
+
+class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
+    __test__ = True
 
 
 class TestSimpleRotations(TestOrientationMethodMixin):

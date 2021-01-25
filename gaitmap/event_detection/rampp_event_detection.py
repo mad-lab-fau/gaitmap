@@ -1,8 +1,9 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union, Dict, TypeVar, cast
+from typing import Optional, Tuple, Union, Dict, TypeVar, cast, Callable
 
 import numpy as np
 import pandas as pd
+from joblib import Memory
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection
@@ -44,6 +45,8 @@ class RamppEventDetection(BaseEventDetection):
         gyr_ml minimum. The values of ic_search_region_ms must be greater or equal than the length of one sample.
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the detection of all events.
 
     Attributes
     ----------
@@ -153,6 +156,7 @@ class RamppEventDetection(BaseEventDetection):
 
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
+    memory: Optional[Memory]
 
     min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
     segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
@@ -161,9 +165,15 @@ class RamppEventDetection(BaseEventDetection):
     sampling_rate_hz: float
     stride_list: pd.DataFrame
 
-    def __init__(self, ic_search_region_ms: Tuple[float, float] = (80, 50), min_vel_search_win_size_ms: float = 100):
+    def __init__(
+        self,
+        ic_search_region_ms: Tuple[float, float] = (80, 50),
+        min_vel_search_win_size_ms: float = 100,
+        memory: Optional[Memory] = None,
+    ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
+        self.memory = memory
 
     def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
@@ -206,12 +216,14 @@ class RamppEventDetection(BaseEventDetection):
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
 
         if dataset_type == "single":
-            results = self._detect_single_dataset(data, stride_list, ic_search_region, min_vel_search_win_size)
+            results = self._detect_single_dataset(
+                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory
+            )
         else:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size
+                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory
                 )
             results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
@@ -223,15 +235,21 @@ class RamppEventDetection(BaseEventDetection):
         stride_list: pd.DataFrame,
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
+        memory: Memory,
     ) -> Dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
+        if memory is None:
+            memory = Memory(None)
+
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
         stride_list = set_correct_index(stride_list, SL_INDEX)
 
         # find events in all segments
-        ic, tc, min_vel = self._find_all_events(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
+        event_detection_func = self._select_all_event_detection_method()
+        event_detection_func = memory.cache(event_detection_func)
+        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
 
         # build first dict / df based on segment start and end
         segmented_event_list = {
@@ -257,37 +275,44 @@ class RamppEventDetection(BaseEventDetection):
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 
-    @staticmethod
-    def _find_all_events(
-        gyr: pd.DataFrame,
-        acc: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        ic_search_region: Tuple[float, float],
-        min_vel_search_win_size: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Find events in provided data by looping over single strides."""
-        gyr_ml = gyr["gyr_ml"].to_numpy()
-        gyr = gyr.to_numpy()
-        acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
-        ic_events = []
-        fc_events = []
-        min_vel_events = []
-        for _, stride in stride_list.iterrows():
-            start = stride["start"]
-            end = stride["end"]
-            gyr_sec = gyr[start:end]
-            gyr_ml_sec = gyr_ml[start:end]
-            acc_sec = acc_pa[start:end]
-            gyr_grad = np.gradient(gyr_ml_sec)
-            ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-            fc_events.append(start + _detect_tc(gyr_ml_sec))
-            min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
+    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+        """Select the function to calculate the all events.
 
-        return (
-            np.array(ic_events, dtype=float),
-            np.array(fc_events, dtype=float),
-            np.array(min_vel_events, dtype=float),
-        )
+        This is separate method to make it easy to overwrite by a subclass.
+        """
+        return _find_all_events
+
+
+def _find_all_events(
+    gyr: pd.DataFrame,
+    acc: pd.DataFrame,
+    stride_list: pd.DataFrame,
+    ic_search_region: Tuple[float, float],
+    min_vel_search_win_size: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Find events in provided data by looping over single strides."""
+    gyr_ml = gyr["gyr_ml"].to_numpy()
+    gyr = gyr.to_numpy()
+    acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
+    ic_events = []
+    fc_events = []
+    min_vel_events = []
+    for _, stride in stride_list.iterrows():
+        start = stride["start"]
+        end = stride["end"]
+        gyr_sec = gyr[start:end]
+        gyr_ml_sec = gyr_ml[start:end]
+        acc_sec = acc_pa[start:end]
+        gyr_grad = np.gradient(gyr_ml_sec)
+        ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
+        fc_events.append(start + _detect_tc(gyr_ml_sec))
+        min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
+
+    return (
+        np.array(ic_events, dtype=float),
+        np.array(fc_events, dtype=float),
+        np.array(min_vel_events, dtype=float),
+    )
 
 
 def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:

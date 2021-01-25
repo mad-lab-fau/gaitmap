@@ -4,6 +4,7 @@ from typing import Optional, Union, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+from joblib import Memory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
@@ -83,6 +84,9 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         The following steps will be performed:
 
         - If multiple matches have the same start point, only the match with the lowest cost will be kept.
+    memory
+        An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes and the peak
+        detection.
 
     Attributes
     ----------
@@ -173,6 +177,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         snap_to_min_win_ms: Optional[float] = 300,
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
+        memory: Optional[Memory] = None,
     ):
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
@@ -186,6 +191,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
             max_signal_stretch_ms=max_signal_stretch_ms,
             resample_template=resample_template,
             find_matches_method=find_matches_method,
+            memory=memory,
         )
 
     @property
@@ -222,6 +228,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,
         to_keep: np.ndarray,
+        memory: Memory,
     ) -> Tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
@@ -254,6 +261,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
             cost=cost,
             to_keep=to_keep,
             acc_cost_mat=acc_cost_mat,
+            memory=memory,
         )
 
         # Resolve strides that have the same start point
