@@ -21,6 +21,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/113)
 - `RtsKalman` has a new results `zupts_` that can be used to check which zero-velocity region were used by the filer.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/113)
+- A new guide on how to evaluate (gait)parameters using parameter optimization and cross validation.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/124)
 
 ### Changed
 
