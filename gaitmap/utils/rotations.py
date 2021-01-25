@@ -336,7 +336,7 @@ def find_angle_between_orientations(
     return out
 
 
-def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
+def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> Union[np.ndarray, float]:
     """Find the angle (in rad) between two  3D vectors.
 
     Parameters

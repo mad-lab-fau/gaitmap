@@ -29,6 +29,18 @@ def multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 @njit()
+def normalize(v: np.ndarray) -> np.ndarray:
+    """Normalize a vector or a quaternion.
+
+    In case the vector has a length of 0, the vector is returned without modification.
+    """
+    norm = np.sqrt(np.sum(v ** 2))
+    if norm == 0:
+        return v
+    return v / norm
+
+
+@njit()
 def rotate_vector(q: np.ndarray, v: np.ndarray) -> np.ndarray:
     """Rotate a vector by a quaternion.
 

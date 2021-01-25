@@ -42,20 +42,23 @@ class TestIsAlmostParallelOrAntiprallel:
 class TestNormalize:
     """Test the function `normalize`."""
 
+    def func(self, x):
+        return normalize(x)
+
     def test_normalize_1d_array(self):
         """Test 1D array."""
-        assert_array_equal(normalize(np.array([2, 0, 0])), np.array([1, 0, 0]))
+        assert_array_equal(self.func(np.array([2.0, 0, 0])), np.array([1.0, 0, 0]))
 
     @pytest.mark.parametrize(
-        "v1, v2", [([0, 2, 0], [0, 1, 0]), ([2, 0, 0], [1, 0, 0]), ([0.5, 0.5, 0], [0.707107, 0.707107, 0]),],
+        "v1, v2", [([0, 2.0, 0], [0, 1, 0]), ([2.0, 0, 0], [1.0, 0, 0]), ([0.5, 0.5, 0], [0.707107, 0.707107, 0])],
     )
     def test_normalize_2d_array(self, v1, v2):
         """Test 2D array."""
-        assert_array_almost_equal(normalize(np.array(v1)), np.array(v2))
+        assert_array_almost_equal(self.func(np.array(v1)), np.array(v2))
 
     def test_normalize_all_zeros(self):
         """Test vector [0, 0, 0]."""
-        assert_array_almost_equal(normalize(np.array([0, 0, 0])), [np.nan, np.nan, np.nan])
+        assert_array_almost_equal(self.func(np.array([0, 0, 0])), [np.nan, np.nan, np.nan])
 
 
 class TestFindRandomOrthogonal:

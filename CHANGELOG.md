@@ -15,6 +15,12 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - Added some utils to simplify caching algorithms with `joblib`.
   There is also a new example explaining caching in more detail.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/126)
+- Experimental support for ZUPT based orientation updates in the `RtsKalman` filter.
+  This approach is not fully validated and should be used with care.
+  If the feature is turned on, a runtime warning will indicate that as well.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/113)
+- `RtsKalman` has a new results `zupts_` that can be used to check which zero-velocity region were used by the filer.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/113)
 
 ### Changed
 
@@ -42,6 +48,11 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 - `gait_detection.ullrich_gait_sequence_detection` now uses `utils.array_handling.merge_intervals` and should therefore
   be able to merge sequences faster. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/120)
+- The `regions_of_interest` parameter of `RoiStrideSegmentation.segment` is now keyword only to be compatible with the
+  `StrideSegmentation` base class.
+- `RtsKalman.covariance` now has the shape `(len(data), 9 * 9)` instead of `(len(data) * 9, 9)` which should make it 
+  easier to plot.
+  
 
 ### Deprecated
 
