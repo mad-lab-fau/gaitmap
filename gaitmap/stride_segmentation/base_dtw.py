@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_path, subsequence_cost_matrix, _local_squared_dist
+from tslearn.metrics import subsequence_path, subsequence_cost_matrix
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
@@ -615,6 +615,19 @@ class BaseDtw(BaseAlgorithm):
             self._max_signal_stretch = np.inf
         else:
             self._max_signal_stretch = np.round(self._max_signal_stretch / 1000 * self.sampling_rate_hz)
+
+
+@njit()
+def _local_squared_dist(x, y):
+    """Local sqare distance taken from tslearn.
+
+    This is copied in gaitmap, as it is part of the private api in tslearn that can be changed without notice.
+    """
+    dist = 0.0
+    for di in range(x.shape[0]):
+        diff = x[di] - y[di]
+        dist += diff * diff
+    return dist
 
 
 @njit(cache=True)
