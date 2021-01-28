@@ -137,7 +137,25 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self):
         """Return string representation of the dataset object."""
-        return str(self.index)
+        return "{}\n\tindex [{} rows x {} columns] =\n\n{}\n\n\t".format(
+            self.__class__.__name__,
+            self.index.shape[0],
+            self.index.shape[1],
+            "\t\t" + str(self.index).replace("\n", "\n\t\t"),
+        )
+
+    def _repr_html_(self):
+        """Return html representation of the dataset object."""
+        return (
+            f"<h3 style='margin-bottom: -1.5em'>{self.__class__.__name__}</h3>"
+            + "<h4 style='margin-left: 2.5em'>index [{} rows x {} columns] =</h4>".format(
+                self.index.shape[0], self.index.shape[1]
+            )
+            + self.index._repr_html_()
+            .replace("<div>", "<div style='margin-top: 0em'>")
+            .replace("<table", "<table style='width:100%;'")
+            .replace("text-align: right;", "text-align: middle;")
+        )
 
     def index_as_multi_index(self):
         """Return the dataset as a pd.MultiIndex."""
