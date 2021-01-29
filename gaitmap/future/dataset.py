@@ -123,25 +123,50 @@ class Dataset(_BaseSerializable):
 
     def __getitem__(self, subscript) -> __class__:
         """Return a dataset object."""
-        if isinstance(subscript, (tuple, list, np.ndarray)):
-            if isinstance(subscript[0], str):
-                return self.__class__(
-                    pd.concat([self.index.loc[self.columns[string]] for string in subscript]).reset_index(drop=True),
-                    self.select_lvl,
-                )
+        return self.clone().set_params(subset_index=self.index.iloc[subscript])
 
-            possible_indices = list(self.index.index)
-            return self.__class__(
-                self.index.iloc[list(filter(lambda i: i in possible_indices, subscript))].reset_index(drop=True),
-                self.select_lvl,
+    def get_subset(
+        self,
+        selected_keys: Optional[Union[Sequence[str], str]] = None,
+        index: Optional[pd.DataFrame] = None,
+        bool_map: Optional[List[bool]] = None,
+        **kwargs: Optional[List[str]],
+    ) -> __class__:
+        """Return a dataset object."""
+        if selected_keys is not None:
+            return self.clone().set_params(
+                subset_index=self.index.loc[
+                    self.index[self._get_selected_level()]
+                    .isin([selected_keys] if isinstance(selected_keys, str) else selected_keys)
+                    .reset_index(drop=True)
+                ]
             )
 
-        if isinstance(subscript, str):
-            return self.__class__(self.index.loc[self.columns[subscript]].reset_index(drop=True), self.select_lvl)
+        if index is not None:
+            if all(map(lambda x: isinstance(x, pd.CategoricalDtype), index.dtypes)) and len(index) > 0:
+                return self.clone().set_params(subset_index=index.reset_index(drop=True))
 
-        raise IndexError("Subscript {} not applicable to this dataset!".format(subscript))
+            raise ValueError(
+                "Provided index is not formatted correctly. Make sure it is not empty and that all columns are of "
+                "dtype pd.CategoricalDtype!"
+            )
 
-    def __repr__(self):
+        if bool_map is not None:
+            if len(bool_map) != self.shape[0]:
+                raise ValueError(f"Parameter bool_map must have length {self.shape[0]} but has {len(bool_map)}!")
+
+            return self.clone().set_params(subset_index=self.index[bool_map].reset_index(drop=True))
+
+        if len(kwargs) > 0:
+            return self.clone().set_params(
+                subset_index=self.index.query(
+                    reduce(lambda x, y: x + y, [f"{key} in {value} and " for key, value in kwargs.items()], "")[:-5]
+                ).reset_index(drop=True)
+            )
+
+        raise ValueError("At least one of selected_keys, index, bool_map or kwarg must be not None!")
+
+    def __repr__(self) -> str:
         """Return string representation of the dataset object."""
         return "{}\n\tindex [{} rows x {} columns] =\n\n\t\t{}\n\n\t".format(
             self.__class__.__name__,
@@ -150,7 +175,7 @@ class Dataset(_BaseSerializable):
             str(self.index).replace("\n", "\n\t\t"),
         )[:-2]
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
         return (
             f"<h3 style='margin-bottom: -1.5em'>{self.__class__.__name__}</h3>"
@@ -163,11 +188,11 @@ class Dataset(_BaseSerializable):
             .replace("text-align: right;", "text-align: middle;")
         )
 
-    def index_as_multi_index(self):
+    def index_as_multi_index(self) -> pd.MultiIndex:
         """Return the dataset as a pd.MultiIndex."""
         return pd.MultiIndex.from_frame(self.index)
 
-    def index_as_dataframe(self):
+    def index_as_dataframe(self) -> pd.DataFrame:
         """Return the dataset as a pd.Dataframe."""
         return self.index
 
@@ -184,5 +209,5 @@ class Dataset(_BaseSerializable):
         """Return generator object containing subset of every category from the selected level."""
         return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
 
-    def _create_index(self):
+    def _create_index(self) -> pd.DataFrame:
         raise NotImplementedError
