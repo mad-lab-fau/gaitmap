@@ -116,7 +116,8 @@ class Dataset(_BaseSerializable):
     def _get_selected_level(self):
         if self.select_lvl is None:
             return self.index.columns[0]
-        elif self.select_lvl in self.index.columns:
+
+        if self.select_lvl in self.index.columns:
             return self.select_lvl
 
         raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
