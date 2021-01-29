@@ -137,12 +137,12 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self):
         """Return string representation of the dataset object."""
-        return "{}\n\tindex [{} rows x {} columns] =\n\n{}\n\n\t".format(
+        return "{}\n\tindex [{} rows x {} columns] =\n\n\t\t{}\n\n\t".format(
             self.__class__.__name__,
             self.index.shape[0],
             self.index.shape[1],
-            "\t\t" + str(self.index).replace("\n", "\n\t\t"),
-        )
+            str(self.index).replace("\n", "\n\t\t"),
+        )[:-2]
 
     def _repr_html_(self):
         """Return html representation of the dataset object."""
