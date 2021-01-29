@@ -83,41 +83,45 @@ class Dataset(_BaseSerializable):
 
     """
 
-    def __init__(self, subset_index: Optional[pd.DataFrame] = None, select_lvl: Optional[str] = None):
-        self._subset_index = subset_index
+    def __init__(
+        self,
+        subset_index: Optional[pd.DataFrame] = None,
+        select_lvl: Optional[str] = None,
+        level_order: Optional[List[str]] = None,
+    ):
+        self.level_order = level_order
+        self.subset_index = subset_index
         self.select_lvl = select_lvl
 
     @property
-    def index(self):
+    def index(self) -> pd.DataFrame:
         """Get index."""
-        return self._create_index() if self._subset_index is None else self._subset_index
+        if self.subset_index is None:
+            return self._create_index()
+
+        return self.subset_index if self.level_order is None else self.subset_index[self.level_order]
 
     @property
-    def select_lvl(self):
-        """Get select_lvl."""
-        return self._select_lvl
+    def column_combinations(self) -> Union[List[str], List[Tuple[str]]]:
+        """Get all possible combinations up to the selected level."""
+        columns = list(self.index.columns)
 
-    @select_lvl.setter
-    def select_lvl(self, value: Optional[str]):
-        """Set select_lvl."""
-        if value is None:
-            self._select_lvl = self.index.columns[0]
-        elif value in self.index.columns:
-            self._select_lvl = value
-        else:
-            raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
+        return [key for key, _ in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])]
 
     @property
-    def columns(self):
-        """Get columns."""
-        return self.index.groupby(by=self.select_lvl).groups
-
-    @property
-    def shape(self):
+    def shape(self) -> Tuple[int]:
         """Get shape."""
-        return (len(self.index.index),)
+        return (len(self.column_combinations),)
 
-    def __getitem__(self, subscript):
+    def _get_selected_level(self):
+        if self.select_lvl is None:
+            return self.index.columns[0]
+        elif self.select_lvl in self.index.columns:
+            return self.select_lvl
+
+        raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
+
+    def __getitem__(self, subscript) -> __class__:
         """Return a dataset object."""
         if isinstance(subscript, (tuple, list, np.ndarray)):
             if isinstance(subscript[0], str):
