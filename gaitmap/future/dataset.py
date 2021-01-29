@@ -1,7 +1,9 @@
 """Base class for all datasets."""
-from typing import Optional
+from __future__ import annotations
 
-import numpy as np
+from functools import reduce
+from typing import Optional, List, Union, Sequence, Generator, Tuple
+
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
@@ -165,9 +167,18 @@ class Dataset(_BaseSerializable):
         """Return the dataset as a pd.Dataframe."""
         return self.index
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[__class__]:
+        """Return generator object containing subset of every combination up to and including the selected level."""
+        columns = list(self.index.columns)
+
+        return (
+            self.clone().set_params(subset_index=group)
+            for _, group in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])
+        )
+
+    def iter(self) -> Generator[__class__]:
         """Return generator object containing subset of every category from the selected level."""
-        return (self.__getitem__(category) for category in self.columns)
+        return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
 
     def _create_index(self):
         raise NotImplementedError
