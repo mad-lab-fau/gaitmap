@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import reduce
+from operator import and_
 from typing import Optional, List, Union, Sequence, Generator, Tuple
 
 import pandas as pd
@@ -105,7 +106,6 @@ class Dataset(_BaseSerializable):
     def column_combinations(self) -> Union[List[str], List[Tuple[str]]]:
         """Get all possible combinations up to the selected level."""
         columns = list(self.index.columns)
-
         return [key for key, _ in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])]
 
     @property
@@ -137,10 +137,8 @@ class Dataset(_BaseSerializable):
         if selected_keys is not None:
             return self.clone().set_params(
                 subset_index=self.index.loc[
-                    self.index[self._get_selected_level()]
-                    .isin([selected_keys] if isinstance(selected_keys, str) else selected_keys)
-                    .reset_index(drop=True)
-                ]
+                    self.index[self._get_selected_level()].isin(self._ensure_is_list(selected_keys))
+                ].reset_index(drop=True)
             )
 
         if index is not None:
@@ -160,9 +158,9 @@ class Dataset(_BaseSerializable):
 
         if len(kwargs) > 0:
             return self.clone().set_params(
-                subset_index=self.index.query(
-                    reduce(lambda x, y: x + y, [f"{key} in {value} and " for key, value in kwargs.items()], "")[:-5]
-                ).reset_index(drop=True)
+                subset_index=self.index.loc[
+                    reduce(and_, (self.index[key].isin(self._ensure_is_list(value)) for key, value in kwargs.items()))
+                ].reset_index(drop=True)
             )
 
         raise ValueError("At least one of selected_keys, index, bool_map or kwarg must be not None!")
@@ -212,3 +210,7 @@ class Dataset(_BaseSerializable):
 
     def _create_index(self) -> pd.DataFrame:
         raise NotImplementedError
+
+    @staticmethod
+    def _ensure_is_list(x):
+        return x if isinstance(x, list) else [x]
