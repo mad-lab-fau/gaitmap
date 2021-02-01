@@ -137,7 +137,7 @@ class Dataset(_BaseSerializable):
         if selected_keys is not None:
             return self.clone().set_params(
                 subset_index=self.index.loc[
-                    self.index[self._get_selected_level()].isin(self._ensure_is_list(selected_keys))
+                    self.index[self._get_selected_level()].isin(_ensure_is_list(selected_keys))
                 ].reset_index(drop=True)
             )
 
@@ -159,7 +159,7 @@ class Dataset(_BaseSerializable):
         if len(kwargs) > 0:
             return self.clone().set_params(
                 subset_index=self.index.loc[
-                    reduce(and_, (self.index[key].isin(self._ensure_is_list(value)) for key, value in kwargs.items()))
+                    reduce(and_, (self.index[key].isin(_ensure_is_list(value)) for key, value in kwargs.items()))
                 ].reset_index(drop=True)
             )
 
@@ -211,6 +211,6 @@ class Dataset(_BaseSerializable):
     def _create_index(self) -> pd.DataFrame:
         raise NotImplementedError
 
-    @staticmethod
-    def _ensure_is_list(x):
-        return x if isinstance(x, list) else [x]
+
+def _ensure_is_list(x):
+    return x if isinstance(x, list) else [x]
