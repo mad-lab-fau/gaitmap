@@ -1,13 +1,13 @@
 """Base class for all datasets."""
-from __future__ import annotations
-
 from functools import reduce
 from operator import and_
-from typing import Optional, List, Union, Sequence, Generator, Tuple
+from typing import Optional, List, Union, Sequence, Generator, Tuple, TypeVar
 
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
+
+Self = TypeVar("Self", bound="Dataset")
 
 
 class Dataset(_BaseSerializable):
@@ -122,7 +122,7 @@ class Dataset(_BaseSerializable):
 
         raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
 
-    def __getitem__(self, subscript) -> __class__:
+    def __getitem__(self, subscript) -> Self:
         """Return a dataset object."""
         return self.clone().set_params(subset_index=self.index.iloc[subscript])
 
@@ -132,7 +132,7 @@ class Dataset(_BaseSerializable):
         index: Optional[pd.DataFrame] = None,
         bool_map: Optional[List[bool]] = None,
         **kwargs: Optional[List[str]],
-    ) -> __class__:
+    ) -> Self:
         """Return a dataset object."""
         if selected_keys is not None:
             return self.clone().set_params(
@@ -195,7 +195,7 @@ class Dataset(_BaseSerializable):
         """Return the dataset as a pd.Dataframe."""
         return self.index
 
-    def __iter__(self) -> Generator[__class__]:
+    def __iter__(self) -> Generator[Self]:
         """Return generator object containing subset of every combination up to and including the selected level."""
         columns = list(self.index.columns)
 
@@ -204,7 +204,7 @@ class Dataset(_BaseSerializable):
             for _, group in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])
         )
 
-    def iter(self) -> Generator[__class__]:
+    def iter(self) -> Generator[Self]:
         """Return generator object containing subset of every category from the selected level."""
         return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
 
