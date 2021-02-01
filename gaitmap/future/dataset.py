@@ -177,7 +177,7 @@ class Dataset(_BaseSerializable):
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
         return (
-            f"<h3 style='margin-bottom: -1.5em'>{self.__class__.__name__}</h3>"
+            "<h3 style='margin-bottom: -1.5em'>{}</h3>".format(self.__class__.__name__)
             + "<h4 style='margin-left: 2.5em'>index [{} rows x {} columns] =</h4>".format(
                 self.index.shape[0], self.index.shape[1]
             )
