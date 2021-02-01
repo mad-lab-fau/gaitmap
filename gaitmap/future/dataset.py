@@ -122,7 +122,7 @@ class Dataset(_BaseSerializable):
 
         raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
 
-    def __getitem__(self, subscript) -> Self:
+    def __getitem__(self: Self, subscript) -> Self:
         """Return a dataset object."""
         return self.clone().set_params(subset_index=self.index.iloc[subscript])
 
@@ -195,7 +195,7 @@ class Dataset(_BaseSerializable):
         """Return the dataset as a pd.Dataframe."""
         return self.index
 
-    def __iter__(self) -> Generator[Self]:
+    def __iter__(self: Self) -> Generator[Self, None, None]:
         """Return generator object containing subset of every combination up to and including the selected level."""
         columns = list(self.index.columns)
 
@@ -204,7 +204,7 @@ class Dataset(_BaseSerializable):
             for _, group in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])
         )
 
-    def iter(self) -> Generator[Self]:
+    def iter(self: Self) -> Generator[Self, None, None]:
         """Return generator object containing subset of every category from the selected level."""
         return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
 
