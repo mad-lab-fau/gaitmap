@@ -216,8 +216,8 @@ class Dataset(_BaseSerializable):
             )
 
         if bool_map is not None:
-            if len(bool_map) != self.shape[0]:
-                raise ValueError(f"Parameter bool_map must have length {self.shape[0]} but has {len(bool_map)}!")
+            if len(bool_map) != self.index.shape[0]:
+                raise ValueError(f"Parameter bool_map must have length {self.index.shape[0]} but has {len(bool_map)}!")
 
             return self.clone().set_params(subset_index=self.index[bool_map].reset_index(drop=True))
 
