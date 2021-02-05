@@ -271,16 +271,14 @@ class Dataset(_BaseSerializable):
 
     def __iter__(self: Self) -> Generator[Self, None, None]:
         """Return generator object containing a subset for every combination up to and including the selected level."""
-        columns = list(self.index.columns)
-
-        return (
-            self.clone().set_params(subset_index=group)
-            for _, group in self.index.groupby(columns[: columns.index(self._get_selected_level()) + 1])
-        )
+        return (self.__getitem__([i]) for i in range(self.shape[0]))
 
     def iter(self: Self) -> Generator[Self, None, None]:
         """Return generator object containing a subset for every category from the selected level."""
-        return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
+        return (
+            self.get_subset(selected_keys=category)
+            for category in self.index[self._get_selected_level()].cat.categories
+        )
 
     def _is_single(self):
         return self.shape[0] == 1
