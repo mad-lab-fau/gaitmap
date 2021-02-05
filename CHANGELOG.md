@@ -8,6 +8,11 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
 
 ### Added
 
+- New module for experimental features. Things implemented there might be changed or deleted without deprecation
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
+- New dataset class that will serve as the base class for all future datasets in `gaitmap.future`. 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
+
 ### Changed  
 
 ### Deprecated
