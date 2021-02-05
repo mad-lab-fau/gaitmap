@@ -144,16 +144,17 @@ class Dataset(_BaseSerializable):
     @property
     def column_combinations(self) -> List[Tuple[str]]:
         """Get all possible combinations up to and including the selected level."""
-        columns = list(self.index.columns)
-
-        return pd.unique(
-            [tuple(row[1]) for row in self.index[columns[: columns.index(self._get_selected_level()) + 1]].iterrows()]
-        )
+        return self._index_helper.index.unique()
 
     @property
     def shape(self) -> Tuple[int]:
         """Get shape."""
         return (len(self.column_combinations),)
+
+    @property
+    def _index_helper(self):
+        columns = list(self.index.columns)
+        return self.index.set_index(columns[: columns.index(self._get_selected_level()) + 1], drop=False)
 
     def _get_selected_level(self):
         if self.select_lvl is None:
@@ -165,8 +166,10 @@ class Dataset(_BaseSerializable):
         raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
 
     def __getitem__(self: Self, subscript) -> Self:
-        """Return a dataset object by passing subscript to iloc."""
-        return self.clone().set_params(subset_index=self.index.iloc[subscript])
+        """Return a dataset object by passing subscript to loc."""
+        return self.clone().set_params(
+            subset_index=self._index_helper.loc[self.column_combinations[subscript]].reset_index(drop=True)
+        )
 
     def get_subset(
         self: Self,
