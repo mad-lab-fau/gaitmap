@@ -20,7 +20,7 @@ pandas = "^1"
 scipy = "^1, <1.6"
 typing_extensions = "^3.7.4"
 numba = "^0"
-numpy = "^1"
+numpy = "^1, <1.2"
 joblib = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
