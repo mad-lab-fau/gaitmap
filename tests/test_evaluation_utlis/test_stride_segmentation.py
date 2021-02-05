@@ -283,8 +283,8 @@ class TestSpecialMatchStrideList:
 
         out = match_stride_lists(sl1, sl2, "ic", tolerance=0)
 
-        assert_array_equal(out["s_id_a"].to_numpy().astype(np.float), [0, 1, 2, np.nan])
-        assert_array_equal(out["s_id_b"].to_numpy().astype(np.float), [np.nan, 1, 2, 0])
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, np.nan])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [np.nan, 1, 2, 0])
 
     @pytest.mark.parametrize(
         "input_param, ground_truth, tolerance, one_to_one, expectation",

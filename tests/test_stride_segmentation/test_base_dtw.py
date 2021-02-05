@@ -592,11 +592,8 @@ class TestTemplateResampling(DtwTestBase):
         template = create_dtw_template(np.array(template_arr), sampling_rate_hz=10)
         dtw = self.init_dtw(template=template, resample_template=False)
 
-        with pytest.warns(UserWarning) as w:
+        with pytest.warns(UserWarning, match="sampling rate are different") as w:
             dtw.segment(test_data, 20)
-
-        assert len(w) == 1
-        assert "sampling rate are different" in str(w[0])
 
         # The warning should not be raised in case their is no template sampling rate
         template = create_dtw_template(np.array(template_arr), sampling_rate_hz=False)
@@ -605,7 +602,9 @@ class TestTemplateResampling(DtwTestBase):
         with pytest.warns(None) as w:
             dtw.segment(test_data, 20)
 
-        assert len(w) == 0
+        with pytest.raises(AssertionError):
+            # Check that no UserWarning was recorded
+            w.pop(UserWarning)
 
 
 class TestDtwConstrains(DtwTestBase):

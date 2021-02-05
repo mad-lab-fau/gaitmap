@@ -341,10 +341,8 @@ class TestPostProcessing:
         # Disable all conflict resolutions to force a double match
         dtw = BarthDtw(max_cost=10000, min_match_length_s=None, conflict_resolution=False, snap_to_min_win_ms=None)
 
-        with pytest.warns(UserWarning) as w:
+        with pytest.warns(UserWarning, match="overlapping strides") as w:
             dtw.segment(data, sampling_rate_hz=204.8)
-
-        assert "overlapping strides" in str(w[0])
 
         # Test that no warning is raised with default paras
         dtw = BarthDtw()
@@ -352,7 +350,9 @@ class TestPostProcessing:
         with pytest.warns(None) as w:
             dtw.segment(data, sampling_rate_hz=204.8)
 
-        assert len(w) == 0
+        with pytest.raises(AssertionError):
+            # Check that no UserWarning was recorded
+            w.pop(UserWarning)
 
     def test_snapping_edge_case(self):
         """Testing if snapping works, even if one of the strides ends inclusive the last sample.
