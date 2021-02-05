@@ -66,17 +66,23 @@ class Dataset(_BaseSerializable):
 
     >>> dataset = Dataset(test_index, "extra")
     >>> dataset.column_combinations
-    array([('patient_1', 'test_1', '0'), ('patient_1', 'test_1', '1'),
-           ('patient_1', 'test_2', '0'), ('patient_1', 'test_2', '1'),
-           ('patient_2', 'test_1', '0'), ('patient_2', 'test_1', '1'),
-           ('patient_3', 'test_1', '0'), ('patient_3', 'test_1', '1'),
-           ('patient_3', 'test_2', '0'), ('patient_3', 'test_2', '1'),
-           ('patient_3', 'test_3', '0'), ('patient_3', 'test_3', '1')],
-          dtype=object)
+    MultiIndex([('patient_1', 'test_1', '0'),
+                ('patient_1', 'test_1', '1'),
+                ('patient_1', 'test_2', '0'),
+                ('patient_1', 'test_2', '1'),
+                ('patient_2', 'test_1', '0'),
+                ('patient_2', 'test_1', '1'),
+                ('patient_3', 'test_1', '0'),
+                ('patient_3', 'test_1', '1'),
+                ('patient_3', 'test_2', '0'),
+                ('patient_3', 'test_2', '1'),
+                ('patient_3', 'test_3', '0'),
+                ('patient_3', 'test_3', '1')],
+               names=['patients', 'tests', 'extra'])
 
     >>> dataset.select_lvl = "patients"
-    >>> dataset.column_combinations
-    array([('patient_1',), ('patient_2',), ('patient_3',)], dtype=object)
+    >>> list(dataset.column_combinations)
+    ['patient_1', 'patient_2', 'patient_3']
 
     >>> dataset.get_subset(selected_keys="patient_2") # doctest: +NORMALIZE_WHITESPACE
     Dataset
@@ -142,7 +148,7 @@ class Dataset(_BaseSerializable):
         return self.subset_index if self.level_order is None else self.subset_index[self.level_order]
 
     @property
-    def column_combinations(self) -> List[Tuple[str]]:
+    def column_combinations(self) -> Union[pd.MultiIndex, pd.CategoricalIndex]:
         """Get all possible combinations up to and including the selected level."""
         return self._index_helper.index.unique()
 
