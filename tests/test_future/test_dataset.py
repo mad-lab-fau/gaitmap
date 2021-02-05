@@ -44,15 +44,10 @@ def _create_valid_index(input_dict=None, columns_names=None):
             }
         )
 
-        test_multi_index["patients"] = test_multi_index["patients"].astype(
-            pd.CategoricalDtype(["patient_1", "patient_2", "patient_3"])
-        )
-
-        test_multi_index["tests"] = test_multi_index["tests"].astype(
-            pd.CategoricalDtype(["test_1", "test_2", "test_3"])
-        )
-
-        test_multi_index["extra"] = test_multi_index["extra"].astype(pd.CategoricalDtype(["0", "1"]))
+        for column_name in test_multi_index.columns:
+            test_multi_index[column_name] = test_multi_index[column_name].astype(
+                pd.CategoricalDtype(test_multi_index[column_name].unique())
+            )
 
         return test_multi_index
 
@@ -100,16 +95,18 @@ class TestDataset:
         assert df.shape[0] == what_to_expect
 
     @pytest.mark.parametrize(
-        "selected_keys,index,bool_map,what_to_expect",
+        "selected_keys,index,bool_map,kwargs,what_to_expect,expect_error",
         [
             (
                 ["patient_1"],
                 None,
                 None,
+                None,
                 _create_valid_index(
                     {"patient_1": {"a": ["test_1", "test_2"], "b": ["0", "1"]}},
                     columns_names=["patients", "tests", "extra"],
                 ),
+                False,
             ),
             (
                 None,
@@ -118,22 +115,93 @@ class TestDataset:
                     columns_names=["patients", "tests", "extra"],
                 ),
                 None,
+                None,
                 _create_valid_index(
                     {"patient_1": {"a": ["test_1", "test_2"], "b": ["0", "1"]}},
                     columns_names=["patients", "tests", "extra"],
                 ),
+                False,
             ),
             (
                 None,
                 None,
                 _create_random_bool_map(12, 68752868),
+                None,
                 _create_valid_index()[_create_random_bool_map(12, 68752868)].reset_index(drop=True),
+                False,
+            ),
+            (
+                None,
+                None,
+                None,
+                {"patients": ["patient_1", "patient_3"], "tests": ["test_2", "test_3"], "extra": ["0"]},
+                _create_valid_index(
+                    {
+                        "patient_1": {"a": ["test_2"], "b": ["0"]},
+                        "patient_3": {"a": ["test_2", "test_3"], "b": ["0"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                False,
+            ),
+            (
+                None,
+                pd.DataFrame(),
+                None,
+                None,
+                "Provided index is not formatted correctly",
+                True,
+            ),
+            (
+                None,
+                None,
+                _create_random_bool_map(12, 68752868)[:-1],
+                None,
+                "Parameter bool_map must have length",
+                True,
+            ),
+            (
+                None,
+                None,
+                None,
+                None,
+                "At least one of selected_keys, index, bool_map or kwarg must be not None!",
+                True,
             ),
         ],
     )
-    def test_get_subset(self, selected_keys, index, bool_map, what_to_expect):
-        pd.testing.assert_frame_equal(
-            what_to_expect,
-            Dataset(subset_index=_create_valid_index()).get_subset(selected_keys, index, bool_map).index_as_dataframe(),
-            check_categorical=False,
+    def test_get_subset(self, selected_keys, index, bool_map, kwargs, what_to_expect, expect_error):
+        df = Dataset(subset_index=_create_valid_index())
+
+        if expect_error:
+            with pytest.raises(ValueError) as e:
+                df.get_subset(selected_keys, index, bool_map) if kwargs is None else df.get_subset(**kwargs)
+
+            assert what_to_expect in str(e)
+        else:
+            pd.testing.assert_frame_equal(
+                left=what_to_expect,
+                right=df.get_subset(selected_keys, index, bool_map).index_as_dataframe()
+                if kwargs is None
+                else df.get_subset(**kwargs).index_as_dataframe(),
+                check_categorical=False,
+            )
+
+    @pytest.mark.parametrize(
+        "select_lvl,what_to_expect,expect_error",
+        [(None, "patients", False), ("tests", "tests", False), ("xyz", "select_lvl must be one of", True)],
+    )
+    def test_get_selected_lvl(self, select_lvl, what_to_expect, expect_error):
+        df = (
+            Dataset(_create_valid_index(), select_lvl=select_lvl)
+            if select_lvl is not None
+            else Dataset(_create_valid_index())
         )
+
+        if expect_error:
+            with pytest.raises(ValueError) as e:
+                df._get_selected_level()
+
+            assert what_to_expect in str(e)
+        else:
+            assert df._get_selected_level() == what_to_expect
