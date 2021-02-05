@@ -273,6 +273,9 @@ class Dataset(_BaseSerializable):
         """Return generator object containing a subset for every category from the selected level."""
         return (self.get_subset(category) for category in self.index.groupby(self._get_selected_level()).groups)
 
+    def _is_single(self):
+        return self.shape[0] == 1
+
     def _create_index(self) -> pd.DataFrame:
         raise NotImplementedError
 
