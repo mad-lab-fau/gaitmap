@@ -10,7 +10,7 @@ from gaitmap.future.dataset import Dataset
 
 def _create_valid_index(input_dict=None, columns_names=None):
     if input_dict is None:
-        test_multi_index = pd.DataFrame(
+        return pd.DataFrame(
             {
                 "patients": [
                     "patient_1",
@@ -44,13 +44,6 @@ def _create_valid_index(input_dict=None, columns_names=None):
             }
         )
 
-        for column_name in test_multi_index.columns:
-            test_multi_index[column_name] = test_multi_index[column_name].astype(
-                pd.CategoricalDtype(test_multi_index[column_name].unique())
-            )
-
-        return test_multi_index
-
     output = {column_name: [] for column_name in columns_names}
 
     for key, value in input_dict.items():
@@ -60,12 +53,7 @@ def _create_valid_index(input_dict=None, columns_names=None):
             for val in map(itemgetter(i), combinations):
                 output[columns_names[i]].append(val)
 
-    output = pd.DataFrame(output)
-
-    for column_name in columns_names:
-        output[column_name] = output[column_name].astype(pd.CategoricalDtype(output[column_name].unique()))
-
-    return output
+    return pd.DataFrame(output)
 
 
 def _create_random_bool_map(n, seed):
@@ -106,7 +94,7 @@ class TestDataset:
                     {"patient_1": {"a": ["test_1", "test_2"], "b": ["0", "1"]}},
                     columns_names=["patients", "tests", "extra"],
                 ),
-                False,
+                None,
             ),
             (
                 None,
@@ -120,7 +108,7 @@ class TestDataset:
                     {"patient_1": {"a": ["test_1", "test_2"], "b": ["0", "1"]}},
                     columns_names=["patients", "tests", "extra"],
                 ),
-                False,
+                None,
             ),
             (
                 None,
@@ -128,7 +116,7 @@ class TestDataset:
                 _create_random_bool_map(12, 68752868),
                 None,
                 _create_valid_index()[_create_random_bool_map(12, 68752868)].reset_index(drop=True),
-                False,
+                None,
             ),
             (
                 None,
@@ -142,7 +130,7 @@ class TestDataset:
                     },
                     columns_names=["patients", "tests", "extra"],
                 ),
-                False,
+                None,
             ),
             (
                 None,
@@ -150,7 +138,7 @@ class TestDataset:
                 None,
                 None,
                 "Provided index is not formatted correctly",
-                True,
+                ValueError,
             ),
             (
                 None,
@@ -158,7 +146,7 @@ class TestDataset:
                 _create_random_bool_map(12, 68752868)[:-1],
                 None,
                 "Parameter bool_map must have length",
-                True,
+                ValueError,
             ),
             (
                 None,
@@ -166,18 +154,32 @@ class TestDataset:
                 None,
                 None,
                 "At least one of selected_keys, index, bool_map or kwarg must be not None!",
-                True,
+                ValueError,
+            ),
+            (
+                ["wrong", "patient_1"],
+                None,
+                None,
+                None,
+                "Can not filter by",
+                KeyError,
+            ),
+            (
+                "wrong",
+                None,
+                None,
+                None,
+                "Can not filter by",
+                KeyError,
             ),
         ],
     )
     def test_get_subset(self, selected_keys, index, bool_map, kwargs, what_to_expect, expect_error):
         df = Dataset(subset_index=_create_valid_index())
 
-        if expect_error:
-            with pytest.raises(ValueError) as e:
+        if expect_error is not None:
+            with pytest.raises(expect_error, match=what_to_expect):
                 df.get_subset(selected_keys, index, bool_map) if kwargs is None else df.get_subset(**kwargs)
-
-            assert what_to_expect in str(e)
         else:
             pd.testing.assert_frame_equal(
                 left=what_to_expect,
@@ -199,9 +201,7 @@ class TestDataset:
         )
 
         if expect_error:
-            with pytest.raises(ValueError) as e:
+            with pytest.raises(ValueError, match=what_to_expect):
                 df._get_selected_level()
-
-            assert what_to_expect in str(e)
         else:
             assert df._get_selected_level() == what_to_expect
