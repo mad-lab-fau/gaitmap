@@ -1,0 +1,17 @@
+import numpy as np
+
+from gaitmap.base import _BaseSerializable
+
+
+class SimplePipeline(_BaseSerializable):
+    def run(self, dataset_single):
+        raise NotImplementedError()
+
+    def score_single(self, dataset_single):
+        raise NotImplementedError()
+
+    def score(self, dataset):
+        scores = []
+        for d in dataset:
+            scores.append(self.score_single(d))
+        return np.mean(scores)
