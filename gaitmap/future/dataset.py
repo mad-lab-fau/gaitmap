@@ -19,8 +19,7 @@ class Dataset(_BaseSerializable):
         For all classes that inherit from this class, subset_index **must** be None.
         The subset_index **must** be created in the method __create_index.
         If the base class is used, then the index the dataset should represent **must** be a pd.Dataframe
-        containig the index. Every column of said pd.Dataframe **must** be of type pd.CategoricalDtype
-        to represent every possible state of that column.
+        containig the index.
         For examples see below.
     select_lvl
         The level that should be used for indexing the dataset.
@@ -206,6 +205,7 @@ class Dataset(_BaseSerializable):
         -------
         subset
             New dataset object filtered by specified parameter.
+            If more then one parameter are given the first one in the order above will be used for filtering.
 
         """
         if selected_keys is not None:
@@ -225,13 +225,10 @@ class Dataset(_BaseSerializable):
             )
 
         if index is not None:
-            if all(map(lambda x: isinstance(x, pd.CategoricalDtype), index.dtypes)) and len(index) > 0:
-                return self.clone().set_params(subset_index=index.reset_index(drop=True))
+            if len(index) <= 0:
+                raise ValueError("Provided index is not formatted correctly. Make sure it is not empty!")
 
-            raise ValueError(
-                "Provided index is not formatted correctly. Make sure it is not empty and that all columns are of "
-                "dtype pd.CategoricalDtype!"
-            )
+            return self.clone().set_params(subset_index=index.reset_index(drop=True))
 
         if bool_map is not None:
             if len(bool_map) != self.index.shape[0]:
