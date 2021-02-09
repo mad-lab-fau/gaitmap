@@ -205,7 +205,7 @@ class Dataset(_BaseSerializable):
         -------
         subset
             New dataset object filtered by specified parameter.
-            If more then one parameter are given the first one in the order above will be used for filtering.
+            If more then one parameter are given then the first one in the order shown above will be used for filtering.
 
         """
         if selected_keys is not None:
