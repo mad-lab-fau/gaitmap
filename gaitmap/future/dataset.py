@@ -209,10 +209,19 @@ class Dataset(_BaseSerializable):
 
         """
         if selected_keys is not None:
+            selected_keys = _ensure_is_list(selected_keys)
+            index_at_selected_lvl = self.index[self._get_selected_level()]
+
+            not_in_index_uniques = [key for key in selected_keys if key not in index_at_selected_lvl.unique()]
+            if len(not_in_index_uniques) > 0:
+                raise KeyError(
+                    "Can not filter by {}! The keys used to filter must be one of {}!".format(
+                        not_in_index_uniques, list(index_at_selected_lvl.unique())
+                    )
+                )
+
             return self.clone().set_params(
-                subset_index=self.index.loc[
-                    self.index[self._get_selected_level()].isin(_ensure_is_list(selected_keys))
-                ].reset_index(drop=True)
+                subset_index=self.index.loc[index_at_selected_lvl.isin(selected_keys)].reset_index(drop=True)
             )
 
         if index is not None:
