@@ -186,7 +186,6 @@ class TestDataset:
                 right=df.get_subset(selected_keys, index, bool_map).index_as_dataframe()
                 if kwargs is None
                 else df.get_subset(**kwargs).index_as_dataframe(),
-                check_categorical=False,
             )
 
     @pytest.mark.parametrize(
