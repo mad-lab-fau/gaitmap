@@ -153,7 +153,7 @@ class TestDataset:
                 None,
                 None,
                 None,
-                "At least one of selected_keys, index, bool_map or kwarg must be not None!",
+                "At least one of `selected_keys`, `index`, `bool_map` or kwarg must not be None!",
                 ValueError,
             ),
             (
@@ -251,7 +251,7 @@ class TestDataset:
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect,expect_error",
-        [(None, "patients", False), ("tests", "tests", False), ("xyz", "select_lvl must be one of", True)],
+        [(None, "patients", False), ("tests", "tests", False), ("xyz", "`select_lvl` must be one of", True)],
     )
     def test_get_selected_lvl(self, select_lvl, what_to_expect, expect_error):
         df = (

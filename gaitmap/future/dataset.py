@@ -168,9 +168,9 @@ class Dataset(_BaseSerializable):
         if self.select_lvl in self.index.columns:
             return self.select_lvl
 
-        raise ValueError("select_lvl must be one of {}".format(self.index.columns.to_list()))
+        raise ValueError("`select_lvl` must be one of {}".format(self.index.columns.to_list()))
 
-    def __getitem__(self: Self, subscript) -> Self:
+    def __getitem__(self: Self, subscript: Union[int, List[int]]) -> Self:
         """Return a dataset object by passing subscript to loc."""
         multi_index = self.column_combinations[subscript]
 
@@ -187,19 +187,17 @@ class Dataset(_BaseSerializable):
         bool_map: Optional[List[bool]] = None,
         **kwargs: Optional[List[str]],
     ) -> Self:
-        """Return a dataset object.
+        """Get a subset of the dataset.
 
         Parameters
         ----------
         selected_keys
-            String or list of strings corresponding to the categories of the selected level
-            that should **not** be filtered out.
+            String or list of strings corresponding to the categories of the selected level that should be selected.
         index
-            If index is not None it will be checked for validity and will be set
-            as the index of the returned dataset object.
+            `pd.DataFrame` that is a valid subset of the current dataset index.
         bool_map
-            List of booleans that will be passed to the index for filtering. The list **must**
-            be of same length as the number of rows in the index.
+            List of booleans that will be passed to the index for filtering.
+            The list **must** be of same length as the number of rows in the index.
         **kwargs
             The key **must** be the name of a index column.
             The value is a list containing strings that correspond to the categories that should be kept.
@@ -229,7 +227,7 @@ class Dataset(_BaseSerializable):
             )
 
         if index is not None:
-            if len(index) <= 0:
+            if len(index) == 0:
                 raise ValueError("Provided index is not formatted correctly. Make sure it is not empty!")
 
             return self.clone().set_params(subset_index=index.reset_index(drop=True))
@@ -247,7 +245,7 @@ class Dataset(_BaseSerializable):
                 ].reset_index(drop=True)
             )
 
-        raise ValueError("At least one of selected_keys, index, bool_map or kwarg must be not None!")
+        raise ValueError("At least one of `selected_keys`, `index`, `bool_map` or kwarg must not be None!")
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
