@@ -1,7 +1,8 @@
 """Base Classes for custom pipelines."""
-from typing import TypeVar
+from typing import TypeVar, Dict, Union
 
 import numpy as np
+import pandas as pd
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.future import Dataset
@@ -42,7 +43,7 @@ class SimplePipeline(_BaseSerializable):
         """
         raise NotImplementedError()
 
-    def score_single(self, dataset_single: Dataset) -> float:
+    def score_single(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
         """Return a performance metric for the result of a single datapoint.
 
         Parameters
@@ -53,12 +54,12 @@ class SimplePipeline(_BaseSerializable):
         Returns
         -------
         score
-            The performance value
+            The performance value(s)
 
         """
         raise NotImplementedError()
 
-    def score(self, dataset: Dataset) -> float:
+    def score(self, dataset: Dataset) -> Union[float, Dict[str, float]]:
         """Return the performance metric as average over multiple datapoints in the dataset.
 
         Parameters
@@ -69,10 +70,15 @@ class SimplePipeline(_BaseSerializable):
         Returns
         -------
         score
-            The performance value as average over the scores of each datapoint.
+            The performance value(s) as average over the scores of each datapoint.
         """
 >>>>>>> c4a6d0f (Added docstrings and correct typing)
         scores = []
         for d in datasets:
             scores.append(self.score_single(d))
+        if isinstance(scores[0], dict):
+            # Invert the dict and calculate the mean per score:
+            df = pd.DataFrame.from_records(scores)
+            means = df.mean()
+            return means.to_dict()
         return np.mean(scores)
