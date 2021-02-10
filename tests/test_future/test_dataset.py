@@ -189,6 +189,67 @@ class TestDataset:
             )
 
     @pytest.mark.parametrize(
+        "subscript,select_lvl,what_to_expect,expect_error",
+        [
+            (
+                0,
+                "extra",
+                _create_valid_index(
+                    {
+                        "patient_1": {"a": ["test_1"], "b": ["0"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                False,
+            ),
+            (
+                4,
+                "patients",
+                "out of bounds",
+                True,
+            ),
+            (
+                [0, 1, 4],
+                "patients",
+                "out of bounds",
+                True,
+            ),
+            (
+                [0, 1],
+                "patients",
+                _create_valid_index(
+                    {
+                        "patient_1": {"a": ["test_1", "test_2"], "b": ["0", "1"]},
+                        "patient_2": {"a": ["test_1"], "b": ["0", "1"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                False,
+            ),
+            (
+                [0, 4],
+                "tests",
+                _create_valid_index(
+                    {
+                        "patient_1": {"a": ["test_1"], "b": ["0", "1"]},
+                        "patient_3": {"a": ["test_2"], "b": ["0", "1"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                False,
+            ),
+        ],
+    )
+    def test_getitem(self, subscript, select_lvl, what_to_expect, expect_error):
+        df = Dataset(subset_index=_create_valid_index(), select_lvl=select_lvl)
+
+        if expect_error:
+            with pytest.raises(IndexError, match=what_to_expect):
+                _ = df[subscript]
+        else:
+            pd.testing.assert_frame_equal(left=what_to_expect, right=df[subscript].index_as_dataframe())
+
+    @pytest.mark.parametrize(
         "select_lvl,what_to_expect,expect_error",
         [(None, "patients", False), ("tests", "tests", False), ("xyz", "select_lvl must be one of", True)],
     )
