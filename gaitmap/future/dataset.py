@@ -176,7 +176,7 @@ class Dataset(_BaseSerializable):
 
         return self.clone().set_params(
             subset_index=self._index_helper.loc[
-                [multi_index] if isinstance(multi_index, tuple) else multi_index
+                [multi_index] if isinstance(multi_index, (tuple, str)) else multi_index
             ].reset_index(drop=True)
         )
 
