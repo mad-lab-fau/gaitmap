@@ -173,7 +173,7 @@ class Dataset(_BaseSerializable):
     def __getitem__(self: Self, subscript) -> Self:
         """Return a dataset object by passing subscript to loc."""
         return self.clone().set_params(
-            subset_index=self._index_helper.loc[self.column_combinations[subscript]].reset_index(drop=True)
+            subset_index=self._index_helper.loc[[self.column_combinations[subscript]]].reset_index(drop=True)
         )
 
     def get_subset(
