@@ -335,7 +335,7 @@ class Dataset(_BaseSerializable):
         if level_to_restore is not None:
             self.select_lvl = level_to_restore
 
-    def is_single(self):
+    def is_single(self) -> bool:
         """Return True if index contains only one row else False."""
         return self.shape[0] == 1
 
