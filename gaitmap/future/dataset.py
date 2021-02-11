@@ -45,9 +45,6 @@ class Dataset(_BaseSerializable):
     Examples
     --------
     >>> test_index = pd.DataFrame({"patients": ["patient_1","patient_1","patient_1","patient_1","patient_2","patient_2","patient_3","patient_3","patient_3","patient_3","patient_3", "patient_3",],"tests": ["test_1","test_1","test_2","test_2","test_1","test_1","test_1","test_1","test_2","test_2","test_3","test_3",],"extra": ["0", "1", "0", "1", "0", "1", "0", "1", "0", "1", "0", "1"]}) # noqa: E501
-    >>> test_index["patients"] = test_index["patients"].astype(pd.CategoricalDtype(["patient_1", "patient_2", "patient_3"])) # noqa: E501
-    >>> test_index["tests"] = test_index["tests"].astype(pd.CategoricalDtype(["test_1", "test_2", "test_3"]))
-    >>> test_index["extra"] = test_index["extra"].astype(pd.CategoricalDtype(["0", "1"]))
     >>> test_index
          patients   tests extra
     0   patient_1  test_1     0
@@ -92,16 +89,20 @@ class Dataset(_BaseSerializable):
             1  patient_2  test_1     1
     <BLANKLINE>
 
-    >>> dataset.get_subset(tests=["test_1", "test_3"]).index_as_multi_index()
-    MultiIndex([('patient_1', 'test_1', '0'),
-                ('patient_1', 'test_1', '1'),
-                ('patient_2', 'test_1', '0'),
-                ('patient_2', 'test_1', '1'),
-                ('patient_3', 'test_1', '0'),
-                ('patient_3', 'test_1', '1'),
-                ('patient_3', 'test_3', '0'),
-                ('patient_3', 'test_3', '1')],
-               names=['patients', 'tests', 'extra'])
+    >>> dataset.get_subset(tests=["test_1", "test_3"]) # doctest: +NORMALIZE_WHITESPACE
+    Dataset
+        index [8 rows x 3 columns] =
+    <BLANKLINE>
+                    patients   tests extra
+                0  patient_1  test_1     0
+                1  patient_1  test_1     1
+                2  patient_2  test_1     0
+                3  patient_2  test_1     1
+                4  patient_3  test_1     0
+                5  patient_3  test_1     1
+                6  patient_3  test_3     0
+                7  patient_3  test_3     1
+    <BLANKLINE>
 
     >>> dataset.select_lvl = "tests"
     >>> next(dataset.__iter__())  # doctest: +NORMALIZE_WHITESPACE
@@ -113,7 +114,7 @@ class Dataset(_BaseSerializable):
                 1  patient_1  test_1     1
     <BLANKLINE>
 
-    >>> next(dataset.iter()) # doctest: +NORMALIZE_WHITESPACE
+    >>> next(dataset.iter_level()) # doctest: +NORMALIZE_WHITESPACE
     Dataset
         index [6 rows x 3 columns] =
     <BLANKLINE>
@@ -124,6 +125,19 @@ class Dataset(_BaseSerializable):
                 3  patient_2  test_1     1
                 4  patient_3  test_1     0
                 5  patient_3  test_1     1
+    <BLANKLINE>
+
+    >>> next(dataset.iter_level(level="extra")) # doctest: +NORMALIZE_WHITESPACE
+    Dataset
+        index [6 rows x 3 columns] =
+    <BLANKLINE>
+                    patients   tests extra
+                0  patient_1  test_1     0
+                1  patient_1  test_2     0
+                2  patient_2  test_1     0
+                3  patient_3  test_1     0
+                4  patient_3  test_2     0
+                5  patient_3  test_3     0
     <BLANKLINE>
 
     """
@@ -147,7 +161,7 @@ class Dataset(_BaseSerializable):
         return self.subset_index if self.level_order is None else self.subset_index[self.level_order]
 
     @property
-    def column_combinations(self) -> Union[pd.MultiIndex, pd.CategoricalIndex]:
+    def column_combinations(self) -> Union[pd.MultiIndex, pd.Index]:
         """Get all possible combinations up to and including the selected level."""
         return self._index_helper.index.unique()
 
@@ -157,13 +171,13 @@ class Dataset(_BaseSerializable):
         return (len(self.column_combinations),)
 
     @property
-    def _index_helper(self):
+    def _index_helper(self) -> pd.DataFrame:
         columns = list(self.index.columns)
         return self.index.set_index(columns[: columns.index(self._get_selected_level()) + 1], drop=False)
 
-    def _get_selected_level(self):
+    def _get_selected_level(self) -> str:
         if self.select_lvl is None:
-            return self.index.columns[0]
+            return self.index.columns[-1]
 
         if self.select_lvl in self.index.columns:
             return self.select_lvl
@@ -180,7 +194,7 @@ class Dataset(_BaseSerializable):
             ].reset_index(drop=True)
         )
 
-    def get_subset(
+    def get_subset(  # noqa: MC0001
         self: Self,
         selected_keys: Optional[Union[List[str], str]] = None,
         index: Optional[pd.DataFrame] = None,
@@ -207,9 +221,19 @@ class Dataset(_BaseSerializable):
         -------
         subset
             New dataset object filtered by specified parameter.
-            If more then one parameter are given then the first one in the order shown above will be used for filtering.
 
         """
+        if (
+            list(
+                map(
+                    lambda x: x is None or (isinstance(x, dict) and len(x) == 0),
+                    (selected_keys, index, bool_map, kwargs),
+                )
+            ).count(False)
+            > 1
+        ):
+            raise ValueError("Only one of `selected_keys`, `index`, `bool_map` or kwarg can be set!")
+
         if selected_keys is not None:
             selected_keys = _ensure_is_list(selected_keys)
             index_at_selected_lvl = self.index[self._get_selected_level()]
@@ -239,6 +263,10 @@ class Dataset(_BaseSerializable):
             return self.clone().set_params(subset_index=self.index[bool_map].reset_index(drop=True))
 
         if len(kwargs) > 0:
+            for key in kwargs:
+                if key not in self.index.columns:
+                    raise KeyError(f"Can not filter by {key}! Key must be one of {list(self.index.columns)}!")
+
             return self.clone().set_params(
                 subset_index=self.index.loc[
                     reduce(and_, (self.index[key].isin(_ensure_is_list(value)) for key, value in kwargs.items()))
@@ -259,37 +287,60 @@ class Dataset(_BaseSerializable):
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
         return (
-            "<h3 style='margin-bottom: -1.5em'>{}</h3>".format(self.__class__.__name__)
-            + "<h4 style='margin-left: 2.5em'>index [{} rows x {} columns] =</h4>".format(
+            '<h3 style="margin-bottom: -0.5em;">{}</h3>\n'.format(self.__class__.__name__)
+            + '<h4 style="margin-left: 2.5em;">index [{} rows x {} columns] =</h4>'.format(
                 self.index.shape[0], self.index.shape[1]
             )
             + self.index._repr_html_()
-            .replace("<div>", "<div style='margin-top: 0em'>")
-            .replace("<table", "<table style='width:100%;'")
-            .replace("text-align: right;", "text-align: middle;")
+            .replace("<div>", '<div style="margin-top: 0em">')
+            .replace('<table border="1" class="dataframe"', '<table style="font-size: 16px; margin-left: 3em;"')
+            .replace("<th>", '<th style="text-align: center;">')
+            .replace("<td>", '<td style="text-align: center; padding-left: 2em; padding-right: 2em;">')
         )
-
-    def index_as_multi_index(self) -> pd.MultiIndex:
-        """Return the dataset as a pd.MultiIndex."""
-        return pd.MultiIndex.from_frame(self.index)
-
-    def index_as_dataframe(self) -> pd.DataFrame:
-        """Return the dataset as a pd.Dataframe."""
-        return self.index
 
     def __iter__(self: Self) -> Generator[Self, None, None]:
         """Return generator object containing a subset for every combination up to and including the selected level."""
         return (self.__getitem__(i) for i in range(self.shape[0]))
 
-    def iter(self: Self) -> Generator[Self, None, None]:
-        """Return generator object containing a subset for every category from the selected level."""
-        return (self.get_subset(selected_keys=category) for category in self.index[self._get_selected_level()].unique())
+    def iter_level(self: Self, level: str = None) -> Generator[Self, None, None]:
+        """Return generator object containing a subset for every category from the selected level.
 
-    def _is_single(self):
+        Parameters
+        ----------
+        level
+            Optional `str` that sets the level which shall be used for iterating.
+            This **must** be one of the columns names of the index.
+            Setting the level **changes** the `self.select_lvl` property to the value of
+            `level` whilst the generator is in use.
+            The `self.select_lvl` property will be restored to the original value after the iteration is completed.
+
+        Returns
+        -------
+        subset
+            New dataset object containing only one category in the specified `level`.
+
+        """
+        level_to_restore = None
+
+        if level is not None:
+            if level not in self.index.columns:
+                raise ValueError(f"`level` must be one of {list(self.index.columns)}")
+
+            level_to_restore = self._get_selected_level()
+            self.select_lvl = level
+
+        for category in self.index[self._get_selected_level()].unique():
+            yield self.get_subset(selected_keys=category)
+
+        if level_to_restore is not None:
+            self.select_lvl = level_to_restore
+
+    def is_single(self):
+        """Return True if index contains only one row else False."""
         return self.shape[0] == 1
 
     def _create_index(self) -> pd.DataFrame:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 def _ensure_is_list(x):
