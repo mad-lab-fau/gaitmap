@@ -475,15 +475,8 @@ class TestDataset:
             with pytest.raises(ValueError, match=what_to_expect):
                 next(df.iter_level(level=level))
         else:
-            # Get the original level value that should be restored
-            original_level = df._get_selected_level()
             # Create the generator
-            generator = df.iter_level(level=level)
-            # See if the first subset is what we expect to get
-            pd.testing.assert_frame_equal(left=what_to_expect, right=next(generator).index)
-            # See if the level is the same as level whilst the generator is "not done" yet
-            assert df._get_selected_level() == level if level is not None else df.index.columns[-1]
-            # "Force" the generator to run till the end
-            _ = list(generator)
-            # See if the level has been correctly restored
-            assert df._get_selected_level() == original_level
+            values = list(df.iter_level(level=level))
+            pd.testing.assert_frame_equal(left=what_to_expect, right=values[0].index)
+
+

@@ -24,7 +24,7 @@ class Dataset(_BaseSerializable):
     select_lvl
         The level that should be used for indexing the dataset.
         This **must** be a string corresponding to one of the columns of the index.
-        If left empty the first column is set as indexing level.
+        If left empty the last column is set as indexing level.
         For examples see below.
     level_order
         List containing **all** columns of the index in an arbitrary order.
@@ -302,7 +302,7 @@ class Dataset(_BaseSerializable):
         """Return generator object containing a subset for every combination up to and including the selected level."""
         return (self.__getitem__(i) for i in range(self.shape[0]))
 
-    def iter_level(self: Self, level: str = None) -> Generator[Self, None, None]:
+    def iter_level(self: Self, level: Optional[str] = None) -> Generator[Self, None, None]:
         """Return generator object containing a subset for every category from the selected level.
 
         Parameters
@@ -310,9 +310,6 @@ class Dataset(_BaseSerializable):
         level
             Optional `str` that sets the level which shall be used for iterating.
             This **must** be one of the columns names of the index.
-            Setting the level **changes** the `self.select_lvl` property to the value of
-            `level` whilst the generator is in use.
-            The `self.select_lvl` property will be restored to the original value after the iteration is completed.
 
         Returns
         -------
@@ -320,20 +317,11 @@ class Dataset(_BaseSerializable):
             New dataset object containing only one category in the specified `level`.
 
         """
-        level_to_restore = None
+        if level and level not in self.index.columns:
+            raise ValueError(f"`level` must be one of {list(self.index.columns)}")
 
-        if level is not None:
-            if level not in self.index.columns:
-                raise ValueError(f"`level` must be one of {list(self.index.columns)}")
-
-            level_to_restore = self._get_selected_level()
-            self.select_lvl = level
-
-        for category in self.index[self._get_selected_level()].unique():
-            yield self.get_subset(selected_keys=category)
-
-        if level_to_restore is not None:
-            self.select_lvl = level_to_restore
+        level = level or self._get_selected_level()
+        return (self.get_subset(**{level: category}) for category in self.index[level].unique())
 
     def is_single(self) -> bool:
         """Return True if index contains only one row else False."""
