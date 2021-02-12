@@ -1,6 +1,4 @@
 """Base class for all datasets."""
-from functools import reduce
-from operator import and_
 from typing import Optional, List, Union, Generator, Tuple, TypeVar
 
 import pandas as pd
@@ -194,7 +192,7 @@ class Dataset(_BaseSerializable):
             ].reset_index(drop=True)
         )
 
-    def get_subset(  # noqa: MC0001
+    def get_subset(
         self: Self,
         selected_keys: Optional[Union[List[str], str]] = None,
         index: Optional[pd.DataFrame] = None,
@@ -235,20 +233,8 @@ class Dataset(_BaseSerializable):
             raise ValueError("Only one of `selected_keys`, `index`, `bool_map` or kwarg can be set!")
 
         if selected_keys is not None:
-            selected_keys = _ensure_is_list(selected_keys)
-            index_at_selected_lvl = self.index[self._get_selected_level()]
-
-            not_in_index_uniques = [key for key in selected_keys if key not in index_at_selected_lvl.unique()]
-            if len(not_in_index_uniques) > 0:
-                raise KeyError(
-                    "Can not filter by {}! The keys used to filter must be one of {}!".format(
-                        not_in_index_uniques, list(index_at_selected_lvl.unique())
-                    )
-                )
-
-            return self.clone().set_params(
-                subset_index=self.index.loc[index_at_selected_lvl.isin(selected_keys)].reset_index(drop=True)
-            )
+            # We just pretend we set kwargs with the correct name
+            kwargs = {self._get_selected_level(): selected_keys}
 
         if index is not None:
             if len(index) == 0:
@@ -263,15 +249,19 @@ class Dataset(_BaseSerializable):
             return self.clone().set_params(subset_index=self.index[bool_map].reset_index(drop=True))
 
         if len(kwargs) > 0:
-            for key in kwargs:
-                if key not in self.index.columns:
-                    raise KeyError(f"Can not filter by {key}! Key must be one of {list(self.index.columns)}!")
+            kwargs = {k: _ensure_is_list(v) for k, v in kwargs.items()}
 
-            return self.clone().set_params(
-                subset_index=self.index.loc[
-                    reduce(and_, (self.index[key].isin(_ensure_is_list(value)) for key, value in kwargs.items()))
-                ].reset_index(drop=True)
+            # Check if all values are actually in their respective columns.
+            # This is not strictly required, but avoids user error
+            assert_all_in_df(self.index, kwargs)
+
+            subset_index = self.index.loc[self.index[list(kwargs.keys())].isin(kwargs).all(axis=1)].reset_index(
+                drop=True
             )
+            if len(subset_index) == 0:
+                raise KeyError(f"No datapoint in the dataset matched the following filter: {kwargs}")
+
+            return self.clone().set_params(subset_index=subset_index)
 
         raise ValueError("At least one of `selected_keys`, `index`, `bool_map` or kwarg must not be None!")
 
@@ -333,3 +323,14 @@ class Dataset(_BaseSerializable):
 
 def _ensure_is_list(x):
     return x if isinstance(x, list) else [x]
+
+
+def assert_all_in_df(df, dic):
+    """Check that all values of the dictionary are in the column 'key' of the pandas dataframe."""
+    for key, value in dic.items():
+        try:
+            index_level = df[key]
+        except KeyError as e:
+            raise KeyError(f"Can not filter by key `{key}`! Key must be one of {list(df.columns)}!") from e
+        if not set(value).issubset(index_level):
+            raise KeyError(f"At least one of {value} is not in level {key}")

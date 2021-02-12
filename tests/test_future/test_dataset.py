@@ -129,12 +129,12 @@ class TestDataset:
             ),
             (
                 "wrong",
-                "Can not filter by",
+                "wrong",
                 True,
             ),
             (
                 ["wrong", "1"],
-                "Can not filter by",
+                "wrong",
                 True,
             ),
         ],
@@ -218,7 +218,7 @@ class TestDataset:
             ),
             (
                 {"wrong": ["patient_1", "patient_3"], "tests": ["test_2", "test_3"], "extra": ["0"]},
-                "Can not filter by",
+                "Can not filter by key `wrong`!",
                 True,
             ),
         ],
@@ -478,5 +478,3 @@ class TestDataset:
             # Create the generator
             values = list(df.iter_level(level=level))
             pd.testing.assert_frame_equal(left=what_to_expect, right=values[0].index)
-
-
