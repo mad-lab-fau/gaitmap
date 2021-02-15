@@ -19,12 +19,20 @@ def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
 
 
 class Optimize(_BaseSerializable):
+    pipeline: Optional[SimplePipeline]
+
+    dataset: Dataset
+
     optimized_pipeline_: SimplePipeline
 
-    def __init__(self, pipeline):
+    def __init__(
+        self,
+        pipeline: Optional[SimplePipeline] = None,
+    ):
         self.pipeline = pipeline
 
     def optimize(self, dataset: Dataset, **kwargs):
+        self.dataset = dataset
         if not hasattr(self.pipeline, "self_optimize"):
             raise ValueError()
         self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset, **kwargs)
@@ -43,6 +51,8 @@ class GridSearch(Optimize):
     n_jobs: Optional[int]
     pre_dispatch: Union[int, str]
 
+    dataset: Dataset
+
     best_params_: Dict
     best_index_: int
     best_score_: float
@@ -50,8 +60,8 @@ class GridSearch(Optimize):
 
     def __init__(
         self,
-        pipeline: Optional[SimplePipeline],
-        parameter_grid: Optional[ParameterGrid],
+        pipeline: Optional[SimplePipeline] = None,
+        parameter_grid: Optional[ParameterGrid] = None,
         n_jobs: Optional[int] = None,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
@@ -61,6 +71,7 @@ class GridSearch(Optimize):
         super().__init__(pipeline=pipeline)
 
     def optimize(self, dataset: Dataset, **kwargs):
+        self.dataset = dataset
         candidate_params = list(self.parameter_grid)
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         with parallel:
