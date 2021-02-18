@@ -35,6 +35,7 @@ class Dataset(_BaseSerializable):
         This returns either the `subset_index` or the base index returned by `create_index`.
     groups
         Returns all possible combinations based on the specified `groupby` columns.
+        The groups are sorted by name.
     shape
         Represents the number of all groups encapsulated in a tuple.
         This is only necessary if `sklearn.model_selection.KFold` is used for splitting the dataset.
@@ -54,7 +55,7 @@ class Dataset(_BaseSerializable):
     >>> # We create a little dummy dataset by passing an index directly to `test_index`
     >>> dataset = Dataset(subset_index=test_index)
     >>> dataset
-    Dataset [12 rows x 3 columns]
+    Dataset [12 groups/rows]
     <BLANKLINE>
              patient    test extra
        0   patient_1  test_1     1
@@ -75,11 +76,11 @@ class Dataset(_BaseSerializable):
 
     >>> for r in dataset[:2]:
     ...     print(r)
-    Dataset [1 rows x 3 columns]
+    Dataset [1 groups/rows]
     <BLANKLINE>
             patient    test extra
        0  patient_1  test_1     1
-    Dataset [1 rows x 3 columns]
+    Dataset [1 groups/rows]
     <BLANKLINE>
             patient    test extra
        0  patient_1  test_1     2
@@ -88,49 +89,71 @@ class Dataset(_BaseSerializable):
     If we select the level `test`, we will loop over all `patient`-`test` combinations.
 
     >>> dataset.groupby = ["patient", "test"]
+    >>> dataset  # doctest: +NORMALIZE_WHITESPACE
+    Dataset [6 groups/rows]
+    <BLANKLINE>
+                           patient    test extra
+       patient   test
+       patient_1 test_1  patient_1  test_1     1
+                 test_1  patient_1  test_1     2
+                 test_2  patient_1  test_2     1
+                 test_2  patient_1  test_2     2
+       patient_2 test_1  patient_2  test_1     1
+                 test_1  patient_2  test_1     2
+                 test_2  patient_2  test_2     1
+                 test_2  patient_2  test_2     2
+       patient_3 test_1  patient_3  test_1     1
+                 test_1  patient_3  test_1     2
+                 test_2  patient_3  test_2     1
+                 test_2  patient_3  test_2     2
     >>> for r in dataset[:2]:
-    ...     print(r)
-    Dataset [2 rows x 3 columns]
+    ...     print(r)  # doctest: +NORMALIZE_WHITESPACE
+    Dataset [1 groups/rows]
     <BLANKLINE>
-            patient    test extra
-       0  patient_1  test_1     1
-       1  patient_1  test_1     2
-    Dataset [2 rows x 3 columns]
+                           patient    test extra
+       patient   test
+       patient_1 test_1  patient_1  test_1     1
+                 test_1  patient_1  test_1     2
+    Dataset [1 groups/rows]
     <BLANKLINE>
-            patient    test extra
-       0  patient_1  test_2     1
-       1  patient_1  test_2     2
+                           patient    test extra
+       patient   test
+       patient_1 test_2  patient_1  test_2     1
+                 test_2  patient_1  test_2     2
 
     To iterate over the unique values of a specific the "iter_level" function:
 
     >>> for r in list(dataset.iter_level("patient"))[:2]:
-    ...     print(r)
-    Dataset [4 rows x 3 columns]
+    ...     print(r)  # doctest: +NORMALIZE_WHITESPACE
+    Dataset [2 groups/rows]
     <BLANKLINE>
-            patient    test extra
-       0  patient_1  test_1     1
-       1  patient_1  test_1     2
-       2  patient_1  test_2     1
-       3  patient_1  test_2     2
-    Dataset [4 rows x 3 columns]
+                           patient    test extra
+       patient   test
+       patient_1 test_1  patient_1  test_1     1
+                 test_1  patient_1  test_1     2
+                 test_2  patient_1  test_2     1
+                 test_2  patient_1  test_2     2
+    Dataset [2 groups/rows]
     <BLANKLINE>
-            patient    test extra
-       0  patient_2  test_1     1
-       1  patient_2  test_1     2
-       2  patient_2  test_2     1
-       3  patient_2  test_2     2
+                           patient    test extra
+       patient   test
+       patient_2 test_1  patient_2  test_1     1
+                 test_1  patient_2  test_1     2
+                 test_2  patient_2  test_2     1
+                 test_2  patient_2  test_2     2
 
     We can also get arbitary subsets from the dataset:
 
     >>> subset = dataset.get_subset(patient=["patient_1", "patient_2"], extra="2")
-    >>> subset
-    Dataset [4 rows x 3 columns]
+    >>> subset  # doctest: +NORMALIZE_WHITESPACE
+    Dataset [4 groups/rows]
     <BLANKLINE>
-            patient    test extra
-       0  patient_1  test_1     2
-       1  patient_1  test_2     2
-       2  patient_2  test_1     2
-       3  patient_2  test_2     2
+                           patient    test extra
+       patient   test
+       patient_1 test_1  patient_1  test_1     2
+                 test_2  patient_1  test_2     2
+       patient_2 test_1  patient_2  test_1     2
+                 test_2  patient_2  test_2     2
 
     """
 
@@ -160,7 +183,7 @@ class Dataset(_BaseSerializable):
 
         These are also the indices used when iterating over the dataset.
         """
-        return self._index_helper.index.unique()
+        return self.grouped_index.index.unique()
 
     @property
     def shape(self) -> Tuple[int]:
@@ -168,19 +191,18 @@ class Dataset(_BaseSerializable):
         return (len(self.groups),)
 
     @property
-    def _index_helper(self) -> pd.DataFrame:
-        cols = self.groupby or self.index.columns.to_list()
-        return self.index.set_index(cols, drop=False)
+    def grouped_index(self) -> pd.DataFrame:
+        if self.groupby is None:
+            return self.index
+        return self.index.set_index(self.groupby, drop=False).sort_index()
 
     def __getitem__(self: Self, subscript: Union[int, Sequence[int]]) -> Self:
         """Return a dataset object containing only the selected row indices of `self.groups`."""
         multi_index = self.groups[subscript]
+        if not isinstance(multi_index, pd.Index):
+            multi_index = [multi_index]
 
-        return self.clone().set_params(
-            subset_index=self._index_helper.loc[
-                [multi_index] if isinstance(multi_index, (tuple, str)) else multi_index
-            ].reset_index(drop=True)
-        )
+        return self.clone().set_params(subset_index=self.grouped_index.loc[multi_index].reset_index(drop=True))
 
     def get_subset(
         self: Self,
@@ -251,18 +273,17 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
-        return "{} [{} rows x {} columns]\n\n   {}\n\n   ".format(
+        return "{} [{} groups/rows]\n\n   {}\n\n   ".format(
             self.__class__.__name__,
-            self.index.shape[0],
-            self.index.shape[1],
-            str(self.index).replace("\n", "\n   "),
+            self.shape[0],
+            str(self.grouped_index).replace("\n", "\n   "),
         )[:-5]
 
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
-        return '<h4 style="margin-bottom: 0.1em;">{} [{} rows x {} columns]</h3>\n'.format(
-            self.__class__.__name__, self.index.shape[0], self.index.shape[1]
-        ) + self.index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
+        return '<h4 style="margin-bottom: 0.1em;">{} [{} groups/rows]</h3>\n'.format(
+            self.__class__.__name__, self.shape[0]
+        ) + self.grouped_index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
             '<table border="1" class="dataframe"', '<table style="margin-left: 3em;"'
         ).replace(
             "<th>", '<th style="text-align: center;">'

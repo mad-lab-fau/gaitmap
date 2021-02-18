@@ -71,6 +71,7 @@ class TestDataset:
             (["patients", "tests", "extra"], 12),
             (["extra", "patients", "tests"], 12),
             ("extra", 2),
+            (None, 12)
         ],
     )
     def test_groupby(self, groupby, length):
