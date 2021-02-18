@@ -142,6 +142,7 @@ class Dataset(_BaseSerializable):
 
     def __init__(
         self,
+        *,
         subset_index: Optional[pd.DataFrame] = None,
         select_lvl: Optional[str] = None,
         level_order: Optional[List[str]] = None,
