@@ -372,6 +372,7 @@ class Dataset(_BaseSerializable):
         """Create the full index for the dataset.
 
         This needs to be implemented by the subclass.
+
         """
         raise NotImplementedError()
 
