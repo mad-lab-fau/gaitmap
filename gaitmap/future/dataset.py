@@ -18,14 +18,9 @@ class Dataset(_BaseSerializable):
 
     Parameters
     ----------
-    groupby_lvl
-        The level that should be used for indexing the dataset.
-        This **must** be a string corresponding to one of the columns of the index.
-        If left empty the last column is set as indexing level.
+    groupby
+        A column name or a list of column names that should be used to group the index before iterating over it.
         For examples see below.
-    level_order
-        List containing **all** columns of the index in an arbitrary order.
-        If this is not Null it will be used for reordering the index.
     subset_index
         For all classes that inherit from this class, subset_index **must** be None.
         The subset_index **must** be created in the method __create_index.
@@ -36,12 +31,13 @@ class Dataset(_BaseSerializable):
     Attributes
     ----------
     index
-        The index of the dataset. Internally it is stored as a pd.Dataframe.
+        The index of the dataset.
+        This returns either the `subset_index` or the base index returned by `create_index`.
     groups
-        Returns all possible combinations up to the selected level.
+        Returns all possible combinations based on the specified `groupby` columns.
     shape
-        Represents the number of all groups encapsulated in a tuple. This is only
-        necessary if sklearn.model_selection.KFold is used for splitting the dataset.
+        Represents the number of all groups encapsulated in a tuple.
+        This is only necessary if `sklearn.model_selection.KFold` is used for splitting the dataset.
 
     Examples
     --------
@@ -88,10 +84,10 @@ class Dataset(_BaseSerializable):
             patient    test extra
        0  patient_1  test_1     2
 
-    We can also change `selected_lvl` (either in the init or afterwards), to loop over other combinations.
+    We can also change `groupby` (either in the init or afterwards), to loop over other combinations.
     If we select the level `test`, we will loop over all `patient`-`test` combinations.
 
-    >>> dataset.groupby_lvl = "test"
+    >>> dataset.groupby = ["patient", "test"]
     >>> for r in dataset[:2]:
     ...     print(r)
     Dataset [2 rows x 3 columns]
@@ -138,19 +134,16 @@ class Dataset(_BaseSerializable):
 
     """
 
-    groupby_lvl: Optional[str]
-    level_order: Optional[List[str]]
+    groupby: Optional[Union[List[str], str]]
     subset_index: Optional[pd.DataFrame]
 
     def __init__(
         self,
         *,
-        groupby_lvl: Optional[str] = None,
-        level_order: Optional[List[str]] = None,
+        groupby: Optional[Union[List[str], str]] = None,
         subset_index: Optional[pd.DataFrame] = None,
     ):
-        self.level_order = level_order
-        self.groupby_lvl = groupby_lvl
+        self.groupby = groupby
         self.subset_index = subset_index
 
     @property
@@ -159,11 +152,11 @@ class Dataset(_BaseSerializable):
         if self.subset_index is None:
             return self.create_index()
 
-        return self.subset_index if self.level_order is None else self.subset_index[self.level_order]
+        return self.subset_index
 
     @property
     def groups(self) -> Union[pd.MultiIndex, pd.Index]:
-        """Get all possible combinations up to and including the selected level of the index.
+        """Get all groups based on the set groupby level.
 
         These are also the indices used when iterating over the dataset.
         """
@@ -176,17 +169,8 @@ class Dataset(_BaseSerializable):
 
     @property
     def _index_helper(self) -> pd.DataFrame:
-        columns = list(self.index.columns)
-        return self.index.set_index(columns[: columns.index(self._get_selected_level()) + 1], drop=False)
-
-    def _get_selected_level(self) -> str:
-        if self.groupby_lvl is None:
-            return self.index.columns[-1]
-
-        if self.groupby_lvl in self.index.columns:
-            return self.groupby_lvl
-
-        raise ValueError("`select_lvl` must be one of {}".format(self.index.columns.to_list()))
+        cols = self.groupby or self.index.columns.to_list()
+        return self.index.set_index(cols, drop=False)
 
     def __getitem__(self: Self, subscript: Union[int, Sequence[int]]) -> Self:
         """Return a dataset object containing only the selected row indices of `self.groups`."""
@@ -200,7 +184,7 @@ class Dataset(_BaseSerializable):
 
     def get_subset(
         self: Self,
-        selected_keys: Optional[Union[List[str], str]] = None,
+        *,
         index: Optional[pd.DataFrame] = None,
         bool_map: Optional[Sequence[bool]] = None,
         **kwargs: Optional[Union[List[str], str]],
@@ -209,8 +193,6 @@ class Dataset(_BaseSerializable):
 
         Parameters
         ----------
-        selected_keys
-            String or list of strings corresponding to the categories of the selected level that should be selected.
         index
             `pd.DataFrame` that is a valid subset of the current dataset index.
         bool_map
@@ -231,16 +213,12 @@ class Dataset(_BaseSerializable):
             list(
                 map(
                     lambda x: x is None or (isinstance(x, dict) and len(x) == 0),
-                    (selected_keys, index, bool_map, kwargs),
+                    (index, bool_map, kwargs),
                 )
             ).count(False)
             > 1
         ):
             raise ValueError("Only one of `selected_keys`, `index`, `bool_map` or kwarg can be set!")
-
-        if selected_keys is not None:
-            # We just pretend we set kwargs with the correct name
-            kwargs = {self._get_selected_level(): selected_keys}
 
         if index is not None:
             if len(index) == 0:
@@ -296,7 +274,7 @@ class Dataset(_BaseSerializable):
         """Return generator object containing a subset for every combination up to and including the selected level."""
         return (self.__getitem__(i) for i in range(self.shape[0]))
 
-    def iter_level(self: Self, level: Optional[str] = None) -> Generator[Self, None, None]:
+    def iter_level(self: Self, level: str) -> Generator[Self, None, None]:
         """Return generator object containing a subset for every category from the selected level.
 
         Parameters
@@ -311,10 +289,9 @@ class Dataset(_BaseSerializable):
             New dataset object containing only one category in the specified `level`.
 
         """
-        if level and level not in self.index.columns:
+        if level not in self.index.columns:
             raise ValueError(f"`level` must be one of {list(self.index.columns)}")
 
-        level = level or self._get_selected_level()
         return (self.get_subset(**{level: category}) for category in self.index[level].unique())
 
     def is_single(self) -> bool:

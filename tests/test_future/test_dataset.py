@@ -64,27 +64,22 @@ def _create_random_bool_map(n, seed):
 
 class TestDataset:
     @pytest.mark.parametrize(
-        "select_lvl,what_to_expect,lvl_order",
+        "groupby,length",
         [
-            ("patients", 3, None),
-            ("tests", 6, None),
-            ("extra", 12, None),
-            ("patients", 12, ["extra", "tests", "patients"]),
-            ("tests", 3, ["tests", "extra", "patients"]),
-            ("extra", 12, ["tests", "patients", "extra"]),
+            ("patients", 3),
+            (["patients", "tests"], 6),
+            (["patients", "tests", "extra"], 12),
+            (["extra", "patients", "tests"], 12),
+            ("extra", 2),
         ],
     )
-    def test_indexing_with_optional_lvl_order(self, select_lvl, what_to_expect, lvl_order):
-        assert (
-            Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl, level_order=lvl_order).shape[0]
-            == what_to_expect
-        )
+    def test_groupby(self, groupby, length):
+        assert Dataset(subset_index=_create_valid_index(), groupby=groupby).shape[0] == length
 
     @pytest.mark.parametrize(
-        "selected_keys,index,bool_map,kwargs,what_to_expect,expect_error",
+        "index,bool_map,kwargs,what_to_expect,expect_error",
         [
             (
-                None,
                 None,
                 None,
                 None,
@@ -92,7 +87,6 @@ class TestDataset:
                 ValueError,
             ),
             (
-                None,
                 _create_valid_index(),
                 _create_random_bool_map(12, 432),
                 None,
@@ -101,52 +95,12 @@ class TestDataset:
             ),
         ],
     )
-    def test_get_subset_generic_errors(self, selected_keys, index, bool_map, kwargs, what_to_expect, expect_error):
+    def test_get_subset_generic_errors(self, index, bool_map, kwargs, what_to_expect, expect_error):
         df = Dataset(subset_index=_create_valid_index())
+        kwargs = kwargs or {}
 
         with pytest.raises(expect_error, match=what_to_expect):
-            df.get_subset(selected_keys, index, bool_map) if kwargs is None else df.get_subset(
-                selected_keys, index, bool_map, **kwargs
-            )
-
-    @pytest.mark.parametrize(
-        "selected_keys,what_to_expect",
-        [
-            (
-                ["0"],
-                _create_valid_index(
-                    {
-                        "patient_1": {"a": ["test_1", "test_2"], "b": ["0"]},
-                        "patient_2": {"a": ["test_1"], "b": ["0"]},
-                        "patient_3": {"a": ["test_1", "test_2", "test_3"], "b": ["0"]},
-                    },
-                    columns_names=["patients", "tests", "extra"],
-                ),
-            ),
-        ],
-    )
-    def test_get_subset_selected_keys_valid_input(self, selected_keys, what_to_expect):
-        pd.testing.assert_frame_equal(
-            left=what_to_expect,
-            right=Dataset(subset_index=_create_valid_index()).get_subset(selected_keys=selected_keys).index,
-        )
-
-    @pytest.mark.parametrize(
-        "selected_keys,what_to_expect",
-        [
-            (
-                "wrong",
-                "wrong",
-            ),
-            (
-                ["wrong", "1"],
-                "wrong",
-            ),
-        ],
-    )
-    def test_get_subset_selected_keys_error_input(self, selected_keys, what_to_expect):
-        with pytest.raises(KeyError, match=what_to_expect):
-            Dataset(subset_index=_create_valid_index()).get_subset(selected_keys)
+            df.get_subset(index=index, bool_map=bool_map, **kwargs)
 
     @pytest.mark.parametrize(
         "index,what_to_expect",
@@ -242,11 +196,11 @@ class TestDataset:
             Dataset(subset_index=_create_valid_index()).get_subset(**kwargs)
 
     @pytest.mark.parametrize(
-        "subscript,select_lvl,what_to_expect",
+        "subscript,groupby,what_to_expect",
         [
             (
                 0,
-                "extra",
+                ["patients", "tests", "extra"],
                 _create_valid_index(
                     {
                         "patient_1": {"a": ["test_1"], "b": ["0"]},
@@ -267,7 +221,7 @@ class TestDataset:
             ),
             (
                 [0, 4],
-                "tests",
+                ["patients", "tests"],
                 _create_valid_index(
                     {
                         "patient_1": {"a": ["test_1"], "b": ["0", "1"]},
@@ -278,10 +232,10 @@ class TestDataset:
             ),
         ],
     )
-    def test_getitem_valid_input(self, subscript, select_lvl, what_to_expect):
+    def test_getitem_valid_input(self, subscript, groupby, what_to_expect):
         pd.testing.assert_frame_equal(
             left=what_to_expect,
-            right=Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)[subscript].index,
+            right=Dataset(subset_index=_create_valid_index(), groupby=groupby)[subscript].index,
         )
 
     @pytest.mark.parametrize(
@@ -301,24 +255,7 @@ class TestDataset:
     )
     def test_getitem_error_input(self, subscript, select_lvl, what_to_expect):
         with pytest.raises(IndexError, match=what_to_expect):
-            _ = Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)[subscript]
-
-    @pytest.mark.parametrize(
-        "select_lvl,what_to_expect",
-        [(None, "extra"), ("tests", "tests")],
-    )
-    def test_get_selected_lvl_valid_input(self, select_lvl, what_to_expect):
-        assert (
-                Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)._get_selected_level() == what_to_expect
-        )
-
-    @pytest.mark.parametrize(
-        "select_lvl,what_to_expect",
-        [("xyz", "`select_lvl` must be one of")],
-    )
-    def test_get_selected_lvl_error_input(self, select_lvl, what_to_expect):
-        with pytest.raises(ValueError, match=what_to_expect):
-            Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)._get_selected_level()
+            _ = Dataset(subset_index=_create_valid_index(), groupby=select_lvl)[subscript]
 
     @pytest.mark.parametrize(
         "index,what_to_expect",
@@ -350,11 +287,11 @@ class TestDataset:
             _ = Dataset().index
 
     @pytest.mark.parametrize(
-        "n_splits,select_lvl,what_to_expect",
+        "n_splits,groupby,what_to_expect",
         [
             (
                 5,
-                "tests",
+                ["patients", "tests"],
                 (
                     _create_valid_index(
                         {
@@ -373,8 +310,8 @@ class TestDataset:
             ),
         ],
     )
-    def test_dataset_with_kfold_valid_input(self, n_splits, select_lvl, what_to_expect):
-        df = Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)
+    def test_dataset_with_kfold_valid_input(self, n_splits, groupby, what_to_expect):
+        df = Dataset(subset_index=_create_valid_index(), groupby=groupby)
         train, test = next(KFold(n_splits=n_splits).split(df))
         pd.testing.assert_frame_equal(left=what_to_expect[0], right=df[train].index)
         pd.testing.assert_frame_equal(left=what_to_expect[1], right=df[test].index)
@@ -387,7 +324,7 @@ class TestDataset:
     )
     def test_dataset_with_kfold_error_input(self, n_splits, select_lvl, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
-            next(KFold(n_splits=n_splits).split(Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)))
+            next(KFold(n_splits=n_splits).split(Dataset(subset_index=_create_valid_index(), groupby=select_lvl)))
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect",
@@ -402,7 +339,7 @@ class TestDataset:
                 ),
             ),
             (
-                "tests",
+                ["patients", "tests"],
                 _create_valid_index(
                     {
                         "patient_1": {"a": ["test_1"], "b": ["0", "1"]},
@@ -411,7 +348,7 @@ class TestDataset:
                 ),
             ),
             (
-                "extra",
+                ["patients", "tests", "extra"],
                 _create_valid_index(
                     {
                         "patient_1": {"a": ["test_1"], "b": ["0"]},
@@ -424,23 +361,12 @@ class TestDataset:
     def test_iter(self, select_lvl, what_to_expect):
         pd.testing.assert_frame_equal(
             left=what_to_expect,
-            right=next(Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl).__iter__()).index,
+            right=next(Dataset(subset_index=_create_valid_index(), groupby=select_lvl).__iter__()).index,
         )
 
     @pytest.mark.parametrize(
         "level,what_to_expect",
         [
-            (
-                None,
-                _create_valid_index(
-                    {
-                        "patient_1": {"a": ["test_1", "test_2"], "b": ["0"]},
-                        "patient_2": {"a": ["test_1"], "b": ["0"]},
-                        "patient_3": {"a": ["test_1", "test_2", "test_3"], "b": ["0"]},
-                    },
-                    columns_names=["patients", "tests", "extra"],
-                ),
-            ),
             (
                 "extra",
                 _create_valid_index(
