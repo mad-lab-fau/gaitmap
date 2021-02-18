@@ -67,15 +67,25 @@ class TestDataset:
         "groupby,length",
         [
             ("patients", 3),
+            (["patients"], 3),
             (["patients", "tests"], 6),
             (["patients", "tests", "extra"], 12),
             (["extra", "patients", "tests"], 12),
             ("extra", 2),
-            (None, 12)
+            (None, 12),
         ],
     )
     def test_groupby(self, groupby, length):
-        assert Dataset(subset_index=_create_valid_index(), groupby=groupby).shape[0] == length
+        ds = Dataset(subset_index=_create_valid_index(), groupby=groupby)
+        assert ds.shape[0] == length
+
+        index_level = len(groupby) if isinstance(groupby, list) else 1
+        assert ds.grouped_index.index.nlevels == index_level
+        assert len(ds.groups) == length
+        if index_level > 1:
+            assert len(ds.groups[0]) == index_level
+        else:
+            assert isinstance(ds.groups[0], (str, int))
 
     @pytest.mark.parametrize(
         "index,bool_map,kwargs,what_to_expect,expect_error",
@@ -418,3 +428,23 @@ class TestDataset:
     def test_iter_level_error_input(self, level, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
             next(Dataset(subset_index=_create_valid_index()).iter_level(level=level))
+
+    @pytest.mark.parametrize(
+        "groupby,groupby_labels,unique",
+        (
+            (None, "patients", 3),
+            (None, ["patients"], 3),
+            (None, ["patients", "extra"], 6),
+        ),
+    )
+    def test_create_group_labels(self, groupby, groupby_labels, unique):
+        ds = Dataset(subset_index=_create_valid_index(), groupby=groupby)
+        labels = ds.create_group_labels(groupby_labels)
+
+        assert len(labels) == ds.shape[0]
+        assert len(set(labels)) == unique
+
+    def test_create_group_labels_error(self):
+        ds = Dataset(subset_index=_create_valid_index(), groupby="patients")
+        with pytest.raises(ValueError, match="Columns used to group the entire dataset"):
+            ds.create_group_labels("patients")

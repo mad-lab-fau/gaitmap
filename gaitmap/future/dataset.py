@@ -33,8 +33,13 @@ class Dataset(_BaseSerializable):
     index
         The index of the dataset.
         This returns either the `subset_index` or the base index returned by `create_index`.
+    grouped_index
+        The index, but all groupby columns are represented as MultiIndex.
+        Note, that the order can be different as the order of index.
     groups
         Returns all possible combinations based on the specified `groupby` columns.
+        If `groupby` is None, this returns the row indices.
+        These are also the groups/indices used when iterating over the dataset.
         The groups are sorted by name.
     shape
         Represents the number of all groups encapsulated in a tuple.
@@ -155,6 +160,27 @@ class Dataset(_BaseSerializable):
        patient_2 test_1  patient_2  test_1     2
                  test_2  patient_2  test_2     2
 
+    If we want to use datasets in combination with `sklearn.model_selection.GroupKFold`, we can generate valid group
+    labels as follows.
+    Note, that you usually don't want to use that in combination with `self.groupby`.
+
+    >>> dataset.groupby = None
+    >>> group_labels = dataset.create_group_labels(["patient", "test"])
+    >>> pd.concat([dataset.index, pd.Series(group_labels, name="group_labels")], axis=1)
+          patient    test extra         group_labels
+    0   patient_1  test_1     1  (patient_1, test_1)
+    1   patient_1  test_1     2  (patient_1, test_1)
+    2   patient_1  test_2     1  (patient_1, test_2)
+    3   patient_1  test_2     2  (patient_1, test_2)
+    4   patient_2  test_1     1  (patient_2, test_1)
+    5   patient_2  test_1     2  (patient_2, test_1)
+    6   patient_2  test_2     1  (patient_2, test_2)
+    7   patient_2  test_2     2  (patient_2, test_2)
+    8   patient_3  test_1     1  (patient_3, test_1)
+    9   patient_3  test_1     2  (patient_3, test_1)
+    10  patient_3  test_2     1  (patient_3, test_2)
+    11  patient_3  test_2     2  (patient_3, test_2)
+
     """
 
     groupby: Optional[Union[List[str], str]]
@@ -178,12 +204,9 @@ class Dataset(_BaseSerializable):
         return self.subset_index
 
     @property
-    def groups(self) -> Union[pd.MultiIndex, pd.Index]:
-        """Get all groups based on the set groupby level.
-
-        These are also the indices used when iterating over the dataset.
-        """
-        return self.grouped_index.index.unique()
+    def groups(self) -> List:
+        """Get all groups based on the set groupby level."""
+        return self._get_unique_groups().to_list()
 
     @property
     def shape(self) -> Tuple[int]:
@@ -196,9 +219,12 @@ class Dataset(_BaseSerializable):
             return self.index
         return self.index.set_index(self.groupby, drop=False).sort_index()
 
+    def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
+        return self.grouped_index.index.unique()
+
     def __getitem__(self: Self, subscript: Union[int, Sequence[int]]) -> Self:
         """Return a dataset object containing only the selected row indices of `self.groups`."""
-        multi_index = self.groups[subscript]
+        multi_index = self._get_unique_groups()[subscript]
         if not isinstance(multi_index, pd.Index):
             multi_index = [multi_index]
 
@@ -318,6 +344,29 @@ class Dataset(_BaseSerializable):
     def is_single(self) -> bool:
         """Return True if index contains only one row (depending on `self.selected_level`) else False."""
         return self.shape[0] == 1
+
+    def create_group_labels(self, groupby: Union[str, List[str]]):
+        """Generate a list of labels for each group/row in the dataset.
+
+        Note that this has a different usecase than the dataset-wide groupby.
+        Setting `self.groupby` reduces the effective size of the dataset to the number of groups.
+        This method produces a group label for each group/row that is already in the dataset.
+
+        The output of this method can be used in combination with `sklearn.model_selection.GroupKFold` as the group
+        label.
+
+
+        """
+        if bool(set(_ensure_is_list(groupby)) & set(_ensure_is_list(self.groupby))):
+            raise ValueError(
+                "Columns used to group the entire dataset (`self.groupby`) can not be used again to generate group "
+                "labels."
+            )
+        if self.groupby is None:
+            index = self.index
+        else:
+            index = self.index.drop(columns=self.groupby)
+        return index.set_index(groupby).index.to_list()
 
     def create_index(self) -> pd.DataFrame:
         """Create the full index for the dataset.
