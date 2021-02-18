@@ -6,11 +6,11 @@ gaitmap.future: Temporary implementation of future features
     :no-inherited-members:
 
 Future features
-------------
+---------------
 .. currentmodule:: gaitmap.future
 
 .. autosummary::
    :toctree: generated/future
    :template: class.rst
 
-    Dataset
+    dataset.Dataset
