@@ -267,25 +267,23 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
-        return "{}\n\tindex [{} rows x {} columns] =\n\n\t\t{}\n\n\t".format(
+        return "{} [{} rows x {} columns]\n\n\t{}\n\n\t".format(
             self.__class__.__name__,
             self.index.shape[0],
             self.index.shape[1],
-            str(self.index).replace("\n", "\n\t\t"),
+            str(self.index).replace("\n", "\n\t"),
         )[:-2]
 
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
-        return (
-            '<h3 style="margin-bottom: -0.5em;">{}</h3>\n'.format(self.__class__.__name__)
-            + '<h4 style="margin-left: 2.5em;">index [{} rows x {} columns] =</h4>'.format(
-                self.index.shape[0], self.index.shape[1]
-            )
-            + self.index._repr_html_()
-            .replace("<div>", '<div style="margin-top: 0em">')
-            .replace('<table border="1" class="dataframe"', '<table style="font-size: 16px; margin-left: 3em;"')
-            .replace("<th>", '<th style="text-align: center;">')
-            .replace("<td>", '<td style="text-align: center; padding-left: 2em; padding-right: 2em;">')
+        return '<h4 style="margin-bottom: 0.1em;">{} [{} rows x {} columns]</h3>\n'.format(
+            self.__class__.__name__, self.index.shape[0], self.index.shape[1]
+        ) + self.index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
+            '<table border="1" class="dataframe"', '<table style="margin-left: 3em;"'
+        ).replace(
+            "<th>", '<th style="text-align: center;">'
+        ).replace(
+            "<td>", '<td style="text-align: center; padding-left: 2em; padding-right: 2em;">'
         )
 
     def __iter__(self: Self) -> Generator[Self, None, None]:
