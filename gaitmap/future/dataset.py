@@ -1,5 +1,5 @@
 """Base class for all datasets."""
-from typing import Optional, List, Union, Generator, Tuple, TypeVar
+from typing import Optional, List, Union, Generator, Tuple, TypeVar, Sequence
 
 import pandas as pd
 
@@ -9,17 +9,16 @@ Self = TypeVar("Self", bound="Dataset")
 
 
 class Dataset(_BaseSerializable):
-    """This is the base class for all datasets.
+    """Baseclass for gaitmap Dataset objects.
+
+    This class provides fundamental functionality like iteration, getting subsets and compatibility with sklearn's
+    cross validation helper.
+
+    For more information check out the examples and user guides on datasets.
 
     Parameters
     ----------
-    subset_index
-        For all classes that inherit from this class, subset_index **must** be None.
-        The subset_index **must** be created in the method __create_index.
-        If the base class is used, then the index the dataset should represent **must** be a pd.Dataframe
-        containig the index.
-        For examples see below.
-    select_lvl
+    groupby_lvl
         The level that should be used for indexing the dataset.
         This **must** be a string corresponding to one of the columns of the index.
         If left empty the last column is set as indexing level.
@@ -27,147 +26,153 @@ class Dataset(_BaseSerializable):
     level_order
         List containing **all** columns of the index in an arbitrary order.
         If this is not Null it will be used for reordering the index.
+    subset_index
+        For all classes that inherit from this class, subset_index **must** be None.
+        The subset_index **must** be created in the method __create_index.
+        If the base class is used, then the index the dataset should represent **must** be a pd.Dataframe
+        containig the index.
+        For examples see below.
 
     Attributes
     ----------
     index
         The index of the dataset. Internally it is stored as a pd.Dataframe.
-    select_lvl
-        The select_lvl property sets the desired level up to which it should index the dataset.
-    column_combinations
+    groups
         Returns all possible combinations up to the selected level.
     shape
-        Represents the number of all column_combinations encapsulated in a tuple. This is only
+        Represents the number of all groups encapsulated in a tuple. This is only
         necessary if sklearn.model_selection.KFold is used for splitting the dataset.
 
     Examples
     --------
-    >>> test_index = pd.DataFrame({"patients": ["patient_1","patient_1","patient_1","patient_1","patient_2","patient_2","patient_3","patient_3","patient_3","patient_3","patient_3", "patient_3",],"tests": ["test_1","test_1","test_2","test_2","test_1","test_1","test_1","test_1","test_2","test_2","test_3","test_3",],"extra": ["0", "1", "0", "1", "0", "1", "0", "1", "0", "1", "0", "1"]}) # noqa: E501
-    >>> test_index
-         patients   tests extra
-    0   patient_1  test_1     0
-    1   patient_1  test_1     1
-    2   patient_1  test_2     0
-    3   patient_1  test_2     1
-    4   patient_2  test_1     0
-    5   patient_2  test_1     1
-    6   patient_3  test_1     0
-    7   patient_3  test_1     1
-    8   patient_3  test_2     0
-    9   patient_3  test_2     1
-    10  patient_3  test_3     0
-    11  patient_3  test_3     1
+    This class is usually not meant to be used directly, but the following code snippets show some common operations
+    that can be expected to work for all dataset subclasses.
 
-    >>> dataset = Dataset(test_index, "extra")
-    >>> dataset.column_combinations
-    MultiIndex([('patient_1', 'test_1', '0'),
-                ('patient_1', 'test_1', '1'),
-                ('patient_1', 'test_2', '0'),
-                ('patient_1', 'test_2', '1'),
-                ('patient_2', 'test_1', '0'),
-                ('patient_2', 'test_1', '1'),
-                ('patient_3', 'test_1', '0'),
-                ('patient_3', 'test_1', '1'),
-                ('patient_3', 'test_2', '0'),
-                ('patient_3', 'test_2', '1'),
-                ('patient_3', 'test_3', '0'),
-                ('patient_3', 'test_3', '1')],
-               names=['patients', 'tests', 'extra'])
+    >>> import pandas as pd
+    >>> from itertools import product
+    >>>
+    >>> test_index = pd.DataFrame(
+    ...     list(product(("patient_1", "patient_2", "patient_3"), ("test_1", "test_2"), ("1", "2"))),
+    ...     columns=["patient", "test", "extra"],
+    ... )
+    >>> # We create a little dummy dataset by passing an index directly to `test_index`
+    >>> dataset = Dataset(subset_index=test_index)
+    >>> dataset
+    Dataset [12 rows x 3 columns]
+    <BLANKLINE>
+             patient    test extra
+       0   patient_1  test_1     1
+       1   patient_1  test_1     2
+       2   patient_1  test_2     1
+       3   patient_1  test_2     2
+       4   patient_2  test_1     1
+       5   patient_2  test_1     2
+       6   patient_2  test_2     1
+       7   patient_2  test_2     2
+       8   patient_3  test_1     1
+       9   patient_3  test_1     2
+       10  patient_3  test_2     1
+       11  patient_3  test_2     2
 
-    >>> dataset.select_lvl = "patients"
-    >>> list(dataset.column_combinations)
-    ['patient_1', 'patient_2', 'patient_3']
+    We can loop over the dataset.
+    By default we will loop over each row.
 
-    >>> dataset.get_subset(selected_keys="patient_2") # doctest: +NORMALIZE_WHITESPACE
-    Dataset
-        index [2 rows x 3 columns] =
+    >>> for r in dataset[:2]:
+    ...     print(r)
+    Dataset [1 rows x 3 columns]
     <BLANKLINE>
-                patients   tests extra
-            0  patient_2  test_1     0
-            1  patient_2  test_1     1
+            patient    test extra
+       0  patient_1  test_1     1
+    Dataset [1 rows x 3 columns]
     <BLANKLINE>
+            patient    test extra
+       0  patient_1  test_1     2
 
-    >>> dataset.get_subset(tests=["test_1", "test_3"]) # doctest: +NORMALIZE_WHITESPACE
-    Dataset
-        index [8 rows x 3 columns] =
-    <BLANKLINE>
-                    patients   tests extra
-                0  patient_1  test_1     0
-                1  patient_1  test_1     1
-                2  patient_2  test_1     0
-                3  patient_2  test_1     1
-                4  patient_3  test_1     0
-                5  patient_3  test_1     1
-                6  patient_3  test_3     0
-                7  patient_3  test_3     1
-    <BLANKLINE>
+    We can also change `selected_lvl` (either in the init or afterwards), to loop over other combinations.
+    If we select the level `test`, we will loop over all `patient`-`test` combinations.
 
-    >>> dataset.select_lvl = "tests"
-    >>> next(dataset.__iter__())  # doctest: +NORMALIZE_WHITESPACE
-    Dataset
-        index [2 rows x 3 columns] =
+    >>> dataset.groupby_lvl = "test"
+    >>> for r in dataset[:2]:
+    ...     print(r)
+    Dataset [2 rows x 3 columns]
     <BLANKLINE>
-                    patients   tests extra
-                0  patient_1  test_1     0
-                1  patient_1  test_1     1
+            patient    test extra
+       0  patient_1  test_1     1
+       1  patient_1  test_1     2
+    Dataset [2 rows x 3 columns]
     <BLANKLINE>
+            patient    test extra
+       0  patient_1  test_2     1
+       1  patient_1  test_2     2
 
-    >>> next(dataset.iter_level()) # doctest: +NORMALIZE_WHITESPACE
-    Dataset
-        index [6 rows x 3 columns] =
-    <BLANKLINE>
-                    patients   tests extra
-                0  patient_1  test_1     0
-                1  patient_1  test_1     1
-                2  patient_2  test_1     0
-                3  patient_2  test_1     1
-                4  patient_3  test_1     0
-                5  patient_3  test_1     1
-    <BLANKLINE>
+    To iterate over the unique values of a specific the "iter_level" function:
 
-    >>> next(dataset.iter_level(level="extra")) # doctest: +NORMALIZE_WHITESPACE
-    Dataset
-        index [6 rows x 3 columns] =
+    >>> for r in list(dataset.iter_level("patient"))[:2]:
+    ...     print(r)
+    Dataset [4 rows x 3 columns]
     <BLANKLINE>
-                    patients   tests extra
-                0  patient_1  test_1     0
-                1  patient_1  test_2     0
-                2  patient_2  test_1     0
-                3  patient_3  test_1     0
-                4  patient_3  test_2     0
-                5  patient_3  test_3     0
+            patient    test extra
+       0  patient_1  test_1     1
+       1  patient_1  test_1     2
+       2  patient_1  test_2     1
+       3  patient_1  test_2     2
+    Dataset [4 rows x 3 columns]
     <BLANKLINE>
+            patient    test extra
+       0  patient_2  test_1     1
+       1  patient_2  test_1     2
+       2  patient_2  test_2     1
+       3  patient_2  test_2     2
+
+    We can also get arbitary subsets from the dataset:
+
+    >>> subset = dataset.get_subset(patient=["patient_1", "patient_2"], extra="2")
+    >>> subset
+    Dataset [4 rows x 3 columns]
+    <BLANKLINE>
+            patient    test extra
+       0  patient_1  test_1     2
+       1  patient_1  test_2     2
+       2  patient_2  test_1     2
+       3  patient_2  test_2     2
 
     """
+
+    groupby_lvl: Optional[str]
+    level_order: Optional[List[str]]
+    subset_index: Optional[pd.DataFrame]
 
     def __init__(
         self,
         *,
-        subset_index: Optional[pd.DataFrame] = None,
-        select_lvl: Optional[str] = None,
+        groupby_lvl: Optional[str] = None,
         level_order: Optional[List[str]] = None,
+        subset_index: Optional[pd.DataFrame] = None,
     ):
         self.level_order = level_order
+        self.groupby_lvl = groupby_lvl
         self.subset_index = subset_index
-        self.select_lvl = select_lvl
 
     @property
     def index(self) -> pd.DataFrame:
         """Get index."""
         if self.subset_index is None:
-            return self._create_index()
+            return self.create_index()
 
         return self.subset_index if self.level_order is None else self.subset_index[self.level_order]
 
     @property
-    def column_combinations(self) -> Union[pd.MultiIndex, pd.Index]:
-        """Get all possible combinations up to and including the selected level."""
+    def groups(self) -> Union[pd.MultiIndex, pd.Index]:
+        """Get all possible combinations up to and including the selected level of the index.
+
+        These are also the indices used when iterating over the dataset.
+        """
         return self._index_helper.index.unique()
 
     @property
     def shape(self) -> Tuple[int]:
         """Get shape."""
-        return (len(self.column_combinations),)
+        return (len(self.groups),)
 
     @property
     def _index_helper(self) -> pd.DataFrame:
@@ -175,17 +180,17 @@ class Dataset(_BaseSerializable):
         return self.index.set_index(columns[: columns.index(self._get_selected_level()) + 1], drop=False)
 
     def _get_selected_level(self) -> str:
-        if self.select_lvl is None:
+        if self.groupby_lvl is None:
             return self.index.columns[-1]
 
-        if self.select_lvl in self.index.columns:
-            return self.select_lvl
+        if self.groupby_lvl in self.index.columns:
+            return self.groupby_lvl
 
         raise ValueError("`select_lvl` must be one of {}".format(self.index.columns.to_list()))
 
-    def __getitem__(self: Self, subscript: Union[int, List[int]]) -> Self:
-        """Return a dataset object by passing subscript to loc."""
-        multi_index = self.column_combinations[subscript]
+    def __getitem__(self: Self, subscript: Union[int, Sequence[int]]) -> Self:
+        """Return a dataset object containing only the selected row indices of `self.groups`."""
+        multi_index = self.groups[subscript]
 
         return self.clone().set_params(
             subset_index=self._index_helper.loc[
@@ -197,8 +202,8 @@ class Dataset(_BaseSerializable):
         self: Self,
         selected_keys: Optional[Union[List[str], str]] = None,
         index: Optional[pd.DataFrame] = None,
-        bool_map: Optional[List[bool]] = None,
-        **kwargs: Optional[List[str]],
+        bool_map: Optional[Sequence[bool]] = None,
+        **kwargs: Optional[Union[List[str], str]],
     ) -> Self:
         """Get a subset of the dataset.
 
@@ -209,7 +214,7 @@ class Dataset(_BaseSerializable):
         index
             `pd.DataFrame` that is a valid subset of the current dataset index.
         bool_map
-            List of booleans that will be passed to the index for filtering.
+            bool-map that is used to index the current index-dataframe.
             The list **must** be of same length as the number of rows in the index.
         **kwargs
             The key **must** be the name of a index column.
@@ -254,7 +259,7 @@ class Dataset(_BaseSerializable):
 
             # Check if all values are actually in their respective columns.
             # This is not strictly required, but avoids user error
-            assert_all_in_df(self.index, kwargs)
+            _assert_all_in_df(self.index, kwargs)
 
             subset_index = self.index.loc[self.index[list(kwargs.keys())].isin(kwargs).all(axis=1)].reset_index(
                 drop=True
@@ -268,12 +273,12 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
-        return "{} [{} rows x {} columns]\n\n\t{}\n\n\t".format(
+        return "{} [{} rows x {} columns]\n\n   {}\n\n   ".format(
             self.__class__.__name__,
             self.index.shape[0],
             self.index.shape[1],
-            str(self.index).replace("\n", "\n\t"),
-        )[:-2]
+            str(self.index).replace("\n", "\n   "),
+        )[:-5]
 
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
@@ -313,10 +318,14 @@ class Dataset(_BaseSerializable):
         return (self.get_subset(**{level: category}) for category in self.index[level].unique())
 
     def is_single(self) -> bool:
-        """Return True if index contains only one row else False."""
+        """Return True if index contains only one row (depending on `self.selected_level`) else False."""
         return self.shape[0] == 1
 
-    def _create_index(self) -> pd.DataFrame:
+    def create_index(self) -> pd.DataFrame:
+        """Create the full index for the dataset.
+
+        This needs to be implemented by the subclass.
+        """
         raise NotImplementedError()
 
 
@@ -324,7 +333,7 @@ def _ensure_is_list(x):
     return x if isinstance(x, list) else [x]
 
 
-def assert_all_in_df(df, dic):
+def _assert_all_in_df(df, dic):
     """Check that all values of the dictionary are in the column 'key' of the pandas dataframe."""
     for key, value in dic.items():
         try:

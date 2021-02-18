@@ -76,7 +76,7 @@ class TestDataset:
     )
     def test_indexing_with_optional_lvl_order(self, select_lvl, what_to_expect, lvl_order):
         assert (
-            Dataset(subset_index=_create_valid_index(), select_lvl=select_lvl, level_order=lvl_order).shape[0]
+            Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl, level_order=lvl_order).shape[0]
             == what_to_expect
         )
 
@@ -281,7 +281,7 @@ class TestDataset:
     def test_getitem_valid_input(self, subscript, select_lvl, what_to_expect):
         pd.testing.assert_frame_equal(
             left=what_to_expect,
-            right=Dataset(subset_index=_create_valid_index(), select_lvl=select_lvl)[subscript].index,
+            right=Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)[subscript].index,
         )
 
     @pytest.mark.parametrize(
@@ -301,14 +301,16 @@ class TestDataset:
     )
     def test_getitem_error_input(self, subscript, select_lvl, what_to_expect):
         with pytest.raises(IndexError, match=what_to_expect):
-            _ = Dataset(subset_index=_create_valid_index(), select_lvl=select_lvl)[subscript]
+            _ = Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)[subscript]
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect",
         [(None, "extra"), ("tests", "tests")],
     )
     def test_get_selected_lvl_valid_input(self, select_lvl, what_to_expect):
-        assert Dataset(_create_valid_index(), select_lvl=select_lvl)._get_selected_level() == what_to_expect
+        assert (
+                Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)._get_selected_level() == what_to_expect
+        )
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect",
@@ -316,7 +318,7 @@ class TestDataset:
     )
     def test_get_selected_lvl_error_input(self, select_lvl, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
-            Dataset(_create_valid_index(), select_lvl=select_lvl)._get_selected_level()
+            Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)._get_selected_level()
 
     @pytest.mark.parametrize(
         "index,what_to_expect",
@@ -372,7 +374,7 @@ class TestDataset:
         ],
     )
     def test_dataset_with_kfold_valid_input(self, n_splits, select_lvl, what_to_expect):
-        df = Dataset(_create_valid_index(), select_lvl=select_lvl)
+        df = Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)
         train, test = next(KFold(n_splits=n_splits).split(df))
         pd.testing.assert_frame_equal(left=what_to_expect[0], right=df[train].index)
         pd.testing.assert_frame_equal(left=what_to_expect[1], right=df[test].index)
@@ -385,7 +387,7 @@ class TestDataset:
     )
     def test_dataset_with_kfold_error_input(self, n_splits, select_lvl, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
-            next(KFold(n_splits=n_splits).split(Dataset(_create_valid_index(), select_lvl=select_lvl)))
+            next(KFold(n_splits=n_splits).split(Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl)))
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect",
@@ -421,7 +423,8 @@ class TestDataset:
     )
     def test_iter(self, select_lvl, what_to_expect):
         pd.testing.assert_frame_equal(
-            left=what_to_expect, right=next(Dataset(_create_valid_index(), select_lvl=select_lvl).__iter__()).index
+            left=what_to_expect,
+            right=next(Dataset(subset_index=_create_valid_index(), groupby_lvl=select_lvl).__iter__()).index,
         )
 
     @pytest.mark.parametrize(
@@ -473,7 +476,7 @@ class TestDataset:
     )
     def test_iter_level_valid_input(self, level, what_to_expect):
         # Create the generator
-        values = list(Dataset(_create_valid_index()).iter_level(level=level))
+        values = list(Dataset(subset_index=_create_valid_index()).iter_level(level=level))
         pd.testing.assert_frame_equal(left=what_to_expect, right=values[0].index)
 
     @pytest.mark.parametrize(
@@ -487,4 +490,4 @@ class TestDataset:
     )
     def test_iter_level_error_input(self, level, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
-            next(Dataset(_create_valid_index()).iter_level(level=level))
+            next(Dataset(subset_index=_create_valid_index()).iter_level(level=level))
