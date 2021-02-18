@@ -356,7 +356,6 @@ class Dataset(_BaseSerializable):
         The output of this method can be used in combination with `sklearn.model_selection.GroupKFold` as the group
         label.
 
-
         """
         if bool(set(_ensure_is_list(groupby)) & set(_ensure_is_list(self.groupby))):
             raise ValueError(
