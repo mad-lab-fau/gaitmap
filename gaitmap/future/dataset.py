@@ -215,6 +215,7 @@ class Dataset(_BaseSerializable):
 
     @property
     def grouped_index(self) -> pd.DataFrame:
+        """Return the the index with the `groupby` columns set as multiindex."""
         if self.groupby is None:
             return self.index
         return self.index.set_index(self.groupby, drop=False).sort_index()
