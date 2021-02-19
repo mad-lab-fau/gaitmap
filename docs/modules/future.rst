@@ -1,5 +1,5 @@
 gaitmap.future: Temporary implementation of future features
-=======================================================
+===========================================================
 
 .. automodule:: gaitmap.future
     :no-members:
