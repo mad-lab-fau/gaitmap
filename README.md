@@ -1,3 +1,5 @@
+<img src="./docs/_static/logo/gaitmap_logo_with_text.png"  width="780">
+
 # gaitmap - The Gait and Movement Analysis Package
 
 *gaitmap* provides a set of algorithms to analyse your IMU movement data without getting into your way.
