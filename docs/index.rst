@@ -15,6 +15,7 @@ gaitmap Docu Overview
    source/user_guide/index
    modules/index.rst
    auto_examples/index.rst
+   Changelog <CHANGELOG.md>
 
 Indices and tables
 ==================
