@@ -8,5 +8,5 @@ To run the script you must have inkscape and imagemagik installed.
 The script relies on correct svg-ids for the important parts of the logo.
 The small logo is expected to have the svg-id `logo` and the full logo should have the id `logo-with-text`.
 
-When you modify the logo make sure to run the script and update all files in the `generated` subfolder.
+When you modify the logo make sure to run the script and update all files in the `_static/logo` subfolder.
 Commit these files.
