@@ -12,6 +12,8 @@ Scientific Changes section), and this project adheres to [Semantic Versioning](h
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
 - New dataset class that will serve as the base class for all future datasets in `gaitmap.future`. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
+- The new gaitmap logo is now shown everywhere :)
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/129)
 
 ### Changed  
 

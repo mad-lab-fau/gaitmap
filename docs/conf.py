@@ -38,6 +38,13 @@ release = info["version"]
 
 copyright = "2020 - {}, MaD-Lab FAU, Digital Health and Gait-Analysis Group".format(datetime.now().year)
 
+# -- Copy the README and fix image path --------------------------------------
+HERE = Path(__file__).parent
+with (HERE.parent / "README.md").open() as f:
+    out = f.read()
+out = out.replace("./docs/_static/logo/gaitmap_logo_with_text.png", "./_static/logo/gaitmap_logo_with_text.png")
+with (HERE / "README.md").open("w+") as f:
+    f.write(out)
 
 # -- General configuration ---------------------------------------------------
 
@@ -101,12 +108,17 @@ add_function_parentheses = False
 #
 # Activate the theme.
 html_theme = "pydata_sphinx_theme"
-html_theme_options = {"show_prev_next": False}
+html_favicon = "_static/logo/gaitmap.ico"
+html_logo = "_static/logo/gaitmap_logo.png"
+html_theme_options = {
+    "gitlab_url": "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap",
+    "show_prev_next": False,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
 
 # -- Options for extensions --------------------------------------------------
 # Intersphinx
