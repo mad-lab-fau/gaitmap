@@ -38,6 +38,13 @@ release = info["version"]
 
 copyright = "2020 - {}, MaD-Lab FAU, Digital Health and Gait-Analysis Group".format(datetime.now().year)
 
+# -- Copy the README and fix image path --------------------------------------
+HERE = Path(__file__).parent
+with (HERE.parent / "README.md").open() as f:
+    out = f.read()
+out = out.replace("./docs/_static/logo/gaitmap_logo_with_text.png", "./_static/logo/gaitmap_logo_with_text.png")
+with (HERE / "README.md").open("w+") as f:
+    f.write(out)
 
 # -- General configuration ---------------------------------------------------
 

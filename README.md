@@ -1,4 +1,4 @@
-<img src="./docs/_static/logo/gaitmap_logo_with_text.png"  width="780">
+<img src="./docs/_static/logo/gaitmap_logo_with_text.png" height="200">
 
 # gaitmap - The Gait and Movement Analysis Package
 
