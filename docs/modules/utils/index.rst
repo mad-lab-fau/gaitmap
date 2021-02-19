@@ -14,5 +14,5 @@ Various internal and external utility functions.
     Rotations <rotations>
     Vector Math <vector_math>
     Signal Processing <signal_processing>
-    Caching <caching>
+    Constants <const>
     Exceptions <exceptions>
