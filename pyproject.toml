@@ -33,7 +33,7 @@ numpy = ">=1"
 joblib = ">=1.2.0"
 scikit-learn = ">=1.0.1"
 tpcp = ">=0.11"
-pomegranate = "^0.13.3"
+pomegranate = "^0.14.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"
