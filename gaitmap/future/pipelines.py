@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.future import Dataset
+from gaitmap.future.dataset import Dataset
 
 Self = TypeVar("Self", bound="SimplePipeline")
 
