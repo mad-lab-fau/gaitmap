@@ -4,19 +4,21 @@ from typing import TypeVar, Dict, Union
 import numpy as np
 import pandas as pd
 
-from gaitmap.base import _BaseSerializable
+from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
 
 Self = TypeVar("Self", bound="SimplePipeline")
 
 
-class SimplePipeline(_BaseSerializable):
+class SimplePipeline(BaseAlgorithm):
     """Baseclass for all custom pipelines.
 
     To create your own custom pipeline, subclass this class and implement `run` and optionally `score_single`.
     You can also overwrite `score`, in case you need to customize how score values are averaged over mutliple
     data points.
     """
+
+    _action_method = "run"
 
     def run(self: Self, dataset_single: Dataset) -> Self:
         """Run the pipeline.
