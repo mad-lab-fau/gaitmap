@@ -130,6 +130,45 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     return np.array([[s.start, s.stop] for s in slices])
 
 
+def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: int = None) -> np.ndarray:
+    """Find regions in bool array and convert those to start-end indices.
+
+    The end index is exclusive!
+
+    Parameters
+    ----------
+    start_end_array : array with shape (n,2)
+        2d-array indicating start and end values e.g. [[10,20],[20,40],[70,80]]
+
+    pad_to_length: int
+        define length of resulting array if None is given the array will have the length of the last element of the
+        initial start_end_array
+
+    Returns
+    -------
+    array with shape (n,)
+        boolean array with 0/1 elements
+
+    Examples
+    --------
+    >>> example_array = np.array([[3,5],[7,8], pad_to_length=12)
+    >>> bool_array = start_end_array_to_bool_array(example_array)
+    >>> bool_array
+    array([0,0,0,1,1,1,0,1,1,0,0,0])
+    >>>  example_array = np.array([[3,5],[7,8], pad_to_length=None)
+    array([0,0,0,1,1,1,0,1,1])
+
+    """
+
+    n_elements = start_end_array[-1][-1] + 1
+    if pad_to_length:
+        n_elements = pad_to_length
+    bool_array = np.zeros(n_elements)
+    for start, end in start_end_array:
+        bool_array[start : end + 1] = 1
+    return bool_array
+
+
 def split_array_at_nan(a: np.ndarray) -> List[Tuple[int, np.ndarray]]:
     """Split an array into sections at nan values.
 
