@@ -11,15 +11,6 @@ Self = TypeVar("Self", bound="SimplePipeline")
 
 
 class SimplePipeline(_BaseSerializable):
-<<<<<<< HEAD
-    def run(self, datasets_single):
-        raise NotImplementedError()
-
-    def score_single(self, datasets_single):
-        raise NotImplementedError()
-
-    def score(self, datasets):
-=======
     """Baseclass for all custom pipelines.
 
     To create your own custom pipeline, subclass this class and implement `run` and optionally `score_single`.
@@ -72,9 +63,8 @@ class SimplePipeline(_BaseSerializable):
         score
             The performance value(s) as average over the scores of each datapoint.
         """
->>>>>>> c4a6d0f (Added docstrings and correct typing)
         scores = []
-        for d in datasets:
+        for d in dataset:
             scores.append(self.score_single(d))
         if isinstance(scores[0], dict):
             # Invert the dict and calculate the mean per score:
