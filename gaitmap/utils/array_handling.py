@@ -131,9 +131,7 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
 
 
 def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: int = None) -> np.ndarray:
-    """Find regions in bool array and convert those to start-end indices.
-
-    The end index is exclusive!
+    """Convert a start-end list to a bool array.
 
     Parameters
     ----------
@@ -147,18 +145,23 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     Returns
     -------
     array with shape (n,)
-        boolean array with 0/1 elements
+        boolean array with True/False elements
 
     Examples
     --------
     >>> example_array = np.array([[3,5],[7,8], pad_to_length=12)
     >>> bool_array = start_end_array_to_bool_array(example_array)
     >>> bool_array
-    array([0,0,0,1,1,1,0,1,1,0,0,0])
+    array([False,False,False,True,True,True,False,True,True, False, False, False])
     >>>  example_array = np.array([[3,5],[7,8], pad_to_length=None)
-    array([0,0,0,1,1,1,0,1,1])
+    array([False,False,False,True,True,True,False,True,True])
 
     """
+
+    start_end_array = np.atleast_2d(start_end_array)
+    if pad_to_length and pad_to_length <= start_end_array[-1][-1]:
+        raise ValueError("Padding length must be larger than last element of start end array!")
+
 
     n_elements = start_end_array[-1][-1] + 1
     if pad_to_length:
@@ -166,7 +169,7 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     bool_array = np.zeros(n_elements)
     for start, end in start_end_array:
         bool_array[start : end + 1] = 1
-    return bool_array
+    return bool_array.astype(bool)
 
 
 def split_array_at_nan(a: np.ndarray) -> List[Tuple[int, np.ndarray]]:
