@@ -162,7 +162,6 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     if pad_to_length and pad_to_length <= start_end_array[-1][-1]:
         raise ValueError("Padding length must be larger than last element of start end array!")
 
-
     n_elements = start_end_array[-1][-1] + 1
     if pad_to_length:
         n_elements = pad_to_length
