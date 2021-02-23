@@ -6,238 +6,17 @@ from pomegranate import HiddenMarkovModel as pgHMM
 import pomegranate as pg
 import numpy as np
 from gaitmap.base import _BaseSerializable
-from gaitmap.stride_segmentation.hmm_models.utils import (
-    gmms_from_samples,
-    create_transition_matrix_left_right,
-    create_transition_matrix_fully_connected,
-    fix_model_names,
-    get_model_distributions,
-    predict,
-    extract_transitions_starts_stops_from_hidden_state_sequence,
-    add_transition,
-    labels_to_strings,
-    create_equidistant_labels_from_label_list,
-    create_equidistant_label_sequence,
-    get_train_data_sequences_transitions,
-    get_train_data_sequences_strides,
+from gaitmap.future.hmm.simple_model import (
+    build_and_train_sub_hmm,
 )
+from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
+
 import copy
 
 VERBOSE_MODEL = True
 VERBOSE_DISTRIBUTIONS = False
 DEBUG_PLOTS = False
 N_JOBS = 1
-
-
-def initialize_hmm(
-    data_train_sequence,
-    labels_initialization_sequence,
-    n_states,
-    n_gmm_components,
-    architecture,
-    random_seed=None,
-    name="untrained",
-):
-    """Model Initialization.
-
-    - data_train_sequence (list of np.ndarrays):
-        list of training sequences this might be e.g. a list of strides where each strides is represented by one
-        np.ndarray (which might contain multiple dimensions)
-
-    - labels_initialization_sequence (list of np.ndarrays):
-        list of labels which are used to initialize the emission distributions. Note: These labels are just for
-        initialization. Distributions will be optimized later in the training process of the model!
-        Length of each np.ndarray in "labels_initialization_sequence" needs to match the length of each
-        corresponding np.ndarray in "data_train_sequence"
-
-    - n_gmm_components (integer) : of components for multivariate distributions
-    - architecture     (str)     : type of model architecture, for more details see below
-    - n_states         (integer) : number of hidden-states within the model
-    - random_seed      (float)   : fix seed for random number generation to make sure that results will be
-                                       reproducible. Set to None if not used.
-                                       TODO: check if random_seed is actually only used if we use k-means somewhere...
-
-    This function supports currently the following "architectures":
-        - "left-right-strict":
-        This will result in a strictly left-right structure, with no self-transitions and
-        start- and end-state bound to the first and last state, respectively.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  0  0  0   starts: 1  0  0  0  0
-                           0  1  1  0  0   stops:  0  0  0  0  1
-                           0  0  1  1  0
-                           0  0  0  1  1
-                           0  0  0  0  1
-
-        - "left-right-loose":
-        This will result in a loose left-right structure, with allowed self-transitions and
-        start- and end-state not specified initially.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  0  0  0   starts: 1  1  1  1  1
-                           0  1  1  0  0   stops:  1  1  1  1  1
-                           0  0  1  1  0
-                           0  0  0  1  1
-                           1  0  0  0  1
-
-         - "fully-connected":
-        This will result in a fully connected structure where all existing edges are initialized with the same probability.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  1  1  1   starts: 1  1  1  1  1
-                           1  1  1  1  1   stops:  1  1  1  1  1
-                           1  1  1  1  1
-                           1  1  1  1  1
-                           1  1  1  1  1
-    """
-
-    [distributions, _] = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        # make sure thate "None" string gets converted to proper None
-        random_seed=random_seed,
-        verbose=VERBOSE_DISTRIBUTIONS,
-        debug_plot=DEBUG_PLOTS,
-    )
-
-    # if we force the model into a left-right architecture we know that stride borders should correspond to the point where the model "loops" (aka state-0 and state-n)
-    # so we also will enforce the model to start with "state-0" and always end with "state-n"
-    if architecture == "left-right-strict":
-        [transition_matrix, start_probs, end_probs] = create_transition_matrix_left_right(
-            n_states, self_transition=False
-        )
-
-    # allow transition model to start and end in all states (as we do not have any specific information about "transitions", this could be actually anything in the data which is no stride)
-    if architecture == "left-right-loose":
-        [transition_matrix, _, _] = create_transition_matrix_left_right(n_states, self_transition=True)
-
-        start_probs = np.ones(n_states).astype(float)
-        end_probs = np.ones(n_states).astype(float)
-
-    # fully connected model with all transitions initialized equally. Allowing all possible transitions.
-    if architecture == "fully-connected":
-        [transition_matrix, start_probs, end_probs] = create_transition_matrix_fully_connected(n_states)
-
-    model = pg.HiddenMarkovModel.from_matrix(
-        transition_probabilities=transition_matrix,
-        distributions=copy.deepcopy(distributions),
-        starts=start_probs,
-        ends=end_probs,
-        verbose=VERBOSE_MODEL,
-    )
-
-    # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like s0, s1, s10, s2 usw..)
-    model = fix_model_names(model)
-    # make sure that transition-matrix is normalized
-    model.bake()
-    model.name = name
-
-    return model
-
-
-def train_hmm(model_untrained, data_train_sequence, max_iterations, stop_threshold, algo_train, name="trained"):
-    """Model Training
-
-    - model_untrained (pomegranate.HiddenMarkovModel):
-        pomegranate HiddenMarkovModel object with initialized distributions and transition matrix
-
-    - data_train_sequence (list of np.ndarrays):
-        list of training sequences this might be e.g. a list of strides where each strides is represented by one
-        np.ndarray (which might contain multiple dimensions)
-
-    - algo_train (str):
-        algorithm for training, can be "viterbi", "baum-welch" or "labeled"
-
-    - stop_threshold (float):
-        termination criteria for training improvement e.g. 1e-9
-
-    - max_iterations (int):
-        termination criteria for training iteration number e.g. 1000
-
-    """
-
-    # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead to unexpected behaviour!
-    length_of_training_sequences = np.array([len(data) for data in data_train_sequence])
-    if np.any(length_of_training_sequences < (len(model_untrained.states) - 2)):
-        raise ValueError(
-            "Length of all training sequences must be equal or larger than the number of states in the given model!"
-        )
-
-    # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a copy
-    model_trained = copy.deepcopy(model_untrained)
-
-    _, history = model_trained.fit(
-        sequences=np.array(data_train_sequence).copy(),
-        labels=None,
-        algorithm=algo_train,
-        stop_threshold=stop_threshold,
-        max_iterations=max_iterations,
-        return_history=True,
-        verbose=VERBOSE_MODEL,
-        n_jobs=N_JOBS,
-    )
-    model_trained.name = name
-
-    return model_trained, history
-
-
-def build_and_train_sub_hmm(
-    data_train_sequence_list,
-    initial_hidden_states_sequence_list,
-    n_states,
-    n_gmm_components,
-    algo_train,
-    stop_threshold,
-    max_iterations,
-    random_seed,
-    architecture,
-    model_name,
-):
-    """Create a single semi-supervised trained HMM model.
-
-    :param data_train_sequence:
-        This is should be a list of training sequences e.g. a list of single stride sequences aka a list of np.ndarrays
-    :param borders_train_sequence:
-        This is should be a list of initial hidden state sequences, corresponding to the given data_train_sequences list
-        the length of both input elements must be the same (as well as the length of individual entry of the
-        data_train_sequence_list, must have a matching length sequences within th initial_hidden_states_sequence_list.
-    :param n_states:
-    :param n_gmm_components:
-    :param algo_train:
-    :param stop_threshold:
-    :param max_iterations:
-    :param random_seed:
-    :param architecture:
-    :param model_name:
-
-    :return:
-    """
-
-    if len(data_train_sequence_list) != len(initial_hidden_states_sequence_list):
-        raise ValueError(
-            "The given training sequence and initial training labels do not match in their number of individual sequences!"
-            "len(data_train_sequence_list) = %d !=  %d = len(initial_hidden_states_sequence_list)"
-            % (len(data_train_sequence_list), len(initial_hidden_states_sequence_list))
-        )
-
-    # initialize model by naive equidistant labels
-    stride_model_untrained = initialize_hmm(
-        data_train_sequence_list,
-        initial_hidden_states_sequence_list,
-        n_states,
-        n_gmm_components,
-        architecture,
-        random_seed=random_seed,
-        name=model_name + "-untrained",
-    )
-    # train model
-    stride_model_trained, history = train_hmm(
-        stride_model_untrained,
-        data_train_sequence_list,
-        max_iterations,
-        stop_threshold,
-        algo_train,
-        name=model_name + "-trained",
-    )
-    return stride_model_trained
 
 
 def create_stride_hmm(
@@ -302,9 +81,51 @@ def create_transition_hmm(
     )
 
 
+def create_fully_labeled_gait_sequences(
+    data_train_sequence, stride_list_sequence, transition_model, stride_model, algo_predict
+):
+    """To find the "actual" hidden-state labels for "labeled-training" with the given training data set, we will again
+    split everything into strides and transitions based on our initial stride borders and then predict the labels with
+    the respective already learned models.
+
+    To rephrase it again: We want to create a fully labeled dataset with already optimal hidden-state labels, but as these
+    lables are hidden, we need to predict them with our already trained models...
+    """
+
+    n_states_transition = len(transition_model.states) - 2  # subtract silent start- and end-state
+
+    labels_train_sequence = []
+
+    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
+        labels_train = np.zeros(len(data))
+
+        # predict hidden-state sequence for each stride using "stride model"
+        for start, end in stride_list[["start", "end"]].to_numpy():
+            stride_data_train = data[start:end]
+            labels_train[start:end] = (
+                predict(stride_model, stride_data_train, algorithm=algo_predict) + n_states_transition
+            )
+
+        # predict hidden-state sequence for each transition using "transition model"
+        transition_mask = np.invert(
+            start_end_array_to_bool_array(stride_list[["start", "end"]].to_numpy(), pad_to_length=len(data) - 1)
+        )
+        transition_start_end_list = bool_array_to_start_end_array(transition_mask)
+
+        # for each transition, get data and create some naive labels for initialization
+        for start, end in transition_start_end_list:
+            transition_data_train = data[start : end + 1]
+            labels_train[start : end + 1] = predict(transition_model, transition_data_train, algorithm=algo_predict)
+
+        # append cleaned sequences to train_sequence
+        labels_train_sequence.append(labels_train)
+
+    return labels_train_sequence
+
+
 def build_combined_transition_stride_model(
     data_train_sequence,
-    borders_train_sequence,
+    stride_list_sequence,
     transition_model,
     stride_model,
     algo_train,
@@ -322,55 +143,15 @@ def build_combined_transition_stride_model(
     n_states_stride = len(stride_model.states) - 2  # subtract silent start- and end-state
     n_states = n_states_transition + n_states_stride
 
-    """To find the "actual" hidden-state labels for "labeled-training" with the given training data set, we will again 
-    split everything into strides and transitions based on our initial stride borders and then predict the labels with 
-    the respective already learned models.
-
-    To rephrase it again: We want to create a fully labeled dataset with already optimal hidden-state labels, but as these
-    lables are hidden, we need to predict them with our already trained models...
-    """
-    labels_train_sequence = []
-
-    for data_train, border_list_train in zip(data_train_sequence, borders_train_sequence):
-        labels_train = np.zeros(len(data_train))
-        if border_list_train.size == 2:
-            border_list_train = [border_list_train]
-        # predict hidden-state sequence for each stride using "stride model"
-        for stride in border_list_train:
-            stride_data_train = data_train[stride[0] : stride[1]]
-            if len(stride_data_train) >= n_states_stride:
-                hidden_state_sequence = predict(
-                    stride_model, stride_data_train, algorithm=algo_predict
-                )  # predict hidden state labels
-                hidden_state_sequence = (
-                    hidden_state_sequence + n_states_transition
-                )  # add label offset for stride states
-                labels_train[stride[0] : stride[1]] = hidden_state_sequence
-
-        # here we will only extract transitions from the given bout
-        [transition_start_end_list, _] = label_helper.bin_array_to_sequence_list(
-            label_helper.flatten_start_stop_list_to_binary_array(
-                border_list_train, pad_to_length=len(data_train)
-            ).astype(bool)
-        )
-
-        # for each transition, get data and create some naive labels for initialization
-        for start_end in transition_start_end_list:
-            transition_data_train = data_train[start_end[0] : start_end[1] + 1]
-            if len(transition_data_train) >= n_states_transition:
-                hidden_state_sequence = predict(
-                    transition_model, transition_data_train, algorithm=algo_predict
-                )  # predict hidden state labels
-                labels_train[start_end[0] : start_end[1] + 1] = hidden_state_sequence
-
-        # append cleaned sequences to train_sequence
-        labels_train_sequence.append(labels_train)
-
-    """Now that we have a fully labeled dataset, we use our already fitted distributions as input for the new model"""
-
     # extract fitted distributions from both separate trained models
     distributions = get_model_distributions(transition_model) + get_model_distributions(stride_model)
 
+    # predict hidden state labels for complete walking bouts
+    labels_train_sequence = create_fully_labeled_gait_sequences(
+        data_train_sequence, stride_list_sequence, transition_model, stride_model, algo_predict
+    )
+
+    """Now that we have a fully labeled dataset, we use our already fitted distributions as input for the new model"""
     if init_method == "fully-connected":
         trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
 
@@ -477,13 +258,88 @@ def train_hhmm(data_train_sequence, borders_train_sequence, settings):
     return [model_trained, stride_model_trained, transition_model_trained]
 
 
+class SimpleHMM(_BaseSerializable):
+    """Wrap all required information to train a new HMM.
+
+    Parameters
+    ----------
+    sampling_rate_hz_model
+        The sampling rate of the data the model was trained with
+    low_pass_cutoff_hz
+        Cutoff frequency of low-pass filter for preprocessing
+    low_pass_order
+        Low-pass filter order
+    axis
+        List of sensor axis which will be used as model input
+    features
+        List of features which will be used as model input
+    window_size_samples
+        window size of moving centered window for feature extraction
+    standardization
+        Flag for feature standardization /  z-score normalization
+
+    See Also
+    --------
+    TBD
+
+    """
+
+    n_states: Optional[int]
+    n_gmm_components: Optional[int]
+    algo_train: Optional[str]
+    algo_predict: Optional[str]
+    stop_threshold: Optional[float]
+    max_iterations: Optional[int]
+    random_seed: Optional[float]
+    architecture: Optional[str]
+    name: Optional[str]
+
+    def __init__(
+        self,
+        n_states: Optional[int] = None,
+        n_gmm_components: Optional[int] = None,
+        algo_train: Optional[str] = None,
+        algo_predict: Optional[str] = None,
+        stop_threshold: Optional[float] = None,
+        max_iterations: Optional[int] = None,
+        random_seed: Optional[float] = None,
+        architecture: Optional[str] = None,
+        name: Optional[str] = None,
+        model: Optional[pgHMM] = None,
+    ):
+        self.n_states = (n_states,)
+        self.n_gmm_components = (n_gmm_components,)
+        self.algo_train = (algo_train,)
+        self.algo_predict = (algo_predict,)
+        self.stop_threshold = (stop_threshold,)
+        self.max_iterations = (max_iterations,)
+        self.random_seed = (random_seed,)
+        self.architecture = (architecture,)
+        self.name = (name,)
+        self.model = None
+
+    def predict(self, feature_data, algorithm="viterbi"):
+        """Perform prediction based on given data and given model."""
+        feature_data = np.ascontiguousarray(feature_data.to_numpy())
+
+        # need to check if memory layout of given data is
+        # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
+        if not np.array(feature_data).flags["C_CONTIGUOUS"]:
+            raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
+
+        labels_predicted = np.asarray(self._model_combined.predict(feature_data, algorithm=algorithm))
+        # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+        return np.asarray(labels_predicted[1:-1])
+
+    def build_model(self, data_sequence, labels_sequence):
+        return self
+
+
 class HiddenMarkovModel(_BaseSerializable):
     """Wrap all required information to train a new HMM.
 
     Parameters
     ----------
-    model_file_name
-        Path to a valid pre-trained and serialized model-json
     sampling_rate_hz_model
         The sampling rate of the data the model was trained with
     low_pass_cutoff_hz
@@ -621,6 +477,7 @@ class HiddenMarkovModelPreTrained(_BaseSerializable):
     _model_combined: Optional[pgHMM]
     _model_stride: Optional[pgHMM]
     _model_transition: Optional[pgHMM]
+
     _n_states_stride: Optional[int]
     _n_states_transition: Optional[int]
 

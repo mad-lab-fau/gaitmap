@@ -239,25 +239,26 @@ class TestBoolArrayToStartEndArray:
         expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
+
 class TestStartEndArrayToBoolArray:
     """Test the function `start_end_array_to_bool_array`."""
 
     def test_simple_input_no_padding(self):
-        input_array = np.array([[2,3],[5,9]])
+        input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array)
-        expected_output = np.array([0,0,1,1,0,1,1,1,1,1]).astype(bool)
+        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_simple_input_1d_no_padding(self):
-        input_array = np.array([2,3])
-        output_array = start_end_array_to_bool_array(input_array,pad_to_length=5)
-        expected_output = np.array([0,0,1,1,0]).astype(bool)
+        input_array = np.array([2, 3])
+        output_array = start_end_array_to_bool_array(input_array, pad_to_length=5)
+        expected_output = np.array([0, 0, 1, 1, 0]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_simple_input_with_padding(self):
         input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array, pad_to_length=12)
-        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1,0,0]).astype(bool)
+        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_overlapping_input_with_padding(self):
@@ -276,8 +277,7 @@ class TestStartEndArrayToBoolArray:
     def test_correct_output_dtype(self):
         input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array)
-        assert output_array.dtype == 'bool'
-
+        assert output_array.dtype == "bool"
 
 
 class TestLocalMinimaBelowThreshold:

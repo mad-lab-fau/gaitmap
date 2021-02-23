@@ -39,11 +39,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         find_matches_min_under_threshold,
     )
 
-from gaitmap.stride_segmentation.hmm_models.models import (
-    HiddenMarkovModel,
-    HiddenMarkovModelStairs,
-)
-from gaitmap.stride_segmentation.roth_hmm import RothHMM
+
 
 
 __all__ = [
@@ -58,7 +54,4 @@ __all__ = [
     "RoiStrideSegmentation",
     "find_matches_find_peaks",
     "find_matches_min_under_threshold",
-    "HiddenMarkovModel",
-    "HiddenMarkovModelStairs",
-    "RothHMM",
 ]
