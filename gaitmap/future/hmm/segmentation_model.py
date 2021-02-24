@@ -2,7 +2,7 @@
 import copy
 import json
 from importlib.resources import open_text
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pomegranate as pg
@@ -137,6 +137,14 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
     def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
         """Perform prediction based on given data and given model."""
+
+        if self.model == None:
+            raise ValueError(
+                "No trained model for prediction available! You must either provide a pre-trained model "
+                "during class initialization or call the train method with appropriate training data to "
+                "generate a new trained model."
+            )
+
         feature_data = np.ascontiguousarray(feature_data.to_numpy())
 
         # need to check if memory layout of given data is
@@ -302,3 +310,15 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.model = model_trained
 
         return self
+
+
+class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
+    def __init__(self):
+        super().__init__()
+
+    def __new__(cls, model_file_name="test_model.json"):
+        # try to load models
+        with open_text("gaitmap.future.hmm.pre_trained_models", model_file_name) as test_data:
+            with open(test_data.name) as f:
+                model_json = json.load(f)
+        return SimpleSegmentationHMM.from_json(model_json)
