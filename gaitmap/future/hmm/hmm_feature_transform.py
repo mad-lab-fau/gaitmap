@@ -1,18 +1,16 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
-from typing import Optional, TypeVar, List
+import warnings
+from typing import List, Optional, TypeVar
+
 import numpy as np
 import pandas as pd
-import warnings
 from numpy.polynomial import polynomial
-from sklearn import preprocessing
 from scipy import signal
-from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-    get_multi_sensor_names,
-    is_sensor_data,
-)
+from sklearn import preprocessing
+
 from gaitmap.base import _BaseSerializable
+from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 
 array_or_dataframe_type = TypeVar("array_or_dataframe_type", pd.DataFrame, np.ndarray)
 
