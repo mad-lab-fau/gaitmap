@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pomegranate as pg
-import matplotlib.pyplot as plt
+
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 
 N_JOBS = 1

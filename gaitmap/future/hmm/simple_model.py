@@ -1,27 +1,27 @@
 """Dtw template base classes and helper."""
+import copy
 from typing import Optional
-from pomegranate import HiddenMarkovModel as pgHMM
-import pomegranate as pg
+
 import numpy as np
+import pomegranate as pg
+from pomegranate import HiddenMarkovModel as pgHMM
+
 from gaitmap.base import _BaseSerializable
 from gaitmap.future.hmm.utils import (
-    gmms_from_samples,
-    create_transition_matrix_left_right,
+    add_transition,
+    create_equidistant_label_sequence,
+    create_equidistant_labels_from_label_list,
     create_transition_matrix_fully_connected,
+    create_transition_matrix_left_right,
+    extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
     get_model_distributions,
-    predict,
-    extract_transitions_starts_stops_from_hidden_state_sequence,
-    add_transition,
-    labels_to_strings,
-    create_equidistant_labels_from_label_list,
-    create_equidistant_label_sequence,
-    get_train_data_sequences_transitions,
     get_train_data_sequences_strides,
+    get_train_data_sequences_transitions,
+    gmms_from_samples,
+    labels_to_strings,
+    predict,
 )
-
-
-import copy
 
 N_JOBS = 1
 

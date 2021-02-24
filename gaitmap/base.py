@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import tpcp
 from joblib import Memory
+from pomegranate.hmm import HiddenMarkovModel
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import GF_ORI
@@ -55,6 +56,8 @@ class _CustomEncoder(json.JSONEncoder):
             return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
+        if isinstance(o, HiddenMarkovModel):
+            return dict(_obj_type="HiddenMarkovModel", hmm=o.to_json())
         if o is tpcp.NOTHING:
             return dict(_obj_type="EmptyDefault")
         if isinstance(o, Memory):
@@ -80,11 +83,14 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
+        if json_obj["_obj_type"] == "HiddenMarkovModel":
+            return HiddenMarkovModel.from_json(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
         if json_obj["_obj_type"] == "Tuple":
             return tuple(json_obj["tuple"])
         raise ValueError("Unknown object type found in serialization!")
+
     return json_obj
 
 

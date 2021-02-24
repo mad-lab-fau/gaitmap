@@ -1,14 +1,12 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
+
 from gaitmap.base import BaseAlgorithm, BaseType
 from gaitmap.future.hmm import HiddenMarkovModel
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-    get_multi_sensor_names,
-    is_sensor_data,
-)
+from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 
 
 class RothHMM(BaseAlgorithm):

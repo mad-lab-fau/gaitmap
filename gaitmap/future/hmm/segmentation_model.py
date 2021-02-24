@@ -1,29 +1,27 @@
 """Dtw template base classes and helper."""
-from importlib.resources import open_text
-from typing import Optional, List
+import copy
 import json
-from pomegranate import HiddenMarkovModel as pgHMM
-import pomegranate as pg
-import numpy as np
-from gaitmap.base import _BaseSerializable
-from gaitmap.future.hmm.simple_model import SimpleHMM
+from importlib.resources import open_text
+from typing import List, Optional
 
+import numpy as np
+import pomegranate as pg
+from pomegranate import HiddenMarkovModel as pgHMM
+
+from gaitmap.base import _BaseSerializable
+from gaitmap.future.hmm.hmm_feature_transform import FeatureTransformHMM
+from gaitmap.future.hmm.simple_model import SimpleHMM
 from gaitmap.future.hmm.utils import (
-    get_train_data_sequences_transitions,
-    get_train_data_sequences_strides,
-    get_model_distributions,
+    add_transition,
+    create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
+    get_model_distributions,
+    get_train_data_sequences_strides,
+    get_train_data_sequences_transitions,
     labels_to_strings,
-    create_transition_matrix_fully_connected,
-    add_transition,
 )
-
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
-
-import copy
-
-from gaitmap.future.hmm.hmm_feature_transform import FeatureTransformHMM
 
 N_JOBS = 1
 
