@@ -23,9 +23,6 @@ from gaitmap.future.hmm.utils import (
 
 import copy
 
-VERBOSE_MODEL = True
-VERBOSE_DISTRIBUTIONS = False
-DEBUG_PLOTS = False
 N_JOBS = 1
 
 
@@ -37,6 +34,7 @@ def initialize_hmm(
     architecture,
     random_seed=None,
     name="untrained",
+    verbose=False,
 ):
     """Model Initialization.
 
@@ -98,8 +96,8 @@ def initialize_hmm(
         labels_initialization_sequence,
         n_gmm_components,
         random_seed=random_seed,
-        verbose=VERBOSE_DISTRIBUTIONS,
-        debug_plot=DEBUG_PLOTS,
+        verbose=verbose,
+        debug_plot=False,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point where the model "loops" (aka state-0 and state-n)
@@ -125,7 +123,7 @@ def initialize_hmm(
         distributions=copy.deepcopy(distributions),
         starts=start_probs,
         ends=end_probs,
-        verbose=VERBOSE_MODEL,
+        verbose=verbose,
     )
 
     # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like s0, s1, s10, s2 usw..)
@@ -137,7 +135,9 @@ def initialize_hmm(
     return model
 
 
-def train_hmm(model_untrained, data_train_sequence, max_iterations, stop_threshold, algo_train, name="trained"):
+def train_hmm(
+    model_untrained, data_train_sequence, max_iterations, stop_threshold, algo_train, name="trained", verbose=True
+):
     """Model Training
 
     - model_untrained (pomegranate.HiddenMarkovModel):
@@ -175,7 +175,7 @@ def train_hmm(model_untrained, data_train_sequence, max_iterations, stop_thresho
         stop_threshold=stop_threshold,
         max_iterations=max_iterations,
         return_history=True,
-        verbose=VERBOSE_MODEL,
+        verbose=verbose,
         n_jobs=N_JOBS,
     )
     model_trained.name = name
@@ -255,11 +255,11 @@ class SimpleHMM(_BaseSerializable):
         if not np.array(feature_data).flags["C_CONTIGUOUS"]:
             raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
 
-        labels_predicted = np.asarray(self.model.predict(feature_data, algorithm=algorithm))
+        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
-    def build_model(self, data_sequence, labels_sequence):
+    def build_model(self, data_sequence, labels_sequence, verbose=True):
 
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
@@ -268,9 +268,13 @@ class SimpleHMM(_BaseSerializable):
                 % (len(data_sequence), len(labels_sequence))
             )
 
+        # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
+        # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
+        data_sequence_train = [np.ascontiguousarray(dataset.to_numpy().copy()) for dataset in data_sequence]
+
         # initialize model by naive equidistant labels
         model_untrained = initialize_hmm(
-            data_sequence,
+            data_sequence_train,
             labels_sequence,
             self.n_states,
             self.n_gmm_components,
@@ -278,14 +282,16 @@ class SimpleHMM(_BaseSerializable):
             random_seed=self.random_seed,
             name=self.name + "-untrained",
         )
+
         # train model
         model_trained, history = train_hmm(
             model_untrained,
-            data_sequence,
+            data_sequence_train,
             self.max_iterations,
             self.stop_threshold,
             self.algo_train,
             name=self.name + "-trained",
+            verbose=verbose,
         )
 
         self.history = history
