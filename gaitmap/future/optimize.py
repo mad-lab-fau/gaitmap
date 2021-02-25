@@ -50,7 +50,7 @@ class GridSearch(Optimize):
     parameter_grid: Optional[ParameterGrid]
     pipeline: Optional[SimplePipeline]
     n_jobs: Optional[int]
-    refit: Union[bool, str]
+    rank_scorer: Optional[str]
     pre_dispatch: Union[int, str]
 
     dataset: Dataset
@@ -67,12 +67,12 @@ class GridSearch(Optimize):
         parameter_grid: Optional[ParameterGrid] = None,
         *,
         n_jobs: Optional[int] = None,
-        refit: Union[bool, str] = True,
+        rank_scorer: Optional[str] = None,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
         self.parameter_grid = parameter_grid
         self.n_jobs = n_jobs
-        self.refit = refit
+        self.rank_scorer = rank_scorer
         self.pre_dispatch = pre_dispatch
         super().__init__(pipeline=pipeline)
 
@@ -96,18 +96,18 @@ class GridSearch(Optimize):
 
         results = self._format_results(candidate_params, out, multi_metric=self.multi_metric_)
 
-        if self.refit:
-            if self.multi_metric_ is True and (not isinstance(self.refit, str) or self.refit not in results):
-                raise ValueError(
-                    "If multi-metric scoring is used, `refit` must be a str specifying the score that should be used "
-                    "to select the best result."
-                )
+        if self.multi_metric_ is True and (not isinstance(self.rank_scorer, str) or self.rank_scorer not in results):
+            raise ValueError(
+                "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be used "
+                "to select the best result."
+            )
 
-            self.best_index_ = results["rank_{}".format(self.refit)].argmin()
-            self.best_score_ = results[self.refit][self.best_index_]
-            self.best_params_ = results["params"][self.best_index_]
+        rank_score = self.rank_scorer or "score"
+        self.best_index_ = results["rank_{}".format(rank_score)].argmin()
+        self.best_score_ = results[rank_score][self.best_index_]
+        self.best_params_ = results["params"][self.best_index_]
 
-            self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_)
+        self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_)
 
         self.gs_results_ = results
 
