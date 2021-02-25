@@ -50,6 +50,7 @@ class GridSearch(Optimize):
     parameter_grid: Optional[ParameterGrid]
     pipeline: Optional[SimplePipeline]
     n_jobs: Optional[int]
+    refit: Union[bool, str]
     pre_dispatch: Union[int, str]
 
     dataset: Dataset
@@ -66,10 +67,12 @@ class GridSearch(Optimize):
         parameter_grid: Optional[ParameterGrid] = None,
         *,
         n_jobs: Optional[int] = None,
+        refit: Union[bool, str] = True,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
         self.parameter_grid = parameter_grid
         self.n_jobs = n_jobs
+        self.refit = refit
         self.pre_dispatch = pre_dispatch
         super().__init__(pipeline=pipeline)
 
@@ -82,16 +85,29 @@ class GridSearch(Optimize):
                 delayed(_score)(pipeline=self.pipeline.clone(), data=dataset, parameters=paras)
                 for paras in candidate_params
             )
-        if isinstance(out[0], dict):
+        # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
+        # values and we just have a single scorer. Mixed cases will raise an error
+        if all(isinstance(t, dict) for t in out):
             self.multi_metric_ = True
-        else:
+        elif all(isinstance(t, (int, float)) for t in out):
             self.multi_metric_ = False
-        results = self._format_results(candidate_params, out, multi_metric=self.multi_metric_)
-        self.best_index_ = results["rank_score"].argmin()
-        self.best_score_ = results["score"][self.best_index_]
-        self.best_params_ = results["params"][self.best_index_]
+        else:
+            raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
 
-        self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_)
+        results = self._format_results(candidate_params, out, multi_metric=self.multi_metric_)
+
+        if self.refit:
+            if self.multi_metric_ is True and (not isinstance(self.refit, str) or self.refit not in results):
+                raise ValueError(
+                    "If multi-metric scoring is used, `refit` must be a str specifying the score that should be used "
+                    "to select the best result."
+                )
+
+            self.best_index_ = results["rank_{}".format(self.refit)].argmin()
+            self.best_score_ = results[self.refit][self.best_index_]
+            self.best_params_ = results["params"][self.best_index_]
+
+            self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_)
 
         self.gs_results_ = results
 
