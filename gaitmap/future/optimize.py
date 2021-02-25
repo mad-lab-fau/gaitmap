@@ -106,8 +106,8 @@ class GridSearch(Optimize):
         self.best_index_ = results["rank_{}".format(rank_score)].argmin()
         self.best_score_ = results[rank_score][self.best_index_]
         self.best_params_ = results["params"][self.best_index_]
-
-        self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_)
+        # We clone twice, in case one of the params was itself a algorithm.
+        self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_).clone()
 
         self.gs_results_ = results
 
