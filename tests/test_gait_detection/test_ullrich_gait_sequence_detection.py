@@ -3,10 +3,30 @@ import pandas as pd
 import pytest
 from pandas._testing import assert_frame_equal
 
+from gaitmap.base import BaseType
 from gaitmap.gait_detection import UllrichGaitSequenceDetection
 from gaitmap.gait_detection.ullrich_gait_sequence_detection import _gait_sequence_concat
 from gaitmap.utils import coordinate_conversion
 from gaitmap.utils.consts import BF_COLS
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+
+class MetaTestConfig:
+    algorithm_class = UllrichGaitSequenceDetection
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> BaseType:
+        data = coordinate_conversion.convert_to_fbf(
+            healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
+        )
+        data = data["left_sensor"]
+        gsd = UllrichGaitSequenceDetection()
+        gsd = gsd.detect(data, 204.8)
+        return gsd
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
 
 
 class TestUllrichGaitSequenceDetection:
