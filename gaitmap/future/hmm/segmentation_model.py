@@ -164,7 +164,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
-    def transform(self, data_sequence, sampling_frequency_hz, stride_list_sequence=None):
+    def transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
 
         if not isinstance(data_sequence, list):
             raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
