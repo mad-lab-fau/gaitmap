@@ -6,11 +6,13 @@ import pandas as pd
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap.future.hmm.segmentation_model import SimpleSegmentationHMM
+from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import (
     SensorData,
     get_multi_sensor_names,
     is_sensor_data,
 )
+import copy
 
 
 class RothHMM(BaseStrideSegmentation):
@@ -80,10 +82,10 @@ class RothHMM(BaseStrideSegmentation):
     def __init__(
         self,
         model: Optional[SimpleSegmentationHMM] = None,
-        snap_to_min: Optional[bool] = True,
+        snap_to_min_win_s: Optional[float] = 0.1,
         snap_to_min_axis: Optional[str] = "gyr_ml",
     ):
-        self.snap_to_min = snap_to_min
+        self.snap_to_min_win_s = snap_to_min_win_s
         self.snap_to_min_axis = snap_to_min_axis
         self.model = model
 
@@ -103,17 +105,6 @@ class RothHMM(BaseStrideSegmentation):
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df
-
-    def _postprocess_matches(
-        self, data, paths: List, cost: np.ndarray, matches_start_end: np.ndarray, to_keep: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        # TODO: implement
-
-        # Apply snap to minimum
-        if self.snap_to_min:
-            return 0
-
-        return 1
 
     def segment(self: BaseType, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> BaseType:
         """Find matches by warping the provided template to the data.
@@ -180,149 +171,54 @@ class RothHMM(BaseStrideSegmentation):
         )
         hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
 
-        matches_start_end_ = self._hidden_states_to_stride_borders(
-            dataset[self.snap_to_min_axis].to_numpy(), hidden_state_sequence_upsampled, self.model.stride_states_
+        matches_start_end_ = self._hidden_states_to_matches_start_end(hidden_state_sequence_upsampled)
+
+        return (
+            self._postprocess_matches(matches_start_end_, dataset),
+            hidden_state_sequence_upsampled,
+            feature_data,
+            hidden_state_sequence,
         )
 
-        return matches_start_end_, hidden_state_sequence_upsampled, feature_data, hidden_state_sequence
+    def _hidden_states_to_matches_start_end(self, hidden_states_predicted):
+        """Convert a hidden state sequence to a list of potential borders."""
 
-    def _hidden_states_to_stride_borders(self, data_to_snap_to, hidden_states_predicted, stride_states):
-        """This function converts the output of a hmm prediction to meaningful stride borders.
+        stride_start_state = self.model.stride_states_[0]
+        stride_end_state = self.model.stride_states_[-1]
 
-            Therefore, potential stride-borders are derived form the hidden states and the actual border is snapped
-            to the data minimum within these potential border windows.
-            The potential border windows are derived from the stride-start / end-states plus the adjacent states, which
-            might be e.g. transition-stride_start, stride_end-transition, stride_end-stride_start,
-            stride_start-stride_end.
+        # find rising edge of stride start state sequence
+        state_sequence_starts = copy.deepcopy(hidden_states_predicted)
+        state_sequence_starts[state_sequence_starts != stride_start_state] = 0
+        matches_starts = np.argwhere(np.diff(state_sequence_starts) > 0)
 
-        - data_to_snap_to:
-            1D array where the "snap to minimum" operation will be performed to find the actual stride border:
-            This is usually the "gyr_ml" data!!
+        # find falling edge of stride end state sequence
+        state_sequence_ends = copy.deepcopy(hidden_states_predicted)
+        state_sequence_ends[state_sequence_ends != stride_end_state] = 0
+        matches_ends = np.argwhere(np.diff(state_sequence_ends) < 0)
 
-        - labels_predicted:
-            Predicted hidden-state labels (this should be an array of some discrete values!)
+        return np.column_stack([matches_starts, matches_ends])
 
-        - stride_states:
-            This is the actual list of states we are looking for so e.g. [5,6,7,8,9,10]
+    def _postprocess_matches(self, matches_start_end, dataset) -> Tuple[np.ndarray, np.ndarray]:
 
-        Returns a list of strides with [start,stop] indices
+        if self.snap_to_min_win_s:
+            # Apply snap to minimum
+            snap_to_min_data = dataset[self.snap_to_min_axis].to_numpy()
+            snap_to_min_win_samples = int(np.round(self.sampling_rate_hz * self.snap_to_min_win_s))
 
-        Example:
-        stride_borders = hidden_states_to_stride_borders2(gyr_ml_data, predicted_labels, np.aragne(stride_start_state,
-        stride_end_state))
-        stride_borders...
-        ... [[100,211],
-             [211,346],
-             [346,478]
-             ...
-             ]
-        """
-
-        if data_to_snap_to.ndim > 1:
-            raise ValueError("Snap to minimum only allows 1D arrays as inputs")
-
-        # get all existing label transitions
-        transitions, _, _ = self._extract_transitions_starts_stops_from_hidden_state_sequence(hidden_states_predicted)
-
-        if len(transitions) == 0:
-            return []
-
-        # START-Window
-        adjacent_labels_starts = [a[0] for a in transitions if a[-1] == stride_states[0]]
-
-        potential_start_window = []
-        for label in adjacent_labels_starts:
-            potential_start_window.extend(
-                self._binary_array_to_start_stop_list(
-                    np.logical_or(hidden_states_predicted == stride_states[0], hidden_states_predicted == label).astype(
-                        int
-                    )
-                )
-            )
-        # remove windows where there is actually no stride-start-state label present
-        potential_start_window = [
-            label
-            for label in potential_start_window
-            if stride_states[0] in np.unique(hidden_states_predicted[label[0] : label[1] + 1])
-        ]
-
-        # melt all windows together
-        bin_array_starts = np.zeros(len(hidden_states_predicted))
-        for window in potential_start_window:
-            bin_array_starts[window[0] : window[1] + 1] = 1
-
-        start_windows = self._binary_array_to_start_stop_list(bin_array_starts)
-        start_borders = [np.argmin(data_to_snap_to[window[0] : window[1] + 1]) + window[0] for window in start_windows]
-
-        # END-Window
-        adjacent_labels_ends = [
-            trans_labels[-1] for trans_labels in transitions if trans_labels[0] == stride_states[-1]
-        ]
-
-        potential_end_window = []
-        for l in adjacent_labels_ends:
-            potential_end_window.extend(
-                self._binary_array_to_start_stop_list(
-                    np.logical_or(hidden_states_predicted == stride_states[-1], hidden_states_predicted == l).astype(
-                        int
-                    )
-                )
+            starts = find_extrema_in_radius(
+                snap_to_min_data,
+                indices=matches_start_end[:, 0],
+                radius=int(snap_to_min_win_samples / 2),
+                extrema_type="min",
             )
 
-        potential_end_window = [
-            a for a in potential_end_window if stride_states[-1] in np.unique(hidden_states_predicted[a[0] : a[1] + 1])
-        ]
+            ends = find_extrema_in_radius(
+                snap_to_min_data,
+                indices=matches_start_end[:, 1],
+                radius=int(snap_to_min_win_samples / 2),
+                extrema_type="min",
+            )
 
-        # melt all windows together
-        bin_array_ends = np.zeros(len(hidden_states_predicted))
-        for w in potential_end_window:
-            bin_array_ends[w[0] : w[1] + 1] = 1
+            return np.column_stack([starts, ends])
 
-        end_windows = self._binary_array_to_start_stop_list(bin_array_ends)
-        end_borders = [np.argmin(data_to_snap_to[w[0] : w[1] + 1]) + w[0] for w in end_windows]
-
-        return np.array(list(zip(start_borders, end_borders)))
-
-    def _extract_transitions_starts_stops_from_hidden_state_sequence(self, hidden_state_sequence):
-        """Return a list of transitions as well as start and stop labels that can be found within the input sequences.
-
-        input = [[1,1,1,1,1,3,3,3,3,2,2,2,2,4,4,4,4,5,5],
-                 [0,0,1,1,1,3,3,3,3,2,2,2,6]]
-        output_transitions = [[1,3],
-                              [3,2],
-                              [2,4],
-                              [4,5],
-                              [0,1],
-                              [2,6]]
-
-        output_starts = [1,0]
-        output_stops = [5,6]
-        """
-        if not isinstance(hidden_state_sequence, list):
-            hidden_state_sequence = [hidden_state_sequence]
-
-        transitions = []
-        starts = []
-        ends = []
-        for labels in hidden_state_sequence:
-            starts.append(labels[0])
-            ends.append(labels[-1])
-            for idx in np.where(abs(np.diff(labels)) > 0)[0]:
-                transitions.append([labels[idx], labels[idx + 1]])
-
-        if len(transitions) > 0:
-            transitions = np.unique(transitions, axis=0).astype(int)
-        starts = np.unique(starts).astype(int)
-        ends = np.unique(ends).astype(int)
-
-        return [transitions, starts, ends]
-
-    def _binary_array_to_start_stop_list(self, bin_array):
-        starts = np.where(np.diff(bin_array) > 0)[0] + 1
-        stops = np.where(np.diff(bin_array) < 0)[0]
-        if bin_array[0] == 1:
-            starts = np.insert(starts, 0, 0)
-        if bin_array[-1] == 1:
-            stops = np.append(stops, len(bin_array) - 1)
-
-        return np.column_stack((starts, stops))
+        return matches_start_end
