@@ -13,10 +13,10 @@ Self = TypeVar("Self", bound="SimplePipeline")
 class SimplePipeline(BaseAlgorithm):
     """Baseclass for all custom pipelines.
 
-    To create your own custom pipeline, subclass this class and implement `run` and optionally `score_single`.
-    You can also overwrite `score`, in case you need to customize how score values are averaged over mutliple
-    data points.
+    To create your own custom pipeline, subclass this class and implement `run`.
     """
+
+    dataset_single: Dataset
 
     _action_method = "run"
 
@@ -36,7 +36,23 @@ class SimplePipeline(BaseAlgorithm):
         """
         raise NotImplementedError()
 
-    def score_single(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
+
+class ScoreableMixin:
+    """A pipeline that can calculate a performance score for a given input.
+
+    This should be used as Mixin if you plan to use to use `GridSearch` (or similar methods) to improve potential
+    parameter of your `SimplePipeline` sub-class.
+    `GridSearch` will then use the `score_single` (or rather the `score`) method to rank the results (by default a
+    higher score is better).
+
+    To use it, subclass the pipeline and implement `run` and `score_single`.
+    If you need more control on how performance values are averaged over multiple data-points (participants,
+    gait-tests, ...), you can also overwrite `score`.
+
+    Note, `score_single` and `score` must return either a numeric value or a dictionary of numeric values.
+    """
+
+    def score(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
         """Return a performance metric for the result of a single datapoint.
 
         Parameters
@@ -51,26 +67,3 @@ class SimplePipeline(BaseAlgorithm):
 
         """
         raise NotImplementedError()
-
-    def score(self, dataset: Dataset) -> Union[float, Dict[str, float]]:
-        """Return the performance metric as average over multiple datapoints in the dataset.
-
-        Parameters
-        ----------
-        dataset
-            A instance of a :class:`gaitmap.future.dataset.Dataset` containing multiple datapoint.
-
-        Returns
-        -------
-        score
-            The performance value(s) as average over the scores of each datapoint.
-        """
-        scores = []
-        for d in dataset:
-            scores.append(self.score_single(d))
-        if isinstance(scores[0], dict):
-            # Invert the dict and calculate the mean per score:
-            df = pd.DataFrame.from_records(scores)
-            means = df.mean()
-            return means.to_dict()
-        return np.mean(scores)

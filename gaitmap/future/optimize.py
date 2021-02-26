@@ -14,9 +14,27 @@ from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines import SimplePipeline
 
 
+def _aggregate_scores(scores):
+    if isinstance(scores[0], dict):
+        # Invert the dict and calculate the mean per score:
+        df = pd.DataFrame.from_records(scores)
+        means = df.mean()
+        return means.to_dict(), {k: v.to_numpy() for k, v in df.iteritems()}
+    return np.mean(scores), scores
+
+
 def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
     pipeline = pipeline.set_params(**parameters)
-    return pipeline.score(dataset=data)
+    pipeline = pipeline.clone()
+    # TODO: Perform aggregation of performance here: Aka mean and maybe weighting?
+    #       This would allow to return all individual scores for each "dataset_single" object or even all fitted result
+    #       objects for each score.
+    scores = []
+    for d in data:
+        # We clone again here, in case any of the parameters were algorithms themself or the score method of the
+        # pipeline does strange things.
+        scores.append(pipeline.score(dataset_single=d))
+    return _aggregate_scores(scores)
 
 
 class Optimize(_BaseSerializable):
@@ -42,8 +60,8 @@ class Optimize(_BaseSerializable):
     def run_optimized(self, dataset_single):
         return self.optimized_pipeline_.run(dataset_single)
 
-    def score(self, datasets):
-        return self.optimized_pipeline_.score(datasets)
+    def score(self, dataset_single):
+        return self.optimized_pipeline_.score(dataset_single)
 
 
 class GridSearch(Optimize):
@@ -85,16 +103,19 @@ class GridSearch(Optimize):
                 delayed(_score)(pipeline=self.pipeline.clone(), data=dataset, parameters=paras)
                 for paras in candidate_params
             )
+        mean_scores, data_point_scores = zip(*out)
         # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
         # values and we just have a single scorer. Mixed cases will raise an error
-        if all(isinstance(t, dict) for t in out):
+        if all(isinstance(t, dict) for t in mean_scores):
             self.multi_metric_ = True
-        elif all(isinstance(t, (int, float)) for t in out):
+        elif all(isinstance(t, (int, float)) for t in mean_scores):
             self.multi_metric_ = False
         else:
             raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
 
-        results = self._format_results(candidate_params, out, multi_metric=self.multi_metric_)
+        results = self._format_results(
+            candidate_params, mean_scores, data_point_scores, multi_metric=self.multi_metric_
+        )
 
         if self.multi_metric_ is True and (not isinstance(self.rank_scorer, str) or self.rank_scorer not in results):
             raise ValueError(
@@ -113,7 +134,7 @@ class GridSearch(Optimize):
 
         return self
 
-    def _format_results(self, candidate_params, out, multi_metric=False):
+    def _format_results(self, candidate_params, mean_scores, data_point_scores=None, multi_metric=False):
         # This function is adapted based on sklearns `BaseSearchCV`
 
         n_candidates = len(candidate_params)
@@ -121,15 +142,21 @@ class GridSearch(Optimize):
 
         if multi_metric:
             # Invert the dict and calculate the mean per score:
-            df = pd.DataFrame.from_records(out)
-            for c in df.columns:
-                tmp = df[c].to_numpy()
-                results[c] = tmp
-                results["rank_{}".format(c)] = np.asarray(rankdata(-tmp, method="min"), dtype=np.int32)
+            df = pd.DataFrame.from_records(mean_scores)
+            for c, v in df.iteritems():
+                v = v.to_numpy()
+                results[c] = v
+                results["rank_{}".format(c)] = np.asarray(rankdata(-v, method="min"), dtype=np.int32)
+            if data_point_scores:
+                df_single = pd.DataFrame.from_records(data_point_scores)
+                for c, v in df_single.iteritems():
+                    results["single_{}".format(c)] = v.to_numpy()
         else:
-            out = np.asarray(out)
-            results["score"] = out
-            results["rank_score"] = np.asarray(rankdata(-out, method="min"), dtype=np.int32)
+            mean_scores = np.asarray(mean_scores)
+            results["score"] = mean_scores
+            results["rank_score"] = np.asarray(rankdata(-mean_scores, method="min"), dtype=np.int32)
+            if data_point_scores:
+                results["single_score"] = data_point_scores
 
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
