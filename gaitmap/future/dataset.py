@@ -18,7 +18,7 @@ class Dataset(_BaseSerializable):
 
     Parameters
     ----------
-    groupby
+    groupby_cols
         A column name or a list of column names that should be used to group the index before iterating over it.
         For examples see below.
     subset_index
@@ -92,7 +92,7 @@ class Dataset(_BaseSerializable):
 
     We can also change `groupby` (either in the init or afterwards), to loop over other combinations.
     If we select the level `test`, we will loop over all `patient`-`test` combinations.
-
+    # TODO: Change
     >>> dataset.groupby = ["patient", "test"]
     >>> dataset  # doctest: +NORMALIZE_WHITESPACE
     Dataset [6 groups/rows]
@@ -183,16 +183,16 @@ class Dataset(_BaseSerializable):
 
     """
 
-    groupby: Optional[Union[List[str], str]]
+    groupby_cols: Optional[Union[List[str], str]]
     subset_index: Optional[pd.DataFrame]
 
     def __init__(
         self,
         *,
-        groupby: Optional[Union[List[str], str]] = None,
+        groupby_cols: Optional[Union[List[str], str]] = None,
         subset_index: Optional[pd.DataFrame] = None,
     ):
-        self.groupby = groupby
+        self.groupby_cols = groupby_cols
         self.subset_index = subset_index
 
     @property
@@ -216,9 +216,9 @@ class Dataset(_BaseSerializable):
     @property
     def grouped_index(self) -> pd.DataFrame:
         """Return the the index with the `groupby` columns set as multiindex."""
-        if self.groupby is None:
+        if self.groupby_cols is None:
             return self.index
-        return self.index.set_index(self.groupby, drop=False).sort_index()
+        return self.index.set_index(self.groupby_cols, drop=False).sort_index()
 
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
@@ -230,6 +230,9 @@ class Dataset(_BaseSerializable):
             multi_index = [multi_index]
 
         return self.clone().set_params(subset_index=self.grouped_index.loc[multi_index].reset_index(drop=True))
+
+    def groupby(self, groupby_cols: Union[List[str], str]):
+        return self.clone().set_params(groupby_cols=groupby_cols)
 
     def get_subset(
         self: Self,
@@ -362,10 +365,10 @@ class Dataset(_BaseSerializable):
                 "Columns used to group the entire dataset (`self.groupby`) can not be used again to generate group "
                 "labels."
             )
-        if self.groupby is None:
+        if self.groupby_cols is None:
             index = self.index
         else:
-            index = self.index.drop(columns=self.groupby)
+            index = self.index.drop(columns=self.groupby_cols)
         return index.set_index(groupby).index.to_list()
 
     def create_index(self) -> pd.DataFrame:
