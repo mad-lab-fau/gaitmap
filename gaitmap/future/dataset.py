@@ -217,8 +217,10 @@ class Dataset(_BaseSerializable):
     def grouped_index(self) -> pd.DataFrame:
         """Return the the index with the `groupby` columns set as multiindex."""
         if self.groupby_cols is None:
-            return self.index
-        return self.index.set_index(self.groupby_cols, drop=False).sort_index()
+            groupby_cols = self.index.columns.to_list()
+        else:
+            groupby_cols = self.groupby_cols
+        return self.index.set_index(groupby_cols, drop=False)
 
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
@@ -303,17 +305,25 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
+        if self.groupby_cols is None:
+            repr_index = self.index
+        else:
+            repr_index = self.grouped_index
         return "{} [{} groups/rows]\n\n   {}\n\n   ".format(
             self.__class__.__name__,
             self.shape[0],
-            str(self.grouped_index).replace("\n", "\n   "),
+            str(repr_index).replace("\n", "\n   "),
         )[:-5]
 
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
+        if self.groupby_cols is None:
+            repr_index = self.index
+        else:
+            repr_index = self.grouped_index
         return '<h4 style="margin-bottom: 0.1em;">{} [{} groups/rows]</h3>\n'.format(
             self.__class__.__name__, self.shape[0]
-        ) + self.grouped_index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
+        ) + repr_index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
             '<table border="1" class="dataframe"', '<table style="margin-left: 3em;"'
         ).replace(
             "<th>", '<th style="text-align: center;">'
