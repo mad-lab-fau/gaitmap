@@ -178,6 +178,7 @@ sphinx_gallery_conf = {
             "../examples/event_detection",
             "../examples/trajectory_reconstruction",
             "../examples/parameters",
+            "../examples/datasets_and_pipelines",
             "../examples/advanced_features",
             "../examples/generic_algorithms",
         ]
