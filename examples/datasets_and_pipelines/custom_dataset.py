@@ -31,7 +31,7 @@ Datasets work best in combination with `Pipelines` and are further compatible wi
 #
 # We will define an index that contains 5 participants, with 3 recordings each. Recording 3 has 2 trials,
 # while the others have only one.
-# Note, that we implement this a static index here, but most of the time, you would create the index by e.g. scanning
+# Note, that we implement this as a static index here, but most of the time, you would create the index by e.g. scanning
 # and listing the files in your data directory.
 # It is important that you don't want to load the entire actual data (e.g. the imu samples) in memory, but just list
 # the available data-points in the index.
@@ -50,9 +50,9 @@ index = pd.DataFrame(index, columns=["participant", "recording", "trial"])
 index
 
 # %%
-# Now we use this index as index for our new dataset.
-# To see the dataset in action, we need to create a instance of it.
-# It's string representation will show us the most important information.
+# Now we use this index as the index of our new dataset.
+# To see the dataset in action, we need to create an instance of it.
+# Its string representation will show us the most important information.
 from gaitmap.future.dataset import Dataset
 
 
@@ -68,14 +68,14 @@ dataset
 # Subsets
 # -------
 # When working with a dataset, the first thing is usually to select the data you want to use.
-# For this you can primarily use the method `get_subset`.
+# For this, you can primarily use the method `get_subset`.
 # Here we want to select only recording 2 and 3 from participant 1 to 4.
 # Note that the returned subset is an instance of your dataset class as well.
 subset = dataset.get_subset(participant=["p1", "p2", "p3", "p4"], recording=["rec_2", "rec_3"])
 subset
 
 # %%
-# The subset can then be further filtered.
+# The subset can then be filtered further.
 # For more advanced filter approaches you can also filter the index directly and use a bool-map to index the dataset
 example_bool_map = subset.index["participant"].isin(["p1", "p2"])
 final_subset = subset.get_subset(bool_map=example_bool_map)
@@ -92,20 +92,20 @@ final_subset
 # This can actually be checked using the `is_single` method.
 for row in final_subset:
     print(row)
-print("This row contains {} data-point".format(len(row)))
+    print("This row contains {} data-point".format(len(row)), end="\n\n")
 # %%
 # However, in many cases, we don't want to iterate over all rows, but rather iterate over groups of the datasets (
 # e.g. all participants or all tests) individually.
 # We can do that in 2 ways (depending on what is needed).
 # For example, if we want to iterate over all recordings, we can do this:
 for trial in final_subset.iter_level("recording"):
-    print(trial)
+    print(trial, end="\n\n")
 
 # %%
 # You can see that we get two subsets, one for each recording label.
 # But what, if we want to iterate over the participants and the recordings together?
 # In these cases, we need to group our dataset first.
-# Note that the grouped_subset shows the new groupby columns as index in the representation and the length of the
+# Note that the grouped_subset shows the new groupby columns as the index in the representation and the length of the
 # dataset is reported to be the number of groups.
 grouped_subset = final_subset.groupby(["participant", "recording"])
 print("The dataset contains {} groups.".format(len(grouped_subset)))
@@ -118,7 +118,7 @@ grouped_subset
 # Each group reports a shape of `(1,)` independent of the number of rows in each group.
 for group in grouped_subset:
     print("This group has the shape {}".format(group.shape))
-    print(group)
+    print(group, end="\n\n")
 
 # %%
 # At any point, you can view all unique groups/rows in the dataset using the `groups` attribute.
@@ -132,12 +132,12 @@ final_subset.groups
 
 # %%
 # If you want you can also ungroup a dataset again.
-# This can be usefull for nested iteration:
+# This can be useful for a nested iteration:
 for outer, group in enumerate(grouped_subset):
     ungrouped = group.groupby(None)
     for inner, subgroup in enumerate(ungrouped):
         print(outer, inner)
-        print(subgroup)
+        print(subgroup, end="\n\n")
 
 # %%
 # Splitting
@@ -146,18 +146,18 @@ for outer, group in enumerate(grouped_subset):
 # distinct sets for a cross-validation.
 #
 # The `Dataset` objects directly support the `sklearn` helper functions for this.
-# For example to split our subset into training and testing we can do the following:
+# For example, to split our subset into training and testing we can do the following:
 from sklearn.model_selection import train_test_split
 
 train, test = train_test_split(final_subset, train_size=0.5)
-print("Train:\n", train)
+print("Train:\n", train, end="\n\n")
 print("Test:\n", test)
 
 # %%
-# Such splitting always occures on data-point level and can therefore be influenced by grouping.
+# Such splitting always occurs on a data-point level and can therefore be influenced by grouping.
 # If we want to split our datasets into training and testing, but only based on the participants, we can do this:
 train, test = train_test_split(final_subset.groupby("participant"), train_size=0.5)
-print("Train:\n", train)
+print("Train:\n", train, end="\n\n")
 print("Test:\n", test)
 
 # %%
@@ -168,7 +168,7 @@ cv = KFold(n_splits=2)
 grouped_subset = final_subset.groupby("participant")
 for train, test in cv.split(grouped_subset):
     # We only print the train set here
-    print(grouped_subset[train])
+    print(grouped_subset[train], end="\n\n")
 
 
 # %%
@@ -190,13 +190,13 @@ from sklearn.model_selection import GroupKFold
 cv = GroupKFold(n_splits=2)
 for train, test in cv.split(final_subset, groups=group_labels):
     # We only print the train set here
-    print(final_subset[train])
+    print(final_subset[train], end="\n\n")
 
 # %%
 # Creating labels also works for datasets that are already grouped.
 # But, the columns that should be contained in the label must be a subset of the groupby columns in this case.
 #
-# The number of grouplabels are 4 in this case, as there are only 4 groups after grouping the datset.
+# The number of group labels is 4 in this case, as there are only 4 groups after grouping the datset.
 group_labels = final_subset.groupby(["participant", "recording"]).create_group_labels("participant")
 group_labels
 
@@ -213,9 +213,9 @@ group_labels
 # However, if you want to make sure your dataset "feels" like part of gaitmap, you should follow these recommendations:
 #
 # - Data access should be provided via `@properties` on the dataset objects, loading the data on demand.
-# - The names of these properties should follow naming used in gaitmap (e.g. `data` for IMU-data) and should return
-#   values using the established gaitmap datatypes.
-# - The names of values that represents gold standard information (i.e. values you would only have in an evaluation
+# - The names of these properties should follow the naming scheme used in gaitmap (e.g. `data` for IMU-data)
+#   and should return values using the established gaitmap datatypes.
+# - The names of values that represent gold standard information (i.e. values you would only have in an evaluation
 #   dataset), should have a trailing `_`, which marks them as result in the context of gaitmap.
 #
 # This should look something like this:
@@ -251,12 +251,12 @@ class CustomDataset(Dataset):
 # trail, you should provide access only, if there is just a single trail by a single participant left in the dataset).
 # Otherwise, you should throw an error.
 # This pattern can be simplified using the `is_single` or `assert_is_single` helper method.
-# These helper check based on the provided `groupby_cols` if there is really just a single group/row left with the
+# These helpers check based on the provided `groupby_cols` if there is really just a single group/row left with the
 # given groupby settings.
 #
 # Let's say `data` can be accessed on either a `recording` or a `trail` level, and `segmented_stride_list` can only
 # be accessed on a `trail` level.
-# Than we could do something like this:
+# Then we could do something like this:
 
 
 class CustomDataset(Dataset):
