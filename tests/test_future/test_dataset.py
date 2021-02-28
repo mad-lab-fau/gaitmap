@@ -76,10 +76,15 @@ class TestDataset:
         ],
     )
     def test_groupby(self, groupby, length):
-        ds = Dataset(subset_index=_create_valid_index(), groupby=groupby)
+        ds = Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)
         assert ds.shape[0] == length
 
-        index_level = len(groupby) if isinstance(groupby, list) else 1
+        if isinstance(groupby, list):
+            index_level = len(groupby)
+        elif groupby is None:
+            index_level = len(ds.index.columns)
+        else:
+            index_level = 1
         assert ds.grouped_index.index.nlevels == index_level
         assert len(ds.groups) == length
         if index_level > 1:
@@ -246,7 +251,7 @@ class TestDataset:
     def test_getitem_valid_input(self, subscript, groupby, what_to_expect):
         pd.testing.assert_frame_equal(
             left=what_to_expect,
-            right=Dataset(subset_index=_create_valid_index(), groupby=groupby)[subscript].index,
+            right=Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)[subscript].index,
         )
 
     @pytest.mark.parametrize(
@@ -266,32 +271,63 @@ class TestDataset:
     )
     def test_getitem_error_input(self, subscript, select_lvl, what_to_expect):
         with pytest.raises(IndexError, match=what_to_expect):
-            _ = Dataset(subset_index=_create_valid_index(), groupby=select_lvl)[subscript]
+            _ = Dataset(subset_index=_create_valid_index(), groupby_cols=select_lvl)[subscript]
 
+    @pytest.mark.parametrize("groupby_level", (["patients"], ["patients", "tests"], ["patients", "tests", "extra"]))
     @pytest.mark.parametrize(
-        "index,what_to_expect",
-        [
+        "index,is_single_level",
+        (
             (
                 _create_valid_index(
                     {
-                        "patient_1": {"a": ["test_1"], "b": ["0", "1"]},
-                        "patient_3": {"a": ["test_2"], "b": ["0", "1"]},
+                        "patient_2": {"a": ["test_1"], "b": ["0", "1"]},
+                        "patient_3": {"a": ["test_1", "test_2", "test_3"], "b": ["0", "1"]},
                     },
                     columns_names=["patients", "tests", "extra"],
                 ),
-                False,
+                [],
             ),
             (
                 _create_valid_index(
-                    {"patient_1": {"a": ["test_1"], "b": ["0"]}},
+                    {
+                        "patient_3": {"a": ["test_1", "test_2", "test_3"], "b": ["0", "1"]},
+                    },
                     columns_names=["patients", "tests", "extra"],
                 ),
-                True,
+                [["patients"]],
             ),
-        ],
+            (
+                _create_valid_index(
+                    {
+                        "patient_3": {"a": ["test_1"], "b": ["0", "1"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                [["patients"], ["patients", "tests"]],
+            ),
+            (
+                _create_valid_index(
+                    {
+                        "patient_3": {"a": ["test_1"], "b": ["1"]},
+                    },
+                    columns_names=["patients", "tests", "extra"],
+                ),
+                [["patients"], ["patients", "tests"], ["patients", "tests", "extra"], None],
+            ),
+        ),
     )
-    def test_is_single(self, index, what_to_expect):
-        assert Dataset(subset_index=index).is_single() == what_to_expect
+    def test_is_single(self, index, is_single_level, groupby_level):
+        ds = Dataset(subset_index=index, groupby_cols=groupby_level)
+        for gr in ["patients"], ["patients", "tests"], ["patients", "tests", "extra"], None:
+            if gr in is_single_level:
+                assert ds.is_single(gr) is True
+                # Check that no error is raised
+                ds.assert_is_single(gr, "test")
+
+            else:
+                assert ds.is_single(gr) is False
+                with pytest.raises(ValueError):
+                    ds.assert_is_single(gr, "test")
 
     def test__create_index_call(self):
         with pytest.raises(NotImplementedError):
@@ -322,7 +358,7 @@ class TestDataset:
         ],
     )
     def test_dataset_with_kfold_valid_input(self, n_splits, groupby, what_to_expect):
-        df = Dataset(subset_index=_create_valid_index(), groupby=groupby)
+        df = Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)
         train, test = next(KFold(n_splits=n_splits).split(df))
         pd.testing.assert_frame_equal(left=what_to_expect[0], right=df[train].index)
         pd.testing.assert_frame_equal(left=what_to_expect[1], right=df[test].index)
@@ -335,7 +371,7 @@ class TestDataset:
     )
     def test_dataset_with_kfold_error_input(self, n_splits, select_lvl, what_to_expect):
         with pytest.raises(ValueError, match=what_to_expect):
-            next(KFold(n_splits=n_splits).split(Dataset(subset_index=_create_valid_index(), groupby=select_lvl)))
+            next(KFold(n_splits=n_splits).split(Dataset(subset_index=_create_valid_index(), groupby_cols=select_lvl)))
 
     @pytest.mark.parametrize(
         "select_lvl,what_to_expect",
@@ -372,7 +408,7 @@ class TestDataset:
     def test_iter(self, select_lvl, what_to_expect):
         pd.testing.assert_frame_equal(
             left=what_to_expect,
-            right=next(Dataset(subset_index=_create_valid_index(), groupby=select_lvl).__iter__()).index,
+            right=next(Dataset(subset_index=_create_valid_index(), groupby_cols=select_lvl).__iter__()).index,
         )
 
     @pytest.mark.parametrize(
@@ -438,13 +474,16 @@ class TestDataset:
         ),
     )
     def test_create_group_labels(self, groupby, groupby_labels, unique):
-        ds = Dataset(subset_index=_create_valid_index(), groupby=groupby)
+        ds = Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)
         labels = ds.create_group_labels(groupby_labels)
 
         assert len(labels) == ds.shape[0]
         assert len(set(labels)) == unique
 
     def test_create_group_labels_error(self):
-        ds = Dataset(subset_index=_create_valid_index(), groupby="patients")
+        ds = Dataset(subset_index=_create_valid_index(), groupby_cols="patients")
         with pytest.raises(ValueError, match="Columns used to group the entire dataset"):
             ds.create_group_labels("patients")
+
+
+# TODO: Test groupby
