@@ -92,6 +92,7 @@ class Dataset(_BaseSerializable):
 
     We can also change `groupby` (either in the init or afterwards), to loop over other combinations.
     If we select the level `test`, we will loop over all `patient`-`test` combinations.
+
     >>> grouped_dataset = dataset.groupby(["patient", "test"])
     >>> grouped_dataset  # doctest: +NORMALIZE_WHITESPACE
     Dataset [6 groups/rows]
@@ -110,6 +111,7 @@ class Dataset(_BaseSerializable):
                  test_1  patient_3  test_1     2
                  test_2  patient_3  test_2     1
                  test_2  patient_3  test_2     2
+
     >>> for r in grouped_dataset[:2]:
     ...     print(r)  # doctest: +NORMALIZE_WHITESPACE
     Dataset [1 groups/rows]
@@ -162,6 +164,7 @@ class Dataset(_BaseSerializable):
     If we want to use datasets in combination with `sklearn.model_selection.GroupKFold`, we can generate valid group
     labels as follows.
     Note, that you usually don't want to use that in combination with `self.groupby`.
+
     >>> # We are using the ungrouped dataset again!
     >>> group_labels = dataset.create_group_labels(["patient", "test"])
     >>> pd.concat([dataset.index, pd.Series(group_labels, name="group_labels")], axis=1)
