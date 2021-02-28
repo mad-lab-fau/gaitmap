@@ -76,21 +76,30 @@ class TestDataset:
         ],
     )
     def test_groupby(self, groupby, length):
-        ds = Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)
-        assert ds.shape[0] == length
+        ds = Dataset(subset_index=_create_valid_index())
+        grouped = ds.groupby(groupby)
+
+        assert id(grouped) != id(ds)
+        assert grouped.groupby_cols == groupby
+        assert grouped.shape[0] == length
 
         if isinstance(groupby, list):
             index_level = len(groupby)
         elif groupby is None:
-            index_level = len(ds.index.columns)
+            index_level = len(grouped.index.columns)
         else:
             index_level = 1
-        assert ds.grouped_index.index.nlevels == index_level
-        assert len(ds.groups) == length
+        assert grouped.grouped_index.index.nlevels == index_level
+        assert len(grouped.groups) == length
         if index_level > 1:
-            assert len(ds.groups[0]) == index_level
+            assert len(grouped.groups[0]) == index_level
         else:
-            assert isinstance(ds.groups[0], (str, int))
+            assert isinstance(grouped.groups[0], (str, int))
+
+    def test_groupby_error(self):
+        ds = Dataset(subset_index=_create_valid_index())
+        with pytest.raises(KeyError, match="You can only groupby columns that are part of the index columns"):
+            ds.groupby("invalid_column_name")
 
     @pytest.mark.parametrize(
         "index,bool_map,kwargs,what_to_expect,expect_error",
@@ -329,7 +338,21 @@ class TestDataset:
                 with pytest.raises(ValueError):
                     ds.assert_is_single(gr, "test")
 
-    def test__create_index_call(self):
+    def test_assert_is_single_error(self):
+        index = _create_valid_index(
+            {
+                "patient_2": {"a": ["test_1"], "b": ["0", "1"]},
+                "patient_3": {"a": ["test_1", "test_2", "test_3"], "b": ["0", "1"]},
+            },
+            columns_names=["patients", "tests", "extra"],
+        )
+        ds = Dataset(subset_index=index)
+        with pytest.raises(ValueError) as e:
+            ds.assert_is_single(None, "test_name")
+
+        assert "test_name" in str(e)
+
+    def test_create_index_call(self):
         with pytest.raises(NotImplementedError):
             _ = Dataset().index
 
@@ -471,19 +494,22 @@ class TestDataset:
             (None, "patients", 3),
             (None, ["patients"], 3),
             (None, ["patients", "extra"], 6),
+            (["patients", "tests"], ["patients"], 3),
         ),
     )
     def test_create_group_labels(self, groupby, groupby_labels, unique):
         ds = Dataset(subset_index=_create_valid_index(), groupby_cols=groupby)
         labels = ds.create_group_labels(groupby_labels)
 
-        assert len(labels) == ds.shape[0]
+        assert len(labels) == len(ds)
         assert len(set(labels)) == unique
 
-    def test_create_group_labels_error(self):
+    def test_create_group_labels_error_groupby(self):
         ds = Dataset(subset_index=_create_valid_index(), groupby_cols="patients")
-        with pytest.raises(ValueError, match="Columns used to group the entire dataset"):
-            ds.create_group_labels("patients")
+        with pytest.raises(KeyError, match="When using `create_group_labels` with a grouped dataset"):
+            ds.create_group_labels("recording")
 
-
-# TODO: Test groupby
+    def test_create_group_labels_error_not_in_index(self):
+        ds = Dataset(subset_index=_create_valid_index())
+        with pytest.raises(KeyError, match="The selected label columns"):
+            ds.create_group_labels("something_wrong")

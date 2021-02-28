@@ -181,6 +181,7 @@ for train, test in cv.split(grouped_subset):
 group_labels = final_subset.create_group_labels("participant")
 group_labels
 
+
 # %%
 # They can then be used as the `group` parameter in `GroupKFold`.
 # Now the data of the two participants is never split between train and test set.
@@ -190,6 +191,14 @@ cv = GroupKFold(n_splits=2)
 for train, test in cv.split(final_subset, groups=group_labels):
     # We only print the train set here
     print(final_subset[train])
+
+# %%
+# Creating labels also works for datasets that are already grouped.
+# But, the columns that should be contained in the label must be a subset of the groupby columns in this case.
+#
+# The number of grouplabels are 4 in this case, as there are only 4 groups after grouping the datset.
+group_labels = final_subset.groupby(["participant", "recording"]).create_group_labels("participant")
+group_labels
 
 # %%
 # Adding Data

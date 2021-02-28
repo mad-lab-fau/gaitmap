@@ -231,7 +231,14 @@ class Dataset(_BaseSerializable):
             groupby_cols = self.index.columns.to_list()
         else:
             groupby_cols = self.groupby_cols
-        return self.index.set_index(groupby_cols, drop=False)
+        try:
+            return self.index.set_index(groupby_cols, drop=False)
+        except KeyError:
+            raise KeyError(
+                "You can only groupby columns that are part of the index columns ({}) and not {}".format(
+                    list(self.index.columns), self.groupby_cols
+                )
+            )
 
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
@@ -255,7 +262,10 @@ class Dataset(_BaseSerializable):
             None (no grouping) or a valid subset of the columns available in the dataset index.
 
         """
-        return self.clone().set_params(groupby_cols=groupby_cols)
+        grouped_ds = self.clone().set_params(groupby_cols=groupby_cols)
+        # Get grouped index to raise an error here, in case the `groupby_cols` are invalid.
+        _ = grouped_ds.grouped_index
+        return grouped_ds
 
     def get_subset(
         self: Self,
@@ -412,32 +422,38 @@ class Dataset(_BaseSerializable):
                 )
             )
 
-    def create_group_labels(self, groupby_cols: Union[str, List[str]]):
+    def create_group_labels(self, label_cols: Union[str, List[str]]):
         """Generate a list of labels for each group/row in the dataset.
 
         Note that this has a different usecase than the dataset-wide groupby.
         Using `groupby` reduces the effective size of the dataset to the number of groups.
-        This method produces a group label for each group/row that is already in the dataset.
+        This method produces a group label for each group/row that is already in the dataset, without changing the
+        dataset.
 
         The output of this method can be used in combination with `sklearn.model_selection.GroupKFold` as the group
         label.
 
         Parameters
         ----------
-        groupby_cols
-            None (no grouping) or a valid subset of the columns available in the dataset index.
+        label_cols
+            The columns that should be included in the label.
+            If the dataset is already grouped, this must be a subset of  `self.groupby_cols`.
 
         """
-        if bool(set(_ensure_is_list(groupby_cols)) & set(_ensure_is_list(self.groupby_cols))):
-            raise ValueError(
-                "Columns used to group the entire dataset (`self.groupby_cols`) can not be used again to generate "
-                "group labels."
+        unique_index = self._get_unique_groups().to_frame()
+        try:
+            return unique_index.set_index(label_cols).index.to_list()
+        except KeyError:
+            if self.groupby_cols is not None:
+                raise KeyError(
+                    "When using `create_group_labels` with a grouped dataset, the selected columns must "
+                    "be a subset of `self.groupby_cols` ({}) and not ({})".format(self.groupby_cols, label_cols)
+                )
+            raise KeyError(
+                "The selected label columns ({}) are not in the index of the dataset ({})".format(
+                    label_cols, list(self.index.columns)
+                )
             )
-        if self.groupby_cols is None:
-            index = self.index
-        else:
-            index = self.index.drop(columns=self.groupby_cols)
-        return index.set_index(groupby_cols).index.to_list()
 
     def create_index(self) -> pd.DataFrame:
         """Create the full index for the dataset.
