@@ -15,7 +15,10 @@ project.
 - New module for experimental features. Things implemented there might be changed or deleted without deprecation
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
 - New dataset class that will serve as the base class for all future datasets in `gaitmap.future`. 
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122)
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/122,
+  https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/132)
+- New example on how to create custom datasets with the new dataset-class
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/132)
 - The new gaitmap logo is now shown everywhere :)
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/129)
 
