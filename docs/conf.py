@@ -26,7 +26,19 @@ import gaitmap
 
 sys.path.insert(0, os.path.abspath(".."))
 
-URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/blob/master"
+
+def replace_gitlab_links(base_url, text):
+    regex = base_url + r"-/(merge_requests|issues)/(\d+)"
+
+    def substitute(matchobj):
+        tokens = {"merge_requests": "!", "issues": "#"}
+        token = tokens[matchobj.group(1)]
+        return "[{}{}]({})".format(token, matchobj.group(2), matchobj.group(0))
+
+    return re.sub(regex, substitute, text)
+
+
+URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/"
 
 # -- Project information -----------------------------------------------------
 
@@ -47,7 +59,11 @@ out = out.replace("./docs/_static/logo/gaitmap_logo_with_text.png", "./_static/l
 with (HERE / "README.md").open("w+") as f:
     f.write(out)
 
-copy(HERE.parent / "CHANGELOG.md", HERE / "CHANGELOG.md")
+with (HERE.parent / "CHANGELOG.md").open() as f:
+    out = f.read()
+out = replace_gitlab_links(URL, out)
+with (HERE / "CHANGELOG.md").open("w+") as f:
+    f.write(out)
 
 # -- General configuration ---------------------------------------------------
 
