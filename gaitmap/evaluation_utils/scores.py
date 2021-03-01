@@ -1,12 +1,15 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, overload
+from typing import Union, Dict, overload
 
 import numpy as np
 import pandas as pd
+from typing_extensions import TypedDict
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
+
+_ScoresDict = TypedDict("_ScoresDict", {"precision": float, "recall": float, "f1_score": float})
 
 
 @overload
@@ -181,12 +184,12 @@ def f1_score(matches_df):
 
 
 @overload
-def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, Tuple[float, float, float]]:
+def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, _ScoresDict]:
     ...
 
 
 @overload
-def precision_recall_f1_score(matches_df: pd.DataFrame) -> Tuple[float, float, float]:
+def precision_recall_f1_score(matches_df: pd.DataFrame) -> _ScoresDict:
     ...
 
 
@@ -215,30 +218,35 @@ def precision_recall_f1_score(matches_df):
 
     Returns
     -------
-    score_metrics : (precision, recall, f1_score) or {"sensor_name": (precision, recall, f1_score), ...}
-        Tuple of precision scores or a dictionary with the same scores.
+    score_metrics : {"precision": precision, "recall": recall, "f1_score": f1_score} or
+    {"s_1": {"precision": precision, ... }, "s_2": {"recall": recall, ... }, "s_3": {"f1_score": f1_score, ... }}
+        Dictionary of precision scores or a dictionary with the keys as the sensor names and the values as dictionaries
+        with the scores.
 
     See Also
     --------
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    is_not_dict = not isinstance(matches_df, dict)
-    if is_not_dict:
-        matches_df = {"__dummy__": matches_df}
+    precisions = precision_score(matches_df.copy())
+    recalls = recall_score(matches_df.copy())
+    f1_scores = f1_score(matches_df.copy())
 
-    output = {}
+    if isinstance(matches_df, dict):
+        return {
+            key: {
+                "precision": precisions[key],
+                "recall": recalls[key],
+                "f1_score": f1_scores[key],
+            }
+            for key in precisions
+        }
 
-    precision = precision_score(matches_df.copy())
-    recall = recall_score(matches_df.copy())
-    f1_score_value = f1_score(matches_df.copy())
-
-    for sensor_name in list(recall.keys()):
-        output[sensor_name] = (precision[sensor_name], recall[sensor_name], f1_score_value[sensor_name])
-
-    if is_not_dict:
-        return output["__dummy__"]
-    return output
+    return {
+        "precision": precisions,
+        "recall": recalls,
+        "f1_score": f1_scores,
+    }
 
 
 def _get_match_type_dfs(

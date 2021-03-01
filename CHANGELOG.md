@@ -22,7 +22,11 @@ project.
 - The new gaitmap logo is now shown everywhere :)
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/129)
 
-### Changed  
+### Changed
+
+- Changed the output format of `gaitmap.evaluation_utils.scores.precision_recall_f1_score` so it will
+  be easier to use with the pipelines and optimizer.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/133)
 
 ### Deprecated
 

@@ -111,28 +111,28 @@ class TestEvaluationScores:
 
         eval_metrics = precision_recall_f1_score(matches_df)
 
-        assert_array_equal(eval_metrics, [0.6, 0.6, 0.6])
+        assert_array_equal(list(eval_metrics.values()), [0.6, 0.6, 0.6])
 
     def test_perfect_precision_recall_f1_single(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [])
 
         eval_metrics = precision_recall_f1_score(matches_df)
 
-        assert_array_equal(eval_metrics, [1.0, 1.0, 1.0])
+        assert_array_equal(list(eval_metrics.values()), [1.0, 1.0, 1.0])
 
     def test_precision_recall_f1_multi(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
 
         eval_metrics = precision_recall_f1_score({"sensor": matches_df})
 
-        assert_array_equal(eval_metrics["sensor"], [0.6, 0.6, 0.6])
+        assert_array_equal(list(eval_metrics["sensor"].values()), [0.6, 0.6, 0.6])
 
     def test_perfect_precision_recall_f1_multi(self):
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [], [])
 
         eval_metrics = precision_recall_f1_score({"sensor": matches_df})
 
-        assert_array_equal(eval_metrics["sensor"], [1.0, 1.0, 1.0])
+        assert_array_equal(list(eval_metrics["sensor"].values()), [1.0, 1.0, 1.0])
 
 
 class TestDivisionByZero:
