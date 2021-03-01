@@ -59,7 +59,7 @@ docs:
   <<: *cached_python_base
   script:
     - doit docs
-    - cp docs/_build/html ./html_docs
+    - cp -r docs/_build/html ./html_docs
   artifacts:
     paths:
       - html_docs
