@@ -146,12 +146,15 @@ html_static_path = ["_static"]
 
 # intersphinx configuration
 intersphinx_module_mapping = {
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "tslearn": ("https://tslearn.readthedocs.io/en/stable/", None),
+    "tslearn": ("https://tslearn.readthedocs.io/en/stable", None),
+    "sklearn": ("https://scikit-learn.org/stable", None),
 }
+
+user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0'
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
