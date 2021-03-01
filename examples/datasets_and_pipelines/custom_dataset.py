@@ -4,7 +4,7 @@ r"""
 Custom Dataset
 ==============
 
-.. warn:: Datasets are still an experimental feature and the API might change at any time.
+.. warning:: Datasets are still an experimental feature and the API might change at any time.
 
 Gaitmap has the concept of Dataset.
 Datasets represent a set of recordings that should all be processed in the same way.
