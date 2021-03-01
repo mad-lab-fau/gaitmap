@@ -1,5 +1,5 @@
 """Base class for all datasets."""
-from typing import Optional, List, Union, Generator, Tuple, TypeVar, Sequence
+from typing import Optional, List, Union, Tuple, TypeVar, Sequence, Iterator
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ class Dataset(_BaseSerializable):
 
     Parameters
     ----------
-    groupby
+    groupby_cols
         A column name or a list of column names that should be used to group the index before iterating over it.
         For examples see below.
     subset_index
@@ -93,8 +93,8 @@ class Dataset(_BaseSerializable):
     We can also change `groupby` (either in the init or afterwards), to loop over other combinations.
     If we select the level `test`, we will loop over all `patient`-`test` combinations.
 
-    >>> dataset.groupby = ["patient", "test"]
-    >>> dataset  # doctest: +NORMALIZE_WHITESPACE
+    >>> grouped_dataset = dataset.groupby(["patient", "test"])
+    >>> grouped_dataset  # doctest: +NORMALIZE_WHITESPACE
     Dataset [6 groups/rows]
     <BLANKLINE>
                            patient    test extra
@@ -111,7 +111,8 @@ class Dataset(_BaseSerializable):
                  test_1  patient_3  test_1     2
                  test_2  patient_3  test_2     1
                  test_2  patient_3  test_2     2
-    >>> for r in dataset[:2]:
+
+    >>> for r in grouped_dataset[:2]:
     ...     print(r)  # doctest: +NORMALIZE_WHITESPACE
     Dataset [1 groups/rows]
     <BLANKLINE>
@@ -128,7 +129,7 @@ class Dataset(_BaseSerializable):
 
     To iterate over the unique values of a specific the "iter_level" function:
 
-    >>> for r in list(dataset.iter_level("patient"))[:2]:
+    >>> for r in list(grouped_dataset.iter_level("patient"))[:2]:
     ...     print(r)  # doctest: +NORMALIZE_WHITESPACE
     Dataset [2 groups/rows]
     <BLANKLINE>
@@ -149,7 +150,7 @@ class Dataset(_BaseSerializable):
 
     We can also get arbitary subsets from the dataset:
 
-    >>> subset = dataset.get_subset(patient=["patient_1", "patient_2"], extra="2")
+    >>> subset = grouped_dataset.get_subset(patient=["patient_1", "patient_2"], extra="2")
     >>> subset  # doctest: +NORMALIZE_WHITESPACE
     Dataset [4 groups/rows]
     <BLANKLINE>
@@ -164,7 +165,7 @@ class Dataset(_BaseSerializable):
     labels as follows.
     Note, that you usually don't want to use that in combination with `self.groupby`.
 
-    >>> dataset.groupby = None
+    >>> # We are using the ungrouped dataset again!
     >>> group_labels = dataset.create_group_labels(["patient", "test"])
     >>> pd.concat([dataset.index, pd.Series(group_labels, name="group_labels")], axis=1)
           patient    test extra         group_labels
@@ -183,16 +184,16 @@ class Dataset(_BaseSerializable):
 
     """
 
-    groupby: Optional[Union[List[str], str]]
+    groupby_cols: Optional[Union[List[str], str]]
     subset_index: Optional[pd.DataFrame]
 
     def __init__(
         self,
         *,
-        groupby: Optional[Union[List[str], str]] = None,
+        groupby_cols: Optional[Union[List[str], str]] = None,
         subset_index: Optional[pd.DataFrame] = None,
     ):
-        self.groupby = groupby
+        self.groupby_cols = groupby_cols
         self.subset_index = subset_index
 
     @property
@@ -208,17 +209,39 @@ class Dataset(_BaseSerializable):
         """Get all groups based on the set groupby level."""
         return self._get_unique_groups().to_list()
 
+    def __len__(self) -> int:
+        """Get the length of the dataset.
+
+        This is equal to the number of rows in the index, if `self.groupby_cols=None`.
+        Otherwise, it is equal to the number of unique groups.
+        """
+        return len(self.groups)
+
     @property
     def shape(self) -> Tuple[int]:
-        """Get shape."""
-        return (len(self.groups),)
+        """Get the shape of the dataset.
+
+        This only reports a single dimension.
+        This is equal to the number of rows in the index, if `self.groupby_cols=None`.
+        Otherwise, it is equal to the number of unique groups.
+        """
+        return (len(self),)
 
     @property
     def grouped_index(self) -> pd.DataFrame:
         """Return the the index with the `groupby` columns set as multiindex."""
-        if self.groupby is None:
-            return self.index
-        return self.index.set_index(self.groupby, drop=False).sort_index()
+        if self.groupby_cols is None:
+            groupby_cols = self.index.columns.to_list()
+        else:
+            groupby_cols = self.groupby_cols
+        try:
+            return self.index.set_index(groupby_cols, drop=False)
+        except KeyError:
+            raise KeyError(
+                "You can only groupby columns that are part of the index columns ({}) and not {}".format(
+                    list(self.index.columns), self.groupby_cols
+                )
+            )
 
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
@@ -230,6 +253,22 @@ class Dataset(_BaseSerializable):
             multi_index = [multi_index]
 
         return self.clone().set_params(subset_index=self.grouped_index.loc[multi_index].reset_index(drop=True))
+
+    def groupby(self, groupby_cols: Optional[Union[List[str], str]]):
+        """Return a copy of the dataset grouped by the specified columns.
+
+        Each unique group represents a single data point in the resulting dataset.
+
+        Parameters
+        ----------
+        groupby_cols
+            None (no grouping) or a valid subset of the columns available in the dataset index.
+
+        """
+        grouped_ds = self.clone().set_params(groupby_cols=groupby_cols)
+        # Get grouped index to raise an error here, in case the `groupby_cols` are invalid.
+        _ = grouped_ds.grouped_index
+        return grouped_ds
 
     def get_subset(
         self: Self,
@@ -300,17 +339,25 @@ class Dataset(_BaseSerializable):
 
     def __repr__(self) -> str:
         """Return string representation of the dataset object."""
+        if self.groupby_cols is None:
+            repr_index = self.index
+        else:
+            repr_index = self.grouped_index
         return "{} [{} groups/rows]\n\n   {}\n\n   ".format(
             self.__class__.__name__,
             self.shape[0],
-            str(self.grouped_index).replace("\n", "\n   "),
+            str(repr_index).replace("\n", "\n   "),
         )[:-5]
 
     def _repr_html_(self) -> str:
         """Return html representation of the dataset object."""
+        if self.groupby_cols is None:
+            repr_index = self.index
+        else:
+            repr_index = self.grouped_index
         return '<h4 style="margin-bottom: 0.1em;">{} [{} groups/rows]</h3>\n'.format(
             self.__class__.__name__, self.shape[0]
-        ) + self.grouped_index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
+        ) + repr_index._repr_html_().replace("<div>", '<div style="margin-top: 0em">').replace(
             '<table border="1" class="dataframe"', '<table style="margin-left: 3em;"'
         ).replace(
             "<th>", '<th style="text-align: center;">'
@@ -318,11 +365,11 @@ class Dataset(_BaseSerializable):
             "<td>", '<td style="text-align: center; padding-left: 2em; padding-right: 2em;">'
         )
 
-    def __iter__(self: Self) -> Generator[Self, None, None]:
+    def __iter__(self: Self) -> Iterator[Self]:
         """Return generator object containing a subset for every combination up to and including the selected level."""
         return (self.__getitem__(i) for i in range(self.shape[0]))
 
-    def iter_level(self: Self, level: str) -> Generator[Self, None, None]:
+    def iter_level(self: Self, level: str) -> Iterator[Self]:
         """Return generator object containing a subset for every category from the selected level.
 
         Parameters
@@ -342,31 +389,74 @@ class Dataset(_BaseSerializable):
 
         return (self.get_subset(**{level: category}) for category in self.index[level].unique())
 
-    def is_single(self) -> bool:
-        """Return True if index contains only one row (depending on `self.selected_level`) else False."""
-        return self.shape[0] == 1
+    def is_single(self, groupby_cols: Optional[Union[str, List[str]]]) -> bool:
+        """Return True if index contains only one row/group with the given groupby settings.
 
-    def create_group_labels(self, groupby: Union[str, List[str]]):
+        If `groupby_cols=None` this checks if there is only a single row left.
+
+        Parameters
+        ----------
+        groupby_cols
+            None (no grouping) or a valid subset of the columns available in the dataset index.
+
+        """
+        return self.groupby(groupby_cols).shape[0] == 1
+
+    def assert_is_single(self, groupby_cols: Optional[Union[str, List[str]]], property_name) -> None:
+        """Raise error if index does contain more than one group/row with the given groupby settings.
+
+        This should be used when implementing access to data values, which can only be accessed when only a single
+        trail/participant/etc. exist in the dataset.
+
+        Parameters
+        ----------
+        groupby_cols
+            None (no grouping) or a valid subset of the columns available in the dataset index.
+        property_name
+            Name of the property this check is used in.
+            Used to format the error message.
+
+        """
+        if not self.is_single(groupby_cols):
+            raise ValueError(
+                "The data value {} of dataset {} can only be accessed if there is only a single "
+                "combination of the columns {} left in a data-subset".format(
+                    property_name, self.__class__.__name__, groupby_cols
+                )
+            )
+
+    def create_group_labels(self, label_cols: Union[str, List[str]]):
         """Generate a list of labels for each group/row in the dataset.
 
         Note that this has a different usecase than the dataset-wide groupby.
-        Setting `self.groupby` reduces the effective size of the dataset to the number of groups.
-        This method produces a group label for each group/row that is already in the dataset.
+        Using `groupby` reduces the effective size of the dataset to the number of groups.
+        This method produces a group label for each group/row that is already in the dataset, without changing the
+        dataset.
 
         The output of this method can be used in combination with `sklearn.model_selection.GroupKFold` as the group
         label.
 
+        Parameters
+        ----------
+        label_cols
+            The columns that should be included in the label.
+            If the dataset is already grouped, this must be a subset of  `self.groupby_cols`.
+
         """
-        if bool(set(_ensure_is_list(groupby)) & set(_ensure_is_list(self.groupby))):
-            raise ValueError(
-                "Columns used to group the entire dataset (`self.groupby`) can not be used again to generate group "
-                "labels."
+        unique_index = self._get_unique_groups().to_frame()
+        try:
+            return unique_index.set_index(label_cols).index.to_list()
+        except KeyError:
+            if self.groupby_cols is not None:
+                raise KeyError(
+                    "When using `create_group_labels` with a grouped dataset, the selected columns must "
+                    "be a subset of `self.groupby_cols` ({}) and not ({})".format(self.groupby_cols, label_cols)
+                )
+            raise KeyError(
+                "The selected label columns ({}) are not in the index of the dataset ({})".format(
+                    label_cols, list(self.index.columns)
+                )
             )
-        if self.groupby is None:
-            index = self.index
-        else:
-            index = self.index.drop(columns=self.groupby)
-        return index.set_index(groupby).index.to_list()
 
     def create_index(self) -> pd.DataFrame:
         """Create the full index for the dataset.

@@ -136,6 +136,12 @@ def test_caching(snapshot):
         assert_frame_equal(s_list, second_call_results.stride_list_[sensor])
 
 
+def test_custom_dataset(snapshot):
+    # There is not really anything specific, we want to test here, so we just run everything and check that there are
+    # no errors.
+    import examples.datasets_and_pipelines.custom_dataset  # noqa
+
+
 def test_multi_process():
     """Test the multiprocess example.
 
