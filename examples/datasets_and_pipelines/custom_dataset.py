@@ -89,10 +89,10 @@ final_subset
 #
 # By default, you can simply iterate over all rows.
 # Note, that each row itself is a dataset again, but just with a single entry.
-# This can actually be checked using the `is_single` method.
 for row in final_subset:
     print(row)
     print("This row contains {} data-point".format(len(row)), end="\n\n")
+
 # %%
 # However, in many cases, we don't want to iterate over all rows, but rather iterate over groups of the datasets (
 # e.g. all participants or all tests) individually.
@@ -131,7 +131,7 @@ grouped_subset.groups
 final_subset.groups
 
 # %%
-# If you want you can also ungroup a dataset again.
+# If you want, you can also ungroup a dataset again.
 # This can be useful for a nested iteration:
 for outer, group in enumerate(grouped_subset):
     ungrouped = group.groupby(None)
@@ -161,7 +161,8 @@ print("Train:\n", train, end="\n\n")
 print("Test:\n", test)
 
 # %%
-# In the same way you can use the dataset (grouped or not) with the cross-validation helper functions:
+# In the same way you can use the dataset (grouped or not) with the cross-validation helper functions
+# (KFold is just an example, all should work):
 from sklearn.model_selection import KFold
 
 cv = KFold(n_splits=2)
@@ -169,7 +170,6 @@ grouped_subset = final_subset.groupby("participant")
 for train, test in cv.split(grouped_subset):
     # We only print the train set here
     print(grouped_subset[train], end="\n\n")
-
 
 # %%
 # While this works well, it is not always what we want.
@@ -181,9 +181,8 @@ for train, test in cv.split(grouped_subset):
 group_labels = final_subset.create_group_labels("participant")
 group_labels
 
-
 # %%
-# They can then be used as the `group` parameter in `GroupKFold`.
+# They can then be used as the `group` parameter in `GroupKFold` (and similar methods).
 # Now the data of the two participants is never split between train and test set.
 from sklearn.model_selection import GroupKFold
 
@@ -212,7 +211,7 @@ group_labels
 #
 # However, if you want to make sure your dataset "feels" like part of gaitmap, you should follow these recommendations:
 #
-# - Data access should be provided via `@properties` on the dataset objects, loading the data on demand.
+# - Data access should be provided via `@property` decorator on the dataset objects, loading the data on demand.
 # - The names of these properties should follow the naming scheme used in gaitmap (e.g. `data` for IMU-data)
 #   and should return values using the established gaitmap datatypes.
 # - The names of values that represent gold standard information (i.e. values you would only have in an evaluation
@@ -247,8 +246,8 @@ class CustomDataset(Dataset):
 # Meaning, do you want/can return data, when there are still multiple participants/recordings in the dataset, or can you
 # only return the data, when there is only a single trail of a single participant left.
 #
-# Usually, we recommend to always return the data on the lowest logical level (e.g. if you recorded separate IMU per
-# trail, you should provide access only, if there is just a single trail by a single participant left in the dataset).
+# Usually, we recommend to always return the data on the lowest logical level (e.g. if you recorded separate IMU sessions
+# per trail, you should provide access only, if there is just a single trail by a single participant left in the dataset).
 # Otherwise, you should throw an error.
 # This pattern can be simplified using the `is_single` or `assert_is_single` helper method.
 # These helpers check based on the provided `groupby_cols` if there is really just a single group/row left with the
@@ -270,7 +269,7 @@ class CustomDataset(Dataset):
         if self.is_single(None):
             return "This is the data for participant {}, rec {} and trial {}".format(*self.groups[0])
         raise ValueError(
-            "Data can only be accessed when their is only a single recording of a single participant in " "the subset"
+            "Data can only be accessed when their is only a single recording of a single participant in the subset"
         )
 
     @property
