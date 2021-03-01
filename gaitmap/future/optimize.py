@@ -22,7 +22,7 @@ def _aggregate_scores(scores):
         return means.to_dict(), {k: v.to_numpy() for k, v in df.iteritems()}
     return np.mean(scores), scores
 
-
+# TODO: If we have a score single method, we could cache it in the context of GridSearch nested in a cv
 def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
     pipeline = pipeline.set_params(**parameters)
     pipeline = pipeline.clone()
