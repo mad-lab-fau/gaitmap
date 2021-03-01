@@ -1,9 +1,10 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
-from typing import Union, Dict, overload, Literal
+from typing import Union, Dict, overload
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Literal
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
