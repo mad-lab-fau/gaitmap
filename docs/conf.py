@@ -28,10 +28,12 @@ sys.path.insert(0, os.path.abspath(".."))
 
 
 def replace_gitlab_links(base_url, text):
-    regex = base_url + r"-/(merge_requests|issues)/(\d+)"
+    regex = base_url + r"-/(merge_requests|issues|commit)/(\w+)"
 
     def substitute(matchobj):
         tokens = {"merge_requests": "!", "issues": "#"}
+        if matchobj.group(1) == "commit":
+            return "[{}]({})".format(matchobj.group(2)[:5], matchobj.group(0))
         token = tokens[matchobj.group(1)]
         return "[{}{}]({})".format(token, matchobj.group(2), matchobj.group(0))
 
