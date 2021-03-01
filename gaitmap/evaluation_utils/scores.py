@@ -4,10 +4,12 @@ from typing import Union, Dict, overload
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
+from typing_extensions import TypedDict
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
+
+_ScoresDict = TypedDict("_ScoresDict", {"precision": float, "recall": float, "f1_score": float})
 
 
 @overload
@@ -182,14 +184,12 @@ def f1_score(matches_df):
 
 
 @overload
-def precision_recall_f1_score(
-    matches_df: Dict[_Hashable, pd.DataFrame]
-) -> Dict[_Hashable, Dict[Literal["precision", "recall", "f1_score"], float]]:
+def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, _ScoresDict]:
     ...
 
 
 @overload
-def precision_recall_f1_score(matches_df: pd.DataFrame) -> Dict[Literal["precision", "recall", "f1_score"], float]:
+def precision_recall_f1_score(matches_df: pd.DataFrame) -> _ScoresDict:
     ...
 
 
