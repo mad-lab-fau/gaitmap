@@ -71,4 +71,5 @@ lint                 Lint all files with Prospector.
 register_ipykernel   Add a jupyter kernel with the gaitmap env to your local install.
 test                 Run Pytest with coverage.
 type_check           Type check with mypy.
+update_version       Bump the version in pyproject.toml and gaitmap.__init__ .
 ```

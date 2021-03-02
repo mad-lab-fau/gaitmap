@@ -1,6 +1,7 @@
+import platform
+import re
 import shutil
 from pathlib import Path
-import platform
 
 DOIT_CONFIG = {
     "default_tasks": ["format", "test", "lint"],
@@ -57,4 +58,34 @@ def task_register_ipykernel():
         "actions": [
             ["python", "-m", "ipykernel", "install", "--user", "--name", "gaitmap", "--display-name", "gaitmap"]
         ]
+    }
+
+
+def update_version_strings(file_path, new_version):
+    # taken from:
+    # https://stackoverflow.com/questions/57108712/replace-updated-version-strings-in-files-via-python
+    version_regex = re.compile(r"(^_*?version_*?\s*=\s*['\"])(\d+\.\d+\.\d+)", re.M)
+    with open(file_path, "r+") as f:
+        content = f.read()
+        f.seek(0)
+        f.write(
+            re.sub(
+                version_regex,
+                lambda match: "{}{}".format(match.group(1), new_version),
+                content,
+            )
+        )
+        f.truncate()
+
+
+def update_version(version):
+    update_version_strings(HERE / "gaitmap/__init__.py", version)
+    update_version_strings(HERE / "pyproject.toml", version)
+
+
+def task_update_version():
+    """Bump the version in pyproject.toml and gaitmap.__init__ ."""
+    return {
+        "actions": [(update_version,)],
+        "params": [{"name": "version", "short": "v", "default": None}],
     }
