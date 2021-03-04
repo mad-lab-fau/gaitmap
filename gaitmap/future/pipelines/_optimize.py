@@ -88,7 +88,7 @@ class GridSearch(Optimize):
                 delayed(_score)(pipeline=self.pipeline.clone(), scoring=scoring, data=dataset, parameters=paras)
                 for paras in candidate_params
             )
-        mean_scores, data_point_scores = zip(*out)
+        mean_scores, data_point_scores, data_point_names = zip(*out)
         # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
         # values and we just have a single scorer. Mixed cases will raise an error
         if all(isinstance(t, dict) for t in mean_scores):
@@ -99,7 +99,11 @@ class GridSearch(Optimize):
             raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
 
         results = self._format_results(
-            candidate_params, mean_scores, data_point_scores, multi_metric=self.multi_metric_
+            candidate_params,
+            mean_scores,
+            data_point_scores=data_point_scores,
+            data_point_names=data_point_names,
+            multi_metric=self.multi_metric_,
         )
 
         if self.multi_metric_ is True and (not isinstance(self.rank_scorer, str) or self.rank_scorer not in results):
@@ -119,7 +123,9 @@ class GridSearch(Optimize):
 
         return self
 
-    def _format_results(self, candidate_params, mean_scores, data_point_scores=None, multi_metric=False):
+    def _format_results(
+        self, candidate_params, mean_scores, *, data_point_scores=None, data_point_names=None, multi_metric=False
+    ):
         # This function is adapted based on sklearns `BaseSearchCV`
 
         n_candidates = len(candidate_params)
@@ -142,6 +148,9 @@ class GridSearch(Optimize):
             results["rank_score"] = np.asarray(rankdata(-mean_scores, method="min"), dtype=np.int32)
             if data_point_scores:
                 results["single_score"] = data_point_scores
+
+        if data_point_names is not None:
+            results["data"] = data_point_names
 
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may

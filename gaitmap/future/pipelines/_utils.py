@@ -34,7 +34,7 @@ def _score(pipeline: SimplePipeline, scoring: Callable, data: Dataset, parameter
     #       This would allow to return all individual scores for each "dataset_single" object or even all fitted result
     #       objects for each score.
     scores = _multi_score(pipeline, scoring, data)
-    return _aggregate_scores(scores)
+    return (*_aggregate_scores(scores), data.groups)
 
 
 def _passthrough_scoring(pipeline, dataset_single):
