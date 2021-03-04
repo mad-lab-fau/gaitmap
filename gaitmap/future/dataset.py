@@ -418,6 +418,8 @@ class Dataset(_BaseSerializable):
 
         """
         if not self.is_single(groupby_cols):
+            if groupby_cols is None:
+                groupby_cols = self.index.columns.to_list()
             raise ValueError(
                 "The data value {} of dataset {} can only be accessed if there is only a single "
                 "combination of the columns {} left in a data-subset".format(
