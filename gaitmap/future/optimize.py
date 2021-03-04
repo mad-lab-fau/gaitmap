@@ -1,6 +1,6 @@
 from collections import defaultdict
 from functools import partial
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, Callable
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ def _aggregate_scores(scores):
     return np.mean(scores), scores
 
 # TODO: If we have a score single method, we could cache it in the context of GridSearch nested in a cv
-def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
+def _score(pipeline: SimplePipeline, scoring: Callable, data: Dataset, parameters: Dict[str, Any]):
     pipeline = pipeline.set_params(**parameters)
     pipeline = pipeline.clone()
     # TODO: Perform aggregation of performance here: Aka mean and maybe weighting?
@@ -33,8 +33,11 @@ def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
     for d in data:
         # We clone again here, in case any of the parameters were algorithms themself or the score method of the
         # pipeline does strange things.
-        scores.append(pipeline.score(dataset_single=d))
+        scores.append(scoring(pipeline, dataset_single=d))
     return _aggregate_scores(scores)
+
+def _passthrough_scoring(pipeline, dataset_single):
+    return pipeline.score(dataset_single)
 
 
 class Optimize(_BaseSerializable):
@@ -66,6 +69,7 @@ class Optimize(_BaseSerializable):
 
 class GridSearch(Optimize):
     parameter_grid: Optional[ParameterGrid]
+    scoring: Optional[Callable]
     pipeline: Optional[SimplePipeline]
     n_jobs: Optional[int]
     rank_scorer: Optional[str]
@@ -84,11 +88,13 @@ class GridSearch(Optimize):
         pipeline: Optional[SimplePipeline] = None,
         parameter_grid: Optional[ParameterGrid] = None,
         *,
+        scoring: Optional[Callable] = None,
         n_jobs: Optional[int] = None,
         rank_scorer: Optional[str] = None,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
         self.parameter_grid = parameter_grid
+        self.scoring = scoring
         self.n_jobs = n_jobs
         self.rank_scorer = rank_scorer
         self.pre_dispatch = pre_dispatch
@@ -98,9 +104,12 @@ class GridSearch(Optimize):
         self.dataset = dataset
         candidate_params = list(self.parameter_grid)
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
+        scoring = self.scoring
+        if scoring is None:
+            scoring = _passthrough_scoring
         with parallel:
             out = parallel(
-                delayed(_score)(pipeline=self.pipeline.clone(), data=dataset, parameters=paras)
+                delayed(_score)(pipeline=self.pipeline.clone(), scoring=scoring, data=dataset, parameters=paras)
                 for paras in candidate_params
             )
         mean_scores, data_point_scores = zip(*out)
