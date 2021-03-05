@@ -312,6 +312,4 @@ def _calculate_score(a, b, *, zero_division, caller_function_name):
         if zero_division in [0, 1]:
             return zero_division
 
-        warnings.warn("Zero_division must be set to warn, 0 or 1. Defaulting to 0")
-
-        return 0
+        raise ValueError('"zero_division" must be set to "warn", 0 or 1!')

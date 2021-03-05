@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.exceptions import UndefinedMetricWarning
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils.scores import precision_score, recall_score, f1_score, precision_recall_f1_score
@@ -155,18 +156,18 @@ class TestDivisionByZeroReturn:
     @pytest.fixture(
         autouse=True,
         params=(
-            [precision_score, [[], [], [1, 2, 3]], "", 0],
             [precision_score, [[], [], [1, 2, 3]], "warn", 0],
             [precision_score, [[], [], [1, 2, 3]], 0, 0],
             [precision_score, [[], [], [1, 2, 3]], 1, 1],
-            [recall_score, [[], [1, 2, 3], []], "", 0],
             [recall_score, [[], [1, 2, 3], []], "warn", 0],
             [recall_score, [[], [1, 2, 3], []], 0, 0],
             [recall_score, [[], [1, 2, 3], []], 1, 1],
-            [f1_score, [[], [], []], "", 0],
             [f1_score, [[], [], []], "warn", 0],
             [f1_score, [[], [], []], 0, 0],
             [f1_score, [[], [], []], 1, 1],
+            [precision_recall_f1_score, [[], [], []], "warn", 0],
+            [precision_recall_f1_score, [[], [], []], 0, 0],
+            [precision_recall_f1_score, [[], [], []], 1, 1],
         ),
     )
     def make_methods(self, request):
@@ -177,28 +178,53 @@ class TestDivisionByZeroReturn:
 
         eval_metrics = self.func(matches_df, zero_division=self.zero_division)
 
-        assert_array_equal(np.array(eval_metrics).astype(float), self.expected_output)
+        assert_array_equal(
+            np.array(list(eval_metrics.values()) if isinstance(eval_metrics, dict) else eval_metrics),
+            self.expected_output,
+        )
 
 
 class TestDivisionByZeroWarnings:
     @pytest.fixture(
         autouse=True,
         params=(
-            [precision_score, [[], [], [1, 2, 3]], "", "must be set"],
             [precision_score, [[], [], [1, 2, 3]], "warn", "calculating the precision score"],
-            [recall_score, [[], [1, 2, 3], []], "", "must be set"],
             [recall_score, [[], [1, 2, 3], []], "warn", "calculating the recall score"],
-            [f1_score, [[], [], []], "", "must be set"],
             [f1_score, [[], [], []], "warn", "calculating the f1 score"],
+            [precision_recall_f1_score, [[], [], []], "warn", "calculating the f1 score"],
         ),
     )
     def make_methods(self, request):
         self.func, self.arguments, self.zero_division, self.warning_message = request.param
 
     def test_division_by_zero_warnings(self):
-
-        with pytest.warns(UserWarning) as w:
+        with pytest.warns(UndefinedMetricWarning) as w:
             self.func(_create_valid_matches_df(*self.arguments), zero_division=self.zero_division)
 
         # check that the message matches
         assert self.warning_message in w[-1].message.args[0]
+
+
+class TestDivisionByZeroError:
+    @pytest.fixture(
+        autouse=True,
+        params=(
+            [precision_score, [[], [], [1, 2, 3]], ""],
+            [precision_score, [[], [], [1, 2, 3]], 2],
+            [recall_score, [[], [1, 2, 3], []], ""],
+            [recall_score, [[], [1, 2, 3], []], 2],
+            [f1_score, [[], [], []], ""],
+            [f1_score, [[], [], []], 2],
+            [precision_recall_f1_score, [[], [], []], ""],
+            [precision_recall_f1_score, [[], [], []], 2],
+        ),
+    )
+    def make_methods(self, request):
+        self.func, self.arguments, self.zero_division = request.param
+
+    def test_division_by_zero_warnings(self):
+        with pytest.raises(ValueError) as e:
+            self.func(_create_valid_matches_df(*self.arguments), zero_division=self.zero_division)
+
+        # check that the message matches
+        assert str(e.value) == '"zero_division" must be set to "warn", 0 or 1!'
