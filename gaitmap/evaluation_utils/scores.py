@@ -13,17 +13,19 @@ _ScoresDict = TypedDict("_ScoresDict", {"precision": float, "recall": float, "f1
 
 @overload
 def recall_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
 ) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def recall_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
+def recall_score(
+    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
+) -> float:
     ...
 
 
-def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
+def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):  # noqa: bad-whitespace
     """Compute the recall.
 
     The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
@@ -75,17 +77,19 @@ def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 @overload
 def precision_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
 ) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def precision_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
+def precision_score(
+    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
+) -> float:
     ...
 
 
-def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
+def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):  # noqa: bad-whitespace
     """Compute the precision.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -139,17 +143,19 @@ def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"
 
 @overload
 def f1_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
 ) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def f1_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
+def f1_score(
+    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
+) -> float:
     ...
 
 
-def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
+def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):  # noqa: bad-whitespace
     """Compute the F1 score, also known as balanced F-score or F-measure.
 
     The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
@@ -204,19 +210,19 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 @overload
 def precision_recall_f1_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
 ) -> Dict[_Hashable, _ScoresDict]:
     ...
 
 
 @overload
 def precision_recall_f1_score(
-    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"
+    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"  # noqa: bad-whitespace
 ) -> _ScoresDict:
     ...
 
 
-def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
+def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):  # noqa: bad-whitespace
     """Compute precision, recall and F1-score.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
