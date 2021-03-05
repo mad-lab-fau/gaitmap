@@ -482,8 +482,8 @@ def _match_label_lists(
     # that we have true one-to-one-matches
 
     # p = 1 is used to select the Manhatten distance
-    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, n_jobs=-1)
-    _, r_nearest_neighbor = left_tree.query(list_right, p=1, n_jobs=-1)
+    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, workers=-1)
+    _, r_nearest_neighbor = left_tree.query(list_right, p=1, workers=-1)
 
     # Filter the once that are true one-to-one matches
     l_indices = np.arange(len(list_left))
