@@ -74,7 +74,7 @@ class TestCalculateParameterErrors:
     )
     def test_invalid_input(self, input_param, ground_truth, expected_error):
         with pytest.raises(ValidationError) as e:
-            calculate_parameter_errors(input_param, ground_truth)
+            calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
 
         assert expected_error in str(e)
 
@@ -112,8 +112,10 @@ class TestCalculateParameterErrors:
     )
     def test_valid_single_sensor_input(self, input_param, ground_truth, expectation):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output_normal = calculate_parameter_errors(input_param, ground_truth)
-        output_pretty = calculate_parameter_errors(input_param, ground_truth, pretty_output=True)
+        output_normal = calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
+        output_pretty = calculate_parameter_errors(
+            input_parameter=input_param, ground_truth_parameter=ground_truth, pretty_output=True
+        )
 
         for error_type in error_types:
             assert_array_equal(np.round(output_normal["param"].loc[error_type], 5), expectation[error_type])
@@ -179,8 +181,10 @@ class TestCalculateParameterErrors:
     )
     def test_valid_multi_sensor_input(self, input_param, ground_truth, sensor_names, expectations):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output_normal = calculate_parameter_errors(input_param, ground_truth)
-        output_pretty = calculate_parameter_errors(input_param, ground_truth, pretty_output=True)
+        output_normal = calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
+        output_pretty = calculate_parameter_errors(
+            input_parameter=input_param, ground_truth_parameter=ground_truth, pretty_output=True
+        )
 
         for sensor_name, expectation in zip(sensor_names, expectations):
             for error_type in error_types:
@@ -215,9 +219,14 @@ class TestCalculateParameterErrors:
     )
     def test_calculate_not_per_sensor_input(self, input_param, ground_truth, expectation):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output_normal = calculate_parameter_errors(input_param, ground_truth, calculate_per_sensor=False)
+        output_normal = calculate_parameter_errors(
+            input_parameter=input_param, ground_truth_parameter=ground_truth, calculate_per_sensor=False
+        )
         output_pretty = calculate_parameter_errors(
-            input_param, ground_truth, calculate_per_sensor=False, pretty_output=True
+            input_parameter=input_param,
+            ground_truth_parameter=ground_truth,
+            pretty_output=True,
+            calculate_per_sensor=False,
         )
 
         for error_type in error_types:

@@ -27,6 +27,8 @@ project.
 - Changed the output format of `gaitmap.evaluation_utils.scores.precision_recall_f1_score` so it will
   be easier to use with the pipelines and optimizer.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/133)
+- Made parameters for `gaitmap.evaluation_utils` keyword only to avoid input confusion.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/135)
 
 ### Deprecated
 
