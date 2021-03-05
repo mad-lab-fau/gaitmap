@@ -26,7 +26,7 @@ class TestEvaluateStrideEventList:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
-            evaluate_stride_event_list(sl, sl, value)
+            evaluate_stride_event_list(ground_truth=sl, stride_event_list=sl, match_cols=value)
 
         assert "One or more selected columns" in str(e.value)
         assert str(value) in str(e.value)
@@ -34,7 +34,7 @@ class TestEvaluateStrideEventList:
     def test_perfect_match(self):
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
-        out = evaluate_stride_event_list(sl, sl, "ic", tolerance=0)
+        out = evaluate_stride_event_list(ground_truth=sl, stride_event_list=sl, match_cols="ic", tolerance=0)
         out = _get_match_type_dfs(out)
 
         assert_array_equal(out["tp"]["s_id"].to_numpy(), [0, 1, 2])
@@ -47,7 +47,7 @@ class TestEvaluateStrideEventList:
         sl1 = self._create_valid_list([[0, 1, 0], [1, 2, 20], [2, 3, 30]], "ic")
         sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
-        out = evaluate_stride_event_list(sl1, sl2, "ic", tolerance=0)
+        out = evaluate_stride_event_list(ground_truth=sl1, stride_event_list=sl2, match_cols="ic", tolerance=0)
         out = _get_match_type_dfs(out)
 
         assert_array_equal(out["tp"]["s_id"].to_numpy(), [1, 2])
