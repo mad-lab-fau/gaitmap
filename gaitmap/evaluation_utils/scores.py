@@ -3,6 +3,7 @@ import warnings
 from typing import Union, Dict, overload
 
 import pandas as pd
+from sklearn.exceptions import UndefinedMetricWarning
 from typing_extensions import TypedDict, Literal
 
 from gaitmap.utils._types import _Hashable
@@ -308,7 +309,10 @@ def _calculate_score(a, b, *, zero_division, caller_function_name):
         return a / b
     except ZeroDivisionError:
         if zero_division == "warn":
-            warnings.warn(f"Zero division happened while calculating the {caller_function_name} score. Returning 0")
+            warnings.warn(
+                f"Zero division happened while calculating the {caller_function_name} score. Returning 0",
+                UndefinedMetricWarning,
+            )
             return 0
 
         if zero_division in [0, 1]:
