@@ -135,32 +135,70 @@ class TestEvaluationScores:
         assert_array_equal(list(eval_metrics["sensor"].values()), [1.0, 1.0, 1.0])
 
 
-class TestDivisionByZero:
-    def _create_valid_matches_df(self, tp, fp, fn):
-        tp_df = pd.DataFrame(
-            np.column_stack([tp, tp, np.repeat("tp", len(tp))]), columns=["s_id", "s_id_ground_truth", "match_type"]
-        )
-        fp_df = pd.DataFrame(
-            np.column_stack([fp, np.repeat(np.nan, len(fp)), np.repeat("fp", len(fp))]),
-            columns=["s_id", "s_id_ground_truth", "match_type"],
-        )
-        fn_df = pd.DataFrame(
-            np.column_stack([np.repeat(np.nan, len(fn)), fn, np.repeat("fn", len(fn))]),
-            columns=["s_id", "s_id_ground_truth", "match_type"],
-        )
+def _create_valid_matches_df(tp, fp, fn):
+    tp_df = pd.DataFrame(
+        np.column_stack([tp, tp, np.repeat("tp", len(tp))]), columns=["s_id", "s_id_ground_truth", "match_type"]
+    )
+    fp_df = pd.DataFrame(
+        np.column_stack([fp, np.repeat(np.nan, len(fp)), np.repeat("fp", len(fp))]),
+        columns=["s_id", "s_id_ground_truth", "match_type"],
+    )
+    fn_df = pd.DataFrame(
+        np.column_stack([np.repeat(np.nan, len(fn)), fn, np.repeat("fn", len(fn))]),
+        columns=["s_id", "s_id_ground_truth", "match_type"],
+    )
 
-        return pd.concat([tp_df, fp_df, fn_df])
+    return pd.concat([tp_df, fp_df, fn_df])
 
+
+class TestDivisionByZeroReturn:
     @pytest.fixture(
         autouse=True,
-        params=([recall_score, [[], [1, 2, 3], []]], [precision_score, [[], [], [1, 2, 3]]], [f1_score, [[], [], []]]),
+        params=(
+            [precision_score, [[], [], [1, 2, 3]], "", 0],
+            [precision_score, [[], [], [1, 2, 3]], "warn", 0],
+            [precision_score, [[], [], [1, 2, 3]], 0, 0],
+            [precision_score, [[], [], [1, 2, 3]], 1, 1],
+            [recall_score, [[], [1, 2, 3], []], "", 0],
+            [recall_score, [[], [1, 2, 3], []], "warn", 0],
+            [recall_score, [[], [1, 2, 3], []], 0, 0],
+            [recall_score, [[], [1, 2, 3], []], 1, 1],
+            [f1_score, [[], [], []], "", 0],
+            [f1_score, [[], [], []], "warn", 0],
+            [f1_score, [[], [], []], 0, 0],
+            [f1_score, [[], [], []], 1, 1],
+        ),
     )
     def make_methods(self, request):
-        self.func, self.arguments = request.param
+        self.func, self.arguments, self.zero_division, self.expected_output = request.param
 
-    def test_division_by_zero(self):
-        matches_df = self._create_valid_matches_df(*self.arguments)
+    def test_division_by_zero_return(self):
+        matches_df = _create_valid_matches_df(*self.arguments)
 
-        eval_metrics = self.func(matches_df)
+        eval_metrics = self.func(matches_df, zero_division=self.zero_division)
 
-        assert_array_equal(np.array(eval_metrics).astype(float), np.nan)
+        assert_array_equal(np.array(eval_metrics).astype(float), self.expected_output)
+
+
+class TestDivisionByZeroWarnings:
+    @pytest.fixture(
+        autouse=True,
+        params=(
+            [precision_score, [[], [], [1, 2, 3]], "", "must be set"],
+            [precision_score, [[], [], [1, 2, 3]], "warn", "calculating the precision score"],
+            [recall_score, [[], [1, 2, 3], []], "", "must be set"],
+            [recall_score, [[], [1, 2, 3], []], "warn", "calculating the recall score"],
+            [f1_score, [[], [], []], "", "must be set"],
+            [f1_score, [[], [], []], "warn", "calculating the f1 score"],
+        ),
+    )
+    def make_methods(self, request):
+        self.func, self.arguments, self.zero_division, self.warning_message = request.param
+
+    def test_division_by_zero_warnings(self):
+
+        with pytest.warns(UserWarning) as w:
+            self.func(_create_valid_matches_df(*self.arguments), zero_division=self.zero_division)
+
+        # check that the message matches
+        assert self.warning_message in w[-1].message.args[0]
