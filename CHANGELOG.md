@@ -21,6 +21,9 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/132)
 - The new gaitmap logo is now shown everywhere :)
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/129)
+- New parameter `zero_division` added to all methods in `gaitmap.evaluation_utils.scores` allowing for setting the
+  return value in case of a zero_division happening. 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/134)
 
 ### Changed
 

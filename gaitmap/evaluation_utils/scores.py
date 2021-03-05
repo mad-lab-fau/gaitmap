@@ -1,10 +1,10 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
-
+import warnings
 from typing import Union, Dict, overload
 
-import numpy as np
 import pandas as pd
-from typing_extensions import TypedDict
+from sklearn.exceptions import UndefinedMetricWarning
+from typing_extensions import TypedDict, Literal
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
@@ -13,16 +13,18 @@ _ScoresDict = TypedDict("_ScoresDict", {"precision": float, "recall": float, "f1
 
 
 @overload
-def recall_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+def recall_score(
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def recall_score(matches_df: pd.DataFrame) -> float:
+def recall_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
     ...
 
 
-def recall_score(matches_df):
+def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
     """Compute the recall.
 
     The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false
@@ -39,6 +41,9 @@ def recall_score(matches_df):
         The `match_type` column indicates the type of match:
         "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
         counterpart exists.
+    zero_division : "warn", 0 or 1, default="warn"
+        Sets the value to return when there is a zero division. If set to
+        "warn", this acts as 0, but warnings are also raised.
 
     Returns
     -------
@@ -62,7 +67,7 @@ def recall_score(matches_df):
         tp = len(matches_dict[sensor_name]["tp"])
         fn = len(matches_dict[sensor_name]["fn"])
 
-        output[sensor_name] = _calculate_score(tp, tp + fn)
+        output[sensor_name] = _calculate_score(tp, tp + fn, zero_division=zero_division, caller_function_name="recall")
 
     if is_not_dict:
         return output["__dummy__"]
@@ -70,16 +75,18 @@ def recall_score(matches_df):
 
 
 @overload
-def precision_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+def precision_score(
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def precision_score(matches_df: pd.DataFrame) -> float:
+def precision_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
     ...
 
 
-def precision_score(matches_df):
+def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
     """Compute the precision.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -97,6 +104,9 @@ def precision_score(matches_df):
         The `match_type` column indicates the type of match:
         "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
         counterpart exists.
+    zero_division : "warn", 0 or 1, default="warn"
+        Sets the value to return when there is a zero division. If set to
+        "warn", this acts as 0, but warnings are also raised.
 
     Returns
     -------
@@ -119,7 +129,9 @@ def precision_score(matches_df):
         tp = len(matches_dict[sensor_name]["tp"])
         fp = len(matches_dict[sensor_name]["fp"])
 
-        output[sensor_name] = _calculate_score(tp, tp + fp)
+        output[sensor_name] = _calculate_score(
+            tp, tp + fp, zero_division=zero_division, caller_function_name="precision"
+        )
 
     if is_not_dict:
         return output["__dummy__"]
@@ -127,16 +139,18 @@ def precision_score(matches_df):
 
 
 @overload
-def f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, float]:
+def f1_score(
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> Dict[_Hashable, float]:
     ...
 
 
 @overload
-def f1_score(matches_df: pd.DataFrame) -> float:
+def f1_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
     ...
 
 
-def f1_score(matches_df):
+def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
     """Compute the F1 score, also known as balanced F-score or F-measure.
 
     The F1 score can be interpreted as the harmonic mean of precision and recall, where an F1 score reaches its
@@ -154,6 +168,9 @@ def f1_score(matches_df):
         The `match_type` column indicates the type of match:
         "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
         counterpart exists.
+    zero_division : "warn", 0 or 1, default="warn"
+        Sets the value to return when there is a zero division. If set to
+        "warn", this acts as 0, but warnings are also raised.
 
     Returns
     -------
@@ -175,7 +192,10 @@ def f1_score(matches_df):
     precision = precision_score(matches_df.copy())
     for sensor_name in list(recall.keys()):
         output[sensor_name] = _calculate_score(
-            2 * (precision[sensor_name] * recall[sensor_name]), precision[sensor_name] + recall[sensor_name]
+            2 * (precision[sensor_name] * recall[sensor_name]),
+            precision[sensor_name] + recall[sensor_name],
+            zero_division=zero_division,
+            caller_function_name="f1",
         )
 
     if is_not_dict:
@@ -184,16 +204,20 @@ def f1_score(matches_df):
 
 
 @overload
-def precision_recall_f1_score(matches_df: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, _ScoresDict]:
+def precision_recall_f1_score(
+    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> Dict[_Hashable, _ScoresDict]:
     ...
 
 
 @overload
-def precision_recall_f1_score(matches_df: pd.DataFrame) -> _ScoresDict:
+def precision_recall_f1_score(
+    matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> _ScoresDict:
     ...
 
 
-def precision_recall_f1_score(matches_df):
+def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
     """Compute precision, recall and F1-score.
 
     The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false
@@ -215,6 +239,9 @@ def precision_recall_f1_score(matches_df):
         The `match_type` column indicates the type of match:
         "tp" (true positive), "fp" (false positives) or "fn" (false negative) if no segmented
         counterpart exists.
+    zero_division : "warn", 0 or 1, default="warn"
+        Sets the value to return when there is a zero division. If set to
+        "warn", this acts as 0, but warnings are also raised.
 
     Returns
     -------
@@ -228,9 +255,9 @@ def precision_recall_f1_score(matches_df):
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    precisions = precision_score(matches_df.copy())
-    recalls = recall_score(matches_df.copy())
-    f1_scores = f1_score(matches_df.copy())
+    precisions = precision_score(matches_df.copy(), zero_division=zero_division)
+    recalls = recall_score(matches_df.copy(), zero_division=zero_division)
+    f1_scores = f1_score(matches_df.copy(), zero_division=zero_division)
 
     if isinstance(matches_df, dict):
         return {
@@ -271,10 +298,18 @@ def _get_match_type_dfs(
     return match_results
 
 
-def _calculate_score(a, b):
+def _calculate_score(a, b, *, zero_division, caller_function_name):
     try:
-        output = a / b
+        return a / b
     except ZeroDivisionError:
-        output = np.nan
+        if zero_division == "warn":
+            warnings.warn(
+                f"Zero division happened while calculating the {caller_function_name} score. Returning 0",
+                UndefinedMetricWarning,
+            )
+            return 0
 
-    return output
+        if zero_division in [0, 1]:
+            return zero_division
+
+        raise ValueError('"zero_division" must be set to "warn", 0 or 1!')
