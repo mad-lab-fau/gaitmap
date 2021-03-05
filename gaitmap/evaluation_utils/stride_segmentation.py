@@ -20,6 +20,7 @@ from gaitmap.utils.exceptions import ValidationError
 
 
 def evaluate_segmented_stride_list(
+    *,
     ground_truth: StrideList,
     segmented_stride_list: StrideList,
     tolerance: Union[int, float] = 0,
@@ -81,7 +82,11 @@ def evaluate_segmented_stride_list(
     --------
     >>> stride_list_ground_truth = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
     >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
-    >>> matches = evaluate_segmented_stride_list(stride_list_ground_truth, stride_list_seg, tolerance=2)
+    >>> matches = evaluate_segmented_stride_list(
+    ...     ground_truth=stride_list_ground_truth,
+    ...     segmented_stride_list=stride_list_seg,
+    ...     tolerance=2
+    ... )
     >>> matches
       s_id s_id_ground_truth match_type
     0    0                 0         tp
@@ -106,8 +111,8 @@ def evaluate_segmented_stride_list(
     >>> stride_list_seg_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
     ...
     >>> matches = evaluate_segmented_stride_list(
-    ...     {"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
-    ...     {"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
+    ...     ground_truth={"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
+    ...     segmented_stride_list={"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
     ...     tolerance=2
     ... )
     >>> matches["left_sensor"]
@@ -181,6 +186,7 @@ def _evaluate_stride_list(
 
 
 def match_stride_lists(
+    *,
     stride_list_a: StrideList,
     stride_list_b: StrideList,
     match_cols: Union[str, Sequence[str]] = ("start", "end"),
@@ -245,7 +251,13 @@ def match_stride_lists(
 
     >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
     >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    >>> match_stride_lists(stride_list_left, stride_list_right, tolerance=2, postfix_a="_left", postfix_b="_right")
+    >>> match_stride_lists(
+    ...     stride_list_a=stride_list_left,
+    ...     stride_list_b=stride_list_right,
+    ...     tolerance=2,
+    ...     postfix_a="_left",
+    ...     postfix_b="_right"
+    ... )
       s_id_left s_id_right
     0         0          0
     1         1        NaN
@@ -268,8 +280,8 @@ def match_stride_lists(
     >>> stride_list_right_22 = pd.DataFrame([[10,22],[31, 41],[20, 36]], columns=["start", "end"]).rename_axis('s_id')
     ...
     >>> test_output = match_stride_lists(
-    ...     {"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
-    ...     {"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
+    ...     stride_list_a={"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
+    ...     stride_list_b={"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
     ...     tolerance=1
     ... )
     >>> test_output["left_sensor"]

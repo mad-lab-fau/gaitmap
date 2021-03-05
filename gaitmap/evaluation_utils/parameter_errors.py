@@ -11,8 +11,9 @@ from gaitmap.utils.exceptions import ValidationError
 
 
 def calculate_parameter_errors(
-    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    *,
     ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool = False,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
@@ -40,14 +41,14 @@ def calculate_parameter_errors(
 
     Parameters
     ----------
-    input_parameter
-        The output of the temporal or spatial parameter calculation (both `.parameters_` and `.parameters_pretty_`
-        are accepted).
-        This can be a Dataframe or a dict of such Dataframes.
     ground_truth_parameter
         The ground truth the input should be compared against.
         This must be the same type as the input is.
         Further, sensor names, column names, and stride ids must match with the `input_parameters`.
+    input_parameter
+        The output of the temporal or spatial parameter calculation (both `.parameters_` and `.parameters_pretty_`
+        are accepted).
+        This can be a Dataframe or a dict of such Dataframes.
     pretty_output
         If `False` the output contains "code" friendly variable/column names.
         If `True` the names are formatted for print/plotting.
@@ -71,7 +72,11 @@ def calculate_parameter_errors(
     --------
     >>> input_param = pd.DataFrame({"para1": [7, 3, 5], "para2": [7, -1, 7]}).rename_axis("stride id")
     >>> ground_truth = pd.DataFrame({"para1": [3, 6, 7], "para2": [-7, -0, 6]}).rename_axis("stride id")
-    >>> print(calculate_parameter_errors(input_param, ground_truth, pretty_output=True)) #doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_parameter_errors(
+    ...     input_parameter=input_param,
+    ...     ground_truth_parameter=ground_truth,
+    ...     pretty_output=True
+    ... ) #doctest: +NORMALIZE_WHITESPACE
                                           para1      para2
     mean error                        -0.333333   4.666667
     error standard deviation           3.785939   8.144528
@@ -86,24 +91,23 @@ def calculate_parameter_errors(
     >>> ground_truth_sensor_left = pd.DataFrame(columns=["para"], data=[21, 86, 65]).rename_axis("s_id")
     >>> input_sensor_right = pd.DataFrame(columns=["para"], data=[26, -58, -3]).rename_axis("s_id")
     >>> ground_truth_sensor_right = pd.DataFrame(columns=["para"], data=[96, -78, 86]).rename_axis("s_id")
-    ...
-    >>> print(calculate_parameter_errors(
-    ...         {"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
-    ...         {"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right}
-    ... )) #doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_parameter_errors(
+    ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
+    ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right}
+    ... ) #doctest: +NORMALIZE_WHITESPACE
                    left_sensor right_sensor
                           para         para
     mean_error       -8.333333   -46.333333
     error_std        13.051181    58.226569
-    abs_mean_error    9.666667    59.666667
+    mean_abs_error    9.666667    59.666667
     abs_error_std    11.590226    35.641736
     max_abs_error    23.000000    89.000000
 
-    >>> print(calculate_parameter_errors(
-    ...         {"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
-    ...         {"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right},
-    ...         calculate_per_sensor=False
-    ... )) #doctest: +NORMALIZE_WHITESPACE
+    >>> calculate_parameter_errors(
+    ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
+    ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right},
+    ...     calculate_per_sensor=False
+    ... ) #doctest: +NORMALIZE_WHITESPACE
                          para
     mean_error     -27.333333
     error_std       43.098337
@@ -131,7 +135,7 @@ def calculate_parameter_errors(
         input_parameter = {"__dummy__": input_parameter}
         ground_truth_parameter = {"__dummy__": ground_truth_parameter}
 
-    output = _calculate_error(input_parameter, ground_truth_parameter, pretty_output, calculate_per_sensor)
+    output = _calculate_error(ground_truth_parameter, input_parameter, pretty_output, calculate_per_sensor)
 
     if input_is_not_dict:
         output = output["__dummy__"]
@@ -140,8 +144,8 @@ def calculate_parameter_errors(
 
 
 def _calculate_error(  # noqa: MC0001
-    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:

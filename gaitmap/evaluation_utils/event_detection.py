@@ -11,6 +11,7 @@ from gaitmap.utils.datatype_helper import StrideList
 
 
 def evaluate_stride_event_list(
+    *,
     ground_truth: StrideList,
     stride_event_list: StrideList,
     match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
@@ -82,7 +83,12 @@ def evaluate_stride_event_list(
     ...     [[10,20, 10],[21,30, 30],[31,40, 22]],
     ...     columns=["start", "end", "ic"]
     ... ).rename_axis('s_id')
-    >>> matches = evaluate_stride_event_list(stride_list_ground_truth, stride_list_seg, match_cols="ic", tolerance=3)
+    >>> matches = evaluate_stride_event_list(
+    ...     ground_truth=stride_list_ground_truth,
+    ...     stride_event_list=stride_list_seg,
+    ...     match_cols="ic",
+    ...     tolerance=3
+    ... )
     >>> matches
        s_id  s_id_ground_truth match_type
     0     0                  0         tp
@@ -108,8 +114,8 @@ def evaluate_stride_event_list(
     ... ).rename_axis('s_id')
     ...
     >>> matches_multi = evaluate_stride_event_list(
-    ...     {"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
-    ...     {"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
+    ...     ground_truth={"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
+    ...     stride_event_list={"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
     ...     match_cols="ic",
     ...     tolerance=2
     ... )
