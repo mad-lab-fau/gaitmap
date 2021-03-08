@@ -1,3 +1,4 @@
+import numbers
 from collections import defaultdict
 from functools import partial
 from typing import Dict, Any, Optional, Union, Callable
@@ -8,12 +9,13 @@ from joblib import Parallel, delayed
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
 from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection._validation import _aggregate_score_dicts
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
-
-from gaitmap.future.pipelines._utils import _score, _passthrough_scoring
+from gaitmap.future.pipelines._score import _optimize_and_score, _score
+from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring
 
 
 class Optimize(_BaseSerializable):
@@ -83,17 +85,21 @@ class GridSearch(Optimize):
         scoring = self.scoring
         if scoring is None:
             scoring = _passthrough_scoring
+        if callable(scoring):
+            scoring = GaitmapScorer(scoring)
         with parallel:
-            out = parallel(
-                delayed(_score)(pipeline=self.pipeline.clone(), scoring=scoring, data=dataset, parameters=paras)
-                for paras in candidate_params
+            results = parallel(
+                delayed(_score)(self.pipeline.clone(), dataset, scoring, paras) for paras in candidate_params
             )
-        mean_scores, data_point_scores, data_point_names = zip(*out)
+        # TODO: Create own version of aggregate_score_dicts and fix versions, where scoring failed
+        results = _aggregate_score_dicts(results)
+        mean_scores = _aggregate_score_dicts(results["scores"])
+        data_point_scores = _aggregate_score_dicts(results["single_scores"])
         # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
         # values and we just have a single scorer. Mixed cases will raise an error
-        if all(isinstance(t, dict) for t in mean_scores):
+        if isinstance(mean_scores, dict):
             self.multi_metric_ = True
-        elif all(isinstance(t, (int, float)) for t in mean_scores):
+        elif all(isinstance(t, numbers.Number) for t in mean_scores):
             self.multi_metric_ = False
         else:
             raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
@@ -102,7 +108,7 @@ class GridSearch(Optimize):
             candidate_params,
             mean_scores,
             data_point_scores=data_point_scores,
-            data_point_names=data_point_names,
+            data_point_names=None,
             multi_metric=self.multi_metric_,
         )
 
@@ -133,9 +139,7 @@ class GridSearch(Optimize):
 
         if multi_metric:
             # Invert the dict and calculate the mean per score:
-            df = pd.DataFrame.from_records(mean_scores)
-            for c, v in df.iteritems():
-                v = v.to_numpy()
+            for c, v in mean_scores.items():
                 results[c] = v
                 results["rank_{}".format(c)] = np.asarray(rankdata(-v, method="min"), dtype=np.int32)
             if data_point_scores:
