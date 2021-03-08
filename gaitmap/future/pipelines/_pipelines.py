@@ -27,6 +27,7 @@ class SimplePipeline(BaseAlgorithm):
         ----------
         dataset_single
             A instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
+            The structure of the data will depend on the dataset.
 
         Returns
         -------
@@ -36,34 +37,53 @@ class SimplePipeline(BaseAlgorithm):
         """
         raise NotImplementedError()
 
-
-class ScoreableMixin:
-    """A pipeline that can calculate a performance score for a given input.
-
-    This should be used as Mixin if you plan to use to use `GridSearch` (or similar methods) to improve potential
-    parameter of your `SimplePipeline` sub-class.
-    `GridSearch` will then use the `score_single` (or rather the `score`) method to rank the results (by default a
-    higher score is better).
-
-    To use it, subclass the pipeline and implement `run` and `score_single`.
-    If you need more control on how performance values are averaged over multiple data-points (participants,
-    gait-tests, ...), you can also overwrite `score`.
-
-    Note, `score_single` and `score` must return either a numeric value or a dictionary of numeric values.
-    """
-
     def score(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
-        """Return a performance metric for the result of a single datapoint.
+        """Optional pipeline method to calculate performance values.
+
+        This is an optional method and does not need to be implemented in many cases.
+        Usually stand-a-lone functions are better suited as scorer.
+
+        A typical score method will call `self.run(dataset_single)` and then compare the results with reference values
+        also available on the dataset.
 
         Parameters
         ----------
         dataset_single
             A instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
+            The structure of the data and the available reference information will depend on the dataset.
 
         Returns
         -------
         score
-            The performance value(s)
+            A float or dict of float quantifying the quality of the pipeline on the provided data.
+            A higher score is always better.
+
+        """
+
+
+class OptimizablePipeline(SimplePipeline):
+    def self_optimize(self: Self, dataset: Dataset, **kwargs) -> Self:
+        """Optimize the input parameter of the pipeline using any logic.
+
+        This method can be used to adapt the input parameters (values provided in the init) based on any data driven
+        heuristic.
+
+        Note that the optimizations must only modify the input parameters (aka `self.clone` should retain the
+        optimization results).
+
+        Parameters
+        ----------
+        dataset
+            A instance of a :class:`gaitmap.future.dataset.Dataset` containing one or multiple data points that can
+            be used for training.
+            The structure of the data and the available reference information will depend on the dataset.
+        kwargs
+            Additional parameter required for the optimization process.
+
+        Returns
+        -------
+        self
+            The class instance with optimized input parameters.
 
         """
         raise NotImplementedError()

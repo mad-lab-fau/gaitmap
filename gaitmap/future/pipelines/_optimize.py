@@ -14,35 +14,65 @@ from sklearn.model_selection._validation import _aggregate_score_dicts
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines._pipelines import SimplePipeline
-from gaitmap.future.pipelines._score import _optimize_and_score, _score
+from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
+from gaitmap.future.pipelines._score import _score
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring
 
 
 class Optimize(_BaseSerializable):
-    pipeline: Optional[SimplePipeline]
+    pipeline: Optional[OptimizablePipeline]
 
     dataset: Dataset
 
-    optimized_pipeline_: SimplePipeline
+    optimized_pipeline_: OptimizablePipeline
 
     def __init__(
         self,
-        pipeline: Optional[SimplePipeline] = None,
+        pipeline: Optional[OptimizablePipeline] = None,
     ):
         self.pipeline = pipeline
 
     def optimize(self, dataset: Dataset, **kwargs):
+        """Run the self-optimization defined by the pipeline.
+
+        The optimized version of the pipeline is stored as `self.optimized_pipeline_`
+
+        Parameters
+        ----------
+        dataset
+            A instance of a :class:`~gaitmap.future.dataset.Dataset` containing one or multiple data points that can
+            be used for optimization.
+            The structure of the data and the available reference information will depend on the dataset.
+        kwargs
+            Additional parameter for the optimization process.
+            They are forwarded to `pipeline.self_optimize`.
+
+        Returns
+        -------
+        self
+            The class instance with all result attributes populated
+
+        """
         self.dataset = dataset
         if not hasattr(self.pipeline, "self_optimize"):
-            raise ValueError()
+            raise ValueError(
+                "To use `Optimize` with a pipeline, the pipeline needs to implement a `self_optimize` method."
+            )
         self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset, **kwargs)
         return self
 
-    def run_optimized(self, dataset_single):
+    def run(self, dataset_single):
+        """Run the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
         return self.optimized_pipeline_.run(dataset_single)
 
     def score(self, dataset_single):
+        """Execute score on the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
         return self.optimized_pipeline_.score(dataset_single)
 
 
@@ -122,8 +152,10 @@ class GridSearch(Optimize):
                 "to select the best result."
             )
         if not self.multi_metric_ and isinstance(self.rank_scorer, str):
-            warnings.warn("You specified `rank_scorer`, but the provided scorer only produces a single score. "
-                          "`rank_scorer` is ignored.")
+            warnings.warn(
+                "You specified `rank_scorer`, but the provided scorer only produces a single score. "
+                "`rank_scorer` is ignored."
+            )
 
         rank_score = "score"
         if self.multi_metric_ and self.rank_scorer:

@@ -12,6 +12,7 @@ from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._utils import _aggregate_scores
 
 if TYPE_CHECKING:
+    from gaitmap.future.pipelines._pipelines import SimplePipeline
     from gaitmap.future.pipelines._optimize import Optimize
 
 
@@ -19,8 +20,6 @@ _ERROR_SCORE_TYPE = Union[Literal["raise"], numbers.Number]
 
 
 class GaitmapScorer:
-    # TODO: Add functionality to add "scores" that are not averaged.
-    #       Potentially also add weighting
     def __init__(self, score_func, **kwargs):
         self._kwargs = kwargs
         self._score_func = score_func
@@ -49,5 +48,5 @@ class GaitmapScorer:
         return _aggregate_scores(scores)
 
 
-def _passthrough_scoring(pipeline, dataset_single):
+def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
     return pipeline.score(dataset_single)
