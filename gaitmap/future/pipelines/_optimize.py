@@ -1,4 +1,5 @@
 import numbers
+import warnings
 from collections import defaultdict
 from functools import partial
 from typing import Dict, Any, Optional, Union, Callable
@@ -93,12 +94,15 @@ class GridSearch(Optimize):
             )
         # TODO: Create own version of aggregate_score_dicts and fix versions, where scoring failed
         results = _aggregate_score_dicts(results)
-        mean_scores = _aggregate_score_dicts(results["scores"])
-        data_point_scores = _aggregate_score_dicts(results["single_scores"])
+        mean_scores = results["scores"]
+        data_point_scores = results["single_scores"]
         # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
         # values and we just have a single scorer. Mixed cases will raise an error
-        if isinstance(mean_scores, dict):
+        if all(isinstance(v, dict) for v in mean_scores):
             self.multi_metric_ = True
+            # In a multimetric case, we need to flatten the individual score dicts.
+            mean_scores = _aggregate_score_dicts(mean_scores)
+            data_point_scores = _aggregate_score_dicts(data_point_scores)
         elif all(isinstance(t, numbers.Number) for t in mean_scores):
             self.multi_metric_ = False
         else:
@@ -117,8 +121,13 @@ class GridSearch(Optimize):
                 "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be used "
                 "to select the best result."
             )
+        if not self.multi_metric_ and isinstance(self.rank_scorer, str):
+            warnings.warn("You specified `rank_scorer`, but the provided scorer only produces a single score. "
+                          "`rank_scorer` is ignored.")
 
-        rank_score = self.rank_scorer or "score"
+        rank_score = "score"
+        if self.multi_metric_ and self.rank_scorer:
+            rank_score = self.rank_scorer
         self.best_index_ = results["rank_{}".format(rank_score)].argmin()
         self.best_score_ = results[rank_score][self.best_index_]
         self.best_params_ = results["params"][self.best_index_]
