@@ -108,12 +108,12 @@ class GridSearch(_BaseOptimize):
         rank_scorer: Optional[str] = None,  # Maybe rename to refit?
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
+        self.pipeline = pipeline
         self.parameter_grid = parameter_grid
         self.scoring = scoring
         self.n_jobs = n_jobs
         self.rank_scorer = rank_scorer
         self.pre_dispatch = pre_dispatch
-        super().__init__(pipeline=pipeline)
 
     def optimize(self, dataset: Dataset, **kwargs):
         self.dataset = dataset

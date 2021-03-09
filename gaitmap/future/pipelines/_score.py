@@ -242,10 +242,10 @@ def _optimize_and_score(
         result["fit_failed"] = False
 
         fit_time = time.time() - start_time
-        test_scores = _apply_scorer(optimizer, test_set, scorer, error_score)
+        test_scores = scorer(optimizer, test_set, error_score)
         score_time = time.time() - start_time - fit_time
         if return_train_score:
-            train_scores = _apply_scorer(optimizer, train_set, scorer, error_score)
+            train_scores = scorer(optimizer, train_set, scorer, error_score)
 
     if verbose > 1:
         total_time = score_time + fit_time
@@ -279,32 +279,3 @@ def _optimize_and_score(
     if return_estimator:
         result["estimator"] = optimizer
     return result
-
-
-def _apply_scorer(
-    optimizer, dataset: Dataset, scorer: GaitmapScorer, error_score: Union[Literal["raise"], numbers.Number] = "raise"
-) -> Tuple[Union[Dict[str, numbers.Number], numbers.Number], Union[Dict[str, np.ndarray], np.ndarray]]:
-    """Compute the score(s) of an algorithm on a given test set.
-
-    In gaitmap we only support single callables as scorer.
-    They can return arbitrary values.
-    Only the scores that are marked for ranking in GridSearchs and similar need to be a numbers (larger = better).
-
-    Further, gaitmap usually produces a single score per entry in the dataset (e.g. one patient or one gait test).
-    The custom gaitmap scorer handle averaging them, but also return the score for each data point individually.
-    """
-    try:
-        agg_scores, single_scores = scorer(optimizer, dataset)
-    except Exception:
-        # TODO: Move this logic into scorer.,
-        if error_score == "raise":
-            raise
-        else:
-            scores = error_score
-            warnings.warn(
-                f"Scoring failed. The score on this train-test partition for "
-                f"these parameters will be set to {error_score}. Details: \n"
-                f"{format_exc()}",
-                UserWarning,
-            )
-    return agg_scores, single_scores

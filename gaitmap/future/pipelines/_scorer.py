@@ -13,8 +13,6 @@ from gaitmap.future.pipelines._utils import _aggregate_scores
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._pipelines import SimplePipeline
-    from gaitmap.future.pipelines._optimize import Optimize
-
 
 _ERROR_SCORE_TYPE = Union[Literal["raise"], numbers.Number]
 
@@ -25,15 +23,15 @@ class GaitmapScorer:
         self._score_func = score_func
 
     def __call__(
-        self, optimizer: Optimize, data: Dataset, error_score: _ERROR_SCORE_TYPE
+        self, pipeline: SimplePipeline, data: Dataset, error_score: _ERROR_SCORE_TYPE
     ) -> Tuple[Union[Dict[str, numbers.Number], numbers.Number], Union[Dict[str, np.ndarray], np.ndarray]]:
-        return self._score(optimizer=optimizer, data=data, error_score=error_score)
+        return self._score(pipeline=pipeline, data=data, error_score=error_score)
 
-    def _score(self, optimizer: Optimize, data: Dataset, error_score: _ERROR_SCORE_TYPE):
+    def _score(self, pipeline: SimplePipeline, data: Dataset, error_score: _ERROR_SCORE_TYPE):
         scores = []
         for d in data:
             try:
-                scores.append(self._score_func(optimizer, d))
+                scores.append(self._score_func(pipeline, d))
             except Exception:
                 if error_score == "raise":
                     raise
