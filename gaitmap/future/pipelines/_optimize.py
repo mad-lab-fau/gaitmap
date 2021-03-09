@@ -19,10 +19,33 @@ from gaitmap.future.pipelines._score import _score
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring
 
 
-class Optimize(_BaseSerializable):
-    pipeline: Optional[OptimizablePipeline]
+class _BaseOptimize(_BaseSerializable):
+    pipeline: Optional[SimplePipeline]
 
     dataset: Dataset
+
+    optimized_pipeline_: SimplePipeline
+
+    def optimize(self, dataset: Dataset, **kwargs):
+        raise NotImplementedError()
+
+    def run(self, dataset_single):
+        """Run the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
+        return self.optimized_pipeline_.run(dataset_single)
+
+    def score(self, dataset_single):
+        """Execute score on the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
+        return self.optimized_pipeline_.score(dataset_single)
+
+
+class Optimize(_BaseOptimize):
+    pipeline: Optional[OptimizablePipeline]
 
     optimized_pipeline_: OptimizablePipeline
 
@@ -61,30 +84,13 @@ class Optimize(_BaseSerializable):
         self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset, **kwargs)
         return self
 
-    def run(self, dataset_single):
-        """Run the optimized pipeline.
 
-        This is a wrapper to contain API compatibility with `SimplePipeline`.
-        """
-        return self.optimized_pipeline_.run(dataset_single)
-
-    def score(self, dataset_single):
-        """Execute score on the optimized pipeline.
-
-        This is a wrapper to contain API compatibility with `SimplePipeline`.
-        """
-        return self.optimized_pipeline_.score(dataset_single)
-
-
-class GridSearch(Optimize):
+class GridSearch(_BaseOptimize):
     parameter_grid: Optional[ParameterGrid]
     scoring: Optional[Callable]
-    pipeline: Optional[SimplePipeline]
     n_jobs: Optional[int]
     rank_scorer: Optional[str]
     pre_dispatch: Union[int, str]
-
-    dataset: Dataset
 
     best_params_: Dict
     best_index_: int
