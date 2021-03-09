@@ -99,7 +99,7 @@ class GridSearch(Optimize):
         *,
         scoring: Optional[Callable] = None,
         n_jobs: Optional[int] = None,
-        rank_scorer: Optional[str] = None,
+        rank_scorer: Optional[str] = None,  # Maybe rename to refit?
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
         self.parameter_grid = parameter_grid
@@ -120,7 +120,10 @@ class GridSearch(Optimize):
             scoring = GaitmapScorer(scoring)
         with parallel:
             results = parallel(
-                delayed(_score)(self.pipeline.clone(), dataset, scoring, paras) for paras in candidate_params
+                delayed(_score)(
+                    self.pipeline.clone(), dataset, scoring, paras, return_parameters=True, return_data_labels=True
+                )
+                for paras in candidate_params
             )
         # TODO: Create own version of aggregate_score_dicts and fix versions, where scoring failed
         results = _aggregate_score_dicts(results)
@@ -139,10 +142,10 @@ class GridSearch(Optimize):
             raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
 
         results = self._format_results(
-            candidate_params,
+            results["parameters"],
             mean_scores,
             data_point_scores=data_point_scores,
-            data_point_names=None,
+            data_point_names=results["data"],
             multi_metric=self.multi_metric_,
         )
 
