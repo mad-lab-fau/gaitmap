@@ -1,12 +1,37 @@
-import pandas as pd
-from sklearn.model_selection import ParameterGrid
+r"""
+.. _grid_search:
 
-from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+Grid Search optimal Algorithm Parameter
+=======================================
+
+.. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
+
+
+"""
+import pandas as pd
+
+# %%
+# To perform a GridSearch (or any other form of parameter optimization in Gaitmap), we first need to have a
+# **Dataset**, a **Pipeline** and a **score** function.
+#
+# 1. The Dataset
+# --------------
+# Datsets wrap multiple gait recordings into an easy to use interface that can be passed around between the higher
+# level gaitmap functions.
+# Learn more about this :ref:`here <custom_dataset>`.
+# If you are lucky, you do not need to create the dataset on your own, but someone has already created a gaitmap dataset
+# for the data you want to use.
+#
+# Here we are going to create a simple "dummy" dataset, that just uses the left and the right-foot recording of the
+# example data to simulate a dataset of one participant with two recordings.
+# In addition to the raw IMU data, the dataset also exposes reference stride borders that we will use to judge the
+# performance of our algorithm.
+# (Note, usually, you wouldn't split the left and the right foot into separate recordings, as gaitmap can handle
+# multiple sensor recordings at once).
+#
+# For our GridSearch, we need an instance of this dataset.
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import SimplePipeline, GridSearch
-from gaitmap.stride_segmentation import BarthDtw
-from gaitmap.utils.coordinate_conversion import convert_right_foot_to_fbf, convert_left_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
@@ -29,6 +54,33 @@ class MyDataset(Dataset):
         return pd.DataFrame({"participant": ["test", "test"], "foot": ["left", "right"]})
 
 
+dataset = MyDataset()
+dataset
+
+# %%
+# 2. The Pipeline
+# ---------------
+# The pipeline simply defines what algorithms we want to run on our data and defines, which parameters of pipeline
+# you still want to be able to modify (e.g. to optimize the in the GridSearch).
+#
+# The pipeline usually needs 3 things:
+#
+# 1. It needs to subclass SimplePipeline
+# 2. It needs to have a `run` method that runs all the algorithmic steps and stores the results on as class attributes.
+#    The run method should expect only a single data point (in our case a single recording of one sensor) as input.
+# 3. A init that defines all parameters that should be adjustable. Note, that the names in the function signature of
+#    the init method, **must** match the corresponding attribute names.
+#
+# Here we simply transform the data into the right coordinate system depending on the foot and apply `BarthDtw` to
+# identify the start and the end of all strides in the recording.
+# The parameter `max_cost` of this algorithm is exposed and will be optimized as part of the GridSearch.
+#
+# For the final GridSearch, we need an instance of the pipeline object.
+from gaitmap.future.pipelines import SimplePipeline
+from gaitmap.stride_segmentation import BarthDtw
+from gaitmap.utils.coordinate_conversion import convert_right_foot_to_fbf, convert_left_foot_to_fbf
+
+
 class MyPipeline(SimplePipeline):
     max_cost: float
 
@@ -48,17 +100,78 @@ class MyPipeline(SimplePipeline):
         return self
 
 
+pipe = MyPipeline()
+
+
+# %%
+# 3. The scorer
+# -------------
+# In the context of a gridsearch, we want to calculate the performance of our algorithm and rank the different
+# parameter candidates accordingly.
+# This is what our score function is for.
+# It gets a pipeline object (**without** results!) and a data point (i.e. a single recording) as input and should
+# return a some sort of performance metric.
+# A higher value is always considered better.
+# If you want to calculate multiple performance measures, you can also return a dictionary of such values.
+# In any case, the performance for a specific parameter combination in the GridSearch will be calculated as the mean
+# over all datapoints.
+# (Note, if you want to change this, you can create custom subclasses of `GaitmapScorer`).
+#
+# A typical score function will first `run` the pipeline and then compare the output with some reference.
+# This reference should be supplied as part of the dataset.
+#
+# In this case we compare the calculated stride lists with the reference and identify which strides were correctly
+# found.
+# Based on these matches, we calculate the precision, the recall, and the f1-score using some helper functions.
+from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+
+
 def score(pipeline: MyPipeline, dataset_single: MyDataset):
     pipeline.run(dataset_single)
     matches_df = evaluate_segmented_stride_list(
         ground_truth=dataset_single.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
     )
-    return precision_recall_f1_score(matches_df)["f1_score"]
+    return precision_recall_f1_score(matches_df)
 
-parameters = ParameterGrid({"max_cost" :[3, 5]})
 
-pipe = MyPipeline()
+# %%
+# The Parameters
+# --------------
+# The last step before running the GridSearch, is to select the parameters we want to test for each dataset.
+# For this, we can directly use sklearn's `ParameterGrid`.
+#
+# In this example, we will just test two values for th `max_cost` threshold.
+from sklearn.model_selection import ParameterGrid
+
+
+parameters = ParameterGrid({"max_cost": [3, 5]})
+
+# %%
+# Running the GridSearch
+# ----------------------
+# Now we have all the pieces to run the GridSearch.
+# After initializing, we can use `optimize` to run the GridSearch.
+#
+# .. note:: If the score function returns a dictionary of scores, `rank_scorer` must be set to the name of the score,
+#           that should be used to decide on the best parameter set.
+from gaitmap.future.pipelines import GridSearch
 
 gs = GridSearch(pipe, parameters, scoring=score, rank_scorer="f1_score")
 gs = gs.optimize(MyDataset())
-print(pd.DataFrame(gs.gs_results_))
+
+# %%
+# The main results are stored in `gs_results_`.
+# It shows the mean performance per parameter combination, the rank for each parameter combination and the
+# performance for each individual data point (in our case a single recording of one sensor).
+pd.DataFrame(gs.gs_results_)
+
+# %%
+# Further, the `optimized_pipeline_` parameter holds an instance of the pipeline initialized with the best parameter
+# combination.
+print("Best Para Combi:", gs.best_params_)
+print("Paras of optimized Pipeline:", gs.optimized_pipeline_.get_params())
+
+# %%
+# To run the optmized pipeline, we can directly use the `run` method on the GridSearch object.
+# This makes it possible to use the `GridSearch` as a replacement for your pipeline object with minimal code changes.
+gs.run(dataset[0]).segmented_stride_list_
