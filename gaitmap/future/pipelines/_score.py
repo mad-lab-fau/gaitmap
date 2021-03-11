@@ -112,7 +112,6 @@ def _optimize_and_score(
     scorer: GaitmapScorer,
     train: Optional[ArrayLike],
     test: Optional[ArrayLike],
-    verbose,
     parameters,
     optimize_params: Optional[Dict],
     return_train_score=False,
@@ -120,8 +119,6 @@ def _optimize_and_score(
     return_data_labels=False,
     return_times=False,
     return_estimator=False,
-    split_progress=None,
-    candidate_progress=None,
     error_score=np.nan,
 ):
     """Fit estimator and compute scores for a given dataset split.

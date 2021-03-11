@@ -13,10 +13,10 @@ from gaitmap.future.dataset import Dataset
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._pipelines import SimplePipeline
 
-_ERROR_SCORE_TYPE = Union[Literal["raise"], numbers.Number]
-_SCORE_TYPE = List[Union[Dict[str, numbers.Number], numbers.Number]]
-_AGG_SCORE_TYPE = Union[Dict[str, numbers.Number], numbers.Number]
-_SINGLE_SCORE_TYPE = Union[Dict[str, np.ndarray], np.ndarray]
+_ERROR_SCORE_TYPE = Union[Literal["raise"], numbers.Number]  # noqa: invalid-name
+_SCORE_TYPE = List[Union[Dict[str, numbers.Number], numbers.Number]]  # noqa: invalid-name
+_AGG_SCORE_TYPE = Union[Dict[str, numbers.Number], numbers.Number]  # noqa: invalid-name
+_SINGLE_SCORE_TYPE = Union[Dict[str, np.ndarray], np.ndarray]  # noqa: invalid-name
 
 
 class GaitmapScorer:
@@ -63,42 +63,39 @@ class GaitmapScorer:
             try:
                 # We need to clone here again, to make sure that the run for each data point is truly independent.
                 scores.append(self._score_func(pipeline.clone(), d))
-            except Exception:
+            except Exception:  # noqa: broad-except
                 if error_score == "raise":
                     raise
-                else:
-                    scores.append(error_score)
-                    warnings.warn(
-                        f"Scoring failed for data point: {d.groups}. "
-                        f"The score of this data point will be set to {error_score}. Details: \n"
-                        f"{format_exc()}",
-                        UserWarning,
-                    )
+                scores.append(error_score)
+                warnings.warn(
+                    f"Scoring failed for data point: {d.groups}. "
+                    f"The score of this data point will be set to {error_score}. Details: \n"
+                    f"{format_exc()}",
+                    UserWarning,
+                )
         return _aggregate_scores(scores, self.aggregate)
 
 
 def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
-    """A dummy scorer callable that can be used, when the score method of the pipeline should be used."""
+    """Dummy scorer callable that can be used, when the score method of the pipeline should be used."""
     return pipeline.score(dataset_single)
 
 
-def _aggregate_scores(
-    scores: _SCORE_TYPE,
-    agg_method: Callable
-) -> Tuple[_AGG_SCORE_TYPE, _SINGLE_SCORE_TYPE]:
+def _aggregate_scores(scores: _SCORE_TYPE, agg_method: Callable) -> Tuple[_AGG_SCORE_TYPE, _SINGLE_SCORE_TYPE]:
     """Invert result dict of and apply aggregation method to each score output."""
     # We need to go through all scores and check if one is a dictionary.
     # Otherwise it might be possible that the values were caused by an error and hence did not return a dict as
     # expected.
     for s in scores:
         if isinstance(s, dict):
+            score_names = s.keys()
             break
     else:
         return agg_method(scores), np.asarray(scores)
     inv_scores = {}
     agg_scores = {}
     # Invert the dict and calculate the mean per score:
-    for key in s:
+    for key in score_names:
         # If the the scorer raised an error, there will only be a single value. This value will be used for all
         # scores then
         score_array = np.asarray([score[key] if isinstance(score, dict) else score for score in scores])

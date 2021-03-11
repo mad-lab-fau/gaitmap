@@ -12,18 +12,17 @@ def _aggregate_final_results(results: List):
 
     Parameters
     ----------
-
     results : list of dict
         List of dicts of the results for all scorers. This is a flat list,
         assumed originally to be of row major order.
 
     Example
     -------
-
     >>> results = [{'a': 1, 'b':10}, {'a': 2, 'b':2}, {'a': 3, 'b':3}, {'a': 10, 'b': 10}]
     >>> _aggregate_final_results(results)                        # doctest: +SKIP
     {'a': array([1, 2, 3, 10]),
      'b': array([10, 2, 3, 10])}
+
     """
     return {
         key: np.asarray([score[key] for score in results])
