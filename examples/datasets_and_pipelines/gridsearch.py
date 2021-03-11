@@ -140,7 +140,7 @@ def score(pipeline: MyPipeline, dataset_single: MyDataset):
 # The last step before running the GridSearch, is to select the parameters we want to test for each dataset.
 # For this, we can directly use sklearn's `ParameterGrid`.
 #
-# In this example, we will just test two values for th `max_cost` threshold.
+# In this example, we will just test two values for the `max_cost` threshold.
 from sklearn.model_selection import ParameterGrid
 
 
@@ -156,7 +156,7 @@ parameters = ParameterGrid({"max_cost": [3, 5]})
 #           that should be used to decide on the best parameter set.
 from gaitmap.future.pipelines import GridSearch
 
-gs = GridSearch(pipe, parameters, scoring=score, rank_scorer="f1_score")
+gs = GridSearch(pipe, parameters, scoring=score, return_optimized="f1_score")
 gs = gs.optimize(MyDataset())
 
 # %%
