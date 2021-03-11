@@ -9,17 +9,16 @@ import numbers
 import time
 import warnings
 from traceback import format_exc
-from typing import Tuple, Union, Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
 from sklearn import clone
 from sklearn.exceptions import FitFailedWarning
 from sklearn.pipeline import Pipeline
-from typing_extensions import Literal
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines._scorer import GaitmapScorer
+from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._optimize import Optimize
@@ -32,17 +31,62 @@ def _score(
     pipeline: Pipeline,
     dataset: Dataset,
     scorer: GaitmapScorer,
-    parameters: Dict,
+    parameters: Optional[Dict],
     return_parameters=False,
     return_data_labels=False,
     return_times=False,
-    candidate_progress=None,
-    error_score=np.nan,
+    error_score=_ERROR_SCORE_TYPE,
 ):
+    """Set parameters and return score.
+
+    Parameters
+    ----------
+    pipeline
+        A instance of a gaitmap pipeline
+    dataset
+        A instance of a gaitmap dataset with multiple data points.
+    scorer
+        A scorer that calculates a score by running the pipeline on each data point and then aggregates the results.
+    parameters
+        The parameters that should be set for the pipeline before scoring
+    return_parameters
+        If the parameter value that was input should be added to the result dict
+    return_data_labels
+        If the names of the data points should be added to the result dict
+    return_times
+        If the time required to score the dataset added to the result dict
+    error_score
+        The value that should be used if scoring fails for a specific data point.
+        This can be any numeric value (including nan and inf) or "raises".
+        If it is "raises", the scoring error is raised instead of ignored.
+        In all other cases a warning is displayed.
+        Note, that if the value is set to np.nan, the aggreagated value over multiple data points will also be nan,
+        if scoring fails for a single data point.
+
+    Returns
+    -------
+    result : dict with the following attributes
+        scores : dict of scorer name -> float
+            Calculated scores
+        scores_single : dict of scorer name -> np.ndarray
+            Calculated scores for each individual data point
+        score_time : float
+            Time required to score the dataset
+        data : List
+            List of data point labels used
+        parameters : dict or None
+            The parameters that have been evaluated.
+
+    """
+    if not isinstance(error_score, numbers.Number) and error_score != "raise":
+        raise ValueError(
+            "error_score must be the string 'raise' or a numeric value. "
+            "(Hint: if using 'raise', please make sure that it has been "
+            "spelled correctly.)"
+        )
+
     if parameters is not None:
-        # clone after setting parameters in case any parameters
-        # are estimators (like pipeline steps)
-        # because pipeline doesn't clone steps in fit
+        # clone after setting parameters in case any parameters are estimators (like pipeline steps).
         cloned_parameters = {}
         for k, v in parameters.items():
             cloned_parameters[k] = clone(v, safe=False)
@@ -53,7 +97,7 @@ def _score(
     agg_scores, single_scores = scorer(pipeline, dataset, error_score)
     score_time = time.time() - start_time
 
-    result = {}
+    result = dict()
     result["scores"] = agg_scores
     result["single_scores"] = single_scores
     if return_times:
@@ -83,7 +127,6 @@ def _optimize_and_score(
     candidate_progress=None,
     error_score=np.nan,
 ):
-
     """Fit estimator and compute scores for a given dataset split.
 
     Parameters
@@ -122,7 +165,7 @@ def _optimize_and_score(
         Parameters to be set on the estimator.
 
     optimize_params : dict or None
-        Parameters that will be passed to ``estimator.fit``.
+        Parameters that will be passed to ``optimizer.optimize``.
 
     return_train_score : bool, default=False
         Compute and return score on training set.
@@ -173,23 +216,6 @@ def _optimize_and_score(
             "(Hint: if using 'raise', please make sure that it has been "
             "spelled correctly.)"
         )
-
-    progress_msg = ""
-    if verbose > 2:
-        if split_progress is not None:
-            progress_msg = f" {split_progress[0]+1}/{split_progress[1]}"
-        if candidate_progress and verbose > 9:
-            progress_msg += f"; {candidate_progress[0]+1}/" f"{candidate_progress[1]}"
-
-    if verbose > 1:
-        if parameters is None:
-            params_msg = ""
-        else:
-            sorted_keys = sorted(parameters)  # Ensure deterministic o/p
-            params_msg = ", ".join(f"{k}={parameters[k]}" for k in sorted_keys)
-    if verbose > 9:
-        start_msg = f"[CV{progress_msg}] START {params_msg}"
-        print(f"{start_msg}{(80 - len(start_msg)) * '.'}")
 
     optimize_params = optimize_params if optimize_params is not None else {}
 
@@ -246,24 +272,6 @@ def _optimize_and_score(
         score_time = time.time() - start_time - fit_time
         if return_train_score:
             train_scores = scorer(optimizer, train_set, scorer, error_score)
-
-    if verbose > 1:
-        total_time = score_time + fit_time
-        end_msg = f"[CV{progress_msg}] END "
-        result_msg = params_msg + (";" if params_msg else "")
-        if verbose > 2 and isinstance(test_scores, dict):
-            for scorer_name in sorted(test_scores):
-                result_msg += f" {scorer_name}: ("
-                if return_train_score:
-                    scorer_scores = train_scores[scorer_name]
-                    result_msg += f"train={scorer_scores:.3f}, "
-                result_msg += f"test={test_scores[scorer_name]:.3f})"
-        result_msg += f" total time={logger.short_format_time(total_time)}"
-
-        # Right align the result_msg
-        end_msg += "." * (80 - len(end_msg) - len(result_msg))
-        end_msg += result_msg
-        print(end_msg)
 
     result["test_scores"] = test_scores
     if return_train_score:
