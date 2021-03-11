@@ -89,7 +89,7 @@ class GridSearch(_BaseOptimize):
     parameter_grid: Optional[ParameterGrid]
     scoring: Optional[Callable]
     n_jobs: Optional[int]
-    rank_scorer: Optional[str]
+    return_optmized: Optional[str]
     pre_dispatch: Union[int, str]
 
     best_params_: Dict
@@ -105,14 +105,14 @@ class GridSearch(_BaseOptimize):
         *,
         scoring: Optional[Callable] = None,
         n_jobs: Optional[int] = None,
-        rank_scorer: Optional[str] = None,  # Maybe rename to refit?
+        return_optimized: Union[bool, str] = True,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
         self.pipeline = pipeline
         self.parameter_grid = parameter_grid
         self.scoring = scoring
         self.n_jobs = n_jobs
-        self.rank_scorer = rank_scorer
+        self.return_optmized = return_optimized
         self.pre_dispatch = pre_dispatch
 
     def optimize(self, dataset: Dataset, **kwargs):
@@ -155,25 +155,29 @@ class GridSearch(_BaseOptimize):
             multi_metric=self.multi_metric_,
         )
 
-        if self.multi_metric_ is True and (not isinstance(self.rank_scorer, str) or self.rank_scorer not in results):
-            raise ValueError(
-                "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be used "
-                "to select the best result."
-            )
-        if not self.multi_metric_ and isinstance(self.rank_scorer, str):
-            warnings.warn(
-                "You specified `rank_scorer`, but the provided scorer only produces a single score. "
-                "`rank_scorer` is ignored."
-            )
+        if self.multi_metric_ is True:
+            # In a multimetric case, return_optmized must either be False of a string
+            if self.return_optmized is True or self.return_optmized not in results:
+                raise ValueError(
+                    "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be "
+                    "used to select the best result."
+                )
+        else:
+            if isinstance(self.return_optmized, str):
+                warnings.warn(
+                    "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
+                    "single score. `return_optimized` is set to True."
+                )
 
-        rank_score = "score"
-        if self.multi_metric_ and self.rank_scorer:
-            rank_score = self.rank_scorer
-        self.best_index_ = results["rank_{}".format(rank_score)].argmin()
-        self.best_score_ = results[rank_score][self.best_index_]
-        self.best_params_ = results["params"][self.best_index_]
-        # We clone twice, in case one of the params was itself a algorithm.
-        self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_).clone()
+        if self.return_optmized:
+            return_optimized = "score"
+            if self.multi_metric_ and self.return_optmized:
+                return_optimized = self.return_optmized
+            self.best_index_ = results["rank_{}".format(return_optimized)].argmin()
+            self.best_score_ = results[return_optimized][self.best_index_]
+            self.best_params_ = results["params"][self.best_index_]
+            # We clone twice, in case one of the params was itself a algorithm.
+            self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_).clone()
 
         self.gs_results_ = results
 
