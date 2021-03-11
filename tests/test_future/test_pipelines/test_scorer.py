@@ -1,44 +1,17 @@
 from unittest.mock import Mock
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import GaitmapScorer, SimplePipeline
-
-
-class DummyPipeline(SimplePipeline):
-    pass
-
-
-class DummyDataset(Dataset):
-    def create_index(self) -> pd.DataFrame:
-        return pd.DataFrame({"value": list(range(5))})
-
-
-def dummy_single_score_func(pipeline, data_point):
-    return data_point.groups[0]
-
-
-def dummy_multi_score_func(pipeline, data_point):
-    return {"score_1": data_point.groups[0], "score_2": data_point.groups[0]}
-
-
-def dummy_error_score_func(pipeline, data_point):
-    if data_point.groups[0] in [0, 2, 4]:
-        raise ValueError("Dummy Error for {}".format(data_point.groups[0]))
-    return data_point.groups[0]
-
-
-def dummy_error_score_func_multi(pipeline, data_point):
-    tmp = dummy_error_score_func(pipeline, data_point)
-    return {"score_1": tmp, "score_2": tmp}
-
-
-@pytest.fixture(params=(dummy_single_score_func, dummy_multi_score_func))
-def scorer(request):
-    return request.param
+from gaitmap.future.pipelines import GaitmapScorer
+from tests.test_future.test_pipelines.conftest import (
+    DummyPipeline,
+    DummyDataset,
+    dummy_single_score_func,
+    dummy_multi_score_func,
+    dummy_error_score_func,
+    dummy_error_score_func_multi,
+)
 
 
 class TestGaitmapScorerCalls:
@@ -64,12 +37,6 @@ class TestGaitmapScorerCalls:
 
 
 class TestGaitmapScorer:
-    # scorer: GaitmapScorer
-    #
-    # @pytest.fixture(autouse=True)
-    # def create_scorer(self, scorer):
-    #     self.scorer = GaitmapScorer(scorer)
-
     def test_score_return_val_single_score(self):
         scorer = GaitmapScorer(dummy_single_score_func)
         pipe = DummyPipeline()

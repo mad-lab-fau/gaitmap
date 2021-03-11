@@ -15,27 +15,24 @@ import numpy as np
 from numpy.typing import ArrayLike
 from sklearn import clone
 from sklearn.exceptions import FitFailedWarning
-from sklearn.pipeline import Pipeline
 
 from gaitmap.future.dataset import Dataset
+from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._optimize import Optimize
 
 
-# TODO: Split in multiple optimize_and_score into a score func -> Score can be used for Gridseearch
-
-
 def _score(
-    pipeline: Pipeline,
+    pipeline: SimplePipeline,
     dataset: Dataset,
     scorer: GaitmapScorer,
     parameters: Optional[Dict],
     return_parameters=False,
     return_data_labels=False,
     return_times=False,
-    error_score=_ERROR_SCORE_TYPE,
+    error_score: _ERROR_SCORE_TYPE = np.nan,
 ):
     """Set parameters and return score.
 
@@ -103,7 +100,7 @@ def _score(
     if return_times:
         result["score_time"] = score_time
     if return_data_labels:
-        result["data"] = dataset.groups
+        result["data_labels"] = dataset.groups
     if return_parameters:
         result["parameters"] = parameters
     return result
