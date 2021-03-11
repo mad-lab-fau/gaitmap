@@ -9,7 +9,7 @@ import numpy as np
 from typing_extensions import Literal
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines._utils import _aggregate_scores
+from gaitmap.future.pipelines._utils import _aggregate_scores_mean
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._pipelines import SimplePipeline
@@ -27,11 +27,15 @@ class GaitmapScorer:
     ) -> Tuple[Union[Dict[str, numbers.Number], numbers.Number], Union[Dict[str, np.ndarray], np.ndarray]]:
         return self._score(pipeline=pipeline, data=data, error_score=error_score)
 
+    def aggregate(self, scores):
+        return _aggregate_scores_mean(scores)
+
     def _score(self, pipeline: SimplePipeline, data: Dataset, error_score: _ERROR_SCORE_TYPE):
         scores = []
         for d in data:
             try:
-                scores.append(self._score_func(pipeline, d))
+                # We need to clone here again, to make sure that the run for each data point is truly independent.
+                scores.append(self._score_func(pipeline.clone(), d))
             except Exception:
                 if error_score == "raise":
                     raise
@@ -43,7 +47,7 @@ class GaitmapScorer:
                         f"{format_exc()}",
                         UserWarning,
                     )
-        return _aggregate_scores(scores)
+        return self.aggregate(scores)
 
 
 def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
