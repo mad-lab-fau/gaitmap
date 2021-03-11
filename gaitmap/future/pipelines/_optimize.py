@@ -10,21 +10,23 @@ from joblib import Parallel, delayed
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
 from sklearn.model_selection import ParameterGrid
-from sklearn.model_selection._validation import _aggregate_score_dicts
 
-from gaitmap.base import _BaseSerializable
+from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
 from gaitmap.future.pipelines._score import _score
-from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring
+from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring, _ERROR_SCORE_TYPE
+from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
-class _BaseOptimize(_BaseSerializable):
-    pipeline: Optional[SimplePipeline]
+class _BaseOptimize(BaseAlgorithm):
+    pipeline: SimplePipeline
 
     dataset: Dataset
 
     optimized_pipeline_: SimplePipeline
+
+    _action_method = "optimize"
 
     def optimize(self, dataset: Dataset, **kwargs):
         raise NotImplementedError()
@@ -45,20 +47,17 @@ class _BaseOptimize(_BaseSerializable):
 
 
 class Optimize(_BaseOptimize):
-    pipeline: Optional[OptimizablePipeline]
+    pipeline: OptimizablePipeline
 
     optimized_pipeline_: OptimizablePipeline
 
-    def __init__(
-        self,
-        pipeline: Optional[OptimizablePipeline] = None,
-    ):
+    def __init__(self, pipeline: OptimizablePipeline):
         self.pipeline = pipeline
 
     def optimize(self, dataset: Dataset, **kwargs):
         """Run the self-optimization defined by the pipeline.
 
-        The optimized version of the pipeline is stored as `self.optimized_pipeline_`
+        The optimized version of the pipeline is stored as `self.optimized_pipeline_`.
 
         Parameters
         ----------
@@ -86,53 +85,143 @@ class Optimize(_BaseOptimize):
 
 
 class GridSearch(_BaseOptimize):
-    parameter_grid: Optional[ParameterGrid]
-    scoring: Optional[Callable]
-    n_jobs: Optional[int]
-    return_optmized: Optional[str]
-    pre_dispatch: Union[int, str]
+    """Perform a GridSearch over various parameters.
 
+    Parameters
+    ----------
+    pipeline
+        The pipeline object to optimize
+    parameter_grid
+        A sklearn parameter grid to define the search space.
+    scoring
+        A callable that can score a single data point given a pipeline.
+        This function should return either a single score or a dictionary of scores.
+
+        .. note:: If scoring returns a dictionary, `return_optimized` must be set to the name of the score that
+                  should be used for ranking.
+    n_jobs
+        The number of processes that should be used to parallelize the search.
+        None means 1, -1 means as many as logical processing cores.
+    pre_dispatch
+        The number of jobs that should be pre dispatched.
+        For an explanation see the documentation of :class:`~sklearn.model_selection.GridSearchCV`
+    return_optimized
+        If True, a pipeline object with the overall best params is created and stored as `optimized_pipeline_`.
+        If `scoring` returns multiple score values, this must be a str corresponding to the name of the score that
+        should be used to rank the results.
+        If False, the respective result attributes will not be populated.
+    error_score
+        Value to assign to the score if an error occurs during scoring.
+        If set to ‘raise’, the error is raised.
+        If a numeric value is given, a Warning is raised.
+
+    Other Parameters
+    ----------------
+    dataset
+        The dataset instance passed to the optimize method
+
+    Attributes
+    ----------
+    gs_results_
+        A dictionary summarizing all results of the gridsearch.
+        The format of this dictionary is design to be directly passed into the `pd.DataFrame` constructor.
+        Each column then represents the result for one set of parameters
+
+        The dictionary contains the following columns:
+
+        param_*
+            The value of a respective parameter
+        params
+            A dictionary representing all parameters
+        score / {scorer-name}
+            The aggregated value of a score over all data-points.
+            If a single score is used for scoring, than the generic name "score" is used.
+            Otherwise multiple columns with the name of the respective scorer exist
+        rank_score / rank_{scorer-name}
+            A sorting for each score from the highest to the lowest value
+        single_score / single_{scorer-name}
+            The individual scores per datapoint for each score.
+            This is a list of values with the `len(dataset)`.
+        data_labels
+            A list of data labels in the order the single score values are provided.
+            These can be used to associate the `single_score` values with a certain data-point.
+    optimized_pipeline_
+        A instance of the input pipeline with the best parameter set.
+        This is only available if `return_optimized` is not False.
+    best_params_
+        The parameter dict that resulted in the best result.
+        This is only available if `return_optimized` is not False.
+    best_index_
+        The index of the result row in the output.
+        This is only available if `return_optimized` is not False.
+    best_score_
+        The score of the best result.
+        In a multimetric case, only the value of the scorer specified by `return_optimized` is provided.
+        This is only available if `return_optimized` is not False.
+    multi_metric_
+        Rather the scorer returned multiple scores
+
+    """
+
+    parameter_grid: ParameterGrid
+    scoring: Optional[Union[Callable, GaitmapScorer]]
+    n_jobs: Optional[int]
+    return_optimized: Optional[str]
+    pre_dispatch: Union[int, str]
+    error_score: _ERROR_SCORE_TYPE
+
+    gs_results_: Dict[str, Any]
     best_params_: Dict
     best_index_: int
     best_score_: float
-    gs_results_: Dict[str, Any]
     multi_metric_: bool
 
     def __init__(
         self,
-        pipeline: Optional[SimplePipeline] = None,
-        parameter_grid: Optional[ParameterGrid] = None,
+        pipeline: SimplePipeline,
+        parameter_grid: ParameterGrid,
         *,
-        scoring: Optional[Callable] = None,
+        scoring: Optional[Union[Callable, GaitmapScorer]] = None,
         n_jobs: Optional[int] = None,
-        return_optimized: Union[bool, str] = True,
         pre_dispatch: Union[int, str] = "n_jobs",
+        return_optimized: Union[bool, str] = True,
+        error_score: _ERROR_SCORE_TYPE = np.nan,
     ):
         self.pipeline = pipeline
         self.parameter_grid = parameter_grid
         self.scoring = scoring
         self.n_jobs = n_jobs
-        self.return_optmized = return_optimized
         self.pre_dispatch = pre_dispatch
+        self.return_optimized = return_optimized
+        self.error_score = error_score
 
     def optimize(self, dataset: Dataset, **kwargs):
         self.dataset = dataset
-        candidate_params = list(self.parameter_grid)
-        parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         scoring = self.scoring
         if scoring is None:
+            # If scoring is None, we will try to use the score method of the pipeline
             scoring = _passthrough_scoring
-        if callable(scoring):
+        if not isinstance(scoring, GaitmapScorer):
+            # We wrap the scorer, unless the user supplied a subclass of the Scorer class
             scoring = GaitmapScorer(scoring)
+
+        parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         with parallel:
+            # Evaluate each parameter combination
             results = parallel(
                 delayed(_score)(
-                    self.pipeline.clone(), dataset, scoring, paras, return_parameters=True, return_data_labels=True
+                    self.pipeline.clone(),
+                    dataset,
+                    scoring,
+                    paras,
+                    return_parameters=True,
+                    return_data_labels=True,
+                    return_times=True,
+                    error_score=self.error_score,
                 )
-                for paras in candidate_params
+                for paras in self.parameter_grid
             )
-        # TODO: Create own version of aggregate_score_dicts and fix versions, where scoring failed
-        results = _aggregate_score_dicts(results)
+        results = _aggregate_final_results(results)
         mean_scores = results["scores"]
         data_point_scores = results["single_scores"]
         # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
@@ -140,8 +229,8 @@ class GridSearch(_BaseOptimize):
         if all(isinstance(v, dict) for v in mean_scores):
             self.multi_metric_ = True
             # In a multimetric case, we need to flatten the individual score dicts.
-            mean_scores = _aggregate_score_dicts(mean_scores)
-            data_point_scores = _aggregate_score_dicts(data_point_scores)
+            mean_scores = _aggregate_final_results(mean_scores)
+            data_point_scores = _aggregate_final_results(data_point_scores)
         elif all(isinstance(t, numbers.Number) for t in mean_scores):
             self.multi_metric_ = False
         else:
@@ -151,28 +240,28 @@ class GridSearch(_BaseOptimize):
             results["parameters"],
             mean_scores,
             data_point_scores=data_point_scores,
-            data_point_names=results["data"],
+            data_point_names=results["data_labels"],
             multi_metric=self.multi_metric_,
         )
 
         if self.multi_metric_ is True:
-            # In a multimetric case, return_optmized must either be False of a string
-            if self.return_optmized is True or self.return_optmized not in results:
+            # In a multimetric case, return_optimized must either be False of a string
+            if self.return_optimized is True or self.return_optimized not in results:
                 raise ValueError(
                     "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be "
                     "used to select the best result."
                 )
         else:
-            if isinstance(self.return_optmized, str):
+            if isinstance(self.return_optimized, str):
                 warnings.warn(
                     "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
                     "single score. `return_optimized` is set to True."
                 )
 
-        if self.return_optmized:
+        if self.return_optimized:
             return_optimized = "score"
-            if self.multi_metric_ and self.return_optmized:
-                return_optimized = self.return_optmized
+            if self.multi_metric_ and self.return_optimized:
+                return_optimized = self.return_optimized
             self.best_index_ = results["rank_{}".format(return_optimized)].argmin()
             self.best_score_ = results[return_optimized][self.best_index_]
             self.best_params_ = results["params"][self.best_index_]
@@ -183,16 +272,19 @@ class GridSearch(_BaseOptimize):
 
         return self
 
-    def _format_results(
+    def _format_results(  # noqa: no-self-use
         self, candidate_params, mean_scores, *, data_point_scores=None, data_point_names=None, multi_metric=False
     ):
-        # This function is adapted based on sklearns `BaseSearchCV`
+        """Format the final result dict.
+
+        This function is adapted based on sklearns `BaseSearchCV`
+        """
+        # TODO: Add time
 
         n_candidates = len(candidate_params)
         results = {}
 
         if multi_metric:
-            # Invert the dict and calculate the mean per score:
             for c, v in mean_scores.items():
                 results[c] = v
                 results["rank_{}".format(c)] = np.asarray(rankdata(-v, method="min"), dtype=np.int32)
@@ -201,14 +293,13 @@ class GridSearch(_BaseOptimize):
                 for c, v in df_single.iteritems():
                     results["single_{}".format(c)] = v.to_numpy()
         else:
-            mean_scores = np.asarray(mean_scores)
             results["score"] = mean_scores
             results["rank_score"] = np.asarray(rankdata(-mean_scores, method="min"), dtype=np.int32)
             if data_point_scores:
                 results["single_score"] = data_point_scores
 
         if data_point_names is not None:
-            results["data"] = data_point_names
+            results["data_labels"] = data_point_names
 
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
