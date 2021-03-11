@@ -262,7 +262,7 @@ def _optimize_and_score(
         result["fit_failed"] = False
 
         fit_time = time.time() - start_time
-        test_scores = scorer(optimizer, test_set, error_score)
+        test_scores = scorer(optimizer.optimized_pipeline_, test_set, error_score)
         score_time = time.time() - start_time - fit_time
         if return_train_score:
             train_scores = scorer(optimizer, train_set, scorer, error_score)

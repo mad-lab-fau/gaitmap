@@ -87,6 +87,16 @@ class Optimize(_BaseOptimize):
 class GridSearch(_BaseOptimize):
     """Perform a GridSearch over various parameters.
 
+    This scores the pipeline for every combination of data-points in the provided dataset and parameter combinations
+    in the `parameter_grid`.
+    The scores over the entire dataset are then aggregated for each para combination.
+    By default this aggregation is a simple average.
+
+    Note, that this is different to how GridSearch works in many other cases:
+    Usually, the performance parameter would be calculated on all data-points at once.
+    Here, each data-point represents a entire participant or gait-recording (depending on the dataset).
+    Therefore, the pipeline and the scoring method are expected to provide a result/score per data-point in the dataset.
+
     Parameters
     ----------
     pipeline
@@ -195,14 +205,22 @@ class GridSearch(_BaseOptimize):
         self.return_optimized = return_optimized
         self.error_score = error_score
 
-    def optimize(self, dataset: Dataset, **kwargs):
+    def optimize(self, dataset: Dataset, **_):
+        """Run the GridSearch over the dataset and find the best parameter combination.
+
+        Parameters
+        ----------
+        dataset
+            The dataset used for optimization.
+
+        """
         self.dataset = dataset
         scoring = self.scoring
         if scoring is None:
             # If scoring is None, we will try to use the score method of the pipeline
             scoring = _passthrough_scoring
         if not isinstance(scoring, GaitmapScorer):
-            # We wrap the scorer, unless the user supplied a subclass of the Scorer class
+            # We wrap the scorer, unless the user already supplied a instance of the GaitmapScorer class (or subclass)
             scoring = GaitmapScorer(scoring)
 
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
