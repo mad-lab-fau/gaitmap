@@ -1,3 +1,4 @@
+"""Higher level wrapper to run training and parameter optimizations."""
 import numbers
 import warnings
 from collections import defaultdict
@@ -29,6 +30,7 @@ class _BaseOptimize(BaseAlgorithm):
     _action_method = "optimize"
 
     def optimize(self, dataset: Dataset, **kwargs):
+        """Apply some form of optimization on the the input parameters of the pipeline."""
         raise NotImplementedError()
 
     def run(self, dataset_single):
@@ -47,6 +49,34 @@ class _BaseOptimize(BaseAlgorithm):
 
 
 class Optimize(_BaseOptimize):
+    """Run a generic self-optimization on the pipeline.
+
+    This is a simple wrapper for pipelines that already implement a `self_optimize` method.
+    This wrapper can be used to ensure that these algorithms can be optimized with the same interface as other
+    optimization methods and can hence, be used in methods like cross-validation.
+
+    Optimize will never modify the original pipeline, but will store a copy of the optimized pipeline as
+    `optimized_pipeline_`.
+
+    Parameters
+    ----------
+    pipeline
+        The pipeline to optimize.
+        The pipeline must implement `self_optimize` to optimize its own input parameters.
+
+    Other Parameters
+    ----------------
+    dataset
+        The dataset used for optimization.
+
+    Attributes
+    ----------
+    optimized_pipeline_
+        The optimized version of the pipeline.
+        That is a copy of the input pipeline with modified params.
+
+    """
+
     pipeline: OptimizablePipeline
 
     optimized_pipeline_: OptimizablePipeline

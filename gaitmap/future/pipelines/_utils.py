@@ -1,3 +1,4 @@
+"""Some helper to work with the format the results of GridSearches and CVs."""
 import numbers
 from typing import List
 

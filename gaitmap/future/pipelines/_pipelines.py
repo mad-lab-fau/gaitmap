@@ -1,9 +1,6 @@
 """Base Classes for custom pipelines."""
 from typing import TypeVar, Dict, Union
 
-import numpy as np
-import pandas as pd
-
 from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
 
@@ -38,7 +35,7 @@ class SimplePipeline(BaseAlgorithm):
         raise NotImplementedError()
 
     def score(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
-        """Optional pipeline method to calculate performance values.
+        """Calculate performance of the pipeline on a dataset with reference information.
 
         This is an optional method and does not need to be implemented in many cases.
         Usually stand-a-lone functions are better suited as scorer.
@@ -62,6 +59,22 @@ class SimplePipeline(BaseAlgorithm):
 
 
 class OptimizablePipeline(SimplePipeline):
+    """Pipeline with custom ways to optimize and/or train input parameters.
+
+    OptimizablePipelines are expected to implement a concrete way to train internal models or optimize parameters.
+    This should not be reimplementation of GridSearch or similar methods.
+    For this :class:`gaitmap.future.pipelines.GridSearch` should be used directly.
+
+    It is important that `self_optimize` only modifies input parameters of the pipeline.
+    This means, if a parameter is optimized, by `self_optimize` it should be named in the `__init__` and should be
+    exportable when calling `pipeline.get_params`.
+    It is also possible to optimize nested parameters.
+    For example, if the pipeline takes a :class:`~gaitmap.stride_segmentation.DtwTemplate` as input, `self_optimize`
+    can modify the template (or create a new DTW Template class).
+    In any case, you should make sure that all optimized parameters are still there if you call `.clone()` on the
+    optimized pipeline.
+    """
+
     def self_optimize(self: Self, dataset: Dataset, **kwargs) -> Self:
         """Optimize the input parameter of the pipeline using any logic.
 

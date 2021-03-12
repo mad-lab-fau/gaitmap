@@ -1,3 +1,4 @@
+"""Helper to score pipelines."""
 from __future__ import annotations
 
 import numbers
@@ -77,7 +78,7 @@ class GaitmapScorer:
 
 
 def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
-    """Dummy scorer callable that can be used, when the score method of the pipeline should be used."""
+    """Call the score method of the pipeline to score the input."""
     return pipeline.score(dataset_single)
 
 
