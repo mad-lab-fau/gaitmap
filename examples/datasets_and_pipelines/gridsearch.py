@@ -163,7 +163,8 @@ gs = gs.optimize(MyDataset())
 # The main results are stored in `gs_results_`.
 # It shows the mean performance per parameter combination, the rank for each parameter combination and the
 # performance for each individual data point (in our case a single recording of one sensor).
-pd.DataFrame(gs.gs_results_)
+results = gs.gs_results_
+pd.DataFrame(results)
 
 # %%
 # Further, the `optimized_pipeline_` parameter holds an instance of the pipeline initialized with the best parameter
@@ -174,4 +175,5 @@ print("Paras of optimized Pipeline:", gs.optimized_pipeline_.get_params())
 # %%
 # To run the optmized pipeline, we can directly use the `run` method on the GridSearch object.
 # This makes it possible to use the `GridSearch` as a replacement for your pipeline object with minimal code changes.
-gs.run(dataset[0]).segmented_stride_list_
+segmented_stride_list = gs.run(dataset[0]).segmented_stride_list_
+segmented_stride_list

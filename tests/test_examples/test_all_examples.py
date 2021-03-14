@@ -1,5 +1,6 @@
 import matplotlib
 import numpy as np
+import pandas as pd
 from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_ACC
@@ -136,10 +137,17 @@ def test_caching(snapshot):
         assert_frame_equal(s_list, second_call_results.stride_list_[sensor])
 
 
-def test_custom_dataset(snapshot):
+def test_custom_dataset():
     # There is not really anything specific, we want to test here, so we just run everything and check that there are
     # no errors.
     import examples.datasets_and_pipelines.custom_dataset  # noqa
+
+
+def test_grid_search(snapshot):
+    from examples.datasets_and_pipelines.gridsearch import results, segmented_stride_list
+
+    snapshot.assert_match(segmented_stride_list, check_dtype=False)
+    snapshot.assert_match(pd.DataFrame(results), check_dtype=False)
 
 
 def test_multi_process():
