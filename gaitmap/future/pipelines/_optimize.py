@@ -16,7 +16,7 @@ from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
 from gaitmap.future.pipelines._score import _score
-from gaitmap.future.pipelines._scorer import GaitmapScorer, _passthrough_scoring, _ERROR_SCORE_TYPE
+from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _validate_scorer
 from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
@@ -245,13 +245,7 @@ class GridSearch(_BaseOptimize):
 
         """
         self.dataset = dataset
-        scoring = self.scoring
-        if scoring is None:
-            # If scoring is None, we will try to use the score method of the pipeline
-            scoring = _passthrough_scoring
-        if not isinstance(scoring, GaitmapScorer):
-            # We wrap the scorer, unless the user already supplied a instance of the GaitmapScorer class (or subclass)
-            scoring = GaitmapScorer(scoring)
+        scoring = _validate_scorer(self.scoring)
 
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         with parallel:
@@ -292,20 +286,7 @@ class GridSearch(_BaseOptimize):
             multi_metric=self.multi_metric_,
         )
 
-        if self.multi_metric_ is True:
-            # In a multimetric case, return_optimized must either be False of a string
-            if self.return_optimized is True or self.return_optimized not in results:
-                raise ValueError(
-                    "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be "
-                    "used to select the best result."
-                )
-        else:
-            if isinstance(self.return_optimized, str):
-                warnings.warn(
-                    "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
-                    "single score. `return_optimized` is set to True."
-                )
-
+        self._validate_return_optimized(results)
         if self.return_optimized:
             return_optimized = "score"
             if self.multi_metric_ and self.return_optimized:
@@ -319,6 +300,22 @@ class GridSearch(_BaseOptimize):
         self.gs_results_ = results
 
         return self
+
+    def _validate_return_optimized(self, results):
+        """Check if `return_optimize` fits to the multimetric output of the scorer."""
+        if self.multi_metric_ is True:
+            # In a multimetric case, return_optimized must either be False of a string
+            if self.return_optimized is True or self.return_optimized not in results:
+                raise ValueError(
+                    "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be "
+                    "used to select the best result."
+                )
+        else:
+            if isinstance(self.return_optimized, str):
+                warnings.warn(
+                    "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
+                    "single score. `return_optimized` is set to True."
+                )
 
     def _format_results(  # noqa: no-self-use
         self, candidate_params, mean_scores, *, data_point_scores=None, data_point_names=None, multi_metric=False
