@@ -4,7 +4,7 @@ from __future__ import annotations
 import numbers
 import warnings
 from traceback import format_exc
-from typing import Tuple, Union, Dict, TYPE_CHECKING, List, Callable
+from typing import Tuple, Union, Dict, TYPE_CHECKING, List, Callable, Optional, Type, TypeVar
 
 import numpy as np
 from typing_extensions import Literal
@@ -80,6 +80,22 @@ class GaitmapScorer:
 def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
     """Call the score method of the pipeline to score the input."""
     return pipeline.score(dataset_single)
+
+
+ScorerBaseType = TypeVar("ScorerBaseType", bound=GaitmapScorer)
+
+
+def _validate_scorer(
+    scoring: Optional[Union[Callable, GaitmapScorer]], base_class: Type[ScorerBaseType] = GaitmapScorer
+) -> ScorerBaseType:
+    """Convert the provided scoring method into a valid scorer object."""
+    if scoring is None:
+        # If scoring is None, we will try to use the score method of the pipeline
+        scoring = _passthrough_scoring
+    if not isinstance(scoring, base_class):
+        # We wrap the scorer, unless the user already supplied a instance of the GaitmapScorer class (or subclass)
+        scoring = base_class(scoring)
+    return scoring
 
 
 def _aggregate_scores(scores: _SCORE_TYPE, agg_method: Callable) -> Tuple[_AGG_SCORE_TYPE, _SINGLE_SCORE_TYPE]:

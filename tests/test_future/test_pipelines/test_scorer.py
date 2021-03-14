@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from gaitmap.future.pipelines import GaitmapScorer
+from gaitmap.future.pipelines._scorer import _passthrough_scoring, _validate_scorer
 from tests.test_future.test_pipelines.conftest import (
     DummyPipeline,
     DummyDataset,
@@ -117,3 +118,26 @@ class TestGaitmapScorer:
             scorer(pipe, data, "raise")
 
         assert str(e.value) == "Dummy Error for 0"
+
+
+def _dummy_func(x):
+    return x
+
+
+def _dummy_func_2(x):
+    return x
+
+
+class TestScorerUtils:
+    @pytest.mark.parametrize(
+        "scoring, expected",
+        (
+            (None, GaitmapScorer(_passthrough_scoring)),
+            (_dummy_func, GaitmapScorer(_dummy_func)),
+            (GaitmapScorer(_dummy_func_2), GaitmapScorer(_dummy_func_2)),
+        ),
+    )
+    def test_validate_scorer(self, scoring, expected):
+        out = _validate_scorer(scoring)
+        assert isinstance(out, type(expected))
+        assert out._score_func == expected._score_func
