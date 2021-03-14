@@ -304,11 +304,13 @@ class GridSearch(_BaseOptimize):
     def _validate_return_optimized(self, results):
         """Check if `return_optimize` fits to the multimetric output of the scorer."""
         if self.multi_metric_ is True:
-            # In a multimetric case, return_optimized must either be False of a string
-            if self.return_optimized is True or self.return_optimized not in results:
+            # In a multimetric case, return_optimized must either be False or a string
+            if self.return_optimized and (
+                not isinstance(self.return_optimized, str) or self.return_optimized not in results
+            ):
                 raise ValueError(
-                    "If multi-metric scoring is used, `rank_scorer` must be a str specifying the score that should be "
-                    "used to select the best result."
+                    "If multi-metric scoring is used, `return_optimized` must be a str specifying the score that "
+                    "should be used to select the best result."
                 )
         else:
             if isinstance(self.return_optimized, str):

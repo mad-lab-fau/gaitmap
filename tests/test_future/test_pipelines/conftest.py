@@ -1,13 +1,16 @@
 import pandas as pd
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import SimplePipeline
+from gaitmap.future.pipelines import SimplePipeline, OptimizablePipeline
 
 
-class DummyPipeline(SimplePipeline):
+class DummyPipeline(OptimizablePipeline):
     def __init__(self, para_1=None, para_2=None):
         self.para_1 = para_1
         self.para_2 = para_2
+
+    def self_optimize(self, dataset: Dataset, **kwargs):
+        pass
 
 
 class DummyDataset(Dataset):
@@ -20,7 +23,7 @@ def dummy_single_score_func(pipeline, data_point):
 
 
 def dummy_multi_score_func(pipeline, data_point):
-    return {"score_1": data_point.groups[0], "score_2": data_point.groups[0]}
+    return {"score_1": data_point.groups[0], "score_2": data_point.groups[0] + 1}
 
 
 def dummy_error_score_func(pipeline, data_point):

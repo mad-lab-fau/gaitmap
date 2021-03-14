@@ -54,13 +54,19 @@ class TestGaitmapScorer:
         data = DummyDataset()
         agg, single = scorer(pipe, data, np.nan)
         assert isinstance(single, dict)
-        for v in single.values():
+        for k, v in single.items():
             assert len(v) == len(data)
             # Our Dummy scorer, returns the groupname of the dataset
-            assert all(v == data.groups)
+            if k == "score_2":
+                assert all(v == np.array(data.groups) + 1)
+            else:
+                assert all(v == data.groups)
         assert isinstance(agg, dict)
-        for v in agg.values():
-            assert v == np.mean(data.groups)
+        for k, v in agg.items():
+            if k == "score_2":
+                assert v == np.mean(data.groups) + 1
+            else:
+                assert v == np.mean(data.groups)
 
     @pytest.mark.parametrize("err_val", (np.nan, 1))
     def test_scoring_return_err_val(self, err_val):
