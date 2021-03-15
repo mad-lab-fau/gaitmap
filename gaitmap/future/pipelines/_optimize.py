@@ -20,6 +20,8 @@ from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
 class BaseOptimize(BaseAlgorithm):
+    """Base class for all optimizer."""
+
     pipeline: SimplePipeline
 
     dataset: Dataset
