@@ -62,7 +62,7 @@ def compare_algo_objects(a, b):
         elif isinstance(value, Rotation):
             assert_array_equal(value.as_quat(), json_val.as_quat())
         elif isinstance(value, pd.DataFrame):
-            assert_frame_equal(value, json_val)
+            assert_frame_equal(value, json_val, check_dtype=False)
         elif isinstance(value, pd.Series):
             assert_series_equal(value, json_val)
         else:
