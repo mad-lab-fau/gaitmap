@@ -32,7 +32,7 @@ class SimplePipeline(BaseAlgorithm):
             The class instance with all result attributes populated
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
 
     def score(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
         """Calculate performance of the pipeline on a dataset with reference information.
@@ -56,6 +56,7 @@ class SimplePipeline(BaseAlgorithm):
             A higher score is always better.
 
         """
+        raise NotImplementedError()  # pragma: no cover
 
 
 class OptimizablePipeline(SimplePipeline):
@@ -99,4 +100,4 @@ class OptimizablePipeline(SimplePipeline):
             The class instance with optimized input parameters.
 
         """
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: no cover
