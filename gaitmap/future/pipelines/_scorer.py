@@ -63,18 +63,36 @@ class GaitmapScorer:
         for d in data:
             try:
                 # We need to clone here again, to make sure that the run for each data point is truly independent.
-                scores.append(self._score_func(pipeline.clone(), d))
+                score = self._score_func(pipeline.clone(), d)
             except Exception:  # noqa: broad-except
                 if error_score == "raise":
                     raise
-                scores.append(error_score)
+                score = error_score
                 warnings.warn(
                     f"Scoring failed for data point: {d.groups}. "
                     f"The score of this data point will be set to {error_score}. Details: \n"
                     f"{format_exc()}",
                     UserWarning,
                 )
+            # We check that the scorer returns only numeric values.
+            _validate_score_return_val(score)
+            scores.append(score)
         return _aggregate_scores(scores, self.aggregate)
+
+
+def _validate_score_return_val(value: _SINGLE_SCORE_TYPE):
+    """We expect a scorer to return either a numeric value or a dictionary of such values."""
+    if isinstance(value, numbers.Number):
+        return
+    if isinstance(value, dict):
+        for v in value.values():
+            if not isinstance(v, numbers.Number):
+                break
+        else:
+            return
+    raise ValueError(
+        "The scoring function must return either a dictionary of numeric values or a single numeric value."
+    )
 
 
 def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):

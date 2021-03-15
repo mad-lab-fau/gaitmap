@@ -125,6 +125,17 @@ class TestGaitmapScorer:
 
         assert str(e.value) == "Dummy Error for 0"
 
+    @pytest.mark.parametrize("error_score", ("raise", 0))
+    @pytest.mark.parametrize("bad_scorer", (lambda x, y: "test", lambda x, y: {"val": "test"}))
+    def test_bad_scorer(self, error_score, bad_scorer):
+        """Check that we catch cases where the scoring func returns invalid values independent of the error_score val"""
+        scorer = GaitmapScorer(bad_scorer)
+        pipe = DummyPipeline()
+        data = DummyDataset()
+        with pytest.raises(ValueError) as e:
+            scorer(pipe, data, error_score)
+        assert "The scoring function must return" in str(e.value)
+
 
 def _dummy_func(x):
     return x

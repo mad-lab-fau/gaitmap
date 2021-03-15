@@ -266,9 +266,9 @@ class GridSearch(_BaseOptimize):
         results = _aggregate_final_results(results)
         mean_scores = results["scores"]
         data_point_scores = results["single_scores"]
-        # We check here if all results are dicts. If yes, we have a multimetric scorer, if not, they all must be numeric
-        # values and we just have a single scorer. Mixed cases will raise an error
-        if all(isinstance(v, dict) for v in mean_scores):
+        # We check here if all results are dicts. We only check the dtype of the first value, as the scorer should
+        # have handled issues with non uniform cases already.
+        if isinstance(mean_scores[0], dict):
             self.multi_metric_ = True
             # In a multimetric case, we need to flatten the individual score dicts.
             mean_scores = _aggregate_final_results(mean_scores)
@@ -276,7 +276,7 @@ class GridSearch(_BaseOptimize):
         elif all(isinstance(t, numbers.Number) for t in mean_scores):
             self.multi_metric_ = False
         else:
-            raise ValueError("The scorer must return either a dictionary of numeric values or a single numeric value.")
+            self.multi_metric_ = False
 
         results = self._format_results(
             results["parameters"],
