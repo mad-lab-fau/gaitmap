@@ -32,25 +32,25 @@ def _score(
     Parameters
     ----------
     pipeline
-        A instance of a gaitmap pipeline
+        An instance of a gaitmap pipeline
     dataset
-        A instance of a gaitmap dataset with multiple data points.
+        An instance of a gaitmap dataset with multiple data points.
     scorer
         A scorer that calculates a score by running the pipeline on each data point and then aggregates the results.
     parameters : dict of valid parameters for the pipeline
         The parameters that should be set for the pipeline before scoring
     return_parameters
-        If the parameter value that was input should be added to the result dict
+        If the parameter value that was inputted should be added to the result dict
     return_data_labels
         If the names of the data points should be added to the result dict
     return_times
-        If the time required to score the dataset added to the result dict
+        If the time required to score the dataset should be added to the result dict
     error_score
         The value that should be used if scoring fails for a specific data point.
         This can be any numeric value (including nan and inf) or "raises".
         If it is "raises", the scoring error is raised instead of ignored.
         In all other cases a warning is displayed.
-        Note, that if the value is set to np.nan, the aggreagated value over multiple data points will also be nan,
+        Note, that if the value is set to np.nan, the aggregated value over multiple data points will also be nan,
         if scoring fails for a single data point.
 
     Returns

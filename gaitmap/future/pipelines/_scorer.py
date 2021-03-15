@@ -45,7 +45,7 @@ class GaitmapScorer:
         Returns
         -------
         agg_scores
-            The average scores over all datapoints
+            The average scores over all data-points
         single_scores
             The scores for each individual data-point
 

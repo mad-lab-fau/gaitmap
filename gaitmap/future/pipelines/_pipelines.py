@@ -23,7 +23,7 @@ class SimplePipeline(BaseAlgorithm):
         Parameters
         ----------
         dataset_single
-            A instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
+            An instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
             The structure of the data will depend on the dataset.
 
         Returns
@@ -46,7 +46,7 @@ class SimplePipeline(BaseAlgorithm):
         Parameters
         ----------
         dataset_single
-            A instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
+            An instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
             The structure of the data and the available reference information will depend on the dataset.
 
         Returns
@@ -63,7 +63,7 @@ class OptimizablePipeline(SimplePipeline):
     """Pipeline with custom ways to optimize and/or train input parameters.
 
     OptimizablePipelines are expected to implement a concrete way to train internal models or optimize parameters.
-    This should not be reimplementation of GridSearch or similar methods.
+    This should not be a reimplementation of GridSearch or similar methods.
     For this :class:`gaitmap.future.pipelines.GridSearch` should be used directly.
 
     It is important that `self_optimize` only modifies input parameters of the pipeline.
@@ -88,7 +88,7 @@ class OptimizablePipeline(SimplePipeline):
         Parameters
         ----------
         dataset
-            A instance of a :class:`gaitmap.future.dataset.Dataset` containing one or multiple data points that can
+            An instance of a :class:`gaitmap.future.dataset.Dataset` containing one or multiple data points that can
             be used for training.
             The structure of the data and the available reference information will depend on the dataset.
         kwargs

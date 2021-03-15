@@ -92,7 +92,7 @@ class Optimize(_BaseOptimize):
         Parameters
         ----------
         dataset
-            A instance of a :class:`~gaitmap.future.dataset.Dataset` containing one or multiple data points that can
+            An instance of a :class:`~gaitmap.future.dataset.Dataset` containing one or multiple data points that can
             be used for optimization.
             The structure of the data and the available reference information will depend on the dataset.
         kwargs
@@ -124,7 +124,7 @@ class GridSearch(_BaseOptimize):
 
     Note, that this is different to how GridSearch works in many other cases:
     Usually, the performance parameter would be calculated on all data-points at once.
-    Here, each data-point represents a entire participant or gait-recording (depending on the dataset).
+    Here, each data-point represents an entire participant or gait-recording (depending on the dataset).
     Therefore, the pipeline and the scoring method are expected to provide a result/score per data-point in the dataset.
 
     Parameters
@@ -164,7 +164,7 @@ class GridSearch(_BaseOptimize):
     ----------
     gs_results_
         A dictionary summarizing all results of the gridsearch.
-        The format of this dictionary is design to be directly passed into the `pd.DataFrame` constructor.
+        The format of this dictionary is designed to be directly passed into the `pd.DataFrame` constructor.
         Each column then represents the result for one set of parameters
 
         The dictionary contains the following columns:
@@ -186,7 +186,7 @@ class GridSearch(_BaseOptimize):
             A list of data labels in the order the single score values are provided.
             These can be used to associate the `single_score` values with a certain data-point.
     optimized_pipeline_
-        A instance of the input pipeline with the best parameter set.
+        An instance of the input pipeline with the best parameter set.
         This is only available if `return_optimized` is not False.
     best_params_
         The parameter dict that resulted in the best result.
@@ -294,7 +294,7 @@ class GridSearch(_BaseOptimize):
             self.best_index_ = results["rank_{}".format(return_optimized)].argmin()
             self.best_score_ = results[return_optimized][self.best_index_]
             self.best_params_ = results["params"][self.best_index_]
-            # We clone twice, in case one of the params was itself a algorithm.
+            # We clone twice, in case one of the params was itself an algorithm.
             self.optimized_pipeline_ = self.pipeline.clone().set_params(**self.best_params_).clone()
 
         self.gs_results_ = results
