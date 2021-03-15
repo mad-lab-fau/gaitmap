@@ -89,12 +89,12 @@ class MyPipeline(SimplePipeline):
     def __init__(self, max_cost: float = 3):
         self.max_cost = max_cost
 
-    def run(self, dataset_single: MyDataset):
+    def run(self, datapoint: MyDataset):
         converter = {"left": convert_left_foot_to_fbf, "right": convert_right_foot_to_fbf}
-        data = converter[dataset_single.groups[0][1]](dataset_single.data)
+        data = converter[datapoint.groups[0][1]](datapoint.data)
 
         dtw = BarthDtw(max_cost=self.max_cost)
-        dtw.segment(data, dataset_single.sampling_rate_hz)
+        dtw.segment(data, datapoint.sampling_rate_hz)
 
         self.segmented_stride_list_ = dtw.stride_list_
         return self
@@ -126,10 +126,10 @@ pipe = MyPipeline()
 from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
 
 
-def score(pipeline: MyPipeline, dataset_single: MyDataset):
-    pipeline.run(dataset_single)
+def score(pipeline: MyPipeline, datapoint: MyDataset):
+    pipeline.run(datapoint)
     matches_df = evaluate_segmented_stride_list(
-        ground_truth=dataset_single.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
+        ground_truth=datapoint.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
     )
     return precision_recall_f1_score(matches_df)
 

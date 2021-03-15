@@ -17,12 +17,12 @@ class SimplePipeline(BaseAlgorithm):
 
     _action_method = "run"
 
-    def run(self: Self, dataset_single: Dataset) -> Self:
+    def run(self: Self, datapoint: Dataset) -> Self:
         """Run the pipeline.
 
         Parameters
         ----------
-        dataset_single
+        datapoint
             An instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
             The structure of the data will depend on the dataset.
 
@@ -34,18 +34,18 @@ class SimplePipeline(BaseAlgorithm):
         """
         raise NotImplementedError()  # pragma: no cover
 
-    def score(self, dataset_single: Dataset) -> Union[float, Dict[str, float]]:
+    def score(self, datapoint: Dataset) -> Union[float, Dict[str, float]]:
         """Calculate performance of the pipeline on a dataset with reference information.
 
         This is an optional method and does not need to be implemented in many cases.
         Usually stand-a-lone functions are better suited as scorer.
 
-        A typical score method will call `self.run(dataset_single)` and then compare the results with reference values
+        A typical score method will call `self.run(datapoint)` and then compare the results with reference values
         also available on the dataset.
 
         Parameters
         ----------
-        dataset_single
+        datapoint
             An instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
             The structure of the data and the available reference information will depend on the dataset.
 

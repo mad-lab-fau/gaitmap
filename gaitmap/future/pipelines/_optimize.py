@@ -19,7 +19,7 @@ from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _
 from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
-class _BaseOptimize(BaseAlgorithm):
+class BaseOptimize(BaseAlgorithm):
     pipeline: SimplePipeline
 
     dataset: Dataset
@@ -32,22 +32,22 @@ class _BaseOptimize(BaseAlgorithm):
         """Apply some form of optimization on the the input parameters of the pipeline."""
         raise NotImplementedError()
 
-    def run(self, dataset_single):
+    def run(self, datapoint):
         """Run the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.
         """
-        return self.optimized_pipeline_.run(dataset_single)
+        return self.optimized_pipeline_.run(datapoint)
 
-    def score(self, dataset_single):
+    def score(self, datapoint):
         """Execute score on the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.
         """
-        return self.optimized_pipeline_.score(dataset_single)
+        return self.optimized_pipeline_.score(datapoint)
 
 
-class Optimize(_BaseOptimize):
+class Optimize(BaseOptimize):
     """Run a generic self-optimization on the pipeline.
 
     This is a simple wrapper for pipelines that already implement a `self_optimize` method.
@@ -113,7 +113,7 @@ class Optimize(_BaseOptimize):
         return self
 
 
-class GridSearch(_BaseOptimize):
+class GridSearch(BaseOptimize):
     """Perform a GridSearch over various parameters.
 
     This scores the pipeline for every combination of data-points in the provided dataset and parameter combinations

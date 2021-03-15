@@ -95,9 +95,9 @@ def _validate_score_return_val(value: _SINGLE_SCORE_TYPE):
     )
 
 
-def _passthrough_scoring(pipeline: SimplePipeline, dataset_single: Dataset):
+def _passthrough_scoring(pipeline: SimplePipeline, datapoint: Dataset):
     """Call the score method of the pipeline to score the input."""
-    return pipeline.score(dataset_single)
+    return pipeline.score(datapoint)
 
 
 ScorerBaseType = TypeVar("ScorerBaseType", bound=GaitmapScorer)

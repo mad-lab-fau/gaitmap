@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.model_selection import ParameterGrid
 
 from gaitmap.future.pipelines import GridSearch, Optimize
-from gaitmap.future.pipelines._optimize import _BaseOptimize
+from gaitmap.future.pipelines._optimize import BaseOptimize
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_future.test_pipelines.conftest import (
     DummyPipeline,
@@ -185,7 +185,7 @@ class TestGridSearch:
 
 
 class TestOptimizeBase:
-    optimzer: _BaseOptimize
+    optimzer: BaseOptimize
 
     @pytest.fixture(
         autouse=True, params=(Optimize(DummyPipeline()), GridSearch(DummyPipeline(), ParameterGrid({"para_1": [1]})))
