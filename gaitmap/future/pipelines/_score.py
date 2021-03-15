@@ -71,8 +71,7 @@ def _score(
     if not isinstance(error_score, numbers.Number) and error_score != "raise":
         raise ValueError(
             "error_score must be the string 'raise' or a numeric value. "
-            "(Hint: if using 'raise', please make sure that it has been "
-            "spelled correctly.)"
+            "(Hint: if using 'raise', please make sure that it has been spelled correctly.)"
         )
 
     if parameters is not None:
@@ -87,9 +86,7 @@ def _score(
     agg_scores, single_scores = scorer(pipeline, dataset, error_score)
     score_time = time.time() - start_time
 
-    result = dict()
-    result["scores"] = agg_scores
-    result["single_scores"] = single_scores
+    result = {"scores": agg_scores, "single_scores": single_scores}
     if return_times:
         result["score_time"] = score_time
     if return_data_labels:

@@ -1,5 +1,4 @@
 """Higher level wrapper to run training and parameter optimizations."""
-import numbers
 import warnings
 from collections import defaultdict
 from functools import partial
@@ -268,15 +267,12 @@ class GridSearch(_BaseOptimize):
         data_point_scores = results["single_scores"]
         # We check here if all results are dicts. We only check the dtype of the first value, as the scorer should
         # have handled issues with non uniform cases already.
+        self.multi_metric_ = False
         if isinstance(mean_scores[0], dict):
             self.multi_metric_ = True
             # In a multimetric case, we need to flatten the individual score dicts.
             mean_scores = _aggregate_final_results(mean_scores)
             data_point_scores = _aggregate_final_results(data_point_scores)
-        elif all(isinstance(t, numbers.Number) for t in mean_scores):
-            self.multi_metric_ = False
-        else:
-            self.multi_metric_ = False
 
         results = self._format_results(
             results["parameters"],
