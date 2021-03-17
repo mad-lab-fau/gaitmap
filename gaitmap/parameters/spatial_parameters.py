@@ -323,7 +323,7 @@ def _calc_gait_velocity(stride_length: pd.Series, stride_time: pd.Series) -> pd.
     return stride_length / stride_time
 
 
-def _get_angle_at_index(angle_course: np.array, index_per_stride: pd.Series) -> pd.Series:
+def _get_angle_at_index(angle_course: np.ndarray, index_per_stride: pd.Series) -> pd.Series:
     indexer = pd.MultiIndex.from_frame(index_per_stride.reset_index())
     return angle_course[indexer].reset_index(level=1, drop=True)
 
@@ -334,7 +334,7 @@ def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
     angles = pd.Series(
         np.rad2deg(
             find_angle_between_orientations(
-                Rotation.from_quat(end.to_numpy()), Rotation.from_quat(start.to_numpy()), [0, 0, 1]
+                Rotation.from_quat(end.to_numpy()), Rotation.from_quat(start.to_numpy()), np.asarray([0, 0, 1])
             )
         ),
         index=start.index,

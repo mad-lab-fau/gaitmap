@@ -321,7 +321,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
         raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
     energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
     # find window with lowest summed energy
-    min_vel_start = np.argmin(np.sum(energy, axis=1))
+    min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
     # min_vel event = middle of this window
     min_vel_center = min_vel_start + min_vel_search_win_size // 2
     return min_vel_center
@@ -356,7 +356,7 @@ def _detect_ic(
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
     acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
 
-    return acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end])
+    return float(acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end]))
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:

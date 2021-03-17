@@ -1,11 +1,12 @@
 """Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
-from typing import Optional
+from typing import Optional, Union, Dict
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils import rotations
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
 from gaitmap.utils.datatype_helper import (
@@ -89,7 +90,7 @@ def align_dataset_to_gravity(
     dataset_type = is_sensor_data(dataset)
 
     window_length = int(round(window_length_s * sampling_rate_hz))
-
+    acc_vector: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
     if dataset_type == "single":
         # get static acc vector
         acc_vector = _get_static_acc_vector(dataset, window_length, static_signal_th, metric)

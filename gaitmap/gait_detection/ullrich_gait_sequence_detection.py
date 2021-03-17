@@ -424,8 +424,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
     def _merge_gait_sequences_multi_sensor_data(
-        self, gait_sequences: Dict[str, pd.DataFrame]
-    ) -> Dict[str, pd.DataFrame]:
+        self, gait_sequences: Dict[_Hashable, pd.DataFrame]
+    ) -> Dict[_Hashable, pd.DataFrame]:
         """Merge gait sequences from different sensor positions for synced data.
 
         Gait sequences from individual sensors are merged using gaitmap.utils.array_handling.merge_intervals.

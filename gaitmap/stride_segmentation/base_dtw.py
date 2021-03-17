@@ -343,6 +343,10 @@ class BaseDtw(BaseAlgorithm):
         # For the typechecker
         assert self.template is not None
 
+        results: Union[
+            Dict[str, Union[np.ndarray, List[np.ndarray]]],
+            Dict[str, Dict[Union[_Hashable, str], Union[np.ndarray, List[np.ndarray]]]],
+        ]
         if isinstance(data, np.ndarray):
             dataset_type = "array"
         else:
@@ -352,7 +356,7 @@ class BaseDtw(BaseAlgorithm):
             # Single template single sensor: easy
             results = self._segment_single_dataset(data, template, memory=memory)
         else:  # Multisensor
-            result_dict: Dict[_Hashable, Dict[str, np.ndarray]] = dict()
+            result_dict: Dict[_Hashable, Dict[str, Union[np.ndarray, List[np.ndarray]]]] = dict()
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
@@ -371,7 +375,9 @@ class BaseDtw(BaseAlgorithm):
 
         return results
 
-    def _segment_single_dataset(self, dataset, template, memory: Memory) -> Dict[str, np.ndarray]:
+    def _segment_single_dataset(
+        self, dataset, template, memory: Memory
+    ) -> Dict[str, Union[np.ndarray, List[np.ndarray]]]:
         if self.resample_template and not template.sampling_rate_hz:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "

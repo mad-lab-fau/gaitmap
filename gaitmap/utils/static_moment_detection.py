@@ -215,18 +215,19 @@ def find_first_static_window_multi_sensor(
                 "The array of each sensor must be 2D, where the first dimension is the time and the second dimension "
                 "the sensor axis."
             )
-        signals = np.hstack(signals)
+        stacked_arrays = np.hstack(signals)
     else:
         if signals.ndim != 3:
             raise ValueError(
                 "If a array is used as input, it must be 3D, where the first dimension is the time, "
                 "the second indicates the sensor and the third the axis of the sensor."
             )
+        stacked_arrays = signals
 
-    n_signals = signals.shape[1]
+    n_signals = stacked_arrays.shape[1]
 
     windows = array_handling.sliding_window_view(
-        signals.reshape((signals.shape[0], -1)),
+        stacked_arrays.reshape((stacked_arrays.shape[0], -1)),
         window_length=window_length,
         overlap=window_length - 1,
         nan_padding=False,

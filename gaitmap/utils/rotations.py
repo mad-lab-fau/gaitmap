@@ -172,7 +172,7 @@ def rotate_dataset_series(dataset: SingleSensorData, rotations: Rotation) -> pd.
     return _rotate_sensor(dataset, rotations, inplace=False)
 
 
-def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
+def find_shortest_rotation(v1: np.ndarray, v2: np.ndarray) -> Rotation:
     """Find a quaternion that rotates v1 into v2 via the shortest way.
 
     Parameters
@@ -204,7 +204,7 @@ def find_shortest_rotation(v1: np.array, v2: np.array) -> Rotation:
     return rotation_from_angle(axis, angle)
 
 
-def get_gravity_rotation(gravity_vector: np.ndarray, expected_gravity: Optional[np.ndarray] = GRAV_VEC) -> Rotation:
+def get_gravity_rotation(gravity_vector: np.ndarray, expected_gravity: np.ndarray = GRAV_VEC) -> Rotation:
     """Find the rotation matrix needed to align  z-axis with gravity.
 
     Parameters
@@ -289,7 +289,7 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
 
 
 def find_angle_between_orientations(
-    ori: Rotation, ref: Rotation, rotation_axis: Optional[Union[np.ndarray, List]] = None
+    ori: Rotation, ref: Rotation, rotation_axis: Optional[np.ndarray] = None
 ) -> Union[float, np.ndarray]:
     """Get the required rotation angle between two orientations.
 
@@ -325,7 +325,7 @@ def find_angle_between_orientations(
     ori_to_ref = ori * ref.inv()
     if rotation_axis is not None:
         ori_to_ref = find_rotation_around_axis(ori_to_ref, rotation_axis)
-    rotvec = ori_to_ref.as_rotvec()
+    rotvec: np.ndarray = ori_to_ref.as_rotvec()
     if rotation_axis is None:
         rotation_axis = rotvec
     out = row_wise_dot(rotvec, normalize(rotation_axis))
