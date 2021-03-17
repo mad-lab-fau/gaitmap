@@ -132,7 +132,7 @@ html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/logo/gaitmap.ico"
 html_logo = "_static/logo/gaitmap_logo.png"
 html_theme_options = {
-    "gitlab_url": "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap",
+    "gitlab_url": "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/blob/master",
     "show_prev_next": False,
 }
 
