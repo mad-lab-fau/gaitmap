@@ -175,7 +175,13 @@ class RamppEventDetection(BaseEventDetection):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.memory = memory
 
-    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
+    def detect(
+            self: Self,
+            data: SensorData,
+            stride_list: StrideList,
+            sampling_rate_hz: float,
+            enforce_consistency: bool = True
+    ) -> Self:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -186,6 +192,8 @@ class RamppEventDetection(BaseEventDetection):
             A list of strides provided by a stride segmentation method
         sampling_rate_hz
             The sampling rate of the data
+        enforce_consistency
+            A bool that can be set to False if you wish to disable postprocessing
 
         Returns
         -------
@@ -217,13 +225,15 @@ class RamppEventDetection(BaseEventDetection):
 
         if dataset_type == "single":
             results = self._detect_single_dataset(
-                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory
+                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory,
+                enforce_consistency=enforce_consistency
             )
         else:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory
+                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory,
+                    enforce_consistency=enforce_consistency
                 )
             results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
@@ -236,6 +246,7 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region: Tuple[int, int],
         min_vel_search_win_size: int,
         memory: Memory,
+        enforce_consistency: bool = True
     ) -> Dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         if memory is None:
@@ -262,10 +273,11 @@ class RamppEventDetection(BaseEventDetection):
         }
         segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
 
-        # check for consistency, remove inconsistent lines
-        segmented_event_list, _ = enforce_stride_list_consistency(
-            segmented_event_list, stride_type="segmented", check_stride_list=False
-        )
+        if enforce_consistency:
+            # check for consistency, remove inconsistent lines
+            segmented_event_list, _ = enforce_stride_list_consistency(
+                segmented_event_list, stride_type="segmented", check_stride_list=False
+            )
 
         min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
             segmented_event_list, target_stride_type="min_vel"
