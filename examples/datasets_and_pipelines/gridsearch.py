@@ -67,11 +67,11 @@ dataset
 #
 # 1. It needs to subclass SimplePipeline
 # 2. It needs to have a `run` method that runs all the algorithmic steps and stores the results on as class attributes.
-#    The run method should expect only a single data point (in our case a single recording of one sensor) as input.
-# 3. A init that defines all parameters that should be adjustable. Note, that the names in the function signature of
-#    the init method, **must** match the corresponding attribute names.
+#    The `run` method should expect only a single data point (in our case a single recording of one sensor) as input.
+# 3. A `init` that defines all parameters that should be adjustable. Note, that the names in the function signature of
+#    the `init` method, **must** match the corresponding attribute names (e.g. `max_cost` -> `self.max_cost`).
 #
-# Here we simply transform the data into the right coordinate system depending on the foot and apply `BarthDtw` to
+# Here we simply transform the data into the correct coordinate system depending on the foot and apply `BarthDtw` to
 # identify the start and the end of all strides in the recording.
 # The parameter `max_cost` of this algorithm is exposed and will be optimized as part of the GridSearch.
 #
@@ -91,6 +91,8 @@ class MyPipeline(SimplePipeline):
 
     def run(self, datapoint: MyDataset):
         converter = {"left": convert_left_foot_to_fbf, "right": convert_right_foot_to_fbf}
+        # `datapoint.groups[0]` gives us the identifier of the datapoint (e.g. `("test", "left")`).
+        # And ``datapoint.groups[0][1]` is the foot.
         data = converter[datapoint.groups[0][1]](datapoint.data)
 
         dtw = BarthDtw(max_cost=self.max_cost)
@@ -119,6 +121,10 @@ pipe = MyPipeline()
 #
 # A typical score function will first `run` the pipeline and then compare the output with some reference.
 # This reference should be supplied as part of the dataset.
+#
+# Instead of using a function as scorer (shown here), you can also implement a method called `score` on your pipeline.
+# Then just pass `None` (which is the default) for the `scoring` parameter in the GridSearch (and other optimizers).
+# However, a function is usually more flexible.
 #
 # In this case we compare the calculated stride lists with the reference and identify which strides were correctly
 # found.
@@ -175,5 +181,7 @@ print("Paras of optimized Pipeline:", gs.optimized_pipeline_.get_params())
 # %%
 # To run the optmized pipeline, we can directly use the `run` method on the GridSearch object.
 # This makes it possible to use the `GridSearch` as a replacement for your pipeline object with minimal code changes.
+#
+# If you would try to call `run` (or `score` for that matter), before the optimization, an error is raised.
 segmented_stride_list = gs.run(dataset[0]).segmented_stride_list_
 segmented_stride_list
