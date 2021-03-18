@@ -323,8 +323,9 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_method = "detect"
 
-    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float,
-               enforce_consistency: bool) -> BaseType:
+    def detect(
+        self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float, enforce_consistency: bool
+    ) -> BaseType:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -392,11 +393,11 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
     _action_method = "calculate"
 
     def calculate(
-            self: BaseType,
-            stride_event_list: StrideList,
-            positions: PositionList,
-            orientations: OrientationList,
-            sampling_rate_hz: float,
+        self: BaseType,
+        stride_event_list: StrideList,
+        positions: PositionList,
+        orientations: OrientationList,
+        sampling_rate_hz: float,
     ) -> BaseType:
         """Find spatial parameters in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
