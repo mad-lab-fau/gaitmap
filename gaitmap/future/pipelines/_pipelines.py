@@ -35,7 +35,7 @@ class SimplePipeline(BaseAlgorithm):
         raise NotImplementedError()  # pragma: no cover
 
     def score(self, datapoint: Dataset) -> Union[float, Dict[str, float]]:
-        """Calculate performance of the pipeline on a dataset with reference information.
+        """Calculate performance of the pipeline on a datapoint with reference information.
 
         This is an optional method and does not need to be implemented in many cases.
         Usually stand-a-lone functions are better suited as scorer.

@@ -127,6 +127,9 @@ class GridSearch(BaseOptimize):
     Usually, the performance parameter would be calculated on all data-points at once.
     Here, each data-point represents an entire participant or gait-recording (depending on the dataset).
     Therefore, the pipeline and the scoring method are expected to provide a result/score per data-point in the dataset.
+    Note, that it is still open to your interpretation, what you consider a datapoint in the context of your analysis.
+    The run method of the pipeline can still process multiple e.g. gaittests in a loop and generate a single output,
+    if you consider a single participant one datapoint.
 
     Parameters
     ----------
@@ -151,6 +154,7 @@ class GridSearch(BaseOptimize):
         If `scoring` returns multiple score values, this must be a str corresponding to the name of the score that
         should be used to rank the results.
         If False, the respective result attributes will not be populated.
+        If multiple parameter combinations have the same score, the one tested first will be used.
     error_score
         Value to assign to the score if an error occurs during scoring.
         If set to ‘raise’, the error is raised.
@@ -249,6 +253,16 @@ class GridSearch(BaseOptimize):
         scoring = _validate_scorer(self.scoring)
 
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
+        # We use a similar structure as sklearns GridSearchCV here, but instead of calling something equivalent to
+        # `fit_score`, we call `score`, which just applies and scores the pipeline on the entirety of our dataset as
+        # we do not need a "train" step.
+        # Our main loop just loops over all parameter combis and the `_score` function then applies the para combi to
+        # the pipeline and scores the resulting pipeline on the dataset, by passing the entire dataset and the
+        # pipeline to the scorer.
+        # Looping over the individual datapoints in the dataset and aggregating the scores is handled by the scorer
+        # itself.
+        # If not explicitly changed the scorer is an instance of `GaitmapScorer` that wraps the actual `scoring`
+        # function provided by the user.
         with parallel:
             # Evaluate each parameter combination
             results = parallel(
