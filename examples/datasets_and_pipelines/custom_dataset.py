@@ -244,10 +244,11 @@ class CustomDataset(Dataset):
 # %%
 # For each of the data-values you need to decide, on which "level" you provide data access.
 # Meaning, do you want/can return data, when there are still multiple participants/recordings in the dataset, or can you
-# only return the data, when there is only a single trail of a single participant left.
+# only return the data, when there is only a single trial of a single participant left.
 #
-# Usually, we recommend to always return the data on the lowest logical level (e.g. if you recorded separate IMU sessions
-# per trail, you should provide access only, if there is just a single trail by a single participant left in the dataset).
+# Usually, we recommend to always return the data on the lowest logical level (e.g. if you recorded separate IMU
+# sessions per trial, you should provide access only, if there is just a single trail by a single participant left in
+# the dataset).
 # Otherwise, you should throw an error.
 # This pattern can be simplified using the `is_single` or `assert_is_single` helper method.
 # These helpers check based on the provided `groupby_cols` if there is really just a single group/row left with the
