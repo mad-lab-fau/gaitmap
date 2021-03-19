@@ -323,9 +323,7 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_method = "detect"
 
-    def detect(
-        self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float, enforce_consistency: bool
-    ) -> BaseType:
+    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
