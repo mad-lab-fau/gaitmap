@@ -1,4 +1,5 @@
 import random
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -53,6 +54,24 @@ class TestEventDetectionRampp:
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
+
+    @pytest.mark.parametrize("var1, output", ((True, 1), (False, 0)))
+    def test_postprocessing(self, healthy_example_imu_data, healthy_example_stride_borders, var1, output):
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left.columns = BF_COLS
+        # only use the first entry of the stride list
+        stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
+
+        def mock_func(event_list, *args, **kwargs):
+            return event_list, None
+
+        ed = RamppEventDetection(enforce_consistency=var1)
+        with patch(
+            "gaitmap.event_detection.rampp_event_detection.enforce_stride_list_consistency", side_effect=mock_func
+        ) as mock:
+            ed.detect(data_left, stride_list_left, 204.8)
+
+        assert mock.call_count == output
 
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test to see if the algorithm is generally working on the example data when provided as dict"""
