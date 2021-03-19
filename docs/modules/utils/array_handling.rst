@@ -19,5 +19,5 @@ Functions
     find_local_minima_with_distance
     find_extrema_in_radius
     split_array_at_nan
-    interpolate1d
+    multi_array_interpolation
     merge_intervals
