@@ -222,13 +222,21 @@ class RamppEventDetection(BaseEventDetection):
 
         if dataset_type == "single":
             results = self._detect_single_dataset(
-                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory,
+                data,
+                stride_list,
+                ic_search_region,
+                min_vel_search_win_size,
+                memory=self.memory,
             )
         else:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory,
+                    data[sensor],
+                    stride_list[sensor],
+                    ic_search_region,
+                    min_vel_search_win_size,
+                    memory=self.memory,
                 )
             results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
