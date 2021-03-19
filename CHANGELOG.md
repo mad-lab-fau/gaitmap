@@ -24,6 +24,9 @@ project.
 - New parameter `zero_division` added to all methods in `gaitmap.evaluation_utils.scores` allowing for setting the
   return value in case of a zero_division happening. 
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/134)
+- A new interpolation method `gaitmap.utils.array_handling.multi_array_interpolation` to interpolate multiple 2D arrays 
+  at once to the same length.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/138)
 
 ### Changed
 
@@ -32,10 +35,15 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/133)
 - Made parameters for `gaitmap.evaluation_utils` keyword only to avoid input confusion.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/135)
+- Improved the performance of dtw template interpolation by a factor of 15-30 (depending on the interpolation type).
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/138)
 
 ### Deprecated
 
 ### Removed
+
+- `gaitmap.utils.array_handling.interpolate1d` was removed as it is not needed anymore internally.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/138)
 
 ### Fixed
 

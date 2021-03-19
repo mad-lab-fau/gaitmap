@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.stride_segmentation.dtw_templates import (
@@ -118,12 +118,16 @@ class TestCreateTemplate:
 
 
 class TestCreateInterpolatedTemplate:
+    @pytest.fixture(autouse=True, params=["linear", "nearest"])
+    def select_kind(self, request):
+        self.kind = request.param
+
     def test_create_interpolated_template_single_dataset(self):
         """Test function can handle single dataset input."""
         template_data = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
-        instance = create_interpolated_dtw_template(template_data, kind="linear", n_samples=None)
+        instance = create_interpolated_dtw_template(template_data, kind=self.kind, n_samples=None)
 
-        assert_array_equal(instance.get_data(), template_data[["dummy_col"]])
+        assert_array_almost_equal(instance.get_data(), template_data[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_dataset_list(self):
@@ -131,9 +135,9 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
 
-        assert_array_equal(instance.get_data(), template_data1[["dummy_col"]])
+        assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_different_indices(self):
@@ -142,9 +146,9 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2.index = template_data2.index + 10
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
 
-        assert_array_equal(instance.get_data(), template_data1[["dummy_col"]])
+        assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_calculates_mean(self):
@@ -152,30 +156,30 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
 
         result_template_df = pd.DataFrame(np.array([0, 0, 0, 0, 0]), columns=["dummy_col"])
-        assert_array_equal(instance.get_data(), result_template_df.to_numpy())
+        assert_array_almost_equal(instance.get_data(), result_template_df.to_numpy())
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_mean_length_over_input_sequences_template(self):
         """Test template has mean length of all input sequences."""
-        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3]), columns=["dummy_col"])
-        template_data2 = pd.DataFrame(np.array([0, 1]), columns=["dummy_col"])
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 4]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=None)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
 
-        assert_array_equal(len(instance.get_data()), 3)
+        assert len(instance.get_data()) == 4
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_upsample(self):
         """Test template has specified length for upsampling."""
-        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3]), columns=["dummy_col"])
-        template_data2 = pd.DataFrame(np.array([0, 1]), columns=["dummy_col"])
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 4]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=5)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=5)
 
-        assert_array_equal(len(instance.get_data()), 5)
+        assert len(instance.get_data()) == 5
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_downsample(self):
@@ -183,7 +187,7 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 5]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 3, 4, 5, 6]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind="linear", n_samples=3)
+        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=3)
 
         assert_array_equal(len(instance.get_data()), 3)
         assert isinstance(instance, DtwTemplate)
@@ -196,4 +200,4 @@ class TestCreateInterpolatedTemplate:
         dataset = {"left_sensor": template_data1, "right_sensor": template_data2}
 
         with pytest.raises(ValidationError, match=r".* SingleSensorData*"):
-            create_interpolated_dtw_template(dataset, kind="linear", n_samples=None)
+            create_interpolated_dtw_template(dataset, kind=self.kind, n_samples=None)

@@ -8,8 +8,8 @@ from gaitmap.utils.array_handling import (
     split_array_at_nan,
     find_local_minima_below_threshold,
     find_extrema_in_radius,
-    interpolate1d,
     merge_intervals,
+    multi_array_interpolation,
 )
 
 
@@ -26,7 +26,7 @@ class TestSlidingWindow:
         with pytest.raises(ValueError, match=r".* window_length .*"):
             sliding_window_view(np.arange(0, 10), window_length=1, overlap=0)
 
-    def test_invalid_inputs_window_size(self):
+    def test_invalid_inputs_window_size_2(self):
         """Test if value error is raised correctly for window length > signal length."""
         with pytest.raises(ValueError, match=r"negative dimensions are not allowed"):
             sliding_window_view(np.arange(0, 10), window_length=15, overlap=0)
@@ -331,20 +331,29 @@ class TestFindMinRadius:
         assert_array_equal(out, indices)
 
 
-class TestInterpolate1D:
-    def test_interpolate1d_upsample(self):
+class TestMultiArrayInterpolate:
+    """Test multi_array_interpolation
+    Note that more tests for this method can indirectly be found in
+    `test_stride_segmentation.test_dtw_templates.TestCreateInterpolatedTemplate`
+    """
+
+    @pytest.fixture(autouse=True, params=["linear", "nearest"])
+    def select_kind(self, request):
+        self.kind = request.param
+
+    def test_upsample(self):
         """Test if data is upsampled to the correct number of samples."""
-        data = np.array([0, 1, 2, 3])
-        data_interpolated = interpolate1d(data, n_samples=10, kind="linear")
+        data = np.array([[0, 1, 2, 3], [0, 1, 2, 3]]).T
+        data_interpolated = multi_array_interpolation([data, data, data], n_samples=10, kind=self.kind)
 
-        assert_array_equal(len(data_interpolated), 10)
+        assert data_interpolated.shape == (3, 2, 10)
 
-    def test_interpolate1d_downsample(self):
+    def test_downsample(self):
         """Test if data is downsampled to the correct number of samples."""
-        data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-        data_interpolated = interpolate1d(data, n_samples=4, kind="linear")
+        data = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]).T
+        data_interpolated = multi_array_interpolation([data, data, data], n_samples=4, kind=self.kind)
 
-        assert_array_equal(len(data_interpolated), 4)
+        assert data_interpolated.shape == (3, 2, 4)
 
 
 class TestMergeIntervals:
