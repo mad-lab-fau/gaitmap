@@ -234,31 +234,51 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
     return array
 
 
-def interpolate1d(array: np.ndarray, n_samples: int, kind: str = "linear") -> np.ndarray:
-    """Interpolate a given input array to fixed number of samples.
-
-    This function is wrapper for the :py:func:`scipy.interpolate.interp1d` method.
+def multi_array_interpolation(arrays: List[np.ndarray], n_samples, kind: str = "linear") -> np.ndarray:
+    """Interpolate multiple 2D-arrays to the same length along axis 0.
 
     Parameters
     ----------
-    array : 1D array
-        Data which shall be interpolated
-    n_samples : int
-        Number of samples in interpolation result
-    kind : str
-        Interpolation function. Please refer to :py:class:`scipy.interpolate.interp1d`
+    arrays
+        numba List of 2D arrays.
+        Note that `arr.shape[1]` must be identical for all arrays.
+    n_samples
+        Number of samples the arrays should be resampled to.
+    kind
+        The type of interpolation to use.
+        Refer to :func:`~scipy.interpolate.interp1d` for possible options.
+
+        .. note:: In case of linear interpolation a custom numba accelerated method is used that is significantly
+                  faster than the scipy implementation.
 
     Returns
     -------
-    interpolated input data
-        Interpolated array with length n_samples, while first and last value of input array equal first and last value
-        of output array.
+    interpolated_data
+        result as a single 3-D array of shape `(len(arrays), arrays[0].shape[1], n_samples)`.
 
     """
-    x_orig = np.linspace(0, len(array), num=len(array), endpoint=True)
-    interp_func = interp1d(x_orig, array, kind=kind)
-    x_new = np.linspace(0, len(array), num=n_samples, endpoint=True)
-    return interp_func(x_new)
+    if kind == "linear":
+        arrays = numba.typed.List(arrays)
+        return _fast_linear_interpolation(arrays, n_samples)
+    final_array = np.empty((len(arrays), arrays[0].shape[1], n_samples))
+    for i, s in enumerate(arrays):
+        x_orig = np.linspace(0, len(s), len(s))
+        x_new = np.linspace(0, len(s), n_samples)
+        final_array[i] = interp1d(x_orig, s.T, kind=kind)(x_new)
+    return final_array
+
+
+@numba.njit()
+def _fast_linear_interpolation(arrays: numba.typed.List, n_samples) -> np.ndarray:
+
+    final_array = np.empty((len(arrays), arrays[0].shape[1], n_samples))
+    for i, s in enumerate(arrays):
+        s_len = len(s)
+        x_orig = np.linspace(0, s_len, s_len)
+        x_new = np.linspace(0, s_len, n_samples)
+        for j, col in enumerate(s.T):
+            final_array[i, j] = np.interp(x_new, x_orig, col)
+    return final_array
 
 
 def merge_intervals(input_array: np.ndarray, gap_size: int = 0) -> np.ndarray:

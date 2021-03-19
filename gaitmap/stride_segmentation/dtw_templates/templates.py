@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.utils.array_handling import interpolate1d
+from gaitmap.utils.array_handling import multi_array_interpolation
 from gaitmap.utils.datatype_helper import is_single_sensor_data
 
 
@@ -236,13 +236,13 @@ def create_interpolated_dtw_template(
         # get mean stride length over given strides
         n_samples = int(np.rint(np.mean([len(df) for df in signal_sequence])))
 
-    # interpolate all strides to mean number of samples
-    resampled_sequences_df_list = [
-        signal_df.apply(lambda x: interpolate1d(x, n_samples, kind), axis=0).reset_index(drop=True)
-        for signal_df in signal_sequence
-    ]
+    # We need to ensure that the columns of all dfs have the right order before
+    # exporting to numpy.
+    expected_col_order = signal_sequence[0].columns
+    arrays = [df.reindex(columns=expected_col_order).to_numpy() for df in signal_sequence]
+    resampled_sequences_df_list = multi_array_interpolation(arrays, n_samples, kind=kind)
 
-    # calculate element-wise mean over all strides
-    template_df = pd.concat(resampled_sequences_df_list).mean(level=0)
+    template = np.mean(resampled_sequences_df_list, axis=0)
+    template_df = pd.DataFrame(template.T, columns=expected_col_order)
 
     return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
