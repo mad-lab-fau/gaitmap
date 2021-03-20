@@ -150,6 +150,14 @@ def test_grid_search(snapshot):
     snapshot.assert_match(pd.DataFrame(results), check_dtype=False)
 
 
+def test_optimizable_pipelines(snapshot):
+    from examples.datasets_and_pipelines.optimizable_pipelines import results, optimized_results
+
+    snapshot.assert_match(results.segmented_stride_list_, check_dtype=False)
+    snapshot.assert_match(optimized_results.segmented_stride_list_, check_dtype=False)
+    snapshot.assert_match(optimized_results.template.get_data())
+
+
 def test_multi_process():
     """Test the multiprocess example.
 
