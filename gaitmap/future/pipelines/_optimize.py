@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Dict, Any, Optional, Union, Callable
 
+import joblib
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
@@ -111,7 +112,22 @@ class Optimize(BaseOptimize):
             raise ValueError(
                 "To use `Optimize` with a pipeline, the pipeline needs to implement a `self_optimize` method."
             )
-        self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset, **kwargs)
+        # record the hash of the pipeline to make an educated guess if the optimization works
+        pipeline = self.pipeline.clone()
+        before_hash = joblib.hash(pipeline)
+        optimized_pipeline = pipeline.self_optimize(dataset, **kwargs)
+        if not isinstance(optimized_pipeline, pipeline.__class__):
+            raise ValueError("Calling `self_optimize` did not return an instance of the pipeline itself! "
+                             "Normally this method should return `self`.")
+        # We clone the optimized pipeline again, to make sure that only changes to the input parameters are kept.
+        optimized_pipeline = optimized_pipeline.clone()
+        after_hash = joblib.hash(optimized_pipeline)
+        if before_hash == after_hash:
+            # If the hash didn't change the object didn't change.
+            # Something might have gone wrong.
+            warnings.warn("Optimizing the pipeline doesn't seem to have changed the parameters of the pipeline. "
+                          "This could indicate an implementation error of the `self_optimize` method.")
+        self.optimized_pipeline_ = optimized_pipeline
         return self
 
 
