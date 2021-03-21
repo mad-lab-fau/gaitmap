@@ -35,7 +35,8 @@ class TestScoreMock:
         _score(*self.dummy_paras, parameters=paras)
         scorer = self.dummy_paras[2]
 
-        assert scorer.call_args[0][0].get_params() == paras
+        out_paras = scorer.call_args[0][0].get_params()
+        assert {k: out_paras[k] for k in paras.keys()} == paras
         assert id(scorer.call_args[0][0]) == id(self.dummy_paras[0])
 
     def test_parameter_clone(self):
