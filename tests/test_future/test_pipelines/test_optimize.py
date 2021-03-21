@@ -33,6 +33,20 @@ class TestMetaFunctionalityGridSearch(TestAlgorithmMixin):
         pytest.skip("TODO: This needs to be fixed!")
 
 
+class TestMetaFunctionalityOptimize(TestAlgorithmMixin):
+    __test__ = True
+    algorithm_class = Optimize
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> Optimize:
+        gs = Optimize(DummyPipeline())
+        gs.optimize(DummyDataset())
+        return gs
+
+    def test_empty_init(self):
+        pytest.skip()
+
+
 class TestGridSearch:
     def test_single_score(self):
         gs = GridSearch(DummyPipeline(), ParameterGrid({"para_1": [1, 2]}), scoring=dummy_single_score_func)
@@ -182,6 +196,49 @@ class TestGridSearch:
         expected_ranking = [2, 2]
         expected_ranking[paras.index(best_value)] = 1
         assert list(gs.gs_results_["rank_score"]) == expected_ranking
+
+
+class TestOptimize:
+    def test_self_optimized_called(self):
+        optimized_pipe = DummyPipeline()
+        optimized_pipe.optimized = True
+
+        ds = DummyDataset()
+        kwargs = {"some_kwargs": "some value"}
+        with patch.object(DummyPipeline, "self_optimize", return_value=optimized_pipe) as mock:
+            result = Optimize(DummyPipeline()).optimize(ds, **kwargs)
+
+        mock.assert_called_once()
+        mock.assert_called_with(ds, **kwargs)
+
+        assert result.optimized_pipeline_.get_params() == optimized_pipe.get_params()
+        # The id must been different, indicating that `optimize` correctly called clone on the output
+        assert id(result.optimized_pipeline_) != id(optimized_pipe)
+
+    @pytest.mark.parametrize(
+        "output,warn", (({}, True), (dict(optimized=True), False), (dict(some_random_para_="val"), True))
+    )
+    def test_optimize_warns(self, output, warn):
+        optimized_pipe = DummyPipeline()
+        for k, v in output.items():
+            setattr(optimized_pipe, k, v)
+        ds = DummyDataset()
+        with patch.object(DummyPipeline, "self_optimize", return_value=optimized_pipe):
+            warning = UserWarning if warn else None
+            with pytest.warns(warning) as w:
+                Optimize(DummyPipeline()).optimize(ds)
+
+            if len(w) > 0:
+                assert "Optimizing the pipeline doesn't seem to have changed" in str(w[0])
+
+    def test_optimize_error(self):
+        ds = DummyDataset()
+        # return anything that is not of the optimizer class
+        with patch.object(DummyPipeline, "self_optimize", return_value="some_value"):
+            with pytest.raises(ValueError) as e:
+                Optimize(DummyPipeline()).optimize(ds)
+
+        assert "Calling `self_optimize` did not return an instance" in str(e.value)
 
 
 class TestOptimizeBase:

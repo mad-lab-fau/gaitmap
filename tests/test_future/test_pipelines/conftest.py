@@ -5,12 +5,14 @@ from gaitmap.future.pipelines import SimplePipeline, OptimizablePipeline
 
 
 class DummyPipeline(OptimizablePipeline):
-    def __init__(self, para_1=None, para_2=None):
+    def __init__(self, para_1=None, para_2=None, optimized=False):
         self.para_1 = para_1
         self.para_2 = para_2
+        self.optimized = optimized
 
     def self_optimize(self, dataset: Dataset, **kwargs):
-        pass
+        self.optimized = True
+        return self
 
 
 class DummyDataset(Dataset):
