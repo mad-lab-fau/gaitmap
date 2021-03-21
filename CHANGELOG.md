@@ -31,6 +31,8 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128)
 - A GridSearch optimizer (similar to GridSearchCV in sklearn, but without the CV part) with a respective example is
   added. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128)
+- A generic wrapper for algorithms and pipelines that can be optimized/trained with respective example.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128) 
 
 ### Changed
 
