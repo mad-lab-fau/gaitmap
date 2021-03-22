@@ -7,11 +7,11 @@ Optimizable Pipelines
 .. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
 
 Some gait analysis algorithms can actively be "trained" to improve their performance or adapt it to a certain dataset.
-In gaitmap we use the term "optimize" instead of "train", as not all algorithms are "machine learning" in the
+In gaitmap we use the term "optimize" instead of "train", as not all algorithms are based on "machine learning" in the
 traditional sense.
 We consider all algorithms/pipelines "optimizable" if they have parameters and models that can be adapted and optimized
 using an algorithm specific optimization method.
-As example the :class:`~gaitmap.stride_segmentation.BarthDtw` is "optimzable", as the template can be explicitly
+For example the :class:`~gaitmap.stride_segmentation.BarthDtw` is "optimizable", as the template can be explicitly
 learned from data.
 Algorithms that can **only** be optimized by brute force (e.g. via GridSearch) are explicitly excluded from this group.
 For more information about the conceptional idea behind this, see the guide on
@@ -31,7 +31,7 @@ import pandas as pd
 # %%
 # The Dataset
 # -----------
-# We will use a simple dataset that consideres the left and the right foot of our example data as seperate datapoints.
+# We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.future.dataset import Dataset
@@ -68,8 +68,9 @@ class MyDataset(Dataset):
 # the `run` method.
 # This means we need rotate the data into the correct coordinate system depending on the foot and then apply the Dtw
 # method.
-# As our primary outcome, we store the segmented stride list.
-# To further compare the output of the method before and after optimization, we also store the cost function.
+# As our primary outcome, we store the segmented stride list (`segmented_stride_list_`).
+# To further compare the output of the method before and after optimization, we also store the cost function (
+# `cost_func_`).
 #
 # For optimization (`self_optimize`), we extract all strides from the provided dataset and average them all into a
 # new template.
@@ -106,6 +107,7 @@ class MyPipeline(OptimizablePipeline):
         sampling_rate = dataset[0].sampling_rate_hz
         for dp in dataset:
             data = self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr")
+            # We take the segmented stride list from the reference/ground truth here
             reference_stride_list = dp.segmented_stride_list_
             all_strides.extend([data.iloc[s:e] for _, (s, e) in reference_stride_list[["start", "end"]].iterrows()])
         template = create_interpolated_dtw_template(all_strides, sampling_rate_hz=sampling_rate)
@@ -143,7 +145,7 @@ class MyPipeline(OptimizablePipeline):
 # As it is not the goal of this example to perform any form of actual evaluation of a model, we will just compare the
 # number of identified strides and the cost functions to show, that the optimization had an impact on the output.
 #
-# For a fait comparison, we must use some train data to optimize the pipeline and then compare the outputs only on a
+# For a fair comparison, we must use some train data to optimize the pipeline and then compare the outputs only on a
 # separate test set.
 from sklearn.model_selection import train_test_split
 
@@ -172,13 +174,14 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 # The means the pipeline object used as input will not be modified.
 from gaitmap.future.pipelines import Optimize
 
+# Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
 optimized_results = optimized_pipe.run(test_set)
 print("Number of Strides:", len(optimized_results.segmented_stride_list_))
 
 # %%
 # We can see that the optimized version finds far more strides.
-# This is to be expected, as the generated template will be more similar to the test data then the default template.
+# This is to be expected, as the generated template will be more similar to the test data than the default template.
 # We can see that even more clearly when comparing the cost functions of the two predictions.
 # The cost function of the optimized pipeline has smaller values at the minima that mark the start and the end of
 # each stride, hence, indicating a larger similarity between template and signal.
@@ -202,7 +205,8 @@ plt.show()
 # We can see the differences in the trained template as well.
 # Here only the `gyr_ml` axis is plotted for simplicity.
 # The optimized template contains much more "detail" of the individuals gait.
-# Note, that this is not "good", as this template is overfit to this participant and will not generalize well.
+# Note, that this is not generally "good", as this template is overfitted to this participant and will not generalize
+# well.
 
 plt.figure()
 plt.plot(results.template.get_data()["gyr_ml"], label="Before Optimization")

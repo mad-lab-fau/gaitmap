@@ -55,7 +55,7 @@ class Optimize(BaseOptimize):
 
     This is a simple wrapper for pipelines that already implement a `self_optimize` method.
     This wrapper can be used to ensure that these algorithms can be optimized with the same interface as other
-    optimization methods and can hence, be used in methods like cross-validation.
+    optimization methods and can hence be used in methods like cross-validation.
 
     Optimize will never modify the original pipeline, but will store a copy of the optimized pipeline as
     `optimized_pipeline_`.
