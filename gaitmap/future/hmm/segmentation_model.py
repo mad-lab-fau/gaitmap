@@ -135,7 +135,15 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.name = name
         self.model = model
 
-    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
+    @property
+    def stride_states_(self) -> dict:
+        return np.arange(self.stride_model.n_states) + self.transition_model.n_states
+
+    @property
+    def transition_states_(self) -> dict:
+        return np.arange(self.transition_model.n_states)
+
+    def predict_hidden_state_sequence(self, feature_data):
         """Perform prediction based on given data and given model."""
 
         if self.model == None:
@@ -152,20 +160,26 @@ class SimpleSegmentationHMM(_BaseSerializable):
         if not np.array(feature_data).flags["C_CONTIGUOUS"]:
             raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
+        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
-    def transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
+    def transform(self, data_sequence, sampling_frequency_hz, stride_list_sequence=None):
+
+        if not isinstance(data_sequence, list):
+            raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
+
         self.data_sequence_feature_space = [
             self.feature_transform.transform(dataset, sampling_frequency_hz) for dataset in data_sequence
         ]
 
-        downsample_factor = int(np.round(sampling_frequency_hz / self.feature_transform.sampling_rate_feature_space_hz))
-
-        self.stride_list_feature_space = [
-            (stride_list / downsample_factor).astype(int) for stride_list in stride_list_sequence
-        ]
+        if stride_list_sequence:
+            downsample_factor = int(
+                np.round(sampling_frequency_hz / self.feature_transform.sampling_rate_feature_space_hz)
+            )
+            self.stride_list_feature_space = [
+                (stride_list / downsample_factor).astype(int) for stride_list in stride_list_sequence
+            ]
         return self
 
     def train(self, verbose=True):

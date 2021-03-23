@@ -4,12 +4,16 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from gaitmap.base import BaseAlgorithm, BaseType
-from gaitmap.future.hmm import HiddenMarkovModel
-from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap.base import BaseStrideSegmentation, BaseType
+from gaitmap.future.hmm.segmentation_model import SimpleSegmentationHMM
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    get_multi_sensor_names,
+    is_sensor_data,
+)
 
 
-class RothHMM(BaseAlgorithm):
+class RothHMM(BaseStrideSegmentation):
     """Segment strides using a pre-trained Hidden Markov Model.
 
     TBD: short description of HMM
@@ -63,18 +67,19 @@ class RothHMM(BaseAlgorithm):
 
     snap_to_min: Optional[bool]
     snap_to_min_axis: Optional[str]
-    model: Optional[HiddenMarkovModel]
+    model: Optional[SimpleSegmentationHMM]
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    feature_transformed_dataset_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    dataset_feature_space_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    hidden_state_sequence_feature_space_: Union[np.ndarray, Dict[str, np.ndarray]]
 
     def __init__(
         self,
-        model: Optional[HiddenMarkovModel] = None,
+        model: Optional[SimpleSegmentationHMM] = None,
         snap_to_min: Optional[bool] = True,
         snap_to_min_axis: Optional[str] = "gyr_ml",
     ):
@@ -137,21 +142,27 @@ class RothHMM(BaseAlgorithm):
             # Single sensor: easy
             (
                 self.matches_start_end_,
-                self.feature_transformed_dataset_,
-                self.hidden_state_sequence,
+                self.hidden_state_sequence_,
+                self.dataset_feature_space_,
+                self.hidden_state_sequence_feature_space_,
             ) = self._segment_single_dataset(data, sampling_rate_hz)
         else:  # Multisensor
             self.hidden_state_sequence_ = dict()
             self.matches_start_end_ = dict()
-            self.feature_transformed_dataset_ = dict()
+            self.dataset_feature_space_ = dict()
+            self.hidden_state_sequence_feature_space_ = dict()
 
             for sensor in get_multi_sensor_names(data):
-                matches_start_end, feature_transformed_dataset, hidden_state_sequence = self._segment_single_dataset(
-                    data[sensor], sampling_rate_hz
-                )
+                (
+                    matches_start_end,
+                    hidden_state_sequence,
+                    dataset_feature_space,
+                    hidden_state_sequence_feature_space,
+                ) = self._segment_single_dataset(data[sensor], sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
-                self.feature_transformed_dataset_[sensor] = feature_transformed_dataset
+                self.dataset_feature_space_[sensor] = dataset_feature_space
+                self.hidden_state_sequence_feature_space_[sensor] = hidden_state_sequence_feature_space
 
         return self
 
@@ -159,19 +170,21 @@ class RothHMM(BaseAlgorithm):
         """Perform Stride Segmentation for a single dataset"""
 
         # tranform dataset to required feature space as defined by the given model parameters
-        feature_data = self._transform_single_dataset(dataset, sampling_rate_hz)
+        feature_data = self.model.feature_transform.transform(dataset, sampling_rate_hz)
 
-        hidden_state_sequence = self.model.predict_hidden_states(feature_data, sampling_rate_hz)
+        hidden_state_sequence = self.model.predict_hidden_state_sequence(feature_data)
 
         # tranform prediction back to original sampling rate!
-        downsample_factor = int(np.round(sampling_rate_hz / self.model.sampling_rate_hz_model))
-        hidden_state_sequence = np.repeat(hidden_state_sequence, downsample_factor)
+        downsample_factor = int(
+            np.round(sampling_rate_hz / self.model.feature_transform.sampling_rate_feature_space_hz)
+        )
+        hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
 
         matches_start_end_ = self._hidden_states_to_stride_borders(
-            dataset[self.snap_to_min_axis].to_numpy(), hidden_state_sequence, self.model.stride_states_
+            dataset[self.snap_to_min_axis].to_numpy(), hidden_state_sequence_upsampled, self.model.stride_states_
         )
 
-        return matches_start_end_, feature_data, hidden_state_sequence
+        return matches_start_end_, hidden_state_sequence_upsampled, feature_data, hidden_state_sequence
 
     def _hidden_states_to_stride_borders(self, data_to_snap_to, hidden_states_predicted, stride_states):
         """This function converts the output of a hmm prediction to meaningful stride borders.
