@@ -1,6 +1,5 @@
-"""The msDTW based stride segmentation algorithm by Barth et al 2013."""
+"""HMM based stride segmentation by Roth et al. 2021."""
 
-import copy
 from typing import Optional, Union, Dict, Tuple
 
 import numpy as np
