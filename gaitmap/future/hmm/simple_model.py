@@ -1,5 +1,5 @@
-"""Dtw template base classes and helper."""
-import copy
+"""Simple model base classes and helper."""
+
 from typing import Optional
 
 import numpy as np
@@ -8,19 +8,10 @@ from pomegranate import HiddenMarkovModel as pgHMM
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.future.hmm.utils import (
-    add_transition,
-    create_equidistant_label_sequence,
-    create_equidistant_labels_from_label_list,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
-    extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
-    get_model_distributions,
-    get_train_data_sequences_strides,
-    get_train_data_sequences_transitions,
     gmms_from_samples,
-    labels_to_strings,
-    predict,
 )
 
 N_JOBS = 1
@@ -267,6 +258,12 @@ class SimpleHMM(_BaseSerializable):
                 "len(data_train_sequence_list) = %d !=  %d = len(initial_hidden_states_sequence_list)"
                 % (len(data_sequence), len(labels_sequence))
             )
+
+        for data in data_sequence:
+            if len(data) < self.n_states:
+                raise ValueError(
+                    'Invalid Training Sequence! At least one training sequence has less samples than the specified value of states! len = %d' % (
+                        data))
 
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
