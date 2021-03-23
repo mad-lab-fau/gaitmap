@@ -63,7 +63,7 @@ print("Number of states, transition-model: %d" % PreTrainedSegmentationHMM().tra
 # needed to get from the hidden state sequences to actual stride borders
 from gaitmap.future.hmm.roth_hmm import RothHMM
 
-roth_hmm = RothHMM(segmentation_model, snap_to_min_win_s=0.2, snap_to_min_axis="gyr_ml")
+roth_hmm = RothHMM(segmentation_model, snap_to_min_win_s=0.3, snap_to_min_axis="gyr_ml")
 roth_hmm = roth_hmm.segment(bf_data, sampling_rate_hz)
 
 # %%

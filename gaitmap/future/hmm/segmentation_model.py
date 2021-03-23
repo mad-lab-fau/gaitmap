@@ -328,7 +328,7 @@ class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
     def __init__(self):
         super().__init__()
 
-    def __new__(cls, model_file_name="test_model.json"):
+    def __new__(cls, model_file_name="fallriskpd_at_lab_model.json"):
         # try to load models
         with open_text("gaitmap.future.hmm.pre_trained_models", model_file_name) as test_data:
             with open(test_data.name) as f:
