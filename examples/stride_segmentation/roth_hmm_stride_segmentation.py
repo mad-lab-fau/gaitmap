@@ -90,7 +90,7 @@ stride_list_left.head()
 sensor = "left_sensor"
 
 fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(10, 5))
-
+axs[0].set_title('gaitmap Body Frame Dataset')
 axs[0].plot(bf_data.reset_index(drop=True)[sensor]['gyr_ml'])
 for start, end in roth_hmm.stride_list_['left_sensor'].to_numpy():
     axs[0].axvline(start, c='r')
@@ -98,6 +98,7 @@ for start, end in roth_hmm.stride_list_['left_sensor'].to_numpy():
     axs[0].axvspan(start, end, alpha=0.2)
 axs[0].set_ylabel('gyr-ml [deg/s]')
 
+axs[1].set_title('Predicted Hidden State Sequence')
 axs[1].plot(roth_hmm.hidden_state_sequence_[sensor])
 for start, end in roth_hmm.matches_start_end_original_[sensor]:
     axs[1].axvline(start, c='g')
