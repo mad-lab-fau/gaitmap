@@ -115,6 +115,7 @@ plt.title("HMM Feature Space")
 ax1.set_xlabel('Samples Features Space @ %d Hz' % roth_hmm.model.feature_transform.sampling_rate_feature_space_hz)
 ax1.set_ylabel('Z-Transform [a.u.]')
 ax1.plot(roth_hmm.dataset_feature_space_[sensor])
+ax1.legend(roth_hmm.dataset_feature_space_[sensor].columns.to_list())
 
 ax2 = ax1.twinx()
 ax2.set_ylabel('Hidden State Sequence', color='tab:green')
