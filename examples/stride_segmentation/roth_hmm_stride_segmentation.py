@@ -1,18 +1,16 @@
 r"""
-.. _example_barth_stride_segmentation:
+.. _example_roth_stride_segmentation:
 
-BarthDtw stride segmentation
+RothHMM stride segmentation
 ============================
 
-This example illustrates how subsequent DTW implemented by the :class:`~gaitmap.stride_segmentation.BarthDtw` can be
-used to detect strides in a continuous signal of an IMU signal.
-The used implementation is based on the work of Barth et al [1]_ and adds a set of postprocessing methods that aim to
-reduce the chance of false positives.
+This example illustrates how a Hidden Markov Model (HMM) implemented by the
+:class:`~gaitmap.gaitmap.future.hmm.roth_hmm` can be used to detect strides in a continuous signal of an IMU signal.
+The used implementation is based on the work of Roth et al [1]_
 
-.. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
-   Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
-   activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
-   Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
+.. [1] Roth, N., Küderle, A., Ullrich, M., Gladow, T., Marxreiter F., Klucken, J., Eskofier, B. & Kluge F. (2021).
+   Hidden Markov Model based Stride Segmentation on Unsupervised Free-living Gait Data in Parkinson’s Disease Patients.
+   Journal of NeuroEngineering and Rehabilitation, (JNER).
 """
 
 import matplotlib.pyplot as plt
@@ -34,26 +32,11 @@ sampling_rate_hz = 204.8
 data.sort_index(axis=1).head(1)
 
 # %%
-# Selecting a template
-# --------------------
-# This library ships with the template that was originally used by Barth et al.
-# It is generated based on manually segmented strides from healthy participants and PD patients.
-# This template is used by default by :class:`~gaitmap.stride_segmentation.BarthDtw`, but we will load it manually in
-# this example.
-from gaitmap.stride_segmentation import BarthOriginalTemplate
-
-template = BarthOriginalTemplate()
-template.get_data().plot()
-plt.xlabel("Time [#]")
-plt.ylabel("gyro [deg/s]")
-plt.show()
-
-# %%
 # Preparing the data
 # ------------------
-# The template only makes use of the gyro information.
-# Further, if you use this template in the DTW, your data is expected to be in the gaitmap BF to be able to use the
-# same template for the left and the right foot.
+# The HMM only makes use of the gyro information.
+# Further, if you use this model, your data is expected to be in the gaitmap body-frame to be able to use the
+# same model for the left and the right foot.
 # Therefore, we need to transform the dataset into the body frame.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
@@ -61,24 +44,34 @@ from gaitmap.utils.coordinate_conversion import convert_to_fbf
 bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 
 # %%
-# Applying the DTW
-# ----------------
-# First we need to initialize the DTW.
-# In most cases it is sufficient to keep all parameters at default.
-# However, if you experience any issues you should start modifying the parameters, starting by `max_cost`,
-# as it has the highest influence on the result.
-from gaitmap.stride_segmentation import BarthDtw
+# Selecting a pre-trained model
+# --------------------
+# This library ships with pre-trained models that can be directly used for prediction/ segmentation.
+# It is generated based on manually segmented strides from healthy participants and PD patients.
+# We can load the model an look at some of its parameters
+from gaitmap.future.hmm.segmentation_model import PreTrainedSegmentationHMM
 
-dtw = BarthDtw(template=template)
-# Apply the dtw to the data
-dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
+segmentation_model = PreTrainedSegmentationHMM("fallriskpd_at_lab_model.json")
+
+print("Number of states, stride-model: %d" % PreTrainedSegmentationHMM().stride_model.n_states)
+print("Number of states, transition-model: %d" % PreTrainedSegmentationHMM().transition_model.n_states)
+
+# %%
+# Predicting hidden states / Stride borders
+# ----------------
+# First we need to pass the pre-trained segmentation model to the roth-HMM wrapper, which will take care of all steps
+# needed to get from the hidden state sequences to actual stride borders
+from gaitmap.future.hmm.roth_hmm import RothHMM
+
+roth_hmm = RothHMM(segmentation_model, snap_to_min_win_s=0.2, snap_to_min_axis="gyr_ml")
+roth_hmm = roth_hmm.segment(bf_data, sampling_rate_hz)
 
 # %%
 # Inspecting the results
 # ----------------------
 # The main output is the `stride_list_`, which contains the start and the end of all identified strides.
 # As we passed a dataset with two sensors, the output will be a dictionary.
-stride_list_left = dtw.stride_list_["left_sensor"]
+stride_list_left = roth_hmm.stride_list_["left_sensor"]
 print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left.head()
 
@@ -86,34 +79,50 @@ stride_list_left.head()
 # To get a better understanding of the results, we can plot additional information about the results.
 # The top row shows the `gyr_ml` axis with the segmented strides plotted on top.
 # They are postprocessed to snap to the closed data minimum.
-# In the second row the cost function of the DTW is plotted.
-# Each minimum marks a potential end of a stride.
-# The black dotted line indicates the used `max_cost` threshold to search for stride candidates.
-# The drawn boxes show the raw result of the DTW without the snap-to-min postprocessing.
-# The third row shows the entire accumulated cost matrix and the path each stride takes through the cost matrix to
-# achieve minimal cost.
+# In the second row the predicted hidden state sequence of the HMM is plotted (this is the tranformed version, matching the input signal)
+# Each transition from the last (n=25) to the first (n=5) stride state marks a potential start/end of a stride.
+# The second plot shows the results in the feature space (which will depend on the feature space setting during the training step)
+# Here this is a downsampled and filtered representative of the gyr_ml signal as well as its window based gradient. All features are z-transformed.
+# Again, the predicted hidden state sequence is plotted together with the data.
 #
 # Only the first couple of strides of the left foot are shown.
 
 sensor = "left_sensor"
-fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
-dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
-axs[0].set_ylabel("gyro [deg/s]")
-axs[1].plot(dtw.cost_function_[sensor])
-axs[1].set_ylabel("dtw cost [a.u.]")
-axs[1].axhline(dtw.max_cost, color="k", linestyle="--")
-axs[2].imshow(dtw.acc_cost_mat_[sensor], aspect="auto")
-axs[2].set_ylabel("template position [#]")
-for p in dtw.paths_[sensor]:
-    axs[2].plot(p.T[1], p.T[0])
-for s in dtw.matches_start_end_original_[sensor]:
-    axs[1].axvspan(*s, alpha=0.3, color="g")
-for _, s in dtw.stride_list_[sensor][["start", "end"]].iterrows():
-    axs[0].axvspan(*s, alpha=0.3, color="g")
 
-axs[0].set_xlim(300, 2000)
-axs[0].set_xlabel("time [#]")
+fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(10, 5))
+
+axs[0].plot(bf_data.reset_index(drop=True)[sensor]['gyr_ml'])
+for start, end in roth_hmm.stride_list_['left_sensor'].to_numpy():
+    axs[0].axvline(start, c='r')
+    axs[0].axvline(end, c='r')
+    axs[0].axvspan(start, end, alpha=0.2)
+axs[0].set_ylabel('gyr-ml [deg/s]')
+
+axs[1].plot(roth_hmm.hidden_state_sequence_[sensor])
+for start, end in roth_hmm.matches_start_end_original_[sensor]:
+    axs[1].axvline(start, c='g')
+    axs[1].axvline(end, c='g')
+    axs[1].axvspan(start, end, alpha=0.2)
+axs[1].set_ylabel('Hidden State [N]')
+
+axs[1].set_xlabel('Samples @ %d Hz' % sampling_rate_hz)
+plt.xlim([0, 5000])
 fig.tight_layout()
-fig.show()
+plt.show()
+
+fig, ax1 = plt.subplots(figsize=(10, 3))
+plt.title("HMM Feature Space")
+ax1.set_xlabel('Samples Features Space @ %d Hz' % roth_hmm.model.feature_transform.sampling_rate_feature_space_hz)
+ax1.set_ylabel('Z-Transform [a.u.]')
+ax1.plot(roth_hmm.dataset_feature_space_[sensor])
+
+ax2 = ax1.twinx()
+ax2.set_ylabel('Hidden State Sequence', color='tab:green')
+ax2.plot(roth_hmm.hidden_state_sequence_feature_space_['left_sensor'], color='tab:green')
+ax2.tick_params(axis='y', labelcolor='tab:green')
+
+plt.xlim([0, 500])
+fig.tight_layout()
+plt.show()
 
 # sphinx_gallery_thumbnail_number = 2
