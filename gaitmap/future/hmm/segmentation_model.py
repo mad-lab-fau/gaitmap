@@ -1,6 +1,4 @@
-"""Dtw template base classes and helper."""
-import copy
-import json
+"""Segmentation model base classes and helper."""
 from importlib.resources import open_text
 from typing import Optional
 
@@ -42,14 +40,6 @@ def create_fully_labeled_gait_sequences(
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
         labels_train = np.zeros(len(data))
 
-        # predict hidden-state sequence for each stride using "stride model"
-        for start, end in stride_list[["start", "end"]].to_numpy():
-            stride_data_train = data[start:end]
-            labels_train[start:end] = (
-                stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                + transition_model.n_states
-            )
-
         # predict hidden-state sequence for each transition using "transition model"
         transition_mask = np.invert(
             start_end_array_to_bool_array(stride_list[["start", "end"]].to_numpy(), pad_to_length=len(data) - 1)
@@ -61,6 +51,14 @@ def create_fully_labeled_gait_sequences(
             transition_data_train = data[start : end + 1]
             labels_train[start : end + 1] = transition_model.predict_hidden_state_sequence(
                 transition_data_train, algorithm=algo_predict
+            )
+
+        # predict hidden-state sequence for each stride using "stride model"
+        for start, end in stride_list[["start", "end"]].to_numpy():
+            stride_data_train = data[start:end]
+            labels_train[start:end] = (
+                    stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
+                    + transition_model.n_states
             )
 
         # append cleaned sequences to train_sequence
