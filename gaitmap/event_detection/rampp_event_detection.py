@@ -49,6 +49,7 @@ class RamppEventDetection(BaseEventDetection):
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
+        (see Notes section for more information).
 
     Attributes
     ----------
@@ -129,10 +130,12 @@ class RamppEventDetection(BaseEventDetection):
     Furthermore, the `min_vel_event_list` list provides the `pre_ic` which is the ic event of the previous stride in
     the stride list.
 
-    The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check.
+    The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check that is enabled by default.
     The gait events within one stride provided by the `stride_list` must occur in the expected order.
     Any stride where the gait events are detected in a different order is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
+    If you wish to disable this consistency check, set `enforce_consistency` to False. In this case, the attribute
+    `min_vel_event_list_` will not be set.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
     continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
@@ -239,6 +242,9 @@ class RamppEventDetection(BaseEventDetection):
                     memory=self.memory,
                 )
             results = invert_result_dictionary(results_dict)
+
+            if not self.enforce_consistency:
+                del results["min_vel_event_list"]
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
