@@ -105,9 +105,12 @@ def _optimize_and_score(
     scorer: GaitmapScorer,
     train: np.ndarray,
     test: np.ndarray,
-    hyperparameters: Optional[Dict],
-    pure_parameters: Optional[Dict],
+    *,
+    optimize_params: Optional[Dict] = None,
+    hyperparameters: Optional[Dict] = None,
+    pure_parameters: Optional[Dict] = None,
     return_train_score=False,
+    return_optimizer=False,
     return_parameters=False,
     return_data_labels=False,
     return_times=False,
@@ -147,11 +150,11 @@ def _optimize_and_score(
     # This allows to cache the train results, if the _optimize_and_score is called multiple times with the same hyper
     # parameters.
     # To be sure that nothing "bad" happens here, we also pass in the pipeline itself to invalidate the cache,
-    # in case a completly different pipeline/algorithm is optimized.
+    # in case a completely different pipeline/algorithm is optimized.
     # Ideally the `memory` object used here should only be used once in the context of e.g. a GridSearchCV.
     # TODO: Throw error if optimization modifies pure parameter
     def cachable_optimize(opti: BaseOptimize, hyperparas: Dict, data: Dataset) -> BaseOptimize:
-        return opti.set_params(**hyperparas).optimize(data)
+        return opti.set_params(**hyperparas).optimize(data, **optimize_params)
 
     start_time = time.time()
     optimize_func = memory.cache(cachable_optimize)
@@ -159,25 +162,27 @@ def _optimize_and_score(
     optimize_time = time.time() - start_time
 
     # Now we set the remaining paras
-    optimized_pipeline = optimizer.optimized_pipeline_.set_params(**pure_parameters)
+    optimized_pipeline = optimizer.set_params(**pure_parameters)
 
     agg_scores, single_scores = scorer(optimized_pipeline, test_set, error_score)
     score_time = time.time() - optimize_time
 
-    result = {"scores": agg_scores, "single_scores": single_scores}
     if return_train_score:
         train_agg_scores, train_single_scores = scorer(optimized_pipeline, train_set, error_score)
-        train_score_time = time.time() - score_time
+
+    result = {"scores": agg_scores, "single_scores": single_scores}
+    if return_train_score:
         result["train_scores"] = train_agg_scores
         result["train_single_scores"] = train_single_scores
     if return_times:
         result["score_time"] = score_time
         result["optimize_time"] = optimize_time
-        if return_train_score:
-            result["train_score_time"] = train_score_time
     if return_data_labels:
         result["train_data_labels"] = train_set.groups
         result["test_data_labels"] = test_set.groups
+    if return_optimizer:
+        # We return a clone here to provide the trained pipeline, but without results
+        result["optimizer"] = optimized_pipeline.clone()
     if return_parameters:
         result["parameters"] = {**hyperparameters, **pure_parameters}
     return result
