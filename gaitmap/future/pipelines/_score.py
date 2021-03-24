@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import numbers
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 
 import numpy as np
 from joblib import Memory
 from sklearn import clone
+from sklearn.model_selection import ParameterGrid
 
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines import BaseOptimize
@@ -180,3 +181,19 @@ def _optimize_and_score(
     if return_parameters:
         result["parameters"] = {**hyperparameters, **pure_parameters}
     return result
+
+
+def _split_hyper_and_pure_parameters(
+    parameter_grid: ParameterGrid, pure_parameters: List[str]
+) -> Tuple[List[Optional[Dict]], List[Optional[Dict]]]:
+    candidates = list(parameter_grid)
+    hyperparas = []
+    pure_paras = []
+    for c in candidates:
+        tmp = {}
+        for k, v in c.items():
+            if k in pure_parameters:
+                tmp[k] = c.pop(v)
+        pure_paras.append(tmp or None)
+        hyperparas.append(c or None)
+    return hyperparas, pure_paras
