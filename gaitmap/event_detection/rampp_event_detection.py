@@ -243,8 +243,8 @@ class RamppEventDetection(BaseEventDetection):
                 )
             results = invert_result_dictionary(results_dict)
 
-            if not self.enforce_consistency:
-                del results["min_vel_event_list"]
+        if not self.enforce_consistency:
+            del results["min_vel_event_list"]
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
