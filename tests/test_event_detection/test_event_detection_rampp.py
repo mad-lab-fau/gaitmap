@@ -73,6 +73,18 @@ class TestEventDetectionRampp:
 
         assert mock.call_count == output
 
+    @pytest.mark.parametrize("input, output", ((False, False), (True, True)))
+    def test_disable_min_vel_event_list(self, healthy_example_imu_data, healthy_example_stride_borders, input, output):
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left.columns = BF_COLS
+        # only use the first entry of the stride list
+        stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
+
+        ed = RamppEventDetection(enforce_consistency=input)
+        ed.detect(data_left, stride_list_left, 204.8)
+
+        assert hasattr(ed, "min_vel_event_list_") == output
+
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test to see if the algorithm is generally working on the example data when provided as dict"""
         data = coordinate_conversion.convert_to_fbf(
