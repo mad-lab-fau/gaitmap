@@ -57,8 +57,8 @@ def create_fully_labeled_gait_sequences(
         for start, end in stride_list[["start", "end"]].to_numpy():
             stride_data_train = data[start:end]
             labels_train[start:end] = (
-                    stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                    + transition_model.n_states
+                stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
+                + transition_model.n_states
             )
 
         # append cleaned sequences to train_sequence
