@@ -189,21 +189,10 @@ def labels_to_strings(labelsequence):
 
     labelsequence_str = []
     for sequence in labelsequence:
-        if isinstance(sequence, np.ndarray):
-            sequence = sequence.tolist()
         if sequence is None:
             labelsequence_str.append(sequence)
             continue
-        labels = np.asarray(sequence)
-        labels_str = labels.astype(str).copy()
-        for i in np.unique(labels).astype(int):
-
-            if i >= 10:
-                labels_str[labels == i] = "s" + chr(87 + i)
-            else:
-                labels_str[labels == i] = "s" + str(int(i))
-        labels_str[labels_str == "nan"] = None
-        labelsequence_str.append(np.asarray(labels_str))
+        labelsequence_str.append(["s%02d" % i for i in sequence])
     return labelsequence_str
 
 
