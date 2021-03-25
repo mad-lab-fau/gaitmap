@@ -3,14 +3,15 @@ from functools import partial
 from typing import Dict, Any, Optional, Union
 
 import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
 from sklearn.model_selection import ParameterGrid
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.future.pipelines import SimplePipeline
 from gaitmap.future.dataset import Dataset
+from gaitmap.future.pipelines import SimplePipeline
 
 
 def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
@@ -57,11 +58,13 @@ class GridSearch(Optimize):
     best_index_: int
     best_score_: float
     gs_results_: Dict[str, Any]
+    multi_metric_: bool
 
     def __init__(
         self,
         pipeline: Optional[SimplePipeline] = None,
         parameter_grid: Optional[ParameterGrid] = None,
+        *,
         n_jobs: Optional[int] = None,
         pre_dispatch: Union[int, str] = "n_jobs",
     ):
@@ -79,7 +82,11 @@ class GridSearch(Optimize):
                 delayed(_score)(pipeline=self.pipeline.clone(), data=dataset, parameters=paras)
                 for paras in candidate_params
             )
-        results = self._format_results(candidate_params, out)
+        if isinstance(out[0], dict):
+            self.multi_metric_ = True
+        else:
+            self.multi_metric_ = False
+        results = self._format_results(candidate_params, out, multi_metric=self.multi_metric_)
         self.best_index_ = results["rank_score"].argmin()
         self.best_score_ = results["score"][self.best_index_]
         self.best_params_ = results["params"][self.best_index_]
@@ -90,15 +97,23 @@ class GridSearch(Optimize):
 
         return self
 
-    def _format_results(self, candidate_params, out):
+    def _format_results(self, candidate_params, out, multi_metric=False):
         # This function is adapted based on sklearns `BaseSearchCV`
 
         n_candidates = len(candidate_params)
         results = {}
 
-        out = np.asarray(out)
-        results["score"] = out
-        results["rank_score"] = np.asarray(rankdata(-out, method="min"), dtype=np.int32)
+        if multi_metric:
+            # Invert the dict and calculate the mean per score:
+            df = pd.DataFrame.from_records(out)
+            for c in df.columns:
+                tmp = df[c].to_numpy()
+                results[c] = tmp
+                results["rank_{}".format(c)] = np.asarray(rankdata(-tmp, method="min"), dtype=np.int32)
+        else:
+            out = np.asarray(out)
+            results["score"] = out
+            results["rank_score"] = np.asarray(rankdata(-out, method="min"), dtype=np.int32)
 
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
