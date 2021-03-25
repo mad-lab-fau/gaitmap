@@ -262,8 +262,9 @@ class SimpleHMM(_BaseSerializable):
         for data in data_sequence:
             if len(data) < self.n_states:
                 raise ValueError(
-                    'Invalid Training Sequence! At least one training sequence has less samples than the specified value of states! len = %d' % (
-                        data))
+                    "Invalid Training Sequence! At least one training sequence has less samples than the specified value of states! len = %d"
+                    % (data)
+                )
 
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
