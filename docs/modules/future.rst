@@ -16,4 +16,6 @@ Future features
     dataset.Dataset
     pipelines.SimplePipeline
     pipelines.OptimizablePipeline
+    pipelines.BaseOptimize
+    pipelines.Optimize
     pipelines.GridSearch
