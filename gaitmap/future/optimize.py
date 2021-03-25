@@ -8,6 +8,7 @@ from numpy.ma import MaskedArray
 from scipy.stats import rankdata
 from sklearn.model_selection import ParameterGrid
 
+from gaitmap.base import _BaseSerializable
 from gaitmap.future.pipelines import SimplePipeline
 from gaitmap.future.dataset import Dataset
 
@@ -17,16 +18,16 @@ def _score(pipeline: SimplePipeline, data: Dataset, parameters: Dict[str, Any]):
     return pipeline.score(dataset=data)
 
 
-class Optimize:
+class Optimize(_BaseSerializable):
     optimized_pipeline_: SimplePipeline
 
     def __init__(self, pipeline):
         self.pipeline = pipeline
 
-    def optimize(self, dataset: Dataset):
+    def optimize(self, dataset: Dataset, **kwargs):
         if not hasattr(self.pipeline, "self_optimize"):
             raise ValueError()
-        self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset)
+        self.optimized_pipeline_ = self.pipeline.clone().self_optimize(dataset, **kwargs)
         return self
 
     def run_optimized(self, dataset_single):
@@ -59,7 +60,7 @@ class GridSearch(Optimize):
         self.pre_dispatch = pre_dispatch
         super().__init__(pipeline=pipeline)
 
-    def optimize(self, dataset: Dataset):
+    def optimize(self, dataset: Dataset, **kwargs):
         candidate_params = list(self.parameter_grid)
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         with parallel:
@@ -113,3 +114,6 @@ class GridSearch(Optimize):
         results["params"] = candidate_params
 
         return results
+
+
+__all__ = ["GridSearch", "Optimize"]
