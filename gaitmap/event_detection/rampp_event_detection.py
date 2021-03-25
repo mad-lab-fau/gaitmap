@@ -276,7 +276,7 @@ class RamppEventDetection(BaseEventDetection):
         segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
 
         if self.enforce_consistency:
-            # check for consistency, remove inconsistent lines
+            # check for consistency, remove inconsistent strides
             segmented_event_list, _ = enforce_stride_list_consistency(
                 segmented_event_list, stride_type="segmented", check_stride_list=False
             )
