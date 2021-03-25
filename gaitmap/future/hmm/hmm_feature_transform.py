@@ -1,6 +1,6 @@
-"""The msDTW based stride segmentation algorithm by Barth et al 2013."""
+"""Feature transformation class for HMM."""
 import warnings
-from typing import List, Optional, TypeVar
+from typing import Optional, List, Union
 
 import numpy as np
 import pandas as pd
@@ -10,12 +10,12 @@ from sklearn import preprocessing
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-
-array_or_dataframe_type = TypeVar("array_or_dataframe_type", pd.DataFrame, np.ndarray)
+from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
 
 
-def butterwoth_lowpass(data: array_or_dataframe_type, fs: float, fc: float, order: int) -> array_or_dataframe_type:
+def butterwoth_lowpass(
+    data: Union[pd.DataFrame, np.ndarray], fs: float, fc: float, order: int
+) -> Union[pd.DataFrame, np.ndarray]:
     """Apply Butterworth Lowpass filter on array or DataFrame."""
     w = fc / (fs / 2)  # Normalize the frequency
     b, a = signal.butter(order, w, "low")
@@ -32,7 +32,7 @@ def butterwoth_lowpass(data: array_or_dataframe_type, fs: float, fc: float, orde
     return data_filtered
 
 
-def decimate(data: array_or_dataframe_type, downsampling_factor: int) -> array_or_dataframe_type:
+def decimate(data: Union[pd.DataFrame, np.ndarray], downsampling_factor: int) -> Union[pd.DataFrame, np.ndarray]:
     """Apply FFT based decimation / downsampling on array or DataFrame."""
     if downsampling_factor <= 1:
         warnings.warn("Downsampling factor <= 1! Downsampling action will be skipped!")
@@ -85,6 +85,7 @@ def calculate_features_for_axis(data, window_size_samples, features, standardiza
     - 'std': standard deviation of each window
     - 'var': variance of each window
     - 'mean': mean of each window
+    - 'polyfit2' : 2nd order polynomial fit for each window
     """
     if window_size_samples > 0:
         window_view = centered_window_view(data, window_size_samples)
@@ -243,8 +244,7 @@ class FeatureTransformHMM(_BaseSerializable):
         self.standardization = standardization
 
     def _transform_single_dataset(self, dataset, sampling_rate_hz):
-        """Perform Feature Transformation for a single dataset"""
-
+        """Perform Feature Transformation for a single dataset."""
         is_sensor_data(dataset, check_acc=True, check_gyr=True, frame="body")
 
         downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_feature_space_hz))
