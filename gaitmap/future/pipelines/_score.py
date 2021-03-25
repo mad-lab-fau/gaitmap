@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numbers
 import time
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, TYPE_CHECKING
 
 import numpy as np
 from joblib import Memory
@@ -15,9 +15,11 @@ from sklearn import clone
 from sklearn.model_selection import ParameterGrid
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import BaseOptimize
 from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE
+
+if TYPE_CHECKING:
+    from gaitmap.future.pipelines._optimize import BaseOptimize
 
 
 def _score(
@@ -130,17 +132,19 @@ def _optimize_and_score(
     """
     if memory is None:
         memory = Memory(None)
-    if hyperparameters is not None:
         # clone after setting parameters in case any parameters are estimators (like pipeline steps).
-        cloned_hyperparameters = {}
+    cloned_hyperparameters = {}
+    if hyperparameters is not None:
         for k, v in hyperparameters.items():
             cloned_hyperparameters[k] = clone(v, safe=False)
-        hyperparameters = cloned_hyperparameters
+    hyperparameters = cloned_hyperparameters
+    cloned_pure_parameters = {}
     if pure_parameters is not None:
-        cloned_pure_parameters = {}
         for k, v in hyperparameters.items():
             cloned_pure_parameters[k] = clone(v, safe=False)
-        pure_parameters = cloned_pure_parameters
+    pure_parameters = cloned_pure_parameters
+
+    optimize_params = optimize_params or {}
 
     train_set = dataset[train]
     test_set = dataset[test]
@@ -162,13 +166,13 @@ def _optimize_and_score(
     optimize_time = time.time() - start_time
 
     # Now we set the remaining paras
-    optimized_pipeline = optimizer.set_params(**pure_parameters)
+    optimizer = optimizer.set_params(**pure_parameters)
 
-    agg_scores, single_scores = scorer(optimized_pipeline, test_set, error_score)
-    score_time = time.time() - optimize_time
+    agg_scores, single_scores = scorer(optimizer.optimized_pipeline_, test_set, error_score)
+    score_time = time.time() - optimize_time - start_time
 
     if return_train_score:
-        train_agg_scores, train_single_scores = scorer(optimized_pipeline, train_set, error_score)
+        train_agg_scores, train_single_scores = scorer(optimizer.optimized_pipeline_, train_set, error_score)
 
     result = {"scores": agg_scores, "single_scores": single_scores}
     if return_train_score:
@@ -181,8 +185,9 @@ def _optimize_and_score(
         result["train_data_labels"] = train_set.groups
         result["test_data_labels"] = test_set.groups
     if return_optimizer:
-        # We return a clone here to provide the trained pipeline, but without results
-        result["optimizer"] = optimized_pipeline.clone()
+        # This is the actual trained optimizer. This means that `optimizer.optimized_pipeline_` contains the actual
+        # instance of the trained pipeline.
+        result["optimizer"] = optimizer
     if return_parameters:
         result["parameters"] = {**hyperparameters, **pure_parameters}
     return result

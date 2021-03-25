@@ -1,7 +1,7 @@
 """Some helper to work with the format the results of GridSearches and CVs."""
 from __future__ import annotations
 import numbers
-from typing import List, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 
 import joblib
 import numpy as np
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from gaitmap.future.pipelines import SimplePipeline
 
 
-def _aggregate_final_results(results: List):
+def _aggregate_final_results(results: List) -> Dict:
     """Aggregate the list of dict to dict of np ndarray/list.
 
     Modified based on sklearn.model_selection._validation._aggregate_score_dicts
@@ -36,6 +36,15 @@ def _aggregate_final_results(results: List):
         else [score[key] for score in results]
         for key in results[0]
     }
+
+
+def _normalize_score_results(scores: List, prefix="", scaler_score_key="score"):
+    """Creates a scoring dictionary based on the type of `scores`"""
+    if isinstance(scores[0], dict):
+        # multimetric scoring
+        return {prefix + k: v for k, v in _aggregate_final_results(scores).items()}
+    # scaler
+    return {prefix + scaler_score_key: scores}
 
 
 def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
