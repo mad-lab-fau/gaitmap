@@ -73,14 +73,16 @@ class TestEventDetectionRampp:
 
         assert mock.call_count == output
 
-    @pytest.mark.parametrize("input, output", ((False, False), (True, True)))
-    def test_disable_min_vel_event_list(self, healthy_example_imu_data, healthy_example_stride_borders, input, output):
+    @pytest.mark.parametrize("enforce_consistency, output", ((False, False), (True, True)))
+    def test_disable_min_vel_event_list(
+        self, healthy_example_imu_data, healthy_example_stride_borders, enforce_consistency, output
+    ):
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
 
-        ed = RamppEventDetection(enforce_consistency=input)
+        ed = RamppEventDetection(enforce_consistency=enforce_consistency)
         ed.detect(data_left, stride_list_left, 204.8)
 
         assert hasattr(ed, "min_vel_event_list_") == output
