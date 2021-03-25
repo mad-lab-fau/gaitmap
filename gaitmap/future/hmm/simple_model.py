@@ -1,5 +1,6 @@
 """Simple model base classes and helper."""
 
+import copy
 from typing import Optional
 
 import numpy as np
@@ -12,6 +13,7 @@ from gaitmap.future.hmm.utils import (
     create_transition_matrix_left_right,
     fix_model_names,
     gmms_from_samples,
+
 )
 
 N_JOBS = 1
@@ -68,7 +70,8 @@ def initialize_hmm(
                            1  0  0  0  1
 
          - "fully-connected":
-        This will result in a fully connected structure where all existing edges are initialized with the same probability.
+        This will result in a fully connected structure where all existing edges are initialized with the same
+        probability.
         Example transition matrix for a 5-state model:
         transition_matrix: 1  1  1  1  1   starts: 1  1  1  1  1
                            1  1  1  1  1   stops:  1  1  1  1  1
@@ -76,8 +79,7 @@ def initialize_hmm(
                            1  1  1  1  1
                            1  1  1  1  1
     """
-
-    if not architecture in ["left-right-strict", "left-right-loose", "fully-connected"]:
+    if architecture not in ["left-right-strict", "left-right-loose", "fully-connected"]:
         raise ValueError(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
@@ -88,17 +90,18 @@ def initialize_hmm(
         n_gmm_components,
         random_seed=random_seed,
         verbose=verbose,
-        debug_plot=False,
     )
 
-    # if we force the model into a left-right architecture we know that stride borders should correspond to the point where the model "loops" (aka state-0 and state-n)
-    # so we also will enforce the model to start with "state-0" and always end with "state-n"
+    # if we force the model into a left-right architecture we know that stride borders should correspond to the point
+    # where the model "loops" (aka state-0 and state-n) so we also will enforce the model to start with "state-0" and
+    # always end with "state-n"
     if architecture == "left-right-strict":
         [transition_matrix, start_probs, end_probs] = create_transition_matrix_left_right(
             n_states, self_transition=False
         )
 
-    # allow transition model to start and end in all states (as we do not have any specific information about "transitions", this could be actually anything in the data which is no stride)
+    # allow transition model to start and end in all states (as we do not have any specific information about
+    # "transitions", this could be actually anything in the data which is no stride)
     if architecture == "left-right-loose":
         [transition_matrix, _, _] = create_transition_matrix_left_right(n_states, self_transition=True)
 
@@ -117,7 +120,8 @@ def initialize_hmm(
         verbose=verbose,
     )
 
-    # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like s0, s1, s10, s2 usw..)
+    # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like
+    # s0, s1, s10, s2 usw..)
     model = fix_model_names(model)
     # make sure that transition-matrix is normalized
     model.bake()
@@ -129,7 +133,7 @@ def initialize_hmm(
 def train_hmm(
     model_untrained, data_train_sequence, max_iterations, stop_threshold, algo_train, name="trained", verbose=True
 ):
-    """Model Training
+    """Train Model.
 
     - model_untrained (pomegranate.HiddenMarkovModel):
         pomegranate HiddenMarkovModel object with initialized distributions and transition matrix
@@ -148,15 +152,16 @@ def train_hmm(
         termination criteria for training iteration number e.g. 1000
 
     """
-
-    # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead to unexpected behaviour!
+    # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead
+    # to unexpected behaviour!
     length_of_training_sequences = np.array([len(data) for data in data_train_sequence])
     if np.any(length_of_training_sequences < (len(model_untrained.states) - 2)):
         raise ValueError(
             "Length of all training sequences must be equal or larger than the number of states in the given model!"
         )
 
-    # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a copy
+    # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a
+    # copy
     model_trained = copy.deepcopy(model_untrained)
 
     _, history = model_trained.fit(
@@ -243,7 +248,7 @@ class SimpleHMM(_BaseSerializable):
 
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-        if not np.array(feature_data).flags["C_CONTIGUOUS"]:
+        if not np.array(feature_data).data.c_contiguous:
             raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
 
         labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
@@ -251,19 +256,19 @@ class SimpleHMM(_BaseSerializable):
         return np.asarray(labels_predicted[1:-1])
 
     def build_model(self, data_sequence, labels_sequence, verbose=True):
-
+        """Build model."""
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
-                "The given training sequence and initial training labels do not match in their number of individual sequences!"
-                "len(data_train_sequence_list) = %d !=  %d = len(initial_hidden_states_sequence_list)"
+                "The given training sequence and initial training labels do not match in their number of individual "
+                "sequences! len(data_train_sequence_list) = %d !=  %d = len(initial_hidden_states_sequence_list)"
                 % (len(data_sequence), len(labels_sequence))
             )
 
         for data in data_sequence:
             if len(data) < self.n_states:
                 raise ValueError(
-                    "Invalid Training Sequence! At least one training sequence has less samples than the specified value of states! len = %d"
-                    % (data)
+                    "Invalid Training Sequence! At least one training sequence has less samples than the specified "
+                    "value of states! len = %d" % data
                 )
 
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
@@ -299,6 +304,7 @@ class SimpleHMM(_BaseSerializable):
 
     @property
     def history_(self) -> dict:
+        """Return model history."""
         return {
             "improvements": self.history.improvements,
             "total_improvement": self.history.total_improvement,

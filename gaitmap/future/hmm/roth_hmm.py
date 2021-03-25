@@ -1,5 +1,5 @@
 """HMM based stride segmentation by Roth et al. 2021."""
-
+import copy
 from typing import Optional, Union, Dict, Tuple
 
 import numpy as np
@@ -167,18 +167,17 @@ class RothHMM(BaseStrideSegmentation):
                     matches_start_end,
                     hidden_state_sequence,
                     dataset_feature_space,
-                    hidden_state_sequence_feature_space,
+                    hidden_state_seq_feature_space,
                 ) = self._segment_single_dataset(data[sensor], sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
                 self.dataset_feature_space_[sensor] = dataset_feature_space
-                self.hidden_state_sequence_feature_space_[sensor] = hidden_state_sequence_feature_space
+                self.hidden_state_sequence_feature_space_[sensor] = hidden_state_seq_feature_space
 
         return self
 
     def _segment_single_dataset(self, dataset, sampling_rate_hz):
         """Perform Stride Segmentation for a single dataset."""
-
         # tranform dataset to required feature space as defined by the given model parameters
         feature_data = self.model.feature_transform.transform(dataset, sampling_rate_hz)
 
@@ -201,7 +200,6 @@ class RothHMM(BaseStrideSegmentation):
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted):
         """Convert a hidden state sequence to a list of potential borders."""
-
         stride_start_state = self.model.stride_states_[0]
         stride_end_state = self.model.stride_states_[-1]
 
@@ -219,7 +217,6 @@ class RothHMM(BaseStrideSegmentation):
 
     def _postprocess_matches(self, matches_start_end, dataset) -> Tuple[np.ndarray, np.ndarray]:
         """Perform postprocessing step by snapping the stride border candidates to minima within the given data."""
-
         if self.snap_to_min_win_s:
             # Apply snap to minimum
             snap_to_min_data = dataset[self.snap_to_min_axis].to_numpy()
