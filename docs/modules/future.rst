@@ -14,3 +14,8 @@ Future features
    :template: class.rst
 
     dataset.Dataset
+    pipelines.SimplePipeline
+    pipelines.OptimizablePipeline
+    pipelines.BaseOptimize
+    pipelines.Optimize
+    pipelines.GridSearch

@@ -66,8 +66,8 @@ class TestAlgorithmMixin:
 
         assert id(results) == id(after_action_instance)
 
-    def test_set_params_valid(self):
-        instance = self.algorithm_class()
+    def test_set_params_valid(self, after_action_instance):
+        instance = after_action_instance.clone()
         valid_names = instance._get_param_names()
         values = list(range(len(valid_names)))
         instance.set_params(**dict(zip(valid_names, values)))
@@ -75,8 +75,8 @@ class TestAlgorithmMixin:
         for k, v in zip(valid_names, values):
             assert getattr(instance, k) == v, k
 
-    def test_set_params_invalid(self):
-        instance = self.algorithm_class()
+    def test_set_params_invalid(self, after_action_instance):
+        instance = after_action_instance.clone()
 
         with pytest.raises(ValueError) as e:
             instance.set_params(an_invalid_name=1)
@@ -84,8 +84,8 @@ class TestAlgorithmMixin:
         assert "an_invalid_name" in str(e)
         assert self.algorithm_class.__name__ in str(e)
 
-    def test_json_roundtrip(self):
-        instance = self.algorithm_class()
+    def test_json_roundtrip(self, after_action_instance):
+        instance = after_action_instance.clone()
 
         json_str = instance.to_json()
 
