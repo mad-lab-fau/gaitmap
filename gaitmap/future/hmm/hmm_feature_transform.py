@@ -74,6 +74,50 @@ def centered_window_view(arr, window_size_samples, pad_value=0.0):
     return sliding_window_view(arr, window_size_samples, window_size_samples - 1)
 
 
+def sliding_window_gradient(data, window_size_samples):
+    """Extract sliding window based linear gradient fit as feature vector."""
+    window_view = centered_window_view(data, window_size_samples)
+    gradient = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 1) for w in window_view])[:, -1]
+    return pd.DataFrame(gradient, columns=["gradient"])
+
+
+def sliding_window_polyfit2(data, window_size_samples):
+    """Extract sliding window based 2nd order polynomial fit as feature vector."""
+    window_view = centered_window_view(data, window_size_samples)
+    poly_coefs = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 2) for w in window_view])
+    return pd.DataFrame(poly_coefs, columns=["polyfit2_a", "polyfit2_b", "polyfit2_c"])
+
+
+def sliding_window_mean(data, window_size_samples):
+    """Extract sliding window based mean as feature vector."""
+    return pd.DataFrame(data, columns=["mean"]).rolling(window_size_samples, min_periods=1, center=True).mean()
+
+
+def sliding_window_var(data, window_size_samples):
+    """Extract sliding window based variance as feature vector."""
+    return pd.DataFrame(data, columns=["var"]).rolling(window_size_samples, min_periods=1, center=True).var()
+
+
+def sliding_window_std(data, window_size_samples):
+    """Extract sliding window based standard deviation as feature vector."""
+    return pd.DataFrame(data, columns=["std"]).rolling(window_size_samples, min_periods=1, center=True).std()
+
+
+def sliding_window_raw(data):
+    """Extract raw data as feature vector."""
+    return pd.DataFrame(data, columns=["raw"])
+
+
+_FEATURE_FUNCTIONS = {
+    "gradient": sliding_window_gradient,
+    "polyfit2": sliding_window_polyfit2,
+    "mean": sliding_window_mean,
+    "std": sliding_window_std,
+    "var": sliding_window_var,
+    "raw": sliding_window_raw,
+}
+
+
 def calculate_features_for_axis(data, window_size_samples, features, standardization=False):
     """Calculate feature matrix on a single sensor axis.
 
@@ -87,53 +131,22 @@ def calculate_features_for_axis(data, window_size_samples, features, standardiza
     - 'mean': mean of each window
     - 'polyfit2' : 2nd order polynomial fit for each window
     """
-    if window_size_samples > 0:
-        window_view = centered_window_view(data, window_size_samples)
-
-    feature_matrix = []
-    columns = []
+    feature_matrix_df = pd.DataFrame()
 
     if not isinstance(features, list):
         features = [features]
 
-    if "raw" in features:
-        raw = data.copy()
-        feature_matrix.append(raw)
-        columns.append("raw")
-
-    if "gradient" in features:
-        gradient = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 1) for w in window_view])[:, -1]
-        feature_matrix.append(gradient)
-        columns.append("gradient")
-
-    if "mean" in features:
-        mean = window_view.mean(axis=1)
-        feature_matrix.append(mean)
-        columns.append("mean")
-
-    if "std" in features:
-        std = window_view.std(axis=1)
-        feature_matrix.append(std)
-        columns.append("std")
-
-    if "var" in features:
-        var = window_view.var(axis=1)
-        feature_matrix.append(var)
-        columns.append("var")
-
-    if "polyfit2" in features:
-        poly_coefs = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 2) for w in window_view])
-        feature_matrix.append(poly_coefs)
-        columns.append("polyfit2_a")
-        columns.append("polyfit2_b")
-        columns.append("polyfit2_c")
-
-    feature_matrix = np.column_stack(feature_matrix)
+    for feature in features:
+        method = _FEATURE_FUNCTIONS[feature]
+        if feature == "raw":
+            feature_matrix_df = pd.concat([feature_matrix_df, method(data)], axis=1)
+        else:
+            feature_matrix_df = pd.concat([feature_matrix_df, method(data, window_size_samples)], axis=1)
 
     if standardization:
-        feature_matrix = preprocessing.scale(feature_matrix)
+        feature_matrix_df = pd.DataFrame(preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns)
 
-    return pd.DataFrame(feature_matrix, columns=columns)
+    return feature_matrix_df
 
 
 def _calculate_features_single_dataset(dataset, axis, features, window_size_samples, standardization):
