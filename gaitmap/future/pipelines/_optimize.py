@@ -2,23 +2,29 @@
 import warnings
 from collections import defaultdict
 from functools import partial
-from typing import Dict, Any, Optional, Union, Callable
+from itertools import product
+from tempfile import TemporaryDirectory
+from typing import Dict, Any, Optional, Union, Callable, Iterator, List
 
 import joblib
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, Memory
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
-from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import ParameterGrid, BaseCrossValidator, check_cv
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
-from gaitmap.future.pipelines._score import _score
+from gaitmap.future.pipelines._score import _score, _optimize_and_score
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _validate_scorer
+from gaitmap.future.pipelines._utils import (
+    _aggregate_final_results,
+    _prefix_para_dict,
+    _split_hyper_and_pure_parameters,
+)
 from gaitmap.utils.exceptions import PotentialUserErrorWarning
-from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
 class BaseOptimize(BaseAlgorithm):
@@ -94,7 +100,7 @@ class Optimize(BaseOptimize):
     def __init__(self, pipeline: OptimizablePipeline):
         self.pipeline = pipeline
 
-    def optimize(self, dataset: Dataset, **kwargs):
+    def optimize(self, dataset: Dataset, **optimize_params):
         """Run the self-optimization defined by the pipeline.
 
         The optimized version of the pipeline is stored as `self.optimized_pipeline_`.
@@ -105,7 +111,7 @@ class Optimize(BaseOptimize):
             An instance of a :class:`~gaitmap.future.dataset.Dataset` containing one or multiple data points that can
             be used for optimization.
             The structure of the data and the available reference information will depend on the dataset.
-        kwargs
+        optimize_params
             Additional parameter for the optimization process.
             They are forwarded to `pipeline.self_optimize`.
 
@@ -123,7 +129,7 @@ class Optimize(BaseOptimize):
         # record the hash of the pipeline to make an educated guess if the optimization works
         pipeline = self.pipeline.clone()
         before_hash = joblib.hash(pipeline)
-        optimized_pipeline = pipeline.self_optimize(dataset, **kwargs)
+        optimized_pipeline = pipeline.self_optimize(dataset, **optimize_params)
         if not isinstance(optimized_pipeline, pipeline.__class__):
             raise ValueError(
                 "Calling `self_optimize` did not return an instance of the pipeline itself! "
@@ -240,7 +246,7 @@ class GridSearch(BaseOptimize):
     parameter_grid: ParameterGrid
     scoring: Optional[Union[Callable, GaitmapScorer]]
     n_jobs: Optional[int]
-    return_optimized: Optional[str]
+    return_optimized: Union[bool, str]
     pre_dispatch: Union[int, str]
     error_score: _ERROR_SCORE_TYPE
 
@@ -412,5 +418,98 @@ class GridSearch(BaseOptimize):
         results.update(param_results)
         # Store a list of param dicts at the key 'params'
         results["params"] = candidate_params
+
+        return results
+
+
+class GridSearchCV(BaseOptimize):
+    pipeline: OptimizablePipeline
+    parameter_grid: ParameterGrid
+    scoring: Optional[Union[Callable, GaitmapScorer]]
+    cv: Optional[Union[int, BaseCrossValidator, Iterator]]
+    pure_parameter_names: Optional[List[str]]
+    n_jobs: Optional[int]
+    return_optimized: Union[bool, str]
+    return_train_score: bool
+    pre_dispatch: Union[int, str]
+    error_score: _ERROR_SCORE_TYPE
+
+    def __init__(
+        self,
+        pipeline: OptimizablePipeline,
+        parameter_grid: ParameterGrid,
+        *,
+        scoring: Optional[Union[Callable, GaitmapScorer]] = None,
+        return_optimized: Union[bool, str] = True,
+        cv: Optional[Union[int, BaseCrossValidator, Iterator]] = None,
+        pure_parameter_names: Optional[List[str]] = None,
+        return_train_score: bool = False,
+        n_jobs: Optional[int] = None,
+        pre_dispatch: Union[int, str] = "n_jobs",
+        error_score: _ERROR_SCORE_TYPE = np.nan,
+    ):
+        self.pipeline = pipeline
+        self.parameter_grid = parameter_grid
+        self.scoring = scoring
+        self.n_jobs = n_jobs
+        self.pre_dispatch = pre_dispatch
+        self.return_optimized = return_optimized
+        self.error_score = error_score
+        self.cv = cv
+        self.pure_parameter_names = pure_parameter_names
+        self.return_train_score = return_train_score
+
+    def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):
+        self.dataset = dataset
+        scoring = _validate_scorer(self.scoring)
+
+        # TODO: Validate pipeline
+        cv = check_cv(self.cv, None, classifier=True)
+
+        # We need to wrap our pipeline for a consistent interface.
+        # In the future we might be able to allow objects with optimizer Interface as input directly.
+        optimizer = Optimize(self.pipeline)
+
+        # For each para combi, we separate the pure parameters (parameters that due not effect the optimization) and
+        # the hyperparameters.
+        # This allows for massive caching optimizations in the `_optimize_and_score`.
+        parameters = _split_hyper_and_pure_parameters(self.parameter_grid, self.pure_parameter_names)
+
+        # To enable the pure parameter performance improvement, we need to create a joblib cache in a temp dir that
+        # is deleted after the run.
+        # We only allow a temporary cache here, because the method that is cached internally is generic and the cache
+        # might not be correctly invalidated, if GridSearchCv is called with a different pipeline or when the
+        # pipeline itself is modified.
+        with TemporaryDirectory("joblib_gaitmap_cache") as cachedir:
+            tmp_cache = Memory(cachedir)
+
+            parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
+            # We use a similar structure to sklearns GridSearchCv here (see GridSearch for more info).
+            with parallel:
+                # Evaluate each parameter combination
+                results = parallel(
+                    delayed(_optimize_and_score)(
+                        optimizer.clone(),
+                        dataset,
+                        scoring,
+                        train,
+                        test,
+                        optimize_params=optimize_params,
+                        hyperparameters=_prefix_para_dict(hyper_paras, "pipeline__"),
+                        pure_parameters=_prefix_para_dict(pure_paras, "pipeline__"),
+                        return_train_score=self.return_train_score,
+                        return_parameters=True,
+                        return_data_labels=True,
+                        return_times=True,
+                        error_score=self.error_score,
+                        memory=tmp_cache,
+                    )
+                    for (cand_idx, (hyper_paras, pure_paras)), (split_idx, (train, test)) in product(
+                        enumerate(parameters), enumerate(cv.split(dataset, groups=groups))
+                    )
+                )
+        if self.return_optimized:
+            # TODO: Refit when return optimized.
+            pass
 
         return results

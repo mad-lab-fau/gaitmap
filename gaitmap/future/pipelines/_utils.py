@@ -1,10 +1,11 @@
 """Some helper to work with the format the results of GridSearches and CVs."""
 from __future__ import annotations
 import numbers
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 
 import joblib
 import numpy as np
+from sklearn.model_selection import ParameterGrid
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines import SimplePipeline
@@ -38,13 +39,35 @@ def _aggregate_final_results(results: List) -> Dict:
     }
 
 
-def _normalize_score_results(scores: List, prefix="", scaler_score_key="score"):
+def _normalize_score_results(scores: List, prefix="", single_score_key="score"):
     """Creates a scoring dictionary based on the type of `scores`"""
     if isinstance(scores[0], dict):
         # multimetric scoring
         return {prefix + k: v for k, v in _aggregate_final_results(scores).items()}
-    # scaler
-    return {prefix + scaler_score_key: scores}
+    # single
+    return {prefix + single_score_key: scores}
+
+
+def _prefix_para_dict(params_dict, prefix="pipeline__"):
+    if not params_dict:
+        return None
+    return {prefix + k: v for k, v in params_dict.items()}
+
+
+def _split_hyper_and_pure_parameters(
+    parameter_grid: ParameterGrid, pure_parameters: Optional[List[str]]
+) -> List[Tuple[Optional[Dict], Optional[Dict]]]:
+    candidates = list(parameter_grid)
+    if pure_parameters is None:
+        return [(c, None) for c in candidates]
+    split_candidates = []
+    for c in candidates:
+        tmp = {}
+        for k in list(c.keys()):
+            if k in pure_parameters:
+                tmp[k] = c.pop(k)
+        split_candidates.append((c or None, tmp or None))
+    return split_candidates
 
 
 def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
