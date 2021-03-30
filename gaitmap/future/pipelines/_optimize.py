@@ -1,4 +1,5 @@
 """Higher level wrapper to run training and parameter optimizations."""
+import time
 import warnings
 from collections import defaultdict
 from functools import partial
@@ -409,13 +410,21 @@ class GridSearchCV(BaseOptimize):
     pipeline: OptimizablePipeline
     parameter_grid: ParameterGrid
     scoring: Optional[Union[Callable, GaitmapScorer]]
+    return_optimized: Union[bool, str]
     cv: Optional[Union[int, BaseCrossValidator, Iterator]]
     pure_parameter_names: Optional[List[str]]
-    n_jobs: Optional[int]
-    return_optimized: Union[bool, str]
     return_train_score: bool
+    verbose: int
+    n_jobs: Optional[int]
     pre_dispatch: Union[int, str]
     error_score: _ERROR_SCORE_TYPE
+
+    cv_results_: Dict[str, Any]
+    best_params_: Dict
+    best_index_: int
+    best_score_: float
+    multimetric_: bool
+    final_optimize_time_: float
 
     def __init__(
         self,
@@ -427,6 +436,7 @@ class GridSearchCV(BaseOptimize):
         cv: Optional[Union[int, BaseCrossValidator, Iterator]] = None,
         pure_parameter_names: Optional[List[str]] = None,
         return_train_score: bool = False,
+        verbose: int = 0,
         n_jobs: Optional[int] = None,
         pre_dispatch: Union[int, str] = "n_jobs",
         error_score: _ERROR_SCORE_TYPE = np.nan,
@@ -434,13 +444,14 @@ class GridSearchCV(BaseOptimize):
         self.pipeline = pipeline
         self.parameter_grid = parameter_grid
         self.scoring = scoring
-        self.n_jobs = n_jobs
-        self.pre_dispatch = pre_dispatch
         self.return_optimized = return_optimized
-        self.error_score = error_score
         self.cv = cv
         self.pure_parameter_names = pure_parameter_names
         self.return_train_score = return_train_score
+        self.verbose = verbose
+        self.n_jobs = n_jobs
+        self.pre_dispatch = pre_dispatch
+        self.error_score = error_score
 
     def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):
         self.dataset = dataset
@@ -467,7 +478,7 @@ class GridSearchCV(BaseOptimize):
         # might not be correctly invalidated, if GridSearchCv is called with a different pipeline or when the
         # pipeline itself is modified.
         with TemporaryDirectory("joblib_gaitmap_cache") as cachedir:
-            tmp_cache = Memory(cachedir)
+            tmp_cache = Memory(cachedir, verbose=self.verbose)
 
             parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
             # We use a similar structure to sklearns GridSearchCv here (see GridSearch for more info).
@@ -509,7 +520,9 @@ class GridSearchCV(BaseOptimize):
             self.best_params_ = results["params"][self.best_index_]
             # We clone twice, in case one of the params was itself an algorithm.
             best_optimizer = Optimize(self.pipeline.clone().set_params(**self.best_params_).clone())
+            final_optimize_start_time = time.time()
             self.optimized_pipeline_ = best_optimizer.optimize(dataset, **optimize_params).optimized_pipeline_
+            self.final_optimize_time_ = final_optimize_start_time - time.time()
 
         return self
 
