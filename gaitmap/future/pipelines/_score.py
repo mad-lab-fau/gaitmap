@@ -164,8 +164,16 @@ def _optimize_and_score(
     optimizer = optimize_func(optimizer, hyperparameters, train_set)
     optimize_time = time.time() - start_time
 
-    # Now we set the remaining paras
-    optimizer = optimizer.set_params(**pure_parameters)
+    # Now we set the remaining paras.
+    if pure_parameters:
+        # Because, we need to set the parameters on the optimized pipeline and not the input pipeline we strip the
+        # naming prefix.
+        # TODO: Not sure if that is the nicest way to do things.
+        striped_paras = {k.split("__", 1)[1]: v for k, v in pure_parameters.items()}
+        optimizer.optimized_pipeline_.set_params(**striped_paras)
+        # We also set the parameters of the input pipeline to make it seem that all parameters were set from the
+        # beginning.
+        optimizer = optimizer.set_params(**pure_parameters)
 
     agg_scores, single_scores = scorer(optimizer.optimized_pipeline_, test_set, error_score)
     score_time = time.time() - optimize_time - start_time
