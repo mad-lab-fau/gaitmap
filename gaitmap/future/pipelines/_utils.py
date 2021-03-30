@@ -1,11 +1,12 @@
 """Some helper to work with the format the results of GridSearches and CVs."""
 from __future__ import annotations
+
 import numbers
+from copy import copy
 from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 
 import joblib
 import numpy as np
-from sklearn.model_selection import ParameterGrid
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines import SimplePipeline
@@ -55,13 +56,13 @@ def _prefix_para_dict(params_dict, prefix="pipeline__"):
 
 
 def _split_hyper_and_pure_parameters(
-    parameter_grid: ParameterGrid, pure_parameters: Optional[List[str]]
+    candidates: List[Dict], pure_parameters: Optional[List[str]]
 ) -> List[Tuple[Optional[Dict], Optional[Dict]]]:
-    candidates = list(parameter_grid)
     if pure_parameters is None:
         return [(c, None) for c in candidates]
     split_candidates = []
     for c in candidates:
+        c = copy(c)  # Otherwise we remove elements from the actual parameter list that is passed as input.
         tmp = {}
         for k in list(c.keys()):
             if k in pure_parameters:

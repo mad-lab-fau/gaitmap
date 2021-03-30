@@ -325,6 +325,7 @@ class GridSearch(BaseOptimize):
             # In a multimetric case, we need to flatten the individual score dicts.
             mean_scores = _aggregate_final_results(mean_scores)
             data_point_scores = _aggregate_final_results(data_point_scores)
+        _validate_return_optimized(self.return_optimized, self.multimetric_, mean_scores[0])
 
         results = self._format_results(
             results["parameters"],
@@ -334,7 +335,6 @@ class GridSearch(BaseOptimize):
             multi_metric=self.multimetric_,
         )
 
-        _validate_return_optimized(self.return_optimized, self.multimetric_, results)
         if self.return_optimized:
             return_optimized = "score"
             if self.multimetric_ and self.return_optimized:
@@ -457,7 +457,9 @@ class GridSearchCV(BaseOptimize):
         # For each para combi, we separate the pure parameters (parameters that due not effect the optimization) and
         # the hyperparameters.
         # This allows for massive caching optimizations in the `_optimize_and_score`.
-        parameters = _split_hyper_and_pure_parameters(self.parameter_grid, self.pure_parameter_names)
+        parameters = list(self.parameter_grid)
+        split_parameters = _split_hyper_and_pure_parameters(parameters, self.pure_parameter_names)
+        parameter_prefix = "pipeline__"
 
         # To enable the pure parameter performance improvement, we need to create a joblib cache in a temp dir that
         # is deleted after the run.
@@ -479,8 +481,8 @@ class GridSearchCV(BaseOptimize):
                         train,
                         test,
                         optimize_params=optimize_params,
-                        hyperparameters=_prefix_para_dict(hyper_paras, "pipeline__"),
-                        pure_parameters=_prefix_para_dict(pure_paras, "pipeline__"),
+                        hyperparameters=_prefix_para_dict(hyper_paras, parameter_prefix),
+                        pure_parameters=_prefix_para_dict(pure_paras, parameter_prefix),
                         return_train_score=self.return_train_score,
                         return_parameters=True,
                         return_data_labels=True,
@@ -489,23 +491,27 @@ class GridSearchCV(BaseOptimize):
                         memory=tmp_cache,
                     )
                     for (cand_idx, (hyper_paras, pure_paras)), (split_idx, (train, test)) in product(
-                        enumerate(parameters), enumerate(cv.split(dataset, groups=groups))
+                        enumerate(split_parameters), enumerate(cv.split(dataset, groups=groups))
                     )
                 )
+        results = self._format_results(parameters, n_splits, out)
+        self.cv_results_ = results
 
-        results = self._format_results(self.parameter_grid, n_splits, out)
-
-        first_test_score = out[0]['test_scores']
+        first_test_score = out[0]["test_scores"]
         self.multimetric_ = isinstance(first_test_score, dict)
+        _validate_return_optimized(self.return_optimized, self.multimetric_, first_test_score)
         if self.return_optimized:
-            # TODO: Refit when return optimized.
-            pass
+            return_optimized = "score"
+            if self.multimetric_ and self.return_optimized:
+                return_optimized = self.return_optimized
+            self.best_index_ = results["rank_test_{}".format(return_optimized)].argmin()
+            self.best_score_ = results["mean_test_{}".format(return_optimized)][self.best_index_]
+            self.best_params_ = results["params"][self.best_index_]
+            # We clone twice, in case one of the params was itself an algorithm.
+            best_optimizer = Optimize(self.pipeline.clone().set_params(**self.best_params_).clone())
+            self.optimized_pipeline_ = best_optimizer.optimize(dataset, **optimize_params).optimized_pipeline_
 
-        # self.multi_metric_ = False
-        # if isinstance(mean_scores[0], dict):
-        #     self.multi_metric_ = True
-
-        return results
+        return self
 
     def _format_results(self, candidate_params, n_splits, out, more_results=None):
         """Format the final result dict.
