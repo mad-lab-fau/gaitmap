@@ -333,7 +333,7 @@ class GridSearch(BaseOptimize):
             multi_metric=self.multi_metric_,
         )
 
-        self._validate_return_optimized(results)
+        _validate_return_optimized(self.return_optimized, self.multi_metric_, results)
         if self.return_optimized:
             return_optimized = "score"
             if self.multi_metric_ and self.return_optimized:
@@ -347,24 +347,6 @@ class GridSearch(BaseOptimize):
         self.gs_results_ = results
 
         return self
-
-    def _validate_return_optimized(self, results):
-        """Check if `return_optimize` fits to the multimetric output of the scorer."""
-        if self.multi_metric_ is True:
-            # In a multimetric case, return_optimized must either be False or a string
-            if self.return_optimized and (
-                not isinstance(self.return_optimized, str) or self.return_optimized not in results
-            ):
-                raise ValueError(
-                    "If multi-metric scoring is used, `return_optimized` must be a str specifying the score that "
-                    "should be used to select the best result."
-                )
-        else:
-            if isinstance(self.return_optimized, str):
-                warnings.warn(
-                    "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
-                    "single score. `return_optimized` is set to True."
-                )
 
     def _format_results(  # noqa: no-self-use
         self, candidate_params, mean_scores, *, data_point_scores=None, data_point_names=None, multi_metric=False
@@ -513,3 +495,20 @@ class GridSearchCV(BaseOptimize):
             pass
 
         return results
+
+
+def _validate_return_optimized(return_optimized, multi_metric, results):
+    """Check if `return_optimize` fits to the multimetric output of the scorer."""
+    if multi_metric is True:
+        # In a multimetric case, return_optimized must either be False or a string
+        if return_optimized and (not isinstance(return_optimized, str) or return_optimized not in results):
+            raise ValueError(
+                "If multi-metric scoring is used, `return_optimized` must be a str specifying the score that "
+                "should be used to select the best result."
+            )
+    else:
+        if isinstance(return_optimized, str):
+            warnings.warn(
+                "You set `return_optimized` to the name of a scorer, but the provided scorer only produces a "
+                "single score. `return_optimized` is set to True."
+            )
