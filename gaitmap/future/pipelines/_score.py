@@ -173,7 +173,7 @@ def _optimize_and_score(
     if return_train_score:
         train_agg_scores, train_single_scores = scorer(optimizer.optimized_pipeline_, train_set, error_score)
 
-    result = {"scores": agg_scores, "single_scores": single_scores}
+    result = {"test_scores": agg_scores, "test_single_scores": single_scores}
     if return_train_score:
         result["train_scores"] = train_agg_scores
         result["train_single_scores"] = train_single_scores

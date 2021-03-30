@@ -68,7 +68,7 @@ class TestGridSearch:
         assert list(results["rank_score"]) == [1, 1]
         assert list(results["score"]) == [2, 2]
 
-        assert gs.multi_metric_ is False
+        assert gs.multimetric_ is False
 
     def test_multi_score(self):
         gs = GridSearch(
@@ -104,7 +104,7 @@ class TestGridSearch:
         assert list(results["score_1"]) == [2, 2]
         assert list(results["score_2"]) == [3, 3]
 
-        assert gs.multi_metric_ is True
+        assert gs.multimetric_ is True
 
     @pytest.mark.parametrize("return_optimized", (True, False, "some_str"))
     def test_return_optimized_single(self, return_optimized):

@@ -23,6 +23,7 @@ from gaitmap.future.pipelines._utils import (
     _aggregate_final_results,
     _prefix_para_dict,
     _split_hyper_and_pure_parameters,
+    _normalize_score_results,
 )
 from gaitmap.utils.exceptions import PotentialUserErrorWarning
 
@@ -254,7 +255,7 @@ class GridSearch(BaseOptimize):
     best_params_: Dict
     best_index_: int
     best_score_: float
-    multi_metric_: bool
+    multimetric_: bool
 
     def __init__(
         self,
@@ -318,9 +319,9 @@ class GridSearch(BaseOptimize):
         data_point_scores = results["single_scores"]
         # We check here if all results are dicts. We only check the dtype of the first value, as the scorer should
         # have handled issues with non uniform cases already.
-        self.multi_metric_ = False
+        self.multimetric_ = False
         if isinstance(mean_scores[0], dict):
-            self.multi_metric_ = True
+            self.multimetric_ = True
             # In a multimetric case, we need to flatten the individual score dicts.
             mean_scores = _aggregate_final_results(mean_scores)
             data_point_scores = _aggregate_final_results(data_point_scores)
@@ -330,13 +331,13 @@ class GridSearch(BaseOptimize):
             mean_scores,
             data_point_scores=data_point_scores,
             data_point_names=results["data_labels"],
-            multi_metric=self.multi_metric_,
+            multi_metric=self.multimetric_,
         )
 
-        _validate_return_optimized(self.return_optimized, self.multi_metric_, results)
+        _validate_return_optimized(self.return_optimized, self.multimetric_, results)
         if self.return_optimized:
             return_optimized = "score"
-            if self.multi_metric_ and self.return_optimized:
+            if self.multimetric_ and self.return_optimized:
                 return_optimized = self.return_optimized
             self.best_index_ = results["rank_{}".format(return_optimized)].argmin()
             self.best_score_ = results[return_optimized][self.best_index_]
@@ -447,6 +448,7 @@ class GridSearchCV(BaseOptimize):
 
         # TODO: Validate pipeline
         cv = check_cv(self.cv, None, classifier=True)
+        n_splits = cv.get_n_splits(dataset, groups=groups)
 
         # We need to wrap our pipeline for a consistent interface.
         # In the future we might be able to allow objects with optimizer Interface as input directly.
@@ -469,7 +471,7 @@ class GridSearchCV(BaseOptimize):
             # We use a similar structure to sklearns GridSearchCv here (see GridSearch for more info).
             with parallel:
                 # Evaluate each parameter combination
-                results = parallel(
+                out = parallel(
                     delayed(_optimize_and_score)(
                         optimizer.clone(),
                         dataset,
@@ -490,9 +492,114 @@ class GridSearchCV(BaseOptimize):
                         enumerate(parameters), enumerate(cv.split(dataset, groups=groups))
                     )
                 )
+
+        results = self._format_results(self.parameter_grid, n_splits, out)
+
+        first_test_score = out[0]['test_scores']
+        self.multimetric_ = isinstance(first_test_score, dict)
         if self.return_optimized:
             # TODO: Refit when return optimized.
             pass
+
+        # self.multi_metric_ = False
+        # if isinstance(mean_scores[0], dict):
+        #     self.multi_metric_ = True
+
+        return results
+
+    def _format_results(self, candidate_params, n_splits, out, more_results=None):
+        """Format the final result dict.
+
+        This function is adapted based on sklearns `BaseSearchCV`
+        """
+        n_candidates = len(candidate_params)
+        out = _aggregate_final_results(out)
+
+        results = dict(more_results or {})
+
+        def _store_non_numeric(key_name: str, array):
+            # We avoid performing any sort of conversion into numpy arrays as this might modify the dtypes.
+            # Instead we use list comprehension to do the reshaping.
+            # The result is a list of lists and not a numpy array.
+            #
+            # Note that the results were produced by iterating first by splits and then by parameters.
+            # We do the same here, but directly transpose the results, as we need to access the data per parameters
+            # afterwards.
+            iterable_array = iter(array)
+            array = [[next(iterable_array) for _ in range(n_splits)] for _ in range(n_candidates)]
+            # "Transpose" the array
+            array = map(list, zip(*array))
+
+            for split_idx, split in enumerate(array):
+                # Uses closure to alter the results
+                results["split%d_%s" % (split_idx, key_name)] = split
+
+        def _store(key_name: str, array, weights=None, splits=False, rank=False):
+            """A small helper to store the scores/times to the cv_results_"""
+            # When iterated first by splits, then by parameters
+            # We want `array` to have `n_candidates` rows and `n_splits` cols.
+            array = np.array(array, dtype=np.float64).reshape(n_candidates, n_splits)
+
+            if splits:
+                for split_idx in range(n_splits):
+                    # Uses closure to alter the results
+                    results["split%d_%s" % (split_idx, key_name)] = array[:, split_idx]
+            array_means = np.average(array, axis=1, weights=weights)
+            results["mean_%s" % key_name] = array_means
+
+            if key_name.startswith(("train_", "test_")) and np.any(~np.isfinite(array_means)):
+                warnings.warn(
+                    f"One or more of the {key_name.split('_')[0]} scores " f"are non-finite: {array_means}",
+                    category=UserWarning,
+                )
+            # Weighted std is not directly available in numpy
+            array_stds = np.sqrt(np.average((array - array_means[:, np.newaxis]) ** 2, axis=1, weights=weights))
+            results["std_%s" % key_name] = array_stds
+
+            if rank:
+                results["rank_%s" % key_name] = np.asarray(rankdata(-array_means, method="min"), dtype=np.int32)
+
+        _store("optimize_time", out["optimize_time"])
+        _store("score_time", out["score_time"])
+        _store_non_numeric("train_data_labels", out["train_data_labels"])
+        _store_non_numeric("test_data_labels", out["test_data_labels"])
+        # Use one MaskedArray and mask all the places where the param is not
+        # applicable for that candidate. Use defaultdict as each candidate may
+        # not contain all the params
+        param_results = defaultdict(
+            partial(
+                MaskedArray,
+                np.empty(
+                    n_candidates,
+                ),
+                mask=True,
+                dtype=object,
+            )
+        )
+        for cand_idx, params in enumerate(candidate_params):
+            for name, value in params.items():
+                # An all masked empty array gets created for the key
+                # `"param_%s" % name` at the first occurrence of `name`.
+                # Setting the value at an index also unmasks that index
+                param_results["param_%s" % name][cand_idx] = value
+
+        results.update(param_results)
+        # Store a list of param dicts at the key 'params'
+        results["params"] = candidate_params
+
+        test_scores_dict = _normalize_score_results(out["test_scores"])
+        test_single_scores_dict = _normalize_score_results(out["test_single_scores"])
+        if self.return_train_score:
+            train_scores_dict = _normalize_score_results(out["train_scores"])
+            train_single_scores_dict = _normalize_score_results(out["train_single_scores"])
+
+        for scorer_name in test_scores_dict:
+            # Computed the (weighted) mean and std for test scores alone
+            _store("test_%s" % scorer_name, test_scores_dict[scorer_name], splits=True, rank=True, weights=None)
+            _store_non_numeric("test_single_{}".format(scorer_name), test_single_scores_dict[scorer_name])
+            if self.return_train_score:
+                _store("train_%s" % scorer_name, train_scores_dict[scorer_name], splits=True)
+                _store_non_numeric("train_single_{}".format(scorer_name), train_single_scores_dict[scorer_name])
 
         return results
 
