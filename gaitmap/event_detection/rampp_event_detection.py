@@ -339,9 +339,9 @@ def _detect_ic(
 
     # alternative:
     # refined_search_region_start, refined_search_region_end = search_region
-    refined_search_region_start = search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)])
-    refined_search_region_end = refined_search_region_start + np.argmax(
-        gyr_ml_grad[refined_search_region_start : search_region[1]]
+    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)]))
+    refined_search_region_end = int(
+        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start : search_region[1]])
     )
 
     if refined_search_region_end - refined_search_region_start <= 0:
