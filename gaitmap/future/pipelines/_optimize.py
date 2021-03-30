@@ -240,7 +240,7 @@ class GridSearch(BaseOptimize):
         The score of the best result.
         In a multimetric case, only the value of the scorer specified by `return_optimized` is provided.
         This is only available if `return_optimized` is not False.
-    multi_metric_
+    multimetric_
         Rather the scorer returned multiple scores
 
     """
@@ -315,25 +315,15 @@ class GridSearch(BaseOptimize):
                 )
                 for paras in self.parameter_grid
             )
-        results = _aggregate_final_results(results)
-        mean_scores = results["scores"]
-        data_point_scores = results["single_scores"]
         # We check here if all results are dicts. We only check the dtype of the first value, as the scorer should
         # have handled issues with non uniform cases already.
-        self.multimetric_ = False
-        if isinstance(mean_scores[0], dict):
-            self.multimetric_ = True
-            # In a multimetric case, we need to flatten the individual score dicts.
-            mean_scores = _aggregate_final_results(mean_scores)
-            data_point_scores = _aggregate_final_results(data_point_scores)
-        _validate_return_optimized(self.return_optimized, self.multimetric_, mean_scores[0])
+        first_test_score = results[0]["scores"]
+        self.multimetric_ = isinstance(first_test_score, dict)
+        _validate_return_optimized(self.return_optimized, self.multimetric_, first_test_score)
 
         results = self._format_results(
-            results["parameters"],
-            mean_scores,
-            data_point_scores=data_point_scores,
-            data_point_names=results["data_labels"],
-            multi_metric=self.multimetric_,
+            list(self.parameter_grid),
+            results,
         )
 
         if self.return_optimized:
@@ -350,34 +340,25 @@ class GridSearch(BaseOptimize):
 
         return self
 
-    def _format_results(  # noqa: no-self-use
-        self, candidate_params, mean_scores, *, data_point_scores=None, data_point_names=None, multi_metric=False
-    ):
+    def _format_results(self, candidate_params, out):  # noqa: no-self-use
         """Format the final result dict.
 
         This function is adapted based on sklearns `BaseSearchCV`
         """
-        # TODO: Add time
-
         n_candidates = len(candidate_params)
+        out = _aggregate_final_results(out)
+
         results = {}
 
-        if multi_metric:
-            for c, v in mean_scores.items():
-                results[c] = v
-                results["rank_{}".format(c)] = np.asarray(rankdata(-v, method="min"), dtype=np.int32)
-            if data_point_scores:
-                df_single = pd.DataFrame.from_records(data_point_scores)
-                for c, v in df_single.iteritems():
-                    results["single_{}".format(c)] = v.to_numpy()
-        else:
-            results["score"] = mean_scores
-            results["rank_score"] = np.asarray(rankdata(-mean_scores, method="min"), dtype=np.int32)
-            if data_point_scores:
-                results["single_score"] = data_point_scores
+        scores_dict = _normalize_score_results(out["scores"])
+        single_scores_dict = _normalize_score_results(out["single_scores"])
+        for c, v in scores_dict.items():
+            results[c] = v
+            results["rank_{}".format(c)] = np.asarray(rankdata(-v, method="min"), dtype=np.int32)
+            results["single_{}".format(c)] = single_scores_dict[c]
 
-        if data_point_names is not None:
-            results["data_labels"] = data_point_names
+        results["data_labels"] = out["data_labels"]
+        results["score_time"] = out["score_time"]
 
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
@@ -457,7 +438,6 @@ class GridSearchCV(BaseOptimize):
         self.dataset = dataset
         scoring = _validate_scorer(self.scoring)
 
-        # TODO: Validate pipeline
         cv = check_cv(self.cv, None, classifier=True)
         n_splits = cv.get_n_splits(dataset, groups=groups)
 

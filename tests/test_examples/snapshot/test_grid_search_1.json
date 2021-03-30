@@ -14,12 +14,20 @@
                 "type":"integer"
             },
             {
+                "name":"single_precision",
+                "type":"string"
+            },
+            {
                 "name":"recall",
                 "type":"number"
             },
             {
                 "name":"rank_recall",
                 "type":"integer"
+            },
+            {
+                "name":"single_recall",
+                "type":"string"
             },
             {
                 "name":"f1_score",
@@ -34,16 +42,12 @@
                 "type":"string"
             },
             {
-                "name":"single_precision",
-                "type":"string"
-            },
-            {
-                "name":"single_recall",
-                "type":"string"
-            },
-            {
                 "name":"data_labels",
                 "type":"string"
+            },
+            {
+                "name":"score_time",
+                "type":"number"
             },
             {
                 "name":"param_max_cost",
@@ -64,21 +68,21 @@
             "index":0,
             "precision":1.0,
             "rank_precision":1,
+            "single_precision":[
+                1.0,
+                1.0
+            ],
             "recall":0.2547619048,
             "rank_recall":2,
+            "single_recall":[
+                0.1428571429,
+                0.3666666667
+            ],
             "f1_score":0.3932926829,
             "rank_f1_score":2,
             "single_f1_score":[
                 0.25,
                 0.5365853659
-            ],
-            "single_precision":[
-                1.0,
-                1.0
-            ],
-            "single_recall":[
-                0.1428571429,
-                0.3666666667
             ],
             "data_labels":[
                 [
@@ -90,6 +94,7 @@
                     "right"
                 ]
             ],
+            "score_time":1.3423323631,
             "param_max_cost":3,
             "params":{
                 "max_cost":3
@@ -99,21 +104,21 @@
             "index":1,
             "precision":0.9827586207,
             "rank_precision":2,
+            "single_precision":[
+                1.0,
+                0.9655172414
+            ],
             "recall":0.9666666667,
             "rank_recall":1,
+            "single_recall":[
+                1.0,
+                0.9333333333
+            ],
             "f1_score":0.9745762712,
             "rank_f1_score":1,
             "single_f1_score":[
                 1.0,
                 0.9491525424
-            ],
-            "single_precision":[
-                1.0,
-                0.9655172414
-            ],
-            "single_recall":[
-                1.0,
-                0.9333333333
             ],
             "data_labels":[
                 [
@@ -125,6 +130,7 @@
                     "right"
                 ]
             ],
+            "score_time":0.304858923,
             "param_max_cost":5,
             "params":{
                 "max_cost":5
