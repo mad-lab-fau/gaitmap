@@ -531,7 +531,7 @@ class GridSearchCV(BaseOptimize):
 
             for split_idx, split in enumerate(array):
                 # Uses closure to alter the results
-                results["split%d_%s" % (split_idx, key_name)] = split
+                results["split{}_{}".format(split_idx, key_name)] = split
 
         def _store(key_name: str, array, weights=None, splits=False, rank=False):
             """A small helper to store the scores/times to the cv_results_"""
@@ -542,9 +542,9 @@ class GridSearchCV(BaseOptimize):
             if splits:
                 for split_idx in range(n_splits):
                     # Uses closure to alter the results
-                    results["split%d_%s" % (split_idx, key_name)] = array[:, split_idx]
+                    results["split{}_{}".format(split_idx, key_name)] = array[:, split_idx]
             array_means = np.average(array, axis=1, weights=weights)
-            results["mean_%s" % key_name] = array_means
+            results["mean_{}".format(key_name)] = array_means
 
             if key_name.startswith(("train_", "test_")) and np.any(~np.isfinite(array_means)):
                 warnings.warn(
@@ -553,10 +553,10 @@ class GridSearchCV(BaseOptimize):
                 )
             # Weighted std is not directly available in numpy
             array_stds = np.sqrt(np.average((array - array_means[:, np.newaxis]) ** 2, axis=1, weights=weights))
-            results["std_%s" % key_name] = array_stds
+            results["std_{}".format(key_name)] = array_stds
 
             if rank:
-                results["rank_%s" % key_name] = np.asarray(rankdata(-array_means, method="min"), dtype=np.int32)
+                results["rank_{}".format(key_name)] = np.asarray(rankdata(-array_means, method="min"), dtype=np.int32)
 
         _store("optimize_time", out["optimize_time"])
         _store("score_time", out["score_time"])
@@ -594,10 +594,10 @@ class GridSearchCV(BaseOptimize):
 
         for scorer_name in test_scores_dict:
             # Computed the (weighted) mean and std for test scores alone
-            _store("test_%s" % scorer_name, test_scores_dict[scorer_name], splits=True, rank=True, weights=None)
+            _store("test_{}".format(scorer_name), test_scores_dict[scorer_name], splits=True, rank=True, weights=None)
             _store_non_numeric("test_single_{}".format(scorer_name), test_single_scores_dict[scorer_name])
             if self.return_train_score:
-                _store("train_%s" % scorer_name, train_scores_dict[scorer_name], splits=True)
+                _store("train_{}".format(scorer_name), train_scores_dict[scorer_name], splits=True)
                 _store_non_numeric("train_single_{}".format(scorer_name), train_single_scores_dict[scorer_name])
 
         return results
