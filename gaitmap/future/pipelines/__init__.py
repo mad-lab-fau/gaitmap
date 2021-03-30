@@ -10,6 +10,7 @@ __all__ = [
     "GaitmapScorer",
     "BaseOptimize",
     "GridSearch",
-    "GridSearchCV" "Optimize",
+    "GridSearchCV",
+    "Optimize",
     "cross_validate",
 ]
