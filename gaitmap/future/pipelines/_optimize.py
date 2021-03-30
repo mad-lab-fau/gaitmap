@@ -495,7 +495,7 @@ class GridSearchCV(BaseOptimize):
                         hyperparameters=_prefix_para_dict(hyper_paras, parameter_prefix),
                         pure_parameters=_prefix_para_dict(pure_paras, parameter_prefix),
                         return_train_score=self.return_train_score,
-                        return_parameters=True,
+                        return_parameters=False,
                         return_data_labels=True,
                         return_times=True,
                         error_score=self.error_score,
