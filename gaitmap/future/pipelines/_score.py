@@ -7,30 +7,52 @@ from __future__ import annotations
 
 import numbers
 import time
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any
 
 import numpy as np
 from joblib import Memory
 from sklearn import clone
+from typing_extensions import TypedDict
 
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
-from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE
+from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
 
 if TYPE_CHECKING:
-    from gaitmap.future.pipelines._optimize import BaseOptimize
+    from gaitmap.future.pipelines._optimize import BaseOptimize  # noqa: cyclic-import
+
+
+class ScoreResults(TypedDict, total=False):
+    scores: _AGG_SCORE_TYPE
+    single_scores: _SINGLE_SCORE_TYPE
+    score_time: float
+    data_labels: List[Union[str, Tuple[str, ...]]]
+    parameters: Optional[Dict[str, Any]]
+
+
+class OptimizeScoreResults(TypedDict, total=False):
+    test_scores: _AGG_SCORE_TYPE
+    test_single_scores: _SINGLE_SCORE_TYPE
+    train_scores: _AGG_SCORE_TYPE
+    train_single_scores: _SINGLE_SCORE_TYPE
+    score_time: float
+    optimize_time: float
+    train_data_labels: List[Union[str, Tuple[str, ...]]]
+    test_data_labels: List[Union[str, Tuple[str, ...]]]
+    parameters: Optional[Dict[str, Any]]
+    optimizer: BaseOptimize
 
 
 def _score(
     pipeline: SimplePipeline,
     dataset: Dataset,
     scorer: GaitmapScorer,
-    parameters: Optional[Dict],
+    parameters: Optional[Dict[str, Any]],
     return_parameters=False,
     return_data_labels=False,
     return_times=False,
     error_score: _ERROR_SCORE_TYPE = np.nan,
-):
+) -> ScoreResults:
     """Set parameters and return score.
 
     Parameters
@@ -90,7 +112,7 @@ def _score(
     agg_scores, single_scores = scorer(pipeline, dataset, error_score)
     score_time = time.time() - start_time
 
-    result = {"scores": agg_scores, "single_scores": single_scores}
+    result: ScoreResults = {"scores": agg_scores, "single_scores": single_scores}
     if return_times:
         result["score_time"] = score_time
     if return_data_labels:
@@ -117,7 +139,7 @@ def _optimize_and_score(
     return_times=False,
     error_score: _ERROR_SCORE_TYPE = np.nan,
     memory: Optional[Memory] = None,
-):
+) -> OptimizeScoreResults:
     """Optimize and score the optimized pipeline on the train and test data, respectively.
 
     This method is aware of the differences between hyperparameters and normal (pure) parameters.
@@ -143,7 +165,7 @@ def _optimize_and_score(
             cloned_pure_parameters[k] = clone(v, safe=False)
     pure_parameters = cloned_pure_parameters
 
-    optimize_params = optimize_params or {}
+    optimize_params_clean: Dict = optimize_params or {}
 
     train_set = dataset[train]
     test_set = dataset[test]
@@ -156,8 +178,8 @@ def _optimize_and_score(
     # in case a completely different pipeline/algorithm is optimized.
     # Ideally the `memory` object used here should only be used once in the context of e.g. a GridSearchCV.
     # TODO: Throw error if optimization modifies pure parameter
-    def cachable_optimize(opti: BaseOptimize, hyperparas: Dict, data: Dataset) -> BaseOptimize:
-        return opti.set_params(**hyperparas).optimize(data, **optimize_params)
+    def cachable_optimize(opti: BaseOptimize, hyperparas: Dict[str, Any], data: Dataset) -> BaseOptimize:
+        return opti.set_params(**hyperparas).optimize(data, **optimize_params_clean)
 
     start_time = time.time()
     optimize_func = memory.cache(cachable_optimize)
@@ -181,7 +203,7 @@ def _optimize_and_score(
     if return_train_score:
         train_agg_scores, train_single_scores = scorer(optimizer.optimized_pipeline_, train_set, error_score)
 
-    result = {"test_scores": agg_scores, "test_single_scores": single_scores}
+    result: OptimizeScoreResults = {"test_scores": agg_scores, "test_single_scores": single_scores}
     if return_train_score:
         result["train_scores"] = train_agg_scores
         result["train_single_scores"] = train_single_scores
@@ -196,5 +218,5 @@ def _optimize_and_score(
         # instance of the trained pipeline.
         result["optimizer"] = optimizer
     if return_parameters:
-        result["parameters"] = {**hyperparameters, **pure_parameters}
+        result["parameters"] = {**hyperparameters, **pure_parameters} or None
     return result

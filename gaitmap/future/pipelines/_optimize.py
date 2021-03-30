@@ -9,7 +9,6 @@ from typing import Dict, Any, Optional, Union, Callable, Iterator, List
 
 import joblib
 import numpy as np
-import pandas as pd
 from joblib import Parallel, delayed, Memory
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
@@ -40,7 +39,7 @@ class BaseOptimize(BaseAlgorithm):
 
     _action_method = "optimize"
 
-    def optimize(self, dataset: Dataset, **kwargs):
+    def optimize(self, dataset: Dataset, **optimize_params):
         """Apply some form of optimization on the the input parameters of the pipeline."""
         raise NotImplementedError()
 
@@ -328,7 +327,7 @@ class GridSearch(BaseOptimize):
 
         if self.return_optimized:
             return_optimized = "score"
-            if self.multimetric_ and self.return_optimized:
+            if self.multimetric_ and isinstance(self.return_optimized, str):
                 return_optimized = self.return_optimized
             self.best_index_ = results["rank_{}".format(return_optimized)].argmin()
             self.best_score_ = results[return_optimized][self.best_index_]
@@ -434,7 +433,7 @@ class GridSearchCV(BaseOptimize):
         self.pre_dispatch = pre_dispatch
         self.error_score = error_score
 
-    def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):
+    def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):  # noqa: arguments-differ
         self.dataset = dataset
         scoring = _validate_scorer(self.scoring)
 
@@ -493,7 +492,7 @@ class GridSearchCV(BaseOptimize):
         _validate_return_optimized(self.return_optimized, self.multimetric_, first_test_score)
         if self.return_optimized:
             return_optimized = "score"
-            if self.multimetric_ and self.return_optimized:
+            if self.multimetric_ and isinstance(self.return_optimized, str):
                 return_optimized = self.return_optimized
             self.best_index_ = results["rank_test_{}".format(return_optimized)].argmin()
             self.best_score_ = results["mean_test_{}".format(return_optimized)][self.best_index_]
@@ -501,7 +500,8 @@ class GridSearchCV(BaseOptimize):
             # We clone twice, in case one of the params was itself an algorithm.
             best_optimizer = Optimize(self.pipeline.clone().set_params(**self.best_params_).clone())
             final_optimize_start_time = time.time()
-            self.optimized_pipeline_ = best_optimizer.optimize(dataset, **optimize_params).optimized_pipeline_
+            optimize_params_clean = optimize_params or {}
+            self.optimized_pipeline_ = best_optimizer.optimize(dataset, **optimize_params_clean).optimized_pipeline_
             self.final_optimize_time_ = final_optimize_start_time - time.time()
 
         return self
@@ -509,7 +509,7 @@ class GridSearchCV(BaseOptimize):
     def _format_results(self, candidate_params, n_splits, out, more_results=None):
         """Format the final result dict.
 
-        This function is adapted based on sklearns `BaseSearchCV`
+        This function is adapted based on sklearns `BaseSearchCV`.
         """
         n_candidates = len(candidate_params)
         out = _aggregate_final_results(out)
@@ -517,6 +517,7 @@ class GridSearchCV(BaseOptimize):
         results = dict(more_results or {})
 
         def _store_non_numeric(key_name: str, array):
+            """Store non-numeric scores/times to the cv_results_."""
             # We avoid performing any sort of conversion into numpy arrays as this might modify the dtypes.
             # Instead we use list comprehension to do the reshaping.
             # The result is a list of lists and not a numpy array.
@@ -534,7 +535,7 @@ class GridSearchCV(BaseOptimize):
                 results["split{}_{}".format(split_idx, key_name)] = split
 
         def _store(key_name: str, array, weights=None, splits=False, rank=False):
-            """A small helper to store the scores/times to the cv_results_"""
+            """Store numeric scores/times to the cv_results_."""
             # When iterated first by splits, then by parameters
             # We want `array` to have `n_candidates` rows and `n_splits` cols.
             array = np.array(array, dtype=np.float64).reshape(n_candidates, n_splits)
@@ -548,7 +549,7 @@ class GridSearchCV(BaseOptimize):
 
             if key_name.startswith(("train_", "test_")) and np.any(~np.isfinite(array_means)):
                 warnings.warn(
-                    f"One or more of the {key_name.split('_')[0]} scores " f"are non-finite: {array_means}",
+                    f"One or more of the {key_name.split('_')[0]} scores are non-finite: {array_means}",
                     category=UserWarning,
                 )
             # Weighted std is not directly available in numpy

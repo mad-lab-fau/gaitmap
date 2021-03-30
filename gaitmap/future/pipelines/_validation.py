@@ -1,3 +1,8 @@
+"""Helper to validate/evaluate pipelines and Optimize.
+
+TODO: We might move this to evaluation utils
+"""
+
 from typing import Union, Any, Dict, Optional, Iterator, Callable, Tuple, List
 
 import numpy as np
@@ -5,7 +10,7 @@ from joblib import Parallel, delayed
 from sklearn.model_selection import check_cv, BaseCrossValidator
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import BaseOptimize
+from gaitmap.future.pipelines._optimize import BaseOptimize
 from gaitmap.future.pipelines._score import _optimize_and_score
 from gaitmap.future.pipelines._scorer import _validate_scorer, _ERROR_SCORE_TYPE
 from gaitmap.future.pipelines._utils import _aggregate_final_results, _normalize_score_results
@@ -30,7 +35,6 @@ def cross_validate(
 
     Note: Verbose will only passed to parallel
     """
-
     cv = check_cv(cv, None, classifier=True)
 
     scoring = _validate_scorer(scoring)

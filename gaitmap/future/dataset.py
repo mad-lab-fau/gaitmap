@@ -1,6 +1,7 @@
 """Base class for all datasets."""
 from typing import Optional, List, Union, Tuple, TypeVar, Sequence, Iterator
 
+import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
@@ -205,7 +206,7 @@ class Dataset(_BaseSerializable):
         return self.subset_index
 
     @property
-    def groups(self) -> List:
+    def groups(self) -> List[Union[str, Tuple[str, ...]]]:
         """Get all groups based on the set groupby level."""
         return self._get_unique_groups().to_list()
 
@@ -246,7 +247,7 @@ class Dataset(_BaseSerializable):
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
 
-    def __getitem__(self: Self, subscript: Union[int, Sequence[int]]) -> Self:
+    def __getitem__(self: Self, subscript: Union[int, Sequence[int], np.ndarray]) -> Self:
         """Return a dataset object containing only the selected row indices of `self.groups`."""
         multi_index = self._get_unique_groups()[subscript]
         if not isinstance(multi_index, pd.Index):

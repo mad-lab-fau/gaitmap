@@ -14,9 +14,9 @@ from gaitmap.future.dataset import Dataset
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._pipelines import SimplePipeline
 
-_ERROR_SCORE_TYPE = Union[Literal["raise"], numbers.Number]  # noqa: invalid-name
-_SCORE_TYPE = List[Union[Dict[str, numbers.Number], numbers.Number]]  # noqa: invalid-name
-_AGG_SCORE_TYPE = Union[Dict[str, numbers.Number], numbers.Number]  # noqa: invalid-name
+_ERROR_SCORE_TYPE = Union[Literal["raise"], float]  # noqa: invalid-name
+_SCORE_TYPE = List[Union[Dict[str, float], float]]  # noqa: invalid-name
+_AGG_SCORE_TYPE = Union[Dict[str, float], float]  # noqa: invalid-name
 _SINGLE_SCORE_TYPE = Union[Dict[str, np.ndarray], np.ndarray]  # noqa: invalid-name
 
 
@@ -33,7 +33,7 @@ class GaitmapScorer:
 
     """
 
-    def __init__(self, score_func, **kwargs):
+    def __init__(self, score_func: Callable, **kwargs):
         self._kwargs = kwargs
         self._score_func = score_func
 
@@ -54,7 +54,7 @@ class GaitmapScorer:
 
     def aggregate(self, scores: np.ndarray) -> float:  # noqa: no-self-use
         """Aggregate the scores of each data point."""
-        return np.mean(scores)
+        return float(np.mean(scores))
 
     def _score(
         self, pipeline: SimplePipeline, data: Dataset, error_score: _ERROR_SCORE_TYPE
@@ -100,12 +100,10 @@ def _passthrough_scoring(pipeline: SimplePipeline, datapoint: Dataset):
     return pipeline.score(datapoint)
 
 
-ScorerBaseType = TypeVar("ScorerBaseType", bound=GaitmapScorer)
-
 
 def _validate_scorer(
-    scoring: Optional[Union[Callable, GaitmapScorer]], base_class: Type[ScorerBaseType] = GaitmapScorer
-) -> ScorerBaseType:
+    scoring: Optional[Union[Callable, GaitmapScorer]], base_class: Type[GaitmapScorer] = GaitmapScorer
+) -> GaitmapScorer:
     """Convert the provided scoring method into a valid scorer object."""
     if scoring is None:
         # If scoring is None, we will try to use the score method of the pipeline

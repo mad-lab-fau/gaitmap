@@ -41,7 +41,7 @@ def _aggregate_final_results(results: List) -> Dict:
 
 
 def _normalize_score_results(scores: List, prefix="", single_score_key="score"):
-    """Creates a scoring dictionary based on the type of `scores`"""
+    """Create a scoring dictionary based on the type of `scores`."""
     if isinstance(scores[0], dict):
         # multimetric scoring
         return {prefix + k: v for k, v in _aggregate_final_results(scores).items()}
@@ -49,7 +49,12 @@ def _normalize_score_results(scores: List, prefix="", single_score_key="score"):
     return {prefix + single_score_key: scores}
 
 
-def _prefix_para_dict(params_dict, prefix="pipeline__"):
+def _prefix_para_dict(params_dict: Optional[Dict], prefix="pipeline__") -> Optional[Dict]:
+    """Add a prefix to all parameter names in the dictionary.
+
+    This can be helpful to adjust a parameter grid that was originally created for a pipeline to work on a wrapper like
+    `Optimize` using the `__` naming convention for nested objects.
+    """
     if not params_dict:
         return None
     return {prefix + k: v for k, v in params_dict.items()}
@@ -58,6 +63,19 @@ def _prefix_para_dict(params_dict, prefix="pipeline__"):
 def _split_hyper_and_pure_parameters(
     candidates: List[Dict], pure_parameters: Optional[List[str]]
 ) -> List[Tuple[Optional[Dict], Optional[Dict]]]:
+    """Split a list of parameters in hyper parameters and pure parameters.
+
+    For each dictionary in the list, this separates the pure parameters (names provided in input) from all hyper
+    parameters (remaining parameters).
+    If either the none of the pure parameters is present in a parameter dict or all parameters are pure parameters,
+    the pure or the hyper parameters are `None`.
+
+    Returns
+    -------
+    split_parameters
+        List of tuples `(hyper, pure)` for each of the para dicts in the input list.
+
+    """
     if pure_parameters is None:
         return [(c, None) for c in candidates]
     split_candidates = []
