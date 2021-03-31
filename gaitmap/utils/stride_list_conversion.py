@@ -110,7 +110,7 @@ def enforce_stride_list_consistency(
     stride_type=Literal["segmented", "min_vel", "ic"],
     check_stride_list: bool = True,
 ) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
-    """Exclude those strides where the gait events do not match the expected order.
+    """Exclude those strides where the gait events do not match the expected order or contain NaN.
 
     Correct order in depends on the stride type:
 
@@ -142,6 +142,8 @@ def enforce_stride_list_consistency(
     if check_stride_list is True:
         is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
     order = SL_EVENT_ORDER[stride_type]
+
+    # Note: the following also drops strides that contain NaN for any event
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
 
     return stride_list[bool_map], stride_list[~bool_map]
