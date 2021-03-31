@@ -305,7 +305,7 @@ def get_train_data_sequences_transitions(data_train_sequence, stride_list_sequen
         # for each transition, get data and create some naive labels for initialization
         for start, end in transition_start_end_list:
             # append extracted sequences and corresponding label set to resuls list
-            trans_data_train_sequence.append(data[start : end])
+            trans_data_train_sequence.append(data[start:end])
             trans_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
 
     return trans_data_train_sequence, trans_labels_train_sequence
@@ -324,9 +324,7 @@ def get_train_data_sequences_strides(data_train_sequence, stride_list_sequence, 
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
         # extract strides directly from stride_list
         for start, end in stride_list[["start", "end"]].to_numpy():
-            stride_data_train_sequence.append(data[start : end])
-            stride_labels_train_sequence.append(
-                create_equidistant_label_sequence(end - start, n_states).astype(int)
-            )
+            stride_data_train_sequence.append(data[start:end])
+            stride_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
 
     return stride_data_train_sequence, stride_labels_train_sequence

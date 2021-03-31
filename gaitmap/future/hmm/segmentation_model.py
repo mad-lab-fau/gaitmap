@@ -51,8 +51,8 @@ def create_fully_labeled_gait_sequences(
 
         # for each transition, get data and create some naive labels for initialization
         for start, end in transition_start_end_list:
-            transition_data_train = data[start : end]
-            labels_train[start : end] = transition_model.predict_hidden_state_sequence(
+            transition_data_train = data[start:end]
+            labels_train[start:end] = transition_model.predict_hidden_state_sequence(
                 transition_data_train, algorithm=algo_predict
             )
 
