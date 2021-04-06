@@ -157,6 +157,11 @@ def test_optimizable_pipelines(snapshot):
     snapshot.assert_match(optimized_results.segmented_stride_list_, check_dtype=False)
     snapshot.assert_match(optimized_results.template.get_data())
 
+def test_cross_validation(snapshot):
+    from examples.datasets_and_pipelines.cross_validation import result_df
+
+    result_df = result_df.drop(["score_time", "optimize_time", "optimizer"], axis=1)
+    snapshot.assert_match(result_df, check_dtype=False)
 
 def test_multi_process():
     """Test the multiprocess example.
