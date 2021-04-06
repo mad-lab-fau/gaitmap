@@ -391,7 +391,7 @@ When reading this, you might ask yourselves, which algorithms (besides template 
 The special requirement is that it needs to be possible to train the trainable components of the algorithm, even though
 we only have ground truth available for the final output.
 But there are a couple of algorithms that fulfil this requirement!
-In general, all algorithms where the *trainable* part of the algorithm doesn’t get us all the way, and post processing
+In general, all algorithms where the *trainable* part of the algorithm doesn't get us all the way, and post processing
 steps are required to calculate the final output, can be considered *Group 3*.
 For example, this could be stride detection algorithms that only provide stride candidates that then are selected based
 on further criteria.
@@ -577,7 +577,7 @@ Group 3
     Optimization
         - Identical to Group 2, but with optional caching to speed up the process.
     Evaluation
-        - Identical to Group 3
+        - Identical to Group 2
 
 For all of these approaches you can retrain/reoptimize on all of your data to generate your production model.
 
