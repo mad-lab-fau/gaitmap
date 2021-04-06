@@ -45,7 +45,9 @@ dummy_regions_list["left_sensor"]
 # The initial orientation will automatically be estimated by the `RegionLevelTrajectory` class using the first
 # n-samples.
 trajectory_method = RtsKalman()
-trajectory_full = RegionLevelTrajectory(trajectory_method=trajectory_method)
+# We set the ori and pos method explicitly to `None` here to silence a warning indicating potential user error.
+# In general, when `trajectory_method` is provided `ori_method` and `pos_method` are ignored.
+trajectory_full = RegionLevelTrajectory(trajectory_method=trajectory_method, ori_method=None, pos_method=None)
 
 
 # %%

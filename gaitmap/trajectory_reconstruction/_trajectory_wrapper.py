@@ -51,6 +51,16 @@ class _TrajectoryReconstructionWrapperMixin:
 
     def _validate_methods(self):
         if self.trajectory_method:
+            if self.ori_method or self.pos_method:
+                warnings.warn(
+                    "You provided a trajectory method AND a ori or pos method. "
+                    "The ori and pos method will be ignored.\n"
+                    "If you see this warning, it could be that you simple left the ori and pos as their default "
+                    "values. In this case you can ignore this warning. "
+                    "Otherwise, make sure that you provide EITHER a ori and position method OR a trajectory method.\n"
+                    "To silence this warning, set `ori_method` and `pos_method` explicitly to `None` when using "
+                    "`trajectory_method`."
+                )
             if not isinstance(self.trajectory_method, BaseTrajectoryMethod):
                 raise ValueError("The provided `trajectory_method` must be a child class of `BaseTrajectoryMethod`.")
             self._combined_algo_mode = True
@@ -66,8 +76,8 @@ class _TrajectoryReconstructionWrapperMixin:
                 )
             if isinstance(self.ori_method, BaseTrajectoryMethod) or isinstance(self.pos_method, BaseTrajectoryMethod):
                 warnings.warn(
-                    "You passed a trajectory method as ori or pos method."
-                    "This will still work, but only the orientation or position of the results will be used."
+                    "You passed a trajectory method as ori or pos method. "
+                    "This will still work, but only the orientation or position of the results will be used. "
                     "Did you mean to pass it as `trajectory_method`?"
                 )
             self._combined_algo_mode = False

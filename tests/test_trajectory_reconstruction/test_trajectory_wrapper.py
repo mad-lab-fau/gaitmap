@@ -81,6 +81,18 @@ class TestIODataStructures:
             )
         assert "trajectory method as ori or pos method" in str(w[0])
 
+    def test_passed_both_warning(self, healthy_example_imu_data):
+        """Test that a warning is raised when passing ori and pos and trajectory emthods all at one.
+
+        This will happen by default, when leaving ori and pos as default values
+        """
+        instance = self.wrapper_class(trajectory_method=RtsKalman())
+        with pytest.warns(UserWarning) as w:
+            instance.estimate(
+                healthy_example_imu_data["left_sensor"], self.example_region["left_sensor"].loc[[0]], 204.8
+            )
+        assert "You provided a trajectory method AND a ori or pos method." in str(w[0])
+
     def test_single_sensor_output(self, healthy_example_imu_data, snapshot):
         test_stride_events = self.example_region["left_sensor"].iloc[:3]
         test_data = healthy_example_imu_data["left_sensor"].iloc[: int(test_stride_events.iloc[-1]["end"])]
