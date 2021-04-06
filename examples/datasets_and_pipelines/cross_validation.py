@@ -11,14 +11,14 @@ get an unbiased result.
 Usually this is achieved by a train-test split.
 However, if you don't have that much data, there is always a risk that one random train-test split, will provide
 better results (or worse) results than another.
-In this cases it is a good idea to use `cross_validation`.
+In this cases it is a good idea to use cross-validation.
 In this procedure, you perform multiple train-test splits and average the results over all "folds".
-For more information see our :ref:`evaluation guide <algorithm_evaluation>` and the :ref:`sklearn guide on cross
-validation <https://scikit-learn.org/stable/modules/cross_validation.html>`.
+For more information see our :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on cross
+validation <https://scikit-learn.org/stable/modules/cross_validation.html>`_.
 
-In this example, we will learn how to use the :py:`~gaitmap.future.pipelines.cross_validation` function implemented in
+In this example, we will learn how to use the :func:`~gaitmap.future.pipelines.cross_validate` function implemented in
 gaitmap.
-For this, we will redo the example on :ref`optimizable pipelines <optimize_pipelines>` but we will perform the final
+For this, we will redo the example on :ref:`optimizable pipelines <optimize_pipelines>` but we will perform the final
 evaluation via cross-validation.
 If you want to have more information on how the dataset and pipeline is built head over to this example.
 Here we will just copy the code over.
