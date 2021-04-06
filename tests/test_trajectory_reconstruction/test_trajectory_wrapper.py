@@ -91,7 +91,7 @@ class TestIODataStructures:
             instance.estimate(
                 healthy_example_imu_data["left_sensor"], self.example_region["left_sensor"].loc[[0]], 204.8
             )
-        assert "You provided a trajectory method AND a ori or pos method." in str(w[0])
+        assert "You provided a trajectory method AND an ori or pos method." in str(w[0])
 
     def test_single_sensor_output(self, healthy_example_imu_data, snapshot):
         test_stride_events = self.example_region["left_sensor"].iloc[:3]
