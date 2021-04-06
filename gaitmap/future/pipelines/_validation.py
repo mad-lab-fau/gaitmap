@@ -64,7 +64,7 @@ def cross_validate(
     results = _aggregate_final_results(results)
     score_results = {}
     # Fix the formatting of all the score results
-    for name in ["scores", "single_scores", "train_scores", "train_single_scores"]:
+    for name in ["test_scores", "test_single_scores", "train_scores", "train_single_scores"]:
         if name in results:
             score = results.pop(name)
             prefix = ""
