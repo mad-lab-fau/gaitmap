@@ -32,7 +32,9 @@ project.
 - A GridSearch optimizer (similar to GridSearchCV in sklearn, but without the CV part) with a respective example is
   added. (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128)
 - A generic wrapper for algorithms and pipelines that can be optimized/trained with respective example.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128) 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128)
+- Added a warning about providing multiple methods when using any trajectory wrapper class to prevent user error.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/142)
 
 ### Changed
 
