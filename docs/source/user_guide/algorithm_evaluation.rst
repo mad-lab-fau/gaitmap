@@ -334,8 +334,8 @@ However, we will see that this does not change our approach to parameter optimiz
 But to build an understanding of the approach, let's start with an algorithm for which we do not want to optimize
 hyper-parameters.
 
-Without Hyper-Parameter Optimization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Without Hyper-Parameter Optimization (only Parameter Optimization)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 There are (or at least there were for me) two approaches that seem plausible at first glance:
 First, we could consider the parameter optimization as part of the training.
 This means, in the train step of our algorithm, we first train the actual model component and then, using the predicted
