@@ -9,11 +9,13 @@ import numbers
 import time
 from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any
 
+import joblib
 import numpy as np
 from joblib import Memory
 from sklearn import clone
 from typing_extensions import TypedDict
 
+from gaitmap.base import _BaseSerializable
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
@@ -176,13 +178,14 @@ def _optimize_and_score(
     # parameters.
     # To be sure that nothing "bad" happens here, we also pass in the pipeline itself to invalidate the cache,
     # in case a completely different pipeline/algorithm is optimized.
-    # Ideally the `memory` object used here should only be used once in the context of e.g. a GridSearchCV.
+    # Ideally the `memory` object used here should only be used once.
+    # E.g. for a single a GridSearchCV.
     # TODO: Throw error if optimization modifies pure parameter
     def cachable_optimize(opti: BaseOptimize, hyperparas: Dict[str, Any], data: Dataset) -> BaseOptimize:
         return opti.set_params(**hyperparas).optimize(data, **optimize_params_clean)
 
-    start_time = time.time()
     optimize_func = memory.cache(cachable_optimize)
+    start_time = time.time()
     optimizer = optimize_func(optimizer, hyperparameters, train_set)
     optimize_time = time.time() - start_time
 
