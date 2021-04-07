@@ -119,7 +119,8 @@ pipe = MyPipeline()
 # over all datapoints.
 # (Note, if you want to change this, you can create custom subclasses of `GaitmapScorer`).
 #
-# A typical score function will first `run` the pipeline and then compare the output with some reference.
+# A typical score function will first call `safe_run` (which calls `run` internally) on the pipeline and then
+# compare the output with some reference.
 # This reference should be supplied as part of the dataset.
 #
 # Instead of using a function as scorer (shown here), you can also implement a method called `score` on your pipeline.
@@ -133,7 +134,8 @@ from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_r
 
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):
-    pipeline.run(datapoint)
+    # We use the `safe_run` wrapper instead of just run. This is always a good idea.
+    pipeline.safe_run(datapoint)
     matches_df = evaluate_segmented_stride_list(
         ground_truth=datapoint.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
     )
@@ -179,9 +181,9 @@ print("Best Para Combi:", gs.best_params_)
 print("Paras of optimized Pipeline:", gs.optimized_pipeline_.get_params())
 
 # %%
-# To run the optmized pipeline, we can directly use the `run` method on the GridSearch object.
+# To run the optmized pipeline, we can directly use the `run`/`safe_run` method on the GridSearch object.
 # This makes it possible to use the `GridSearch` as a replacement for your pipeline object with minimal code changes.
 #
-# If you would try to call `run` (or `score` for that matter), before the optimization, an error is raised.
-segmented_stride_list = gs.run(dataset[0]).segmented_stride_list_
+# If you would try to call `run`/`safe_run` (or `score` for that matter), before the optimization, an error is raised.
+segmented_stride_list = gs.safe_run(dataset[0]).segmented_stride_list_
 segmented_stride_list

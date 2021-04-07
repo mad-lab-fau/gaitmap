@@ -160,7 +160,8 @@ train_set, test_set = train_test_split(ds, train_size=0.5, random_state=0)
 # This means, the pipeline will use :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate`.
 pipeline = MyPipeline()
 
-results = pipeline.run(test_set)
+# We use the `safe_run` wrapper instead of just run. This is always a good idea.
+results = pipeline.safe_run(test_set)
 print("Number of Strides:", len(results.segmented_stride_list_))
 
 # %%
@@ -176,7 +177,7 @@ from gaitmap.future.pipelines import Optimize
 
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
-optimized_results = optimized_pipe.run(test_set)
+optimized_results = optimized_pipe.safe_run(test_set)
 print("Number of Strides:", len(optimized_results.segmented_stride_list_))
 
 # %%
