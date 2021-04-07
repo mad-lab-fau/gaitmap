@@ -36,14 +36,21 @@ class BaseOptimize(BaseAlgorithm):
         """Apply some form of optimization on the the input parameters of the pipeline."""
         raise NotImplementedError()
 
-    def run(self, datapoint):
+    def run(self, datapoint: Dataset):
         """Run the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.
         """
         return self.optimized_pipeline_.run(datapoint)
 
-    def score(self, datapoint):
+    def safe_run(self, datapoint: Dataset):
+        """Call the safe_run method of the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
+        return self.optimized_pipeline_.safe_run(datapoint)
+
+    def score(self, datapoint: Dataset):
         """Execute score on the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.

@@ -3,6 +3,7 @@ from typing import TypeVar, Dict, Union
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
+from gaitmap.future.pipelines._utils import check_safe_run
 
 Self = TypeVar("Self", bound="SimplePipeline")
 
@@ -20,6 +21,9 @@ class SimplePipeline(BaseAlgorithm):
     def run(self: Self, datapoint: Dataset) -> Self:
         """Run the pipeline.
 
+        Note, that it is usually preferred to use `safe_run` on custom pipelines instead of `run`, as `safe_run` can
+        catch certain implementation errors of the run method.
+
         Parameters
         ----------
         datapoint
@@ -33,6 +37,26 @@ class SimplePipeline(BaseAlgorithm):
 
         """
         raise NotImplementedError()  # pragma: no cover
+
+    def safe_run(self: Self, datapoint: Dataset) -> Self:
+        """Run the pipeline with some additional checks.
+
+        It is preferred to use this method over `run`, as it can catch some simple implementation errors of custom
+        pipelines.
+
+        Parameters
+        ----------
+        datapoint
+            An instance of a :class:`gaitmap.future.dataset.Dataset` containing only a single datapoint.
+            The structure of the data will depend on the dataset.
+
+        Returns
+        -------
+        self
+            The class instance with all result attributes populated
+
+        """
+        return check_safe_run(self, datapoint)
 
     def score(self, datapoint: Dataset) -> Union[float, Dict[str, float]]:
         """Calculate performance of the pipeline on a datapoint with reference information.
