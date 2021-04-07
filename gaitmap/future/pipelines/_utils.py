@@ -49,7 +49,7 @@ def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
         raise ValueError(
             "Running the pipeline did modify the parameters of the pipeline. "
             "This must not happen to make sure individual runs of the pipeline are independent.\n\n"
-            "This is usually happens, when you use a algorithm object as parameter to your pipeline. "
+            "This usually happens, when you use an algorithm object as a parameter to your pipeline. "
             "In this case, make sure you call `algo_object.clone()` on the algorithm object before using "
             "it in the run method"
         )
