@@ -17,6 +17,7 @@ from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
 from gaitmap.future.pipelines._score import _score
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _validate_scorer
+from gaitmap.utils.exceptions import PotentialUserErrorWarning
 from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
@@ -129,7 +130,7 @@ class Optimize(BaseOptimize):
             # Something might have gone wrong.
             warnings.warn(
                 "Optimizing the pipeline doesn't seem to have changed the parameters of the pipeline. "
-                "This could indicate an implementation error of the `self_optimize` method."
+                "This could indicate an implementation error of the `self_optimize` method.", PotentialUserErrorWarning
             )
         self.optimized_pipeline_ = optimized_pipeline
         return self
