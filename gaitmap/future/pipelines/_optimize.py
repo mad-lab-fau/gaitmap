@@ -17,6 +17,7 @@ from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
 from gaitmap.future.pipelines._score import _score
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _validate_scorer
+from gaitmap.utils.exceptions import PotentialUserErrorWarning
 from gaitmap.future.pipelines._utils import _aggregate_final_results
 
 
@@ -35,14 +36,21 @@ class BaseOptimize(BaseAlgorithm):
         """Apply some form of optimization on the the input parameters of the pipeline."""
         raise NotImplementedError()
 
-    def run(self, datapoint):
+    def run(self, datapoint: Dataset):
         """Run the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.
         """
         return self.optimized_pipeline_.run(datapoint)
 
-    def score(self, datapoint):
+    def safe_run(self, datapoint: Dataset):
+        """Call the safe_run method of the optimized pipeline.
+
+        This is a wrapper to contain API compatibility with `SimplePipeline`.
+        """
+        return self.optimized_pipeline_.safe_run(datapoint)
+
+    def score(self, datapoint: Dataset):
         """Execute score on the optimized pipeline.
 
         This is a wrapper to contain API compatibility with `SimplePipeline`.
@@ -129,7 +137,8 @@ class Optimize(BaseOptimize):
             # Something might have gone wrong.
             warnings.warn(
                 "Optimizing the pipeline doesn't seem to have changed the parameters of the pipeline. "
-                "This could indicate an implementation error of the `self_optimize` method."
+                "This could indicate an implementation error of the `self_optimize` method.",
+                PotentialUserErrorWarning,
             )
         self.optimized_pipeline_ = optimized_pipeline
         return self

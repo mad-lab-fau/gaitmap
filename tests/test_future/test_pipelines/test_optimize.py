@@ -6,6 +6,7 @@ from sklearn.model_selection import ParameterGrid
 
 from gaitmap.future.pipelines import GridSearch, Optimize
 from gaitmap.future.pipelines._optimize import BaseOptimize
+from gaitmap.utils.exceptions import PotentialUserErrorWarning
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_future.test_pipelines.conftest import (
     DummyPipeline,
@@ -224,7 +225,7 @@ class TestOptimize:
             setattr(optimized_pipe, k, v)
         ds = DummyDataset()
         with patch.object(DummyPipeline, "self_optimize", return_value=optimized_pipe):
-            warning = UserWarning if warn else None
+            warning = PotentialUserErrorWarning if warn else None
             with pytest.warns(warning) as w:
                 Optimize(DummyPipeline()).optimize(ds)
 

@@ -35,6 +35,9 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/128)
 - Added a warning about providing multiple methods when using any trajectory wrapper class to prevent user error.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/142)
+- Added a new `safe_run` method to pipelines that should be used over the normal `run` method.
+  `safe_run` performance multiple checks to catch potential implementation errors in user created pipelines.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/144)
 
 ### Changed
 

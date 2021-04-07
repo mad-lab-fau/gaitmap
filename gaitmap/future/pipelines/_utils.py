@@ -1,8 +1,13 @@
 """Some helper to work with the format the results of GridSearches and CVs."""
+from __future__ import annotations
 import numbers
-from typing import List
+from typing import List, TYPE_CHECKING
 
+import joblib
 import numpy as np
+
+if TYPE_CHECKING:
+    from gaitmap.future.pipelines import SimplePipeline
 
 
 def _aggregate_final_results(results: List):
@@ -31,3 +36,33 @@ def _aggregate_final_results(results: List):
         else [score[key] for score in results]
         for key in results[0]
     }
+
+
+def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
+    """Run the pipeline and check that run behaved as expected."""
+    before_paras = pipeline.get_params()
+    before_paras_hash = joblib.hash(before_paras)
+    output: SimplePipeline = pipeline.run(*args, **kwargs)
+    after_paras = pipeline.get_params()
+    after_paras_hash = joblib.hash(after_paras)
+    if not before_paras_hash == after_paras_hash:
+        raise ValueError(
+            "Running the pipeline did modify the parameters of the pipeline. "
+            "This must not happen to make sure individual runs of the pipeline are independent.\n\n"
+            "This usually happens, when you use an algorithm object as a parameter to your pipeline. "
+            "In this case, make sure you call `algo_object.clone()` on the algorithm object before using "
+            "it in the run method"
+        )
+    if not isinstance(output, type(pipeline)):
+        raise ValueError(
+            "The `run` method of the pipeline must return `self` or in rare cases a new instance of the "
+            "pipeline itself. "
+            "But the return value had the type {}".format(type(output))
+        )
+    if not output._action_is_applied:
+        raise ValueError(
+            "Running the pipeline did not set any results on the output. "
+            "Make sure the `run` method sets the result values as expected as class attributes and all "
+            "names of result attributes have a trailing `_` to mark them as such."
+        )
+    return output
