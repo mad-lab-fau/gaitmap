@@ -114,7 +114,7 @@ from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_r
 
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):
-    pipeline.run(datapoint)
+    pipeline.safe_run(datapoint)
     matches_df = evaluate_segmented_stride_list(
         ground_truth=datapoint.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
     )
