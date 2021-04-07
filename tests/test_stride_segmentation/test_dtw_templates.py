@@ -1,3 +1,4 @@
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
@@ -45,7 +46,7 @@ class TestTemplateBaseClass:
 
         instance = DtwTemplate(data=template)
 
-        assert_array_equal(instance.data, template)
+        assert_array_equal(instance.get_data(), template)
 
     def test_no_valid_info_provided(self):
         """Test that an error is raised, if neither a filename nor a array is provided."""
@@ -92,6 +93,16 @@ class TestBartTemplate:
         assert_frame_equal(barth_instance.get_data(), instance.get_data())
         assert barth_instance.sampling_rate_hz == 204.8
         assert barth_instance.scaling == 500.0
+
+    def test_hashing(self):
+        """Test that calling `get_data` does not modify the hash of the object."""
+        barth_instance = BarthOriginalTemplate()
+
+        before_hash = joblib.hash(barth_instance)
+        barth_instance.get_data()
+        after_hash = joblib.hash(barth_instance)
+
+        assert before_hash == after_hash
 
 
 class TestCreateTemplate:

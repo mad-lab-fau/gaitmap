@@ -73,12 +73,13 @@ class DtwTemplate(_BaseSerializable):
         """
         if self.data is None and self.template_file_name is None:
             raise ValueError("Neither a template array nor a template file is provided.")
-        if self.data is None:
+        data = self.data
+        if data is None:
             with open_text(
                 "gaitmap.stride_segmentation.dtw_templates", cast(str, self.template_file_name)
             ) as test_data:
-                self.data = pd.read_csv(test_data, header=0)
-        template = self.data
+                data = pd.read_csv(test_data, header=0)
+        template = data
 
         if self.use_cols is None:
             return template

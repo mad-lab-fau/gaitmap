@@ -45,6 +45,10 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/135)
 - Improved the performance of dtw template interpolation by a factor of 15-30 (depending on the interpolation type).
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/138)
+- File based dtw templates do not implicitly cache the template data anymore.
+  This means calling `get_data` on the template does not change the object anymore, which is desirable in the context of
+  caching.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/143)
 
 ### Deprecated
 
