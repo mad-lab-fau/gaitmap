@@ -137,7 +137,8 @@ class Optimize(BaseOptimize):
             # Something might have gone wrong.
             warnings.warn(
                 "Optimizing the pipeline doesn't seem to have changed the parameters of the pipeline. "
-                "This could indicate an implementation error of the `self_optimize` method.", PotentialUserErrorWarning
+                "This could indicate an implementation error of the `self_optimize` method.",
+                PotentialUserErrorWarning,
             )
         self.optimized_pipeline_ = optimized_pipeline
         return self

@@ -49,4 +49,5 @@ pylint:
     - protected-access
     - too-many-lines
     - bad-whitespace
+    - cyclic-import # ignored because of false positive due to Type hints
 
