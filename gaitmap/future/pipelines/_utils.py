@@ -38,7 +38,7 @@ def _aggregate_final_results(results: List):
     }
 
 
-def check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
+def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
     """Run the pipeline and check that run behaved as expected."""
     before_paras = pipeline.get_params()
     before_paras_hash = joblib.hash(before_paras)
