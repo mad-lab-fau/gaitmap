@@ -240,7 +240,7 @@ def multi_array_interpolation(arrays: List[np.ndarray], n_samples, kind: str = "
     Parameters
     ----------
     arrays
-        numba List of 2D arrays.
+        List of 2D arrays.
         Note that `arr.shape[1]` must be identical for all arrays.
     n_samples
         Number of samples the arrays should be resampled to.
