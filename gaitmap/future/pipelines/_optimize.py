@@ -286,7 +286,7 @@ class GridSearch(BaseOptimize):
 
         """
         self.dataset = dataset
-        scoring = _validate_scorer(self.scoring)
+        scoring = _validate_scorer(self.scoring, self.pipeline)
 
         parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
         # We use a similar structure as sklearns GridSearchCV here, but instead of calling something equivalent to
@@ -435,7 +435,7 @@ class GridSearchCV(BaseOptimize):
 
     def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):  # noqa: arguments-differ
         self.dataset = dataset
-        scoring = _validate_scorer(self.scoring)
+        scoring = _validate_scorer(self.scoring, self.pipeline)
 
         cv = check_cv(self.cv, None, classifier=True)
         n_splits = cv.get_n_splits(dataset, groups=groups)

@@ -12,6 +12,7 @@ from typing_extensions import Literal
 from gaitmap.future.dataset import Dataset
 
 if TYPE_CHECKING:
+    from gaitmap.future.pipelines._optimize import BaseOptimize
     from gaitmap.future.pipelines._pipelines import SimplePipeline
 
 _ERROR_SCORE_TYPE = Union[Literal["raise"], float]  # noqa: invalid-name
@@ -100,18 +101,28 @@ def _passthrough_scoring(pipeline: SimplePipeline, datapoint: Dataset):
     return pipeline.score(datapoint)
 
 
-
 def _validate_scorer(
-    scoring: Optional[Union[Callable, GaitmapScorer]], base_class: Type[GaitmapScorer] = GaitmapScorer
+    scoring: Optional[Union[Callable, GaitmapScorer]],
+    pipeline: SimplePipeline,
+    base_class: Type[GaitmapScorer] = GaitmapScorer,
 ) -> GaitmapScorer:
     """Convert the provided scoring method into a valid scorer object."""
     if scoring is None:
         # If scoring is None, we will try to use the score method of the pipeline
+        # However, we run score once with an empty dataset and check if it is actually implemented:
+        try:
+            pipeline.score(Dataset())
+        except NotImplementedError as e:
+            raise e
+        except Exception:
+            pass
         scoring = _passthrough_scoring
-    if not isinstance(scoring, base_class):
+    if isinstance(scoring, base_class):
+        return scoring
+    if callable(scoring):
         # We wrap the scorer, unless the user already supplied a instance of the GaitmapScorer class (or subclass)
-        scoring = base_class(scoring)
-    return scoring
+        return base_class(scoring)
+    raise ValueError("A valid scorer must either be a instance of `GaitmapScorer` (or subclass), None, or a callable.")
 
 
 def _aggregate_scores(scores: _SCORE_TYPE, agg_method: Callable) -> Tuple[_AGG_SCORE_TYPE, _SINGLE_SCORE_TYPE]:
