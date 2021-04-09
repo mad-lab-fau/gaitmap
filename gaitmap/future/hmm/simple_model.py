@@ -165,7 +165,7 @@ def train_hmm(
     model_trained = copy.deepcopy(model_untrained)
 
     _, history = model_trained.fit(
-        sequences=np.array(data_train_sequence).copy(),
+        sequences=np.array(data_train_sequence, dtype=object).copy(),
         labels=None,
         algorithm=algo_train,
         stop_threshold=stop_threshold,
@@ -213,6 +213,7 @@ class SimpleHMM(_BaseSerializable):
     max_iterations: Optional[int]
     random_seed: Optional[float]
     architecture: Optional[str]
+    verbose: bool
     name: Optional[str]
     model: Optional[pgHMM]
 
@@ -228,6 +229,7 @@ class SimpleHMM(_BaseSerializable):
         max_iterations: Optional[int] = None,
         random_seed: Optional[float] = None,
         architecture: Optional[str] = None,
+        verbose: bool = True,
         name: Optional[str] = None,
         model: Optional[pgHMM] = None,
     ):
@@ -239,6 +241,7 @@ class SimpleHMM(_BaseSerializable):
         self.max_iterations = max_iterations
         self.random_seed = random_seed
         self.architecture = architecture
+        self.verbose = verbose
         self.name = name
         self.model = model
 
@@ -255,7 +258,7 @@ class SimpleHMM(_BaseSerializable):
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
-    def build_model(self, data_sequence, labels_sequence, verbose=True):
+    def build_model(self, data_sequence, labels_sequence):
         """Build model."""
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
@@ -294,7 +297,7 @@ class SimpleHMM(_BaseSerializable):
             self.stop_threshold,
             self.algo_train,
             name=self.name + "-trained",
-            verbose=verbose,
+            verbose=self.verbose,
         )
 
         self.history = history
