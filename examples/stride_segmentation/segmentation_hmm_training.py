@@ -153,7 +153,7 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 # the dataset, train the individual sub models and finally combine them to a flatten segmentation model.
 
 segmentation_model = segmentation_model.train(
-    data_train_all, stride_list_sequence, sampling_frequency_hz=sampling_rate_hz
+    data_train_sequence, stride_list_sequence, sampling_frequency_hz=sampling_rate_hz
 )
 
 # %%
