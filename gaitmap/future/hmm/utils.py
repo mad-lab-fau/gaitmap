@@ -78,7 +78,7 @@ def gmms_from_samples(data, labels, n_components, random_seed=None, verbose=Fals
     Normal Distributions for each cluster. If n_components is > 1 then a Mixture Model of n-univariate or n-multivariate
     Gaussian Distributions will be fitted.
     """
-    if not np.array(data).data.c_contiguous:
+    if not np.array(data, dtype=object).data.c_contiguous:
         raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
 
     clustered_data = cluster_data_by_labels(data, labels)
@@ -161,7 +161,7 @@ def predict(model, data, algorithm="viterbi"):
     """Perform prediction based on given data and given model."""
     # need to check if memory layout of given data is
     # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-    if not np.array(data).data.c_contiguous:
+    if not np.array(data, dtype=object).data.c_contiguous:
         raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
 
     labels_predicted = np.asarray(model.predict(data, algorithm=algorithm))
