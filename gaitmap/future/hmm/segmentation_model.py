@@ -108,8 +108,6 @@ class SimpleSegmentationHMM(_BaseSerializable):
     model: Optional[pgHMM]
 
     n_states: Optional[int]
-    data_sequence_feature_space = None
-    stride_list_feature_space = None
     history: Optional[pg.callbacks.History]
 
     def __init__(
@@ -122,6 +120,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
         stop_threshold: Optional[float] = None,
         max_iterations: Optional[int] = None,
         initialization: Optional[str] = None,
+        verbose: bool = True,
         name: Optional[str] = None,
         model: Optional[pgHMM] = None,
     ):
@@ -133,6 +132,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.stop_threshold = stop_threshold
         self.max_iterations = max_iterations
         self.initialization = initialization
+        self.verbose = verbose
         self.name = name
         self.model = model
 
@@ -171,46 +171,43 @@ class SimpleSegmentationHMM(_BaseSerializable):
         if not isinstance(data_sequence, list):
             raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
 
-        self.data_sequence_feature_space = [
+        data_sequence_feature_space = [
             self.feature_transform.transform(dataset, sampling_frequency_hz) for dataset in data_sequence
         ]
 
+        stride_list_feature_space = None
         if stride_list_sequence:
             downsample_factor = int(
                 np.round(sampling_frequency_hz / self.feature_transform.sampling_rate_feature_space_hz)
             )
-            self.stride_list_feature_space = [
-                (stride_list / downsample_factor).astype(int) for stride_list in stride_list_sequence
+            stride_list_feature_space = [
+                (stride_list[["start", "end"]] / downsample_factor).astype(int) for stride_list in stride_list_sequence
             ]
-        return self
+        return [data_sequence_feature_space, stride_list_feature_space]
 
-    def train(self, verbose=True):
+    def train(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
         """Train HMM."""
-        if self.data_sequence_feature_space is None or self.stride_list_feature_space is None:
-            raise ValueError(
-                "No feature transformed data available for training! Make sure you have called the "
-                '"transform" function prior to training SimpleSegmentationHMM.transform'
-                "gait_bout_sequence, stride_list_sequence, sampling_frequency_hz)"
-            )
+        # perform feature transformation
+        data_sequence_feature_space, stride_list_feature_space = self.transform(
+            data_sequence, stride_list_sequence, sampling_frequency_hz
+        )
 
         if self.initialization not in ["labels", "fully-connected"]:
             raise ValueError('Invalid value for initialization! Must be one of "labels" or "fully-connected"')
 
         # train sub stride model
         strides_sequence, init_stride_state_labels = get_train_data_sequences_strides(
-            self.data_sequence_feature_space, self.stride_list_feature_space, self.stride_model.n_states
+            data_sequence_feature_space, stride_list_feature_space, self.stride_model.n_states
         )
 
-        stride_model_trained = self.stride_model.build_model(strides_sequence, init_stride_state_labels, verbose)
+        stride_model_trained = self.stride_model.build_model(strides_sequence, init_stride_state_labels)
 
         # train sub transition model
         transition_sequence, init_trans_state_labels = get_train_data_sequences_transitions(
-            self.data_sequence_feature_space, self.stride_list_feature_space, self.transition_model.n_states
+            data_sequence_feature_space, stride_list_feature_space, self.transition_model.n_states
         )
 
-        transition_model_trained = self.transition_model.build_model(
-            transition_sequence, init_trans_state_labels, verbose
-        )
+        transition_model_trained = self.transition_model.build_model(transition_sequence, init_trans_state_labels)
 
         # For model combination actually only the transition probabilities will be updated, while keeping the already
         # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
@@ -228,8 +225,8 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         # predict hidden state labels for complete walking bouts
         labels_train_sequence = create_fully_labeled_gait_sequences(
-            self.data_sequence_feature_space,
-            self.stride_list_feature_space,
+            data_sequence_feature_space,
+            stride_list_feature_space,
             transition_model_trained,
             stride_model_trained,
             self.algo_predict,
@@ -245,7 +242,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
                 starts=start_probs,
                 ends=None,
                 state_names=None,
-                verbose=verbose,
+                verbose=self.verbose,
             )
 
         if self.initialization == "labels":
@@ -278,7 +275,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
                 starts=start_probs,
                 ends=None,
                 state_names=None,
-                verbose=verbose,
+                verbose=self.verbose,
             )
 
             # Add missing transitions which will "connect" transition-hmm and stride-hmm
@@ -302,8 +299,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         # make sure data is in an pomegranate compatible format!
         data_train_sequence = [
-            np.ascontiguousarray(copy.deepcopy(feature_data.to_numpy()))
-            for feature_data in self.data_sequence_feature_space
+            np.ascontiguousarray(copy.deepcopy(feature_data.to_numpy())) for feature_data in data_sequence_feature_space
         ]
 
         _, history = model_trained.fit(
@@ -313,7 +309,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
             return_history=True,
-            verbose=verbose,
+            verbose=self.verbose,
             n_jobs=N_JOBS,
         )
 
@@ -323,6 +319,11 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.model = model_trained
 
         return self
+
+    def export_json(self, path):
+        """Export HMM to json file."""
+        with open(path, "w") as f:
+            json.dump(self.to_json(), f)
 
 
 class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
