@@ -14,9 +14,9 @@ The used implementation is based on the work of Roth et al [1]_
 """
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
-numpy.random.seed(0)
+np.random.seed(0)
 
 # %%
 # Getting some example data
