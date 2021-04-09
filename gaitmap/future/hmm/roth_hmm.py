@@ -213,6 +213,11 @@ class RothHMM(BaseStrideSegmentation):
         state_sequence_ends[state_sequence_ends != stride_end_state] = 0
         matches_ends = np.argwhere(np.diff(state_sequence_ends) < 0)
 
+        # special case where the very last part of the data is just half a stride, so the model finds a begin of a
+        # stride but no end! We need to add this end manually
+        if len(matches_starts) > len(matches_ends):
+            matches_ends = np.append(matches_ends, len(hidden_states_predicted))
+
         return np.column_stack([matches_starts, matches_ends])
 
     def _postprocess_matches(self, matches_start_end, dataset) -> Tuple[np.ndarray, np.ndarray]:
