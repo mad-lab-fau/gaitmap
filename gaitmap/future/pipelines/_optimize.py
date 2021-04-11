@@ -176,6 +176,7 @@ class GridSearch(BaseOptimize):
     scoring
         A callable that can score a single data point given a pipeline.
         This function should return either a single score or a dictionary of scores.
+        If scoring is `None` the default `score` method of the pipeline is used instead.
 
         .. note:: If scoring returns a dictionary, `return_optimized` must be set to the name of the score that
                   should be used for ranking.
@@ -221,7 +222,7 @@ class GridSearch(BaseOptimize):
         rank_score / rank_{scorer-name}
             A sorting for each score from the highest to the lowest value
         single_score / single_{scorer-name}
-            The individual scores per datapoint for each score.
+            The individual scores per datapoint for each parameter combination.
             This is a list of values with the `len(dataset)`.
         data_labels
             A list of data labels in the order the single score values are provided.
