@@ -193,7 +193,9 @@ def _optimize_and_score(
     if pure_parameters:
         # Because, we need to set the parameters on the optimized pipeline and not the input pipeline we strip the
         # naming prefix.
-        # TODO: Not sure if that is the nicest way to do things.
+        # TODO: Not sure if that is the nicest way to do things. This also needs to be more specific. At the moment
+        #  we assume that all parameter are just prefixed with algo. THis might not be the case, if you set
+        #  parameters of the actual optimizer (not sure if you would do that, but anyway...
         striped_paras = {k.split("__", 1)[1]: v for k, v in pure_parameters.items()}
         optimizer.optimized_pipeline_.set_params(**striped_paras)
         # We also set the parameters of the input pipeline to make it seem that all parameters were set from the
