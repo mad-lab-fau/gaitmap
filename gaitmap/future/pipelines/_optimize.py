@@ -436,6 +436,9 @@ class GridSearchCV(BaseOptimize):
         If the performance on the train score should be returned in addition to the test score performance.
         Note, that this increases the runtime.
         If `True`, the fields `train_data_labels`, `train_score`, and `train_score_single` are available in the results.
+    verbose
+        Control the verbosity of information printed during the optimization.
+        At the moment this will only effect the caching done, when `pure_parameter_names` are provided.
     n_jobs
         The number of processes that should be used to parallelize the search.
         None means 1, -1 means as many as logical processing cores.
