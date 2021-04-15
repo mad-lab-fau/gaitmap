@@ -450,6 +450,11 @@ class GridSearchCV(BaseOptimize):
         If set to ‘raise’, the error is raised.
         If a numeric value is given, a Warning is raised.
 
+    Other Parameters
+    ----------------
+    dataset
+        The dataset instance passed to the optimize method
+
     Attributes
     ----------
     cv_results_
