@@ -38,6 +38,9 @@ project.
 - Added a new `safe_run` method to pipelines that should be used over the normal `run` method.
   `safe_run` performance multiple checks to catch potential implementation errors in user created pipelines.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/144)
+- New parameter `enforce_consistency` added to `gaitmap.event_detection.RamppEventDetection` to make event detection 
+  postprocessing optional.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/136)
 
 ### Changed
 

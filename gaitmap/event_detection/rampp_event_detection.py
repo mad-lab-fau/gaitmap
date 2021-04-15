@@ -47,6 +47,9 @@ class RamppEventDetection(BaseEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
+    enforce_consistency
+        An optional bool that can be set to False if you wish to disable postprocessing
+        (see Notes section for more information).
 
     Attributes
     ----------
@@ -127,10 +130,14 @@ class RamppEventDetection(BaseEventDetection):
     Furthermore, the `min_vel_event_list` list provides the `pre_ic` which is the ic event of the previous stride in
     the stride list.
 
-    The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check.
+    The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check that is enabled by default.
     The gait events within one stride provided by the `stride_list` must occur in the expected order.
-    Any stride where the gait events are detected in a different order is dropped!
+    Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
+    If you wish to disable this consistency check, set `enforce_consistency` to False.
+    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `segmented_event_list_` to get
+    all detected events for the exact stride list that was used as input.
+    Note, that this list might contain NaN for some events.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
     continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
@@ -157,6 +164,7 @@ class RamppEventDetection(BaseEventDetection):
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
     memory: Optional[Memory]
+    enforce_consistency: bool
 
     min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
     segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
@@ -170,10 +178,12 @@ class RamppEventDetection(BaseEventDetection):
         ic_search_region_ms: Tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
         memory: Optional[Memory] = None,
+        enforce_consistency: bool = True,
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.memory = memory
+        self.enforce_consistency = enforce_consistency
 
     def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
@@ -226,6 +236,11 @@ class RamppEventDetection(BaseEventDetection):
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory
                 )
             results = invert_result_dictionary(results_dict)
+
+        # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
+        # and can not be used for anything anyway
+        if not self.enforce_consistency:
+            del results["min_vel_event_list"]
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
@@ -262,10 +277,11 @@ class RamppEventDetection(BaseEventDetection):
         }
         segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
 
-        # check for consistency, remove inconsistent lines
-        segmented_event_list, _ = enforce_stride_list_consistency(
-            segmented_event_list, stride_type="segmented", check_stride_list=False
-        )
+        if self.enforce_consistency:
+            # check for consistency, remove inconsistent strides
+            segmented_event_list, _ = enforce_stride_list_consistency(
+                segmented_event_list, stride_type="segmented", check_stride_list=False
+            )
 
         min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
             segmented_event_list, target_stride_type="min_vel"

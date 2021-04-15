@@ -53,6 +53,25 @@ class TestEnforceStrideListConsistency:
         assert_frame_equal(event_list[event_list["s_id"].isin(wrong_s_ids)], removed_strides)
         assert len(removed_strides) == len(wrong_s_ids)
 
+    @pytest.mark.parametrize(
+        "stride_type",
+        ("segmented", "min_vel", "ic"),
+    )
+    def test_nan_removal(self, stride_type):
+        """Test that strides that contain NaN in any column are removed."""
+        event_list = self._create_example_stride_list(stride_type)
+        nan_s_ids = [0, 3, 5, 19]
+        modified = SL_EVENT_ORDER[stride_type][-1]
+        wrong = event_list[modified].copy()
+        wrong[event_list["s_id"].isin(nan_s_ids)] = np.nan
+        event_list[modified] = wrong
+
+        filtered_event_list, removed_strides = enforce_stride_list_consistency(event_list, stride_type)
+
+        assert_frame_equal(event_list[~event_list["s_id"].isin(nan_s_ids)], filtered_event_list)
+        assert_frame_equal(event_list[event_list["s_id"].isin(nan_s_ids)], removed_strides)
+        assert len(removed_strides) == len(nan_s_ids)
+
     def test_check_stride_list(self):
         stride_type = "segmented"
         # First use a stride list that works
