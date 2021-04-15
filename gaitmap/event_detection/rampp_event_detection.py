@@ -132,10 +132,13 @@ class RamppEventDetection(BaseEventDetection):
 
     The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check that is enabled by default.
     The gait events within one stride provided by the `stride_list` must occur in the expected order.
-    Any stride where the gait events are detected in a different order is dropped!
+    Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
-    If you wish to disable this consistency check, set `enforce_consistency` to False. In this case, the attribute
-    `min_vel_event_list_` will not be set.
+    If you wish to disable this consistency check, set `enforce_consistency` to False.
+    This will still
+    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `segmented_event_list_` to get
+    all detected events for the exact stride list that was used as input.
+    Note, that this list might contain NaN for some events.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
     continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
