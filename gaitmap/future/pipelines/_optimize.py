@@ -454,8 +454,61 @@ class GridSearchCV(BaseOptimize):
         The format of this dictionary is designed to be directly passed into the `pd.DataFrame` constructor.
         Each column then represents the result for one set of parameters
 
-        The dictionary contains the following columns:
+        The dictionary contains the following entries:
 
+        param_{parameter_name}
+            The value of a respective parameter
+        params
+            A dictionary representing all parameters
+        mean_test_score / mean_test_{scorer_name}
+            The average test score over all folds.
+            If a single score is used for scoring, than the generic name "score" is used.
+            Otherwise multiple columns with the name of the respective scorer exist
+        std_test_score / std_test_{scorer_name}
+            The std of the test scores over all folds.
+        rank_test_score / rank_{scorer_name}
+            The rank of the mean test score assuming higher values are better.
+        split{n}_test_score / split{n}_test_{scorer_name}
+            The performance on the test set in fold n.
+        split{n}_test_single_score / split{n}_test_single_{scorer_name}
+            The performance in fold n on every single datapoint in the test set.
+        split{n}_test_data_labels
+            The ids of the datapoints used in the test set of fold n.
+        mean_train_score / mean_train_{scorer_name}
+            The average train score over all folds.
+        std_train_score / std_train_{scorer_name}
+            The std of the train scores over all folds.
+        split{n}_train_score / split{n}_train_{scorer_name}
+            The performance on the train set in fold n.
+        rank_train_score / rank_{scorer_name}
+            The rank of the mean train score assuming higher values are better.
+        split{n}_train_single_score / split{n}_train_single_{scorer_name}
+            The performance in fold n on every single datapoint in the train set.
+        split{n}_train_data_labels
+            The ids of the datapoints used in the train set of fold n.
+        mean_{optimize/score}_time
+            Average time over all folds spend for optimization and scoring, respectively
+        std_{optimize/score}_time
+            Standard deviation of the optimize/score times over all folds.
+
+    optimized_pipeline_
+        An instance of the input pipeline with the best parameter set.
+        This is only available if `return_optimized` is not False.
+    best_params_
+        The parameter dict that resulted in the best result.
+        This is only available if `return_optimized` is not False.
+    best_index_
+        The index of the result row in the output.
+        This is only available if `return_optimized` is not False.
+    best_score_
+        The score of the best result.
+        In a multimetric case, only the value of the scorer specified by `return_optimized` is provided.
+        This is only available if `return_optimized` is not False.
+    multimetric_
+        Rather the scorer returned multiple scores
+    final_optimize_time_
+        Time spend to perform the final optimization on all data.
+        This is only available if `return_optimized` is not False.
 
     """
 
