@@ -52,6 +52,7 @@ class MyDataset(Dataset):
     def create_index(self) -> pd.DataFrame:
         return pd.DataFrame({"participant": ["test", "test"], "foot": ["left", "right"]})
 
+
 # %%
 # The Pipeline
 # ------------
@@ -75,10 +76,10 @@ class MyPipeline(OptimizablePipeline):
     cost_func_: np.ndarray
 
     def __init__(
-            self,
-            max_cost: float = 3,
-            template: DtwTemplate = BarthOriginalTemplate(),
-            n_train_strides: Optional[int] = None,
+        self,
+        max_cost: float = 3,
+        template: DtwTemplate = BarthOriginalTemplate(),
+        n_train_strides: Optional[int] = None,
     ):
         self.max_cost = max_cost
         self.template = template
@@ -126,12 +127,14 @@ class MyPipeline(OptimizablePipeline):
         self.cost_func_ = dtw.cost_function_
         return self
 
+
 # %%
 # The Scorer
 # ----------
 # The scorer is identical to the scoring function used in the other examples.
 # The F1-score is still the most important parameter for our comparison.
 from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):
     pipeline.safe_run(datapoint)
@@ -182,8 +185,7 @@ parameters = ParameterGrid({"max_cost": [3, 5], "n_train_strides": [None, 1]})  
 # Then we can simply run the search using the `optimize` method.
 from gaitmap.future.pipelines import GridSearchCV
 
-gs = GridSearchCV(pipeline=MyPipeline(), parameter_grid=parameters, scoring=score, cv=cv,
-                  return_optimized="f1_score", verbose=1)
+gs = GridSearchCV(pipeline=MyPipeline(), parameter_grid=parameters, scoring=score, cv=cv, return_optimized="f1_score")
 gs = gs.optimize(MyDataset())
 
 # %%
@@ -261,7 +263,7 @@ gs_cached = GridSearchCV(
     pure_parameter_names=["max_cost"],
     cv=cv,
     return_optimized="f1_score",
-    verbose=2
+    verbose=2,
 )
 gs_cached = gs_cached.optimize(MyDataset())
 cached_results = gs_cached.cv_results_
