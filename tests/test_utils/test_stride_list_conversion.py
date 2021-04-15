@@ -57,7 +57,8 @@ class TestEnforceStrideListConsistency:
         "stride_type",
         ("segmented", "min_vel", "ic"),
     )
-    def test_nan_error(self, stride_type):
+    def test_nan_removal(self, stride_type):
+        """Test that strides that contain NaN in any column are removed."""
         event_list = self._create_example_stride_list(stride_type)
         nan_s_ids = [0, 3, 5, 19]
         modified = SL_EVENT_ORDER[stride_type][-1]
