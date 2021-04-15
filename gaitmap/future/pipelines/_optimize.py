@@ -2,6 +2,7 @@
 import time
 import warnings
 from collections import defaultdict
+from contextlib import nullcontext
 from functools import partial
 from itertools import product
 from tempfile import TemporaryDirectory
@@ -209,7 +210,7 @@ class GridSearch(BaseOptimize):
         The format of this dictionary is designed to be directly passed into the `pd.DataFrame` constructor.
         Each column then represents the result for one set of parameters
 
-        The dictionary contains the following columns:
+        The dictionary contains the following entries:
 
         param_*
             The value of a respective parameter
@@ -388,6 +389,76 @@ class GridSearch(BaseOptimize):
 
 
 class GridSearchCV(BaseOptimize):
+    """Exhaustive (Hyper)Parameter search using a cross validation based score.
+
+    This class follows as much as possible the interface of :func:`~sklearn.model_selection.GridSearchCV`.
+    If the gaitmap documentation is missing some information, the respective documentation of sklearn might be helpful.
+
+    Compared to the sklearn implementation this method uses a couple of gaitmap specific optimizations and
+    quality-of-life improvements.
+
+    Parameters
+    ----------
+    pipeline
+        A gaitmap pipeline implementing `self_optimize`.
+    parameter_grid
+        A sklearn parameter grid to define the search space.
+    scoring
+        A callable that can score a single data point given a pipeline.
+        This function should return either a single score or a dictionary of scores.
+        If scoring is `None` the default `score` method of the pipeline is used instead.
+
+        .. note:: If scoring returns a dictionary, `return_optimized` must be set to the name of the score that
+                  should be used for ranking.
+    return_optimized
+        If True, a pipeline object with the overall best params is created  and reoptimized using all provided data
+        as input.
+        The optimized pipeline object is stored as `optimized_pipeline_`.
+        If `scoring` returns multiple score values, this must be a str corresponding to the name of the score that
+        should be used to rank the results.
+        If False, the respective result attributes will not be populated.
+        If multiple parameter combinations have the same score, the one tested first will be used.
+    cv
+        A integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
+        The default (`None`) will result in a 5-fold cross validation.
+        For further inputs check the sklearn documentation
+    pure_parameter_names
+        .. warning: Do not use this option unless you fully understand it!
+
+        A list of parameter names (named in the `parameter_grid`) that do not effect training aka are not
+        Hyperparameters.
+        This information can be used for massive performance improvements, as the training does not need to be
+        repeated, if one of these parameters changes.
+        However, setting it incorrectly can lead to hard to detect errors in the final results.
+
+        For more information on this approach see the :ref:`evaluation guide <algorithm_evaluation>`.
+    return_train_score
+        If the performance on the train score should be returned in addition to the test score performance.
+        Note, that this increases the runtime.
+        If `True`, the fields `train_data_labels`, `train_score`, and `train_score_single` are available in the results.
+    n_jobs
+        The number of processes that should be used to parallelize the search.
+        None means 1, -1 means as many as logical processing cores.
+    pre_dispatch
+        The number of jobs that should be pre dispatched.
+        For an explanation see the documentation of :class:`~sklearn.model_selection.GridSearchCV`
+    error_score
+        Value to assign to the score if an error occurs during scoring.
+        If set to ‘raise’, the error is raised.
+        If a numeric value is given, a Warning is raised.
+
+    Attributes
+    ----------
+    cv_results_
+        A dictionary summarizing all results of the gridsearch.
+        The format of this dictionary is designed to be directly passed into the `pd.DataFrame` constructor.
+        Each column then represents the result for one set of parameters
+
+        The dictionary contains the following columns:
+
+
+    """
+
     pipeline: OptimizablePipeline
     parameter_grid: ParameterGrid
     scoring: Optional[Union[Callable, GaitmapScorer]]
@@ -457,8 +528,11 @@ class GridSearchCV(BaseOptimize):
         # We only allow a temporary cache here, because the method that is cached internally is generic and the cache
         # might not be correctly invalidated, if GridSearchCv is called with a different pipeline or when the
         # pipeline itself is modified.
-        with TemporaryDirectory("joblib_gaitmap_cache") as cachedir:
-            tmp_cache = Memory(cachedir, verbose=self.verbose)
+        tmp_dir_context = nullcontext()
+        if self.pure_parameter_names:
+            tmp_dir_context = TemporaryDirectory("joblib_gaitmap_cache")
+        with tmp_dir_context as cachedir :
+            tmp_cache = Memory(cachedir, verbose=self.verbose) if cachedir else None
 
             parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
             # We use a similar structure to sklearns GridSearchCv here (see GridSearch for more info).
