@@ -592,7 +592,7 @@ class GridSearchCV(BaseOptimize):
         tmp_dir_context = nullcontext()
         if self.pure_parameter_names:
             tmp_dir_context = TemporaryDirectory("joblib_gaitmap_cache")
-        with tmp_dir_context as cachedir :
+        with tmp_dir_context as cachedir:
             tmp_cache = Memory(cachedir, verbose=self.verbose) if cachedir else None
 
             parallel = Parallel(n_jobs=self.n_jobs, pre_dispatch=self.pre_dispatch)
@@ -642,7 +642,7 @@ class GridSearchCV(BaseOptimize):
 
         return self
 
-    def _format_results(self, candidate_params, n_splits, out, more_results=None):
+    def _format_results(self, candidate_params, n_splits, out, more_results=None):  # noqa: MC0001
         """Format the final result dict.
 
         This function is adapted based on sklearns `BaseSearchCV`.

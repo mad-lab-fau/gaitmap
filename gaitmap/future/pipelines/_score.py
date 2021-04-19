@@ -12,13 +12,12 @@ from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any, Type
 import joblib
 import numpy as np
 from joblib import Memory
-from sklearn import clone
 from typing_extensions import TypedDict
 
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
-from gaitmap.future.pipelines._utils import _get_nested_paras
+from gaitmap.future.pipelines._utils import _get_nested_paras, _clone_parameter_dict
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._optimize import BaseOptimize  # noqa: cyclic-import
@@ -108,11 +107,9 @@ def _score(
 
     if parameters is not None:
         # clone after setting parameters in case any parameters are estimators (like pipeline steps).
-        cloned_parameters = {}
-        for k, v in parameters.items():
-            cloned_parameters[k] = clone(v, safe=False)
+        parameters = _clone_parameter_dict(parameters)
 
-        pipeline = pipeline.set_params(**cloned_parameters)
+        pipeline = pipeline.set_params(**parameters)
 
     start_time = time.time()
     agg_scores, single_scores = scorer(pipeline, dataset, error_score)
@@ -128,7 +125,7 @@ def _score(
     return result
 
 
-def _optimize_and_score(
+def _optimize_and_score(  # noqa: too-many-branches
     optimizer: BaseOptimize,
     dataset: Dataset,
     scorer: GaitmapScorer,
@@ -159,17 +156,9 @@ def _optimize_and_score(
     """
     if memory is None:
         memory = Memory(None)
-        # clone after setting parameters in case any parameters are estimators (like pipeline steps).
-    cloned_hyperparameters = {}
-    if hyperparameters is not None:
-        for k, v in hyperparameters.items():
-            cloned_hyperparameters[k] = clone(v, safe=False)
-    hyperparameters = cloned_hyperparameters
-    cloned_pure_parameters = {}
-    if pure_parameters is not None:
-        for k, v in pure_parameters.items():
-            cloned_pure_parameters[k] = clone(v, safe=False)
-    pure_parameters = cloned_pure_parameters
+    # clone after setting parameters in case any parameters are estimators (like pipeline steps).
+    hyperparameters = _clone_parameter_dict(hyperparameters)
+    pure_parameters = _clone_parameter_dict(pure_parameters)
 
     optimize_params_clean: Dict = optimize_params or {}
 

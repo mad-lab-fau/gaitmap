@@ -7,6 +7,7 @@ from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
 
 import joblib
 import numpy as np
+from sklearn import clone
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines import SimplePipeline
@@ -60,7 +61,7 @@ def _prefix_para_dict(params_dict: Optional[Dict], prefix="pipeline__") -> Optio
     return {prefix + k: v for k, v in params_dict.items()}
 
 
-def _get_nested_paras(param_dict: Optional[Dict], nested_object_name="pipeline"):
+def _get_nested_paras(param_dict: Optional[Dict], nested_object_name="pipeline") -> Dict:
     """Get the parameters belonging to a nested object and remove the suffix.
 
     If the parameter of a double nested object are required, use `level_1__level_1`.
@@ -68,6 +69,14 @@ def _get_nested_paras(param_dict: Optional[Dict], nested_object_name="pipeline")
     if not param_dict:
         return {}
     return {k.split("__", 1)[1]: v for k, v in param_dict.items() if k.startswith("{}__".format(nested_object_name))}
+
+
+def _clone_parameter_dict(param_dict: Optional[Dict]) -> Dict:
+    cloned_param_dict = {}
+    if param_dict is not None:
+        for k, v in param_dict.items():
+            cloned_param_dict[k] = clone(v, safe=False)
+    return cloned_param_dict
 
 
 def _split_hyper_and_pure_parameters(
