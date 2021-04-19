@@ -367,6 +367,57 @@ class TestGridSearchCV:
 
         assert gs.multimetric_ is True
 
+    def test_return_train_values(self):
+        # Fixed cv iterator
+        cv = PredefinedSplit(test_fold=[0, 0, 1, 1, 1])  # Test Fold 0 has len==2 and 1 has len == 3
+        gs = GridSearchCV(
+            DummyPipeline(),
+            ParameterGrid({"para_1": [1, 2]}),
+            scoring=dummy_multi_score_func,
+            return_optimized=False,
+            return_train_score=True,
+            cv=cv,
+        )
+        gs.optimize(DummyDataset())
+        results = gs.cv_results_
+
+        assert set(results.keys()).issuperset(
+            {
+                "split0_train_data_labels",
+                "split1_train_data_labels",
+                "split0_train_score_1",
+                "split1_train_score_1",
+                "mean_train_score_1",
+                "std_train_score_1",
+                "split0_train_single_score_1",
+                "split1_train_single_score_1",
+                "split0_train_score_2",
+                "split1_train_score_2",
+                "mean_train_score_2",
+                "std_train_score_2",
+                "split0_train_single_score_2",
+                "split1_train_single_score_2",
+            }
+        )
+
+    def test_final_optimized_trained_on_all_data(self):
+        optimized_pipe = DummyPipeline()
+        optimized_pipe.optimized = True
+        ds = DummyDataset()
+
+        with patch.object(DummyPipeline, "self_optimize", return_value=optimized_pipe) as mock:
+            GridSearchCV(
+                DummyPipeline(),
+                ParameterGrid({"para_1": [1, 2, 3]}),
+                scoring=dummy_single_score_func,
+                cv=2,
+                return_optimized=True,
+            ).optimize(ds)
+
+        assert mock.call_count == 7  # 3 paras * 2 folds + final optimize
+        # Final optimize was called with all the data.
+        assert len(mock.call_args_list[-1][0][0]) == 5
+
     def test_pure_parameters(self):
         optimized_pipe = DummyPipeline()
         optimized_pipe.optimized = True
