@@ -61,12 +61,12 @@ example_dataset.sort_index(axis=1).head(1)
 import numpy as np
 from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
 
-# rotate left_sensor first by -90 deg around the x-axis, followed by a -90 deg rotation around the z-axis. Test: check.
+# rotate left_sensor first by -90 deg around the z-axis, followed by a -90 deg rotation around the x-axis. As the rotation matrix is multiplied from the left, the rotation matrix  results in:
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
     np.array([0, 0, 1]), np.deg2rad(-90)
 )
 
-# rotate right_sensor first by +90 deg around the x-axis, followed by a +90 deg rotation around the z-axis
+# rotate right_sensor first by +90 deg around the z-axis, followed by a +90 deg rotation around the x-axis
 right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_from_angle(
     np.array([0, 0, 1]), np.deg2rad(90)
 )
