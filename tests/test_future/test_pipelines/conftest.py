@@ -24,6 +24,14 @@ def dummy_single_score_func(pipeline, data_point):
     return data_point.groups[0]
 
 
+def create_dummy_score_func(name):
+    return lambda x, y: getattr(x, name)
+
+
+def create_dummy_multi_score_func(names):
+    return lambda x, y: {"score_1": getattr(x, names[0]), "score_2": getattr(x, names[1])}
+
+
 def dummy_multi_score_func(pipeline, data_point):
     return {"score_1": data_point.groups[0], "score_2": data_point.groups[0] + 1}
 

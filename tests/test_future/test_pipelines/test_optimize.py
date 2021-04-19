@@ -1,4 +1,5 @@
 from tempfile import TemporaryDirectory
+from typing import Union
 from unittest.mock import patch
 
 import joblib
@@ -17,6 +18,8 @@ from tests.test_future.test_pipelines.conftest import (
     dummy_single_score_func,
     DummyDataset,
     dummy_multi_score_func,
+    create_dummy_score_func,
+    create_dummy_multi_score_func,
 )
 
 
@@ -68,6 +71,120 @@ class TestMetaFunctionalityOptimize(TestAlgorithmMixin):
 
     def test_empty_init(self):
         pytest.skip()
+
+
+class TestGridSearchCommon:
+    optimizer: Union[GridSearch, GridSearchCV]
+
+    @pytest.fixture(
+        autouse=True,
+        ids=["GridSearch", "GridSearchCV"],
+        params=(
+            GridSearch(DummyPipeline(), parameter_grid=ParameterGrid({"para_1": [1, 2]})),
+            GridSearchCV(DummyPipeline(), ParameterGrid({"para_1": [1, 2]}), cv=2),
+        ),
+    )
+    def gridsearch(self, request):
+        self.optimizer = request.param.clone()
+
+    @pytest.mark.parametrize("return_optimized", (True, False, "some_str"))
+    def test_return_optimized_single(self, return_optimized):
+        gs = self.optimizer
+        gs.set_params(
+            return_optimized=return_optimized,
+            parameter_grid=ParameterGrid({"para_1": [1, 2]}),
+            scoring=create_dummy_score_func("para_1"),
+        )
+        warning = None
+        if isinstance(return_optimized, str):
+            warning = UserWarning
+
+        with pytest.warns(warning) as w:
+            gs.optimize(DummyDataset())
+
+        if isinstance(return_optimized, str):
+            assert "return_optimize" in str(w[0])
+        else:
+            assert len(w) == 0
+
+        if return_optimized:  # True or str
+            assert gs.best_params_ == {"para_1": 2}
+            assert gs.best_index_ == 1
+            assert gs.best_score_ == 2
+            assert isinstance(gs.optimized_pipeline_, DummyPipeline)
+            assert gs.optimized_pipeline_.para_1 == gs.best_params_["para_1"]
+        else:
+            assert not hasattr(gs, "best_params_")
+            assert not hasattr(gs, "best_index_")
+            assert not hasattr(gs, "best_score_")
+            assert not hasattr(gs, "optimized_pipeline_")
+
+    @pytest.mark.parametrize("return_optimized", (False, "score_1", "score_2"))
+    def test_return_optimized_multi(self, return_optimized):
+        gs = self.optimizer
+        gs.set_params(
+            return_optimized=return_optimized,
+            parameter_grid=ParameterGrid({"para_1": [1, 2], "para_2": [4, 3]}),
+            scoring=create_dummy_multi_score_func(("para_1", "para_2")),
+        )
+        gs.optimize(DummyDataset())
+
+        if return_optimized in ("score_1", "score_2"):
+            assert (
+                gs.best_params_
+                == {"score_1": {"para_1": 2, "para_2": 4}, "score_2": {"para_1": 1, "para_2": 4}}[return_optimized]
+            )
+            assert gs.best_index_ == {"score_1": 2, "score_2": 0}[return_optimized]
+            assert gs.best_score_ == {"score_1": 2, "score_2": 4}[return_optimized]
+            assert isinstance(gs.optimized_pipeline_, DummyPipeline)
+            assert gs.optimized_pipeline_.para_1 == gs.best_params_["para_1"]
+        else:
+            assert not hasattr(gs, "best_params_")
+            assert not hasattr(gs, "best_index_")
+            assert not hasattr(gs, "best_score_")
+            assert not hasattr(gs, "optimized_pipeline_")
+
+    @pytest.mark.parametrize("return_optimized", (True, "some_str"))
+    def test_return_optimized_multi_exception(self, return_optimized):
+        gs = self.optimizer
+        gs.set_params(
+            return_optimized=return_optimized,
+            parameter_grid=ParameterGrid({"para_1": [1, 2]}),
+            scoring=dummy_multi_score_func,
+        )
+
+        with pytest.raises(ValueError):
+            gs.optimize(DummyDataset())
+
+    @pytest.mark.parametrize("best_value", (1, 2))
+    def test_rank(self, best_value):
+        def dummy_best_scorer(best):
+            def scoring(pipe, ds):
+                if pipe.para_1 == best:
+                    return 1
+                return 0
+
+            return scoring
+
+        paras = [1, 2]
+        gs = self.optimizer
+        gs.set_params(
+            parameter_grid=ParameterGrid({"para_1": paras}),
+            scoring=dummy_best_scorer(best_value),
+            return_optimized=True,
+        )
+        gs.optimize(DummyDataset())
+
+        assert gs.best_score_ == 1
+        assert gs.best_index_ == paras.index(best_value)
+        assert gs.best_params_ == {"para_1": best_value}
+        expected_ranking = [2, 2]
+        expected_ranking[paras.index(best_value)] = 1
+        if isinstance(self.optimizer, GridSearch):
+            results = gs.gs_results_["rank_score"]
+        else:
+            results = gs.cv_results_["rank_test_score"]
+        assert list(results) == expected_ranking
 
 
 class TestGridSearch:
@@ -127,98 +244,6 @@ class TestGridSearch:
         assert list(results["score_2"]) == [3, 3]
 
         assert gs.multimetric_ is True
-
-    @pytest.mark.parametrize("return_optimized", (True, False, "some_str"))
-    def test_return_optimized_single(self, return_optimized):
-        gs = GridSearch(
-            DummyPipeline(),
-            ParameterGrid({"para_1": [1, 2]}),
-            scoring=dummy_single_score_func,
-            return_optimized=return_optimized,
-        )
-        warning = None
-        if isinstance(return_optimized, str):
-            warning = UserWarning
-
-        with pytest.warns(warning) as w:
-            gs.optimize(DummyDataset())
-
-        if isinstance(return_optimized, str):
-            assert "return_optimize" in str(w[0])
-        else:
-            assert len(w) == 0
-
-        if return_optimized:  # True or str
-            assert gs.best_params_ == {"para_1": 1}
-            assert gs.best_index_ == 0
-            assert gs.best_score_ == 2
-            assert isinstance(gs.optimized_pipeline_, DummyPipeline)
-            assert gs.optimized_pipeline_.para_1 == gs.best_params_["para_1"]
-        else:
-            assert not hasattr(gs, "best_params_")
-            assert not hasattr(gs, "best_index_")
-            assert not hasattr(gs, "best_score_")
-            assert not hasattr(gs, "optimized_pipeline_")
-
-    @pytest.mark.parametrize("return_optimized", (False, "score_1", "score_2"))
-    def test_return_optimized_multi(self, return_optimized):
-        gs = GridSearch(
-            DummyPipeline(),
-            ParameterGrid({"para_1": [1, 2]}),
-            scoring=dummy_multi_score_func,
-            return_optimized=return_optimized,
-        )
-        gs.optimize(DummyDataset())
-
-        if return_optimized in ("score_1", "score_2"):
-            assert gs.best_params_ == {"para_1": 1}
-            assert gs.best_index_ == 0
-            assert gs.best_score_ == {"score_1": 2, "score_2": 3}[return_optimized]
-            assert isinstance(gs.optimized_pipeline_, DummyPipeline)
-            assert gs.optimized_pipeline_.para_1 == gs.best_params_["para_1"]
-        else:
-            assert not hasattr(gs, "best_params_")
-            assert not hasattr(gs, "best_index_")
-            assert not hasattr(gs, "best_score_")
-            assert not hasattr(gs, "optimized_pipeline_")
-
-    @pytest.mark.parametrize("return_optimized", (True, "some_str"))
-    def test_return_optimized_multi_exception(self, return_optimized):
-        gs = GridSearch(
-            DummyPipeline(),
-            ParameterGrid({"para_1": [1, 2]}),
-            scoring=dummy_multi_score_func,
-            return_optimized=return_optimized,
-        )
-
-        with pytest.raises(ValueError):
-            gs.optimize(DummyDataset())
-
-    @pytest.mark.parametrize("best_value", (1, 2))
-    def test_rank(self, best_value):
-        def dummy_best_scorer(best):
-            def scoring(pipe, ds):
-                if pipe.para_1 == best:
-                    return 1
-                return 0
-
-            return scoring
-
-        paras = [1, 2]
-        gs = GridSearch(
-            DummyPipeline(),
-            ParameterGrid({"para_1": paras}),
-            scoring=dummy_best_scorer(best_value),
-            return_optimized=True,
-        )
-        gs.optimize(DummyDataset())
-
-        assert gs.best_score_ == 1
-        assert gs.best_index_ == paras.index(best_value)
-        assert gs.best_params_ == {"para_1": best_value}
-        expected_ranking = [2, 2]
-        expected_ranking[paras.index(best_value)] = 1
-        assert list(gs.gs_results_["rank_score"]) == expected_ranking
 
 
 class TestGridSearchCV:
@@ -341,19 +366,6 @@ class TestGridSearchCV:
         )
 
         assert gs.multimetric_ is True
-
-    @pytest.mark.parametrize("return_optimized", (True, "some_str"))
-    def test_return_optimized_multi_exception(self, return_optimized):
-        gs = GridSearchCV(
-            DummyPipeline(),
-            ParameterGrid({"para_1": [1, 2]}),
-            scoring=dummy_multi_score_func,
-            cv=2,
-            return_optimized=return_optimized,
-        )
-
-        with pytest.raises(ValueError):
-            gs.optimize(DummyDataset())
 
     def test_pure_parameters(self):
         optimized_pipe = DummyPipeline()
