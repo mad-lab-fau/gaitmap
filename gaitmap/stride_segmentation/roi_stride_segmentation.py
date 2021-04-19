@@ -57,7 +57,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         Note that sensors that do not have ROIs specified will not be processed.
 
     For more information about the valid formats for the regions of interest list, review the
-    :ref:`coordinate system guide <coordinate_systems>`.
+    :ref:`datatype guide <_datatypes>`.
 
     Parameters
     ----------
@@ -155,8 +155,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             The input data.
             For details on the required datatypes review the class docstring.
         sampling_rate_hz
-            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
-            a number of samples and it will be used to resample the template if `resample_template` is `True`.
+            The sampling rate of the data signal.
         regions_of_interest : single or multi-sensor regions of interest list
             The regions of interest that should be used.
             The segmentation algorithm will be applied to each region individually
