@@ -192,8 +192,9 @@ def _optimize_and_score(  # noqa: too-many-branches
         result["score_time"] = score_time
         result["optimize_time"] = optimize_time
     if return_data_labels:
-        if return_train_score:
-            result["train_data_labels"] = train_set.groups
+        # Note we always return the train data attribute as it is interesting information independent of the train
+        # score and has 0 runtime impact.
+        result["train_data_labels"] = train_set.groups
         result["test_data_labels"] = test_set.groups
     if return_optimizer:
         # This is the actual trained optimizer. This means that `optimizer.optimized_pipeline_` contains the actual

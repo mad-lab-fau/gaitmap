@@ -435,7 +435,7 @@ class GridSearchCV(BaseOptimize):
     return_train_score
         If the performance on the train score should be returned in addition to the test score performance.
         Note, that this increases the runtime.
-        If `True`, the fields `train_data_labels`, `train_score`, and `train_score_single` are available in the results.
+        If `True`, the fields `train_score`, and `train_score_single` are available in the results.
     verbose
         Control the verbosity of information printed during the optimization.
         At the moment this will only effect the caching done, when `pure_parameter_names` are provided.
@@ -698,8 +698,7 @@ class GridSearchCV(BaseOptimize):
         _store("optimize_time", out["optimize_time"])
         _store("score_time", out["score_time"])
         _store_non_numeric("test_data_labels", out["test_data_labels"])
-        if self.return_train_score:
-            _store_non_numeric("train_data_labels", out["train_data_labels"])
+        _store_non_numeric("train_data_labels", out["train_data_labels"])
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
         # not contain all the params
