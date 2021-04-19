@@ -46,10 +46,6 @@
                 "type":"string"
             },
             {
-                "name":"score_time",
-                "type":"number"
-            },
-            {
                 "name":"param_max_cost",
                 "type":"string"
             },
@@ -94,7 +90,6 @@
                     "right"
                 ]
             ],
-            "score_time":1.3423323631,
             "param_max_cost":3,
             "params":{
                 "max_cost":3
@@ -130,7 +125,6 @@
                     "right"
                 ]
             ],
-            "score_time":0.304858923,
             "param_max_cost":5,
             "params":{
                 "max_cost":5

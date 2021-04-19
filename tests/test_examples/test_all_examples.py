@@ -147,7 +147,7 @@ def test_grid_search(snapshot):
     from examples.datasets_and_pipelines.gridsearch import results, segmented_stride_list
 
     snapshot.assert_match(segmented_stride_list, check_dtype=False)
-    snapshot.assert_match(pd.DataFrame(results), check_dtype=False)
+    snapshot.assert_match(pd.DataFrame(results).drop("score_time", axis=1), check_dtype=False)
 
 
 def test_optimizable_pipelines(snapshot):

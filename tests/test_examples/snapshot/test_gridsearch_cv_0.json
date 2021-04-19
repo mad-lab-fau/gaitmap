@@ -6,19 +6,19 @@
                 "type":"integer"
             },
             {
-                "name":"split0_train_data_labels",
-                "type":"string"
-            },
-            {
-                "name":"split1_train_data_labels",
-                "type":"string"
-            },
-            {
                 "name":"split0_test_data_labels",
                 "type":"string"
             },
             {
                 "name":"split1_test_data_labels",
+                "type":"string"
+            },
+            {
+                "name":"split0_train_data_labels",
+                "type":"string"
+            },
+            {
+                "name":"split1_train_data_labels",
                 "type":"string"
             },
             {
@@ -126,18 +126,6 @@
     "data":[
         {
             "index":0,
-            "split0_train_data_labels":[
-                [
-                    "test",
-                    "right"
-                ]
-            ],
-            "split1_train_data_labels":[
-                [
-                    "test",
-                    "left"
-                ]
-            ],
             "split0_test_data_labels":[
                 [
                     "test",
@@ -148,6 +136,18 @@
                 [
                     "test",
                     "right"
+                ]
+            ],
+            "split0_train_data_labels":[
+                [
+                    "test",
+                    "right"
+                ]
+            ],
+            "split1_train_data_labels":[
+                [
+                    "test",
+                    "left"
                 ]
             ],
             "param_max_cost":3,
@@ -192,18 +192,6 @@
         },
         {
             "index":1,
-            "split0_train_data_labels":[
-                [
-                    "test",
-                    "right"
-                ]
-            ],
-            "split1_train_data_labels":[
-                [
-                    "test",
-                    "left"
-                ]
-            ],
             "split0_test_data_labels":[
                 [
                     "test",
@@ -214,6 +202,18 @@
                 [
                     "test",
                     "right"
+                ]
+            ],
+            "split0_train_data_labels":[
+                [
+                    "test",
+                    "right"
+                ]
+            ],
+            "split1_train_data_labels":[
+                [
+                    "test",
+                    "left"
                 ]
             ],
             "param_max_cost":3,
@@ -258,18 +258,6 @@
         },
         {
             "index":2,
-            "split0_train_data_labels":[
-                [
-                    "test",
-                    "right"
-                ]
-            ],
-            "split1_train_data_labels":[
-                [
-                    "test",
-                    "left"
-                ]
-            ],
             "split0_test_data_labels":[
                 [
                     "test",
@@ -280,6 +268,18 @@
                 [
                     "test",
                     "right"
+                ]
+            ],
+            "split0_train_data_labels":[
+                [
+                    "test",
+                    "right"
+                ]
+            ],
+            "split1_train_data_labels":[
+                [
+                    "test",
+                    "left"
                 ]
             ],
             "param_max_cost":5,
@@ -324,18 +324,6 @@
         },
         {
             "index":3,
-            "split0_train_data_labels":[
-                [
-                    "test",
-                    "right"
-                ]
-            ],
-            "split1_train_data_labels":[
-                [
-                    "test",
-                    "left"
-                ]
-            ],
             "split0_test_data_labels":[
                 [
                     "test",
@@ -346,6 +334,18 @@
                 [
                     "test",
                     "right"
+                ]
+            ],
+            "split0_train_data_labels":[
+                [
+                    "test",
+                    "right"
+                ]
+            ],
+            "split1_train_data_labels":[
+                [
+                    "test",
+                    "left"
                 ]
             ],
             "param_max_cost":5,
