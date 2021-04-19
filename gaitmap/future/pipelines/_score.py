@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numbers
 import time
-from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any
+from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any, Type
 
 import joblib
 import numpy as np
@@ -15,7 +15,6 @@ from joblib import Memory
 from sklearn import clone
 from typing_extensions import TypedDict
 
-from gaitmap.base import _BaseSerializable
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
@@ -26,6 +25,8 @@ if TYPE_CHECKING:
 
 
 class ScoreResults(TypedDict, total=False):
+    """Type representing results of _score."""
+
     scores: _AGG_SCORE_TYPE
     single_scores: _SINGLE_SCORE_TYPE
     score_time: float
@@ -34,6 +35,8 @@ class ScoreResults(TypedDict, total=False):
 
 
 class OptimizeScoreResults(TypedDict, total=False):
+    """Type representing results of _score_and_optimize."""
+
     test_scores: _AGG_SCORE_TYPE
     test_single_scores: _SINGLE_SCORE_TYPE
     train_scores: _AGG_SCORE_TYPE
@@ -173,32 +176,8 @@ def _optimize_and_score(
     train_set = dataset[train]
     test_set = dataset[test]
 
-    # We do not set all paras right away, we first create a cached optimize function that only has the hyper
-    # parameters as input.
-    # This allows to cache the train results, if the _optimize_and_score is called multiple times with the same hyper
-    # parameters.
-    # To be sure that nothing "bad" happens here, we also pass in the pipeline itself to invalidate the cache,
-    # in case a completely different pipeline/algorithm is optimized.
-    # Ideally the `memory` object used here should only be used once.
-    # E.g. for a single a GridSearchCV.
-    def cachable_optimize(
-        opti: BaseOptimize, hyperparas: Dict[str, Any], data: Dataset, optimize_params: Dict
-    ) -> BaseOptimize:
-        return opti.set_params(**hyperparas).optimize(data, **optimize_params)
-
-    optimize_func = memory.cache(cachable_optimize)
     start_time = time.time()
-    # Optimization must never modify pure parameters, or we have a problem.
-    # We check that by calculating the hash of all pure parameters before and after the optimization.
-    pure_para_hash = joblib.hash({k: v for k, v in optimizer.get_params().items() if k in pure_parameters})
-    optimizer = optimize_func(optimizer, hyperparameters, train_set, optimize_params_clean)
-    if pure_para_hash != joblib.hash({k: v for k, v in optimizer.get_params().items() if k in pure_parameters}):
-        raise ValueError(
-            "Optimizing the pipeline modified a parameter marked as `pure`. "
-            "This must not happen. "
-            "Double check your optimize implementation and the list of pure parameters."
-        )
-
+    optimizer = _cached_optimize(optimizer, train_set, hyperparameters, pure_parameters, memory, optimize_params_clean)
     optimize_time = time.time() - start_time
 
     # Now we set the remaining paras.
@@ -234,3 +213,55 @@ def _optimize_and_score(
     if return_parameters:
         result["parameters"] = {**hyperparameters, **pure_parameters} or None
     return result
+
+
+def _cached_optimize(
+    optimizer: BaseOptimize, data: Dataset, hyperparameters: Dict, pure_parameters: Dict, memory: Memory, optimize_paras
+):
+    """Set parameters and optimize a pipeline and cache the optimization result.
+
+    This method will cache the training as long as the hyperparameters stay the same.
+    Changing the pure parameters will not invalidate the cache.
+
+    """
+    # We do not set all paras right away, we first create a cached optimize function that only has the hyper
+    # parameters as input.
+    # This allows to cache the train results, if the _optimize_and_score is called multiple times with the same hyper
+    # parameters.
+    # To be sure that nothing "bad" happens here, we also pass in the pipeline class itself to invalidate the cache,
+    # in case a completely different pipeline/algorithm is optimized.
+    # Ideally the `memory` object used here should only be used once.
+    # E.g. for a single a GridSearchCV.
+    def cachable_optimize(
+        opti: Type[BaseOptimize], hyperparas: Dict[str, Any], data: Dataset, optimize_params: Dict
+    ) -> BaseOptimize:
+        _ = opti
+        return optimizer.set_params(**hyperparas).optimize(data, **optimize_params)
+
+    optimize_func = memory.cache(cachable_optimize)
+    # Optimization must never modify pure parameters, or we have a problem.
+    # We check that by calculating the hash of all pure parameters before and after the optimization.
+    opti_paras = optimizer.get_params()
+    pure_para_subset = {k: opti_paras[k] for k in pure_parameters}
+    pure_para_hash = joblib.hash(pure_para_subset)
+    pipeline_pure_para_hash = joblib.hash(_get_nested_paras(pure_para_subset, "pipeline"))
+
+    # This is the actual call to train the optimizer:
+    optimizer = optimize_func(type(optimizer), hyperparameters, data, optimize_paras)
+
+    opti_paras = optimizer.get_params()
+    optimized_pipeline_paras = optimizer.optimized_pipeline_.get_params()
+    # We check that the pure parameters on the optimize object haven't changed and that the pure parameters belonging
+    # to the pipeline have not changed in the `optimized_pipeline`.
+    # Note, that the first case will never happen with gaitmap native Optimizers, but could happen for custom
+    # optimizers.
+    if pipeline_pure_para_hash != joblib.hash(
+        {k: optimized_pipeline_paras[k] for k in _get_nested_paras(pure_parameters, "pipeline")}
+    ) or pure_para_hash != joblib.hash({k: opti_paras[k] for k in pure_parameters}):
+        raise ValueError(
+            "Optimizing the pipeline modified a parameter marked as `pure`. "
+            "This must not happen. "
+            "Double check your optimize implementation and the list of pure parameters."
+        )
+
+    return optimizer

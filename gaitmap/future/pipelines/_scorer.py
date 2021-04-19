@@ -4,7 +4,7 @@ from __future__ import annotations
 import numbers
 import warnings
 from traceback import format_exc
-from typing import Tuple, Union, Dict, TYPE_CHECKING, List, Callable, Optional, Type, TypeVar
+from typing import Tuple, Union, Dict, TYPE_CHECKING, List, Callable, Optional, Type
 
 import numpy as np
 from typing_extensions import Literal
@@ -12,7 +12,6 @@ from typing_extensions import Literal
 from gaitmap.future.dataset import Dataset
 
 if TYPE_CHECKING:
-    from gaitmap.future.pipelines._optimize import BaseOptimize
     from gaitmap.future.pipelines._pipelines import SimplePipeline
 
 _ERROR_SCORE_TYPE = Union[Literal["raise"], float]  # noqa: invalid-name
@@ -114,7 +113,7 @@ def _validate_scorer(
             pipeline.score(Dataset())
         except NotImplementedError as e:
             raise e
-        except Exception:
+        except Exception:  # noqa: broad-except
             pass
         scoring = _passthrough_scoring
     if isinstance(scoring, base_class):
