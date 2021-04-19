@@ -697,8 +697,9 @@ class GridSearchCV(BaseOptimize):
 
         _store("optimize_time", out["optimize_time"])
         _store("score_time", out["score_time"])
-        _store_non_numeric("train_data_labels", out["train_data_labels"])
         _store_non_numeric("test_data_labels", out["test_data_labels"])
+        if self.return_train_score:
+            _store_non_numeric("train_data_labels", out["train_data_labels"])
         # Use one MaskedArray and mask all the places where the param is not
         # applicable for that candidate. Use defaultdict as each candidate may
         # not contain all the params

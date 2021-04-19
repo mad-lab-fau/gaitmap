@@ -60,6 +60,16 @@ def _prefix_para_dict(params_dict: Optional[Dict], prefix="pipeline__") -> Optio
     return {prefix + k: v for k, v in params_dict.items()}
 
 
+def _get_nested_paras(param_dict: Optional[Dict], nested_object_name="pipeline"):
+    """Get the parameters belonging to a nested object and remove the suffix.
+
+    If the parameter of a double nested object are required, use `level_1__level_1`.
+    """
+    if not param_dict:
+        return {}
+    return {k.split("__", 1)[1]: v for k, v in param_dict.items() if k.startswith("{}__".format(nested_object_name))}
+
+
 def _split_hyper_and_pure_parameters(
     candidates: List[Dict], pure_parameters: Optional[List[str]]
 ) -> List[Tuple[Optional[Dict], Optional[Dict]]]:

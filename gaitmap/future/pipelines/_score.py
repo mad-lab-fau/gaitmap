@@ -19,6 +19,7 @@ from gaitmap.base import _BaseSerializable
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
 from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
+from gaitmap.future.pipelines._utils import _get_nested_paras
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._optimize import BaseOptimize  # noqa: cyclic-import
@@ -180,27 +181,34 @@ def _optimize_and_score(
     # in case a completely different pipeline/algorithm is optimized.
     # Ideally the `memory` object used here should only be used once.
     # E.g. for a single a GridSearchCV.
-    # TODO: Throw error if optimization modifies pure parameter
-    def cachable_optimize(opti: BaseOptimize, hyperparas: Dict[str, Any], data: Dataset) -> BaseOptimize:
-        return opti.set_params(**hyperparas).optimize(data, **optimize_params_clean)
+    def cachable_optimize(
+        opti: BaseOptimize, hyperparas: Dict[str, Any], data: Dataset, optimize_params: Dict
+    ) -> BaseOptimize:
+        return opti.set_params(**hyperparas).optimize(data, **optimize_params)
 
     optimize_func = memory.cache(cachable_optimize)
     start_time = time.time()
-    optimizer = optimize_func(optimizer, hyperparameters, train_set)
+    # Optimization must never modify pure parameters, or we have a problem.
+    # We check that by calculating the hash of all pure parameters before and after the optimization.
+    pure_para_hash = joblib.hash({k: v for k, v in optimizer.get_params().items() if k in pure_parameters})
+    optimizer = optimize_func(optimizer, hyperparameters, train_set, optimize_params_clean)
+    if pure_para_hash != joblib.hash({k: v for k, v in optimizer.get_params().items() if k in pure_parameters}):
+        raise ValueError(
+            "Optimizing the pipeline modified a parameter marked as `pure`. "
+            "This must not happen. "
+            "Double check your optimize implementation and the list of pure parameters."
+        )
+
     optimize_time = time.time() - start_time
 
     # Now we set the remaining paras.
-    if pure_parameters:
-        # Because, we need to set the parameters on the optimized pipeline and not the input pipeline we strip the
-        # naming prefix.
-        # TODO: Not sure if that is the nicest way to do things. This also needs to be more specific. At the moment
-        #  we assume that all parameter are just prefixed with algo. THis might not be the case, if you set
-        #  parameters of the actual optimizer (not sure if you would do that, but anyway...
-        striped_paras = {k.split("__", 1)[1]: v for k, v in pure_parameters.items()}
-        optimizer.optimized_pipeline_.set_params(**striped_paras)
-        # We also set the parameters of the input pipeline to make it seem that all parameters were set from the
-        # beginning.
-        optimizer = optimizer.set_params(**pure_parameters)
+    # Because, we need to set the parameters on the optimized pipeline and not the input pipeline we strip the
+    # naming prefix.
+    striped_paras = _get_nested_paras(pure_parameters, "pipeline")
+    optimizer.optimized_pipeline_.set_params(**striped_paras)
+    # We also set the parameters of the input pipeline to make it seem that all parameters were set from the
+    # beginning.
+    optimizer = optimizer.set_params(**pure_parameters)
 
     agg_scores, single_scores = scorer(optimizer.optimized_pipeline_, test_set, error_score)
     score_time = time.time() - optimize_time - start_time
@@ -216,7 +224,8 @@ def _optimize_and_score(
         result["score_time"] = score_time
         result["optimize_time"] = optimize_time
     if return_data_labels:
-        result["train_data_labels"] = train_set.groups
+        if return_train_score:
+            result["train_data_labels"] = train_set.groups
         result["test_data_labels"] = test_set.groups
     if return_optimizer:
         # This is the actual trained optimizer. This means that `optimizer.optimized_pipeline_` contains the actual
