@@ -4,8 +4,8 @@ Region Level Trajectory reconstruction
 
 This example shows how to calculate a IMU/foot trajectory_full over an entire gait sequence using
 :class:`~gaitmap.trajectory_reconstruction.RegionLevelTrajectory`.
-If you need an introduction to trajectory reconstruction in general, have a look at:ref`this example
-<trajectory_stride>`.
+If you need an introduction to trajectory reconstruction in general, have a look 
+at:ref`this example <trajectory_stride>`.
 """
 
 # %%
