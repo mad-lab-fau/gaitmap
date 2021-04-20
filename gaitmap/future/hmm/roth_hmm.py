@@ -222,7 +222,7 @@ class RothHMM(BaseStrideSegmentation):
 
     def _postprocess_matches(self, matches_start_end, dataset) -> Tuple[np.ndarray, np.ndarray]:
         """Perform postprocessing step by snapping the stride border candidates to minima within the given data."""
-        if self.snap_to_min_win_s:
+        if self.snap_to_min_win_s and len(matches_start_end) > 0:
             # Apply snap to minimum
             snap_to_min_data = dataset[self.snap_to_min_axis].to_numpy()
             snap_to_min_win_samples = int(np.round(self.sampling_rate_hz * self.snap_to_min_win_s))
