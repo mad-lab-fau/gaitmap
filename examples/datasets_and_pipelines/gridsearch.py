@@ -65,7 +65,7 @@ dataset
 #
 # The pipeline usually needs 3 things:
 #
-# 1. It needs the subclass SimplePipeline
+# 1. It needs to be subclass of `SimplePipeline`.
 # 2. It needs to have a `run` method that runs all the algorithmic steps and stores the results as class attributes.
 #    The `run` method should expect only a single data point (in our case a single recording of one sensor) as input.
 # 3. A `init` that defines all parameters that should be adjustable. Note, that the names in the function signature of
