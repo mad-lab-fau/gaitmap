@@ -402,7 +402,7 @@ class GridSearchCV(BaseOptimize):
     pipeline
         A gaitmap pipeline implementing `self_optimize`.
     parameter_grid
-        A sklearn parameter grid to define the search space.
+        A sklearn parameter grid to define the search space for the grid search.
     scoring
         A callable that can score a single data point given a pipeline.
         This function should return either a single score or a dictionary of scores.
@@ -419,9 +419,9 @@ class GridSearchCV(BaseOptimize):
         If False, the respective result attributes will not be populated.
         If multiple parameter combinations have the same score, the one tested first will be used.
     cv
-        A integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
+        An integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
         The default (`None`) will result in a 5-fold cross validation.
-        For further inputs check the sklearn documentation
+        For further inputs check the sklearn documentation.
     pure_parameter_names
         .. warning: Do not use this option unless you fully understand it!
 
@@ -460,18 +460,18 @@ class GridSearchCV(BaseOptimize):
     cv_results_
         A dictionary summarizing all results of the gridsearch.
         The format of this dictionary is designed to be directly passed into the `pd.DataFrame` constructor.
-        Each column then represents the result for one set of parameters
+        Each column then represents the result for one set of parameters.
 
         The dictionary contains the following entries:
 
         param_{parameter_name}
-            The value of a respective parameter
+            The value of a respective parameter.
         params
-            A dictionary representing all parameters
+            A dictionary representing all parameters.
         mean_test_score / mean_test_{scorer_name}
             The average test score over all folds.
-            If a single score is used for scoring, than the generic name "score" is used.
-            Otherwise multiple columns with the name of the respective scorer exist
+            If a single score is used for scoring, then the generic name "score" is used.
+            Otherwise, multiple columns with the name of the respective scorer exist.
         std_test_score / std_test_{scorer_name}
             The std of the test scores over all folds.
         rank_test_score / rank_{scorer_name}
@@ -495,7 +495,7 @@ class GridSearchCV(BaseOptimize):
         split{n}_train_data_labels
             The ids of the datapoints used in the train set of fold n.
         mean_{optimize/score}_time
-            Average time over all folds spend for optimization and scoring, respectively
+            Average time over all folds spent for optimization and scoring, respectively.
         std_{optimize/score}_time
             Standard deviation of the optimize/score times over all folds.
 
@@ -515,7 +515,7 @@ class GridSearchCV(BaseOptimize):
     multimetric_
         Rather the scorer returned multiple scores
     final_optimize_time_
-        Time spend to perform the final optimization on all data.
+        Time spent to perform the final optimization on all data.
         This is only available if `return_optimized` is not False.
 
     """
@@ -577,7 +577,7 @@ class GridSearchCV(BaseOptimize):
         # In the future we might be able to allow objects with optimizer Interface as input directly.
         optimizer = Optimize(self.pipeline)
 
-        # For each para combi, we separate the pure parameters (parameters that due not effect the optimization) and
+        # For each para combi, we separate the pure parameters (parameters that do not effect the optimization) and
         # the hyperparameters.
         # This allows for massive caching optimizations in the `_optimize_and_score`.
         parameters = list(self.parameter_grid)
