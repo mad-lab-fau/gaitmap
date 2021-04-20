@@ -60,13 +60,13 @@ dataset
 # %%
 # 2. The Pipeline
 # ---------------
-# The pipeline simply defines what algorithms we want to run on our data and defines, which parameters of pipeline
-# you still want to be able to modify (e.g. to optimize the in the GridSearch).
+# The pipeline simply defines what algorithms we want to run on our data and defines, which parameters of the pipeline
+# you still want to be able to modify (e.g. to optimize in the GridSearch).
 #
 # The pipeline usually needs 3 things:
 #
-# 1. It needs to subclass SimplePipeline
-# 2. It needs to have a `run` method that runs all the algorithmic steps and stores the results on as class attributes.
+# 1. It needs to be subclass of `SimplePipeline`.
+# 2. It needs to have a `run` method that runs all the algorithmic steps and stores the results as class attributes.
 #    The `run` method should expect only a single data point (in our case a single recording of one sensor) as input.
 # 3. A `init` that defines all parameters that should be adjustable. Note, that the names in the function signature of
 #    the `init` method, **must** match the corresponding attribute names (e.g. `max_cost` -> `self.max_cost`).
