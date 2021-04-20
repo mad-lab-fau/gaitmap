@@ -41,7 +41,7 @@ def cross_validate(
     optimizable
         A optimizable class instance like `GridSearch`/`GridSearchCV` or a pipeline wrapped in an `Optimize` object.
     dataset
-        A gaitmap dataset containing all information
+        A gaitmap dataset containing all information.
     groups
         Group labels for samples used by the cross validation helper, in case a grouped CV is used (e.g.
         :class:`~sklearn.model_selection.GroupKFold`).
@@ -52,7 +52,7 @@ def cross_validate(
         This function should return either a single score or a dictionary of scores.
         If scoring is `None` the default `score` method of the optimizable is used instead.
     cv
-        A integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
+        An integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
         The default (`None`) will result in a 5-fold cross validation.
         For further inputs check the sklearn documentation.
     n_jobs
@@ -99,13 +99,13 @@ def cross_validate(
             A list of data labels of the train set in the order the single score values are provided.
             These can be used to associate the `single_score` values with a certain data-point.
         train_score / train_{scorer-name}
-            Results for train set of each fold
+            Results for train set of each fold.
         train_single_score / train_single_{scorer-name}
             Results for individual datapoints in the train set of each fold
         train_data_labels
            The data labels for the train set.
         optimize_time
-            Time required to optimize the pipeline in each fold
+            Time required to optimize the pipeline in each fold.
         score_time
             Cumulative score time to score all data points in the test set.
         optimizer
