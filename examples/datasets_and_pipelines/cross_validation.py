@@ -10,7 +10,7 @@ Whenever using some sort of trainable algorithm it is important to clearly separ
 get an unbiased result.
 Usually this is achieved by a train-test split.
 However, if you don't have that much data, there is always a risk that one random train-test split, will provide
-better results (or worse) results than another.
+better (or worse) results than another.
 In this cases it is a good idea to use cross-validation.
 In this procedure, you perform multiple train-test splits and average the results over all "folds".
 For more information see our :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on cross
@@ -20,7 +20,7 @@ In this example, we will learn how to use the :func:`~gaitmap.future.pipelines.c
 gaitmap.
 For this, we will redo the example on :ref:`optimizable pipelines <optimize_pipelines>` but we will perform the final
 evaluation via cross-validation.
-If you want to have more information on how the dataset and pipeline is built head over to this example.
+If you want to have more information on how the dataset and pipeline is built, head over to this example.
 Here we will just copy the code over.
 """
 import numpy as np
@@ -139,7 +139,7 @@ cv = KFold(n_splits=2)
 # ----------------
 # Now we have all the pieces for the final cross validation.
 # First we need to create instances of our data and pipeline.
-# Then we need to wrap our pipeline instance into a :class:`~gaitmap.future.pipelines.Optimize` wrapper.
+# Then we need to wrap our pipeline instance into an :class:`~gaitmap.future.pipelines.Optimize` wrapper.
 # Finally we can call `cross_validate`.
 from gaitmap.future.pipelines import Optimize, cross_validate
 

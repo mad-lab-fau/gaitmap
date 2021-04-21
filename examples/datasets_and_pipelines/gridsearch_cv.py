@@ -29,7 +29,7 @@ random.seed(1)  # We set the random seed for repeatable results
 # Dataset
 # -------
 # As always, we need a dataset, a pipeline, and a scoring method for a parameter search.
-# We ruse the dataset used in other pipeline examples.
+# We reuse the dataset used in other pipeline examples.
 from gaitmap.future.dataset import Dataset
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 
@@ -163,15 +163,13 @@ cv = KFold(n_splits=2)
 # The pipeline above exposes a couple of parameters.
 # The `template` will be modified during training.
 # The `n_train_strides` controls how many strides are used during training and hence, directly effects the outcome.
-# Therefore, we consider it a **Hyper**parameter.
-# The `max_cost` parameter is important when matching, but does not used, and hence does not influence the result of
-# the training.
-# Therefore, we consider it a normal or **pure** parameter.
+# The `max_cost` parameter is important when matching, but does not influence training.
+# For our basic `GridSearchCV` this doesn't matter and we treat both types of parameters the same way.
+# But if you have a similar case in your pipeline make sure to read the section on *Pure Parameters* at the end of the
+# example.
 #
-# The Gridsearch will be performed over the `n_train_strides` and the `max_cost` parameter.
 # For the `n_train_strides` we test the values `None` (all strides) and 1 (single stride) to make sure that we will
 # see a performance difference between the two options.
-# Note, that we must not Gridsearch parameters that are modified during training.
 from sklearn.model_selection import ParameterGrid
 
 
@@ -232,7 +230,14 @@ segmented_stride_list
 # ---------------
 # As mentioned above, some parameters in this search do not affect the outcome of the optimization step.
 # We call these parameters *pure* parameters.
-# Still, `self_optimize` was called once for each parameter combination above.
+# In this example `max_cost` is a *pure* parameter.
+# In contrast, `n_train_strides` is a *Hyperparameter*, as changing the parameter does change the outcome of the
+# pipeline optimization step.
+#
+# However, during our GridSearch we treat both types of parameters the same.
+# This means, `self_optimize` is called once for each parameter combination above, even though we expect the same output
+# of `self_optimize` for the e.g. parameter combinations `{"max_cost": 3, "n_train_strides": None}` and
+# `{"max_cost": 5, "n_train_strides": None}`.
 # In this example this didn't really matter, because the optimization was fast, but in other cases it could be very
 # wasteful to rerun the optimization multiple times, even though the outcome would be identical.
 #
