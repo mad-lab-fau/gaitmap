@@ -163,7 +163,7 @@ cv = KFold(n_splits=2)
 # The pipeline above exposes a couple of parameters.
 # The `template` will be modified during training.
 # The `n_train_strides` controls how many strides are used during training and hence, directly effects the outcome.
-# The `max_cost` parameter is important when matching, but does not influence training.
+# The `max_cost` parameter is important for the actual dtw-matching, but does not influence the optimization step.
 # For our basic `GridSearchCV` this doesn't matter and we treat both types of parameters the same way.
 # But if you have a similar case in your pipeline make sure to read the section on *Pure Parameters* at the end of the
 # example.
