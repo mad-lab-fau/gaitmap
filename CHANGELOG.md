@@ -41,6 +41,11 @@ project.
 - New parameter `enforce_consistency` added to `gaitmap.event_detection.RamppEventDetection` to make event detection 
   postprocessing optional.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/136)
+- A GridSearchCV optimizer (similar to GridSearchCV in sklearn) with respective example is added.
+  This version is specifically implemented for gaitmap and has some fancy ways of performance optimization.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/139)
+- A cross-validation function is added to evaluate optimizable pipelines of any kind.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/139)
 
 ### Changed
 
