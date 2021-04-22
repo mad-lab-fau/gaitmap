@@ -1,4 +1,5 @@
-from typing import Dict, Union, Tuple, List
+"""Transformers that scale data to certaind ata ranges."""
+from typing import Dict, Union, Tuple
 
 import numpy as np
 import pandas as pd
@@ -48,15 +49,19 @@ class TrainableTransformer(BaseTransformer):
         -------
         self
             The trained instance of the transformer
+
         """
         raise NotImplementedError()
 
 
 class GroupedTransformer(TrainableTransformer):
+    """Apply specific transformations to specific groups of columns."""
+
     def __init__(self, scaler_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]):
         self.scaler_mapping = scaler_mapping
 
     def train(self, data: SensorData, sampling_rate_hz: float):
+        """Train all trainable scaler based on the train data."""
         self._validate(data)
         for k, v in self.scaler_mapping.items():
             if isinstance(v, TrainableTransformer):
@@ -64,6 +69,7 @@ class GroupedTransformer(TrainableTransformer):
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        """Transform all data columns based on the selected scalers."""
         self._validate(data)
         results = []
         for k, v in self.scaler_mapping.items():
@@ -74,7 +80,7 @@ class GroupedTransformer(TrainableTransformer):
         # Check that each column is only mentioned once:
         unique_k = []
         for k in self.scaler_mapping.keys():
-            if not isinstance(k, (Tuple, List)):
+            if not isinstance(k, tuple):
                 k = (k,)
             for i in k:
                 if i in unique_k:
@@ -175,7 +181,7 @@ class AbsMaxScaler(BaseTransformer):
         """
         return self._transform(data, self._get_abs_max(data))
 
-    def _get_abs_max(self, data: SingleSensorData) -> float:
+    def _get_abs_max(self, data: SingleSensorData) -> float:  # noqa: no-self-use
         return np.nanmax(np.abs(data.to_numpy()))
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
@@ -225,6 +231,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformer):
         -------
         self
             The trained instance of the transformer
+
         """
         self.data_max = self._get_abs_max(data)
         return self
@@ -249,7 +256,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformer):
 
 
 class MinMaxScaler(BaseTransformer):
-    """Scale the data by Min-Max values learned from trainings data
+    """Scale the data by Min-Max values learned from trainings data.
 
     After the scaling the min of the data is equivalent ot `feature_range[0]` and the max of the data is equivalent
     to `feature_range[1]`.
@@ -291,7 +298,7 @@ class MinMaxScaler(BaseTransformer):
         data_range = self._calc_data_range(data)
         return self._transform(data, data_range)
 
-    def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:
+    def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:  # noqa: no-self-use
         # We calculate the global min and max over all rows and columns!
         data = data.to_numpy()
         return np.nanmin(data), np.nanmax(data)
@@ -300,7 +307,7 @@ class MinMaxScaler(BaseTransformer):
         data = data.copy()
         feature_range = self.feature_range
         data_min, data_max = data_range
-        transform_range = (data_min - data_min) or 1.0
+        transform_range = (data_max - data_min) or 1.0
         transform_scale = (feature_range[1] - feature_range[0]) / transform_range
         transform_min = feature_range[0] - data_min * transform_scale
 
@@ -310,7 +317,7 @@ class MinMaxScaler(BaseTransformer):
 
 
 class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformer):
-    """Scale the data by Min-Max values learned from trainings data
+    """Scale the data by Min-Max values learned from trainings data.
 
     .. warning :: By default, this scaler will not modify the data!
               Use `train` to adapt the `data_range` parameter based on a set of training data.
@@ -355,6 +362,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformer):
         -------
         self
             The trained instance of the transformer
+
         """
         self.data_range = self._calc_data_range(data)
         return self
