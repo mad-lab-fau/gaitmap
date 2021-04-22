@@ -189,10 +189,11 @@ class GridSearch(BaseOptimize):
         For an explanation see the documentation of :class:`~sklearn.model_selection.GridSearchCV`
     return_optimized
         If True, a pipeline object with the overall best params is created and stored as `optimized_pipeline_`.
-        If `scoring` returns multiple score values, this must be a str corresponding to the name of the score that
-        should be used to rank the results.
+        If `scoring` returns returns a dictionary of score values, this must be a str corresponding to the name of the
+        score that should be used to rank the results.
         If False, the respective result attributes will not be populated.
         If multiple parameter combinations have the same score, the one tested first will be used.
+        Otherwise, higher values are always considered better.
     error_score
         Value to assign to the score if an error occurs during scoring.
         If set to ‘raise’, the error is raised.
@@ -242,7 +243,7 @@ class GridSearch(BaseOptimize):
         In a multimetric case, only the value of the scorer specified by `return_optimized` is provided.
         This is only available if `return_optimized` is not False.
     multimetric_
-        Rather the scorer returned multiple scores
+        If the scorer returned multiple scores
 
     """
 
@@ -389,7 +390,7 @@ class GridSearch(BaseOptimize):
 
 
 class GridSearchCV(BaseOptimize):
-    """Exhaustive (Hyper)Parameter search using a cross validation based score.
+    """Exhaustive (Hyper)Parameter search using a cross validation based score to optimize pipeline parameters.
 
     This class follows as much as possible the interface of :func:`~sklearn.model_selection.GridSearchCV`.
     If the gaitmap documentation is missing some information, the respective documentation of sklearn might be helpful.
@@ -414,10 +415,12 @@ class GridSearchCV(BaseOptimize):
         If True, a pipeline object with the overall best params is created  and reoptimized using all provided data
         as input.
         The optimized pipeline object is stored as `optimized_pipeline_`.
-        If `scoring` returns multiple score values, this must be a str corresponding to the name of the score that
-        should be used to rank the results.
+        If `scoring` returns returns a dictionary of score values, this must be a str corresponding to the name of the
+        score that should be used to rank the results.
         If False, the respective result attributes will not be populated.
-        If multiple parameter combinations have the same score, the one tested first will be used.
+        If multiple parameter combinations have the same mean score over all CV folds, the one tested first will be
+        used.
+        Otherwise, higher mean values are always considered better.
     cv
         An integer specifying the number of folds in a K-Fold cross-validation or a valid cross validation helper.
         The default (`None`) will result in a 5-fold cross validation.
@@ -433,15 +436,17 @@ class GridSearchCV(BaseOptimize):
 
         For more information on this approach see the :ref:`evaluation guide <algorithm_evaluation>`.
     return_train_score
-        If the performance on the train score should be returned in addition to the test score performance.
+        If True the performance on the train score is returned in addition to the test score performance.
         Note, that this increases the runtime.
         If `True`, the fields `train_score`, and `train_score_single` are available in the results.
     verbose
-        Control the verbosity of information printed during the optimization.
+        Control the verbosity of information printed during the optimization (larger number -> higher verbosity).
         At the moment this will only effect the caching done, when `pure_parameter_names` are provided.
     n_jobs
-        The number of processes that should be used to parallelize the search.
-        None means 1, -1 means as many as logical processing cores.
+        The number of parallel jobs.
+        The default (`None`) means 1 job at the time, hence, no parallel computing.
+        -1 means as many as logical processing cores.
+        One job is created per cv + para combi combintion.
     pre_dispatch
         The number of jobs that should be pre dispatched.
         For an explanation see the documentation of :class:`~sklearn.model_selection.GridSearchCV`
@@ -513,7 +518,7 @@ class GridSearchCV(BaseOptimize):
         In a multimetric case, only the value of the scorer specified by `return_optimized` is provided.
         This is only available if `return_optimized` is not False.
     multimetric_
-        Rather the scorer returned multiple scores
+        If the scorer returned multiple scores
     final_optimize_time_
         Time spent to perform the final optimization on all data.
         This is only available if `return_optimized` is not False.

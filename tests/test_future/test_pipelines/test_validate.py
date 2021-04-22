@@ -15,7 +15,7 @@ class TestCrossValidate:
         ds = DummyDataset()
         pipeline = DummyPipeline()
 
-        # The we use effectively a leave one our CV for testing.
+        # The we use len(ds) splits, effectively a leave one our CV for testing.
         cv = KFold(n_splits=len(ds))
         train, test = zip(*cv.split(ds))
         with patch.object(DummyPipeline, "self_optimize", return_value=pipeline) as mock:
@@ -47,8 +47,8 @@ class TestCrossValidate:
             pd.testing.assert_frame_equal(ds[expected].index, actual[0][0].index)
 
     def test_single_score(self):
-        # The we use effectively a leave one our CV for testing.
         ds = DummyDataset()
+        # The we use len(ds) splits, effectively a leave one our CV for testing.
         cv = KFold(n_splits=len(ds))
 
         results = cross_validate(

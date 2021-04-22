@@ -60,7 +60,7 @@ def cross_validate(
         One job is created per CV fold.
         The default (`None`) means 1 job at the time, hence, no parallel computing.
     verbose
-        The verbosity level.
+        The verbosity level (larger number -> higher verbosity).
         At the moment this only effects `Parallel`.
     optimize_params
         Additional parameter that are forwarded to the `optimize` method.
@@ -68,7 +68,7 @@ def cross_validate(
         The number of jobs that should be pre dispatched.
         For an explanation see the documentation of :class:`~joblib.Parallel`.
     return_train_score
-        If the performance on the train score should be returned in addition to the test score performance.
+        If True the performance on the train score is returned in addition to the test score performance.
         Note, that this increases the runtime.
         If `True`, the fields `train_data_labels`, `train_score`, and `train_score_single` are available in the results.
     return_optimizer

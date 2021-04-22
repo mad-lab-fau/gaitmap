@@ -248,6 +248,7 @@ class TestGridSearch:
 
 class TestGridSearchCV:
     def test_single_score(self):
+        """Test scoring when only a single performance parameter."""
         # Fixed cv iterator
         cv = PredefinedSplit(test_fold=[0, 0, 1, 1, 1])  # Test Fold 0 has len==2 and 1 has len == 3
         ds = DummyDataset()
@@ -296,6 +297,7 @@ class TestGridSearchCV:
         assert gs.multimetric_ is False
 
     def test_multi_score(self):
+        """Test scoring when only a multiple performance parameter."""
         # Fixed cv iterator
         cv = PredefinedSplit(test_fold=[0, 0, 1, 1, 1])  # Test Fold 0 has len==2 and 1 has len == 3
         gs = GridSearchCV(

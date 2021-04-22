@@ -80,7 +80,7 @@ def _clone_parameter_dict(param_dict: Optional[Dict]) -> Dict:
 
 
 def _split_hyper_and_pure_parameters(
-    candidates: List[Dict], pure_parameters: Optional[List[str]]
+    param_dict: List[Dict], pure_parameters: Optional[List[str]]
 ) -> List[Tuple[Optional[Dict], Optional[Dict]]]:
     """Split a list of parameters in hyper parameters and pure parameters.
 
@@ -96,16 +96,16 @@ def _split_hyper_and_pure_parameters(
 
     """
     if pure_parameters is None:
-        return [(c, None) for c in candidates]
-    split_candidates = []
-    for c in candidates:
+        return [(c, None) for c in param_dict]
+    split_param_dict = []
+    for c in param_dict:
         c = copy(c)  # Otherwise we remove elements from the actual parameter list that is passed as input.
         tmp = {}
         for k in list(c.keys()):
             if k in pure_parameters:
                 tmp[k] = c.pop(k)
-        split_candidates.append((c or None, tmp or None))
-    return split_candidates
+        split_param_dict.append((c or None, tmp or None))
+    return split_param_dict
 
 
 def _check_safe_run(pipeline: SimplePipeline, *args, **kwargs):
