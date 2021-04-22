@@ -128,15 +128,21 @@ class DtwTemplate(_BaseSerializable):
             return template
         use_cols = list(self.use_cols)
         if isinstance(template, np.ndarray):
+            if self.data_transform is not None:
+                raise ValueError("Data Transformations are only supported for dataframe templates at the moment."
+                                 "Explicitly set `self.data_transform` to None.")
             if template.ndim < 2:
                 raise ValueError("The stored template is only 1D, but a 2D array is required to use `use_cols`")
             return np.squeeze(template[:, use_cols])
-        return template[use_cols]
+        return self._apply_data_transform(template[use_cols], self.sampling_rate_hz)
 
-    def transform_data(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+    def _apply_data_transform(self, data, sampling_rate_hz: float) -> SingleSensorData:
         if not self.data_transform:
             return data
         return self.data_transform.transform(data, sampling_rate_hz)
+
+    def transform_data(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        return self._apply_data_transform(data, sampling_rate_hz)
 
 
 class InterpolatedDtwTemplate(DtwTemplate):
@@ -179,8 +185,9 @@ class InterpolatedDtwTemplate(DtwTemplate):
         )
         self.sampling_rate_hz = effective_sampling_rate
         if isinstance(self.data_transform, TrainableTransformerMixin):
+            # We train the transformer, but we don't apply the transformation to the template data.
             self.data_transform = self.data_transform.train(template_df, self.sampling_rate_hz)
-        self.data = self.transform_data(template_df, sampling_rate_hz)
+        self.data = template_df
         return self
 
 
@@ -218,7 +225,7 @@ class BarthOriginalTemplate(DtwTemplate):
     gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
 
     """
-
+    # TODO: Change Barth Orignal template and multiply it by the scaler.
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
