@@ -147,7 +147,7 @@ def test_grid_search(snapshot):
     from examples.datasets_and_pipelines.gridsearch import results, segmented_stride_list
 
     snapshot.assert_match(segmented_stride_list, check_dtype=False)
-    snapshot.assert_match(pd.DataFrame(results), check_dtype=False)
+    snapshot.assert_match(pd.DataFrame(results).drop("score_time", axis=1), check_dtype=False)
 
 
 def test_optimizable_pipelines(snapshot):
@@ -156,6 +156,26 @@ def test_optimizable_pipelines(snapshot):
     snapshot.assert_match(results.segmented_stride_list_, check_dtype=False)
     snapshot.assert_match(optimized_results.segmented_stride_list_, check_dtype=False)
     snapshot.assert_match(optimized_results.template.get_data())
+
+
+def test_cross_validation(snapshot):
+    from examples.datasets_and_pipelines.cross_validation import result_df
+
+    result_df = result_df.drop(["score_time", "optimize_time", "optimizer"], axis=1)
+    snapshot.assert_match(result_df, check_dtype=False)
+
+
+def test_gridsearch_cv(snapshot):
+    from examples.datasets_and_pipelines.gridsearch_cv import results_df, cached_results
+
+    ignore_cols = ["mean_score_time", "mean_optimize_time", "std_optimize_time", "std_score_time"]
+
+    results_df = results_df.drop(ignore_cols, axis=1)
+    cached_results = pd.DataFrame(cached_results)
+    cached_results = cached_results.drop(ignore_cols, axis=1)
+    pd.testing.assert_frame_equal(cached_results, results_df)
+
+    snapshot.assert_match(results_df, check_dtype=False)
 
 
 def test_multi_process():

@@ -167,7 +167,8 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 # %%
 # Optimization
 # ------------
-# To optimize the pipeline, we will **not** call `self_optimize` directly, but use the `Optimize` wrapper.
+# To optimize the pipeline, we will **not** call `self_optimize` directly, but use the
+# :class:`~gaitmap.future.pipelines.Optimize` wrapper.
 # It has the same interface as other optimization methods like :class:`~gaitmap.future.pipelines.GridSearch`.
 # Further, it makes some checks to catch potential implementation errors of our `self_optimize` method.
 #

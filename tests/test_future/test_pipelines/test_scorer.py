@@ -155,6 +155,20 @@ class TestScorerUtils:
         ),
     )
     def test_validate_scorer(self, scoring, expected):
-        out = _validate_scorer(scoring)
+        pipe = DummyPipeline()
+        pipe.score = lambda x: x
+        out = _validate_scorer(scoring, pipe)
         assert isinstance(out, type(expected))
         assert out._score_func == expected._score_func
+
+    def test_score_not_implemented(self):
+        with pytest.raises(NotImplementedError):
+            _validate_scorer(None, DummyPipeline())
+
+    def test_invalid_input(self):
+        pipe = DummyPipeline()
+        pipe.score = lambda x: x
+        with pytest.raises(ValueError) as e:
+            _validate_scorer("something invalid", pipe)
+
+        assert "A valid scorer must either be a instance of" in str(e)
