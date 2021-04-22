@@ -62,7 +62,22 @@ class FixedScaler(BaseTransformer):
         self.offset = offset
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
-        return (data + self.offset) * self.scale
+        return (data - self.offset) / self.scale
+
+
+class AbsMaxScaler(TrainableTransformer):
+    def __init__(self, feature_max: float = 1, data_max: float = 1):
+        self.feature_max = feature_max
+        self.data_max = data_max
+
+    def train(self, data: SensorData, sampling_rate_hz: float):
+        self.data_max = np.nanmax(np.abs(data.to_numpy()))
+        return self
+
+    def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        data = data.copy()
+        data *= self.feature_max / self.data_max
+        return data
 
 
 class MinMaxScaler(TrainableTransformer):
