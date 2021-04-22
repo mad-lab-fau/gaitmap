@@ -35,8 +35,9 @@ import pandas as pd
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
 from tpcp import Dataset
 
+from gaitmap.data_transform._scaler import AbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-
+from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
 
 class MyDataset(Dataset):
     @property
@@ -82,7 +83,7 @@ class MyDataset(Dataset):
 #           It further **must** return self.
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
-from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, PureParameter
+from tpcp import CloneFactory, OptimizableParameter, OptimizablePipeline, PureParameter
 
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
@@ -108,19 +109,9 @@ class MyPipeline(OptimizablePipeline):
         # We expect multiple datapoints in the dataset
         all_strides = []
         sampling_rate = dataset[0].sampling_rate_hz
-        for dp in dataset:
-            data = self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr")
-            # We take the segmented stride list from the reference/ground truth here
-            reference_stride_list = dp.segmented_stride_list_
-            all_strides.extend([data.iloc[s:e] for _, (s, e) in reference_stride_list[["start", "end"]].iterrows()])
-        template = create_interpolated_dtw_template(all_strides, sampling_rate_hz=sampling_rate)
-        # We normalize the template the same way as `BarthOriginalTemplate` is normalized to make them comparable
-        scaling = np.max(np.abs(template.get_data().to_numpy()))
-        template.scaling = scaling
-        template.data /= scaling
-
-        # We modify the pipeline instance and set the new template
-        self.template = template
+        datasets = [self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr") for dp in dataset]
+        stride_lists = [dp.segmented_stride_list_ for dp in dataset]
+        self.template.create_template(datasets, stride_lists, sampling_rate, columns=["gyr_pa", "gyr_ml", "gyr_si"])
         return self
 
     def _convert_cord_system(self, data, foot):
@@ -179,6 +170,7 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 # The means the pipeline object used as input will not be modified.
 from tpcp.optimize import Optimize
 
+pipeline = MyPipeline(template=InterpolatedDtwTemplate(data_transform=AbsMaxScaler()))
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
 optimized_results = optimized_pipe.safe_run(test_set)

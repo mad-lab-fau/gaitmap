@@ -400,9 +400,7 @@ class BaseDtw(BaseAlgorithm):
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)
         # Downscale the data by the factor provided by the template
-        scaling_factor = float(getattr(template, "scaling", None) or 1.0)
-        matching_data /= scaling_factor
-
+        matching_data = template.transform_data(matching_data, sampling_rate_hz=self.sampling_rate_hz)
         if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
             final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:

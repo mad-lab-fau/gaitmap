@@ -1,13 +1,16 @@
 """Dtw template base classes and helper."""
+import warnings
 from importlib.resources import open_text
-from typing import List, Optional, Tuple, Union, cast
+from typing import List, Optional, Tuple, Union, cast, Iterable
 
 import numpy as np
 import pandas as pd
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.data_transform import BaseTransformer, FixedScaler, TrainableTransformerMixin
+from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import multi_array_interpolation
-from gaitmap.utils.datatype_helper import is_single_sensor_data
+from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData, SingleSensorStrideList
 
 
 class DtwTemplate(_BaseSerializable):
@@ -27,7 +30,7 @@ class DtwTemplate(_BaseSerializable):
         If you want to use a template stored somewhere else, load it manually and then provide it as template.
     sampling_rate_hz
         The sampling rate that was used to record the template data
-    scaling
+    data_transform
         A multiplicative factor used to downscale the signal before the template is applied.
         The downscaled signal should then have have the same value range as the template signal.
         A large scale difference between data and template will result in mismatches.
@@ -49,23 +52,62 @@ class DtwTemplate(_BaseSerializable):
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
     use_cols: Optional[Tuple[Union[str, int], ...]]
-    scaling: Optional[float]
+    data_transform: Optional[BaseTransformer]
     data: Optional[Union[np.ndarray, pd.DataFrame]]
 
     def __init__(
         self,
+        *,
         data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
-        scaling: Optional[float] = None,
+        data_transform: Optional[BaseTransformer] = None,
         use_cols: Optional[Tuple[Union[str, int], ...]] = None,
+        scaling: Optional[float] = None,
     ):
+
         self.data = data
         self.template_file_name = template_file_name
         self.sampling_rate_hz = sampling_rate_hz
+        self.data_transform = data_transform
+        # Note this will overwrite `data_transform`, but sclaing is deprecated.
         self.scaling = scaling
         self.use_cols = use_cols
         super().__init__()
+
+    @property
+    def scaling(self):
+        warnings.warn(
+            "The scaling parameter is deprecated use `data_transform` instead. "
+            "The provided scaling will be automatically converted into an equivalent `data_transform` "
+            "value."
+        )
+        if self.data_transform is None:
+            return None
+        if not isinstance(self.data_transform, FixedScaler):
+            raise ValueError(
+                "The deprecated `scaling` parameter is only still supported, if `data_transform` is a " "fixed scaler."
+            )
+        return self.data_transform.scale
+
+    @scaling.setter
+    def scaling(self, value: float):
+        if value is not None:
+            warnings.warn(
+                "The scaling parameter is deprecated use `data_transform` instead. "
+                "The provided scaling will be automatically converted into an equivalent `data_transform` "
+                "value."
+            )
+            self.data_transform = FixedScaler(scale=value)
+
+    def create_template(
+        self,
+        data_sequences: List[SingleSensorData],
+        label_sequences: List[SingleSensorStrideList],
+        sampling_rate_hz: float,
+        **kwargs,
+    ):
+        raise NotImplementedError()
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
@@ -91,13 +133,63 @@ class DtwTemplate(_BaseSerializable):
             return np.squeeze(template[:, use_cols])
         return template[use_cols]
 
+    def transform_data(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        if not self.data_transform:
+            return data
+        return self.data_transform.transform(data, sampling_rate_hz)
+
+
+class InterpolatedDtwTemplate(DtwTemplate):
+    def __init__(
+        self,
+        *,
+        data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
+        sampling_rate_hz: Optional[float] = None,
+        data_transform: Optional[BaseTransformer] = None,
+        interpolation_method: str = "linear",
+        n_samples: Optional[int] = None,
+        use_cols: Optional[Tuple[Union[str, int], ...]] = None,
+    ):
+        self.interpolation_method = interpolation_method
+        self.n_samples = n_samples
+        super().__init__(
+            data=data,
+            template_file_name=None,
+            sampling_rate_hz=sampling_rate_hz,
+            data_transform=data_transform,
+            use_cols=use_cols,
+        )
+
+    def create_template(
+        self,
+        data_sequences: List[SingleSensorData],
+        label_sequences: List[SingleSensorStrideList],
+        sampling_rate_hz: float,
+        *,
+        columns: Optional[List[_Hashable]] = None,
+        **kwargs,
+    ):
+        template_df, effective_sampling_rate = _create_interpolated_dtw_template(
+            data_sequences,
+            label_sequences,
+            sampling_rate_hz,
+            kind=self.interpolation_method,
+            n_samples=self.n_samples,
+            columns=columns,
+        )
+        self.sampling_rate_hz = effective_sampling_rate
+        if isinstance(self.data_transform, TrainableTransformerMixin):
+            self.data_transform = self.data_transform.train(template_df, self.sampling_rate_hz)
+        self.data = self.transform_data(template_df, sampling_rate_hz)
+        return self
+
 
 class BarthOriginalTemplate(DtwTemplate):
     """Template used for stride segmentation by Barth et al.
 
     Parameters
     ----------
-    scaling
+    data_transform
         A multiplicative factor used to downscale the signal before the template is applied.
         The downscaled signal should then have have the same value range as the template signal.
         A large scale difference between data and template will result in mismatches.
@@ -130,12 +222,14 @@ class BarthOriginalTemplate(DtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(self, scaling=500.0, use_cols: Optional[Tuple[Union[str, int], ...]] = None):
+    def __init__(
+        self, *, data_transform=FixedScaler(scale=500.0), use_cols: Optional[Tuple[Union[str, int], ...]] = None
+    ):
         super().__init__(
             use_cols=use_cols,
             template_file_name=self.template_file_name,
             sampling_rate_hz=self.sampling_rate_hz,
-            scaling=scaling,
+            data_transform=data_transform,
         )
 
 
@@ -175,8 +269,11 @@ def create_dtw_template(
     gaitmap.stride_segmentation.DtwTemplate: Template base class
 
     """
+    warnings.warn(
+        "`create_dtw_template` is deprecated. Use the `DtwTemplate` constructor directly.", DeprecationWarning
+    )
     template_instance = DtwTemplate(
-        data=template, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols
+        data=template, sampling_rate_hz=sampling_rate_hz, data_transform=scaling, use_cols=use_cols
     )
 
     return template_instance
@@ -228,23 +325,54 @@ def create_interpolated_dtw_template(
     gaitmap.stride_segmentation.DtwTemplate: Template base class
 
     """
+    warnings.warn(
+        "`create_interpolated_dtw_template` is deprecated. Use `InterpolatedDtwTemplate.create_template` instead.",
+        DeprecationWarning,
+    )
     if not isinstance(signal_sequence, list):
         signal_sequence = [signal_sequence]
+    # TODO: Deprecate method
+    fake_stride_list = [pd.DataFrame([[0, len(df)]], columns=["start", "end"]) for df in signal_sequence]
+    template_df = _create_interpolated_dtw_template(signal_sequence, fake_stride_list, kind, n_samples)
+    return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
 
+
+def _create_interpolated_dtw_template(
+    signal_sequence: List[SingleSensorData],
+    label_sequences: List[SingleSensorStrideList],
+    sampling_rate_hz: float,
+    kind: str = "linear",
+    n_samples: Optional[int] = None,
+    columns: Optional[List[_Hashable]] = None,
+) -> Tuple[pd.DataFrame, float]:
     for df in signal_sequence:
         is_single_sensor_data(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
 
-    if n_samples is None:
-        # get mean stride length over given strides
-        n_samples = int(np.rint(np.mean([len(df) for df in signal_sequence])))
-
     # We need to ensure that the columns of all dfs have the right order before
     # exporting to numpy.
-    expected_col_order = signal_sequence[0].columns
-    arrays = [df.reindex(columns=expected_col_order).to_numpy() for df in signal_sequence]
+    expected_col_order = columns or signal_sequence[0].columns
+    arrays = list(_cut_strides_from_labels(signal_sequence, label_sequences, expected_col_order))
+    # get mean stride length over given strides
+    mean_stride_samples = int(np.rint(np.mean([len(df) for df in arrays])))
+    n_samples = n_samples or mean_stride_samples
     resampled_sequences_df_list = multi_array_interpolation(arrays, n_samples, kind=kind)
 
     template = np.mean(resampled_sequences_df_list, axis=0)
     template_df = pd.DataFrame(template.T, columns=expected_col_order)
 
-    return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
+    # When we interpolate all templates to a fixed number of samples, the effective sampling rate changes.
+    # We approximate the sampling rate using the average stride length in the provided data.
+    effective_sampling_rate = sampling_rate_hz
+    if n_samples:
+        effective_sampling_rate = n_samples / (mean_stride_samples / sampling_rate_hz)
+
+    return template_df, effective_sampling_rate
+
+
+def _cut_strides_from_labels(
+    signal_sequence: Iterable[SingleSensorData], label_sequences: Iterable[SingleSensorStrideList], expected_col_order
+):
+    for df, labels in zip(signal_sequence, label_sequences):
+        df = df.reindex(columns=expected_col_order).to_numpy()
+        for (_, s, e) in labels[["start", "end"]].itertuples():
+            yield df[s:e]

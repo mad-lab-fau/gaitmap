@@ -5,6 +5,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 
+from gaitmap.data_transform import FixedScaler
 from gaitmap.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     DtwTemplate,
@@ -92,7 +93,7 @@ class TestBartTemplate:
 
         assert_frame_equal(barth_instance.get_data(), instance.get_data())
         assert barth_instance.sampling_rate_hz == 204.8
-        assert barth_instance.scaling == 500.0
+        assert barth_instance.data_transform.get_params() == FixedScaler(500., 0).get_params()
 
     def test_hashing(self):
         """Test that calling `get_data` does not modify the hash of the object."""
