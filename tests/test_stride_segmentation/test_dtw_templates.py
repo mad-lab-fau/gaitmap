@@ -12,6 +12,7 @@ from gaitmap.stride_segmentation.dtw_templates import (
     create_dtw_template,
     create_interpolated_dtw_template,
 )
+from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import compare_algo_objects
 
@@ -87,13 +88,13 @@ class TestTemplateBaseClass:
 
 class TestBartTemplate:
     def test_load(self):
-        instance = DtwTemplate(template_file_name="barth_original_template.csv", scaling=FixedScaler(500., 0))
+        instance = DtwTemplate(template_file_name="barth_original_template.csv", scaling=FixedScaler(500.0, 0))
 
         barth_instance = BarthOriginalTemplate()
 
         assert_frame_equal(barth_instance.get_data(), instance.get_data())
         assert barth_instance.sampling_rate_hz == 204.8
-        assert barth_instance.scaling.get_params() == FixedScaler(500., 0).get_params()
+        assert barth_instance.scaling.get_params() == FixedScaler(500.0, 0).get_params()
 
     def test_hashing(self):
         """Test that calling `get_data` does not modify the hash of the object."""
@@ -147,7 +148,15 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
+
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
 
         assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
@@ -158,7 +167,15 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2.index = template_data2.index + 10
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
+
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
 
         assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
         assert isinstance(instance, DtwTemplate)
@@ -168,7 +185,15 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
+
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
 
         result_template_df = pd.DataFrame(np.array([0, 0, 0, 0, 0]), columns=["dummy_col"])
         assert_array_almost_equal(instance.get_data(), result_template_df.to_numpy())
@@ -179,9 +204,18 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 4]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=None)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
+
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
 
         assert len(instance.get_data()) == 4
+        assert instance.sampling_rate_hz == 1
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_upsample(self):
@@ -189,9 +223,18 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 4]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=5)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
 
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=5).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
         assert len(instance.get_data()) == 5
+        # Effective sampling rate is calculated based on the number of samples before and after interpolation
+        assert instance.sampling_rate_hz == 5 / 4
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_fixed_length_template_downsample(self):
@@ -199,13 +242,23 @@ class TestCreateInterpolatedTemplate:
         template_data1 = pd.DataFrame(np.array([0, 1, 2, 3, 5]), columns=["dummy_col"])
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 3, 4, 5, 6]), columns=["dummy_col"])
 
-        instance = create_interpolated_dtw_template([template_data1, template_data2], kind=self.kind, n_samples=3)
+        dummy_sequence_list = [
+            pd.DataFrame([[0, len(data)]], columns=["start", "end"]) for data in [template_data1, template_data2]
+        ]
 
+        instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=3).create_template(
+            [template_data1, template_data2],
+            dummy_sequence_list,
+            sampling_rate_hz=1,
+        )
         assert_array_equal(len(instance.get_data()), 3)
+        # Effective sampling rate is calculated based on the number of samples before and after interpolation
+        assert instance.sampling_rate_hz == 3 / 6
         assert isinstance(instance, DtwTemplate)
 
     def test_create_interpolated_template_check_multisensordataset_exception(self):
         """Test only single sensor datasets are valid input."""
+        # TODO: Change this entire test, because the inputs to the new function are different.
         template_data1 = pd.DataFrame(np.array([[0, 1, 2], [0, 1, 2]]), columns=["col_1", "col_2", "col_3"])
         template_data2 = pd.DataFrame(np.array([[0, 1, 2], [0, 1, 2]]), columns=["col_1", "col_2", "col_3"])
 
