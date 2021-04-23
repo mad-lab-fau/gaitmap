@@ -87,13 +87,13 @@ class TestTemplateBaseClass:
 
 class TestBartTemplate:
     def test_load(self):
-        instance = DtwTemplate(template_file_name="barth_original_template.csv")
+        instance = DtwTemplate(template_file_name="barth_original_template.csv", scaling=FixedScaler(500., 0))
 
         barth_instance = BarthOriginalTemplate()
 
         assert_frame_equal(barth_instance.get_data(), instance.get_data())
         assert barth_instance.sampling_rate_hz == 204.8
-        assert barth_instance.data_transform.get_params() == FixedScaler(500., 0).get_params()
+        assert barth_instance.scaling.get_params() == FixedScaler(500., 0).get_params()
 
     def test_hashing(self):
         """Test that calling `get_data` does not modify the hash of the object."""

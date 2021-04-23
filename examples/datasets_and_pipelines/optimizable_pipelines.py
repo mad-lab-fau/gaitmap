@@ -170,7 +170,7 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 # The means the pipeline object used as input will not be modified.
 from tpcp.optimize import Optimize
 
-pipeline = MyPipeline(template=InterpolatedDtwTemplate(data_transform=AbsMaxScaler()))
+pipeline = MyPipeline(template=InterpolatedDtwTemplate(scaling=AbsMaxScaler()))
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
 optimized_results = optimized_pipe.safe_run(test_set)

@@ -394,13 +394,14 @@ class BaseDtw(BaseAlgorithm):
                 "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
             )
 
-        # Extract the parts of the data that is relevant for matching.
-        template_array, matching_data = self._extract_relevant_data_and_template(template.get_data(), dataset)
+        # Extract the parts of the data that is relevant for matching and apply potential data transforms defined in
+        # the template.
+        template_array, matching_data = self._extract_relevant_data_and_template(
+            template, dataset, self.sampling_rate_hz
+        )
         # Ensure that all values are floats
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)
-        # Downscale the data by the factor provided by the template
-        matching_data = template.transform_data(matching_data, sampling_rate_hz=self.sampling_rate_hz)
         if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
             final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
         else:
@@ -577,39 +578,44 @@ class BaseDtw(BaseAlgorithm):
         return template
 
     @staticmethod
-    def _extract_relevant_data_and_template(template, data) -> Tuple[np.ndarray, np.ndarray]:
+    def _extract_relevant_data_and_template(
+        template: DtwTemplate, data: Union[np.ndarray, pd.DataFrame], sampling_rate_hz: float
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Get the relevant parts of the data based on the provided template and return template and data as array."""
+        template_array = template.get_data()
         data_is_numpy = isinstance(data, np.ndarray)
-        template_is_numpy = isinstance(template, np.ndarray)
+        template_is_numpy = isinstance(template_array, np.ndarray)
         if data_is_numpy and template_is_numpy:
             data = np.squeeze(data)
-            template = np.squeeze(template)
-            if template.ndim == 1 and data.ndim == 1:
-                return template, data
-            if template.shape[1] > data.shape[1]:
+            template_array = np.squeeze(template_array)
+            if template_array.ndim == 1 and data.ndim == 1:
+                return template_array, data
+            if template_array.shape[1] > data.shape[1]:
                 raise ValueError(
                     "The provided data has less columns than the used template. ({} < {})".format(
-                        data.shape[1], template.shape[1]
+                        data.shape[1], template_array.shape[1]
                     )
                 )
             return (
-                template,
-                data[:, : template.shape[1]],
+                template_array,
+                data[:, : template_array.shape[1]],
             )
         data_is_df = isinstance(data, pd.DataFrame)
-        template_is_df = isinstance(template, pd.DataFrame)
+        template_is_df = isinstance(template_array, pd.DataFrame)
 
         if data_is_df and template_is_df:
             try:
-                data = data[template.columns]
+                data = data[template_array.columns]
+                # We transform the data here based on the scaling/preprocessing defined in the template
+                data = template.transform_data(data, sampling_rate_hz)
             except KeyError as e:
                 raise KeyError(
                     "Some columns of the template are not available in the data! This might happen because you "
                     "provided the data in the wrong coordinate frame (Sensor vs. Body)."
                     "Review the general documentation for more information."
-                    "\n\nMissing columns: {}".format(list(set(template.columns) - set(data.columns)))
+                    "\n\nMissing columns: {}".format(list(set(template_array.columns) - set(data.columns)))
                 ) from e
-            return template.to_numpy(), data.to_numpy()
+            return template_array.to_numpy(), data.to_numpy()
         # TODO: Better error message
         raise ValueError("Invalid combination of data and template")
 

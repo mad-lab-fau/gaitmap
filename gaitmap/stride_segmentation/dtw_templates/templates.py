@@ -30,7 +30,7 @@ class DtwTemplate(_BaseSerializable):
         If you want to use a template stored somewhere else, load it manually and then provide it as template.
     sampling_rate_hz
         The sampling rate that was used to record the template data
-    data_transform
+    scaling
         A multiplicative factor used to downscale the signal before the template is applied.
         The downscaled signal should then have have the same value range as the template signal.
         A large scale difference between data and template will result in mismatches.
@@ -52,7 +52,7 @@ class DtwTemplate(_BaseSerializable):
     sampling_rate_hz: Optional[float]
     template_file_name: Optional[str]
     use_cols: Optional[Tuple[Union[str, int], ...]]
-    data_transform: Optional[BaseTransformer]
+    scaling: Optional[BaseTransformer]
     data: Optional[Union[np.ndarray, pd.DataFrame]]
 
     def __init__(
@@ -61,44 +61,21 @@ class DtwTemplate(_BaseSerializable):
         data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         template_file_name: Optional[str] = None,
         sampling_rate_hz: Optional[float] = None,
-        data_transform: Optional[BaseTransformer] = None,
+        scaling: Optional[BaseTransformer] = None,
         use_cols: Optional[Tuple[Union[str, int], ...]] = None,
-        scaling: Optional[float] = None,
     ):
 
         self.data = data
         self.template_file_name = template_file_name
         self.sampling_rate_hz = sampling_rate_hz
-        self.data_transform = data_transform
-        # Note this will overwrite `data_transform`, but sclaing is deprecated.
+        if isinstance(scaling, float):
+            warnings.warn(
+                "Using a numeric value for scaling is deprecated."
+                "Use `scaling=FixedScaler({})` instead.".format(scaling)
+            )
         self.scaling = scaling
         self.use_cols = use_cols
         super().__init__()
-
-    @property
-    def scaling(self):
-        warnings.warn(
-            "The scaling parameter is deprecated use `data_transform` instead. "
-            "The provided scaling will be automatically converted into an equivalent `data_transform` "
-            "value."
-        )
-        if self.data_transform is None:
-            return None
-        if not isinstance(self.data_transform, FixedScaler):
-            raise ValueError(
-                "The deprecated `scaling` parameter is only still supported, if `data_transform` is a " "fixed scaler."
-            )
-        return self.data_transform.scale
-
-    @scaling.setter
-    def scaling(self, value: float):
-        if value is not None:
-            warnings.warn(
-                "The scaling parameter is deprecated use `data_transform` instead. "
-                "The provided scaling will be automatically converted into an equivalent `data_transform` "
-                "value."
-            )
-            self.data_transform = FixedScaler(scale=value)
 
     def create_template(
         self,
@@ -107,7 +84,13 @@ class DtwTemplate(_BaseSerializable):
         sampling_rate_hz: float,
         **kwargs,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Creating a new template array from data is not supported for the template base "
+            "class or any classes with pre-calculated template arrays (e.g. "
+            "`BarthOriginalTemplate`). "
+            "If you want to create a custom template use on of the template subclasses that "
+            "implements this method."
+        )
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
@@ -125,24 +108,29 @@ class DtwTemplate(_BaseSerializable):
         template = data
 
         if self.use_cols is None:
-            return template
+            return self._apply_scaling(template, self.sampling_rate_hz)
         use_cols = list(self.use_cols)
         if isinstance(template, np.ndarray):
-            if self.data_transform is not None:
-                raise ValueError("Data Transformations are only supported for dataframe templates at the moment."
-                                 "Explicitly set `self.data_transform` to None.")
             if template.ndim < 2:
                 raise ValueError("The stored template is only 1D, but a 2D array is required to use `use_cols`")
             return np.squeeze(template[:, use_cols])
-        return self._apply_data_transform(template[use_cols], self.sampling_rate_hz)
+        return self._apply_scaling(template[use_cols], self.sampling_rate_hz)
 
-    def _apply_data_transform(self, data, sampling_rate_hz: float) -> SingleSensorData:
-        if not self.data_transform:
+    def _apply_scaling(self, data, sampling_rate_hz: float) -> SingleSensorData:
+        if not self.scaling:
             return data
-        return self.data_transform.transform(data, sampling_rate_hz)
+        if isinstance(data, np.ndarray):
+            raise ValueError(
+                "Data Transformations are only supported for dataframe templates at the moment."
+                "Explicitly set `self.data_transform` to None."
+            )
+        if isinstance(self.scaling, float):
+            # TODO: Remove once Deprecation is done
+            return FixedScaler(self.scaling, 0).transform(data, sampling_rate_hz)
+        return self.scaling.transform(data, sampling_rate_hz)
 
     def transform_data(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
-        return self._apply_data_transform(data, sampling_rate_hz)
+        return self._apply_scaling(data, sampling_rate_hz)
 
 
 class InterpolatedDtwTemplate(DtwTemplate):
@@ -151,7 +139,7 @@ class InterpolatedDtwTemplate(DtwTemplate):
         *,
         data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
         sampling_rate_hz: Optional[float] = None,
-        data_transform: Optional[BaseTransformer] = None,
+        scaling: Optional[BaseTransformer] = None,
         interpolation_method: str = "linear",
         n_samples: Optional[int] = None,
         use_cols: Optional[Tuple[Union[str, int], ...]] = None,
@@ -162,7 +150,7 @@ class InterpolatedDtwTemplate(DtwTemplate):
             data=data,
             template_file_name=None,
             sampling_rate_hz=sampling_rate_hz,
-            data_transform=data_transform,
+            scaling=scaling,
             use_cols=use_cols,
         )
 
@@ -184,9 +172,9 @@ class InterpolatedDtwTemplate(DtwTemplate):
             columns=columns,
         )
         self.sampling_rate_hz = effective_sampling_rate
-        if isinstance(self.data_transform, TrainableTransformerMixin):
+        if isinstance(self.scaling, TrainableTransformerMixin):
             # We train the transformer, but we don't apply the transformation to the template data.
-            self.data_transform = self.data_transform.train(template_df, self.sampling_rate_hz)
+            self.scaling = self.scaling.train(template_df, self.sampling_rate_hz)
         self.data = template_df
         return self
 
@@ -196,7 +184,7 @@ class BarthOriginalTemplate(DtwTemplate):
 
     Parameters
     ----------
-    data_transform
+    scaling
         A multiplicative factor used to downscale the signal before the template is applied.
         The downscaled signal should then have have the same value range as the template signal.
         A large scale difference between data and template will result in mismatches.
@@ -225,18 +213,17 @@ class BarthOriginalTemplate(DtwTemplate):
     gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
 
     """
+
     # TODO: Change Barth Orignal template and multiply it by the scaler.
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(
-        self, *, data_transform=FixedScaler(scale=500.0), use_cols: Optional[Tuple[Union[str, int], ...]] = None
-    ):
+    def __init__(self, *, scaling=FixedScaler(scale=500.0), use_cols: Optional[Tuple[Union[str, int], ...]] = None):
         super().__init__(
             use_cols=use_cols,
             template_file_name=self.template_file_name,
             sampling_rate_hz=self.sampling_rate_hz,
-            data_transform=data_transform,
+            scaling=scaling,
         )
 
 
@@ -280,7 +267,7 @@ def create_dtw_template(
         "`create_dtw_template` is deprecated. Use the `DtwTemplate` constructor directly.", DeprecationWarning
     )
     template_instance = DtwTemplate(
-        data=template, sampling_rate_hz=sampling_rate_hz, data_transform=scaling, use_cols=use_cols
+        data=template, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols
     )
 
     return template_instance
@@ -340,7 +327,9 @@ def create_interpolated_dtw_template(
         signal_sequence = [signal_sequence]
     # TODO: Deprecate method
     fake_stride_list = [pd.DataFrame([[0, len(df)]], columns=["start", "end"]) for df in signal_sequence]
-    template_df = _create_interpolated_dtw_template(signal_sequence, fake_stride_list, kind, n_samples)
+    template_df, _ = _create_interpolated_dtw_template(
+        signal_sequence, fake_stride_list, sampling_rate_hz, kind, n_samples
+    )
     return create_dtw_template(template_df, sampling_rate_hz, scaling, use_cols)
 
 
@@ -370,7 +359,7 @@ def _create_interpolated_dtw_template(
     # When we interpolate all templates to a fixed number of samples, the effective sampling rate changes.
     # We approximate the sampling rate using the average stride length in the provided data.
     effective_sampling_rate = sampling_rate_hz
-    if n_samples:
+    if n_samples and sampling_rate_hz:
         effective_sampling_rate = n_samples / (mean_stride_samples / sampling_rate_hz)
 
     return template_df, effective_sampling_rate
