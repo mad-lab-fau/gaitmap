@@ -92,6 +92,26 @@ class DtwTemplate(_BaseSerializable):
             "implements this method."
         )
 
+    def train_scaler(self):
+        """Adapt the scaler based on the current template data.
+
+        .. note:: This will only have an effect, if the scaler is actually trainable.
+
+        .. note:: Usually the scaler will be retrained when you create a template using the `create_template` method.
+                  This means, you only need to use this method after manually modifying `data` attribute or changed
+                  the scaler after creating the template.
+
+        Returns
+        -------
+        self
+            The instance of the template with the `self.scaling` attribute updated.
+
+        """
+        if isinstance(self.scaling, TrainableTransformer):
+            # We train the transformer, but we don't apply the transformation to the template data.
+            self.scaling = self.scaling.train(self.get_data(), self.sampling_rate_hz)
+        return self
+
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.
 
@@ -176,6 +196,7 @@ class InterpolatedDtwTemplate(DtwTemplate):
             # We train the transformer, but we don't apply the transformation to the template data.
             self.scaling = self.scaling.train(template_df, self.sampling_rate_hz)
         self.data = template_df
+        self.train_scaler()
         return self
 
 
