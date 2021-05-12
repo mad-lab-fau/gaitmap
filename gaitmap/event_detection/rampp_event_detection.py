@@ -42,7 +42,8 @@ class RamppEventDetection(BaseEventDetection):
         for the ic the algorithm first looks for a local minimum in the gyr_ml signal after the swing phase. The actual
         ic is then determined in the acc_pa signal in the ic_search_region_ms around that gyr_ml minimum.
         ic_search_region_ms[0] describes the start and ic_search_region_ms[1] the end of the region to check around the
-        gyr_ml minimum. The values of `ic_search_region_ms` must be greater or equal than the sample time (1/`sampling_rate_hz`).
+        gyr_ml minimum. The values of `ic_search_region_ms` must be greater or equal than the sample time 
+        (1/`sampling_rate_hz`).
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     memory
