@@ -53,7 +53,7 @@ This follows the Python convention for indices and therefore, you can extract a 
 Note that `dataset[end]` refers to the first value **after** the region!
 To get the last sample of a region you must use `end-1`.
 
-The length of a region (in samples) is simply `end - start`.
+The duration of a region (in samples) is simply `end - start`.
 
 For edge cases this means:
 
