@@ -34,6 +34,15 @@ project.
   For most methods and functions, it should be enough to just change the import statement.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
 
+### Migration Guide
+
+- template scaling is now different
+- Use scaler instead
+
+### Scientific Changes
+
+- effective sampling rate
+
 ## [1.6.0] - 2022-05-31
 
 ### Scientific Changes
