@@ -1,4 +1,5 @@
 """The gait sequence detection algorithm by Ullrich et al. 2020."""
+import copy
 import itertools
 from typing import Tuple, Union, Dict, TypeVar
 
@@ -76,6 +77,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         example for left and right foot, may occur. If `merge_gait_sequences_from_sensors` is set to True,
         the gait sequences from all sensors will be merged by applying a logical `OR` to the single results. This is
         only allowed for synchronized sensor data.
+    additional_margin_s
+        Additional seconds to be added around the detected gait sequences a symmetrical margin window. Resulting
+        overlaps will be handeled.
 
     Attributes
     ----------
@@ -144,6 +148,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         locomotion_band: Tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
+        additional_margin_s: float = None
     ):
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
@@ -152,6 +157,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.locomotion_band = locomotion_band
         self.harmonic_tolerance_hz = harmonic_tolerance_hz
         self.merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
+        self.additional_margin_s = additional_margin_s
 
     def detect(self: Self, data: SensorData, sampling_rate_hz: float) -> Self:
         """Find gait sequences in data.
@@ -262,6 +268,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             gait_sequences_start = (np.arange(len(gait_sequences_bool)) * (overlap + 1))[gait_sequences_bool]
         # concat subsequent gs
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
+
+        if self.additional_margin_s:
+            gait_sequences_start_end = self._add_symmetric_margin_to_start_end_list(gait_sequences_start_end,
+                                                                                    sig_length)
 
         if gait_sequences_start_end.size == 0:
             gait_sequences_ = pd.DataFrame(columns=["start", "end"])
@@ -447,6 +457,24 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_merged = gait_sequences_merged.reset_index()
 
         return {sensor_name: gait_sequences_merged for sensor_name in sensor_names}
+
+    def _add_symmetric_margin_to_start_end_list(self, gait_sequences_start_end, sig_length) -> \
+            np.ndarray:
+        """Add a symmetrical margin to start and end of the gait sequences."""
+        margin_samples = int(np.round(self.additional_margin_s * self.sampling_rate_hz))
+
+        gait_sequences_start_end_copy = copy.deepcopy(gait_sequences_start_end)
+        for gs in gait_sequences_start_end_copy:
+            gs[0] = gs[0] - margin_samples
+            gs[1] = gs[1] + margin_samples
+
+        if gait_sequences_start_end_copy[0][0] < 0:
+            gait_sequences_start_end_copy[0][0] = 0
+
+        if gait_sequences_start_end_copy[-1][1] >= sig_length:
+            gait_sequences_start_end_copy[-1][1] = sig_length - 1
+
+        return merge_intervals(gait_sequences_start_end_copy)
 
 
 def _gait_sequence_concat(sig_length: int, gait_sequences_start: np.ndarray, window_size: int) -> np.ndarray:
