@@ -148,7 +148,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         locomotion_band: Tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
-        additional_margin_s: float = None
+        additional_margin_s: float = None,
     ):
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
@@ -270,8 +270,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_start_end = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
         if self.additional_margin_s:
-            gait_sequences_start_end = self._add_symmetric_margin_to_start_end_list(gait_sequences_start_end,
-                                                                                    sig_length)
+            gait_sequences_start_end = self._add_symmetric_margin_to_start_end_list(
+                gait_sequences_start_end, sig_length
+            )
 
         if gait_sequences_start_end.size == 0:
             gait_sequences_ = pd.DataFrame(columns=["start", "end"])
@@ -458,8 +459,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         return {sensor_name: gait_sequences_merged for sensor_name in sensor_names}
 
-    def _add_symmetric_margin_to_start_end_list(self, gait_sequences_start_end, sig_length) -> \
-            np.ndarray:
+    def _add_symmetric_margin_to_start_end_list(self, gait_sequences_start_end, sig_length) -> np.ndarray:
         """Add a symmetrical margin to start and end of the gait sequences."""
         margin_samples = int(np.round(self.additional_margin_s * self.sampling_rate_hz))
 
