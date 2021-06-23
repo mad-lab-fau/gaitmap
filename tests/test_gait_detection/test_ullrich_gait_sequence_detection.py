@@ -388,7 +388,7 @@ class TestUllrichGaitSequenceDetection:
     def test_adding_of_margin(self):
         "Test the addition of a symmetric margin to all gait sequences."
         # dummy array with start and end sample values of gait sequences
-        gait_sequences_start_end = np.array([[100, 500], [600, 800], [1000, 1400], [1900, 1999]])
+        gait_sequences_start_end = np.array([[100, 500], [600, 800], [1000, 1400], [1900, 2000]])
         margin_s = 2  # add two seconds to the beginning and end of all gait sequences
         sig_length = 2000  # the maximum signal length in samples needs to be mocked for this test
 
@@ -400,6 +400,6 @@ class TestUllrichGaitSequenceDetection:
         # 2. the last end sample should be sig_length - 1
         # 3. the first three of the original gait sequences should be merged to one due to overlaps after adding the
         # margin
-        out_expected = [[0, 1600], [1700, 1999]]
+        out_expected = [[0, 1600], [1700, 2000]]
 
         np.testing.assert_array_equal(out, out_expected)

@@ -464,15 +464,14 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         margin_samples = int(np.round(self.additional_margin_s * self.sampling_rate_hz))
 
         gait_sequences_start_end_copy = copy.deepcopy(gait_sequences_start_end)
-        for gs in gait_sequences_start_end_copy:
-            gs[0] = gs[0] - margin_samples
-            gs[1] = gs[1] + margin_samples
+        gait_sequences_start_end_copy[:, 0] -= margin_samples
+        gait_sequences_start_end_copy[:, 1] += margin_samples
 
         if gait_sequences_start_end_copy[0][0] < 0:
             gait_sequences_start_end_copy[0][0] = 0
 
         if gait_sequences_start_end_copy[-1][1] >= sig_length:
-            gait_sequences_start_end_copy[-1][1] = sig_length - 1
+            gait_sequences_start_end_copy[-1][1] = sig_length
 
         return merge_intervals(gait_sequences_start_end_copy)
 
