@@ -46,6 +46,10 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/139)
 - A cross-validation function is added to evaluate optimizable pipelines of any kind.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/139)
+- `gaitmap.gait_detection.ullrich_gait_sequence_detection.UllrichGaitSequenceDetection` now has the option to add a
+ margin that will be symmetrically added around the detected gait sequences. This should help to included intervals
+  before and after steady state gait, that can be missed by the algorithm.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/152)
 
 ### Changed
 
