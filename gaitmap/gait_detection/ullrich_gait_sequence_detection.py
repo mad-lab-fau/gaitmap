@@ -79,7 +79,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         only allowed for synchronized sensor data.
     additional_margin_s
         Additional seconds to be added around the detected gait sequences a symmetrical margin window. Resulting
-        overlaps will be handeled.
+        overlaps will be handeled by `gaitmap.utils.array_handling.merge_intervals` such that overlapping gait
+        sequences after adding the margin will be merged. If the margins exceed the limits of the signals,
+        they intervals will be clipped to [0, length(signal)].
 
     Attributes
     ----------
