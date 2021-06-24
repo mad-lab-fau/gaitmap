@@ -329,6 +329,13 @@ def _get_angle_at_index(angle_course: np.ndarray, index_per_stride: pd.Series) -
 
 
 def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
+
+    # We need to handle the case of empty orientations df manually
+    if orientations.empty:
+        angles = pd.Series()
+        angles.index.name = "s_id"
+        return angles
+
     start = orientations.groupby(level="s_id").first()
     end = orientations.groupby(level="s_id").last()
     angles = pd.Series(
