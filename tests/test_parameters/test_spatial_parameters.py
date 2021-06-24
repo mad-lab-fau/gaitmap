@@ -134,6 +134,24 @@ class TestIndividualParameter:
             check_exact=False,
         )
 
+    def test_turning_angle_empty_orientation(self):
+        """Test the turning angle computation in case of empty orientation input.
+
+        For scipy<=1.5.4 this produced an empty Series automatically. For scipy>1.6.0 we need to handle the case of
+        an empty input manually. The expected output is defined based on the behavior for scipy==1.5.4.
+        """
+        empty_orientations = pd.DataFrame(columns=["q_x", "q_y", "q_z", "q_w"])
+        empty_orientations.index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['s_id', 'sample'])
+
+        expected_out = pd.Series()
+        expected_out.index.name = "s_id"
+
+        assert_series_equal(
+            _calc_turning_angle(empty_orientations),
+            expected_out,
+            check_exact=False,
+        )
+
     def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course):
         assert_series_equal(
             _compute_sole_angle_course(single_sensor_orientation_list_with_index), single_sensor_sole_angle_course
