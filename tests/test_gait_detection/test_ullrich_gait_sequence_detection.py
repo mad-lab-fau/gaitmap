@@ -384,3 +384,27 @@ class TestUllrichGaitSequenceDetection:
         out = _gait_sequence_concat(sig_length, gait_sequences_start, window_size)
 
         np.testing.assert_array_equal(out, out_expected)
+
+    @pytest.mark.parametrize(
+        "margin_s, output",
+        (
+            (10, np.array([[90, 510], [590, 810], [990, 1410], [1890, 2000]])),  # simple case, no overlaps
+            (200, np.array([[0, 1600], [1700, 2000]])),  # simple overlaps, exceeding signal range
+            (800, np.array([[0, 2000]])),  # multiple overlaps
+        ),
+    )
+    def test_adding_of_margin(self, margin_s, output):
+        """Test the addition of a symmetric margin to all gait sequences."""
+        # dummy array with start and end sample values of gait sequences
+        gait_sequences_start_end = np.array([[100, 500], [600, 800], [1000, 1400], [1900, 2000]])
+        sig_length = 2000  # the maximum signal length in samples needs to be mocked for this test
+
+        gsd = UllrichGaitSequenceDetection(additional_margin_s=margin_s)
+        gsd.sampling_rate_hz = 1
+        margin_added = gsd._add_symmetric_margin_to_start_end_list(gait_sequences_start_end, sig_length)
+
+        # 1. there should be no negative values
+        # 2. the last end sample should be sig_length
+        # 3. the overlapping gait sequences should be merged after adding the
+        # margin
+        np.testing.assert_array_equal(margin_added, output)
