@@ -141,7 +141,7 @@ class TestIndividualParameter:
         an empty input manually. The expected output is defined based on the behavior for scipy==1.5.4.
         """
         empty_orientations = pd.DataFrame(columns=["q_x", "q_y", "q_z", "q_w"])
-        empty_orientations.index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['s_id', 'sample'])
+        empty_orientations.index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=["s_id", "sample"])
 
         expected_out = pd.Series()
         expected_out.index.name = "s_id"
