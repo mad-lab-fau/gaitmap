@@ -74,8 +74,10 @@ project.
 
 ### Fixed
 - After internal updates of scipy>=1.6 we now manually handle empty orientation inputs in 
-`gaitmap.parameters.spatial_parameters._calc_turning_angle`.
-(https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/153)
+`gaitmap.parameters.spatial_parameters._calc_turning_angle` and 
+`gaitmap.parameters.spatial_parameters._compute_sole_angle_course`.
+(https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/153, 
+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/154)
 
 ### Migration Guide
 
