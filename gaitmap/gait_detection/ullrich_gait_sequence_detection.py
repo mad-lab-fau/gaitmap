@@ -467,11 +467,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_start_end_copy[:, 0] -= margin_samples
         gait_sequences_start_end_copy[:, 1] += margin_samples
 
-        if gait_sequences_start_end_copy[0][0] < 0:
-            gait_sequences_start_end_copy[0][0] = 0
-
-        if gait_sequences_start_end_copy[-1][1] >= sig_length:
-            gait_sequences_start_end_copy[-1][1] = sig_length
+        gait_sequences_start_end_copy = np.clip(gait_sequences_start_end_copy, 0, sig_length)
 
         return merge_intervals(gait_sequences_start_end_copy)
 
