@@ -366,6 +366,12 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     # TODO: Is this different from calculating the angle only in the sagittal plane?
     # TODO: Linear dedrifting
     """
+    # We need to handle the case of empty orientations df manually
+    if orientations.empty:
+        floor_angle = pd.Series()
+        floor_angle.index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=["s_id", "sample"])
+        return floor_angle
+
     forward = pd.DataFrame(
         Rotation.from_quat(orientations.to_numpy()).apply([1, 0, 0]), columns=list("xyz"), index=orientations.index
     )
