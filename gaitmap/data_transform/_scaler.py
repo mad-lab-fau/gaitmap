@@ -1,5 +1,5 @@
 """Transformers that scale data to certaind ata ranges."""
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -31,17 +31,16 @@ class BaseTransformer(_BaseSerializable):
         raise NotImplementedError()
 
 
-class TrainableTransformer(BaseTransformer):
+class TrainableTransformerMixin():
     """Base class for transformers with adaptable parameters."""
 
-    def train(self, data: SingleSensorData, sampling_rate_hz: float):
+    def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
         """Learn the parameters of the transformer based on provided data.
 
         Parameters
         ----------
         data
            A dataframe representing single sensor data.
-           # TODO: Does this make sense to only have a single sensor dataframe here?
         sampling_rate_hz
             The sampling rate of the data in Hz
 
@@ -54,29 +53,32 @@ class TrainableTransformer(BaseTransformer):
         raise NotImplementedError()
 
 
-class GroupedTransformer(TrainableTransformer):
+class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     """Apply specific transformations to specific groups of columns."""
 
     def __init__(self, scaler_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]):
         self.scaler_mapping = scaler_mapping
 
-    def train(self, data: SensorData, sampling_rate_hz: float):
-        """Train all trainable scaler based on the train data."""
-        self._validate(data)
+    def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
+        """Train all trainable scaler based on the self_optimize data."""
+        mapped_cols = self._validate_mapping()
+        for d in data:
+            self._validate(d, mapped_cols)
         for k, v in self.scaler_mapping.items():
-            if isinstance(v, TrainableTransformer):
-                self.scaler_mapping[k] = v.train(data, sampling_rate_hz=sampling_rate_hz)
+            if isinstance(v, TrainableTransformerMixin):
+                self.scaler_mapping[k] = v.self_optimize(data, sampling_rate_hz=sampling_rate_hz)
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
         """Transform all data columns based on the selected scalers."""
-        self._validate(data)
+        mapped_cols = self._validate_mapping()
+        self._validate(data, mapped_cols)
         results = []
         for k, v in self.scaler_mapping.items():
             results.append(v.transform(data[list(k)], sampling_rate_hz=sampling_rate_hz))
         return pd.concat(results)[data.columns]
 
-    def _validate(self, data):
+    def _validate_mapping(self) -> Set[_Hashable]:
         # Check that each column is only mentioned once:
         unique_k = []
         for k in self.scaler_mapping.keys():
@@ -88,9 +90,12 @@ class GroupedTransformer(TrainableTransformer):
                         "Each column name must only be mentioned once in the keys of `scaler_mapping`."
                         "Applying multiple transformations to the same column is not supported."
                     )
-            unique_k.append(k)
-        if not set(data.columns).issuperset(unique_k):
-            raise ValueError("You specified transformations for columns that do not exist." "This is not supported!")
+                unique_k.append(i)
+        return set(unique_k)
+
+    def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]):
+        if not set(data.columns).issuperset(selected_cols):
+            raise ValueError("You specified transformations for columns that do not exist. This is not supported!")
 
 
 class FixedScaler(BaseTransformer):
@@ -182,7 +187,7 @@ class AbsMaxScaler(BaseTransformer):
         return self._transform(data, self._get_abs_max(data))
 
     def _get_abs_max(self, data: SingleSensorData) -> float:  # noqa: no-self-use
-        return np.nanmax(np.abs(data.to_numpy()))
+        return float(np.nanmax(np.abs(data.to_numpy())))
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
         data = data.copy()
@@ -190,13 +195,15 @@ class AbsMaxScaler(BaseTransformer):
         return data
 
 
-class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformer):
+class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
     """Scale data by the absolut max of a trainings sequence.
 
     .. warning :: By default, this scaler will not modify the data!
-                  Use `train` to adapt the `data_range` parameter based on a set of training data.
+                  Use `self_optimize` to adapt the `data_range` parameter based on a set of training data.
 
-    During training the scaler will calculate the absolute max from the trainigs data:
+    During training the scaler will calculate the absolute max from the trainigs data,
+    Per provided dataset `data_max` will be calculated.
+    The final `data_max` is the max over all train sequences.
 
     .. code-block::
 
@@ -217,7 +224,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformer):
         self.data_max = data_max
         super().__init__(feature_max=feature_max)
 
-    def train(self, data: SensorData, sampling_rate_hz: float):
+    def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
         """Calculate scaling parameters based on a trainings sequence.
 
         Parameters
@@ -233,7 +240,8 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformer):
             The trained instance of the transformer
 
         """
-        self.data_max = self._get_abs_max(data)
+        max_vals = [self._get_abs_max(d) for d in data]
+        self.data_max = np.max(max_vals)
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
@@ -301,7 +309,7 @@ class MinMaxScaler(BaseTransformer):
     def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:  # noqa: no-self-use
         # We calculate the global min and max over all rows and columns!
         data = data.to_numpy()
-        return np.nanmin(data), np.nanmax(data)
+        return float(np.nanmin(data)), float(np.nanmax(data))
 
     def _transform(self, data: SingleSensorData, data_range) -> SingleSensorData:
         data = data.copy()
@@ -316,13 +324,14 @@ class MinMaxScaler(BaseTransformer):
         return data
 
 
-class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformer):
+class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
     """Scale the data by Min-Max values learned from trainings data.
 
     .. warning :: By default, this scaler will not modify the data!
-              Use `train` to adapt the `data_range` parameter based on a set of training data.
+              Use `self_optimize` to adapt the `data_range` parameter based on a set of training data.
 
-    During training the scaling and offset is calculated based on the min and max of the trainings sequence:
+    During training the scaling and offset is calculated based on the min and max of the trainings sequence.
+    If multiple sequences are provided for training, the global min and max values of **all** sequences are used.
 
     .. code-block::
         data_range =  (x_train.min(), x_train.max())
@@ -348,7 +357,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformer):
         self.data_range = data_range
         super().__init__(feature_range=feature_range)
 
-    def train(self, data: SensorData, sampling_rate_hz: float):
+    def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
         """Calculate scaling parameters based on a trainings sequence.
 
         Parameters
@@ -364,7 +373,8 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformer):
             The trained instance of the transformer
 
         """
-        self.data_range = self._calc_data_range(data)
+        mins, maxs = zip(*(self._calc_data_range(d) for d in data))
+        self.data_range = np.min(mins), np.maxs(maxs)
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
