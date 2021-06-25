@@ -8,6 +8,8 @@ from gaitmap.data_transform._scaler import (
     AbsMaxScaler,
     TrainableAbsMaxScaler,
     TrainableMinMaxScaler,
+    PerColTransformer,
+    IdentityTransformer,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "FixedScaler",
     "AbsMaxScaler",
     "TrainableAbsMaxScaler",
+    "PerColTransformer",
+    "IdentityTransformer",
 ]

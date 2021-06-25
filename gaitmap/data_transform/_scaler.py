@@ -1,5 +1,6 @@
 """Transformers that scale data to certaind ata ranges."""
-from typing import Dict, Union, Tuple, Sequence, Set
+from functools import reduce
+from typing import Dict, Union, Tuple, Sequence, Set, Optional
 
 import numpy as np
 import pandas as pd
@@ -66,11 +67,20 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         Grouped Transformer is called.
         The transformer will be cloned before that and hence, you can provide the same instance of a transformer
         multiple times in the mapping.
+    keep_all_cols
+        If `True`, columns that are not mentioned as keys in the `transformer_mapping`, will be added to the output
+        unchanged.
+        Otherwise, only columns that are actually transformed remain in the output.
 
     """
 
-    def __init__(self, transformer_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]):
+    def __init__(
+        self,
+        transformer_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer],
+        keep_all_cols: bool = False,
+    ):
         self.transformer_mapping = transformer_mapping
+        self.keep_all_cols = keep_all_cols
 
     def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
         """Train all trainable transformers based on the provided data.
@@ -93,6 +103,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         -------
         self
             The trained instance of the transformer
+
         """
         mapped_cols = self._validate_mapping()
         for d in data:
@@ -111,12 +122,17 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         """Transform all data columns based on the selected scalers."""
         mapped_cols = self._validate_mapping()
         self._validate(data, mapped_cols)
-        results = []
-        for k, v in self.transformer_mapping.items():
+        results = {}
+        mapping = self.transformer_mapping
+        if self.keep_all_cols:
+            mapping = {**mapping, **{k: IdentityTransformer() for k in set(data.columns) - mapped_cols}}
+        for k, v in mapping.items():
             if not isinstance(k, tuple):
                 k = (k,)
-            results.append(v.transform(data[list(k)], sampling_rate_hz=sampling_rate_hz))
-        return pd.concat(results)[data.columns]
+            tmp = v.transform(data[list(k)], sampling_rate_hz=sampling_rate_hz)
+            for col in k:
+                results[col] = tmp[[col]]
+        return pd.concat(results, axis=1)[data.columns]
 
     def _validate_mapping(self) -> Set[_Hashable]:
         # Check that each column is only mentioned once:
@@ -136,6 +152,58 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]):  # noqa: no-self-use
         if not set(data.columns).issuperset(selected_cols):
             raise ValueError("You specified transformations for columns that do not exist. This is not supported!")
+
+
+class PerColTransformer(BaseTransformer, TrainableTransformerMixin):
+    """Apply a single transformer to each column individually.
+
+    This is identical to using the `GroupedTransformer` and specifying each column in the `transformer_mapping` as
+    individual keys
+    """
+
+    def __init__(
+        self,
+        base_transformer: BaseTransformer,
+        _trained_transformers: Optional[Dict[_Hashable, BaseTransformer]] = None,
+    ):
+        self.base_transformer = base_transformer
+        self._trained_transformers = _trained_transformers
+
+    def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
+        if not isinstance(self.base_transformer, TrainableTransformerMixin):
+            return self
+        self._validate(data)
+        trained_transformers = {}
+        for col in data[0].columns:
+            trained_transformers[col] = self.base_transformer.clone().self_optimize(
+                [d[[col]] for d in data], sampling_rate_hz
+            )
+        self._trained_transformers = trained_transformers
+        return self
+
+    def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        """Transform all data columns based on the selected scalers."""
+        results = {}
+        if not isinstance(self.base_transformer, TrainableTransformerMixin) or self._trained_transformers is None:
+            for col in data.columns:
+                results[col] = self.base_transformer.transform(data[[col]], sampling_rate_hz)
+        else:
+            if not set(data.columns) == set(self._trained_transformers.keys()):
+                raise ValueError("The provided data has different columns than the data used during training.")
+            for k, v in self._trained_transformers.items():
+                results[k] = v.transform(data[[k]], sampling_rate_hz=sampling_rate_hz)
+        return pd.concat(results)[data.columns]
+
+    def _validate(self, data: Sequence[SingleSensorData]):  # noqa:  no-self-use
+        if len(data) > 1 and not reduce(lambda x, y: set(x.columns) == set(y.columns), data[:-1], data[-1]):
+            raise ValueError("All datasets must have the same columns to be used with this transformer.")
+
+
+class IdentityTransformer(BaseTransformer):
+    """Dummy Transformer that does not modify the data."""
+
+    def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        return data
 
 
 class FixedScaler(BaseTransformer):
@@ -262,8 +330,8 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
     """
 
-    def __init__(self, feature_max: float = 1, data_max: float = 1):
-        self.data_max = data_max
+    def __init__(self, feature_max: float = 1, _data_max: float = 1):
+        self._data_max = _data_max
         super().__init__(feature_max=feature_max)
 
     def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
@@ -283,7 +351,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
         """
         max_vals = [self._get_abs_max(d) for d in data]
-        self.data_max = np.max(max_vals)
+        self._data_max = np.max(max_vals)
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
@@ -302,7 +370,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
             The scaled dataframe
 
         """
-        return self._transform(data, self.data_max)
+        return self._transform(data, self._data_max)
 
 
 class MinMaxScaler(BaseTransformer):
@@ -395,9 +463,9 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
     def __init__(
         self,
         feature_range: Tuple[float, float] = (0, 1.0),
-        data_range: Union[Tuple[float, float]] = (0, 1.0),
+        _data_range: Union[Tuple[float, float]] = (0, 1.0),
     ):
-        self.data_range = data_range
+        self._data_range = _data_range
         super().__init__(feature_range=feature_range)
 
     def self_optimize(self, data: Sequence[SingleSensorData], sampling_rate_hz: float):
@@ -417,7 +485,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
         """
         mins, maxs = zip(*(self._calc_data_range(d) for d in data))
-        self.data_range = np.min(mins), np.maxs(maxs)
+        self._data_range = np.min(mins), np.maxs(maxs)
         return self
 
     def transform(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
@@ -436,4 +504,4 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
             The scaled dataframe
 
         """
-        return self._transform(data, self.data_range)
+        return self._transform(data, self._data_range)
