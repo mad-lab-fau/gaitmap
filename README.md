@@ -19,11 +19,11 @@ Its API is designed to mimic `sklearn` to provide you a familiar and elegant int
 First, install a compatible version of Python.
 Then install the package using pip.
 
-For a stable experience install one of our releases (e.g. 1.3.0):
+For a stable experience install one of our releases (e.g. 1.4.0):
 
 For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
 ```
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.3.0 --upgrade
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.4.0 --upgrade
 ```
 
 The latest git (bleeding edge) version:
