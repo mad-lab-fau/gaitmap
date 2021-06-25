@@ -8,7 +8,29 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [1.4.0] - 
+## [1.5.0] -
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Migration Guide
+
+### Scientific Changes
+
+
+## [1.4.0] - 2021-06-25
+
+With 1.4. we finally realize the longterm goal to make the comparison of algorithms easy and unify code across dataset 
+and algorithms.
+The highlights of this release are the new experimental `Dataset` and `Pipeline` classes and first-class support for
+trainable algorithms.
 
 ### Added
 
@@ -80,6 +102,11 @@ project.
 https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/154)
 
 ### Migration Guide
+
+- If you used `gaitmap.evaluation_utils.scores.precision_recall_f1_score`, the output is now a dictionary instead of a
+  tuple. Migration should be straight forward.
+- Some parameters are now keyword only. In case you get an unexpected error, telling you that "an algorithm only 
+  receives n positional arguments, but you provided n+1", double-check the call signature.
 
 ### Scientific Changes
 
