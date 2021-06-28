@@ -695,9 +695,12 @@ def subsequence_cost_matrix_with_constrains(
     have been taken, it is not possible to take another vertical or horizontal, respectively, unless at least one
     step in any other direction is taken.
 
-    The returned cost-matrix has 3 "layers".
+    To save ram, the implementation, only tracks a single counter.
+    Negative values of the counter indicate that we are currently in a series of horizontal steps (along the `longseq`).
+    Positive values indicate that we are in a series of vertical steps.
+    In result, the returned cost-matrix has 2 "layers".
     The first layer is the actual warping cost.
-    The second layer is the count of vertical steps and the third layer the count of horizontal steps.
+    The second layer are the respective counters.
     """
     cum_sum = _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps)
     if return_only_cost is True:
@@ -707,38 +710,40 @@ def subsequence_cost_matrix_with_constrains(
 
 @njit(cache=True)
 def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
+    # We consider longseq directions as negative and subseq directions as positive values
+    max_longseq_steps = -max_longseq_steps
     l1 = subseq.shape[0]
     l2 = longseq.shape[0]
-    cum_sum = np.full((l1 + 1, l2 + 1, 3), np.inf)
+    cum_sum = np.full((l1 + 1, l2 + 1, 2), np.inf)
     cum_sum[0, :] = 0.0
+    # All counter values are set to 0
     cum_sum[0:] = 0
 
     for i in range(l1):
         for j in range(l2):
             cum_sum[i + 1, j + 1, 0] = _local_squared_dist(subseq[i], longseq[j])
-            vals = np.empty((3, 3))
+            vals = np.empty((3, 2))
             shifts = [(1, 0), (0, 1), (0, 0)]
-            for index in range(3):
-                shift = shifts[index]
+            # Generate all possible outcomes and check if any of them violate the constrains.
+            for index, shift in enumerate(shifts):
                 vals[index, :] = cum_sum[i + shift[0], j + shift[1]]
-                # Check if either the number vertical or horizontal step exceed the threshold.
-                # In this case set the distance to infinite, so that this direction can not be picked.
-                # vertical step
-                if index == 0 and vals[index, 1] >= max_longseq_steps:
-                    vals[index, 0] = np.inf
-                # horizontal step
-                elif index == 1 and vals[index, 2] >= max_subseq_steps:
-                    vals[index, 0] = np.inf
-
+            # Check if either the number vertical or horizontal step exceed the threshold.
+            # In this case set the distance to infinite, so that this direction can not be picked.
+            # vertical step
+            if vals[0, 1] <= max_longseq_steps:
+                vals[0, 0] = np.inf
+            if vals[1, 1] >= max_subseq_steps:
+                vals[1, 0] = np.inf
             smallest_cost = np.argmin(vals[:, 0])
             # update the step counter based on what step is taken (smallest cost)
-            if smallest_cost == 0:
-                # Vertical step is take, update verticals tep counter, reset horizontal
-                cum_sum[i + 1, j + 1, 1] = vals[0, 1] + 1
-                cum_sum[i + 1, j + 1, 2] = 0
-            elif smallest_cost == 1:
-                # Horizontal step is take, update horizontal tep counter, reset vertical
-                cum_sum[i + 1, j + 1, 2] = vals[1, 2] + 1
-                cum_sum[i + 1, j + 1, 1] = 0
+            # We only need to update the step counter, if the smallest cost wasn't the diagonal step (2)
+            if smallest_cost != 2:
+                step = -1 if smallest_cost == 0 else 1
+                current_counter = vals[smallest_cost, 1]
+                if np.sign(step) != np.sign(current_counter):
+                    # The step changes direction from horizontal to vertical
+                    # This means we reset the counter
+                    current_counter = 0
+                cum_sum[i + 1, j + 1, 1] = current_counter + step
             cum_sum[i + 1, j + 1, 0] += vals[smallest_cost, 0]
     return cum_sum[1:, 1:]
