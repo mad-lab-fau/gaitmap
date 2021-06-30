@@ -78,6 +78,7 @@ package:
     - packages
   <<: *cached_python_base
   script:
+    - deactivate && pip install poetry
     - poetry run doit update_version -v prepatch
     - poetry config repositories.gaitmap https://mad-srv.informatik.uni-erlangen.de/api/v4/projects/943/packages/pypi
     - poetry publish --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
