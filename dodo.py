@@ -108,12 +108,14 @@ def create_prerelease():
         .split(" ", 1)[1]
         .rsplit(".", 1)[0]
     )
-    last_commit = (
-        subprocess.check_output("git log -1 --pretty=%cd --date=format:%Y%m%d%H%M%S".split()).decode().strip()
-    )
-    new_version += "."+last_commit
+    last_commit = subprocess.check_output("git log -1 --pretty=%cd --date=format:%Y%m%d%H%M%S".split()).decode().strip()
+    new_version += "." + last_commit
     update_version(new_version)
 
 
 def task_create_prerelease():
+    """Create a prerelase version tag.
+
+    This should only be run within the CI.
+    """
     return {"actions": [(create_prerelease,)], "verbosity": 2}
