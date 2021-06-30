@@ -25,13 +25,9 @@ create_env:
   stage: create_env
   <<: *python_base
   script:
-    - git config --global credential.helper store
-    - echo "https://gitlab-ci-token:${CI_JOB_TOKEN}@mad-srv.informatik.uni-erlangen.de" > ~/.git-credentials
-    - pip install pip --upgrade
     - pip install poetry
-    - poetry run pip install psutil
     - poetry update --lock
-    - poetry install  --remove-untracked
+    - poetry install --remove-untracked
   artifacts:
     expire_in: 1 day
     paths:
@@ -81,9 +77,9 @@ package:
     - deactivate && pip install poetry
     - poetry run doit update_version -v prepatch
     - poetry config repositories.gaitmap https://mad-srv.informatik.uni-erlangen.de/api/v4/projects/943/packages/pypi
-    - wget https://pki.pca.dfn.de/dfn-ca-global-g2/pub/cacert/chain.txt -o /tmp/fau.crt &&\
-      poetry config certificates.gaitmap.cert /tmp/fau.crt
-    - poetry publish --build --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+    - wget https://pki.pca.dfn.de/dfn-ca-global-g2/pub/cacert/chain.txt -o /tmp/fau.crt
+    - poetry config certificates.gaitmap.cert /tmp/fau.crt
+    - poetry publish --build --repository gaitmap -u gitlab-ci-token -p "${CI_JOB_TOKEN}"
 
 pages:
   stage: pages
