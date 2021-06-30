@@ -72,7 +72,7 @@ def update_version_strings(file_path, new_version):
         f.write(
             re.sub(
                 version_regex,
-                lambda match: "{}{}\"".format(match.group(1), new_version),
+                lambda match: '{}{}"'.format(match.group(1), new_version),
                 content,
             )
         )
@@ -83,7 +83,8 @@ def update_version(version):
     subprocess.run(["poetry", "version", version], shell=False, check=True)
     new_version = (
         subprocess.run(["poetry", "version"], shell=False, check=True, capture_output=True)
-        .stdout.decode().strip()
+        .stdout.decode()
+        .strip()
         .split(" ", 1)[1]
     )
     print(new_version)
