@@ -67,11 +67,9 @@ docs:
       - docs/_build
 
 package:
-  # TODO: Change to deploy once working
-  stage: testing
+  stage: deploy
   only:
-    # TODO: Change to master once working
-    - packages
+    - master
   <<: *cached_python_base
   script:
     - deactivate && pip install poetry
