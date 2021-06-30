@@ -14,6 +14,11 @@ project.
 
 ### Changed
 
+- The constrained DTW only tracks a single counter now.
+  By using the positive and the negative value range, we can save 1/3 of the overall RAM.
+  This should improve performance.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/155)
+
 ### Deprecated
 
 ### Removed
