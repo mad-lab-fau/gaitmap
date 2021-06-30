@@ -87,7 +87,6 @@ def update_version(version):
         .strip()
         .split(" ", 1)[1]
     )
-    print(new_version)
     update_version_strings(HERE / "gaitmap/__init__.py", new_version)
 
 
@@ -97,3 +96,24 @@ def task_update_version():
         "actions": [(update_version,)],
         "params": [{"name": "version", "short": "v", "default": None}],
     }
+
+
+def create_prerelease():
+    # We create a alpha version and then replace the version number with the date of the latest commit
+    subprocess.run(["poetry", "version", "prerelease"], shell=False, check=True)
+    new_version = (
+        subprocess.run(["poetry", "version"], shell=False, check=True, capture_output=True)
+        .stdout.decode()
+        .strip()
+        .split(" ", 1)[1]
+        .rsplit(".", 1)[0]
+    )
+    last_commit = (
+        subprocess.check_output("git log -1 --pretty=%cd --date=format:%Y%m%d%H%M%S".split()).decode().strip()
+    )
+    new_version += "."+last_commit
+    update_version(new_version)
+
+
+def task_create_prerelease():
+    return {"actions": [(create_prerelease,)], "verbosity": 2}
