@@ -81,6 +81,18 @@ package:
     - poetry run doit create_prerelease
     - poetry publish --build --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
 
+package_release:
+  stage: deploy
+  <<: *cached_python_base
+  only:
+    - tags
+  script:
+    - deactivate && pip install poetry
+    - poetry config repositories.gaitmap https://mad-srv.informatik.uni-erlangen.de/api/v4/projects/943/packages/pypi
+    - wget https://pki.pca.dfn.de/dfn-ca-global-g2/pub/cacert/chain.txt -O /tmp/fau.crt
+    - poetry config certificates.gaitmap.cert /tmp/fau.crt
+    - poetry publish --build --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+
 pages:
   stage: pages
   dependencies:
