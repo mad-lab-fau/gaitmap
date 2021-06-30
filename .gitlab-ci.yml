@@ -70,6 +70,18 @@ docs:
       - docs/auto_examples
       - docs/_build
 
+package:
+  # TODO: Change to deploy once working
+  stage: testing
+  only:
+    # TODO: Change to master once working
+    - packages
+  <<: *cached_python_base
+  script:
+    - poetry run doit update_version -v prepatch
+    - poetry config repositories.gaitmap https://mad-srv.informatik.uni-erlangen.de/api/v4/projects/943/packages/pypi
+    - poetry publish --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+
 pages:
   stage: pages
   dependencies:
