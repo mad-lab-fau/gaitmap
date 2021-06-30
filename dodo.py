@@ -1,6 +1,7 @@
 import platform
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 DOIT_CONFIG = {
@@ -64,14 +65,14 @@ def task_register_ipykernel():
 def update_version_strings(file_path, new_version):
     # taken from:
     # https://stackoverflow.com/questions/57108712/replace-updated-version-strings-in-files-via-python
-    version_regex = re.compile(r"(^_*?version_*?\s*=\s*['\"])(\d+\.\d+\.\d+)", re.M)
+    version_regex = re.compile(r"(^_*?version_*?\s*=\s*\")(\d+\.\d+\.\d+-?\S*)\"", re.M)
     with open(file_path, "r+") as f:
         content = f.read()
         f.seek(0)
         f.write(
             re.sub(
                 version_regex,
-                lambda match: "{}{}".format(match.group(1), new_version),
+                lambda match: '{}{}"'.format(match.group(1), new_version),
                 content,
             )
         )
@@ -79,8 +80,14 @@ def update_version_strings(file_path, new_version):
 
 
 def update_version(version):
-    update_version_strings(HERE / "gaitmap/__init__.py", version)
-    update_version_strings(HERE / "pyproject.toml", version)
+    subprocess.run(["poetry", "version", version], shell=False, check=True)
+    new_version = (
+        subprocess.run(["poetry", "version"], shell=False, check=True, capture_output=True)
+        .stdout.decode()
+        .strip()
+        .split(" ", 1)[1]
+    )
+    update_version_strings(HERE / "gaitmap/__init__.py", new_version)
 
 
 def task_update_version():
@@ -89,3 +96,26 @@ def task_update_version():
         "actions": [(update_version,)],
         "params": [{"name": "version", "short": "v", "default": None}],
     }
+
+
+def create_prerelease():
+    # We create a alpha version and then replace the version number with the date of the latest commit
+    subprocess.run(["poetry", "version", "prerelease"], shell=False, check=True)
+    new_version = (
+        subprocess.run(["poetry", "version"], shell=False, check=True, capture_output=True)
+        .stdout.decode()
+        .strip()
+        .split(" ", 1)[1]
+        .rsplit(".", 1)[0]
+    )
+    last_commit = subprocess.check_output("git log -1 --pretty=%cd --date=format:%Y%m%d%H%M%S".split()).decode().strip()
+    new_version += "." + last_commit
+    update_version(new_version)
+
+
+def task_create_prerelease():
+    """Create a prerelase version tag.
+
+    This should only be run within the CI.
+    """
+    return {"actions": [(create_prerelease,)], "verbosity": 2}
