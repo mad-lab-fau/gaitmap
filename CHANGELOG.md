@@ -24,6 +24,9 @@ project.
 ### Removed
 
 ### Fixed
+- Bugfix for `gaitmap.gait_detection.ullrich_gait_sequence_detection`: Now proper handling of cases where margin
+ should be added but no gait sequences were detected 
+ (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/157) 
 
 ### Migration Guide
 
