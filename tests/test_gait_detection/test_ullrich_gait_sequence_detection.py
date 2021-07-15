@@ -408,3 +408,13 @@ class TestUllrichGaitSequenceDetection:
         # 3. the overlapping gait sequences should be merged after adding the
         # margin
         np.testing.assert_array_equal(margin_added, output)
+
+    def test_adding_of_margin_empty_gsd(self):
+        """Test correct behavior in case no gait sequences are detected."""
+        gait_sequences_start_end = np.array([])
+        sig_length = 2000
+
+        gsd = UllrichGaitSequenceDetection(additional_margin_s=10)
+        gsd.sampling_rate_hz = 1
+        margin_added = gsd._add_symmetric_margin_to_start_end_list(gait_sequences_start_end, sig_length)
+        np.testing.assert_array_equal(margin_added, gait_sequences_start_end)
