@@ -463,6 +463,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     def _add_symmetric_margin_to_start_end_list(self, gait_sequences_start_end, sig_length) -> np.ndarray:
         """Add a symmetrical margin to start and end of the gait sequences."""
+        if np.size(gait_sequences_start_end) == 0:
+            return gait_sequences_start_end
+
         margin_samples = int(np.round(self.additional_margin_s * self.sampling_rate_hz))
 
         gait_sequences_start_end_copy = copy.deepcopy(gait_sequences_start_end)
