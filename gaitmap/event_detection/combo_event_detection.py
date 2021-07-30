@@ -1,10 +1,11 @@
 """The event detection algorithm by Rampp et al. 2014 slightly changed to better fit stair ambulation."""
-from typing import Optional, Tuple, Union, Dict, TypeVar, cast, Callable
+from typing import Optional, Tuple, Union, Dict, TypeVar, Callable
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from numpy.linalg import norm
+from scipy import signal
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -24,7 +25,6 @@ from gaitmap.utils.stride_list_conversion import (
     enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
 )
-from scipy import signal
 
 Self = TypeVar("Self", bound="ComboEventDetection")
 
@@ -55,8 +55,8 @@ class ComboEventDetection(BaseEventDetection):
         corresponds to the min_vel sample of the subsequent stride.
         Strides for which no valid events could be found are removed.
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
-        DO NOT USE this attribute: `ic` and `tc` detection have been thorouhly tested, however detected min_vel events have
-        NOT been validated!
+        DO NOT USE this attribute: `ic` and `tc` detection have been thorouhly tested, however detected min_vel events
+        have NOT been validated!
     segmented_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
@@ -342,8 +342,10 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
 
 
 def _get_midswing_max(gyr_ml):
-    """Return the first prominent maximum within the given stride. This maximum should correspond to the mid swing
-    gait event."""
+    """ Return the first prominent maximum within the given stride.
+
+    This maximum should correspond to the mid swing gait event.
+    """
     peaks = []
     prominence = 800  # TODO: make this adjustable?
 
@@ -372,11 +374,13 @@ def _detect_ic(
     acc_pa: np.ndarray,
     gyr_ml_grad: np.ndarray,
 ) -> float:
-    """The IC is located at the minimum of the derivative of the low-pass filtered acc_pa signal.
+    """ Detect IC within the stride.
+
+    The IC is located at the minimum of the derivative of the low-pass filtered acc_pa signal.
     The search for this minimum starts after the gyro_ml midswing peak and the filtered acc_pa swing peak
     and ends at the pre-midstance peak in the gyro_ml signal or at the latest at 70% of the stride length.
-    (This is better fit for various walking speeds and stair inclinations.)"""
-
+    (This is better fit for various walking speeds and stair inclinations.)
+    """
     # Determine rough search region
     # use midswing peak instead of global peak (the latter fails for stair descent)
     mid_swing_max = _get_midswing_max(gyr_ml)
@@ -389,7 +393,8 @@ def _detect_ic(
         return np.nan
 
     # start with end as this max in the derivative is quite easily detectable within the search region
-    # and the start acc_pa max has to be the max before that which is not necessarily the global max within the search region
+    # and the start acc_pa max has to be the max before that which is not necessarily
+    # the global max within the search region
     refined_search_region_end = int(
         search_region[0]
         + np.argmax(gyr_ml_grad[slice(*search_region)])
@@ -430,9 +435,12 @@ def _detect_ic(
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
-    """The TC is located at the gyr_ml minimum somewhere around the given stride start.
+    """ Detect TC in stride.
+
+    The TC is located at the gyr_ml minimum somewhere around the given stride start.
     The search area for the TC is determined in the `_find_all_events` function and
-    only the relevant slice of the gyro signal is then passed on to this function."""
+    only the relevant slice of the gyro signal is then passed on to this function.
+    """
     try:
         return np.argmin(gyr_ml)
     except IndexError:
