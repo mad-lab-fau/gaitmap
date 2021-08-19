@@ -1,14 +1,12 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Callable, Dict, Optional, Tuple, TypeVar, Union, cast
+from typing import Optional, Tuple, Union, Dict, cast, Callable
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._base import _EventDetectionMixin
-from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
 from gaitmap.utils.datatype_helper import (
     SensorData,
 )
@@ -204,7 +202,7 @@ def _find_all_events(
     gyr = gyr.to_numpy()
     acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
     ic_events = []
-    fc_events = []
+    tc_events = []
     min_vel_events = []
     for _, stride in stride_list.iterrows():
         start = stride["start"]
@@ -214,31 +212,14 @@ def _find_all_events(
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
         ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-        fc_events.append(start + _detect_tc(gyr_ml_sec))
-        min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
+        tc_events.append(start + _detect_tc(gyr_ml_sec))
+        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
     return (
         np.array(ic_events, dtype=float),
-        np.array(fc_events, dtype=float),
+        np.array(tc_events, dtype=float),
         np.array(min_vel_events, dtype=float),
     )
-
-
-def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
-    energy = norm(gyr, axis=-1) ** 2
-    if min_vel_search_win_size >= len(energy):
-        raise ValueError(
-            f"min_vel_search_win_size_ms is {min_vel_search_win_size}, but gyr data"
-            f"has only {len(gyr)} samples. The search window should roughly be 100ms"
-            " and the stride time must be larger. If the stride is shorter, something"
-            " went wrong with stride segmentation."
-        )
-    energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
-    # find window with lowest summed energy
-    min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
-    # min_vel event = middle of this window
-    min_vel_center = min_vel_start + min_vel_search_win_size // 2
-    return min_vel_center
 
 
 def _detect_ic(

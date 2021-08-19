@@ -8,7 +8,7 @@ from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection.combo_event_detection import ComboEventDetection
+from gaitmap.event_detection.combo_event_detection import HerzerEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -17,7 +17,7 @@ from tests.mixins.test_caching_mixin import TestCachingMixin
 
 
 class MetaTestConfig:
-    algorithm_class = ComboEventDetection
+    algorithm_class = HerzerEventDetection
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
@@ -25,7 +25,7 @@ class MetaTestConfig:
         data_left.columns = BF_COLS
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         ed.detect(data_left, stride_list_left, 204.8)
         return ed
 
@@ -47,13 +47,14 @@ class TestEventDetectionHerzer:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         ed.detect(data, healthy_example_stride_borders, 204.8)
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
+
     #
     # @pytest.mark.parametrize("var1, output", ((True, 1), (False, 0)))
     # def test_postprocessing(self, healthy_example_imu_data, healthy_example_stride_borders, var1, output):
@@ -65,7 +66,7 @@ class TestEventDetectionHerzer:
     #     def mock_func(event_list, *args, **kwargs):
     #         return event_list, None
     #
-    #     ed = ComboEventDetection(enforce_consistency=var1)
+    #     ed = HerzerEventDetection(enforce_consistency=var1)
     #     with patch(
     #         "gaitmap.event_detection.rampp_event_detection.enforce_stride_list_consistency", side_effect=mock_func
     #     ) as mock:
@@ -82,7 +83,7 @@ class TestEventDetectionHerzer:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
 
-        ed = ComboEventDetection(enforce_consistency=enforce_consistency)
+        ed = HerzerEventDetection(enforce_consistency=enforce_consistency)
         ed.detect(data_left, stride_list_left, 204.8)
 
         assert hasattr(ed, "min_vel_event_list_") == output
@@ -100,7 +101,7 @@ class TestEventDetectionHerzer:
             dict_keys[1]: healthy_example_stride_borders["right_sensor"],
         }
 
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         ed.detect(data_dict, stride_list_dict, 204.8)
 
         assert list(datatype_helper.get_multi_sensor_names(ed.min_vel_event_list_)) == dict_keys
@@ -112,7 +113,7 @@ class TestEventDetectionHerzer:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        ed_df = ComboEventDetection()
+        ed_df = HerzerEventDetection()
         ed_df.detect(data, healthy_example_stride_borders, 204.8)
 
         dict_keys = ["l", "r"]
@@ -122,7 +123,7 @@ class TestEventDetectionHerzer:
             dict_keys[1]: healthy_example_stride_borders["right_sensor"],
         }
 
-        ed_dict = ComboEventDetection()
+        ed_dict = HerzerEventDetection()
         ed_dict.detect(data_dict, stride_list_dict, 204.8)
 
         assert_frame_equal(ed_df.min_vel_event_list_["left_sensor"], ed_dict.min_vel_event_list_["l"])
@@ -131,7 +132,7 @@ class TestEventDetectionHerzer:
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         with pytest.raises(ValidationError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
 
@@ -148,7 +149,7 @@ class TestEventDetectionHerzer:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
-        ed = ComboEventDetection(min_vel_search_win_size_ms=5000)
+        ed = HerzerEventDetection(min_vel_search_win_size_ms=5000)
         with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
             ed.detect(data_left, stride_list_left, 204.8)
 
@@ -157,7 +158,7 @@ class TestEventDetectionHerzer:
     #     data_left = healthy_example_imu_data["left_sensor"]
     #     data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
     #     stride_list_left = healthy_example_stride_borders["left_sensor"]
-    #     ed = ComboEventDetection(ic_search_region_ms=(1, 1))
+    #     ed = HerzerEventDetection(ic_search_region_ms=(1, 1))
     #     with pytest.raises(ValueError):
     #         ed.detect(data_left, stride_list_left, 204.8)
 
@@ -167,7 +168,7 @@ class TestEventDetectionHerzer:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         ed.detect(data_left, stride_list_left, 204.8)
         # per default min_vel_event_list_ has 6 columns
         assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 6)
@@ -181,7 +182,7 @@ class TestEventDetectionHerzer:
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         # switch s_ids in stride list to random numbers
         stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         ed.detect(data_left, stride_list_left, 204.8)
 
         # Check that all of the old stride ids are still in the new one
@@ -201,7 +202,7 @@ class TestEventDetectionHerzer:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
@@ -210,7 +211,7 @@ class TestEventDetectionHerzer:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
-        ed = ComboEventDetection()
+        ed = HerzerEventDetection()
         with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 

@@ -9,6 +9,7 @@ from scipy import signal
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.event_detection import RamppEventDetection
+from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
@@ -27,10 +28,8 @@ from gaitmap.utils.stride_list_conversion import (
     _segmented_stride_list_to_min_vel_single_sensor,
 )
 
-Self = TypeVar("Self", bound="HerzerEventDetection")
 
-
-class HerzerEventDetection(RamppEventDetection):
+class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     ComboEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
@@ -158,13 +157,6 @@ class HerzerEventDetection(RamppEventDetection):
     memory: Optional[Memory]
     enforce_consistency: bool
 
-    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-
-    data: SensorData
-    sampling_rate_hz: float
-    stride_list: pd.DataFrame
-
     def __init__(
         self,
         min_vel_search_win_size_ms: float = 100,
@@ -172,115 +164,11 @@ class HerzerEventDetection(RamppEventDetection):
         enforce_consistency: bool = True,
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        self.memory = memory
-        self.enforce_consistency = enforce_consistency
+        super(HerzerEventDetection, self).__init__(memory=memory, enforce_consistency=enforce_consistency)
 
-    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
-        """Find gait events in data within strides provided by stride_list.
-
-        Parameters
-        ----------
-        data
-            The data set holding the imu raw data
-        stride_list
-            A list of strides provided by a stride segmentation method
-        sampling_rate_hz
-            The sampling rate of the data
-
-        Returns
-        -------
-        self
-            The class instance with all result attributes populated
-
-        """
-        dataset_type = is_sensor_data(data, frame="body")
-        stride_list_type = is_stride_list(stride_list, stride_type="any")
-
-        if dataset_type != stride_list_type:
-            raise ValidationError(
-                "An invalid combination of stride list and dataset was provided."
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
-            )
-
-        self.data = data
-        self.sampling_rate_hz = sampling_rate_hz
-        self.stride_list = stride_list
-
+    def _get_detect_kwargs(self) -> Dict[str, int]:  # noqa: no-self-use
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-
-        if dataset_type == "single":
-            results = self._detect_single_dataset(
-                data,
-                stride_list,
-                min_vel_search_win_size,
-                memory=self.memory,
-            )
-        else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
-            for sensor in get_multi_sensor_names(data):
-                results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor],
-                    stride_list[sensor],
-                    min_vel_search_win_size,
-                    memory=self.memory,
-                )
-            results = invert_result_dictionary(results_dict)
-
-        # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
-        # and can not be used for anything anyway
-        if not self.enforce_consistency:
-            del results["min_vel_event_list"]
-        set_params_from_dict(self, results, result_formatting=True)
-        return self
-
-    def _detect_single_dataset(
-        self,
-        data: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        min_vel_search_win_size: int,
-        memory: Memory,
-    ) -> Dict[str, pd.DataFrame]:
-        """Detect gait events for a single sensor data set and put into correct output stride list."""
-        if memory is None:
-            memory = Memory(None)
-
-        acc = data[BF_ACC]
-        gyr = data[BF_GYR]
-
-        stride_list = set_correct_index(stride_list, SL_INDEX)
-
-        # find events in all segments
-        event_detection_func = self._select_all_event_detection_method()
-        event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, min_vel_search_win_size)
-
-        # build first dict / df based on segment start and end
-        segmented_event_list = {
-            "s_id": stride_list.index,
-            "start": stride_list["start"],
-            "end": stride_list["end"],
-            "ic": ic,
-            "tc": tc,
-            "min_vel": min_vel,
-        }
-        segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
-
-        if self.enforce_consistency:
-            # check for consistency, remove inconsistent strides
-            segmented_event_list, _ = enforce_stride_list_consistency(
-                segmented_event_list, stride_type="segmented", check_stride_list=False
-            )
-
-        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
-            segmented_event_list, target_stride_type="min_vel"
-        )
-
-        min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
-
-        return {
-            "min_vel_event_list": min_vel_event_list,
-            "segmented_event_list": segmented_event_list,
-        }
+        return {"min_vel_search_win_size": min_vel_search_win_size}
 
     def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
         """Select the function to calculate the all events.
@@ -317,29 +205,13 @@ def _find_all_events(
 
         ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad))
         fc_events.append(tc_start + _detect_tc(gyr_ml_tc_sec))
-        min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
+        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
     return (
         np.array(ic_events, dtype=float),
         np.array(fc_events, dtype=float),
         np.array(min_vel_events, dtype=float),
     )
-
-
-def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
-    energy = norm(gyr, axis=-1) ** 2
-    if min_vel_search_win_size >= len(energy):
-        raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
-    energy = sliding_window_view(
-        energy,
-        window_length=min_vel_search_win_size,
-        overlap=min_vel_search_win_size - 1,
-    )
-    # find window with lowest summed energy
-    min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
-    # min_vel event = middle of this window
-    min_vel_center = min_vel_start + min_vel_search_win_size // 2
-    return min_vel_center
 
 
 def _get_midswing_max(gyr_ml):
@@ -404,6 +276,9 @@ def _detect_ic(
         # and in a search range the last value is normally not included but here it should be
     )
 
+    # TODO: Fix this! The lowpass filter order is unlikely calculated correctly.
+    #   Makes more sense to use typical motion band cutoffs here and hor performance filter the entire signal outside
+    #   the loop
     # Low pass filter acc_pa to remove sharp peaks and get the overall shape of the signal.The swing acceleration peak
     # is now clearly distinguishable from the IC peak, because the latter is too high frequency.
     # First, design the Butterworth filter
