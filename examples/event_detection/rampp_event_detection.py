@@ -231,7 +231,7 @@ fig.show()
 # Thus, the dropped first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
 # the first stride in the `min_vel_event_list_`.
 # Therefore, the `min_vel_event_list_` list has one stride less than the `segmented_event_list_`.
-from gaitmap.event_detection.rampp_event_detection import RamppEventDetection
+from gaitmap.event_detection import RamppEventDetection
 
 ed2 = RamppEventDetection()
 segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
