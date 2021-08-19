@@ -1,4 +1,4 @@
-from typing import TypeVar, Dict, Callable, Any, Optional
+from typing import TypeVar, Dict, Callable, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -29,6 +29,9 @@ Self = TypeVar("Self", bound="_EventDetectionMixin")
 class _EventDetectionMixin:
     memory: Optional[Memory]
     enforce_consistency: bool
+
+    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
     data: SensorData
     sampling_rate_hz: float

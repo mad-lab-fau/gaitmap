@@ -8,7 +8,7 @@ from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection.combo_event_detection import HerzerEventDetection
+from gaitmap.event_detection._herzer_event_detection import HerzerEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError

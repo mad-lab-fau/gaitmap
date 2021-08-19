@@ -150,15 +150,6 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
-    memory: Optional[Memory]
-    enforce_consistency: bool
-
-    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-
-    data: SensorData
-    sampling_rate_hz: float
-    stride_list: pd.DataFrame
 
     def __init__(
         self,
@@ -226,7 +217,7 @@ def _detect_ic(
     gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
     # Determine rough search region
-    search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
+    search_region = (np.argmax(gyr_ml), int(0.6 * gyr_ml.shape[0]))
 
     if search_region[1] - search_region[0] <= 0:
         # The gyr argmax was not found in the first half of the step
@@ -249,7 +240,7 @@ def _detect_ic(
 
     # Acc search window
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
-    acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
+    acc_search_region_end = int(np.min(np.array([gyr_ml.shape[0], heel_strike_candidate + ic_search_region[1]])))
 
     return float(acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end]))
 

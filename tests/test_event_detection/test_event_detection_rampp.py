@@ -8,7 +8,8 @@ from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection.rampp_event_detection import RamppEventDetection, _detect_min_vel, _detect_tc
+from gaitmap.event_detection._base import _detect_min_vel_gyr_energy
+from gaitmap.event_detection._rampp_event_detection import RamppEventDetection, _detect_tc
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -139,7 +140,7 @@ class TestEventDetectionRampp:
         """Test if error is raised correctly if windows size matches the size of the input data"""
         dummy_gyr = np.ones((100, 3))
         with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is*"):
-            _detect_min_vel(dummy_gyr, dummy_gyr.size)
+            _detect_min_vel_gyr_energy(dummy_gyr, dummy_gyr.size)
 
     def test_valid_min_vel_search_win_size_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if error is raised correctly on too large min_vel_search_win_size_ms"""
@@ -147,7 +148,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = RamppEventDetection(min_vel_search_win_size_ms=5000)
-        with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is*"):
+        with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
             ed.detect(data_left, stride_list_left, 204.8)
 
     def test_valid_ic_search_region_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
