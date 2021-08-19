@@ -192,7 +192,8 @@ def _find_all_events(
         gyr_ml_sec = gyr_ml[start:end]
         duration = end - start
         # search for TC shortly before and after the labeled stride start
-        tc_start = int(start - 0.25 * duration)
+        # If for some reason, we are right at the beginning of a recording, we will start at 0
+        tc_start = np.max([0, int(start - 0.25 * duration)])
         gyr_ml_tc_sec = gyr_ml[tc_start : int(start + 0.25 * duration)]
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
@@ -311,7 +312,5 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
     The search area for the TC is determined in the `_find_all_events` function and
     only the relevant slice of the gyro signal is then passed on to this function.
     """
-    try:
-        return np.argmin(gyr_ml)
-    except IndexError:
-        return np.nan
+    return np.argmin(gyr_ml)
+
