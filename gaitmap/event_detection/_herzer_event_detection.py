@@ -1,4 +1,4 @@
-"""The event detection algorithm by Rampp et al. 2014 slightly changed to better fit stair ambulation."""
+"""An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
 from typing import Optional, Tuple, Dict, Callable
 
 import numpy as np
