@@ -8,6 +8,7 @@ from numpy.linalg import norm
 from scipy import signal
 
 from gaitmap.base import BaseEventDetection
+from gaitmap.event_detection import RamppEventDetection
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
@@ -26,10 +27,10 @@ from gaitmap.utils.stride_list_conversion import (
     _segmented_stride_list_to_min_vel_single_sensor,
 )
 
-Self = TypeVar("Self", bound="ComboEventDetection")
+Self = TypeVar("Self", bound="HerzerEventDetection")
 
 
-class ComboEventDetection(BaseEventDetection):
+class HerzerEventDetection(RamppEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     ComboEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
@@ -79,7 +80,7 @@ class ComboEventDetection(BaseEventDetection):
     --------
     Get gait events from single sensor signal
 
-    >>> event_detection = ComboEventDetection()
+    >>> event_detection = HerzerEventDetection()
     >>> event_detection.detect(data=data, stride_list=stride_list, sampling_rate_hz=204.8)
     >>> event_detection.segmented_event_list_
 
@@ -342,7 +343,7 @@ def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
 
 
 def _get_midswing_max(gyr_ml):
-    """ Return the first prominent maximum within the given stride.
+    """Return the first prominent maximum within the given stride.
 
     This maximum should correspond to the mid swing gait event.
     """
@@ -374,7 +375,7 @@ def _detect_ic(
     acc_pa: np.ndarray,
     gyr_ml_grad: np.ndarray,
 ) -> float:
-    """ Detect IC within the stride.
+    """Detect IC within the stride.
 
     The IC is located at the minimum of the derivative of the low-pass filtered acc_pa signal.
     The search for this minimum starts after the gyro_ml midswing peak and the filtered acc_pa swing peak
@@ -435,7 +436,7 @@ def _detect_ic(
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
-    """ Detect TC in stride.
+    """Detect TC in stride.
 
     The TC is located at the gyr_ml minimum somewhere around the given stride start.
     The search area for the TC is determined in the `_find_all_events` function and

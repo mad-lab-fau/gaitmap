@@ -7,28 +7,14 @@ from joblib import Memory
 from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
-from gaitmap.utils._types import _Hashable
+from gaitmap.event_detection._base import _EventDetectionMixin
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.datatype_helper import (
     SensorData,
-    StrideList,
-    get_multi_sensor_names,
-    is_sensor_data,
-    is_stride_list,
-    set_correct_index,
-)
-from gaitmap.utils.exceptions import ValidationError
-from gaitmap.utils.stride_list_conversion import (
-    _segmented_stride_list_to_min_vel_single_sensor,
-    enforce_stride_list_consistency,
 )
 
-Self = TypeVar("Self", bound="RamppEventDetection")
 
-
-class RamppEventDetection(BaseEventDetection):
+class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
@@ -185,41 +171,16 @@ class RamppEventDetection(BaseEventDetection):
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        self.memory = memory
-        self.enforce_consistency = enforce_consistency
-        super().__init__()
+        super(RamppEventDetection, self).__init__(memory=memory, enforce_consistency=enforce_consistency)
 
-    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
-        """Find gait events in data within strides provided by stride_list.
+    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+        """Select the function to calculate the all events.
 
-        Parameters
-        ----------
-        data
-            The data set holding the imu raw data
-        stride_list
-            A list of strides provided by a stride segmentation method
-        sampling_rate_hz
-            The sampling rate of the data
-
-        Returns
-        -------
-        self
-            The class instance with all result attributes populated
-
+        This is separate method to make it easy to overwrite by a subclass.
         """
-        dataset_type = is_sensor_data(data, frame="body")
-        stride_list_type = is_stride_list(stride_list, stride_type="any")
+        return _find_all_events
 
-        if dataset_type != stride_list_type:
-            raise ValidationError(
-                "An invalid combination of stride list and dataset was provided."
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
-            )
-
-        self.data = data
-        self.sampling_rate_hz = sampling_rate_hz
-        self.stride_list = stride_list
-
+    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:  # noqa: no-self-use
         ic_search_region = cast(
             Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )
@@ -228,79 +189,7 @@ class RamppEventDetection(BaseEventDetection):
                 "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-
-        if dataset_type == "single":
-            results = self._detect_single_dataset(
-                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory
-            )
-        else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
-            for sensor in get_multi_sensor_names(data):
-                results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory
-                )
-            results = invert_result_dictionary(results_dict)
-
-        # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
-        # and can not be used for anything anyway
-        if not self.enforce_consistency:
-            del results["min_vel_event_list"]
-        set_params_from_dict(self, results, result_formatting=True)
-        return self
-
-    def _detect_single_dataset(
-        self,
-        data: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        ic_search_region: Tuple[int, int],
-        min_vel_search_win_size: int,
-        memory: Memory,
-    ) -> Dict[str, pd.DataFrame]:
-        """Detect gait events for a single sensor data set and put into correct output stride list."""
-        if memory is None:
-            memory = Memory(None)
-
-        acc = data[BF_ACC]
-        gyr = data[BF_GYR]
-
-        stride_list = set_correct_index(stride_list, SL_INDEX)
-
-        # find events in all segments
-        event_detection_func = self._select_all_event_detection_method()
-        event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
-
-        # build first dict / df based on segment start and end
-        segmented_event_list = {
-            "s_id": stride_list.index,
-            "start": stride_list["start"],
-            "end": stride_list["end"],
-            "ic": ic,
-            "tc": tc,
-            "min_vel": min_vel,
-        }
-        segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
-
-        if self.enforce_consistency:
-            # check for consistency, remove inconsistent strides
-            segmented_event_list, _ = enforce_stride_list_consistency(
-                segmented_event_list, stride_type="segmented", check_stride_list=False
-            )
-
-        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
-            segmented_event_list, target_stride_type="min_vel"
-        )
-
-        min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
-
-        return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
-
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
-        """Select the function to calculate the all events.
-
-        This is separate method to make it easy to overwrite by a subclass.
-        """
-        return _find_all_events
+        return {"ic_search_region": ic_search_region, "min_vel_search_win_size": min_vel_search_win_size}
 
 
 def _find_all_events(
