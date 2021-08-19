@@ -1,5 +1,5 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
-from typing import Optional, Tuple, Dict, Callable
+from typing import Optional, Tuple, Dict, Callable, Union
 
 import numpy as np
 import pandas as pd
@@ -27,6 +27,16 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     ----------
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms.
+    mid_swing_peak_prominence
+        The expected min/(min, max) peak prominence of the mid swing peak in the `gyr_ml` signal.
+        This value is passed directly to :func:`~scipy.signal.find_peaks`.
+        The detected mid-swing peak is used to define the search region for the IC
+    mid_swing_n_considered_peaks
+        The number of peaks that should be considered in the initial search for the mid-swing.
+        In particular for stair climbing, multiple prominent peaks might occure.
+        The search algorithm consideres the n-most prominent and takes the one occuring first in the signal as the
+        mid-swing.
+        The detected mid-swing peak is used to define the search region for the IC
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
@@ -148,21 +158,32 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """
 
     min_vel_search_win_size_ms: float
+    mid_swing_peak_prominence: Union[Tuple[float, float], float]
+    mid_swing_n_considered_peaks: int
     memory: Optional[Memory]
     enforce_consistency: bool
 
     def __init__(
         self,
         min_vel_search_win_size_ms: float = 100,
+        # TODO: Optimize these parameters again
+        mid_swing_peak_prominence: Union[Tuple[float, float], float] = 20,
+        mid_swing_n_considered_peaks: int = 3,
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
+        self.mid_swing_peak_prominence = mid_swing_peak_prominence
+        self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         super(HerzerEventDetection, self).__init__(memory=memory, enforce_consistency=enforce_consistency)
 
     def _get_detect_kwargs(self) -> Dict[str, int]:  # noqa: no-self-use
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-        return {"min_vel_search_win_size": min_vel_search_win_size}
+        return {
+            "min_vel_search_win_size": min_vel_search_win_size,
+            "mid_swing_peak_prominence": self.mid_swing_peak_prominence,
+            "mid_swing_n_considered_peaks": self.mid_swing_n_considered_peaks,
+        }
 
     def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
         """Select the function to calculate the all events.
@@ -177,6 +198,8 @@ def _find_all_events(
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
     min_vel_search_win_size: int,
+    mid_swing_peak_prominence: Union[Tuple[float, float], float],
+    mid_swing_n_considered_peaks: int,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
@@ -198,7 +221,9 @@ def _find_all_events(
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
 
-        ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad))
+        ic_events.append(
+            start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, mid_swing_peak_prominence, mid_swing_n_considered_peaks)
+        )
         fc_events.append(tc_start + _detect_tc(gyr_ml_tc_sec))
         min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
@@ -209,31 +234,18 @@ def _find_all_events(
     )
 
 
-def _get_midswing_max(gyr_ml):
+def _get_midswing_max(gyr_ml, peak_prominence_thresholds: Union[Tuple[float, float], float], n_considered_peaks: int):
     """Return the first prominent maximum within the given stride.
 
     This maximum should correspond to the mid swing gait event.
     """
-    peaks = []
-    prominence = 800  # TODO: make this adjustable?
+    peaks, properties = signal.find_peaks(gyr_ml, prominence=peak_prominence_thresholds, height=0)
+    if len(peaks) == 0:
+        return np.nan
+    peak_prominence = properties["prominences"]
+    # We find the n most prominent peaks and then take the one that occurs first in the data array.
+    peak = peaks[np.min(np.argsort(peak_prominence)[-n_considered_peaks:])]
 
-    # lower prominence condition until several peaks are recognized, to not only get THE prominent peak
-    # (the mid swing peak is mostly the first out of several prominent peaks, but sometimes not the most prominent one)
-    while len(peaks) < 2:
-        if prominence <= 0:
-            return np.nan
-
-        # find positive peaks with the given prominence
-        peaks, _ = signal.find_peaks(gyr_ml, prominence=prominence, height=0)
-
-        if prominence > 20:
-            prominence -= 20
-        # some level walking steps only have one maximum over 0, this seems to be one of these steps
-        elif len(peaks) == 1:
-            break
-
-    # only the first peak is interesting
-    peak = peaks[0]
     return peak
 
 
@@ -241,6 +253,8 @@ def _detect_ic(
     gyr_ml: np.ndarray,
     acc_pa: np.ndarray,
     gyr_ml_grad: np.ndarray,
+    peak_prominence_thresholds: Union[Tuple[float, float], float],
+    n_considered_peaks: int,
 ) -> int:
     """Detect IC within the stride.
 
@@ -251,7 +265,7 @@ def _detect_ic(
     """
     # Determine rough search region
     # use midswing peak instead of global peak (the latter fails for stair descent)
-    mid_swing_max = _get_midswing_max(gyr_ml)
+    mid_swing_max = _get_midswing_max(gyr_ml, peak_prominence_thresholds, n_considered_peaks)
     search_region = (mid_swing_max, int(0.7 * len(gyr_ml)))
 
     # search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
