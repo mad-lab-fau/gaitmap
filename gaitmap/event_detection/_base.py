@@ -1,3 +1,5 @@
+"""Mixin for event detection algorithms that work similar to Rampp et al."""
+
 from typing import TypeVar, Dict, Callable, Any, Optional, Union
 
 import numpy as np
@@ -156,7 +158,6 @@ class _EventDetectionMixin:
 
         This is a separate method to make it easy to overwrite by a subclass.
         """
-
         return {}
 
 

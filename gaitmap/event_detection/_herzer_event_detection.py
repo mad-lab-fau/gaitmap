@@ -1,34 +1,15 @@
 """The event detection algorithm by Rampp et al. 2014 slightly changed to better fit stair ambulation."""
-from typing import Optional, Tuple, Union, Dict, TypeVar, Callable
+from typing import Optional, Tuple, Dict, Callable
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from numpy.linalg import norm
 from scipy import signal
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection import RamppEventDetection
 from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
-from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
-from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
-from gaitmap.utils.datatype_helper import (
-    StrideList,
-    SensorData,
-    get_multi_sensor_names,
-    set_correct_index,
-    is_sensor_data,
-    is_stride_list,
-)
-from gaitmap.utils.exceptions import ValidationError
-from gaitmap.utils.stride_list_conversion import (
-    enforce_stride_list_consistency,
-    _segmented_stride_list_to_min_vel_single_sensor,
-)
 
-# TODO: Add the second paper that was used as basis to the docstring.
+
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
@@ -51,6 +32,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
+
 
     Attributes
     ----------
