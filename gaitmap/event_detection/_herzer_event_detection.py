@@ -193,7 +193,7 @@ def _find_all_events(
         duration = end - start
         # search for TC shortly before and after the labeled stride start
         # If for some reason, we are right at the beginning of a recording, we will start at 0
-        tc_start = np.max([0, int(start - 0.25 * duration)])
+        tc_start = np.clip(int(start - 0.25 * duration), 0, None)
         gyr_ml_tc_sec = gyr_ml[tc_start : int(start + 0.25 * duration)]
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
@@ -241,7 +241,7 @@ def _detect_ic(
     gyr_ml: np.ndarray,
     acc_pa: np.ndarray,
     gyr_ml_grad: np.ndarray,
-) -> float:
+) -> int:
     """Detect IC within the stride.
 
     The IC is located at the minimum of the derivative of the low-pass filtered acc_pa signal.
@@ -270,6 +270,7 @@ def _detect_ic(
         # +1 because the min max distance is often very small
         # and in a search range the last value is normally not included but here it should be
     )
+    refined_search_region_end = np.clip(refined_search_region_end, None, len(gyr_ml))
 
     # TODO: Fix this! The lowpass filter order is unlikely calculated correctly.
     #   Makes more sense to use typical motion band cutoffs here and hor performance filter the entire signal outside
@@ -288,21 +289,18 @@ def _detect_ic(
         refined_search_region_start = int(
             search_region[0] + np.argmax(acc_pa_filt[search_region[0] : refined_search_region_end])
         )
+        refined_search_region_start = np.clip(refined_search_region_start, 0, None)
     except ValueError:
         return np.nan
 
     if refined_search_region_end - refined_search_region_start <= 0:
         return np.nan
 
-    # Acc search window
-    acc_search_region_start = int(np.max(np.array([0, search_region[0], refined_search_region_start])))
-    acc_search_region_end = int(
-        np.min(np.array([len(acc_pa), refined_search_region_end]))
-    )  # should always be the latter
-
     # the minimum in the derivative of the filtered acc_pa signal is our IC
     acc_pa_filt_deriv = np.diff(acc_pa_filt)
-    return float(acc_search_region_start + np.argmin(acc_pa_filt_deriv[acc_search_region_start:acc_search_region_end]))
+    return refined_search_region_start + np.argmin(
+        acc_pa_filt_deriv[refined_search_region_start:refined_search_region_end]
+    )
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:
@@ -313,4 +311,3 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
     only the relevant slice of the gyro signal is then passed on to this function.
     """
     return np.argmin(gyr_ml)
-
