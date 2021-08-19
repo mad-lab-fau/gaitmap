@@ -7,9 +7,6 @@ from joblib import Memory
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-)
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):

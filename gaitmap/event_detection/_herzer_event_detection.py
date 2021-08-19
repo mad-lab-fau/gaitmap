@@ -28,12 +28,18 @@ from gaitmap.utils.stride_list_conversion import (
     _segmented_stride_list_to_min_vel_single_sensor,
 )
 
-
+# TODO: Add the second paper that was used as basis to the docstring.
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
-    ComboEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
+    HerzerEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
     features in the foot-mounted sensor signals.
+    The method was first developed in the context of the Bachelor Thesis by Liv Herzer (2021) under the supervision of
+    Nils Roth.
+    It combines techniques used in Rampp et al. (2014) [1]_ and (TODO: Insert second paper) with some original
+    approaches.
+    The particular goial was to create an Event Detection that worked well during level walking **and** stair
+    ambulation.
     For more details refer to the `Notes` section.
 
     Parameters
@@ -94,28 +100,32 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     Notes
     -----
-    Rampp et al. implemented the detection of three gait events from foot-mounted sensor data [1]_.
-    This detection was improved for stair ambulation with the following detection rules:
+    This methods implements the detection of three events:
 
     terminal contact (`tc`), also called toe-off (TO):
+        At `tc` the movement of the ankle joint changes from a plantar flexion to a dorsal extension in the sagittal
+        plane.
         `tc` occurs roughly at the poit of the most rapid plantar flexion of the foot in the saggital plane.
-        This results in a minimum in the gyr_ml signal.
+        This corresponds to a minimum in the `gyr_ml` signal.
+        TODO: Add paper
 
     initial contact (`ic`), also called heel strike (HS):
         At `ic` the foot decelerates rapidly when the foot hits the ground.
         For the detection of `ic` only the signal between the first prominent maximum and 70% of the
-        gyr_ml signal is considered.
-        The search area is further narrowed down to in between the maximum of the low-pass filtered acc_pa signal and
-        the steepest positive slope of the gyr_ml signal.
-        After that the low-pass filtered acc_pa signal derivative is searched for a minimum in this area.
+        stride duration is considered.
+        The search area is further narrowed down to be between the maximum of the low-pass filtered `acc_pa` signal and
+        the steepest positive slope of the `gyr_ml` signal.
+        After that the low-pass filtered `acc_pa` signal derivative is searched for a minimum in this area.
+        This corresponds to the fastest deceleration.
 
     minimal velocity (`min_vel_`), originally called mid stance (MS) in the paper [1]_:
         At `min_vel` the foot has the lowest velocity.
         It is defined to be the middle of the window with the lowest energy in all axes of the gyr signal.
         The default window size is set to 100 ms with 50 % overlap.
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
+        This approach is identical to [1]_.
 
-    The :func:`~gaitmap.event_detection.ComboEventDetection.detect` method provides a stride list `min_vel_event_list`
+    The :func:`~gaitmap.event_detection.HerzerEventDetection.detect` method provides a stride list `min_vel_event_list`
     with the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
     `min_vel` samples.
     The start sample of each stride corresponds to the min_vel sample of that stride and the end sample corresponds to
@@ -136,7 +146,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     Note, that this list might contain NaN for some events.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
-    continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
+    continuous gait sequences (with continuous subsequent strides according to the `stride_list`) are detected and the
     first (segmented) stride of each sequence is dropped.
     This is required due to the shift of stride borders between the `stride_list` and the `min_vel_event_list`.
     Thus, the first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
@@ -145,6 +155,8 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
     different types of strides can be found :ref:`here<stride_list_guide>`.
+
+    TODO: Add Image similar to Rampp
 
 
     .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
