@@ -224,7 +224,6 @@ class RtsKalman(BaseTrajectoryMethod):
         process_noise = np.zeros((9, 9))
         process_noise[3:6, 3:6] = self.velocity_error_variance * np.eye(3)
         process_noise[6:, 6:] = self.orientation_error_variance * np.eye(3)
-        covariance = np.copy(process_noise)
 
         # measure noise
         meas_noise = np.zeros((4, 4))
@@ -244,7 +243,6 @@ class RtsKalman(BaseTrajectoryMethod):
             initial_orientation,
             sampling_rate_hz,
             meas_noise,
-            covariance,
             process_noise,
             zupts,
             self.level_walking,
@@ -307,7 +305,6 @@ def rts_kalman_update_series(
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
-    covariance,
     process_noise,
     zupts,
     level_walking,
@@ -319,7 +316,6 @@ def rts_kalman_update_series(
         initial_orientation,
         sampling_rate_hz,
         meas_noise,
-        covariance,
         process_noise,
         zupts,
         level_walking,
@@ -351,7 +347,6 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
-    covariance,
     process_noise,
     zupts,
     level_walking,
@@ -366,25 +361,22 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     state_transitions = np.empty((accel.shape[0], 9, 9))
 
     # initialize states
+    initial_covariance = np.copy(process_noise)
     positions[0, :] = np.zeros(3)
     velocities[0, :] = np.zeros(3)
     orientations[0, :] = np.copy(initial_orientation)
     prior_error_states[0, :] = np.zeros(9)
     posterior_error_states[0, :] = np.zeros(9)
-    prior_covariances[0, :, :] = covariance
-    posterior_covariances[0, :, :] = covariance
+    prior_covariances[0, :, :] = initial_covariance
+    posterior_covariances[0, :, :] = initial_covariance
     transition_matrix = np.eye(9)
     transition_matrix[:3, 3:6] = np.eye(3) / sampling_rate_hz
 
-    gravity = normalize(GRAV_VEC)
-
-    # During zupt we measure 6 values:
+    # During zupt we measure 4 values:
     # 1-3: v_{x,y,z} = 0
     # 4 : p_z = 0
-    # 5 : angle(global_acc, global_grav) around x-axis = 0
-    # 6 : angle(global_acc, global_grav) around y-axis = 0
     #
-    # The values 1-4 are directly part of the stater space.
+    # All values are directly part of the stater space.
     # This means we have a trivial measurement function h and jacobian H
     zupt_measurement = np.zeros(4)
     # meas_jacob dh/d(\delta x) maps from measurement space into the error space
@@ -447,7 +439,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
             innovation_cov = meas_jacob @ prior_covariances[i + 1] @ meas_jacob.T + meas_noise
             gain = prior_covariances[i + 1] @ meas_jacob.T @ np.linalg.pinv(innovation_cov)
             posterior_error_states[i + 1, :] = prior_error_states[i + 1] + gain @ innovation
-            factor = np.eye(covariance.shape[0]) - gain @ meas_jacob
+            factor = np.eye(initial_covariance.shape[0]) - gain @ meas_jacob
             covariance_adj = factor @ prior_covariances[i + 1] @ factor.T
             posterior_covariances[i + 1, :, :] = covariance_adj + gain @ meas_noise @ gain.T
         else:
@@ -500,7 +492,6 @@ def _rts_kalman_update_series(
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
-    covariance,
     process_noise,
     zupts,
     level_walking,
@@ -511,7 +502,6 @@ def _rts_kalman_update_series(
         initial_orientation,
         sampling_rate_hz,
         meas_noise,
-        covariance,
         process_noise,
         zupts,
         level_walking,
