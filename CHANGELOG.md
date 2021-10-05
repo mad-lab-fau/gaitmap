@@ -22,8 +22,10 @@ project.
   Before it only got the gyro data already converted in rad/s.
   This change should make it easier to overwrite the ZUPT detection with custom methods.
   This is a breaking change! See the migration guide for more details.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 - The `memory` option for `RtsKalman` was removed.
   This is a breaking change!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 ### Deprecated
 
@@ -62,6 +64,7 @@ project.
   the orientation error.
   This is a breaking change!
   See the Migration section for more details, if you used this feature before.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 
 ## [1.4.0] - 2021-06-25
