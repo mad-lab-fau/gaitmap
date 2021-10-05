@@ -1,8 +1,22 @@
+from typing import NamedTuple, Callable
+
 import numpy as np
 from numba import njit
 
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.fast_quaternion_math import multiply, quat_from_rotvec, rotate_vector
+
+
+class _RtsParameter:
+    pass
+
+
+class SimpleZuptParameter(_RtsParameter, NamedTuple):
+    level_walking: bool
+
+
+class ForwardPassDependencies(NamedTuple):
+    motion_update_func: Callable
 
 
 def rts_kalman_update_series(
@@ -13,7 +27,9 @@ def rts_kalman_update_series(
     meas_noise,
     process_noise,
     zupts,
-    level_walking,
+    parameters: _RtsParameter,
+    forward_pass_func: Callable,
+    forward_pass_dependencies: ForwardPassDependencies,
 ):
     """Perform a forward and backwards kalman pass with smoothing over the entire series."""
     return _rts_kalman_update_series(
@@ -24,7 +40,9 @@ def rts_kalman_update_series(
         meas_noise,
         process_noise,
         zupts,
-        level_walking,
+        parameters=parameters,
+        forward_pass_func=forward_pass_func,
+        forward_pass_dependencies=forward_pass_dependencies,
     )
 
 
@@ -35,7 +53,7 @@ def cross_product_matrix(vec):
 
 
 @njit()
-def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampling_rate_hz):
+def simple_navigation_equations(acc, gyro, orientation, position, velocity, sampling_rate_hz):
     sigma = gyro / sampling_rate_hz
     r = quat_from_rotvec(sigma)
     new_orientation = multiply(orientation, r)
@@ -47,7 +65,7 @@ def _rts_kalman_motion_update(acc, gyro, orientation, position, velocity, sampli
 
 
 @njit()
-def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
+def default_rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     accel,
     gyro,
     initial_orientation,
@@ -55,7 +73,8 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     meas_noise,
     process_noise,
     zupts,
-    level_walking,
+    parameters: SimpleZuptParameter,
+    dependencies: ForwardPassDependencies,
 ):
     prior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     posterior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
@@ -94,7 +113,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     # Zero Velocity update
     meas_func[0:3] = 1
     meas_jacob[0:3, 3:6] = np.eye(3)
-    if level_walking is True:
+    if parameters.level_walking is True:
         # Zero elevation update
         meas_jacob[3, 2] = 1
         meas_func[3] = 1
@@ -104,7 +123,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
         omega = np.ascontiguousarray(gyro[i])
 
         # calculate the new nominal position, velocity and orientation by integrating the acc and gyro measurement
-        position, velocity, orientation = _rts_kalman_motion_update(
+        position, velocity, orientation = dependencies.motion_update_func(
             acc, omega, orientations[i], positions[i], velocities[i], sampling_rate_hz
         )
         positions[i + 1, :] = position
@@ -130,7 +149,7 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
 
             # velocity error
             zupt_measurement[0:3] = velocity
-            if level_walking:
+            if parameters.level_walking:
                 # z-position error
                 zupt_measurement[3] = position[2]
 
@@ -200,9 +219,11 @@ def _rts_kalman_update_series(
     meas_noise,
     process_noise,
     zupts,
-    level_walking,
+    parameters: _RtsParameter,
+    forward_pass_func: Callable,
+    forward_pass_dependencies: ForwardPassDependencies,
 ):
-    forward_eskf_results, forward_nominal_states = _rts_kalman_forward_pass(
+    forward_eskf_results, forward_nominal_states = forward_pass_func(
         acc,
         gyro,
         initial_orientation,
@@ -210,7 +231,8 @@ def _rts_kalman_update_series(
         meas_noise,
         process_noise,
         zupts,
-        level_walking,
+        parameters=parameters,
+        dependencies=forward_pass_dependencies,
     )
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
 

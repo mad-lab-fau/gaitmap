@@ -7,7 +7,11 @@ from joblib import Memory
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod
-from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import rts_kalman_update_series
+from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
+    rts_kalman_update_series,
+    SimpleZuptParameter,
+    simple_navigation_equations, default_rts_kalman_forward_pass, ForwardPassDependencies,
+)
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
@@ -165,6 +169,10 @@ class RtsKalman(BaseTrajectoryMethod):
     covariance_: pd.DataFrame
     zupts_: np.ndarray
 
+    _forward_pass = default_rts_kalman_forward_pass
+    _injected_update_functions = ForwardPassDependencies(motion_update_func=simple_navigation_equations)
+
+
     def __init__(
         self,
         initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
@@ -233,9 +241,9 @@ class RtsKalman(BaseTrajectoryMethod):
         acc_data = data[SF_ACC].to_numpy()
         zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
-        cached_rts_kalman_update_series = memory.cache(rts_kalman_update_series)
+        parameters = SimpleZuptParameter(level_walking=self.level_walking)
 
-        states, covariances = cached_rts_kalman_update_series(
+        states, covariances = rts_kalman_update_series(
             acc_data,
             gyro_data,
             initial_orientation,
@@ -243,7 +251,9 @@ class RtsKalman(BaseTrajectoryMethod):
             meas_noise,
             process_noise,
             zupts,
-            self.level_walking,
+            parameters=parameters,
+            forward_pass_func=self._forward_pass,
+            forward_pass_dependencies=self._injected_update_functions
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
