@@ -10,7 +10,9 @@ from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
     rts_kalman_update_series,
     SimpleZuptParameter,
-    simple_navigation_equations, default_rts_kalman_forward_pass, ForwardPassDependencies,
+    simple_navigation_equations,
+    default_rts_kalman_forward_pass,
+    ForwardPassDependencies,
 )
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
@@ -73,8 +75,6 @@ class RtsKalman(BaseTrajectoryMethod):
     zupt_window_overlap_s
         Length of the window overlap used in the default method to find ZUPTs.
         It is given in seconds and if not given it defaults to half the window length.
-    memory
-        An optional `joblib.Memory` object that can be provided to cache the results of the kalman filter.
 
     Attributes
     ----------
@@ -172,7 +172,6 @@ class RtsKalman(BaseTrajectoryMethod):
     _forward_pass = default_rts_kalman_forward_pass
     _injected_update_functions = ForwardPassDependencies(motion_update_func=simple_navigation_equations)
 
-
     def __init__(
         self,
         initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
@@ -184,7 +183,6 @@ class RtsKalman(BaseTrajectoryMethod):
         level_walking_variance: float = 10e-8,
         zupt_window_length_s: float = 0.05,
         zupt_window_overlap_s: Optional[float] = None,
-        memory: Optional[Memory] = None,
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
@@ -195,7 +193,6 @@ class RtsKalman(BaseTrajectoryMethod):
         self.level_walking_variance = level_walking_variance
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
-        self.memory = memory
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
@@ -223,10 +220,6 @@ class RtsKalman(BaseTrajectoryMethod):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
 
-        memory = self.memory
-        if memory is None:
-            memory = Memory(None)
-
         process_noise = np.zeros((9, 9))
         process_noise[3:6, 3:6] = self.velocity_error_variance * np.eye(3)
         process_noise[6:, 6:] = self.orientation_error_variance * np.eye(3)
@@ -237,9 +230,10 @@ class RtsKalman(BaseTrajectoryMethod):
         if self.level_walking is True:
             meas_noise[3, 3] = self.level_walking_variance
 
+        zupts = self.find_zupts(data, self.sampling_rate_hz)
+
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
-        zupts = self.find_zupts(gyro_data, self.sampling_rate_hz)
 
         parameters = SimpleZuptParameter(level_walking=self.level_walking)
 
@@ -253,7 +247,7 @@ class RtsKalman(BaseTrajectoryMethod):
             zupts,
             parameters=parameters,
             forward_pass_func=self._forward_pass,
-            forward_pass_dependencies=self._injected_update_functions
+            forward_pass_dependencies=self._injected_update_functions,
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
@@ -279,13 +273,16 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupts_ = bool_array_to_start_end_array(zupts)
         return self
 
-    def find_zupts(self, gyro, sampling_rate_hz: float):
-        """Find the ZUPT samples based on the gyro measurements.
+    def find_zupts(self, data, sampling_rate_hz: float):
+        """Find the ZUPT samples based on the provided data.
+
+        By default this method uses only the gyro data, but custom ZUPT method can be implemented by subclassing the
+        Kalmanfilter and overwriting this method.
 
         Parameters
         ----------
-        gyro
-            gyro in rad/s
+        data
+            Continuous sensor data including gyro and acc values.s
         sampling_rate_hz
             sampling rate of the gyro data
 
@@ -302,6 +299,6 @@ class RtsKalman(BaseTrajectoryMethod):
         else:
             window_overlap = round(sampling_rate_hz * zupt_window_overlap_s)
         zupts = find_static_samples(
-            gyro, window_length, self.zupt_threshold_dps * (np.pi / 180), "maximum", window_overlap
+            data[SF_GYR].to_numpy(), window_length, self.zupt_threshold_dps, "maximum", window_overlap
         )
         return zupts
