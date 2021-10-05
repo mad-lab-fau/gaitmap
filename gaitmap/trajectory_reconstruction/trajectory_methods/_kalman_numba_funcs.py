@@ -1,3 +1,5 @@
+"""Helper functions for the RTS Kalman filter."""
+
 from typing import NamedTuple, Callable
 
 import numpy as np
@@ -12,10 +14,14 @@ class _RtsParameter:
 
 
 class SimpleZuptParameter(_RtsParameter, NamedTuple):
+    """Parameter for a simple Zupt aided RtsKalman filter."""
+
     level_walking: bool
 
 
 class ForwardPassDependencies(NamedTuple):
+    """Required dependency functions for the forward pass."""
+
     motion_update_func: Callable
 
 
@@ -54,6 +60,7 @@ def cross_product_matrix(vec):
 
 @njit()
 def simple_navigation_equations(acc, gyro, orientation, position, velocity, sampling_rate_hz):
+    """Calculate the next state using simple navigation equations."""
     sigma = gyro / sampling_rate_hz
     r = quat_from_rotvec(sigma)
     new_orientation = multiply(orientation, r)
@@ -76,6 +83,10 @@ def default_rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-bran
     parameters: SimpleZuptParameter,
     dependencies: ForwardPassDependencies,
 ):
+    """Run the forward pass of an RTSKalman filter.
+
+    The forward pass function that is used for the default RTSKalman filter.
+    """
     prior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     posterior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     prior_error_states = np.empty((accel.shape[0] + 1, 9))
