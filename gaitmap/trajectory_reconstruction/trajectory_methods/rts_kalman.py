@@ -64,20 +64,6 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking_variance
         The variance of the noise of the measured position during a level walking update.
         Should typically be very small.
-    zupt_orientation_update
-        Flag to control, if the orientation of the IMU should be actively corrected using acceleration information
-        during ZUPT.
-        If True, the direction of gravity is guessed based on the direction of the acc-vector.
-        This direction is then aligned with the expected gravity direction.
-        This is disabled by default, as it can lead to unexpected results, if there is a lot of movement during the
-        mid stance.
-        However, depending on the dataset, this can be very benifical.
-
-        .. warning:: The support for orientation updates is still experimental and not fully validated on real data.
-
-    zupt_orientation_error_variance
-        The variance of the noise of the measured orientation during the ZUPT.
-        This might be comparably high, because we still expcet some variation in the accelerometer.
     zupt_window_length_s
         Length of the window used in the default method to find ZUPTs.
         If the value is too small at least a window of 2 samples is used.
@@ -173,8 +159,6 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking_variance: float
     zupt_window_length_s: float
     zupt_window_overlap_s: Optional[float]
-    zupt_orientation_update: bool
-    zupt_orientation_error_variance: float
     memory: Optional[Memory]
 
     data: SingleSensorData
@@ -192,8 +176,6 @@ class RtsKalman(BaseTrajectoryMethod):
         orientation_error_variance: float = 10e-2,
         level_walking: bool = True,
         level_walking_variance: float = 10e-8,
-        zupt_orientation_update: bool = False,
-        zupt_orientation_error_variance: float = 10e-1,
         zupt_window_length_s: float = 0.05,
         zupt_window_overlap_s: Optional[float] = None,
         memory: Optional[Memory] = None,
@@ -205,8 +187,6 @@ class RtsKalman(BaseTrajectoryMethod):
         self.orientation_error_variance = orientation_error_variance
         self.level_walking = level_walking
         self.level_walking_variance = level_walking_variance
-        self.zupt_orientation_update = zupt_orientation_update
-        self.zupt_orientation_error_variance = zupt_orientation_error_variance
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
         self.memory = memory
@@ -232,12 +212,6 @@ class RtsKalman(BaseTrajectoryMethod):
         self.sampling_rate_hz = sampling_rate_hz
         initial_orientation = self.initial_orientation
 
-        if self.zupt_orientation_update is True:
-            warnings.warn(
-                "Support for zupt orientation updates (`zupt_orientation_update=True`) is still "
-                "experimental and not properly validated on large datasets."
-            )
-
         is_single_sensor_data(self.data, frame="sensor", raise_exception=True)
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
@@ -253,13 +227,10 @@ class RtsKalman(BaseTrajectoryMethod):
         covariance = np.copy(process_noise)
 
         # measure noise
-        # TODO: Set different zupt noises for ori and vel?
-        meas_noise = np.zeros((6, 6))
+        meas_noise = np.zeros((4, 4))
         meas_noise[0:3, 0:3] = np.eye(3) * self.zupt_variance
         if self.level_walking is True:
             meas_noise[3, 3] = self.level_walking_variance
-        if self.zupt_orientation_update:
-            meas_noise[4:6, 4:6] = np.eye(2) * self.zupt_orientation_error_variance
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
@@ -277,7 +248,6 @@ class RtsKalman(BaseTrajectoryMethod):
             process_noise,
             zupts,
             self.level_walking,
-            self.zupt_orientation_update,
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
@@ -341,7 +311,6 @@ def rts_kalman_update_series(
     process_noise,
     zupts,
     level_walking,
-    orientation_correction,
 ):
     """Perform a forward and backwards kalman pass with smoothing over the entire series."""
     return _rts_kalman_update_series(
@@ -354,7 +323,6 @@ def rts_kalman_update_series(
         process_noise,
         zupts,
         level_walking,
-        orientation_correction,
     )
 
 
@@ -387,7 +355,6 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     process_noise,
     zupts,
     level_walking,
-    orientation_correction,
 ):
     prior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
     posterior_covariances = np.empty((accel.shape[0] + 1, 9, 9))
@@ -419,17 +386,13 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
     #
     # The values 1-4 are directly part of the stater space.
     # This means we have a trivial measurement function h and jacobian H
-    # Value 5 is the angle between the local z-axis and the global z-axis.
-    # This can be represented as the second euler angle in a 3-1-3 euler angel configuration.
-    # Hence we can calculate it from the quaternion components.
-    # See notes on the full calculation in the ZUPT update code.
-    zupt_measurement = np.zeros(6)
+    zupt_measurement = np.zeros(4)
     # meas_jacob dh/d(\delta x) maps from measurement space into the error space
     # Because we directly observe the values from our error vector without any conversion, it just consists of 1 in the
     # right places.
-    meas_jacob = np.zeros((6, 9))
+    meas_jacob = np.zeros((4, 9))
     # The meas_func is used to mask only the correction values we want to have.
-    meas_func = np.zeros(6)
+    meas_func = np.zeros(4)
     # Zero Velocity update
     meas_func[0:3] = 1
     meas_jacob[0:3, 3:6] = np.eye(3)
@@ -437,10 +400,6 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
         # Zero elevation update
         meas_jacob[3, 2] = 1
         meas_func[3] = 1
-    if orientation_correction is True:
-        # Angle error update
-        meas_func[4:6] = 1
-        meas_jacob[4:6, 6:8] = np.eye(2)
 
     for i, zupt in enumerate(zupts):
         acc = np.ascontiguousarray(accel[i])
@@ -476,14 +435,6 @@ def _rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
             if level_walking:
                 # z-position error
                 zupt_measurement[3] = position[2]
-            # orientation error
-            if orientation_correction:
-                # Find the angles between rotated acc and gravity
-                norm_acc = normalize(rotated_acc)
-                cross = np.cross(norm_acc, gravity)
-                dot = np.dot(norm_acc, gravity)
-                zupt_measurement[4] = np.arctan2(np.dot(cross, np.array([1.0, 0, 0])), dot)
-                zupt_measurement[5] = np.arctan2(np.dot(cross, np.array([0, 1.0, 0])), dot)
 
             innovation = meas_func.copy()
             # Instead of using the calculated error, we calculate how much the error has increased since the last time
@@ -553,7 +504,6 @@ def _rts_kalman_update_series(
     process_noise,
     zupts,
     level_walking,
-    orientation_correction,
 ):
     forward_eskf_results, forward_nominal_states = _rts_kalman_forward_pass(
         acc,
@@ -565,7 +515,6 @@ def _rts_kalman_update_series(
         process_noise,
         zupts,
         level_walking,
-        orientation_correction,
     )
     corrected_error_states, corrected_covariances = _rts_kalman_backward_pass(*forward_eskf_results)
 
