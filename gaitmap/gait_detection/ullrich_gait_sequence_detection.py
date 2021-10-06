@@ -1,7 +1,7 @@
 """The gait sequence detection algorithm by Ullrich et al. 2020."""
 import copy
 import itertools
-from typing import Tuple, Union, Dict, TypeVar
+from typing import Dict, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -13,13 +13,13 @@ from gaitmap.base import BaseGaitDetection
 from gaitmap.utils import signal_processing
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import sliding_window_view, find_extrema_in_radius, merge_intervals
+from gaitmap.utils.array_handling import find_extrema_in_radius, merge_intervals, sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR
 from gaitmap.utils.datatype_helper import (
-    is_multi_sensor_data,
+    RegionsOfInterestList,
     SensorData,
     get_multi_sensor_names,
-    RegionsOfInterestList,
+    is_multi_sensor_data,
     is_sensor_data,
 )
 
@@ -448,7 +448,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # In case all dataframes are empty, so no gait sequences were detected just return an empty dataframe.
         sensor_names = list(get_multi_sensor_names(self.data))
 
-        if all([df.empty for df in gait_sequences.values()]):
+        if all(df.empty for df in gait_sequences.values()):
             return {sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"]) for sensor_name in sensor_names}
 
         gait_sequences_merged = pd.DataFrame(

@@ -1,11 +1,11 @@
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from sklearn.model_selection import KFold
 
-from gaitmap.future.pipelines import cross_validate, Optimize
+from gaitmap.future.pipelines import Optimize, cross_validate
 from tests.test_future.test_pipelines.conftest import DummyDataset, DummyPipeline, dummy_single_score_func
 
 

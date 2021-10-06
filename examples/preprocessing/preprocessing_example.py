@@ -9,7 +9,6 @@ use of all gaitmap functions.
 """
 
 import matplotlib.pyplot as plt
-from gaitmap.utils.consts import SF_GYR, SF_ACC
 
 # %%
 # Getting some example data
@@ -20,6 +19,7 @@ from gaitmap.utils.consts import SF_GYR, SF_ACC
 # be transformed to match the gaitmap coordinate system definitions.
 # The data contains information from two sensors - one from the right and one from the left foot.
 from gaitmap.example_data import get_healthy_example_imu_data_not_rotated
+from gaitmap.utils.consts import SF_ACC, SF_GYR
 
 example_dataset = get_healthy_example_imu_data_not_rotated()
 sampling_rate_hz = 204.8
@@ -59,7 +59,8 @@ example_dataset.sort_index(axis=1).head(1)
 
 # Rename columns and align with the expected orientation
 import numpy as np
-from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
+
+from gaitmap.utils.rotations import rotate_dataset, rotation_from_angle
 
 # rotate left_sensor first by -90 deg around the z-axis, followed by a -90 deg rotation around the x-axis. As the rotation matrix is multiplied from the left, the rotation matrix  results in:
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(

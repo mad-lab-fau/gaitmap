@@ -7,7 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseType
-from gaitmap.stride_segmentation import ConstrainedBarthDtw, create_dtw_template, BarthOriginalTemplate
+from gaitmap.stride_segmentation import BarthOriginalTemplate, ConstrainedBarthDtw, create_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin

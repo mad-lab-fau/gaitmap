@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import numbers
 import time
-from typing import Dict, Optional, TYPE_CHECKING, Union, Tuple, List, Any, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import joblib
 import numpy as np
@@ -16,8 +16,8 @@ from typing_extensions import TypedDict
 
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines._pipelines import SimplePipeline
-from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, _AGG_SCORE_TYPE
-from gaitmap.future.pipelines._utils import _get_nested_paras, _clone_parameter_dict
+from gaitmap.future.pipelines._scorer import _AGG_SCORE_TYPE, _ERROR_SCORE_TYPE, _SINGLE_SCORE_TYPE, GaitmapScorer
+from gaitmap.future.pipelines._utils import _clone_parameter_dict, _get_nested_paras
 
 if TYPE_CHECKING:
     from gaitmap.future.pipelines._optimize import BaseOptimize  # noqa: cyclic-import

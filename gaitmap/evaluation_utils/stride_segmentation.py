@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Union, Tuple, Dict, Sequence
+from typing import Dict, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -10,11 +10,11 @@ from scipy.spatial.ckdtree import cKDTree
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
+    SingleSensorStrideList,
     StrideList,
-    set_correct_index,
     get_multi_sensor_names,
     is_stride_list,
-    SingleSensorStrideList,
+    set_correct_index,
 )
 from gaitmap.utils.exceptions import ValidationError
 

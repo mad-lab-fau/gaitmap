@@ -49,6 +49,7 @@ data = convert_to_fbf(data, left_like="left_", right_like="right_")
 #
 # However, in this example, we will use a temp-directory that will be deleted at the end of the example.
 from tempfile import TemporaryDirectory
+
 from joblib import Memory
 
 tmp_dir = TemporaryDirectory()

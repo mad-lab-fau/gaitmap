@@ -7,9 +7,9 @@ from pandas.core.indexes.frozen import FrozenList
 from gaitmap.base import BaseType
 from gaitmap.parameters.spatial_parameters import (
     SpatialParameterCalculation,
-    _calc_stride_length,
-    _calc_gait_velocity,
     _calc_arc_length,
+    _calc_gait_velocity,
+    _calc_stride_length,
     _calc_turning_angle,
     _compute_sole_angle_course,
 )

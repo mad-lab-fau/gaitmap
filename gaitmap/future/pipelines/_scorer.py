@@ -4,7 +4,7 @@ from __future__ import annotations
 import numbers
 import warnings
 from traceback import format_exc
-from typing import Tuple, Union, Dict, TYPE_CHECKING, List, Callable, Optional, Type
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 from typing_extensions import Literal

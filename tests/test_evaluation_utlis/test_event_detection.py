@@ -4,7 +4,6 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import evaluate_stride_event_list
-
 from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 
 

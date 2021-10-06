@@ -1,5 +1,5 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 import numba.typed
 import numpy as np
@@ -324,8 +324,13 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
     stack.append(input_array[0])
 
     for i in range(1, len(input_array)):
-        if stack[-1][0] <= input_array[i][0] <= (stack[-1][1] + gap_size) <= (input_array[i][1] + gap_size):
-            stack[-1][1] = input_array[i][1]
+        if (
+            stack[-1][0]  # noqa: unsubscriptable-object
+            <= input_array[i][0]
+            <= (stack[-1][1] + gap_size)  # noqa: unsubscriptable-object
+            <= (input_array[i][1] + gap_size)
+        ):
+            stack[-1][1] = input_array[i][1]  # noqa: unsupported-assignment-operation
         else:
             stack.append(input_array[i])
 

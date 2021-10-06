@@ -51,4 +51,5 @@ pylint:
     - too-many-lines
     - bad-whitespace
     - cyclic-import # ignored because of false positive due to Type hints
+    - consider-using-f-string # We are not against f-strings, but we do not want to enforce them either.
 

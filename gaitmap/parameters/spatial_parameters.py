@@ -1,5 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
-from typing import Union, Dict, Tuple, TypeVar
+from typing import Dict, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -9,21 +9,21 @@ from scipy.spatial.transform import Rotation
 from gaitmap.base import BaseSpatialParameterCalculation
 from gaitmap.parameters.temporal_parameters import _calc_stride_time
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import GF_POS, GF_ORI, SL_INDEX, GF_INDEX
+from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    StrideList,
-    MultiSensorStrideList,
-    SingleSensorStrideList,
-    PositionList,
-    SingleSensorPositionList,
-    MultiSensorPositionList,
-    OrientationList,
-    SingleSensorOrientationList,
     MultiSensorOrientationList,
-    set_correct_index,
-    is_stride_list,
-    is_position_list,
+    MultiSensorPositionList,
+    MultiSensorStrideList,
+    OrientationList,
+    PositionList,
+    SingleSensorOrientationList,
+    SingleSensorPositionList,
+    SingleSensorStrideList,
+    StrideList,
     is_orientation_list,
+    is_position_list,
+    is_stride_list,
+    set_correct_index,
 )
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle

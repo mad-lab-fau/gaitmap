@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Union, Dict, Sequence, Iterable, Optional, List, Callable, cast
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -8,24 +8,24 @@ from typing_extensions import Literal
 from gaitmap.utils._datatype_validation_helper import (
     _ALLOWED_FRAMES,
     _ALLOWED_FRAMES_TYPE,
-    _get_expected_dataset_cols,
-    _assert_is_dtype,
-    _assert_has_multindex_cols,
+    _ALLOWED_STRIDE_TYPE,
+    _ALLOWED_TRAJ_LIST_TYPES,
     _assert_has_columns,
     _assert_has_index_columns,
+    _assert_has_multindex_cols,
+    _assert_is_dtype,
     _assert_multisensor_is_not_empty,
-    _ALLOWED_STRIDE_TYPE,
+    _get_expected_dataset_cols,
     _get_multi_sensor_data_names,
-    _ALLOWED_TRAJ_LIST_TYPES,
 )
 from gaitmap.utils._types import _DataFrame, _Hashable
 from gaitmap.utils.consts import (
-    SL_COLS,
-    SL_ADDITIONAL_COLS,
+    GF_ORI,
     GF_POS,
     GF_VEL,
-    GF_ORI,
     ROI_ID_COLS,
+    SL_ADDITIONAL_COLS,
+    SL_COLS,
     SL_INDEX,
     TRAJ_TYPE_COLS,
 )

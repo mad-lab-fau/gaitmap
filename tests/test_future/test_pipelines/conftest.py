@@ -1,7 +1,7 @@
 import pandas as pd
 
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import SimplePipeline, OptimizablePipeline
+from gaitmap.future.pipelines import OptimizablePipeline, SimplePipeline
 
 
 class DummyPipeline(OptimizablePipeline):

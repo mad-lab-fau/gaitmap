@@ -3,16 +3,16 @@
 Definitions can be found in the :ref:`coordinate_systems` guide.
 """
 import warnings
-from typing import Optional, List
+from typing import List, Optional
 
 import pandas as pd
 
-from gaitmap.utils.consts import SF_COLS, BF_COLS, FSF_FBF_CONVERSION_LEFT, FSF_FBF_CONVERSION_RIGHT
+from gaitmap.utils.consts import BF_COLS, FSF_FBF_CONVERSION_LEFT, FSF_FBF_CONVERSION_RIGHT, SF_COLS
 from gaitmap.utils.datatype_helper import (
-    is_multi_sensor_data,
-    SingleSensorData,
     MultiSensorData,
+    SingleSensorData,
     get_multi_sensor_names,
+    is_multi_sensor_data,
     is_single_sensor_data,
 )
 
@@ -159,7 +159,7 @@ def convert_to_fbf(
 
 
 def _handle_foot(foot, foot_like, data, rot_func):
-    result = dict()
+    result = {}
     if foot_like:
         foot = [sensor for sensor in get_multi_sensor_names(data) if foot_like in sensor]
         if not foot:

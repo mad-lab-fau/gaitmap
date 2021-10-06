@@ -45,6 +45,8 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # for demonstration purposes we will for now stick with the data of one foot only
 bf_data = bf_data["left_sensor"]
 
+import numpy as np
+
 # %%
 # Add rest and non-gait data
 # --------------------------
@@ -52,7 +54,6 @@ bf_data = bf_data["left_sensor"]
 # Additionally to the gait data we use some artificial signal to simulate rest and an arbitrary cyclic but non-gait
 # movement.
 import pandas as pd
-import numpy as np
 
 # use zeros for rest
 rest_df = pd.DataFrame([[0] * bf_data.shape[1]], columns=bf_data.columns)

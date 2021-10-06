@@ -6,25 +6,25 @@ from contextlib import nullcontext
 from functools import partial
 from itertools import product
 from tempfile import TemporaryDirectory
-from typing import Dict, Any, Optional, Union, Callable, Iterator, List
+from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import joblib
 import numpy as np
-from joblib import Parallel, delayed, Memory
+from joblib import Memory, Parallel, delayed
 from numpy.ma import MaskedArray
 from scipy.stats import rankdata
-from sklearn.model_selection import ParameterGrid, BaseCrossValidator, check_cv
+from sklearn.model_selection import BaseCrossValidator, ParameterGrid, check_cv
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines._pipelines import SimplePipeline, OptimizablePipeline
-from gaitmap.future.pipelines._score import _score, _optimize_and_score
-from gaitmap.future.pipelines._scorer import GaitmapScorer, _ERROR_SCORE_TYPE, _validate_scorer
+from gaitmap.future.pipelines._pipelines import OptimizablePipeline, SimplePipeline
+from gaitmap.future.pipelines._score import _optimize_and_score, _score
+from gaitmap.future.pipelines._scorer import _ERROR_SCORE_TYPE, GaitmapScorer, _validate_scorer
 from gaitmap.future.pipelines._utils import (
     _aggregate_final_results,
+    _normalize_score_results,
     _prefix_para_dict,
     _split_hyper_and_pure_parameters,
-    _normalize_score_results,
 )
 from gaitmap.utils.exceptions import PotentialUserErrorWarning
 

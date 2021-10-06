@@ -1,6 +1,6 @@
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import calculate_parameter_errors

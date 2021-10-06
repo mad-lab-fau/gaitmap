@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of an event stride segmentation against ground truth."""
 
-from typing import Union, Dict
+from typing import Dict, Union
 
 from pandas import DataFrame
 from typing_extensions import Literal

@@ -78,7 +78,7 @@ dataset
 # For the final GridSearch, we need an instance of the pipeline object.
 from gaitmap.future.pipelines import SimplePipeline
 from gaitmap.stride_segmentation import BarthDtw
-from gaitmap.utils.coordinate_conversion import convert_right_foot_to_fbf, convert_left_foot_to_fbf
+from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 
 
 class MyPipeline(SimplePipeline):
@@ -150,7 +150,6 @@ def score(pipeline: MyPipeline, datapoint: MyDataset):
 #
 # In this example, we will just test two values for the `max_cost` threshold.
 from sklearn.model_selection import ParameterGrid
-
 
 parameters = ParameterGrid({"max_cost": [3, 5]})
 

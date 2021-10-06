@@ -28,9 +28,8 @@ To learn more about such preprocessing steps see :ref:`this example <example_pre
 # The example data used in the following is already in the correct gaitmap coordinate system.
 import matplotlib.pyplot as plt
 
-from gaitmap.example_data import get_healthy_example_stride_events, get_healthy_example_imu_data
-from gaitmap.trajectory_reconstruction import SimpleGyroIntegration, ForwardBackwardIntegration, StrideLevelTrajectory
-
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_events
+from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration, SimpleGyroIntegration, StrideLevelTrajectory
 
 stride_list = get_healthy_example_stride_events()
 imu_data = get_healthy_example_imu_data()

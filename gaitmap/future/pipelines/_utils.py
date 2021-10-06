@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numbers
 from copy import copy
-from typing import List, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import joblib
 import numpy as np

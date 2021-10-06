@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.exceptions import UndefinedMetricWarning
 from numpy.testing import assert_array_equal
 
-from gaitmap.evaluation_utils.scores import precision_score, recall_score, f1_score, precision_recall_f1_score
+from gaitmap.evaluation_utils.scores import f1_score, precision_recall_f1_score, precision_score, recall_score
 
 
 class TestEvaluationScores:
@@ -198,7 +197,7 @@ class TestDivisionByZeroWarnings:
         self.func, self.arguments, self.zero_division, self.warning_message = request.param
 
     def test_division_by_zero_warnings(self):
-        with pytest.warns(UndefinedMetricWarning) as w:
+        with pytest.warns(UserWarning) as w:
             self.func(_create_valid_matches_df(*self.arguments), zero_division=self.zero_division)
 
         # check that the message matches

@@ -6,9 +6,9 @@ from pandas._testing import assert_frame_equal
 from gaitmap.utils.consts import SL_EVENT_ORDER
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
     convert_segmented_stride_list,
+    enforce_stride_list_consistency,
 )
 
 

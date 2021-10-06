@@ -8,18 +8,18 @@ import pandas as pd
 import pytest
 from sklearn.model_selection import ParameterGrid, PredefinedSplit
 
-from gaitmap.future.pipelines import GridSearch, Optimize, GaitmapScorer
+from gaitmap.future.pipelines import GaitmapScorer, GridSearch, Optimize
 from gaitmap.future.pipelines._optimize import BaseOptimize, GridSearchCV
 from gaitmap.future.pipelines._score import _optimize_and_score
 from gaitmap.utils.exceptions import PotentialUserErrorWarning
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_future.test_pipelines.conftest import (
-    DummyPipeline,
-    dummy_single_score_func,
     DummyDataset,
-    dummy_multi_score_func,
-    create_dummy_score_func,
+    DummyPipeline,
     create_dummy_multi_score_func,
+    create_dummy_score_func,
+    dummy_multi_score_func,
+    dummy_single_score_func,
 )
 
 

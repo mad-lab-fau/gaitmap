@@ -22,8 +22,9 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-
 random.seed(1)  # We set the random seed for repeatable results
+
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 
 # %%
 # Dataset
@@ -31,7 +32,6 @@ random.seed(1)  # We set the random seed for repeatable results
 # As always, we need a dataset, a pipeline, and a scoring method for a parameter search.
 # We reuse the dataset used in other pipeline examples.
 from gaitmap.future.dataset import Dataset
-from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 
 
 class MyDataset(Dataset):
@@ -62,9 +62,9 @@ class MyDataset(Dataset):
 # during training.
 # Modifying this parameter, will change the result of the `self_optimize` step.
 from gaitmap.future.pipelines import OptimizablePipeline
-from gaitmap.stride_segmentation import DtwTemplate, BarthOriginalTemplate, create_interpolated_dtw_template, BarthDtw
-from gaitmap.utils.datatype_helper import SingleSensorStrideList
+from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
+from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
@@ -171,7 +171,6 @@ cv = KFold(n_splits=2)
 # For the `n_train_strides` we test the values `None` (all strides) and 1 (single stride) to make sure that we will
 # see a performance difference between the two options.
 from sklearn.model_selection import ParameterGrid
-
 
 parameters = ParameterGrid({"max_cost": [3, 5], "n_train_strides": [None, 1]})  # None means all strides.
 

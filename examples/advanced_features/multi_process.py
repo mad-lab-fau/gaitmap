@@ -31,7 +31,7 @@ Other Python helpers to spawn multiple processes will of course work as well.
 
 """
 from pprint import pprint
-from typing import Dict, Any
+from typing import Any, Dict
 
 # %%
 # Load some example data
@@ -43,6 +43,8 @@ data = get_healthy_example_imu_data()
 bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 sampling_rate_hz = 204.8
 
+from sklearn.model_selection import ParameterGrid
+
 # %%
 # Preparing the stride segmentation
 # ---------------------------------
@@ -51,7 +53,6 @@ sampling_rate_hz = 204.8
 # Note, that we make use of gaitmaps `set_params` methods later.
 # Hence, we can specify parameters for the nested template object in the parameter grid using the double "_" notation.
 from gaitmap.stride_segmentation import BarthDtw
-from sklearn.model_selection import ParameterGrid
 
 dtw = BarthDtw()
 parameter_grid = ParameterGrid({"max_cost": [1800, 2200], "template__use_cols": [("gyr_ml",), ("gyr_ml", "gyr_si")]})

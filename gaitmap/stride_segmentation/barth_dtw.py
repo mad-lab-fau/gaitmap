@@ -1,6 +1,6 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 import warnings
-from typing import Optional, Union, Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -9,7 +9,7 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
-from gaitmap.stride_segmentation.dtw_templates.templates import DtwTemplate, BarthOriginalTemplate
+from gaitmap.stride_segmentation.dtw_templates.templates import BarthOriginalTemplate, DtwTemplate
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import StrideList

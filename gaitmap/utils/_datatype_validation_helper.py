@@ -1,11 +1,11 @@
 """Internal helpers for dataset validation."""
-from typing import List, Union, Iterable, Dict, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import pandas as pd
 from typing_extensions import Literal
 
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import SF_ACC, SF_GYR, BF_ACC, BF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.exceptions import ValidationError
 
 _ALLOWED_FRAMES = ["any", "body", "sensor"]

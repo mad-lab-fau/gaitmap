@@ -38,10 +38,9 @@ Datasets work best in combination with `Pipelines` and are further compatible wi
 # Then you can filter the dataset first and load the data once you know which data-points you want to access.
 # We will discuss this later in the example.
 from itertools import product
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 import pandas as pd
-
 
 trials = list(product(("rec_1", "rec_2", "rec_3"), ("trial_1",)))
 trials.append(("rec_3", "trial_2"))

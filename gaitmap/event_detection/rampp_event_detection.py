@@ -1,5 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union, Dict, TypeVar, cast, Callable
+from typing import Callable, Dict, Optional, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -12,17 +12,17 @@ from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    StrideList,
     SensorData,
+    StrideList,
     get_multi_sensor_names,
-    set_correct_index,
     is_sensor_data,
     is_stride_list,
+    set_correct_index,
 )
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
+    enforce_stride_list_consistency,
 )
 
 Self = TypeVar("Self", bound="RamppEventDetection")
@@ -231,7 +231,7 @@ class RamppEventDetection(BaseEventDetection):
                 data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory
             )
         else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
                     data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory

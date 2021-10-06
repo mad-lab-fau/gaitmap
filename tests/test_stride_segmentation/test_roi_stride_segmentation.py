@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Union, Dict
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -7,14 +7,14 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.stride_segmentation import create_dtw_template, BarthDtw
+from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
 from gaitmap.utils.datatype_helper import (
     SensorData,
-    is_multi_sensor_data,
     get_multi_sensor_names,
-    is_single_sensor_stride_list,
+    is_multi_sensor_data,
     is_multi_sensor_stride_list,
+    is_single_sensor_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin

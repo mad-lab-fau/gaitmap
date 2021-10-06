@@ -5,21 +5,21 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert
 from pandas._testing import assert_frame_equal
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_COLS, SF_ACC, SF_GYR
+from gaitmap.utils.consts import SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
-    rotation_from_angle,
     _rotate_sensor,
-    rotate_dataset,
-    find_shortest_rotation,
-    get_gravity_rotation,
-    find_rotation_around_axis,
-    find_angle_between_orientations,
-    find_unsigned_3d_angle,
     angle_diff,
-    rotate_dataset_series,
+    find_angle_between_orientations,
+    find_rotation_around_axis,
+    find_shortest_rotation,
     find_signed_3d_angle,
+    find_unsigned_3d_angle,
+    get_gravity_rotation,
+    rotate_dataset,
+    rotate_dataset_series,
+    rotation_from_angle,
 )
 
 

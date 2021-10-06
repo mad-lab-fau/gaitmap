@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from gaitmap.base import BaseType, BaseOrientationMethod
+from gaitmap.base import BaseOrientationMethod, BaseType
 from gaitmap.trajectory_reconstruction import MadgwickAHRS
 from gaitmap.trajectory_reconstruction.orientation_methods.madgwick import _madgwick_update
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin

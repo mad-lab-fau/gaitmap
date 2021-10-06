@@ -6,11 +6,11 @@ from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    StrideList,
     SingleSensorStrideList,
+    StrideList,
     is_single_sensor_stride_list,
-    set_correct_index,
     is_stride_list,
+    set_correct_index,
 )
 
 

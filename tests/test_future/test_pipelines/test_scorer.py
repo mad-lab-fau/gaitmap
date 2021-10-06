@@ -6,12 +6,12 @@ import pytest
 from gaitmap.future.pipelines import GaitmapScorer
 from gaitmap.future.pipelines._scorer import _passthrough_scoring, _validate_scorer
 from tests.test_future.test_pipelines.conftest import (
-    DummyPipeline,
     DummyDataset,
-    dummy_single_score_func,
-    dummy_multi_score_func,
+    DummyPipeline,
     dummy_error_score_func,
     dummy_error_score_func_multi,
+    dummy_multi_score_func,
+    dummy_single_score_func,
 )
 
 

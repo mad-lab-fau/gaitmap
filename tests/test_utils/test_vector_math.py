@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 from numpy.linalg import norm
-from numpy.testing import assert_array_equal, assert_array_almost_equal, assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_array_equal
 
 from gaitmap.utils.vector_math import (
-    find_random_orthogonal,
     find_orthogonal,
-    normalize,
+    find_random_orthogonal,
     is_almost_parallel_or_antiparallel,
+    normalize,
 )
 
 

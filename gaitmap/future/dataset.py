@@ -1,5 +1,5 @@
 """Base class for all datasets."""
-from typing import Optional, List, Union, Tuple, TypeVar, Sequence, Iterator
+from typing import Iterator, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -237,12 +237,12 @@ class Dataset(_BaseSerializable):
             groupby_cols = self.groupby_cols
         try:
             return self.index.set_index(groupby_cols, drop=False)
-        except KeyError:
+        except KeyError as e:
             raise KeyError(
                 "You can only groupby columns that are part of the index columns ({}) and not {}".format(
                     list(self.index.columns), self.groupby_cols
                 )
-            )
+            ) from e
 
     def _get_unique_groups(self) -> Union[pd.MultiIndex, pd.Index]:
         return self.grouped_index.index.unique()
@@ -449,17 +449,17 @@ class Dataset(_BaseSerializable):
         unique_index = self._get_unique_groups().to_frame()
         try:
             return unique_index.set_index(label_cols).index.to_list()
-        except KeyError:
+        except KeyError as e:
             if self.groupby_cols is not None:
                 raise KeyError(
                     "When using `create_group_labels` with a grouped dataset, the selected columns must "
                     "be a subset of `self.groupby_cols` ({}) and not ({})".format(self.groupby_cols, label_cols)
-                )
+                ) from e
             raise KeyError(
                 "The selected label columns ({}) are not in the index of the dataset ({})".format(
                     label_cols, list(self.index.columns)
                 )
-            )
+            ) from e
 
     def create_index(self) -> pd.DataFrame:
         """Create the full index for the dataset.

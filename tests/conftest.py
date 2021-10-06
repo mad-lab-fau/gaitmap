@@ -9,11 +9,11 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.example_data import (
     get_healthy_example_imu_data,
-    get_healthy_example_stride_borders,
     get_healthy_example_mocap_data,
-    get_healthy_example_stride_events,
     get_healthy_example_orientation,
     get_healthy_example_position,
+    get_healthy_example_stride_borders,
+    get_healthy_example_stride_events,
     get_ms_example_imu_data,
 )
 from tests._regression_utils import PyTestSnapshotTest

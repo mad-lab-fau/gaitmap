@@ -1,7 +1,6 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
 import warnings
-from typing import TypeVar, Optional
-from typing import Union
+from typing import Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -11,15 +10,9 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import GRAV_VEC
-from gaitmap.utils.consts import SF_GYR, SF_ACC, GF_POS, GF_VEL
-from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
-from gaitmap.utils.fast_quaternion_math import (
-    quat_from_rotvec,
-    multiply,
-    rotate_vector,
-    normalize,
-)
+from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
+from gaitmap.utils.fast_quaternion_math import multiply, normalize, quat_from_rotvec, rotate_vector
 from gaitmap.utils.static_moment_detection import find_static_samples
 
 Self = TypeVar("Self", bound="RtsKalman")

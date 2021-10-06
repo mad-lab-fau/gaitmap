@@ -1,5 +1,5 @@
 """Calculate temporal parameters algorithm."""
-from typing import Union, Dict, TypeVar
+from typing import Dict, TypeVar, Union
 
 import pandas as pd
 
@@ -7,11 +7,11 @@ from gaitmap.base import BaseTemporalParameterCalculation
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    StrideList,
     MultiSensorStrideList,
     SingleSensorStrideList,
-    set_correct_index,
+    StrideList,
     is_stride_list,
+    set_correct_index,
 )
 
 Self = TypeVar("Self", bound="TemporalParameterCalculation")

@@ -1,5 +1,5 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
-from typing import Optional, Tuple, Union, Dict, TypeVar
+from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
@@ -8,39 +8,39 @@ from typing_extensions import Literal
 from gaitmap.base import (
     BaseOrientationMethod,
     BasePositionMethod,
-    BaseTrajectoryReconstructionWrapper,
     BaseTrajectoryMethod,
+    BaseTrajectoryReconstructionWrapper,
 )
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
-    _TrajectoryReconstructionWrapperMixin,
     _initial_orientation_from_start,
+    _TrajectoryReconstructionWrapperMixin,
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.datatype_helper import (
-    SensorData,
-    SingleSensorData,
-    is_sensor_data,
-    RegionsOfInterestList,
-    is_regions_of_interest_list,
-    SingleSensorRegionsOfInterestList,
-    get_single_sensor_regions_of_interest_types,
-    StrideList,
-    is_stride_list,
-    VelocityList,
     OrientationList,
     PositionList,
+    RegionsOfInterestList,
+    SensorData,
+    SingleSensorData,
+    SingleSensorOrientationList,
+    SingleSensorPositionList,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+    SingleSensorVelocityList,
+    StrideList,
+    VelocityList,
+    get_multi_sensor_names,
+    get_single_sensor_regions_of_interest_types,
+    get_single_sensor_trajectory_list_types,
     is_orientation_list,
     is_position_list,
+    is_regions_of_interest_list,
+    is_sensor_data,
+    is_stride_list,
     is_velocity_list,
-    get_multi_sensor_names,
-    SingleSensorStrideList,
-    SingleSensorPositionList,
-    SingleSensorOrientationList,
-    SingleSensorVelocityList,
     set_correct_index,
-    get_single_sensor_trajectory_list_types,
 )
 from gaitmap.utils.exceptions import ValidationError
 

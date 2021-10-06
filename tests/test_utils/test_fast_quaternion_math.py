@@ -4,11 +4,11 @@ from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform.rotation import Rotation
 
 from gaitmap.utils.fast_quaternion_math import (
-    rate_of_change_from_gyro,
     multiply,
-    rotate_vector,
-    quat_from_rotvec,
     normalize,
+    quat_from_rotvec,
+    rate_of_change_from_gyro,
+    rotate_vector,
 )
 from tests.test_utils.test_vector_math import TestNormalize
 

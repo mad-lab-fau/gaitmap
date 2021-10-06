@@ -3,13 +3,13 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.utils.array_handling import (
-    sliding_window_view,
     bool_array_to_start_end_array,
-    split_array_at_nan,
-    find_local_minima_below_threshold,
     find_extrema_in_radius,
+    find_local_minima_below_threshold,
     merge_intervals,
     multi_array_interpolation,
+    sliding_window_view,
+    split_array_at_nan,
 )
 
 

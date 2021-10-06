@@ -13,13 +13,13 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from NilsPodLib.exceptions import LegacyWarning, CorruptedPackageWarning, CalibrationWarning, SynchronisationWarning
+from NilsPodLib.exceptions import CalibrationWarning, CorruptedPackageWarning, LegacyWarning, SynchronisationWarning
 from scipy.spatial.transform import Rotation
 from sensor_position_dataset_helper import (
     get_imu_test,
     get_mocap_test,
-    get_subject_folder,
     get_session_df,
+    get_subject_folder,
     get_subject_mocap_folder,
 )
 
