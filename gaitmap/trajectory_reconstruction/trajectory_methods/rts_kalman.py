@@ -8,11 +8,11 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
-    rts_kalman_update_series,
-    SimpleZuptParameter,
-    simple_navigation_equations,
-    default_rts_kalman_forward_pass,
     ForwardPassDependencies,
+    SimpleZuptParameter,
+    default_rts_kalman_forward_pass,
+    rts_kalman_update_series,
+    simple_navigation_equations,
 )
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
