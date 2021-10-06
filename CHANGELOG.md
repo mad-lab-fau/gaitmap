@@ -18,6 +18,14 @@ project.
   By using the positive and the negative value range, we can save 1/3 of the overall RAM.
   This should improve performance.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/155)
+- `RtsKalman.find_zupts` now gets passed the entire data **before** any unit conversions.
+  Before it only got the gyro data already converted in rad/s.
+  This change should make it easier to overwrite the ZUPT detection with custom methods.
+  This is a breaking change! See the migration guide for more details.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
+- The `memory` option for `RtsKalman` was removed.
+  This is a breaking change!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 ### Deprecated
 
@@ -29,8 +37,34 @@ project.
  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/157) 
 
 ### Migration Guide
+- We removed the orientation update feature of the `RtsKalman` class.
+  This feature was of by default.
+  Unless you explicitly enabled it, you should be fine.
+  In case you used the feature, remove all references to the respective keywords.
+- The call signature and the units of the gyro data passed `RtsKalman.find_zupts` has changed.
+  In case you where using custom subclasses of `RtsKalman` to implement custom zupt methods, you need to update your 
+  zupt methods for the new input structure.
+- The `memory` option for `RtsKalman` was removed, as it was not particularly useful. In case you need caching we 
+  recommend implementing it externally.
 
 ### Scientific Changes
+
+- The "ori_update" feature of the Kalman filter was removed again. 
+  The feature was experimental anyway, but in turns out the implementation was actually wrong.
+  The RTSKalman filter tracks the change in error state open-loop.
+  This means errors are not applied during ZUPT-measurements, but simply added up and corrected at the very end.
+  This works well for position and velocity, but the equations for orientation assume, that the orientation error 
+  remains small enough so that a linearization and separation of the angle error on the different axis is possible.
+  When the filter is run open loop, it is very likely that the orientation error will quickly reach ranges, where this 
+  doesn't hold anymore.
+  We concluded that the used method to track the orientation error (and hence, correct it directly) is not suitable for 
+  open-loop Kalmanfilter designs.
+  It is unlikely that the feature will be added again in the future.
+  However, prior versions can be used as reference to implement a closed loop Kalmanfilter with direct observations of 
+  the orientation error.
+  This is a breaking change!
+  See the Migration section for more details, if you used this feature before.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 
 ## [1.4.0] - 2021-06-25
