@@ -48,6 +48,7 @@ memory_profiler = "^0.57.0"
 toml = "^0.10.1"
 mypy = "^0.790"
 pytest-xdist = "^2.2.0"
+isort = "^5.9.3"
 
 [tool.black]
 line-length = 120
@@ -69,6 +70,12 @@ exclude = '''
   )/
 )
 '''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 120
+skip_gitignore = true
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

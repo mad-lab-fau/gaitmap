@@ -5,7 +5,7 @@ import json
 import types
 import warnings
 from collections import defaultdict
-from typing import Callable, Dict, TypeVar, Any, List, Type, DefaultDict, Union
+from typing import Any, Callable, DefaultDict, Dict, List, Type, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -14,13 +14,13 @@ from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
-    SensorData,
-    StrideList,
-    PositionList,
-    VelocityList,
     OrientationList,
+    PositionList,
+    SensorData,
     SingleSensorData,
     SingleSensorOrientationList,
+    StrideList,
+    VelocityList,
 )
 
 BaseType = TypeVar("BaseType", bound="_BaseSerializable")
@@ -129,9 +129,10 @@ class _BaseSerializable:
         return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
 
     def _to_json_dict(self) -> Dict[str, Any]:
-        json_dict: Dict[str, Union[str, Dict[str, Any]]] = dict()
-        json_dict["_gaitmap_obj"] = self.__class__.__name__
-        json_dict["params"] = self.get_params(deep=False)
+        json_dict: Dict[str, Union[str, Dict[str, Any]]] = {
+            "_gaitmap_obj": self.__class__.__name__,
+            "params": self.get_params(deep=False),
+        }
         return json_dict
 
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
@@ -151,7 +152,7 @@ class _BaseSerializable:
 
         """
         # Basically copied from sklearn
-        out: Dict[str, Any] = dict()
+        out: Dict[str, Any] = {}
         for key in self._get_param_names():
             value = getattr(self, key)
             if deep and isinstance(value, _BaseSerializable):

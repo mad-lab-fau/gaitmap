@@ -1,11 +1,11 @@
 """A version of BarthDTW that used local warping constrains by default."""
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Union
 
 from joblib import Memory
 from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
-from gaitmap.stride_segmentation.dtw_templates import DtwTemplate, BarthOriginalTemplate
+from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
 from gaitmap.utils._types import _Hashable
 
 

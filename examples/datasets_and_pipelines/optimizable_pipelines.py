@@ -82,7 +82,7 @@ class MyDataset(Dataset):
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
 from gaitmap.future.pipelines import OptimizablePipeline
-from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, BarthOriginalTemplate, create_interpolated_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 

@@ -27,7 +27,7 @@ from pprint import pprint
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseAlgorithm
-from gaitmap.trajectory_reconstruction import StrideLevelTrajectory, MadgwickAHRS, ForwardBackwardIntegration
+from gaitmap.trajectory_reconstruction import ForwardBackwardIntegration, MadgwickAHRS, StrideLevelTrajectory
 
 # Setting an initial orientation here, is pointless as it will be overwritten by StrideLevelTrajectory
 # It is used here to demonstrate the ability to serialize Rotation objects.
@@ -60,13 +60,14 @@ pprint(loaded_slt.get_params())
 loaded_slt = StrideLevelTrajectory.from_json(json_str)
 pprint(loaded_slt.get_params())
 
+from joblib import Memory
+
 # %%
 # Caching Support
 # ---------------
 # Note that the json export does not cover `joblib.memory` objects that some algorithms use to cache results.
 # When you attempt to do this, you will get a warning with further information.
 from gaitmap.stride_segmentation import BarthDtw
-from joblib import Memory
 
 # Create a memory object. Usually you would pass the path to a cache dir.
 mem = Memory()

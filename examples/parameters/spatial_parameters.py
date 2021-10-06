@@ -24,9 +24,9 @@ The used implementation is based on the work of Kanzler et al [1]_ and Rampp et 
 # For this we need stride event list obtained from event detection method, position and orientation list
 # obtained from trajectory reconstruction.
 from gaitmap.example_data import (
-    get_healthy_example_stride_events,
-    get_healthy_example_position,
     get_healthy_example_orientation,
+    get_healthy_example_position,
+    get_healthy_example_stride_events,
 )
 from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
 

@@ -1,13 +1,13 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 import warnings
-from typing import Optional, List, Tuple, Union, Dict, TypeVar, Any, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from numba import njit
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_path, subsequence_cost_matrix
+from tslearn.metrics import subsequence_cost_matrix, subsequence_path
 from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
@@ -16,12 +16,7 @@ from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-    is_single_sensor_data,
-    get_multi_sensor_names,
-    is_sensor_data,
-)
+from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
 
 Self = TypeVar("Self", bound="BaseDtw")
 
@@ -356,7 +351,7 @@ class BaseDtw(BaseAlgorithm):
             # Single template single sensor: easy
             results = self._segment_single_dataset(data, template, memory=memory)
         else:  # Multisensor
-            result_dict: Dict[_Hashable, Dict[str, Union[np.ndarray, List[np.ndarray]]]] = dict()
+            result_dict: Dict[_Hashable, Dict[str, Union[np.ndarray, List[np.ndarray]]]] = {}
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
@@ -604,13 +599,13 @@ class BaseDtw(BaseAlgorithm):
         if data_is_df and template_is_df:
             try:
                 data = data[template.columns]
-            except KeyError:
+            except KeyError as e:
                 raise KeyError(
                     "Some columns of the template are not available in the data! This might happen because you "
                     "provided the data in the wrong coordinate frame (Sensor vs. Body)."
                     "Review the general documentation for more information."
                     "\n\nMissing columns: {}".format(list(set(template.columns) - set(data.columns)))
-                )
+                ) from e
             return template.to_numpy(), data.to_numpy()
         # TODO: Better error message
         raise ValueError("Invalid combination of data and template")

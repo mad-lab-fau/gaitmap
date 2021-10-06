@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.spatial.transform import Rotation
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod
-from gaitmap.utils.consts import SF_COLS, GF_VEL, GF_POS, GF_ORI
+from gaitmap.utils.consts import GF_ORI, GF_POS, GF_VEL, SF_COLS
 from gaitmap.utils.datatype_helper import (
     is_single_sensor_orientation_list,
     is_single_sensor_position_list,

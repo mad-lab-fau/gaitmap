@@ -13,10 +13,10 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orien
 from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.datatype_helper import (
-    is_single_sensor_orientation_list,
-    is_single_sensor_position_list,
     is_multi_sensor_orientation_list,
     is_multi_sensor_position_list,
+    is_single_sensor_orientation_list,
+    is_single_sensor_position_list,
 )
 from gaitmap.utils.exceptions import ValidationError
 

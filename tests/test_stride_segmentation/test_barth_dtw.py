@@ -8,13 +8,13 @@ from pandas.testing import assert_frame_equal
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
-from gaitmap.utils.datatype_helper import is_single_sensor_stride_list, is_multi_sensor_stride_list
+from gaitmap.utils.datatype_helper import is_multi_sensor_stride_list, is_single_sensor_stride_list
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_stride_segmentation.test_base_dtw import (
-    TestSimpleSegment,
     TestMultiDimensionalArrayInputs,
     TestMultiSensorInputs,
+    TestSimpleSegment,
 )
 
 

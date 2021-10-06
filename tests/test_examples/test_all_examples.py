@@ -25,7 +25,7 @@ def test_barth_dtw_example(snapshot):
 
 
 def test_constrained_barth_dtw_example(snapshot):
-    from examples.stride_segmentation.constrained_barth_dtw_stride_segmentation import dtw, cdtw, default_cdtw
+    from examples.stride_segmentation.constrained_barth_dtw_stride_segmentation import cdtw, default_cdtw, dtw
 
     assert len(dtw.matches_start_end_["left_sensor"]) == 74
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"], "dtw")
@@ -82,7 +82,7 @@ def test_rampp_event_detection(snapshot):
 
 
 def test_json_example(snapshot):
-    from examples.advanced_features.algo_serialize import json_str, slt, loaded_slt
+    from examples.advanced_features.algo_serialize import json_str, loaded_slt, slt
 
     snapshot.assert_match(json_str)
 
@@ -151,7 +151,7 @@ def test_grid_search(snapshot):
 
 
 def test_optimizable_pipelines(snapshot):
-    from examples.datasets_and_pipelines.optimizable_pipelines import results, optimized_results
+    from examples.datasets_and_pipelines.optimizable_pipelines import optimized_results, results
 
     snapshot.assert_match(results.segmented_stride_list_, check_dtype=False)
     snapshot.assert_match(optimized_results.segmented_stride_list_, check_dtype=False)
@@ -166,7 +166,7 @@ def test_cross_validation(snapshot):
 
 
 def test_gridsearch_cv(snapshot):
-    from examples.datasets_and_pipelines.gridsearch_cv import results_df, cached_results
+    from examples.datasets_and_pipelines.gridsearch_cv import cached_results, results_df
 
     ignore_cols = ["mean_score_time", "mean_optimize_time", "std_optimize_time", "std_score_time"]
 

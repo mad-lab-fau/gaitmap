@@ -1,6 +1,6 @@
 """Dtw template base classes and helper."""
 from importlib.resources import open_text
-from typing import Optional, Union, Tuple, List, cast
+from typing import List, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd

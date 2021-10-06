@@ -1,6 +1,6 @@
 import pytest
 
-from gaitmap.base import BaseType, BaseOrientationMethod
+from gaitmap.base import BaseOrientationMethod, BaseType
 from gaitmap.trajectory_reconstruction import SimpleGyroIntegration
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin

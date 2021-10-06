@@ -4,9 +4,9 @@ from numpy.testing import assert_array_equal
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.static_moment_detection import (
+    find_first_static_window_multi_sensor,
     find_static_samples,
     find_static_sequences,
-    find_first_static_window_multi_sensor,
 )
 
 

@@ -27,13 +27,14 @@ np.random.seed(0)
 example_dataset = get_healthy_example_imu_data_not_rotated()
 sampling_rate_hz = 204.8
 
+from gaitmap.preprocessing import sensor_alignment
+
 # %%
 # Preprocessing
 # -------------
 # Fix the alignment between the sensor coordinate system and the gaitmap coordinate system.
 # This will be different for each sensor position and recording.
-from gaitmap.utils.rotations import rotation_from_angle, rotate_dataset
-from gaitmap.preprocessing import sensor_alignment
+from gaitmap.utils.rotations import rotate_dataset, rotation_from_angle
 
 # rotate left_sensor first by -90 deg around the x-axis, followed by a -90 deg rotation around the z-axis
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
@@ -51,6 +52,8 @@ dataset_sf = rotate_dataset(example_dataset, rotations)
 # Align to Gravity
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
 
+from gaitmap.stride_segmentation import BarthDtw
+
 # %%
 # Stride Segmentation
 # -------------------
@@ -58,7 +61,6 @@ dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(datase
 # For longer datasets it might be required to first identify segments of walking to reduce the chance of
 # false-positives.
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
-from gaitmap.stride_segmentation import BarthDtw
 
 dtw = BarthDtw()
 # Convert data to foot-frame

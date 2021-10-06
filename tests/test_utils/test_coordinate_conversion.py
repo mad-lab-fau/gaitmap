@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from gaitmap.utils.consts import SF_COLS, BF_COLS
+from gaitmap.utils.consts import BF_COLS, SF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf, convert_to_fbf
 
 

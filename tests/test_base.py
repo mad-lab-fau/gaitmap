@@ -1,5 +1,5 @@
 """This tests the BaseAlgorithm and fundamental functionality."""
-from inspect import signature, Parameter
+from inspect import Parameter, signature
 from typing import Any, Dict, Tuple
 
 import pytest

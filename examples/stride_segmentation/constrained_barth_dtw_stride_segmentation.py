@@ -54,7 +54,6 @@ numpy.random.seed(0)
 from gaitmap.example_data import get_ms_example_imu_data
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
-
 data = get_ms_example_imu_data()
 sampling_rate_hz = 102.4
 bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")

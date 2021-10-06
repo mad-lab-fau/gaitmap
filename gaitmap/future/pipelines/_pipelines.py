@@ -1,5 +1,5 @@
 """Base Classes for custom pipelines."""
-from typing import TypeVar, Dict, Union
+from typing import Dict, TypeVar, Union
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.future.dataset import Dataset

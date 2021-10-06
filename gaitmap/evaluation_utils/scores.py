@@ -1,10 +1,9 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 import warnings
-from typing import Union, Dict, overload
+from typing import Dict, Union, overload
 
 import pandas as pd
-from sklearn.exceptions import UndefinedMetricWarning
-from typing_extensions import TypedDict, Literal
+from typing_extensions import Literal, TypedDict
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
@@ -285,7 +284,7 @@ def _get_match_type_dfs(
 
     for dataframe_name in get_multi_sensor_names(match_results):
         matches_types = match_results[dataframe_name].groupby("match_type")
-        matches_types_dict = dict()
+        matches_types_dict = {}
         for group in ["tp", "fp", "fn"]:
             if group in matches_types.groups:
                 matches_types_dict[group] = matches_types.get_group(group)
@@ -301,15 +300,15 @@ def _get_match_type_dfs(
 def _calculate_score(a, b, *, zero_division, caller_function_name):
     try:
         return a / b
-    except ZeroDivisionError:
+    except ZeroDivisionError as e:
         if zero_division == "warn":
             warnings.warn(
                 f"Zero division happened while calculating the {caller_function_name} score. Returning 0",
-                UndefinedMetricWarning,
+                UserWarning,
             )
             return 0
 
         if zero_division in [0, 1]:
             return zero_division
 
-        raise ValueError('"zero_division" must be set to "warn", 0 or 1!')
+        raise ValueError('"zero_division" must be set to "warn", 0 or 1!') from e

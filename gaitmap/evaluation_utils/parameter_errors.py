@@ -1,6 +1,6 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
-from typing import Union, Dict
+from typing import Dict, Union
 
 import numpy as np
 import pandas as pd

@@ -1,5 +1,5 @@
 """Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
-from typing import Optional, Union, Dict
+from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -8,14 +8,10 @@ from scipy.spatial.transform import Rotation
 from gaitmap.utils import rotations
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
-from gaitmap.utils.datatype_helper import (
-    get_multi_sensor_names,
-    SensorData,
-    is_sensor_data,
-)
-from gaitmap.utils.rotations import rotation_from_angle, find_signed_3d_angle
-from gaitmap.utils.static_moment_detection import find_static_samples, METRIC_FUNCTION_NAMES
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap.utils.rotations import find_signed_3d_angle, rotation_from_angle
+from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples
 from gaitmap.utils.vector_math import normalize
 
 

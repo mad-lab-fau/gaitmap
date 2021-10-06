@@ -1,23 +1,23 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
 from copy import deepcopy
-from typing import Dict, Optional, TypeVar, Generic, Union
+from typing import Dict, Generic, Optional, TypeVar, Union
 
 import pandas as pd
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
-from gaitmap.utils._algo_helper import set_params_from_dict, invert_result_dictionary
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import ROI_ID_COLS
 from gaitmap.utils.datatype_helper import (
-    SensorData,
     RegionsOfInterestList,
+    SensorData,
     SingleSensorRegionsOfInterestList,
     StrideList,
     get_multi_sensor_names,
-    is_sensor_data,
-    is_regions_of_interest_list,
     get_single_sensor_regions_of_interest_types,
+    is_regions_of_interest_list,
+    is_sensor_data,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -177,7 +177,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             # Apply the segmentation to a single dataset in case a multi - sensor roi list is provided
             results_dict: Dict[
                 _Hashable, Dict[str, Union[pd.DataFrame, Dict[_Hashable, StrideSegmentationAlgorithm]]]
-            ] = dict()
+            ] = {}
             for sensor, roi in self.regions_of_interest.items():
                 sensor_data = self.data[sensor]
                 results_dict[sensor] = self._segment_single_sensor(

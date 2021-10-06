@@ -6,23 +6,17 @@ from scipy.spatial.transform import Rotation
 from gaitmap.base import (
     BaseOrientationMethod,
     BasePositionMethod,
-    BaseTrajectoryReconstructionWrapper,
     BaseTrajectoryMethod,
+    BaseTrajectoryReconstructionWrapper,
 )
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
-    _TrajectoryReconstructionWrapperMixin,
     _initial_orientation_from_start,
+    _TrajectoryReconstructionWrapperMixin,
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import SL_INDEX
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-    StrideList,
-    SingleSensorData,
-    is_sensor_data,
-    is_stride_list,
-)
+from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError
 
 Self = TypeVar("Self", bound="StrideLevelTrajectory")

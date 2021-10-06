@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.integrate import cumtrapz
 
 from gaitmap.base import BasePositionMethod
-from gaitmap.utils.consts import GRAV_VEC, SF_ACC, GF_VEL, GF_POS
+from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 
 Self = TypeVar("Self", bound="ForwardBackwardIntegration")

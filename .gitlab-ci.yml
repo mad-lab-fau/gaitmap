@@ -44,7 +44,7 @@ test:
   stage: testing
   <<: *cached_python_base
   script:
-    - doit test -p "-n 4"
+    - doit test -p "-n 2"
 
 lint:
   stage: testing

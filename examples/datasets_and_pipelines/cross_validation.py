@@ -29,7 +29,7 @@ import pandas as pd
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.future.dataset import Dataset
 from gaitmap.future.pipelines import OptimizablePipeline
-from gaitmap.stride_segmentation import DtwTemplate, BarthOriginalTemplate, create_interpolated_dtw_template, BarthDtw
+from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 

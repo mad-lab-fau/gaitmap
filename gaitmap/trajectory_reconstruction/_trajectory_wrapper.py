@@ -1,27 +1,27 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Optional, Tuple, Dict, Sequence, TypeVar
+from typing import Dict, Optional, Sequence, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from typing_extensions import Literal
 
-from gaitmap.base import BasePositionMethod, BaseOrientationMethod, BaseTrajectoryMethod
+from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import GF_ORI, GF_VEL, GF_POS, SF_ACC
+from gaitmap.utils.consts import GF_ORI, GF_POS, GF_VEL, SF_ACC
 from gaitmap.utils.datatype_helper import (
+    RegionsOfInterestList,
     SensorData,
     SingleSensorData,
-    set_correct_index,
-    get_multi_sensor_names,
     SingleSensorRegionsOfInterestList,
-    RegionsOfInterestList,
+    get_multi_sensor_names,
+    set_correct_index,
 )
-from gaitmap.utils.rotations import rotate_dataset_series, get_gravity_rotation
+from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
 
 Self = TypeVar("Self", bound="_TrajectoryReconstructionWrapperMixin")
 
@@ -86,7 +86,7 @@ class _TrajectoryReconstructionWrapperMixin:
         if dataset_type == "single":
             results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(self.data):
                 results_dict[sensor] = self._estimate_single_sensor(
                     self.data[sensor], self._integration_regions[sensor]
@@ -100,9 +100,9 @@ class _TrajectoryReconstructionWrapperMixin:
     ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = tuple((*self._expected_integration_region_index, "sample"))
-        orientation = dict()
-        velocity = dict()
-        position = dict()
+        orientation = {}
+        velocity = {}
+        position = {}
         if len(integration_regions) == 0:
             index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=full_index)
             return {

@@ -2,20 +2,20 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
-from typing import Union, Dict, Optional, List
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_GYR, SF_ACC, GRAV_VEC
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import (
-    get_multi_sensor_names,
-    is_single_sensor_data,
     SensorData,
     SingleSensorData,
+    get_multi_sensor_names,
     is_sensor_data,
+    is_single_sensor_data,
 )
 from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 

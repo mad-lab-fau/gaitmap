@@ -8,7 +8,7 @@ the right thing.
 - The same is True for the threshold/max_cost
 
 """
-from typing import Union, Dict
+from typing import Dict, Union
 from unittest.mock import patch
 
 import numpy as np
