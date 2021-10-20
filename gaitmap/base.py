@@ -307,6 +307,18 @@ class BaseAlgorithm(_BaseSerializable):
         return attrs
 
 
+class BaseSensorAlignment(BaseAlgorithm):
+    """Base class for all sensor alignment algorithms."""
+
+    _action_method = "align"
+
+    aligned_data_: SensorData
+
+    def align(self: BaseType, data: SensorData, **kwargs) -> BaseType:
+        """Align sensor data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
+
+
 class BaseStrideSegmentation(BaseAlgorithm):
     """Base class for all stride segmentation algorithms."""
 
