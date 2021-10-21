@@ -17,38 +17,7 @@ Self = TypeVar("Self", bound="PcaAlignment")
 
 
 def align_pca_2d_single_sensor(dataset: SensorData, pca_plane_axis: Sequence[str]):
-    """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane.
-
-    The medio-lateral axis will be defined as the principle component with the highest explained variance within the 2D
-    projection ("birds eye view") of the X-Y sensor frame. Therefore, we will apply 'sklearn.decomposition.PCA' to fix
-    the sensor heading. To ensure a 2D problem the dataset should be aligned roughly to gravity beforhand so we can
-    assume a fixed z-axis of [0,0,1]. Note: the PCA is sign invariant this means an additional 180deg flip of the
-    coordinate system might be still necessary after alignment!
-
-    Parameters
-    ----------
-    dataset : gaitmap.utils.dataset_helper.Sensordata
-        dataframe representing a single or multiple sensors.
-        In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
-        and the second level the axis names (all sensor frame axis must be present)
-        The dataset is expected to be already aligned to gravity and the missing alignment is only a 2D problem
-
-    pca_plane_axis: List[str]
-        list of axis names which span the 2D-plane where the pca will be performed e.g. ["gyr_x","gyr_y"]
-
-    Returns
-    -------
-    aligned dataset
-        This will always be a copy. The original dataframe will not be modified.
-
-    Examples
-    --------
-    >>> # pd.DataFrame containing one or multiple sensor data streams, each of containing all 6 IMU
-    ... # axis (acc_x, ..., gyr_z)
-    >>> dataset_aligned = align_heading_2d_single_sensor(dataset, pca_plane_axis=["gyr_x", "gyr_y"])
-    <copy of dataset with all axis aligned to medio-lateral axis>
-
-    """
+    """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane."""
     pca_plane_axis = list(pca_plane_axis)
     if len(pca_plane_axis) != 2 or not (set(pca_plane_axis).issubset(SF_GYR) or set(pca_plane_axis).issubset(SF_ACC)):
         raise ValueError('Invalid axis for pca plane! Valid axis would be e.g. ("gyr_x", "gyr_y")')
@@ -78,7 +47,57 @@ def align_pca_2d_single_sensor(dataset: SensorData, pca_plane_axis: Sequence[str
 
 
 class PcaAlignment(BaseSensorAlignment):
-    """Base class for all sensor alignment algorithms."""
+    """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane.
+
+    The medio-lateral axis will be defined as the principle component with the highest explained variance within the 2D
+    projection ("birds eye view") of the X-Y sensor frame. Therefore, we will apply 'sklearn.decomposition.PCA' to fix
+    the sensor heading. To ensure a 2D problem the dataset should be aligned roughly to gravity beforhand so we can
+    assume a fixed z-axis of [0,0,1].
+
+    Parameters
+    ----------
+    pca_plane_axis
+        list of axis names which span the 2D-plane where the pca will be performed e.g. ("gyr_x","gyr_y")
+
+    Attributes
+    ----------
+    aligned_data_
+        The rotated sensor data after alignment
+
+    rotation_:
+        The rotation object tranforming the original data to the aligned data :class:`~scipy.spatial.transform.Rotation`
+
+    pca_:
+        PCA object after fitting :class:`~sklearn.decomposition.PCA`
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the `align` method.
+    sampling_rate_hz
+        The sampling rate of the data
+
+    Examples
+    --------
+    Align dataset to medio-lateral plane
+
+    >>> pca_alignment = PcaAlignment(pca_plane_axis=("gyr_x","gyr_y"))
+    >>> pca_alignment = pca_alignment.align(data, 204.8)
+    >>> pca_alignment.aligned_data_['left_sensor']
+    <copy of dataset with axis aligned to the medio-lateral plane>
+    ...
+
+    Notes
+    -----
+    The PCA is sign invariant this means only an alignment to the medio-lateral plane will be performend! An additional
+    180deg flip of the coordinate system might be still necessary after the PCA alignment!
+
+
+    See Also
+    --------
+    sklearn.decomposition.PCA: Details on the used PCA implementation for this method.
+
+    """
 
     rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
     pca_: Union[PCA, Dict[_Hashable, PCA]]
