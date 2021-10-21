@@ -5,8 +5,8 @@ gaitmap.preprocessing: Helper to align and prepare datasets
     :no-members:
     :no-inherited-members:
 
-SensorAlignmentClasses
-------------------------
+Classes
+-------
 .. automodule:: gaitmap.preprocessing.sensor_alignment
     :no-members:
     :no-inherited-members:

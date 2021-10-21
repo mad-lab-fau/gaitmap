@@ -16,6 +16,8 @@ from gaitmap.utils.rotations import rotate_dataset
 Self = TypeVar("Self", bound="PcaAlignment")
 
 
+# TODO: Move `right_handed_cord` to general utils package
+
 def right_handed_cord(x: Optional[np.ndarray], y: Optional[np.ndarray], z: Optional[np.ndarray]) -> np.ndarray:
     """Create right handed coordinate system, with two axis provided."""
     if x is None:
@@ -36,7 +38,8 @@ def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_
     if len(pca_plane_axis) != 2 or not (set(pca_plane_axis).issubset(SF_GYR) or set(pca_plane_axis).issubset(SF_ACC)):
         raise ValueError('Invalid axis for pca plane! Valid axis would be e.g. ("gyr_x", "gyr_y").')
 
-    # find ml-axis by PCA only search in 2D plane assuming that the dataset is already roughly aligned to gravity
+    # find dominant movement axis by PCA only search in 2D plane assuming that the dataset is already roughly aligned in
+    # the third direction
     pca = PCA(n_components=2)
     pca = pca.fit(dataset[pca_plane_axis])
 
@@ -83,10 +86,8 @@ class PcaAlignment(BaseSensorAlignment):
     ----------
     aligned_data_ :
         The rotated sensor data after alignment
-
     rotation_ :
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data
-
     pca_ :
         :class:`~sklearn.decomposition.PCA` object after fitting
 
@@ -98,9 +99,10 @@ class PcaAlignment(BaseSensorAlignment):
 
     Examples
     --------
-    Align dataset to medio-lateral plane
+    Align dataset to medio-lateral plane, by aligning the y-axis with the dominant component in the
+    gyro x-y-plane
 
-    >>> pca_alignment = PcaAlignment(pca_plane_axis=("gyr_x","gyr_y"))
+    >>> pca_alignment = PcaAlignment(target_axis="y", pca_plane_axis=("gyr_x","gyr_y"))
     >>> pca_alignment = pca_alignment.align(data, 204.8)
     >>> pca_alignment.aligned_data_['left_sensor']
     <copy of dataset with axis aligned to the medio-lateral plane>
