@@ -16,7 +16,21 @@ from gaitmap.utils.rotations import rotate_dataset
 Self = TypeVar("Self", bound="PcaAlignment")
 
 
-def align_pca_2d_single_sensor(dataset: SensorData, pca_plane_axis: Sequence[str]):
+def right_handed_cord(x: Optional[np.ndarray], y: Optional[np.ndarray], z: Optional[np.ndarray]) -> np.ndarray:
+    """Create right handed coordinate system, with two axis provided."""
+    if x is None:
+        x = np.cross(y, z)
+    elif y is None:
+        y = np.cross(z, x)
+    elif z is None:
+        z = np.cross(x, y)
+    else:
+        raise ValueError("The missing axis must be set to None!")
+
+    return np.array([x, y, z])
+
+
+def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_axis: Sequence[str]):
     """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane."""
     pca_plane_axis = list(pca_plane_axis)
     if len(pca_plane_axis) != 2 or not (set(pca_plane_axis).issubset(SF_GYR) or set(pca_plane_axis).issubset(SF_ACC)):
@@ -27,15 +41,18 @@ def align_pca_2d_single_sensor(dataset: SensorData, pca_plane_axis: Sequence[str
     pca = pca.fit(dataset[pca_plane_axis])
 
     # define new coordinate system
-    # ml-axis: this corresponds to the pca component with highest explained_variance_
-    foot_ml_axis = np.array([pca.components_[0][0], pca.components_[0][1], 0])
-    # si-axis: ensure rotation only in x-y plane by setting z-axis to constant [0,0,1] for [x,y,z]
-    foot_si_axis = np.array([0, 0, 1])
-    # pa-axis: this is the orthogonal axis to ml-si plane (calculate by cross product)
-    foot_pa_axis = np.cross(foot_ml_axis, foot_si_axis)
+    # target axis will correspond to the pca component with highest explained_variance_
+    pca_main_component_axis = np.array([pca.components_[0][0], pca.components_[0][1], 0])
 
-    # build rotation matrix from new coordinate system
-    rotation_matrix = np.array([foot_pa_axis, foot_ml_axis, foot_si_axis])
+    target_axis_helper = {"x": None, "y": None}
+
+    if not target_axis.lower() in target_axis_helper:
+        raise ValueError("Invalid target aixs! Axis must be one of {}".format(target_axis_helper.keys()))
+
+    target_axis_helper[target_axis.lower()] = pca_main_component_axis
+
+    rotation_matrix = right_handed_cord(**target_axis_helper, z=np.array([0, 0, 1]))
+
     r = Rotation.from_matrix(rotation_matrix)
 
     # apply rotation to dataset
@@ -56,26 +73,28 @@ class PcaAlignment(BaseSensorAlignment):
 
     Parameters
     ----------
+    target_axis
+        axis to which the main component found by the pca analysis will be aligned e.g. "y"
     pca_plane_axis
-        list of axis names which span the 2D-plane where the pca will be performed e.g. ("gyr_x","gyr_y")
+        list of axis names which span the 2D-plane where the pca will be performed e.g. ("gyr_x","gyr_y"). Note: the
+        order of the axis defining the pca plane will influence also your target axis! So best keep a x-y order.
 
     Attributes
     ----------
-    aligned_data_
+    aligned_data_ :
         The rotated sensor data after alignment
 
-    rotation_:
+    rotation_ :
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data
 
-    pca_:
+    pca_ :
         :class:`~sklearn.decomposition.PCA` object after fitting
 
     Other Parameters
     ----------------
     data
         The data passed to the `align` method.
-    sampling_rate_hz
-        The sampling rate of the data
+
 
     Examples
     --------
@@ -102,18 +121,22 @@ class PcaAlignment(BaseSensorAlignment):
     rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
     pca_: Union[PCA, Dict[_Hashable, PCA]]
 
-    def __init__(self, pca_plane_axis: Optional[Sequence[str]] = ("gyr_x", "gyr_y")):
+    target_axis: str
+    pca_plane_axis: Sequence[str]
+
+    def __init__(self, target_axis: str = "y", pca_plane_axis: Sequence[str] = ("gyr_x", "gyr_y")):
+        self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
 
     def align(self: Self, data: SensorData, **kwargs) -> Self:
         """Align sensor data."""
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")
         if dataset_type in ("single", "array"):
-            results = align_pca_2d_single_sensor(data, self.pca_plane_axis)
+            results = align_pca_2d_single_sensor(data, self.target_axis, self.pca_plane_axis)
         else:
             # Multisensor
             result_dict = {
-                sensor: align_pca_2d_single_sensor(data[sensor], self.pca_plane_axis)
+                sensor: align_pca_2d_single_sensor(data[sensor], self.target_axis, self.pca_plane_axis)
                 for sensor in get_multi_sensor_names(data)
             }
             results = invert_result_dictionary(result_dict)
