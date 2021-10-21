@@ -20,7 +20,7 @@ def align_pca_2d_single_sensor(dataset: SensorData, pca_plane_axis: Sequence[str
     """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane."""
     pca_plane_axis = list(pca_plane_axis)
     if len(pca_plane_axis) != 2 or not (set(pca_plane_axis).issubset(SF_GYR) or set(pca_plane_axis).issubset(SF_ACC)):
-        raise ValueError('Invalid axis for pca plane! Valid axis would be e.g. ("gyr_x", "gyr_y")')
+        raise ValueError('Invalid axis for pca plane! Valid axis would be e.g. ("gyr_x", "gyr_y").')
 
     # find ml-axis by PCA only search in 2D plane assuming that the dataset is already roughly aligned to gravity
     pca = PCA(n_components=2)
@@ -65,10 +65,10 @@ class PcaAlignment(BaseSensorAlignment):
         The rotated sensor data after alignment
 
     rotation_:
-        The rotation object tranforming the original data to the aligned data :class:`~scipy.spatial.transform.Rotation`
+        The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data
 
     pca_:
-        PCA object after fitting :class:`~sklearn.decomposition.PCA`
+        :class:`~sklearn.decomposition.PCA` object after fitting
 
     Other Parameters
     ----------------
