@@ -10,7 +10,7 @@ from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_name
 
 
 class TestPcaAlignment:
-    """Test the function `align_to_gravity`."""
+    """Test the pca alignment class `PcaAlignment`."""
 
     sample_sensor_data: pd.DataFrame
     sample_sensor_dataset: MultiSensorData
@@ -57,8 +57,7 @@ class TestPcaAlignment:
             assert isinstance(pca_align.pca_[sensor], PCA)
 
     def test_invalid_pca_plane_axis(self, healthy_example_imu_data):
-        """Test if value error is raised correctly if no static window can be found on dataset with given user
-        settings."""
+        """Test if value error is raised correctly if invalid axis for the search plane are defined."""
         data = healthy_example_imu_data
 
         with pytest.raises(ValueError, match=r".*Invalid axis for pca plane *"):
@@ -71,6 +70,7 @@ class TestPcaAlignment:
             PcaAlignment(pca_plane_axis=("acc_x")).align(data)
 
     def test_correct_rotation(self, healthy_example_imu_data):
+        """Test if the alignment actually returns the expected rotation matrix on real imu data."""
         data = healthy_example_imu_data["left_sensor"]
 
         pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
