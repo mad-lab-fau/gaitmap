@@ -5,6 +5,19 @@ gaitmap.preprocessing: Helper to align and prepare datasets
     :no-members:
     :no-inherited-members:
 
+Classes
+-------
+.. automodule:: gaitmap.preprocessing.sensor_alignment
+    :no-members:
+    :no-inherited-members:
+
+.. currentmodule:: gaitmap.preprocessing.sensor_alignment
+.. autosummary::
+   :toctree: generated/preprocessing
+   :template: class.rst
+
+    PcaAlignment
+
 Functions
 ---------
 .. currentmodule:: gaitmap.preprocessing
