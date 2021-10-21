@@ -1,131 +1,81 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.linalg import norm
 from numpy.testing import assert_almost_equal
+from scipy.spatial.transform import Rotation
+from sklearn.decomposition import PCA
 
-from gaitmap.preprocessing.sensor_alignment import align_dataset_to_gravity, align_heading_of_sensors
-from gaitmap.utils.consts import SF_ACC, SF_COLS
-from gaitmap.utils.datatype_helper import MultiSensorData
-from gaitmap.utils.rotations import rotate_dataset, rotation_from_angle
+from gaitmap.preprocessing.sensor_alignment import PcaAlignment
+from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
 
 
-class TestAlignToGravity:
+class TestPcaAlignment:
     """Test the function `align_to_gravity`."""
 
     sample_sensor_data: pd.DataFrame
     sample_sensor_dataset: MultiSensorData
 
-    @pytest.fixture(autouse=True, params=("dict", "frame"))
-    def _sample_sensor_data(self, request):
-        """Create some sample data.
+    def test_single_sensor_input(self, healthy_example_imu_data):
+        """Dummy test to see if the algorithm is generally working on the example data"""
+        data = healthy_example_imu_data["left_sensor"]
 
-        This data is recreated before each test (using pytest.fixture).
-        """
-        acc = [0.0, 0.0, 1.0]
-        gyr = [0.11, 0.12, 0.13]
-        all_data = np.repeat(np.array([*acc, *gyr])[None, :], 5, axis=0)
-        self.sample_sensor_data = pd.DataFrame(all_data, columns=SF_COLS)
-        dataset = {"s1": self.sample_sensor_data, "s2": self.sample_sensor_data}
-        if request.param == "dict":
-            self.sample_sensor_dataset = dataset
-        elif request.param == "frame":
-            self.sample_sensor_dataset = pd.concat(dataset, axis=1)
+        pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
+        pca_align = pca_align.align(data=data)
 
-    def test_no_static_moments_in_dataset(self):
+        assert len(pca_align.aligned_data_) == len(data)
+
+        assert isinstance(pca_align.aligned_data_, pd.DataFrame)
+        assert isinstance(pca_align.rotation_, Rotation)
+        assert isinstance(pca_align.pca_, PCA)
+
+    def test_multi_sensor_input(self, healthy_example_imu_data):
+        """Dummy test to see if the algorithm is generally working on the example data"""
+        data = healthy_example_imu_data
+
+        pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
+        pca_align = pca_align.align(data=data)
+
+        for sensor in get_multi_sensor_names(data):
+            assert len(pca_align.aligned_data_[sensor]) == len(data[sensor])
+
+            assert isinstance(pca_align.aligned_data_[sensor], pd.DataFrame)
+            assert isinstance(pca_align.rotation_[sensor], Rotation)
+            assert isinstance(pca_align.pca_[sensor], PCA)
+
+    def test_multi_sensor_input(self, healthy_example_imu_data):
+        """Dummy test to see if the algorithm is generally working on the example data"""
+        data = healthy_example_imu_data
+
+        pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
+        pca_align = pca_align.align(data=data)
+
+        for sensor in get_multi_sensor_names(data):
+            assert len(pca_align.aligned_data_[sensor]) == len(data[sensor])
+
+            assert isinstance(pca_align.aligned_data_[sensor], pd.DataFrame)
+            assert isinstance(pca_align.rotation_[sensor], Rotation)
+            assert isinstance(pca_align.pca_[sensor], PCA)
+
+    def test_invalid_pca_plane_axis(self, healthy_example_imu_data):
         """Test if value error is raised correctly if no static window can be found on dataset with given user
         settings."""
-        with pytest.raises(ValueError, match=r".*No static windows .*"):
-            align_dataset_to_gravity(
-                self.sample_sensor_dataset,
-                sampling_rate_hz=1,
-                window_length_s=3,
-                static_signal_th=0.0,
-                metric="maximum",
-            )
+        data = healthy_example_imu_data
 
-    def test_mulit_sensor_dataset_misaligned(self):
-        """Test basic alignment using different 180 deg rotations on each dataset."""
-        gravity = np.array([0.0, 0.0, 1.0])
+        with pytest.raises(ValueError, match=r".*Invalid axis for pca plane *"):
+            PcaAlignment(pca_plane_axis=("abc", "gyr_y")).align(data)
 
-        rot = {
-            "s1": rotation_from_angle(np.array([0, 1, 0]), np.deg2rad(180)),
-            "s2": rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(180)),
-        }
-        miss_aligned_dataset = rotate_dataset(self.sample_sensor_dataset, rot)
+        with pytest.raises(ValueError, match=r".*Invalid axis for pca plane *"):
+            PcaAlignment(pca_plane_axis=("acc_x", "gyr_y")).align(data)
 
-        aligned_dataset = align_dataset_to_gravity(
-            miss_aligned_dataset, sampling_rate_hz=1, window_length_s=3, static_signal_th=1.0, gravity=gravity
-        )
+        with pytest.raises(ValueError, match=r".*Invalid axis for pca plane *"):
+            PcaAlignment(pca_plane_axis=("acc_x")).align(data)
 
-        assert_almost_equal(aligned_dataset["s1"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
-        assert_almost_equal(aligned_dataset["s2"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
+    def test_correct_rotation(self, healthy_example_imu_data):
+        data = healthy_example_imu_data["left_sensor"]
 
-    def test_single_sensor_dataset_misaligned(self):
-        """Test basic alignment using different 180 deg rotations on single sensor."""
-        gravity = np.array([0.0, 0.0, 1.0])
+        pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
+        pca_align = pca_align.align(data=data)
 
-        miss_aligned_data = rotate_dataset(
-            self.sample_sensor_data, rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(180))
-        )
+        expected_rot_matrix = np.array([[0.95948049, -0.28177506, 0.0], [0.28177506, 0.95948049, 0.0], [0.0, 0.0, 1.0]])
 
-        aligned_data = align_dataset_to_gravity(
-            miss_aligned_data, sampling_rate_hz=1, window_length_s=3, static_signal_th=1.0, gravity=gravity
-        )
-
-        assert_almost_equal(aligned_data[SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
-
-
-class TestXYAlignment:
-    @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_xy_alignment_simple(self, angle):
-        signal = np.random.normal(scale=1000, size=(500, 3))
-        rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
-        rot = align_heading_of_sensors(signal, rot_signal)
-        rotvec = rot.as_rotvec()
-
-        assert_almost_equal(np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]), -angle)
-        assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1)
-
-        assert_almost_equal(rot.apply(rot_signal), signal)
-
-    def test_xy_alignment_dummy(
-        self,
-    ):
-        signal = np.random.normal(scale=1000, size=(500, 3))
-        rot_signal = rotation_from_angle(np.array([0, 0, 1]), 0).apply(signal)
-        rot = align_heading_of_sensors(signal, rot_signal)
-        rotvec = rot.as_rotvec()
-
-        assert_almost_equal(rotvec, [0, 0, 0])
-
-    @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_xy_alignment_with_noise(self, angle):
-        signal = np.random.normal(scale=1000, size=(500, 3))
-        rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
-
-        noise = np.random.normal(scale=5, size=(500, 3))
-
-        rot = align_heading_of_sensors(signal, rot_signal + noise)
-        rotvec = rot.as_rotvec()
-
-        angle_error = ((np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]) - -angle) + 180) % 360 - 180
-        # Allow error of 2 deg
-        assert np.abs(angle_error) < 2.0
-        assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1, 3)
-
-    @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_smoothing(self, angle):
-        signal = np.random.normal(scale=1000, size=(500, 3))
-        rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
-
-        noise = np.random.normal(scale=5, size=(500, 3))
-        outlier = np.random.choice([0, 1000, -1000], size=(500, 3), p=[0.9, 0.05, 0.05])
-
-        rot = align_heading_of_sensors(signal, rot_signal + noise + outlier)
-        rotvec = rot.as_rotvec()
-
-        angle_error = ((np.rad2deg(norm(rotvec)) * np.sign(rotvec[-1]) - -angle) + 180) % 360 - 180
-        # Allow error of 2 deg
-        assert np.abs(angle_error) < 2.0
-        assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1, 3)
+        assert_almost_equal(expected_rot_matrix, pca_align.rotation_.as_matrix())
