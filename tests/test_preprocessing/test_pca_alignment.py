@@ -32,20 +32,6 @@ class TestPcaAlignment:
         """Dummy test to see if the algorithm is generally working on the example data"""
         data = healthy_example_imu_data
 
-        pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
-        pca_align = pca_align.align(data=data)
-
-        for sensor in get_multi_sensor_names(data):
-            assert len(pca_align.aligned_data_[sensor]) == len(data[sensor])
-
-            assert isinstance(pca_align.aligned_data_[sensor], pd.DataFrame)
-            assert isinstance(pca_align.rotation_[sensor], Rotation)
-            assert isinstance(pca_align.pca_[sensor], PCA)
-
-    def test_multi_sensor_input(self, healthy_example_imu_data):
-        """Dummy test to see if the algorithm is generally working on the example data"""
-        data = healthy_example_imu_data
-
         pca_align = PcaAlignment(target_axis="y", pca_plane_axis=("gyr_x", "gyr_y"))
         pca_align = pca_align.align(data=data)
 

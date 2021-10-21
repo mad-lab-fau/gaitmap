@@ -18,6 +18,7 @@ Self = TypeVar("Self", bound="PcaAlignment")
 
 # TODO: Move `right_handed_cord` to general utils package
 
+
 def right_handed_cord(x: Optional[np.ndarray], y: Optional[np.ndarray], z: Optional[np.ndarray]) -> np.ndarray:
     """Create right handed coordinate system, with two axis provided."""
     if x is None:
@@ -33,7 +34,7 @@ def right_handed_cord(x: Optional[np.ndarray], y: Optional[np.ndarray], z: Optio
 
 
 def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_axis: Sequence[str]):
-    """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane."""
+    """Align dataset target axis, to the main foot rotation plane, which is usually the medio-lateral plane."""
     pca_plane_axis = list(pca_plane_axis)
     if len(pca_plane_axis) != 2 or not (set(pca_plane_axis).issubset(SF_GYR) or set(pca_plane_axis).issubset(SF_ACC)):
         raise ValueError('Invalid axis for pca plane! Valid axis would be e.g. ("gyr_x", "gyr_y").')
@@ -67,12 +68,14 @@ def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_
 
 
 class PcaAlignment(BaseSensorAlignment):
-    """Align dataset y-axis, to the main foot rotation plane, which is usually the medio-lateral plane.
+    """Align dataset target axis, to the main foot rotation plane, which is usually the medio-lateral plane.
 
-    The medio-lateral axis will be defined as the principle component with the highest explained variance within the 2D
-    projection ("birds eye view") of the X-Y sensor frame. Therefore, we will apply 'sklearn.decomposition.PCA' to fix
-    the sensor heading. To ensure a 2D problem the dataset should be aligned roughly to gravity beforhand so we can
-    assume a fixed z-axis of [0,0,1].
+    The Principle Component Analysis (PCA) can be used to determin the coordinate plane where the main movement
+    component is located, which corresponds to the main component of the PCA after fitting to the provided data. This
+    is typically intended to align one axis of the sensor frame to the foot medio-lateral axis. The ML-axis is therefore
+    assumed to correspond to the principle component with the highest explained variance within the 2D projection
+    ("birds eye view") of the X-Y sensor frame. To ensure a 2D problem the dataset should be aligned roughly to gravity
+    beforhand so we can assume a fixed z-axis of [0,0,1] and solve the alignment as a pure heading issue.
 
     Parameters
     ----------
