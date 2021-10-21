@@ -12,9 +12,6 @@ from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_name
 class TestPcaAlignment:
     """Test the pca alignment class `PcaAlignment`."""
 
-    sample_sensor_data: pd.DataFrame
-    sample_sensor_dataset: MultiSensorData
-
     def test_single_sensor_input(self, healthy_example_imu_data):
         """Dummy test to see if the algorithm is generally working on the example data"""
         data = healthy_example_imu_data["left_sensor"]
