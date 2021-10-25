@@ -170,7 +170,6 @@ class RtsKalman(BaseTrajectoryMethod):
     zupts_: np.ndarray
 
     _forward_pass = default_rts_kalman_forward_pass
-    _injected_update_functions = ForwardPassDependencies(motion_update_func=simple_navigation_equations)
 
     def __init__(
         self,
@@ -247,7 +246,7 @@ class RtsKalman(BaseTrajectoryMethod):
             zupts,
             parameters=parameters,
             forward_pass_func=self._forward_pass,
-            forward_pass_dependencies=self._injected_update_functions,
+            forward_pass_dependencies=self._prepare_forward_pass_dependencies(),
         )
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
@@ -302,3 +301,10 @@ class RtsKalman(BaseTrajectoryMethod):
             data[SF_GYR].to_numpy(), window_length, self.zupt_threshold_dps, "maximum", window_overlap
         )
         return zupts
+
+    def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:  # noqa: no-self-use
+        """Create the dependencies for the numba functions.
+
+        This should be overwritten by subclasses, that need custom internal functions/parameters.
+        """
+        return ForwardPassDependencies(motion_update_func=simple_navigation_equations, motion_update_func_parameters=())

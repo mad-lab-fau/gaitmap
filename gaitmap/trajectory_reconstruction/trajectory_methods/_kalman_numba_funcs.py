@@ -1,6 +1,6 @@
 """Helper functions for the RTS Kalman filter."""
 
-from typing import Callable, NamedTuple
+from typing import Callable, NamedTuple, Tuple
 
 import numpy as np
 from numba import njit
@@ -23,6 +23,8 @@ class ForwardPassDependencies(NamedTuple):
     """Required dependency functions for the forward pass."""
 
     motion_update_func: Callable
+    # This needs to be a tuple and not a dict, as numba can not process dicts
+    motion_update_func_parameters: Tuple
 
 
 def rts_kalman_update_series(
@@ -59,7 +61,7 @@ def cross_product_matrix(vec):
 
 
 @njit()
-def simple_navigation_equations(acc, gyro, orientation, position, velocity, sampling_rate_hz):
+def simple_navigation_equations(acc, gyro, orientation, position, velocity, sampling_rate_hz, _):
     """Calculate the next state using simple navigation equations."""
     sigma = gyro / sampling_rate_hz
     r = quat_from_rotvec(sigma)
@@ -135,7 +137,13 @@ def default_rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-bran
 
         # calculate the new nominal position, velocity and orientation by integrating the acc and gyro measurement
         position, velocity, orientation = dependencies.motion_update_func(
-            acc, omega, orientations[i], positions[i], velocities[i], sampling_rate_hz
+            acc,
+            omega,
+            orientations[i],
+            positions[i],
+            velocities[i],
+            sampling_rate_hz,
+            dependencies.motion_update_func_parameters,
         )
         positions[i + 1, :] = position
         velocities[i + 1, :] = velocity
