@@ -7,9 +7,7 @@ from numpy.testing import assert_array_almost_equal
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction import RtsKalman
 from gaitmap.utils.consts import SF_COLS
-from gaitmap.utils.rotations import find_unsigned_3d_angle
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
-from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajectory_method_mixin import (
     TestTrajectoryMethodMixin,
 )
