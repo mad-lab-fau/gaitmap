@@ -220,6 +220,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         >>> find_first_static_window_multi_sensor([sensor_1_gyro, sensor_2_gyro], window_length=128, inactive_signal_th=5)
 
         """
+        data = np.atleast_2d(data)
         data = data.T
         drift_model = np.full(data.shape, np.nan)
         # in case we have a linear part at the very end we need to enforce a reference for the last sample!
@@ -236,9 +237,9 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         # linear fit within all zupt sequence
         for start, end in zupt_sequences:
             poly_fn = polynomial.polyfit(np.arange(end - start), data[start:end], 1)
-            drift_model[start:end] = poly_fn[0] + poly_fn[1] * np.arange(end - start)
+            drift_model[start:end] = polynomial.polyval(np.arange(end - start), poly_fn).T
 
         # fill all non zupt regions with linear drift models
         x = np.arange(len(data))
-        mask_known_values = ~np.isnan(drift_model)
+        mask_known_values = ~np.isnan(drift_model[:, 0])
         return interp1d(x[mask_known_values], drift_model[mask_known_values])(x)
