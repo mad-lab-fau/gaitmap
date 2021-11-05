@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples
 
@@ -18,18 +18,20 @@ Self = TypeVar("Self", bound="PieceWiseLinearDedriftedIntegration")
 
 
 class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
-    """Use a piecewise linear drift model based on detected zupts for integration of acc to estimate velocity and position.
+    """Use a piecewise linear drift model based on zupts for integration of acc to estimate velocity and position.
 
     .. warning::
        We assume that the acc signal is already converted into the global/world frame!
        Refer to the :ref:`Coordinate System Guide <coordinate_systems>` for details.
 
-    This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a piece wise linear drift model. 
+    This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a piece wise linear drift
+    model.
     The method can be applied on complete movement sequences without the need for previous stride segmentation.
     We assume a linear integration error between all detected zupt regions.
     We further assume, that the signal starts with resting period (i.e. the starting velocity is assumed to be 0).
-    
-    The ZUPTS update is currently only performed on the gyro norm and with the default settings we expect to find mid-stances
+
+    The ZUPTS update is currently only performed on the gyro norm and with the default settings we expect to find
+    mid-stances
     as ZUPTS during regular walking.
 
     Further drift correction is applied using a level-assumption (i.e. we assume that the sensor starts and ends its
@@ -99,8 +101,8 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     For each region a linear fit is applied to corresonding velocity data.
     This is done to also compensate for drift during these resting phases.
 
-    For the remaing regions (non-ZUPT), a linear interpolation is applied, basically connecting the end of 
-    the linear fit applied to one region to the start of the next region with a straight line.
+    For the remaing regions (non-ZUPT), a linear interpolation is applied, basically connecting the end of the linear
+    fit applied to one region to the start of the next region with a straight line.
     For the first value in the sequence, we always assume a velocity of 0 and for the last value we take the final
     uncorrected velocity value.
     This multi linear baseline is than substracted from the velocity to correct it.
@@ -178,8 +180,6 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         velocity = cumtrapz(acc_data_padded, axis=0, initial=0) / self.sampling_rate_hz
         drift_model = self._estimate_piece_wise_linear_drift_model(velocity, self.zupts_)
         velocity -= drift_model
-        self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
-        self.velocity_.index.name = "sample"
 
         position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
@@ -188,12 +188,14 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
                 position[:, -1], self.zupts_
             )
 
+        self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
+        self.velocity_.index.name = "sample"
         self.position_ = pd.DataFrame(position, columns=GF_POS)
         self.position_.index.name = "sample"
 
         return self
 
-    def find_zupts(self, data, sampling_rate_hz: float):
+    def find_zupts(self, data, sampling_rate_hz: float) -> np.ndarray:
         """Find the ZUPT samples based on the provided data.
 
         By default this method uses only the gyro data.
@@ -223,7 +225,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     def _estimate_piece_wise_linear_drift_model(  # noqa: no-self-use
         self, data: np.ndarray, zupt_sequences: np.ndarray
-    ):
+    ) -> np.ndarray:
         """Estimate a piece wise linear drift error model.
 
         Parameters
@@ -258,10 +260,11 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
         # fill all non zupt regions with linear drift models
         # make sure our mask is only 1D as multidimensional masks result in single dimensional outputs in numpy
-        # We can do that, because we know the positions of the nans are the same in all axis, as the regions are defined by the ZUPTS
+        # We can do that, because we know the positions of the nans are the same in all axis, as the regions are defined
+        # by the ZUPTS
         mask_known_values = ~np.isnan(drift_model[:, 0])
 
-        # Interpolate the remaing regions linearly
+        # Interpolate the remaining regions linearly
         x = np.arange(len(drift_model))
         result = interp1d(x[mask_known_values], drift_model[mask_known_values], axis=0)(x)
         return np.squeeze(result)

@@ -31,7 +31,6 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
 class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     __test__ = True
 
-
     def init_algo_class(self) -> BasePositionMethod:
         # For basic integration tests, we do not remove gravity
         return PieceWiseLinearDedriftedIntegration(gravity=None, zupt_window_length_s=0.1)
@@ -39,7 +38,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
     def test_symetric_velocity_integrations(self, acc):
         """All test data starts and ends at zero."""
-        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid 
+        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
         test = self.init_algo_class()
 
@@ -59,7 +58,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]))
     def test_all_axis(self, acc):
         """Test against the physics equation."""
-        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid 
+        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
         test = self.init_algo_class()
 
@@ -98,7 +97,6 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         expected_pos = 0.5 * acc * (n_steps - 1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps + n_zupt_samples], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps + n_zupt_samples], expected_pos)
-
 
 
 class TestPieceWiseLinearDedriftedIntegration:
