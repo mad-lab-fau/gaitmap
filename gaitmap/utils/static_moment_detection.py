@@ -1,5 +1,5 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.linalg import norm
@@ -18,7 +18,7 @@ def find_static_samples(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: int = None,
+    overlap: Optional[int] = None,
 ) -> np.ndarray:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
@@ -72,13 +72,13 @@ def find_static_samples(
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
 
     if metric not in _METRIC_FUNCTIONS:
-        raise ValueError("Invalid metric passed! %s as metric is not supported." % metric)
+        raise ValueError("Invalid metric passed! {} as metric is not supported.".format(metric))
 
     # check if minimum signal length matches window length
     if window_length > len(signal):
         raise ValueError(
             "Invalid window length, window must be smaller or equal than given signal length. Given signal length: "
-            "%d with given window_length: %d." % (len(signal), window_length)
+            "{} with given window_length: {}.".format(len(signal), window_length)
         )
 
     # add default overlap value
