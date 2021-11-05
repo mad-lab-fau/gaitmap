@@ -167,25 +167,21 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         # Add an implicit 0 to the beginning of the data
         # make sure we also add the padding to the gyro data to ensure that the zupt fit to the also padded acc data
         acc_data_padded = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
-        gyr_data_padded = np.pad(data[SF_GYR].to_numpy(), pad_width=((1, 0), (0, 0)), constant_values=0)
 
         # find zupts for drift correction on the padded data
-        self.zupts_ = bool_array_to_start_end_array(
-            self.find_zupts(
-                pd.DataFrame(np.column_stack([acc_data_padded, gyr_data_padded]), columns=SF_COLS),
-                self.sampling_rate_hz,
-            )
-        )
+        self.zupts_ = bool_array_to_start_end_array(self.find_zupts(data, self.sampling_rate_hz))
+        # shift zupts to fit to the padded acc data!
+        zupts_padded = self.zupts_ + 1
 
         velocity = cumtrapz(acc_data_padded, axis=0, initial=0) / self.sampling_rate_hz
-        drift_model = self._estimate_piece_wise_linear_drift_model(velocity, self.zupts_)
+        drift_model = self._estimate_piece_wise_linear_drift_model(velocity, zupts_padded)
         velocity -= drift_model
 
         position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
         if self.level_assumption is True:
             position[:, -1] = position[:, -1] - self._estimate_piece_wise_linear_drift_model(
-                position[:, -1], self.zupts_
+                position[:, -1], zupts_padded
             )
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
@@ -241,6 +237,9 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
             for dedrifting
 
         """
+        if len(zupt_sequences) == 0:
+            raise ValueError("No valid zupt regions available! Without any zupts we cannot dedrift this sequence!")
+
         data = np.atleast_2d(data)
         if data.shape[0] == 1:
             data = data.T
@@ -249,9 +248,6 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         drift_model[-1] = data[-1]
         # data[0] should usually be 0 (i.e. the starting value of the velocity/position)
         drift_model[0] = data[0]
-
-        if len(zupt_sequences) == 0:
-            raise ValueError("No valid zupt regions available! Without any zupts we cannot dedrift this sequence!")
 
         # linear fit within all zupt sequence
         for start, end in zupt_sequences:
