@@ -18,14 +18,15 @@ Self = TypeVar("Self", bound="PieceWiseLinearDedriftedIntegration")
 
 
 class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
-    """Use a piecewise linear drift model based on zupts for integration of acc to estimate velocity and position.
+    """Use a piecewise linear drift model utilizing zupts for integration of acc to estimate velocity and position.
 
     .. warning::
        We assume that the acc signal is already converted into the global/world frame!
        Refer to the :ref:`Coordinate System Guide <coordinate_systems>` for details.
 
     This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a piece wise linear dirft
-    error model. This means we assume a linear integration error between zupt regions. The zupt update is currently only
+    error model. The method can be applied on complete movement sequences without the need for previous stride
+    segmentation. Therefore we assume a linear integration error between zupt regions. The zupt update is currently only
     performed on the gyro norm.
 
     Further drift correction is applied using a level-assumption (i.e. we assume that the sensor starts and ends its
@@ -76,16 +77,17 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     >>> import pandas as pd
     >>> from gaitmap.utils.consts import SF_ACC
-    >>> data = pd.DataFrame(..., columns=SF_ACC)
+    >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
-    >>> fbi = ForwardBackwardIntegration(level_assumption=True, gravity=np.array([0, 0, 9.81]))
+    >>> pwli = PieceWiseLinearDedriftedIntegration(zupt_window_length_s=0.15, zupt_threshold_dps=15,
+    >>>        gravity=np.array([0, 0, 9.81]))
     >>> # Apply the algorithm
-    >>> fbi = fbi.estimate(data, sampling_rate_hz=sampling_rate_hz)
+    >>> pwli = pwli.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
-    >>> fbi.position_
+    >>> pwli.position_
     <pd.Dataframe with resulting positions>
-    >>> fbi.velocity_
+    >>> pwli.velocity_
     <pd.Dataframe with resulting velocities>
 
     See Also
