@@ -164,12 +164,12 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         acc_data = data[SF_ACC].to_numpy()
         if self.gravity is not None:
             acc_data -= self.gravity
-        # Add an implicit 0 to the beginning of the data
-        # make sure we also add the padding to the gyro data to ensure that the zupt fit to the also padded acc data
-        acc_data_padded = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
 
-        # find zupts for drift correction on the padded data
+        # find zupts for drift correction
         self.zupts_ = bool_array_to_start_end_array(self.find_zupts(data, self.sampling_rate_hz))
+
+        # Add an implicit 0 to the beginning of the data
+        acc_data_padded = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
         # shift zupts to fit to the padded acc data!
         zupts_padded = self.zupts_ + 1
 
@@ -180,7 +180,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
         if self.level_assumption is True:
-            position[:, -1] = position[:, -1] - self._estimate_piece_wise_linear_drift_model(
+            position[:, -1] -= self._estimate_piece_wise_linear_drift_model(
                 position[:, -1], zupts_padded
             )
 
