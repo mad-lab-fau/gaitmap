@@ -38,7 +38,7 @@ def find_static_samples(
        Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric : str, optional
+    metric : str
         Metric which will be calculated per window, one of the following strings
 
         'mean' (default)
