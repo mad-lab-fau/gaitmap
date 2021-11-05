@@ -425,3 +425,16 @@ class BaseGaitDetection(BaseAlgorithm):
     def detect(self: BaseType, data: SensorData, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences or other regions of interest in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
+
+
+class BaseZuptDetector(BaseAlgorithm):
+    """Base class for all detection algorithms."""
+
+    _action_method = "detect"
+
+    zupts_: pd.DataFrame
+    per_sample_zupts_: np.ndarray
+
+    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
+        """Find ZUPTs in data."""
+        raise NotImplementedError("Needs to be implemented by child class.")
