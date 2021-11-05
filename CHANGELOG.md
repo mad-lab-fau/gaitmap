@@ -12,10 +12,12 @@ project.
 
 ### Added
 
+- New position method `PieceWiseLinearDedriftedIntegration` using piece wise linear dedrifted integration utilizing zupt updates 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/166)
 - New sub module in preprocessing for sensor alignment functions
-  ([!161](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161))
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161)
 - New algorithm `PcaAlignment` for sensor heading alignment using 2D PCA to align sensor frame to medio-lateral plane
-  ([!161](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161))
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161)
 
 ### Changed
 

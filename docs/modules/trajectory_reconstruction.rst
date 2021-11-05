@@ -54,3 +54,4 @@ Position Estimation Methods
    :template: class.rst
 
     ForwardBackwardIntegration
+    PieceWiseLinearDedriftedIntegration
