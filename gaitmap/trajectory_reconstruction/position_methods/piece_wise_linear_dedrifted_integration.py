@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_COLS, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples
 
@@ -180,9 +180,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
         if self.level_assumption is True:
-            position[:, -1] -= self._estimate_piece_wise_linear_drift_model(
-                position[:, -1], zupts_padded
-            )
+            position[:, -1] -= self._estimate_piece_wise_linear_drift_model(position[:, -1], zupts_padded)
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
         self.velocity_.index.name = "sample"
