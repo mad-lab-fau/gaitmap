@@ -19,6 +19,7 @@ class MetaTestConfig:
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = PieceWiseLinearDedriftedIntegration()
+        # Get enough samples from the signal to ensure a ZUPT
         position.estimate(healthy_example_imu_data["left_sensor"].iloc[:500], sampling_rate_hz=204.8)
         return position
 
@@ -30,10 +31,16 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
 class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     __test__ = True
 
+
+    def init_algo_class(self) -> BasePositionMethod:
+        # For basic integration tests, we do not remove gravity
+        return PieceWiseLinearDedriftedIntegration(gravity=None, zupt_window_length_s=0.1)
+
     @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
     def test_symetric_velocity_integrations(self, acc):
         """All test data starts and ends at zero."""
-        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid zupt updates within the test data
+        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid 
+        # zupt updates within the test data
         test = self.init_algo_class()
 
         test_data = np.repeat(np.array(acc)[None, :], 10, axis=0)
@@ -52,7 +59,8 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
     @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]))
     def test_all_axis(self, acc):
         """Test against the physics equation."""
-        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid zupt updates within the test data
+        # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid 
+        # zupt updates within the test data
         test = self.init_algo_class()
 
         n_steps = 10
@@ -91,9 +99,6 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps + n_zupt_samples], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps + n_zupt_samples], expected_pos)
 
-    def init_algo_class(self) -> BasePositionMethod:
-        # For basic integration tests, we do not remove gravity
-        return PieceWiseLinearDedriftedIntegration(gravity=None, zupt_window_length_s=0.1)
 
 
 class TestPieceWiseLinearDedriftedIntegration:

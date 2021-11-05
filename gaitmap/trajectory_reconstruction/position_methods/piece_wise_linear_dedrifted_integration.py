@@ -18,16 +18,19 @@ Self = TypeVar("Self", bound="PieceWiseLinearDedriftedIntegration")
 
 
 class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
-    """Use a piecewise linear drift model utilizing zupts for integration of acc to estimate velocity and position.
+    """Use a piecewise linear drift model based on detected zupts for integration of acc to estimate velocity and position.
 
     .. warning::
        We assume that the acc signal is already converted into the global/world frame!
        Refer to the :ref:`Coordinate System Guide <coordinate_systems>` for details.
 
-    This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a piece wise linear dirft
-    error model. The method can be applied on complete movement sequences without the need for previous stride
-    segmentation. Therefore we assume a linear integration error between zupt regions. The zupt update is currently only
-    performed on the gyro norm.
+    This method uses the zero-velocity assumption (ZUPT) to perform a drift removal using a piece wise linear drift model. 
+    The method can be applied on complete movement sequences without the need for previous stride segmentation.
+    We assume a linear integration error between all detected zupt regions.
+    We further assume, that the signal starts with resting period (i.e. the starting velocity is assumed to be 0).
+    
+    The ZUPTS update is currently only performed on the gyro norm and with the default settings we expect to find mid-stances
+    as ZUPTS during regular walking.
 
     Further drift correction is applied using a level-assumption (i.e. we assume that the sensor starts and ends its
     movement at the same z-position/height between zupt regions).
@@ -70,13 +73,13 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     Examples
     --------
-    Your data must be a pd.DataFrame with at least columns defined by :obj:`~gaitmap.utils.consts.SF_ACC`.
+    Your data must be a pd.DataFrame with all sensor columns defined.
     Remember, that this method does not transform your data into another coordinate frame, but just integrates it.
-    If you want to use this method to calculate e.g. a stride length, make sure to cenvert your data into the global
+    If you want to use this method to calculate e.g. a stride length, make sure to convert your data into the global
     frame using any of the implemented orientation estimation methods.
 
     >>> import pandas as pd
-    >>> from gaitmap.utils.consts import SF_ACC
+    >>> from gaitmap.utils.consts import SF_COLS
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
@@ -89,6 +92,20 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     <pd.Dataframe with resulting positions>
     >>> pwli.velocity_
     <pd.Dataframe with resulting velocities>
+
+    Notes
+    -----
+    In detail, the dedrifting works by first identifing all regions of zero velocity.
+    For each region a linear fit is applied to corresonding velocity data.
+    This is done to also compensate for drift during these resting phases.
+
+    For the remaing regions (non-ZUPT), a linear interpolation is applied, basically connecting the end of 
+    the linear fit applied to one region to the start of the next region with a straight line.
+    For the first value in the sequence, we always assume a velocity of 0 and for the last value we take the final
+    uncorrected velocity value.
+    This multi linear baseline is than substracted from the velocity to correct it.
+
+    The same process is repeated for the z-position in case `level_walking=True`.
 
     See Also
     --------
@@ -153,7 +170,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         # find zupts for drift correction on the padded data
         self.zupts_ = bool_array_to_start_end_array(
             self.find_zupts(
-                pd.DataFrame(np.column_stack([acc_data_padded, gyr_data_padded]), columns=SF_ACC + SF_GYR),
+                pd.DataFrame(np.column_stack([acc_data_padded, gyr_data_padded]), columns=SF_COLS),
                 self.sampling_rate_hz,
             )
         )
@@ -164,7 +181,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
         self.velocity_.index.name = "sample"
 
-        position = cumtrapz(self.velocity_.to_numpy(), axis=0, initial=0) / self.sampling_rate_hz
+        position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
         if self.level_assumption is True:
             position[:, -1] = position[:, -1] - self._estimate_piece_wise_linear_drift_model(
@@ -212,7 +229,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         Parameters
         ----------
         data : array with shape (k, m)
-            The drift model will be estimated per columns in case of a multidimensional unput
+            The drift model will be estimated per column in case of a multidimensional input
         zupt_sequences
             Zupt sequences indicating the start and end indices for each zupt region
 
@@ -228,6 +245,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         drift_model = np.full(data.shape, np.nan)
         # for the interpolation we need to enforce a reference for the very first and very last sample!
         drift_model[-1] = data[-1]
+        # data[0] should usually be 0 (i.e. the starting value of the velocity/position)
         drift_model[0] = data[0]
 
         if len(zupt_sequences) == 0:
@@ -240,8 +258,10 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
         # fill all non zupt regions with linear drift models
         # make sure our mask is only 1D as multidimensional masks result in single dimensional outputs in numpy
+        # We can do that, because we know the positions of the nans are the same in all axis, as the regions are defined by the ZUPTS
         mask_known_values = ~np.isnan(drift_model[:, 0])
 
+        # Interpolate the remaing regions linearly
         x = np.arange(len(drift_model))
         result = interp1d(x[mask_known_values], drift_model[mask_known_values], axis=0)(x)
         return np.squeeze(result)
