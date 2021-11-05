@@ -292,11 +292,10 @@ class RtsKalman(BaseTrajectoryMethod):
 
         """
         window_length = max(2, round(sampling_rate_hz * self.zupt_window_length_s))
-        zupt_window_overlap_s = self.zupt_window_overlap_s
-        if zupt_window_overlap_s is None:
+        if self.zupt_window_overlap_s is None:
             window_overlap = int(window_length // 2)
         else:
-            window_overlap = round(sampling_rate_hz * zupt_window_overlap_s)
+            window_overlap = round(sampling_rate_hz * self.zupt_window_overlap_s)
         zupts = find_static_samples(
             data[SF_GYR].to_numpy(), window_length, self.zupt_threshold_dps, "maximum", window_overlap
         )
