@@ -200,7 +200,7 @@ class _BaseSerializable:
 
         This will create a new instance of the class itself and all nested gaitmap objects
         """
-        return clone(self, safe=False)
+        return clone(self, safe=True)
 
     def to_json(self) -> str:
         """Export the current object parameters as json.
