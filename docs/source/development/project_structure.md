@@ -107,11 +107,15 @@ From the guide:
 
 Additions to the guide:
 
+- All algorithms classes must directly or indirectly inherit from `BaseAlgorithm`
 - All classes should store the data (and other arguments) passed in the "action" step in the class object unless the 
   amount of data would result in an unreasonable performance issue.
   Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to 
   helper functions, that e.g. can visualize in and outputs.
   These parameters should be documented under "Other Parameters" to not clutter the docstring.
+- You must call `super().__init__()` in the init
+- Mutable defaults in the init are as always a bad idea, but in gaitmap we make specific exceptions.
+  See the section on *Mutable defaults* below.
 - All methods should take care that they do not modify the original data passed to the function.
   If required a copy of the data can be created, but **not** stored in the object.
 - All classes should validate their input parameters during the "action" (or whenever the parameters are first needed).
@@ -142,6 +146,7 @@ Also review the actual implementation of the other algorithms for further inspir
 
 ```python
 import numpy as np
+import pandas as pd
 from gaitmap.base import BaseEventDetection, BaseType
 from typing import Optional, Tuple, Union, Dict
 from gaitmap.utils.datatype_helper import SensorData, is_multi_sensor_data, is_single_sensor_data
@@ -208,6 +213,7 @@ class RamppEventDetection(BaseEventDetection):
         # Just add the Parameters without any logic
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
+        super().__init__()
 
     def detect(self: BaseType, data: SensorData, sampling_rate_hz: float,
                segmented_stride_list: pd.DataFrame) -> BaseType:
@@ -269,6 +275,41 @@ We follow the [`sklearn` recommendations](https://scikit-learn.org/stable/glossa
 Algorithms that require an initial value for some optimization should expose this value via the `__init__`.
 If the parameter is `None` a random initial value should be used that is controlled by the additional `random_state`
 argument.
+
+### Mutable Defaults
+
+Mutable Defaults for functions or classes are a really bad idea in Python and can lead to
+[unexpected behaviour](https://stackoverflow.com/questions/1132941/least-astonishment-and-the-mutable-default-argument).
+Therefore, you should avoid them whenever possible, e.g. by using tuples instead of lists or tuples of tuples instead of
+dictionaries.
+If that is not possible it might be an option to provide a `None` or a similar object indicating *empty* and then create
+the actual "default" value inside the function or class.
+This is in general fine.
+
+However, in gaitmap we sometimes run into the situation that we pass one algorithm to another algorithm as default
+values.
+In these cases, seeing the algorithm with its default values right in the code and documentation is really nice.
+Therefore, we have a workaround implemented in gaitmap to handle these cases.
+Basically, you need to wrap the mutable parameter into a `default` call and make sure to call `super().__init()`, after
+you added all parameters to the object.
+
+```python
+from gaitmap.base import BaseEventDetection, BaseAlgorithm
+from gaitmap.event_detection import RamppEventDetection
+from gaitmap.utils._algo_helper import default
+
+class MyAlgorithm(BaseAlgorithm):
+    def __init__(self, normal_para: int = 3, mutable_default: BaseEventDetection = default(RamppEventDetection())):
+        self.normal_para = normal_para
+        self.mutable_default = mutable_default
+        super().__init__()
+```
+
+Under the hood, the `super().__init__()` call will scan all parameters that were added, and if it sees one marked as 
+default, it will replace it with a clone of itself.
+This basically creates a new version of the passed algorithm for every new instance instead of using the mutable default 
+over and over again.
+
 
 ## Code guidelines
 
