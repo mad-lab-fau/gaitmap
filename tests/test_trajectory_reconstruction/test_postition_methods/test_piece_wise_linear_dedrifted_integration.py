@@ -33,14 +33,14 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
 
     def init_algo_class(self) -> BasePositionMethod:
         # For basic integration tests, we do not remove gravity
-        return PieceWiseLinearDedriftedIntegration(gravity=None, zupt_window_length_s=0.1)
+        return PieceWiseLinearDedriftedIntegration(gravity=None).set_params(zupt_detector__window_length_s=0.1)
 
     @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
     def test_symetric_velocity_integrations(self, acc):
         """All test data starts and ends at zero."""
         # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
-        test = self.init_algo_class()
+        test = self.init_algo_class().set_params(zupt_detector__window_length_s=0.3, zupt_detector__metric="maximum")
 
         test_data = np.repeat(np.array(acc)[None, :], 10, axis=0)
         test_data = np.vstack((test_data, -test_data))
@@ -50,7 +50,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         test_data.loc[0:2, SF_GYR + SF_ACC] = 0
         test_data.loc[test_data.index[-3:], SF_GYR + SF_ACC] = 0
         expected = np.zeros(3)
-        test = test.estimate(test_data, 1)
+        test = test.estimate(test_data, 10)
 
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
@@ -60,7 +60,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         """Test against the physics equation."""
         # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
-        test = self.init_algo_class()
+        test = self.init_algo_class().set_params(zupt_detector__window_length_s=0.3, zupt_detector__metric="maximum")
 
         n_steps = 10
         n_zupt_samples = 3
@@ -85,7 +85,8 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         test_data.loc[0 : n_zupt_samples - 1, SF_GYR] = 0
         test_data.loc[test_data.index[-n_zupt_samples:], SF_GYR] = 0
 
-        test.estimate(test_data, 1)
+        fs = 10
+        test.estimate(test_data, fs)
 
         expected = np.zeros(3)
         assert_array_almost_equal(test.position_.to_numpy()[-1], expected)
@@ -93,8 +94,8 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
 
         # Test quarter point
         # The +0.5 and the 0.25 comes because of the trapezoid rule integration *the 0.25 because you integrate twice)
-        expected_vel = acc * (n_steps - 1) + 0.5 * acc
-        expected_pos = 0.5 * acc * (n_steps - 1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc
+        expected_vel = (acc * (n_steps - 1) + 0.5 * acc) / fs
+        expected_pos = (0.5 * acc * (n_steps - 1) ** 2 + 0.5 * acc * (n_steps - 1) + 0.25 * acc) / fs ** 2
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps + n_zupt_samples], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps + n_zupt_samples], expected_pos)
 

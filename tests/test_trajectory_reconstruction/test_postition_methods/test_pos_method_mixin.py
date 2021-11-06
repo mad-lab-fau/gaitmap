@@ -24,7 +24,7 @@ class TestPositionMethodNoGravityMixin:
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
-        test = test.estimate(idiot_data, 1)
+        test = test.estimate(idiot_data, 100)
         expected = np.zeros((11, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_vel.index.name = "sample"
@@ -39,7 +39,7 @@ class TestPositionMethodNoGravityMixin:
         test = self.init_algo_class()
         sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
-        test = test.estimate(sensor_data, 1)
+        test = test.estimate(sensor_data, 100)
 
         assert is_single_sensor_position_list(test.position_, position_list_type=None)
         assert len(test.position_) == len(sensor_data) + 1
