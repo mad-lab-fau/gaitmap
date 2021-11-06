@@ -15,6 +15,7 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError
@@ -130,8 +131,8 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
-        pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
+        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):

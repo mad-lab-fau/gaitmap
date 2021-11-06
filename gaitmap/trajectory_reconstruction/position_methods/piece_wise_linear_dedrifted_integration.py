@@ -139,6 +139,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.zupt_metric = zupt_metric
         self.zupt_threshold_dps = zupt_threshold_dps
         self.gravity = gravity
+        super().__init__()
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.

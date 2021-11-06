@@ -1,6 +1,7 @@
 """A set of helper functions to make developing algorithms easier."""
 from typing import Any, Dict
 
+from gaitmap.base import _BaseSerializable
 from gaitmap.utils._types import _Hashable, _HashableVar
 
 
@@ -52,3 +53,8 @@ def set_params_from_dict(obj: Any, param_dict: Dict[str, Any], result_formatting
             if not k.endswith("_"):
                 k += "_"
         setattr(obj, k, v)
+
+
+def default(algo: _BaseSerializable) -> _BaseSerializable:
+    algo.__DEFAULT = True
+    return algo

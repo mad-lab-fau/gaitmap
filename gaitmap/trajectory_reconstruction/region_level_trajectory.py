@@ -17,6 +17,7 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.datatype_helper import (
     OrientationList,
@@ -189,9 +190,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
+        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
         # TODO: Change default so simple forward integration once this is implemented
-        pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
+        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
