@@ -19,7 +19,7 @@ class MetaTestConfig:
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         kalman_filter = RtsKalman()
-        kalman_filter.estimate(healthy_example_imu_data["left_sensor"].iloc[:15], sampling_rate_hz=1)
+        kalman_filter.estimate(healthy_example_imu_data["left_sensor"].iloc[:15], sampling_rate_hz=100)
         return kalman_filter
 
 
@@ -34,10 +34,10 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
     def init_algo_class(self, **kwargs) -> RtsKalman:
         kwargs = {**self.default_kwargs, **kwargs}
-        return RtsKalman(**kwargs)
+        return RtsKalman().set_params(**kwargs)
 
     def test_covariance_output_format(self):
-        test = self.init_algo_class()
+        test = self.init_algo_class(zupt_detector__window_length_s=1)
         fs = 15
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
@@ -46,7 +46,11 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         assert test.covariance_.shape == (len(sensor_data) + 1, 9 * 9)
 
     def test_zupt_output(self):
-        test = self.init_algo_class(zupt_threshold_dps=10, zupt_window_length_s=0.01)
+        test = self.init_algo_class(
+            zupt_detector__inactive_signal_threshold=10,
+            zupt_detector__window_length_s=0.3,
+            zupt_detector__window_overlap=0.8,
+        )
         fs = 15
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 100.0])[None, :], 100, axis=0)
         expected_zupts = [[0, 10], [30, 55], [85, 90]]
@@ -59,7 +63,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
     def test_corrects_velocity_drift(self):
         """Check that ZUPTs correct a velocity drift and set velocity to zero."""
-        test = RtsKalman(level_walking=False, zupt_window_length_s=0.2)
+        test = RtsKalman(level_walking=False, zupt_window_length_s=0.3)
         acc = np.array([5.0, 5.0, 12.81])
         accel_data = np.repeat(np.concatenate((acc, [0.0, 0.0, 40.0]))[None, :], 5, axis=0)
         zupt_data = np.repeat(np.concatenate((acc, [0.0, 0.0, 0.0]))[None, :], 10, axis=0)

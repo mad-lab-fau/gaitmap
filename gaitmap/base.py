@@ -13,7 +13,7 @@ from joblib import Memory
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils._algo_helper import clone
-from gaitmap.utils.consts import GF_ORI
+from gaitmap.utils.consts import GF_ORI, _EMPTY
 from gaitmap.utils.datatype_helper import (
     OrientationList,
     PositionList,
@@ -41,6 +41,8 @@ class _CustomEncoder(json.JSONEncoder):
             return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
+        if o is _EMPTY:
+            return dict(_obj_type="EmptyDefault")
         if isinstance(o, Memory):
             warnings.warn(
                 "Exporting `joblib.Memory` objects to json is not supported. "
@@ -64,6 +66,9 @@ def _custom_deserialize(json_obj):
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
+        if json_obj["_obj_type"] == "EmptyDefault":
+            return _EMPTY
+        raise ValueError("Unknown object type found in serialization!")
     return json_obj
 
 

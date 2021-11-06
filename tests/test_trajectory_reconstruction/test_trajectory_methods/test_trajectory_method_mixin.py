@@ -26,7 +26,7 @@ class TestTrajectoryMethodMixin:
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((15, 6)), columns=SF_COLS)
         idiot_data["acc_z"] = 9.81
-        test = test.estimate(idiot_data, 1)
+        test = test.estimate(idiot_data, 15)
         expected = np.zeros((16, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_vel.index.name = "sample"
