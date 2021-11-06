@@ -21,6 +21,9 @@ project.
 
 ### Changed
 
+- Cloning is now more robust and falls back to deep cloning objects that are not algorithms.
+  This prevents issues when mutable objects (other than nested algorithms) are used in parameters
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/170)
 - We now handle mutable defaults to prevent strange edge cases! Read more about it in the `project_structure` guide
   under the development-guide tab in the Documentation.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/168)
@@ -33,22 +36,25 @@ project.
   This change should make it easier to overwrite the ZUPT detection with custom methods.
   This is a breaking change! See the migration guide for more details.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
-- The `memory` option for `RtsKalman` was removed.
-  This is a breaking change!
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 ### Deprecated
 
 ### Removed
 
+- The `memory` option for `RtsKalman` was removed.
+  This is a breaking change!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
+
 ### Fixed
+
 - Bugfix for `gaitmap.gait_detection.ullrich_gait_sequence_detection`: Now proper handling of cases where margin
  should be added but no gait sequences were detected 
  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/157) 
 
 ### Migration Guide
+
 - We removed the orientation update feature of the `RtsKalman` class.
-  This feature was of by default.
+  This feature was off by default.
   Unless you explicitly enabled it, you should be fine.
   In case you used the feature, remove all references to the respective keywords.
 - The call signature and the units of the gyro data passed `RtsKalman.find_zupts` has changed.
