@@ -1,10 +1,15 @@
 """A set of helper functions to make developing algorithms easier."""
-from typing import Any, Dict, TypeVar
+from __future__ import annotations
 
-from gaitmap.base import _BaseSerializable
+import copy
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple, TypeVar, Union
+
 from gaitmap.utils._types import _Hashable, _HashableVar
 
-Algo = TypeVar("Algo", bound=_BaseSerializable)
+if TYPE_CHECKING:
+    from gaitmap.base import _BaseSerializable
+
+Algo = TypeVar("Algo", bound="_BaseSerializable")
 
 
 def invert_result_dictionary(
@@ -55,6 +60,65 @@ def set_params_from_dict(obj: Any, param_dict: Dict[str, Any], result_formatting
             if not k.endswith("_"):
                 k += "_"
         setattr(obj, k, v)
+
+
+def clone(
+    algorithm: Union[_BaseSerializable, List[_BaseSerializable], Set[_BaseSerializable], Tuple[_BaseSerializable]],
+    *,
+    safe: bool = True,
+):
+    """Construct a new algorithm object with the same parameters.
+
+    This is a modified version from sklearn and the original was published under a BSD-3 license and the original file
+    can be found here: https://github.com/scikit-learn/scikit-learn/blob/0d378913b/sklearn/base.py#L31
+
+    Clone does a deep copy of the model in an algorithm without actually copying attached data and results.
+    It yields a new algorithm with the same parameters.
+    All parameters
+
+    Parameters
+    ----------
+    algorithm : {list, tuple, set} of algorithm instance or a single algorithm instance
+        The algorithm or group of algorithms to be cloned.
+    safe : bool, default=False
+        If safe is False, clone will fall back to a deep copy on objects
+        that are not algorithms.
+
+    """
+    from gaitmap.base import _BaseSerializable  # noqa: import-outside-toplevel
+
+    # XXX: not handling dictionaries
+    if isinstance(algorithm, (list, tuple, set, frozenset)):
+        return type(algorithm)([clone(a, safe=safe) for a in algorithm])  # noqa: to-many-function-args
+    # Compared to sklearn, we check specifically for _BaseSerializable and not just if `get_params` is defined on the
+    # object.
+    # Due to the way algorithms in gaitmap work, they need to inherit from _BaseSerializable.
+    # Therefore, we do not accidentally want to treat an sklearn algo (or similar) as algorithm
+    if not isinstance(algorithm, _BaseSerializable):
+        if not safe:
+            return copy.deepcopy(algorithm)
+        raise TypeError(
+            f"Cannot clone object '{repr(algorithm)}' (type {type(algorithm)}): "
+            "it does not seem to be a compatible algorithm class algorithm as it does not inherit from "
+            "_BaseSerializable or BaseAlgorithm method."
+        )
+
+    klass = algorithm.__class__
+    new_object_params = algorithm.get_params(deep=False)
+    for name, param in new_object_params.items():
+        new_object_params[name] = clone(param, safe=False)
+    new_object = klass(**new_object_params)
+    params_set = new_object.get_params(deep=False)
+
+    # quick sanity check of the parameters of the clone
+    for name in new_object_params:
+        param1 = new_object_params[name]
+        param2 = params_set[name]
+        if param1 is not param2:
+            raise RuntimeError(
+                f"Cannot clone object {algorithm}, as the constructor either does not set or modifies parameter {name}"
+            )
+    return new_object
 
 
 def default(algo: Algo) -> Algo:

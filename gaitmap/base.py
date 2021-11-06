@@ -12,6 +12,7 @@ import pandas as pd
 from joblib import Memory
 from scipy.spatial.transform import Rotation
 
+from gaitmap.utils._algo_helper import clone
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
     OrientationList,
@@ -199,11 +200,7 @@ class _BaseSerializable:
 
         This will create a new instance of the class itself and all nested gaitmap objects
         """
-        cloned_dict = self.get_params(deep=False)
-        for k, v in cloned_dict.items():
-            if isinstance(v, _BaseSerializable):
-                cloned_dict[k] = v.clone()
-        return self.__class__(**cloned_dict)
+        return clone(self, safe=True)
 
     def to_json(self) -> str:
         """Export the current object parameters as json.

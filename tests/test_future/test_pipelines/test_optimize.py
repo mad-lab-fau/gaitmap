@@ -37,7 +37,7 @@ class TestMetaFunctionalityGridSearch(TestAlgorithmMixin):
         pytest.skip()
 
     def test_json_roundtrip(self, after_action_instance):
-        # TODO: Implement json serialazable for sklearn objects
+        # TODO: Implement json serialazable for sklearn objects and for scorer
         pytest.skip("TODO: This needs to be fixed!")
 
 
@@ -55,7 +55,7 @@ class TestMetaFunctionalityGridSearchCV(TestAlgorithmMixin):
         pytest.skip()
 
     def test_json_roundtrip(self, after_action_instance):
-        # TODO: Implement json serialazable for sklearn objects
+        # TODO: Implement json serialazable for sklearn objects and for scorer
         pytest.skip("TODO: This needs to be fixed!")
 
 
