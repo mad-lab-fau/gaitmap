@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
-from gaitmap.utils.consts import SF_GYR, SF_ACC, BF_ACC, BF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.zupt_detection import NormZuptDetector
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -26,6 +26,31 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
 class TestNormZuptDetector:
     """Test the function `sliding_window_view`."""
 
+    @pytest.mark.parametrize("ws,sr", ((1, 1), (1, 2), (2, 1), (2.49, 1)))
+    def test_error_window_to_small(self, healthy_example_imu_data, ws, sr):
+        with pytest.raises(ValidationError, match=r".*The effective window size is smaller*"):
+            NormZuptDetector(window_length_s=ws).detect(healthy_example_imu_data["left_sensor"], sr)
+
+    @pytest.mark.parametrize("overlap,valid", ((0, True), (1, False), (0.5, True), (-0.5, False)))
+    def test_wrong_window_overlap(self, overlap, valid, healthy_example_imu_data):
+        if not valid:
+            with pytest.raises(ValidationError, match=r"`window_overlap` must be `0 <= window_overlap < 1`"):
+                NormZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
+        else:
+            d = NormZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
+
+    @pytest.mark.parametrize("win_len,overlap,valid", ((1, 0, True), (10 / 200, 0.99, False)))
+    def test_effective_overlap_error(self, win_len, overlap, valid, healthy_example_imu_data):
+        if not valid:
+            with pytest.raises(ValidationError, match=r".*The effective window overlap after rounding is 1"):
+                NormZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
+                    healthy_example_imu_data["left_sensor"], 200
+                )
+        else:
+            NormZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
+                healthy_example_imu_data["left_sensor"], 200
+            )
+
     @pytest.mark.parametrize(
         "sensor,axis,valid",
         (
@@ -41,7 +66,15 @@ class TestNormZuptDetector:
         data = pd.DataFrame(np.empty((10, len(axis))), columns=axis)
         if valid is False:
             with pytest.raises(ValidationError):
-                NormZuptDetector(sensor=sensor).detect(data, 1)
+                NormZuptDetector(sensor=sensor, window_length_s=0.5).detect(data, 10)
+        else:
+            NormZuptDetector(sensor=sensor, window_length_s=0.5).detect(data, 10)
+
+    def test_debug_outputs(self):
+        data = pd.DataFrame(np.empty((10, 3)), columns=BF_GYR)
+        zupt = NormZuptDetector(sensor="gyr", window_length_s=0.5, window_overlap=0.2).detect(data, 10)
+        assert zupt.window_length_samples_ == 5
+        assert zupt.window_overlap_samples_ == 1
 
     def test_invalid_input_metric_default_overlap(self, healthy_example_imu_data):
         """Test if value error is raised correctly on invalid input dimensions."""

@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples
 
 Self = TypeVar("Self", bound="NormZuptDetector")
@@ -73,6 +74,12 @@ class NormZuptDetector(BaseZuptDetector):
     per_sample_zupts_
         A bool array with length `len(data)`.
         If the value is `True` for a sample, it is part of a static region.
+    window_length_samples_
+        The internally calculated window length in samples.
+        This might be helpful for debugging
+    window_overlap_samples_
+        The internally calculated window overlap in samples.
+        This might be helpful for debugging.
 
     See Also
     --------
@@ -91,6 +98,8 @@ class NormZuptDetector(BaseZuptDetector):
     sampling_rate_hz: float
 
     per_sample_zupts_: np.ndarray
+    window_length_samples_: int
+    window_overlap_samples_: int
 
     def __init__(
         self,
@@ -135,21 +144,24 @@ class NormZuptDetector(BaseZuptDetector):
         )
 
         window_length = round(sampling_rate_hz * self.window_length_s)
-        if window_length < 2:
-            raise ValueError(
-                f"The effective window size is smaller than 2 samples (`sampling_rate_hz`={sampling_rate_hz}, "
+        if window_length < 3:
+            raise ValidationError(
+                f"The effective window size is smaller than 3 samples (`sampling_rate_hz`={sampling_rate_hz}, "
                 f"`window_length_s`={self.window_length_s}). "
                 "Specify a larger window length."
             )
         if not 0 <= self.window_overlap < 1:
-            raise ValueError("`window_overlap` must be `0 <= window_overlap < 1`")
+            raise ValidationError("`window_overlap` must be `0 <= window_overlap < 1`")
 
         window_overlap_samples = round(window_length * self.window_overlap)
         if window_overlap_samples == window_length:
-            raise ValueError(
+            raise ValidationError(
                 "The effective window overlap after rounding is 1, because the window is to short. "
                 "Either choose a smaller overlap or a larger window."
             )
+
+        self.window_overlap_samples_ = window_overlap_samples
+        self.window_length_samples_ = window_length
 
         zupts = find_static_samples(
             data.filter(like=self.sensor).to_numpy(),
