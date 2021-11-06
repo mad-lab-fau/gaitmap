@@ -139,10 +139,13 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
     >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
-    ...                    zupt_threshold_dps=34.0,
     ...                    zupt_variance=10e-8,
     ...                    velocity_error_variance=10e5,
-    ...                    orientation_error_variance=10e-2)
+    ...                    orientation_error_variance=10e-2,
+    ...                    zupt_detector=NormZuptDetector(semsor="gyr",
+    ...                                                   window_length_s=0.05
+    ...                    )
+    ...             )
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -357,7 +360,6 @@ class RtsKalman(BaseTrajectoryMethod):
         """
         # TODO: Use normal ZUPT detector after deprecation
         z = self._zupt_detector.clone().detect(data, sampling_rate_hz)
-        print(z.window_overlap_samples_)
         return z.per_sample_zupts_
 
     def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:  # noqa: no-self-use
