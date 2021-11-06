@@ -196,6 +196,7 @@ class Dataset(_BaseSerializable):
     ):
         self.groupby_cols = groupby_cols
         self.subset_index = subset_index
+        super().__init__()
 
     @property
     def index(self) -> pd.DataFrame:

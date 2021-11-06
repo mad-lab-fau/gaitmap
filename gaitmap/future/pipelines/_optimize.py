@@ -101,6 +101,7 @@ class Optimize(BaseOptimize):
 
     def __init__(self, pipeline: OptimizablePipeline):
         self.pipeline = pipeline
+        super().__init__()
 
     def optimize(self, dataset: Dataset, **optimize_params):
         """Run the self-optimization defined by the pipeline.
@@ -278,6 +279,7 @@ class GridSearch(BaseOptimize):
         self.pre_dispatch = pre_dispatch
         self.return_optimized = return_optimized
         self.error_score = error_score
+        super().__init__()
 
     def optimize(self, dataset: Dataset, **_):
         """Run the GridSearch over the dataset and find the best parameter combination.
@@ -570,6 +572,7 @@ class GridSearchCV(BaseOptimize):
         self.n_jobs = n_jobs
         self.pre_dispatch = pre_dispatch
         self.error_score = error_score
+        super().__init__()
 
     def optimize(self, dataset: Dataset, *, groups=None, **optimize_params):  # noqa: arguments-differ
         self.dataset = dataset

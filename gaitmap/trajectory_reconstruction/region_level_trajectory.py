@@ -48,7 +48,7 @@ from gaitmap.utils.exceptions import ValidationError
 Self = TypeVar("Self", bound="RegionLevelTrajectory")
 
 
-class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReconstructionWrapperMixin):
+class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajectoryReconstructionWrapper):
     """Estimate the trajectory over the duration of an entire gait sequence or region of interest.
 
     This class will take any of the implemented orientation, position, and trajectory methods and apply them to all
@@ -196,9 +196,9 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
-        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
+        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
     def estimate(
         self: Self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float

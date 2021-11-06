@@ -58,5 +58,14 @@ def set_params_from_dict(obj: Any, param_dict: Dict[str, Any], result_formatting
 
 
 def default(algo: Algo) -> Algo:
+    """Wraps nested algorithm arguments to mark them as default value.
+
+    This is required, as algorithms by default are mutable.
+    Hence, when one algo instance is used as default parameter for another algo instance, we have a mutable default,
+    which is bad.
+
+    We handle that by cloning default values on init.
+    To mark a parameter to be cloned on init, it needs to be wrapped with this function.
+    """
     algo.__DEFAULT = True
     return algo
