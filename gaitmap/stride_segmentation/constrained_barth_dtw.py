@@ -6,6 +6,7 @@ from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
 from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils._types import _Hashable
 
 
@@ -127,7 +128,7 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = BarthOriginalTemplate(),
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = default(BarthOriginalTemplate()),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4,

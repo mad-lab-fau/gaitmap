@@ -138,6 +138,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     ):
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
+        super().__init__()
 
     def segment(  # noqa: arguments-differ
         self: Self,

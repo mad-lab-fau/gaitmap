@@ -1,7 +1,10 @@
 """A set of helper functions to make developing algorithms easier."""
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar
 
+from gaitmap.base import _BaseSerializable
 from gaitmap.utils._types import _Hashable, _HashableVar
+
+Algo = TypeVar("Algo", bound=_BaseSerializable)
 
 
 def invert_result_dictionary(
@@ -52,3 +55,17 @@ def set_params_from_dict(obj: Any, param_dict: Dict[str, Any], result_formatting
             if not k.endswith("_"):
                 k += "_"
         setattr(obj, k, v)
+
+
+def default(algo: Algo) -> Algo:
+    """Wrap nested algorithm arguments to mark them as default value.
+
+    This is required, as algorithms by default are mutable.
+    Hence, when one algo instance is used as default parameter for another algo instance, we have a mutable default,
+    which is bad.
+
+    We handle that by cloning default values on init.
+    To mark a parameter to be cloned on init, it needs to be wrapped with this function.
+    """
+    algo.__DEFAULT = True
+    return algo

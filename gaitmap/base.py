@@ -67,6 +67,12 @@ def _custom_deserialize(json_obj):
 
 
 class _BaseSerializable:
+    def __init__(self):
+        # clone all algorithm object that might be defaults to prevent issues with mutable defaults
+        for k, v in self.get_params(deep=False).items():
+            if getattr(v, "__DEFAULT", None):
+                setattr(self, k, v.clone())
+
     @classmethod
     def _get_param_names(cls) -> List[str]:
         """Get parameter names for the estimator.

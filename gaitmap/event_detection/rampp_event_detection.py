@@ -185,6 +185,7 @@ class RamppEventDetection(BaseEventDetection):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.memory = memory
         self.enforce_consistency = enforce_consistency
+        super().__init__()
 
     def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.

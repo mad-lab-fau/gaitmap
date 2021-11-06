@@ -65,6 +65,7 @@ class DtwTemplate(_BaseSerializable):
         self.sampling_rate_hz = sampling_rate_hz
         self.scaling = scaling
         self.use_cols = use_cols
+        super().__init__()
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
         """Return the template of the dataset.

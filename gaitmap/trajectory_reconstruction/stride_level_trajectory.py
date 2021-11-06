@@ -15,6 +15,7 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError
@@ -22,7 +23,7 @@ from gaitmap.utils.exceptions import ValidationError
 Self = TypeVar("Self", bound="StrideLevelTrajectory")
 
 
-class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReconstructionWrapperMixin):
+class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajectoryReconstructionWrapper):
     """Estimate the trajectory over the duration of a stride by considering each stride individually.
 
     You can select a method for the orientation estimation and a method for the position estimation (or a combined
@@ -130,14 +131,14 @@ class StrideLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
-        pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
+        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
-        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
+        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
     def estimate(self: Self, data: SensorData, stride_event_list: StrideList, sampling_rate_hz: float) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .

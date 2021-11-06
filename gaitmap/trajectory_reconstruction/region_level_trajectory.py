@@ -17,6 +17,7 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.datatype_helper import (
     OrientationList,
@@ -47,7 +48,7 @@ from gaitmap.utils.exceptions import ValidationError
 Self = TypeVar("Self", bound="RegionLevelTrajectory")
 
 
-class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReconstructionWrapperMixin):
+class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajectoryReconstructionWrapper):
     """Estimate the trajectory over the duration of an entire gait sequence or region of interest.
 
     This class will take any of the implemented orientation, position, and trajectory methods and apply them to all
@@ -189,15 +190,15 @@ class RegionLevelTrajectory(BaseTrajectoryReconstructionWrapper, _TrajectoryReco
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = SimpleGyroIntegration(),
+        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
         # TODO: Change default so simple forward integration once this is implemented
-        pos_method: Optional[BasePositionMethod] = ForwardBackwardIntegration(),
+        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
-        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
+        super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
     def estimate(
         self: Self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
