@@ -1,8 +1,10 @@
 """A set of helper functions to make developing algorithms easier."""
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils._types import _Hashable, _HashableVar
+
+Algo = TypeVar("Algo", bound=_BaseSerializable)
 
 
 def invert_result_dictionary(
@@ -55,6 +57,6 @@ def set_params_from_dict(obj: Any, param_dict: Dict[str, Any], result_formatting
         setattr(obj, k, v)
 
 
-def default(algo: _BaseSerializable) -> _BaseSerializable:
+def default(algo: Algo) -> Algo:
     algo.__DEFAULT = True
     return algo
