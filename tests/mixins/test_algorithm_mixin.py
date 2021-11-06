@@ -109,7 +109,9 @@ class TestAlgorithmMixin:
         init_signature = inspect.signature(init)
         # Consider the constructor parameters excluding 'self'
         parameters = {
-            p.name: p.default for p in init_signature.parameters.values() if p.name != "self" and p.kind != p.VAR_KEYWORD
+            p.name: p.default
+            for p in init_signature.parameters.values()
+            if p.name != "self" and p.kind != p.VAR_KEYWORD
         }
         nested_algos = {k: v for k, v in parameters.items() if isinstance(v, _BaseSerializable)}
         if len(nested_algos) == 0:
