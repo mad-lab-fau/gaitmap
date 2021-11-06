@@ -1,10 +1,9 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
 import warnings
-from typing import Optional, TypeVar, Union, Dict, Any
+from typing import Any, Dict, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
-from joblib import Memory
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
@@ -17,9 +16,8 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
 )
 from gaitmap.utils._algo_helper import default
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR, _EMPTY
+from gaitmap.utils.consts import _EMPTY, GF_POS, GF_VEL, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
-from gaitmap.utils.static_moment_detection import find_static_samples
 from gaitmap.zupt_detection import NormZuptDetector
 
 Self = TypeVar("Self", bound="RtsKalman")
@@ -50,6 +48,9 @@ class RtsKalman(BaseTrajectoryMethod):
         It is critical that this value is close to the actual orientation.
         If you pass an array, remember that the order of elements must be x, y, z, w.
     zupt_threshold_dps
+        .. warning::
+            This parameter is deprecated and will be removed soon! Use `zupt_detector` instead.
+
         The threshold used in the default method for ZUPT detection in degree per second.
         It looks at the maximum energy in windows of 10 gyro samples and decides for a ZUPT, if this energy is
         smaller than `zupt_threshold_dps`.
@@ -72,10 +73,16 @@ class RtsKalman(BaseTrajectoryMethod):
         The variance of the noise of the measured position during a level walking update.
         Should typically be very small.
     zupt_window_length_s
+        .. warning::
+            This parameter is deprecated and will be removed soon! Use `zupt_detector` instead.
+
         Length of the window used in the default method to find ZUPTs.
         If the value is too small at least a window of 2 samples is used.
         Given in seconds.
     zupt_window_overlap_s
+        .. warning::
+            This parameter is deprecated and will be removed soon! Use `zupt_detector` instead.
+
         Length of the window overlap used in the default method to find ZUPTs.
         It is given in seconds and if not given it defaults to half the window length.
     zupt_detector
@@ -193,9 +200,11 @@ class RtsKalman(BaseTrajectoryMethod):
         level_walking_variance: float = 10e-8,
         zupt_window_length_s: float = _EMPTY,
         zupt_window_overlap_s: Optional[float] = _EMPTY,
-        zupt_detector=default(NormZuptDetector(
-            sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
-        )),
+        zupt_detector=default(
+            NormZuptDetector(
+                sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
+            )
+        ),
     ):
         self.initial_orientation = initial_orientation
         self.zupt_threshold_dps = zupt_threshold_dps
@@ -313,7 +322,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupts_ = bool_array_to_start_end_array(zupts)
         return self
 
-    def _convert_deprecated_args(
+    def _convert_deprecated_args(  # noqa: no-self-use
         self, deprecated_args: Dict[str, Any], zupt_detector: NormZuptDetector
     ) -> NormZuptDetector:
         # TODO: Remove after full deprecation
@@ -347,7 +356,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
         """
         # TODO: Use normal ZUPT detector after deprecation
-        z =  self._zupt_detector.clone().detect(data, sampling_rate_hz)
+        z = self._zupt_detector.clone().detect(data, sampling_rate_hz)
         print(z.window_overlap_samples_)
         return z.per_sample_zupts_
 

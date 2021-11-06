@@ -75,7 +75,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
     def test_corrects_z_position(self):
         """Check that level walking reset position to zero during ZUPTs."""
-        test = self.init_algo_class()
+        test = self.init_algo_class(zupt_detector__window_length_s=1)
         accel_data = np.repeat(np.concatenate(([0.0, 0.0, 100], [0.0, 0.0, 40.0]))[None, :], 5, axis=0)
         zupt_data = np.repeat(np.concatenate(([0.0, 0.0, 9.81], [0.0, 0.0, 0.0]))[None, :], 10, axis=0)
         sensor_data = np.vstack((accel_data, zupt_data))

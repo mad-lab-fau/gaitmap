@@ -26,7 +26,7 @@ class TestTrajectoryMethodMixin:
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((15, 6)), columns=SF_COLS)
         idiot_data["acc_z"] = 9.81
-        test = test.estimate(idiot_data, 15)
+        test = test.estimate(idiot_data, 100)
         expected = np.zeros((16, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_vel.index.name = "sample"
@@ -43,7 +43,7 @@ class TestTrajectoryMethodMixin:
 
     def test_output_formats(self):
         test = self.init_algo_class()
-        fs = 15
+        fs = 100
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, fs)
@@ -101,7 +101,7 @@ class TestTrajectoryMethodMixin:
         test_data = np.vstack((accel_data, break_data))
         test_data = pd.DataFrame(test_data, columns=SF_COLS)
 
-        test = test.estimate(test_data, 10)
+        test = test.estimate(test_data, 100)
         expected = np.zeros(3)
 
         assert_array_almost_equal(test.velocity_.to_numpy()[0], expected, decimal=10)

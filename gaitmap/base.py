@@ -13,7 +13,7 @@ from joblib import Memory
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils._algo_helper import clone
-from gaitmap.utils.consts import GF_ORI, _EMPTY
+from gaitmap.utils.consts import _EMPTY, GF_ORI
 from gaitmap.utils.datatype_helper import (
     OrientationList,
     PositionList,
