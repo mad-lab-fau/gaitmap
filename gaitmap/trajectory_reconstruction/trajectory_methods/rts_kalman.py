@@ -345,6 +345,9 @@ class RtsKalman(BaseTrajectoryMethod):
         By default this method uses only the gyro data, but custom ZUPT method can be implemented by subclassing the
         Kalmanfilter and overwriting this method.
 
+        .. warning:: If you plan to implement your own Zupt Detection, use a custom ZuptDetector as input.
+                     This method is deprecated and will be removed
+
         Parameters
         ----------
         data

@@ -164,7 +164,8 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
             acc_data -= self.gravity
 
         # find zupts for drift correction
-        self.zupts_ = bool_array_to_start_end_array(self.find_zupts(data, self.sampling_rate_hz))
+        zupts = self.zupt_detector.clone().detect(data, sampling_rate_hz).per_sample_zupts_
+        self.zupts_ = bool_array_to_start_end_array(zupts)
 
         # Add an implicit 0 to the beginning of the data
         acc_data_padded = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
@@ -186,27 +187,6 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.position_.index.name = "sample"
 
         return self
-
-    def find_zupts(self, data, sampling_rate_hz: float) -> np.ndarray:
-        """Find the ZUPT samples based on the provided data.
-
-        By default this method uses only the gyro data.
-
-        Parameters
-        ----------
-        data
-            Continuous sensor data including gyro and acc values.s
-        sampling_rate_hz
-            sampling rate of the gyro data
-
-        Returns
-        -------
-        zupt_array
-            array of length gyro with True and False indicating a ZUPT.
-
-        """
-        z = self.zupt_detector.clone().detect(data, sampling_rate_hz)
-        return z.per_sample_zupts_
 
     def _estimate_piece_wise_linear_drift_model(  # noqa: no-self-use
         self, data: np.ndarray, zupt_sequences: np.ndarray
