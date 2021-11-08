@@ -12,7 +12,10 @@ project.
 
 ### Added
 
-- New position method `PieceWiseLinearDedriftedIntegration` using piece wise linear dedrifted integration utilizing zupt updates 
+- A new submodule for ZUPT-Detection Algorithms and a first implementation in form of the `NormZuptDetector`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/167)
+- New position method `PieceWiseLinearDedriftedIntegration` using piece wise linear dedrifted integration utilizing zupt
+  updates.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/166)
 - New sub module in preprocessing for sensor alignment functions
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161)
