@@ -20,7 +20,7 @@ class NormZuptDetector(BaseZuptDetector):
     """Detect ZUPTs based on either the Acc or the Gyro norm.
 
     The ZUPT method uses a sliding window approach with overlap.
-    Overlapping windows will be combined with a logical "or" in the region of the the overlap.
+    For overlapping windows the results will be combined with a logical "or" in the region of the the overlap.
     I.e. if one of the overlapping windows is considered static, the entire region is.
     Neighboring static windows will be combined to a static region.
 
@@ -83,7 +83,6 @@ class NormZuptDetector(BaseZuptDetector):
 
     See Also
     --------
-    gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
     gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
 
     """
