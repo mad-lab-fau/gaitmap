@@ -47,7 +47,8 @@ class NormZuptDetector(BaseZuptDetector):
         The overlap in samples is calculated as `overlap_samples = round(window_length_samples * window_overlap)`
     inactive_signal_threshold : float
        Threshold to decide whether a window should be considered as active or inactive.
-       Window will be tested on `metric(norm_window) <= threshold`
+       Window will be tested on `metric(norm_window) <= threshold`.
+       The unit of this values depends on the selected sensor and metric.
     metric : str
         Metric which will be calculated per window on the norm of the signal, one of the following strings
 

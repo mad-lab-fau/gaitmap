@@ -5,6 +5,7 @@ import copy
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple, TypeVar, Union
 
 from gaitmap.utils._types import _Hashable, _HashableVar
+from gaitmap.utils.consts import _EMPTY
 
 if TYPE_CHECKING:
     from gaitmap.base import _BaseSerializable
@@ -87,6 +88,8 @@ def clone(
     """
     from gaitmap.base import _BaseSerializable  # noqa: import-outside-toplevel
 
+    if algorithm is _EMPTY:
+        return _EMPTY
     # XXX: not handling dictionaries
     if isinstance(algorithm, (list, tuple, set, frozenset)):
         return type(algorithm)([clone(a, safe=safe) for a in algorithm])  # noqa: to-many-function-args

@@ -8,11 +8,12 @@ from numpy.polynomial import polynomial
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
-from gaitmap.base import BasePositionMethod
+from gaitmap.base import BasePositionMethod, BaseZuptDetector
+from gaitmap.utils._algo_helper import default
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
-from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples
+from gaitmap.zupt_detection import NormZuptDetector
 
 Self = TypeVar("Self", bound="PieceWiseLinearDedriftedIntegration")
 
@@ -40,15 +41,8 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     Parameters
     ----------
-    zupt_window_length_s
-        The windows length in seconds considered for zupt detection.
-    zupt_window_overlap_s
-        Window overlap in seconds for the zupt detection.
-    zupt_metric
-        The metric that should be calculated on the gyro norm in each window
-    zupt_threshold_dps
-        The threshold for zupt windows.
-        If metric(norm(window, axis=-1))<=`inactive_signal_th` for the gyro signal, it is considered a valid zupt.
+    zupt_detector
+        An instance of a valid Zupt detector that will be used to find ZUPTs.
     level_assumption
         If True, it is assumed that the stride starts and ends at z=0 and dedrifting in that direction is applied
         accordingly.
@@ -82,11 +76,15 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     >>> import pandas as pd
     >>> from gaitmap.utils.consts import SF_COLS
+    >>> from gaitmap.zupt_detection import NormZuptDetector
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
-    >>> pwli = PieceWiseLinearDedriftedIntegration(zupt_window_length_s=0.15, zupt_threshold_dps=15,
-    >>>        gravity=np.array([0, 0, 9.81]))
+    >>> pwli = PieceWiseLinearDedriftedIntegration(NormZuptDetector(window_length_s=0.15,
+    ...                                                             inactive_signal_threshold=15.
+    ...                                            ),
+    ...                                            gravity=np.array([0, 0, 9.81])
+    ...        )
     >>> # Apply the algorithm
     >>> pwli = pwli.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -118,6 +116,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     level_assumption: bool
     gravity: Optional[np.ndarray]
+    zupt_detector: BaseZuptDetector
 
     data: SingleSensorData
     sampling_rate_hz: float
@@ -126,18 +125,16 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     def __init__(
         self,
+        zupt_detector=default(
+            NormZuptDetector(
+                sensor="gyr", window_length_s=0.15, window_overlap=0.5, metric="mean", inactive_signal_threshold=15.0
+            )
+        ),
         level_assumption: bool = True,
-        zupt_window_length_s: float = 0.15,
-        zupt_window_overlap_s: float = None,
-        zupt_metric: METRIC_FUNCTION_NAMES = "mean",
-        zupt_threshold_dps: float = 15,
         gravity: Optional[np.ndarray] = GRAV_VEC,
     ):
+        self.zupt_detector = zupt_detector
         self.level_assumption = level_assumption
-        self.zupt_window_length_s = zupt_window_length_s
-        self.zupt_window_overlap_s = zupt_window_overlap_s
-        self.zupt_metric = zupt_metric
-        self.zupt_threshold_dps = zupt_threshold_dps
         self.gravity = gravity
         super().__init__()
 
@@ -167,7 +164,8 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
             acc_data -= self.gravity
 
         # find zupts for drift correction
-        self.zupts_ = bool_array_to_start_end_array(self.find_zupts(data, self.sampling_rate_hz))
+        zupts = self.zupt_detector.clone().detect(data, sampling_rate_hz).per_sample_zupts_
+        self.zupts_ = bool_array_to_start_end_array(zupts)
 
         # Add an implicit 0 to the beginning of the data
         acc_data_padded = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
@@ -189,34 +187,6 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.position_.index.name = "sample"
 
         return self
-
-    def find_zupts(self, data, sampling_rate_hz: float) -> np.ndarray:
-        """Find the ZUPT samples based on the provided data.
-
-        By default this method uses only the gyro data.
-
-        Parameters
-        ----------
-        data
-            Continuous sensor data including gyro and acc values.s
-        sampling_rate_hz
-            sampling rate of the gyro data
-
-        Returns
-        -------
-        zupt_array
-            array of length gyro with True and False indicating a ZUPT.
-
-        """
-        window_length = max(2, round(sampling_rate_hz * self.zupt_window_length_s))
-        if self.zupt_window_overlap_s is None:
-            window_overlap = int(window_length // 2)
-        else:
-            window_overlap = round(sampling_rate_hz * self.zupt_window_overlap_s)
-        zupts = find_static_samples(
-            data[SF_GYR].to_numpy(), window_length, self.zupt_threshold_dps, self.zupt_metric, window_overlap
-        )
-        return zupts
 
     def _estimate_piece_wise_linear_drift_model(  # noqa: no-self-use
         self, data: np.ndarray, zupt_sequences: np.ndarray

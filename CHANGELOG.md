@@ -39,8 +39,24 @@ project.
   This change should make it easier to overwrite the ZUPT detection with custom methods.
   This is a breaking change! See the migration guide for more details.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
+- The Zupt-Detection of `RtsKalman` is now handled via dependency injection.
+  Instead of specifying a list of parameters for the Zupt detection you can simply pass a instance of a Zupt detector.
+  (see `gaitmap.zupt_detection`).
+  The old parameters a deprecated.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/169)
+- The `memory` option for `RtsKalman` was removed.
+  This is a breaking change!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
 
 ### Deprecated
+
+- The parameters `"zupt_threshold_dps", "zupt_window_length_s", "zupt_window_overlap_s"` for `RtsKalman` are now 
+  deprecated.
+  Instead a Zupt-Detector instance should be used.
+  When converting from the current parameters to the new `NormZuptDetector` class, note that the overlap is now 
+  specified as a fraction of the window length and not in seconds!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
+
 
 ### Removed
 
@@ -63,6 +79,8 @@ project.
 - The call signature and the units of the gyro data passed `RtsKalman.find_zupts` has changed.
   In case you where using custom subclasses of `RtsKalman` to implement custom zupt methods, you need to update your 
   zupt methods for the new input structure.
+  However, due to the new changes to ZuptDetectors, it is likely that you do not need a custom subclass anymore, but can
+  simply pass a instance of a ZuptDetector to the Kalman class
 - The `memory` option for `RtsKalman` was removed, as it was not particularly useful. In case you need caching we 
   recommend implementing it externally.
 
