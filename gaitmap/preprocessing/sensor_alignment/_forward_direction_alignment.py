@@ -55,11 +55,17 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     Attributes
     ----------
-    aligned_data_ :
+    aligned_data_
         The rotated sensor data after alignment
-    rotation_ :
+    rotation_
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data. For
         this class the rotation corresponds either to a 0deg or 180deg rotation.
+    is_flipped_
+        Boolean indicating if the data is flipped
+    ori_method_
+        Reference to the orientation method object after alignment
+    pos_method_
+        Reference to the position method object after alignment
 
     Other Parameters
     ----------------
@@ -98,6 +104,9 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     ori_method_: BaseOrientationMethod
     ori_method: BaseOrientationMethod
     is_flipped_: bool
+
+    data: SensorData
+    sampling_rate_hz: float
 
     def __init__(
         self,
@@ -157,6 +166,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     def _align_heading_single_sensor(self, data, sampling_rate_hz):
         """Align single sensor data."""
+        self.data = data
+        self.sampling_rate_hz = sampling_rate_hz
         r = Rotation.from_euler(self.rotation_axis.lower(), 0, degrees=True)
         is_flipped = self._forward_direction_is_flipped(data, sampling_rate_hz)
         if is_flipped:
@@ -171,14 +182,14 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         zupts_initial_ori = self.zupt_detector_orientation_init.detect(data, sampling_rate_hz).zupts_
         # only consider the very first static moment
         start, end = zupts_initial_ori.to_numpy()[0]
-        first_static_acc_vec = data[SF_ACC][start:end].median().to_numpy()
+        first_static_acc_vec = data[SF_ACC].iloc[start:end].median().to_numpy()
 
         # apply ori-method filter to rotate sensor frame into the global world frame
         initial_orientation = get_gravity_rotation(first_static_acc_vec, GRAV_VEC)
         self.ori_method_ = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-        self.ori_method_ = self.ori_method_.estimate(data[start:], sampling_rate_hz)
-        acc_data = self.ori_method_.orientation_object_[:-1].apply(data[start:][SF_ACC])
-        gyr_data = self.ori_method_.orientation_object_[:-1].apply(data[start:][SF_GYR])
+        self.ori_method_ = self.ori_method_.estimate(data.iloc[start:], sampling_rate_hz)
+        acc_data = self.ori_method_.orientation_object_[:-1].apply(data.iloc[start:][SF_ACC])
+        gyr_data = self.ori_method_.orientation_object_[:-1].apply(data.iloc[start:][SF_GYR])
 
         data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_ACC + SF_GYR)
 

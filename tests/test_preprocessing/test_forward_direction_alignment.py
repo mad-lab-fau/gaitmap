@@ -4,9 +4,25 @@ import pytest
 from numpy.testing import assert_almost_equal
 from scipy.spatial.transform import Rotation
 
+from gaitmap.base import BaseType
 from gaitmap.preprocessing.sensor_alignment import ForwardDirectionSignAlignment
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.rotations import rotate_dataset
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+
+class MetaTestConfig:
+    algorithm_class = ForwardDirectionSignAlignment
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> BaseType:
+        fdsa = ForwardDirectionSignAlignment()
+        fdsa.align(healthy_example_imu_data["left_sensor"].iloc[:1000], sampling_rate_hz=204.8)
+        return fdsa
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
 
 
 class TestForwardDirectionSignAlignment:

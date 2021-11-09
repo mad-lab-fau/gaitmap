@@ -87,11 +87,11 @@ class PcaAlignment(BaseSensorAlignment):
 
     Attributes
     ----------
-    aligned_data_ :
+    aligned_data_
         The rotated sensor data after alignment
-    rotation_ :
+    rotation_
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data
-    pca_ :
+    pca_
         :class:`~sklearn.decomposition.PCA` object after fitting
 
     Other Parameters
@@ -129,6 +129,8 @@ class PcaAlignment(BaseSensorAlignment):
     target_axis: str
     pca_plane_axis: Sequence[str]
 
+    data: SensorData
+
     def __init__(self, target_axis: str = "y", pca_plane_axis: Sequence[str] = ("gyr_x", "gyr_y")):
         self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
@@ -136,6 +138,7 @@ class PcaAlignment(BaseSensorAlignment):
 
     def align(self: Self, data: SensorData, **kwargs) -> Self:
         """Align sensor data."""
+        self.data = data
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")
         if dataset_type in ("single", "array"):
             results = align_pca_2d_single_sensor(data, self.target_axis, self.pca_plane_axis)

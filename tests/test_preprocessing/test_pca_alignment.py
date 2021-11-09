@@ -5,8 +5,24 @@ from numpy.testing import assert_almost_equal
 from scipy.spatial.transform import Rotation
 from sklearn.decomposition import PCA
 
+from gaitmap.base import BaseType
 from gaitmap.preprocessing.sensor_alignment import PcaAlignment
-from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
+from gaitmap.utils.datatype_helper import get_multi_sensor_names
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+
+class MetaTestConfig:
+    algorithm_class = PcaAlignment
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> BaseType:
+        pcaa = PcaAlignment()
+        pcaa.align(healthy_example_imu_data["left_sensor"].iloc[:10])
+        return pcaa
+
+
+class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+    __test__ = True
 
 
 class TestPcaAlignment:
