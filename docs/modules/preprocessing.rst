@@ -17,6 +17,7 @@ Classes
    :template: class.rst
 
     PcaAlignment
+    ForwardDirectionSignAlignment
 
 Functions
 ---------

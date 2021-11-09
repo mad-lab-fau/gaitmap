@@ -120,6 +120,8 @@ class PcaAlignment(BaseSensorAlignment):
     See Also
     --------
     sklearn.decomposition.PCA: Details on the used PCA implementation for this method.
+    gaitmap.preprocessing.sensor_alignment.ForwardDirectionSignAlignment: Details on the ForwardDirectionSignAlignment
+    class which will handle the potentially required 180deg flip.
 
     """
 
