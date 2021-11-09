@@ -130,9 +130,9 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
         if self.pos_method and not isinstance(self.pos_method, BasePositionMethod):
             raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
-        if not self.rotation_axis.lower() in "xyz":
+        if self.rotation_axis.lower() not in "xyz":
             raise ValueError("Invalid rotation aixs! Axis must be one of x,y or z!")
-        if not self.forward_direction.lower() in "xyz":
+        if self.forward_direction.lower() not in "xyz":
             raise ValueError("Invalid forward direction aixs! Axis must be one of x,y or z!")
         if self.rotation_axis.lower() == self.forward_direction.lower():
             raise ValueError(
