@@ -126,6 +126,20 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     def align(self: Self, data: SensorData, sampling_rate_hz: float, **kwargs) -> Self:  # noqa: arguments-differ
         """Align sensor data."""
+        if self.ori_method and not isinstance(self.ori_method, BaseOrientationMethod):
+            raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")
+        if self.pos_method and not isinstance(self.pos_method, BasePositionMethod):
+            raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
+        if not self.rotation_axis.lower() in "xyz":
+            raise ValueError("Invalid rotation aixs! Axis must be one of x,y or z!")
+        if not self.forward_direction.lower() in "xyz":
+            raise ValueError("Invalid forward direction aixs! Axis must be one of x,y or z!")
+        if self.rotation_axis.lower() == self.forward_direction.lower():
+            raise ValueError(
+                "Invalid combination of rotation and forward direction axis! Axes must be perpendicular "
+                "to each other!"
+            )
+
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")
         if dataset_type in ("single", "array"):
             results = self._align_heading_single_sensor(data, sampling_rate_hz)
@@ -144,15 +158,12 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     def _align_heading_single_sensor(self, data, sampling_rate_hz):
         """Align single sensor data."""
         r = Rotation.from_euler(self.rotation_axis.lower(), 0, degrees=True)
-        self.is_flipped_ = self._forward_direction_is_flipped(data, sampling_rate_hz)
-        if self.is_flipped_:
+        is_flipped = self._forward_direction_is_flipped(data, sampling_rate_hz)
+        if is_flipped:
             # flip data by 180deg around specified rotation-axis
             r = r * Rotation.from_euler(self.rotation_axis.lower(), 180, degrees=True)
 
-        return {
-            "aligned_data": rotate_dataset(data, r),
-            "rotation": r,
-        }
+        return {"aligned_data": rotate_dataset(data, r), "rotation": r, "is_flipped": is_flipped}
 
     def _forward_direction_is_flipped(self, data: np.ndarray, sampling_rate_hz: float):
         """Estimate if data is 180deg flipped by the sign of the reconstructed forward velocity."""
@@ -196,4 +207,4 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             (forward_vel_fix_heading <= -self.baseline_velocity_threshold)
             | (forward_vel_fix_heading >= self.baseline_velocity_threshold)
         ]
-        return forward_vel_without_baseline.mean() < 0
+        return bool(forward_vel_without_baseline.mean() < 0)
