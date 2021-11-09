@@ -20,3 +20,5 @@ Functions
     get_healthy_example_orientation
     get_healthy_example_position
     get_ms_example_imu_data
+    get_healthy_example_imu_data_stair_up
+    get_healthy_example_imu_data_stair_down
