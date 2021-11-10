@@ -10,8 +10,8 @@ from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseSensorAl
 from gaitmap.trajectory_reconstruction import MadgwickAHRS, PieceWiseLinearDedriftedIntegration
 from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR, SF_COLS
-from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, SingleSensorData
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_COLS, SF_GYR
+from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, get_multi_sensor_names, is_sensor_data
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset
 from gaitmap.zupt_detection import NormZuptDetector
 
@@ -112,8 +112,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
     is_flipped_: Union[bool, Dict[_Hashable, bool]]
-    pos_method_: BasePositionMethod
-    ori_method_: BaseOrientationMethod
+    pos_method_: Union[BasePositionMethod, Dict[_Hashable, BasePositionMethod]]
+    ori_method_: Union[BaseOrientationMethod, Dict[_Hashable, BaseOrientationMethod]]
 
     def __init__(
         self,
@@ -176,12 +176,19 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         r = Rotation.from_euler(self.rotation_axis.lower(), 0, degrees=True)
-        is_flipped = self._forward_direction_is_flipped(data, sampling_rate_hz)
+        results_dict = self._forward_direction_is_flipped(data, sampling_rate_hz)
+        is_flipped = results_dict["is_flipped"]
         if is_flipped:
             # flip data by 180deg around specified rotation-axis
-            r = r * Rotation.from_euler(self.rotation_axis.lower(), 180, degrees=True)
+            r = Rotation.from_euler(self.rotation_axis.lower(), 180, degrees=True)
 
-        return {"aligned_data": rotate_dataset(data, r), "rotation": r, "is_flipped": is_flipped}
+        return {
+            "aligned_data": rotate_dataset(data, r),
+            "rotation": r,
+            "is_flipped": is_flipped,
+            "ori_method": results_dict["ori_method"],
+            "pos_method": results_dict["pos_method"],
+        }
 
     def _forward_direction_is_flipped(self, data: SingleSensorData, sampling_rate_hz: float):
         """Estimate if data is 180deg flipped by the sign of the reconstructed forward velocity."""
@@ -197,15 +204,15 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         # TODO: Maybe check if there is sufficient data after the first static moment?
         data_after_first_static = data.iloc[start:]
         initial_orientation = get_gravity_rotation(first_static_acc_vec, GRAV_VEC)
-        self.ori_method_ = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-        self.ori_method_ = self.ori_method_.estimate(data_after_first_static, sampling_rate_hz)
-        acc_data = self.ori_method_.orientation_object_[:-1].apply(data_after_first_static[SF_ACC])
-        gyr_data = self.ori_method_.orientation_object_[:-1].apply(data_after_first_static[SF_GYR])
+        ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
+        ori_method = ori_method.estimate(data_after_first_static, sampling_rate_hz)
+        acc_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_ACC])
+        gyr_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_GYR])
 
         data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_COLS)
 
         # apply pos-method to estimate the forward movement direction
-        self.pos_method_ = self.pos_method.clone().estimate(data_wf, sampling_rate_hz)
+        pos_method = self.pos_method.clone().estimate(data_wf, sampling_rate_hz)
 
         # to ignore any rotation component around the rotation-/ heading-axis we again apply the inverse of the original
         # rotation around the specified rotation-axis on the estimated world frame velocity
@@ -221,11 +228,11 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         forward_vel_fix_heading = pd.DataFrame(
             Rotation.from_euler(
                 self.rotation_axis.lower(),
-                self.ori_method_.orientation_object_.as_euler(rotation_order[self.rotation_axis])[:, 0],
+                ori_method.orientation_object_.as_euler(rotation_order[self.rotation_axis])[:, 0],
             )
             .inv()
-            .apply(self.pos_method_.velocity_),
-            columns=self.pos_method_.velocity_.columns,
+            .apply(pos_method.velocity_),
+            columns=pos_method.velocity_.columns,
         )["vel_" + self.forward_direction.lower()]
 
         # Cut out the regions that are for sure not static
@@ -233,4 +240,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             forward_vel_fix_heading.abs() >= self.baseline_velocity_threshold
         ]
 
-        return bool(forward_vel_without_baseline.mean() < 0)
+        return {
+            "is_flipped": bool(forward_vel_without_baseline.mean() < 0),
+            "ori_method": ori_method,
+            "pos_method": pos_method,
+        }

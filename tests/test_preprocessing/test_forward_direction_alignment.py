@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_almost_equal
 from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseType
+from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseType
 from gaitmap.preprocessing.sensor_alignment import ForwardDirectionSignAlignment
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.rotations import rotate_dataset
@@ -40,6 +40,8 @@ class TestForwardDirectionSignAlignment:
         assert isinstance(fdsa.aligned_data_, pd.DataFrame)
         assert isinstance(fdsa.rotation_, Rotation)
         assert isinstance(fdsa.is_flipped_, bool)
+        assert isinstance(fdsa.ori_method_, BaseOrientationMethod)
+        assert isinstance(fdsa.pos_method_, BasePositionMethod)
 
     def test_multi_sensor_input(self, healthy_example_imu_data):
         """Dummy test to see if the algorithm is generally working on the example data"""
@@ -54,6 +56,8 @@ class TestForwardDirectionSignAlignment:
             assert isinstance(fdsa.aligned_data_[sensor], pd.DataFrame)
             assert isinstance(fdsa.rotation_[sensor], Rotation)
             assert isinstance(fdsa.is_flipped_[sensor], bool)
+            assert isinstance(fdsa.ori_method_[sensor], BaseOrientationMethod)
+            assert isinstance(fdsa.pos_method_[sensor], BasePositionMethod)
 
     def test_invalid_axis_combination(self):
         """Test if value error is raised correctly if invalid axis are defined."""
