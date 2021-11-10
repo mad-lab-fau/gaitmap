@@ -62,9 +62,9 @@ class TestForwardDirectionSignAlignment:
     def test_invalid_axis_combination(self):
         """Test if value error is raised correctly if invalid axis are defined."""
 
-        with pytest.raises(ValueError, match=r".*Invalid rotation aixs! *"):
+        with pytest.raises(ValueError, match=r".*Invalid rotation axis! *"):
             ForwardDirectionSignAlignment(forward_direction="x", rotation_axis="a").align(1, sampling_rate_hz=1)
-        with pytest.raises(ValueError, match=r".*Invalid forward direction aixs! *"):
+        with pytest.raises(ValueError, match=r".*Invalid forward direction axis! *"):
             ForwardDirectionSignAlignment(forward_direction="a", rotation_axis="x").align(1, sampling_rate_hz=1)
         with pytest.raises(ValueError, match=r".*Invalid combination of rotation and forward direction axis! *"):
             ForwardDirectionSignAlignment(forward_direction="x", rotation_axis="x").align(1, sampling_rate_hz=1)

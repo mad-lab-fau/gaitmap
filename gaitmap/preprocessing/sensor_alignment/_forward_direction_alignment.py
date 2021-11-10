@@ -153,8 +153,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             raise ValueError("Invalid forward direction axis! Axis must be one of x,y or z!")
         if self.rotation_axis.lower() == self.forward_direction.lower():
             raise ValueError(
-                "Invalid combination of rotation and forward direction axis! They can not be the same!"
-                f" Both are `{self.rotation_axis.lower()}`."
+                "Invalid combination of rotation and forward direction axis! They can not be the same! "
+                f"Both are `{self.rotation_axis.lower()}`."
             )
 
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")
