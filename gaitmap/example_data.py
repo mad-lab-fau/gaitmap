@@ -170,3 +170,25 @@ def get_healthy_example_position():
     data = data.groupby(level=0)
     data = {k: v.reset_index(drop=True, level=0) for k, v in data}
     return data
+
+
+def get_healthy_example_imu_data_stair_down():
+    """Get example IMU data from a healthy subject walking down a single staircase.
+
+    This data corresponds to the "stair_long_down_normal" of subject 11 in the MaD stair ambulation dataset
+
+    The sampling rate is 204.8 Hz
+    """
+    test_data_path = _get_data("imu_sample_healthy_stair_down.csv")
+    return pd.read_csv(test_data_path, header=[0, 1], index_col=0)
+
+
+def get_healthy_example_imu_data_stair_up():
+    """Get example IMU data from a healthy subject walking up a single staircase.
+
+    This data corresponds to the "stair_long_up_normal" of subject 11 in the MaD stair ambulation dataset
+
+    The sampling rate is 204.8 Hz
+    """
+    test_data_path = _get_data("imu_sample_healthy_stair_up.csv")
+    return pd.read_csv(test_data_path, header=[0, 1], index_col=0)

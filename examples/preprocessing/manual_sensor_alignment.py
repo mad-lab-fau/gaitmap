@@ -1,11 +1,18 @@
 r"""
 .. _example_preprocessing:
 
-Preprocessing
-=============
+Manual Sensor Alignment
+=======================
 
 This example illustrates the preprocessing pipeline, to make sure that coordinate system conventions are correct for the
 use of all gaitmap functions.
+
+In many cases manual alignment is the easiest way to get started, if the rough sensor orientation is known.
+This will be mostly the case for recordings in controlled environments.
+
+If the sensor orientation is not known, you can attempt to use an automatic sensor alignment, explained in the examples
+:ref:`example_automatic_sensor_alignment_detailed` and :ref:`example_automatic_sensor_alignment_simple`.
+
 """
 
 import matplotlib.pyplot as plt
@@ -24,14 +31,6 @@ from gaitmap.utils.consts import SF_ACC, SF_GYR
 example_dataset = get_healthy_example_imu_data_not_rotated()
 sampling_rate_hz = 204.8
 example_dataset.sort_index(axis=1).head(1)
-
-# %%
-# Calibration to physical units
-# -----------------------------
-# All gaitmap algorithms expect the sensor data to be properly calibrated to physical units. For accelerometer
-# units should be m/s^2 and for gyroscope deg/s.
-
-# Your job to make sure that the data is represented in the required physical units!
 
 # %%
 # Rotate to Sensor Frame Definition
