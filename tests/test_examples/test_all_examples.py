@@ -60,6 +60,44 @@ def test_preprocessing_example(snapshot):
     snapshot.assert_match(dataset_sf_aligned_to_gravity.to_numpy()[:1000])
 
 
+def test_sensor_alignment_detailed_example(snapshot):
+    from examples.preprocessing.sensor_alignment_example_detailed import (
+        forward_aligned_data,
+        gravity_aligned_data,
+        pca_aligned_data,
+    )
+
+    desired_acc_vec = np.array([0.0, 0.0, 9.81])
+
+    # check if at least first 5 samples of left- and right-sensor are correctly aligned to gravity
+    left_acc = pca_aligned_data["left_sensor"][SF_ACC].to_numpy()[:5, :]
+    right_acc = pca_aligned_data["right_sensor"][SF_ACC].to_numpy()[:5, :]
+
+    for acc_l, acc_r in zip(left_acc, right_acc):
+        np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
+        np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
+
+    # just check first 1000 rows to make sure that snapshot stays in a kB range
+    for sensor in ["left_sensor", "right_sensor"]:
+        snapshot.assert_match(gravity_aligned_data[sensor].to_numpy()[:1000])
+        snapshot.assert_match(pca_aligned_data[sensor].to_numpy()[:1000])
+        snapshot.assert_match(forward_aligned_data[sensor].to_numpy()[:1000])
+
+
+def test_sensor_alignment_detailed_simple(snapshot):
+    from examples.preprocessing.sensor_alignment_example_detailed import (
+        forward_aligned_data,
+        gravity_aligned_data,
+        pca_aligned_data,
+    )
+
+    # just check first 1000 rows to make sure that snapshot stays in a kB range
+    for sensor in ["left_sensor", "right_sensor"]:
+        snapshot.assert_match(gravity_aligned_data[sensor].to_numpy()[:1000])
+        snapshot.assert_match(pca_aligned_data[sensor].to_numpy()[:1000])
+        snapshot.assert_match(forward_aligned_data[sensor].to_numpy()[:1000])
+
+
 def test_temporal_parameters(snapshot):
     from examples.parameters.temporal_parameters import p
 
