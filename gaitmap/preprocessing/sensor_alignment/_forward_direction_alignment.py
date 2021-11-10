@@ -1,4 +1,4 @@
-"""Correct for 180 degree missalignment between sensor and foot coordinat frame based on forward direction."""
+"""Correct for 180 degree misalignments between sensor and foot coordinate frame based on forward direction."""
 
 from typing import Dict, TypeVar, Union
 
@@ -10,8 +10,8 @@ from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseSensorAl
 from gaitmap.trajectory_reconstruction import MadgwickAHRS, PieceWiseLinearDedriftedIntegration
 from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
-from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR, SF_COLS
+from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, SingleSensorData
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset
 from gaitmap.zupt_detection import NormZuptDetector
 
@@ -24,7 +24,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     This method applies a fixed 0deg or 180deg flip of the coordinate system to match the sensor frame with the expected
     forward direction. This step is necessary as a subsequent step of other alignment methods which are sign invariant
     like for example a alignment via PCA. Such methods can only align the sensor frame with a given target plane but
-    cannot ensure the correct "direction" of the coordinate frame. Therefore an additional 180deg rotation might be
+    cannot ensure the correct "direction" of the coordinate frame. Therefore, an additional 180deg rotation might be
     necessary. The forward direction is estimated by a strapdown integration of the given IMU data and evaluation of the
     sign of the primary velocity component of the expected forward direction. To ensure only the forward component
     within the sensor frame is considered rotations around the yaw axis within the global frame are ignored. The sign
@@ -61,11 +61,16 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data. For
         this class the rotation corresponds either to a 0deg or 180deg rotation.
     is_flipped_
-        Boolean indicating if the data is flipped
+        Boolean indicating if the data is flipped (aka 180 deg rotation required)
     ori_method_
-        Reference to the orientation method object after alignment
+        Reference to the orientation method object after alignment.
+        This contains the calculated orientations.
+        This is mostly useful for debugging.
     pos_method_
         Reference to the position method object after alignment
+        This contains the calculated velocities and positions.
+        Note, that these will equivalent to the full sensor trajectory in the world frame.
+        This is mostly useful for debugging.
 
     Other Parameters
     ----------------
@@ -83,6 +88,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     >>> fdsa.aligned_data_['left_sensor']
     <copy of dataset with axis aligned to the medio-lateral plane>
     ...
+    >>> fdsa.is_flipped_  # True when the data was rotated by 180 deg, False afterwise
+    True
 
     Notes
     -----
@@ -92,21 +99,21 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     See Also
     --------
-    gaitmap.preprocessing.sensor_alignment._pca_alignment.PcaAlignment: Details on the PCA based alignment method.
+    gaitmap.preprocessing.sensor_alignment.PcaAlignment: Details on the PCA based alignment method.
 
     """
 
-    rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
-
-    zupt_detector_orientation_init_: BaseZuptDetector
-    pos_method_: BasePositionMethod
-    pos_method: BasePositionMethod
-    ori_method_: BaseOrientationMethod
     ori_method: BaseOrientationMethod
-    is_flipped_: bool
+    zupt_detector_orientation_init: BaseZuptDetector
+    pos_method: BasePositionMethod
 
     data: SensorData
     sampling_rate_hz: float
+
+    rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
+    is_flipped_: Union[bool, Dict[_Hashable, bool]]
+    pos_method_: BasePositionMethod
+    ori_method_: BaseOrientationMethod
 
     def __init__(
         self,
@@ -164,7 +171,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
         return self
 
-    def _align_heading_single_sensor(self, data, sampling_rate_hz):
+    def _align_heading_single_sensor(self, data: SingleSensorData, sampling_rate_hz: float):
         """Align single sensor data."""
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
@@ -176,28 +183,35 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
         return {"aligned_data": rotate_dataset(data, r), "rotation": r, "is_flipped": is_flipped}
 
-    def _forward_direction_is_flipped(self, data: np.ndarray, sampling_rate_hz: float):
+    def _forward_direction_is_flipped(self, data: SingleSensorData, sampling_rate_hz: float):
         """Estimate if data is 180deg flipped by the sign of the reconstructed forward velocity."""
         # estimate initial orientation for ori method from first static acc region
-        zupts_initial_ori = self.zupt_detector_orientation_init.detect(data, sampling_rate_hz).zupts_
+        zupts_initial_ori = self.zupt_detector_orientation_init.clone().detect(data, sampling_rate_hz).zupts_
         # only consider the very first static moment
         start, end = zupts_initial_ori.to_numpy()[0]
         first_static_acc_vec = data[SF_ACC].iloc[start:end].median().to_numpy()
 
         # apply ori-method filter to rotate sensor frame into the global world frame
+        # Note we only track the trajectory after the first static moment.
+        # This should be sufficient to find the forward direction.
+        # TODO: Maybe check if there is sufficient data after the first static moment?
+        data_after_first_static = data.iloc[start:]
         initial_orientation = get_gravity_rotation(first_static_acc_vec, GRAV_VEC)
         self.ori_method_ = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-        self.ori_method_ = self.ori_method_.estimate(data.iloc[start:], sampling_rate_hz)
-        acc_data = self.ori_method_.orientation_object_[:-1].apply(data.iloc[start:][SF_ACC])
-        gyr_data = self.ori_method_.orientation_object_[:-1].apply(data.iloc[start:][SF_GYR])
+        self.ori_method_ = self.ori_method_.estimate(data_after_first_static, sampling_rate_hz)
+        acc_data = self.ori_method_.orientation_object_[:-1].apply(data_after_first_static[SF_ACC])
+        gyr_data = self.ori_method_.orientation_object_[:-1].apply(data_after_first_static[SF_GYR])
 
-        data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_ACC + SF_GYR)
+        data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_COLS)
 
         # apply pos-method to estimate the forward movement direction
-        self.pos_method_ = self.pos_method.estimate(data_wf, sampling_rate_hz)
+        self.pos_method_ = self.pos_method.clone().estimate(data_wf, sampling_rate_hz)
 
         # to ignore any rotation component around the rotation-/ heading-axis we again apply the inverse of the original
         # rotation around the specified rotation-axis on the estimated world frame velocity
+        # We do that by transforming th rotation into euler angels.
+        # By defining the order of the angles, we ensure that the rotation we want to rotate around has the range
+        # -180 to +180 deg
         rotation_order = {
             "x": "xyz",
             "y": "yzx",
@@ -214,8 +228,9 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             columns=self.pos_method_.velocity_.columns,
         )["vel_" + self.forward_direction.lower()]
 
+        # Cut out the regions that are for sure not static
         forward_vel_without_baseline = forward_vel_fix_heading[
-            (forward_vel_fix_heading <= -self.baseline_velocity_threshold)
-            | (forward_vel_fix_heading >= self.baseline_velocity_threshold)
+            forward_vel_fix_heading.abs() >= self.baseline_velocity_threshold
         ]
+
         return bool(forward_vel_without_baseline.mean() < 0)

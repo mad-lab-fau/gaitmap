@@ -48,7 +48,7 @@ rotated_dataset = rotate_dataset(example_dataset, z_axis_rotation * x_axis_rotat
 # %%
 # Visualize the original and misaligned/ rotated dataset
 
-_, axs = plt.subplots(2, 2, figsize=(13, 6))
+fig, axs = plt.subplots(2, 2, figsize=(13, 6))
 axs[0, 0].plot(example_dataset[sensor].iloc[:5000][SF_ACC])
 axs[0, 1].plot(rotated_dataset[sensor].iloc[:5000][SF_ACC])
 for ax in axs[0]:
@@ -63,7 +63,7 @@ axs[0, 0].set_title("Acceleration - original")
 axs[1, 0].set_title("Gyroscope - original")
 axs[0, 1].set_title("Acceleration - rotated")
 axs[1, 1].set_title("Gyroscope - rotated")
-plt.tight_layout()
+fig.tight_layout()
 
 
 # %%
@@ -74,7 +74,7 @@ plt.tight_layout()
 # This step will correct for misalignments around the x- and y-axis. Therefore, we will use a static-moment-detection,
 # to derive the absolute sensor orientation based on static accelerometer windows and find the shortest rotation to
 # gravity. The sensor coordinate system will be finally rotated, such that all static accelerometer windows will be
-# close to acc = [0.0, 0.0, 9.81].
+# close to `acc = [0.0, 0.0, 9.81]`.
 
 from gaitmap.preprocessing import align_dataset_to_gravity
 
@@ -85,7 +85,7 @@ gravity_aligned_data = align_dataset_to_gravity(
 # %%
 # Visualize the result of the gravity alignment
 
-_, axs = plt.subplots(2, 3, figsize=(13, 6))
+fig, axs = plt.subplots(2, 3, figsize=(13, 6))
 axs[0, 0].plot(example_dataset[sensor].iloc[:1000][SF_ACC])
 axs[0, 1].plot(rotated_dataset[sensor].iloc[:1000][SF_ACC])
 axs[0, 2].plot(gravity_aligned_data[sensor].iloc[:1000][SF_ACC])
@@ -106,7 +106,7 @@ axs[1, 1].set_title("Gyroscope - rotated")
 axs[0, 2].set_title("Acceleration - gravity aligned")
 axs[1, 2].set_title("Gyroscope - gravity aligned")
 
-plt.tight_layout()
+fig.tight_layout()
 
 # %%
 # Heading Alignment
@@ -119,7 +119,7 @@ plt.tight_layout()
 # To find the misalignment of the heading to the sagittal plane we will perform a Principle Component Analysis (PCA) of
 # the gyroscope data in the x-y plane. We assume that the main component found by the PCA corresponds to the
 # medio-lateral axis.
-
+#
 # However, the used PCA implementation will define the sign of this main component pointing towards the highest
 # variance. Therefore, we found the sagittal plane but still miss the actual forward direction. Hence we
 # still might require a final 180 deg flip around the z-axis. This will heavily depend on your input data. In some cases
@@ -245,9 +245,10 @@ import numpy as np
 
 pca_rotation = pca_alignment.rotation_[sensor]
 
-# let look at the rotation angles in degree
-# we see that the PCA alignment method applys a pure heading correction, which is similar to our initial misalignment
-# around the z-axis of 70 deg
+# %%
+# Lets look at the rotation angles in degree.
+# We see that the PCA alignment method applys a pure heading correction, which is similar to our initial misalignment
+# around the z-axis of 70 deg.
 rot_angles = np.rad2deg(pca_rotation.as_euler("xyz"))
 print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
 
@@ -257,9 +258,9 @@ print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_
 # --------------------------------
 # To find the sign of the forward direction we will perform an actual trajectory reconstruction and consider the sign of
 # the sensor velocity in the foot posterior-anterior direction. As we do not yet have any information about strides
-# available we will use zero velocity detectors for drift compensation and apply a piece wise linear drift compensation.
+# available we will use zero velocity detectors for drift compensation and apply a piecewise-linear-drift-compensation.
 # To ensure that the forward direction is always aligned with the sensor frame, the heading component will be ignored
-# during the transformation of the sensor- to the world-frame during trajectory reconstruction
+# during the transformation of the sensor- to the world-frame during trajectory reconstruction.
 
 from gaitmap.preprocessing.sensor_alignment import ForwardDirectionSignAlignment
 from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS
@@ -287,7 +288,7 @@ forward_aligned_data = fdsa.aligned_data_
 # %%
 # Visualize the process of the forward direction alignment
 
-_, axs = plt.subplots(2, 3, figsize=(13, 6))
+fig, axs = plt.subplots(2, 3, figsize=(13, 6))
 axs[0, 0].plot(example_dataset[sensor].iloc[:1000][SF_ACC])
 axs[0, 1].plot(pca_aligned_data[sensor].iloc[:1000][SF_ACC])
 axs[0, 2].plot(forward_aligned_data[sensor].iloc[:1000][SF_ACC])
@@ -309,14 +310,15 @@ axs[1, 1].set_title("Gyroscope - PCA aligned")
 axs[0, 2].set_title("Acceleration - forward aligned")
 axs[1, 2].set_title("Gyroscope - forward aligned")
 
-plt.tight_layout()
+fig.tight_layout()
 
 # %%
 # Check the resulting rotation object
 
 fdsa_rotation = fdsa.rotation_[sensor]
 
-# let look at the rotation angles in degree
+# %%
+# Lets look at the rotation angles in degree.
 rot_angles = np.rad2deg(fdsa_rotation.as_euler("xyz"))
 print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
 
@@ -347,5 +349,5 @@ print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_
 # **Forward Direction Sign Alignment:**
 # * This function relies on a valid trajectory reconstruction, therefore Orientation and Position method hyperparameters
 #   might require some tuning.
-# * Second the `baseline_velocity_threshold` can be increased to exlcude the influence of static samples (aka where no
-#   movement/ velocity is present and therefore cannot add any information about the forward direction.
+# * Second the `baseline_velocity_threshold` can be increased to exclude the influence of static samples (aka where no
+#   movement/ velocity is present) and therefore, cannot add any information about the forward direction.

@@ -85,7 +85,7 @@ forward_aligned_data = (
 )
 
 # %%
-# Visualize the result of the gravity alignment
+# Visualize the result of the sensor alignment
 
 _, axs = plt.subplots(2, 3, figsize=(13, 6))
 axs[0, 0].plot(example_dataset[sensor].iloc[:1000][SF_ACC])
