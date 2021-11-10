@@ -1,8 +1,8 @@
 r"""
 .. _example_preprocessing:
 
-Preprocessing
-=============
+Manual Alignment
+================
 
 This example illustrates the preprocessing pipeline, to make sure that coordinate system conventions are correct for the
 use of all gaitmap functions.

@@ -23,7 +23,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     This method applies a fixed 0deg or 180deg flip of the coordinate system to match the sensor frame with the expected
     forward direction. This step is necessary as a subsequent step of other alignment methods which are sign invariant
-    like for example a alignment via PCA. Such methods can only align the sensor frame with a given target plane but
+    like for example an alignment via PCA. Such methods can only align the sensor frame with a given target plane but
     cannot ensure the correct "direction" of the coordinate frame. Therefore, an additional 180deg rotation might be
     necessary. The forward direction is estimated by a strapdown integration of the given IMU data and evaluation of the
     sign of the primary velocity component of the expected forward direction. To ensure only the forward component
@@ -81,7 +81,8 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     Examples
     --------
-    Estimate the sign of the forward direction velocity and apply a 0deg or 180deg flip on the data accordingly
+    Estimate the sign of the forward direction velocity and apply a 0deg or 180deg flip on the data accordingly. This
+    step is usually a subsequent step of a previous sign invariant alignment step like the PCA alignment.
 
     >>> fdsa = ForwardDirectionSignAlignment(forward_direction="x", rotation_axis="z", baseline_velocity_threshold=0.2)
     >>> fdsa = fdsa.align(data, 204.8)

@@ -1,12 +1,14 @@
 r"""
-.. _example_sensor_alignment:
+.. _example_automatic_sensor_alignment_detailed:
 
-Sensor Alignment Detailed
-=========================
+Automatic Sensor Alignment Detailed
+===================================
 
-This example illustrates the sensor alignment pipeline, to make sure that the sensor coordinate frame is properly
-aligned with the foot. This might be necessary e.g. in real-world datasets where participants attach and detach the
-sensor frequently and possibly place the sensor in unintended orientations like upside down or 90/180deg rotated.
+This example illustrates all individual steps of an automatic sensor alignment pipeline, to make sure that the sensor
+coordinate frame is properly aligned with the foot, independent of the actual sensor attachment. This might be necessary
+e.g. in real-world datasets where participants attach and detach the sensor frequently and possibly place the sensor in
+unintended orientations like upside down or 90/180deg rotated. A minimal example of the automatic sensor alignment using
+ only defaults can be found here: :ref:`example_automatic_sensor_alignment_simple`
 """
 
 import matplotlib.pyplot as plt
@@ -120,10 +122,13 @@ fig.tight_layout()
 # the gyroscope data in the x-y plane. We assume that the main component found by the PCA corresponds to the
 # medio-lateral axis.
 #
-# However, the used PCA implementation will define the sign of this main component pointing towards the highest
-# variance. Therefore, we found the sagittal plane but still miss the actual forward direction. Hence we
-# still might require a final 180 deg flip around the z-axis. This will heavily depend on your input data. In some cases
-# the sign of the PCA might already match the forward direction.
+# However, the used PCA implementation will define the sign of this main component based on the distribution of your
+# input data which does not necessarily fit the expected forward direction. Therefore, we cannot just rely on the sign
+# of the PCA and only use it to find the sagittal plane but still miss the actual forward direction. Hence we
+# still might require a final 180 deg flip around the z-axis. Again: This will heavily depend on your input data. In
+# some cases the sign of the PCA might already match the forward direction. However, to not run into a 50:50 chance we
+# will need to add an additionally processing step to reliably detect the actual forward direction, which will be
+# demonstrated in the following sections.
 
 from gaitmap.preprocessing.sensor_alignment import PcaAlignment
 
@@ -132,7 +137,7 @@ pca_alignment = pca_alignment.align(gravity_aligned_data)
 pca_aligned_data = pca_alignment.aligned_data_
 
 # %%
-# Visualize the result of the pca/ heading alignment
+# Visualize the result of the pca/ heading alignment.
 
 _, axs = plt.subplots(2, 3, figsize=(13, 6))
 axs[0, 0].plot(example_dataset[sensor].iloc[:1000][SF_ACC])
@@ -159,7 +164,9 @@ axs[1, 2].set_title("Gyroscope - PCA aligned")
 plt.tight_layout()
 
 # %%
-# Visualize the process of the PCA alignment
+# Visualize the process of the PCA alignment. We can clearly see that the PCA alignment found the desired
+# sagittal plane but with an 180deg misalignment, which still must be addressed in the last step of the presented
+# pipeline.
 
 fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -173,7 +180,7 @@ for ax in axs:
         0.0,
         0.0,
         0,
-        500,
+        -500,
         head_width=25,
         head_length=25,
         linewidth=2,
@@ -185,7 +192,7 @@ for ax in axs:
     ax.arrow(
         0.0,
         0.0,
-        500,
+        -500,
         0,
         head_width=25,
         head_length=25,
@@ -195,8 +202,8 @@ for ax in axs:
         ls=":",
         zorder=5,
     )
-    ax.text(25, 500, "World X", c="b")
-    ax.text(500, -60, "World Y", c="orange")
+    ax.text(25, -550, 'Anterior Direction ("X")', c="b")
+    ax.text(-700, 60, 'Lateral Direction ("Y")', c="orange")
     ax.set_ylim([-800, 800])
     ax.set_xlim([-800, 800])
     ax.axvline(0, c="k", ls="--", alpha=0.5, zorder=-1)
@@ -205,7 +212,7 @@ for ax in axs:
     ax.set_ylabel("gyr-y")
 
 axs[0].text(460, 200, "Sensor X", c="lime")
-axs[0].text(200, -500, "Sensor Y", c="r")
+axs[0].text(200, -450, "Sensor Y", c="r")
 axs[0].arrow(
     0.0,
     0.0,
@@ -230,8 +237,8 @@ axs[0].arrow(
 )
 axs[1].arrow(0.0, 0.0, 0, 500, head_width=25, head_length=25, linewidth=2, color="lime", length_includes_head=True)
 axs[1].arrow(0.0, 0.0, 500, 0, head_width=25, head_length=25, linewidth=2, color="r", length_includes_head=True)
-axs[1].text(-220, 500, "Sensor X", c="lime")
-axs[1].text(500, 40, "Sensor Y", c="r")
+axs[1].text(40, 540, "Sensor X", c="lime")
+axs[1].text(400, 40, "Sensor Y", c="r")
 
 axs[0].set_title("Before Alignment")
 axs[1].set_title("After PCA Alignment")
@@ -247,8 +254,7 @@ pca_rotation = pca_alignment.rotation_[sensor]
 
 # %%
 # Lets look at the rotation angles in degree.
-# We see that the PCA alignment method applys a pure heading correction, which is similar to our initial misalignment
-# around the z-axis of 70 deg.
+# We see that the PCA alignment method applies a pure heading correction.
 rot_angles = np.rad2deg(pca_rotation.as_euler("xyz"))
 print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
 
@@ -256,11 +262,14 @@ print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_
 # %%
 # Forward Direction Sign Alignment
 # --------------------------------
-# To find the sign of the forward direction we will perform an actual trajectory reconstruction and consider the sign of
-# the sensor velocity in the foot posterior-anterior direction. As we do not yet have any information about strides
-# available we will use zero velocity detectors for drift compensation and apply a piecewise-linear-drift-compensation.
-# To ensure that the forward direction is always aligned with the sensor frame, the heading component will be ignored
-# during the transformation of the sensor- to the world-frame during trajectory reconstruction.
+# As previously mentioned the sign of the PCA is considered more or less random and will rely on the distribution of
+# your input data. Therefore, the PCA alignment might require an additional 180deg flip to fix the missing sing or aka
+# align the sensor to the forward direction. To find the sign of the forward direction we will perform an actual
+# trajectory reconstruction and consider the sign of the sensor velocity in the foot posterior-anterior direction. As we
+# do not yet have any information about strides available we will use zero velocity detectors for drift compensation and
+# apply a piecewise-linear-drift-compensation. To ensure that the forward direction is always aligned with the sensor
+# frame, the heading component will be ignored during the transformation of the sensor- to the world-frame during
+# trajectory reconstruction.
 
 from gaitmap.preprocessing.sensor_alignment import ForwardDirectionSignAlignment
 from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS
@@ -318,36 +327,17 @@ fig.tight_layout()
 fdsa_rotation = fdsa.rotation_[sensor]
 
 # %%
-# Lets look at the rotation angles in degree.
+# Lets look at the rotation angles in degree. The forward direction sign alignment applied the required 180deg flip to
+# the data.
 rot_angles = np.rad2deg(fdsa_rotation.as_euler("xyz"))
 print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
 
 # %%
+# As a final result of the automatic alignment pipeline all misalignment around all axis were subsequently fixed.
+# Therefore, the sensor coordinate system is now ideally aligned with the foot and the data can be further processed
+# to derive gait and stride parameters.
+
+# %%
 # Troubleshooting
 # ---------------
-# The alignment of the sensor to the foot might fail during windows which do not contain enough valid gait data! The
-# PCA alignment and forward direction sign alignment are based on assumptions which are valid during gait (including
-# stair ambulation) however will most certainly not hold for either static windows or non gait activities!
-#
-# Although default values were chosen to work hopefully on most movement sequences containing gait, the sensor alignment
-# pipeline contains a bunch of tunable hyperparameters which might need to be adapted for your special case.
-#
-# **Hyperparameter Tuning:**
-#
-# **Gravity Alignment:**
-# * First you could try to **increase** the **threshold**: The threshold refers to the metric calculated over the given
-#   window on the norm of the gyroscope. So given the default metric "median" this means, a window will be considered
-#   static if the median of the gyroscope norm is lower than the given threshold within the window length.
-#
-# * Second you could try to **lower** the **window length**: The shorter the window length, the higher the chance that
-#   there is sequence of samples which will be below your set threshold.
-#
-# **PCA Alignment:**
-# * Here only axis definitions can be adapted, however the default values are already chosen to conform to gaitmap
-#   coordinate conventions
-#
-# **Forward Direction Sign Alignment:**
-# * This function relies on a valid trajectory reconstruction, therefore Orientation and Position method hyperparameters
-#   might require some tuning.
-# * Second the `baseline_velocity_threshold` can be increased to exclude the influence of static samples (aka where no
-#   movement/ velocity is present) and therefore, cannot add any information about the forward direction.
+# Refer to :ref:`example_automatic_sensor_alignment_simple`

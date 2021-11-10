@@ -1,12 +1,14 @@
 r"""
-.. _example_sensor_alignment:
+.. _example_automatic_sensor_alignment_simple:
 
-Sensor Alignment Simple
-=======================
+Automatic Sensor Alignment Simple
+=================================
 
-This example illustrates the sensor alignment pipeline, to make sure that the sensor coordinate frame is properly
-aligned with the foot. This might be necessary e.g. in real-world datasets where participants attach and detach the
-sensor frequently and possibly place the sensor in unintended orientations like upside down or 90/180deg rotated.
+This example illustrates a minimal version of an automatic sensor alignment pipeline, to make sure that the sensor
+coordinate frame is properly aligned with the foot, independent of the actual sensor attachment. This might be necessary
+e.g. in real-world datasets where participants attach and detach the sensor frequently and possibly place the sensor in
+unintended orientations like upside down or 90/180deg rotated. A more detailed example can be found here:
+:ref:`example_automatic_sensor_alignment_detailed`
 """
 
 import matplotlib.pyplot as plt
@@ -110,3 +112,38 @@ axs[0, 2].set_title("Acceleration - aligned")
 axs[1, 2].set_title("Gyroscope - aligned")
 
 plt.tight_layout()
+
+# %%
+# Troubleshooting
+# ---------------
+# The alignment of the sensor to the foot might fail during windows which do not contain enough valid gait data! The
+# PCA alignment and forward direction sign alignment are based on assumptions which are valid during gait (including
+# stair ambulation) however will most certainly not hold for either static windows or non gait activities!
+#
+# As this pipeline applies the same, single coordinate transformation (all rotations of the individual steps could be
+# combined to a single one) to all samples within the given sequence this should be applied only for sequences where a
+# constant misalignment is assumed. This assumption is usually valid for at least one walking bout, as a major change in
+# the sensor attachment is unlikely to happen during gait. However, in between walking bouts participants might attach
+# and detach sensor units (especially during continuous real-world recordings) and therefore misalignment might change
+# between bouts. Therefore, it is recommended to apply the alignment steps for each bout individually instead of
+# processing whole real-world datasets at once.
+#
+# Although default values were chosen to work hopefully on most movement sequences containing gait, the sensor alignment
+# pipeline contains a bunch of tunable hyperparameters which might need to be adapted for your special case.
+#
+# **Hyperparameter Tuning:**
+#
+# **Gravity Alignment:**
+# Refer to :ref:`example_preprocessing`
+#
+# **PCA Alignment:**
+# * Here only axis definitions can be adapted, however the default values are already chosen to conform to gaitmap
+#   coordinate conventions
+#
+# **Forward Direction Sign Alignment:**
+# * This function relies on a valid trajectory reconstruction, therefore Orientation and Position method hyperparameters
+#   might require some tuning.
+# * Second the `baseline_velocity_threshold` can be increased to exclude the influence of regions without movement
+# (aka where no forward velocity is present) and therefore, cannot add any information about the forward direction.
+# This might be necessary if the proportion of non-movement samples is much higher than movement samples in the
+# respective processed sequence.
