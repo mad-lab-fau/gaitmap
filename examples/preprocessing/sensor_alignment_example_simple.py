@@ -20,10 +20,10 @@ import matplotlib.pyplot as plt
 # Furthermore, as this was a supervised recording, the alignment of the sensor to the shoe/ foot was manually aligned
 # before the recording. The data contains synchronized data from two sensors - one from the right and one from the left
 # foot.
-from gaitmap.example_data import get_ms_example_imu_data
+from gaitmap.example_data import get_healthy_example_imu_data
 from gaitmap.utils.consts import SF_ACC, SF_GYR
 
-example_dataset = get_ms_example_imu_data()
+example_dataset = get_healthy_example_imu_data()
 sampling_rate_hz = 204.8
 # for simplicity we will only look at one foot in this example. However, all functions work the same way on both feet.
 sensor = "right_sensor"
@@ -71,9 +71,8 @@ plt.tight_layout()
 # -------------------------
 # Now we apply all necessary steps for a full sensor to foot alignment procedure. This includes:
 # * Gravity alignment
-# * Heading alignment:
-#   * PCA alignment
-#   * Forward direction sign alignment
+# * PCA alignment (as part of heading alignment)
+# * Forward direction sign alignment (as part of heading alignment)
 
 from gaitmap.preprocessing.sensor_alignment import ForwardDirectionSignAlignment, PcaAlignment, align_dataset_to_gravity
 

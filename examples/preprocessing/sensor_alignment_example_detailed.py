@@ -342,7 +342,7 @@ print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_
 #
 # **PCA Alignment:**
 # * Here only axis definitions can be adapted, however the default values are already chosen to conform to gaitmap
-# coordinate conventions
+#   coordinate conventions
 #
 # **Forward Direction Sign Alignment:**
 # * This function relies on a valid trajectory reconstruction, therefore Orientation and Position method hyperparameters
