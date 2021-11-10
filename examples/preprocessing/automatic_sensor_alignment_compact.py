@@ -1,8 +1,8 @@
 r"""
 .. _example_automatic_sensor_alignment_simple:
 
-Automatic Sensor Alignment Simple
-=================================
+Automatic sensor alignment
+==========================
 
 This example illustrates a minimal version of an automatic sensor alignment pipeline, to make sure that the sensor
 coordinate frame is properly aligned with the foot, independent of the actual sensor attachment. This might be necessary
@@ -69,7 +69,7 @@ plt.tight_layout()
 
 
 # %%
-# Sensor Alignment Pipeline
+# Sensor alignment pipeline
 # -------------------------
 # Now we apply all necessary steps for a full sensor to foot alignment procedure. This includes:
 # * Gravity alignment
@@ -114,6 +114,17 @@ axs[1, 2].set_title("Gyroscope - aligned")
 plt.tight_layout()
 
 # %%
+# Performance considerations
+# --------------------------
+# During alignment multiple copies of the input data are created and the calculated orientations and positions stored
+# on the result objects.
+# This can lead to substantial RAM usage.
+# Therefore, it might be a good idea to explicitly delete the intermediate data and used algorithm objects after the
+# alignment.
+del gravity_aligned_data
+del pca_aligned_data
+
+# %%
 # Troubleshooting
 # ---------------
 # The alignment of the sensor to the foot might fail during windows which do not contain enough valid gait data! The
@@ -121,10 +132,10 @@ plt.tight_layout()
 # stair ambulation) however will most certainly not hold for either static windows or non gait activities!
 #
 # As this pipeline applies the same, single coordinate transformation (all rotations of the individual steps could be
-# combined to a single one) to all samples within the given sequence this should be applied only for sequences where a
+# combined to a single one) to all samples within the given sequence, it should be applied only to sequences where a
 # constant misalignment is assumed. This assumption is usually valid for at least one walking bout, as a major change in
 # the sensor attachment is unlikely to happen during gait. However, in between walking bouts participants might attach
-# and detach sensor units (especially during continuous real-world recordings) and therefore misalignment might change
+# and detach sensor units (especially during continuous real-world recordings) and therefore, misalignment might change
 # between bouts. Therefore, it is recommended to apply the alignment steps for each bout individually instead of
 # processing whole real-world datasets at once.
 #
@@ -137,13 +148,15 @@ plt.tight_layout()
 # Refer to :ref:`example_preprocessing`
 #
 # **PCA Alignment:**
+#
 # * Here only axis definitions can be adapted, however the default values are already chosen to conform to gaitmap
 #   coordinate conventions
 #
 # **Forward Direction Sign Alignment:**
+#
 # * This function relies on a valid trajectory reconstruction, therefore Orientation and Position method hyperparameters
 #   might require some tuning.
 # * Second the `baseline_velocity_threshold` can be increased to exclude the influence of regions without movement
-# (aka where no forward velocity is present) and therefore, cannot add any information about the forward direction.
-# This might be necessary if the proportion of non-movement samples is much higher than movement samples in the
-# respective processed sequence.
+#   (aka where no forward velocity is present) and therefore, cannot add any information about the forward direction.
+#   This might be necessary if the proportion of non-movement samples is much higher than movement samples in the
+#   respective processed sequence.

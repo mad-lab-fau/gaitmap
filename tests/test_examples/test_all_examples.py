@@ -44,7 +44,7 @@ def test_roi(snapshot):
 
 
 def test_preprocessing_example(snapshot):
-    from examples.preprocessing.preprocessing_example import dataset_sf_aligned_to_gravity
+    from examples.preprocessing.manual_sensor_alignment import dataset_sf_aligned_to_gravity
 
     desired_acc_vec = np.array([0.0, 0.0, 9.81])
 
@@ -61,7 +61,7 @@ def test_preprocessing_example(snapshot):
 
 
 def test_sensor_alignment_detailed_example(snapshot):
-    from examples.preprocessing.sensor_alignment_example_detailed import (
+    from examples.preprocessing.automatic_sensor_alignment_details import (
         forward_aligned_data,
         gravity_aligned_data,
         pca_aligned_data,
@@ -85,7 +85,7 @@ def test_sensor_alignment_detailed_example(snapshot):
 
 
 def test_sensor_alignment_detailed_simple(snapshot):
-    from examples.preprocessing.sensor_alignment_example_detailed import (
+    from examples.preprocessing.automatic_sensor_alignment_details import (
         forward_aligned_data,
         gravity_aligned_data,
         pca_aligned_data,

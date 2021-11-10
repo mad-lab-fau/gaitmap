@@ -148,13 +148,13 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         if self.pos_method and not isinstance(self.pos_method, BasePositionMethod):
             raise ValueError("The provided `pos_method` must be a child class of `BasePositionMethod`.")
         if self.rotation_axis.lower() not in "xyz":
-            raise ValueError("Invalid rotation aixs! Axis must be one of x,y or z!")
+            raise ValueError("Invalid rotation axis! Axis must be one of x,y or z!")
         if self.forward_direction.lower() not in "xyz":
-            raise ValueError("Invalid forward direction aixs! Axis must be one of x,y or z!")
+            raise ValueError("Invalid forward direction axis! Axis must be one of x,y or z!")
         if self.rotation_axis.lower() == self.forward_direction.lower():
             raise ValueError(
-                "Invalid combination of rotation and forward direction axis! Axes must be perpendicular "
-                "to each other!"
+                "Invalid combination of rotation and forward direction axis! They can not be the same!"
+                f" Both are `{self.rotation_axis.lower()}`."
             )
 
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")
