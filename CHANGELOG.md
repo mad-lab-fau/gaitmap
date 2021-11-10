@@ -14,13 +14,19 @@ project.
 
 - A new submodule for ZUPT-Detection Algorithms and a first implementation in form of the `NormZuptDetector`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/167)
-- New position method `PieceWiseLinearDedriftedIntegration` using piece wise linear dedrifted integration utilizing zupt
-  updates.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/166)
 - New sub module in preprocessing for sensor alignment functions
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161)
 - New algorithm `PcaAlignment` for sensor heading alignment using 2D PCA to align sensor frame to medio-lateral plane
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/161)
+- New position method `PieceWiseLinearDedriftedIntegration` using piece wise linear dedrifted integration utilizing zupt
+  updates.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/166)
+- A new algorithm (`ForwardDirectionSignAlignment`) to detect the walking direction to automatically align the sensor 
+  attachment orientation.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/171)
+- An example that explains how to automatically align a sensor to the gaitmap coordinate system, when it was attached in 
+  an arbitrary orientation.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/171)
 
 ### Changed
 
