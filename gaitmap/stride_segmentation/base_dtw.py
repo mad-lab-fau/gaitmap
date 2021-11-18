@@ -7,8 +7,6 @@ import pandas as pd
 from joblib import Memory
 from numba import njit
 from scipy.interpolate import interp1d
-from tslearn.metrics import subsequence_cost_matrix, subsequence_path
-from tslearn.utils import to_time_series
 from typing_extensions import Literal
 
 from gaitmap.base import BaseAlgorithm
@@ -17,6 +15,12 @@ from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
+
+# We do a late import of tslearn to avoid the annoying error messages
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="h5py not installed")
+    from tslearn.metrics import subsequence_cost_matrix, subsequence_path
+    from tslearn.utils import to_time_series
 
 Self = TypeVar("Self", bound="BaseDtw")
 
