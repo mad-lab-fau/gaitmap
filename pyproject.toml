@@ -27,6 +27,7 @@ numba =  [
 numpy = ">=1"
 joblib = "^1.0.0"
 scikit-learn = "^1.0.1"
+tpcp = {path = "../../private/tpcp", develop=true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"

@@ -24,14 +24,14 @@ import pandas as pd
 
 random.seed(1)  # We set the random seed for repeatable results
 
-from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-
 # %%
 # Dataset
 # -------
 # As always, we need a dataset, a pipeline, and a scoring method for a parameter search.
 # We reuse the dataset used in other pipeline examples.
-from gaitmap.future.dataset import Dataset
+from tpcp import Dataset
+
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 
 
 class MyDataset(Dataset):
@@ -61,7 +61,8 @@ class MyDataset(Dataset):
 # We add an additional parameter `n_train_strides` that controls how many randomly selected strides should be used
 # during training.
 # Modifying this parameter, will change the result of the `self_optimize` step.
-from gaitmap.future.pipelines import OptimizablePipeline
+from tpcp import OptimizablePipeline, default
+
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
@@ -78,7 +79,8 @@ class MyPipeline(OptimizablePipeline):
     def __init__(
         self,
         max_cost: float = 3,
-        template: DtwTemplate = BarthOriginalTemplate(),
+        # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
+        template: DtwTemplate = default(BarthOriginalTemplate()),
         n_train_strides: Optional[int] = None,
     ):
         self.max_cost = max_cost
@@ -180,7 +182,7 @@ parameters = ParameterGrid({"max_cost": [3, 5], "n_train_strides": [None, 1]})  
 # Setting up the GridSearchCV object is similar to the normal GridSearch, we just need to add the additional `cv`
 # parameter.
 # Then we can simply run the search using the `optimize` method.
-from gaitmap.future.pipelines import GridSearchCV
+from tpcp.optimize import GridSearchCV
 
 gs = GridSearchCV(pipeline=MyPipeline(), parameter_grid=parameters, scoring=score, cv=cv, return_optimized="f1_score")
 gs = gs.optimize(MyDataset())

@@ -5,10 +5,11 @@ from typing import Dict, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import default
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseSensorAlignment, BaseZuptDetector
 from gaitmap.trajectory_reconstruction import MadgwickAHRS, PieceWiseLinearDedriftedIntegration
-from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, get_multi_sensor_names, is_sensor_data

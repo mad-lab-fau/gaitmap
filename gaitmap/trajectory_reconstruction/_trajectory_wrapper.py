@@ -5,12 +5,13 @@ from typing import Dict, Optional, Sequence, Tuple, TypeVar
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import default
 from typing_extensions import Literal
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_ORI, GF_POS, GF_VEL, SF_ACC
 from gaitmap.utils.datatype_helper import (

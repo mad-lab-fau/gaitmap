@@ -7,9 +7,9 @@ import pandas as pd
 from numpy.polynomial import polynomial
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+from tpcp import default
 
 from gaitmap.base import BasePositionMethod, BaseZuptDetector
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data

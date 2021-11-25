@@ -1,19 +1,17 @@
 """Base class for all algorithms."""
 
-import inspect
 import json
-import types
 import warnings
-from collections import defaultdict
-from typing import Any, Callable, DefaultDict, Dict, List, Type, TypeVar, Union
+from typing import Any, Dict, Type, TypeVar, Union
 
 import numpy as np
 import pandas as pd
+import tpcp
 from joblib import Memory
 from scipy.spatial.transform import Rotation
+from tpcp._utils._general import _EMPTY
 
-from gaitmap.utils._algo_helper import clone
-from gaitmap.utils.consts import _EMPTY, GF_ORI
+from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
     OrientationList,
     PositionList,
@@ -72,51 +70,7 @@ def _custom_deserialize(json_obj):
     return json_obj
 
 
-class _BaseSerializable:
-    def __init__(self):
-        # clone all algorithm object that might be defaults to prevent issues with mutable defaults
-        for k, v in self.get_params(deep=False).items():
-            if getattr(v, "__DEFAULT", None):
-                setattr(self, k, v.clone())
-
-    @classmethod
-    def _get_param_names(cls) -> List[str]:
-        """Get parameter names for the estimator.
-
-        The parameters of an algorithm are defined based on its `__init__` method.
-        All parameters of this method are considered parameters of the algorithm.
-
-        Notes
-        -----
-        Adopted based on `sklearn BaseEstimator._get_param_names`.
-
-        Returns
-        -------
-        param_names
-            List of parameter names of the algorithm
-
-        """
-        # fetch the constructor or the original constructor before deprecation wrapping if any
-        init = cls.__init__
-        if init is object.__init__:
-            # No explicit constructor to introspect
-            return []
-
-        # introspect the constructor arguments to find the model parameters to represent
-        init_signature = inspect.signature(init)
-        # Consider the constructor parameters excluding 'self'
-        parameters = [p for p in init_signature.parameters.values() if p.name != "self" and p.kind != p.VAR_KEYWORD]
-        for p in parameters:
-            if p.kind == p.VAR_POSITIONAL:
-                raise RuntimeError(
-                    "gaitmap-algorithms should always specify their parameters in the signature of their "
-                    "__init__ (no varargs). {} with constructor {} doesn't follow this convention.".format(
-                        cls, init_signature
-                    )
-                )
-        # Extract and sort argument names excluding 'self'
-        return sorted([p.name for p in parameters])
-
+class _BaseSerializable(tpcp.BaseTpcpObject):
     @classmethod
     def _get_subclasses(cls: Type[BaseType]):
         for subclass in cls.__subclasses__():
@@ -137,75 +91,12 @@ class _BaseSerializable:
         instance = cls(**input_data)
         return instance
 
-    def _get_params_without_nested_class(self) -> Dict[str, Any]:
-        return {k: v for k, v in self.get_params().items() if not isinstance(v, _BaseSerializable)}
-
     def _to_json_dict(self) -> Dict[str, Any]:
         json_dict: Dict[str, Union[str, Dict[str, Any]]] = {
             "_gaitmap_obj": self.__class__.__name__,
             "params": self.get_params(deep=False),
         }
         return json_dict
-
-    def get_params(self, deep: bool = True) -> Dict[str, Any]:
-        """Get parameters for this algorithm.
-
-        Parameters
-        ----------
-        deep
-            Only relevant if object contains nested algorithm objects.
-            If this is the case and deep is True, the params of these nested objects are included in the output using a
-            prefix like `nested_object_name__` (Note the two "_" at the end)
-
-        Returns
-        -------
-        params
-            Parameter names mapped to their values.
-
-        """
-        # Basically copied from sklearn
-        out: Dict[str, Any] = {}
-        for key in self._get_param_names():
-            value = getattr(self, key)
-            if deep and isinstance(value, _BaseSerializable):
-                deep_items = value.get_params(deep=True).items()
-                out.update((key + "__" + k, val) for k, val in deep_items)
-            out[key] = value
-        return out
-
-    def set_params(self: BaseType, **params: Any) -> BaseType:
-        """Set the parameters of this Algorithm.
-
-        To set parameters of nested objects use `nested_object_name__para_name=`.
-        """
-        # Basically copied from sklearn
-        if not params:
-            # Simple optimization to gain speed (inspect is slow)
-            return self
-        valid_params = self.get_params(deep=True)
-
-        nested_params: DefaultDict[str, Any] = defaultdict(dict)  # grouped by prefix
-        for key, value in params.items():
-            key, delim, sub_key = key.partition("__")
-            if key not in valid_params:
-                raise ValueError("`{}` is not a valid parameter name for {}.".format(key, self.__class__.__name__))
-
-            if delim:
-                nested_params[key][sub_key] = value
-            else:
-                setattr(self, key, value)
-                valid_params[key] = value
-
-        for key, sub_params in nested_params.items():
-            valid_params[key].set_params(**sub_params)
-        return self
-
-    def clone(self: BaseType) -> BaseType:
-        """Create a new instance of the class with all parameters copied over.
-
-        This will create a new instance of the class itself and all nested gaitmap objects
-        """
-        return clone(self, safe=True)
 
     def to_json(self) -> str:
         """Export the current object parameters as json.
@@ -238,7 +129,7 @@ class _BaseSerializable:
         return instance
 
 
-class BaseAlgorithm(_BaseSerializable):
+class BaseAlgorithm(tpcp.BaseAlgorithm, _BaseSerializable):
     """Base class for all algorithms.
 
     All type-specific algorithm classes should inherit from this class and need to
@@ -252,67 +143,6 @@ class BaseAlgorithm(_BaseSerializable):
         The name of the action method used by the Childclass
 
     """
-
-    _action_method: str
-
-    @property
-    def _action_is_applied(self) -> bool:
-        """Check if the action method was already called/results were generated."""
-        if len(self.get_attributes()) == 0:
-            return False
-        return True
-
-    def _get_action_method(self) -> Callable:
-        """Get the action method as callable.
-
-        This is intended to be used by wrappers, that do not know the Type of an algorithm
-        """
-        return getattr(self, self._action_method)
-
-    def get_other_params(self) -> Dict[str, Any]:
-        """Get all "Other Parameters" of the Algorithm.
-
-        "Other Parameters" are all parameters set outside of the `__init__` that are not considered results.
-        This usually includes the "data" and all other parameters passed to the action method.
-
-        Returns
-        -------
-        params
-            Parameter names mapped to their values.
-
-        """
-        params = self.get_params()
-        attrs = {
-            v: getattr(self, v) for v in vars(self) if not v.endswith("_") and not v.startswith("_") and v not in params
-        }
-        return attrs
-
-    def get_attributes(self) -> Dict[str, Any]:
-        """Get all Attributes of the Algorithm.
-
-        "Attributes" are all values considered results of the algorithm.
-        They are indicated by a trailing "_" in their name.
-        The values are only populated after the action method of the algorithm was called.
-
-        Returns
-        -------
-        params
-            Parameter names mapped to their values.
-
-        Raises
-        ------
-        AttributeError
-            If one or more of the attributes are not retrievable from the instance.
-            This usually indicates that the action method was not called yet.
-
-        """
-        all_attributes = dir(self)
-        attrs = {
-            v: getattr(self, v)
-            for v in all_attributes
-            if v.endswith("_") and not v.startswith("__") and not isinstance(getattr(self, v), types.MethodType)
-        }
-        return attrs
 
 
 class BaseSensorAlignment(BaseAlgorithm):

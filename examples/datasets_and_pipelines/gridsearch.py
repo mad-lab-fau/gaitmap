@@ -8,6 +8,7 @@ Grid Search optimal Algorithm Parameter
 
 
 """
+import joblib
 import pandas as pd
 
 # %%
@@ -30,8 +31,9 @@ import pandas as pd
 # multiple sensor recordings at once).
 #
 # For our GridSearch, we need an instance of this dataset.
+from tpcp import Dataset
+
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.future.dataset import Dataset
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
@@ -76,7 +78,8 @@ dataset
 # The parameter `max_cost` of this algorithm is exposed and will be optimized as part of the GridSearch.
 #
 # For the final GridSearch, we need an instance of the pipeline object.
-from gaitmap.future.pipelines import SimplePipeline
+from tpcp import SimplePipeline
+
 from gaitmap.stride_segmentation import BarthDtw
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 
@@ -161,7 +164,7 @@ parameters = ParameterGrid({"max_cost": [3, 5]})
 #
 # .. note:: If the score function returns a dictionary of scores, `rank_scorer` must be set to the name of the score,
 #           that should be used to decide on the best parameter set.
-from gaitmap.future.pipelines import GridSearch
+from tpcp.optimize import GridSearch
 
 gs = GridSearch(pipe, parameters, scoring=score, return_optimized="f1_score")
 gs = gs.optimize(MyDataset())

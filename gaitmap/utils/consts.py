@@ -70,6 +70,3 @@ FSF_FBF_CONVERSION_RIGHT = {
     "gyr_y": (-1, "gyr_ml"),
     "gyr_z": (1, "gyr_si"),
 }
-
-#: A empty object for defaults
-_EMPTY = object()

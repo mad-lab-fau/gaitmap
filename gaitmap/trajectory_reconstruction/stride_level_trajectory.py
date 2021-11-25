@@ -2,6 +2,7 @@
 from typing import Optional, TypeVar
 
 from scipy.spatial.transform import Rotation
+from tpcp import default
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -15,7 +16,6 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError

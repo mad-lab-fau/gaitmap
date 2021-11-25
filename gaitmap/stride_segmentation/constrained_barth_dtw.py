@@ -2,11 +2,11 @@
 from typing import Dict, Optional, Union
 
 from joblib import Memory
+from tpcp import default
 from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
 from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils._types import _Hashable
 
 

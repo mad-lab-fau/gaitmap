@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import default
+from tpcp._utils._general import _EMPTY
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
@@ -14,9 +16,8 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
     rts_kalman_update_series,
     simple_navigation_equations,
 )
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import _EMPTY, GF_POS, GF_VEL, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
 

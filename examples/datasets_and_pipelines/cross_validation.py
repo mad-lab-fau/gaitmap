@@ -4,7 +4,7 @@ r"""
 Cross Validation
 ================
 
-.. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
+.. warning:: GridSearch and Pipelines in gaitmap are deprecated! Use tpcp instead!
 
 Whenever using some sort of trainable algorithm it is important to clearly separate the training and the testing data to
 get an unbiased result.
@@ -25,10 +25,9 @@ Here we will just copy the code over.
 """
 import numpy as np
 import pandas as pd
+from tpcp import Dataset, OptimizablePipeline, default
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.future.dataset import Dataset
-from gaitmap.future.pipelines import OptimizablePipeline
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
@@ -60,7 +59,8 @@ class MyPipeline(OptimizablePipeline):
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = BarthOriginalTemplate()):
+    # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
+    def __init__(self, max_cost: float = 3, template: DtwTemplate = default(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 
@@ -141,7 +141,8 @@ cv = KFold(n_splits=2)
 # First we need to create instances of our data and pipeline.
 # Then we need to wrap our pipeline instance into an :class:`~gaitmap.future.pipelines.Optimize` wrapper.
 # Finally we can call `cross_validate`.
-from gaitmap.future.pipelines import Optimize, cross_validate
+from tpcp.optimize import Optimize
+from tpcp.validate import cross_validate
 
 ds = MyDataset()
 pipe = MyPipeline()

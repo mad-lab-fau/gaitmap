@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import default
 from typing_extensions import Literal
 
 from gaitmap.base import (
@@ -17,7 +18,6 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.datatype_helper import (
     OrientationList,

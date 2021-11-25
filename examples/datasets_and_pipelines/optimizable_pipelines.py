@@ -28,13 +28,14 @@ This example shows how such a pipeline should be implemented and how it can be o
 import numpy as np
 import pandas as pd
 
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
+from gaitmap.future.dataset import Dataset
+
 # %%
 # The Dataset
 # -----------
 # We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
-from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.future.dataset import Dataset
 
 
 class MyDataset(Dataset):
@@ -81,7 +82,8 @@ class MyDataset(Dataset):
 #           It further **must** return self.
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
-from gaitmap.future.pipelines import OptimizablePipeline
+from tpcp import OptimizablePipeline, default
+
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
@@ -94,7 +96,8 @@ class MyPipeline(OptimizablePipeline):
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = BarthOriginalTemplate()):
+    # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
+    def __init__(self, max_cost: float = 3, template: DtwTemplate = default(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 
@@ -174,7 +177,7 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 #
 # Note, that the optimize method will perform all optimizations on a copy of the pipeline.
 # The means the pipeline object used as input will not be modified.
-from gaitmap.future.pipelines import Optimize
+from tpcp.optimize import Optimize
 
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
