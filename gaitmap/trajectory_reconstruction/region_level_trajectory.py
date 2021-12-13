@@ -181,6 +181,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     gaitmap.trajectory_reconstruction: Implemented algorithms for orientation and position estimation
 
     """
+
     _action_methods = ("estimate", "estimate_intersect")
 
     align_window_width: int

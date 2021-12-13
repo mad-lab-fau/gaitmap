@@ -1,9 +1,8 @@
 """A collection of higher level algorithms to run, optimize and validate algorithms."""
 import warnings
 
-from tpcp import OptimizablePipeline, SimplePipeline
-from tpcp.base import BaseOptimize
-from tpcp.optimize import GridSearch, GridSearchCV, Optimize
+from tpcp import OptimizablePipeline, Pipeline
+from tpcp.optimize import GridSearch, GridSearchCV, Optimize, BaseOptimize
 from tpcp.validate import Scorer, cross_validate
 
 warnings.warn(
@@ -16,13 +15,13 @@ GaitmapScorer = Scorer
 
 
 __all__ = [
-    "SimplePipeline",
+    "Pipeline",
     "OptimizablePipeline",
     "GaitmapScorer",
     "Scorer",
-    "BaseOptimize",
     "GridSearch",
     "GridSearchCV",
     "Optimize",
     "cross_validate",
+    "BaseOptimize",
 ]
