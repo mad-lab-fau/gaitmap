@@ -9,7 +9,7 @@ GridSearchCV
 When trying to optimize parameters for algorithms that have trainable components, it is required to perform
 the parameter search on a validation set (that is separate from the test set used for the final validation).
 Even better, is to use a cross validation for this step.
-In gaitmap this can be done by using :class:`~gaitmap.future.pipelines.GridSearchCv`.
+In gaitmap this can be done by using :class:`~tpcp.optimize.GridSearchCV`.
 
 This example explains how to use this method.
 To learn more about the concept, review the :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on
@@ -61,7 +61,7 @@ class MyDataset(Dataset):
 # We add an additional parameter `n_train_strides` that controls how many randomly selected strides should be used
 # during training.
 # Modifying this parameter, will change the result of the `self_optimize` step.
-from tpcp import OptimizablePipeline, CloneFactory, PureParameter, HyperParameter, OptimizableParameter
+from tpcp import CloneFactory, HyperParameter, OptimizableParameter, OptimizablePipeline, PureParameter
 
 from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf

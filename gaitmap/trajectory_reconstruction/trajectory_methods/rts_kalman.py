@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import CloneFactory, NOTHING
+from tpcp import NOTHING, CloneFactory
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (

@@ -16,7 +16,7 @@ In this procedure, you perform multiple train-test splits and average the result
 For more information see our :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on cross
 validation <https://scikit-learn.org/stable/modules/cross_validation.html>`_.
 
-In this example, we will learn how to use the :func:`~gaitmap.future.pipelines.cross_validate` function implemented in
+In this example, we will learn how to use the :func:`~tpcp.optimize.cross_validate` function implemented in
 gaitmap.
 For this, we will redo the example on :ref:`optimizable pipelines <optimize_pipelines>` but we will perform the final
 evaluation via cross-validation.
@@ -25,7 +25,7 @@ Here we will just copy the code over.
 """
 import numpy as np
 import pandas as pd
-from tpcp import Dataset, OptimizablePipeline, CloneFactory, OptimizableParameter, Parameter
+from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
@@ -139,7 +139,7 @@ cv = KFold(n_splits=2)
 # ----------------
 # Now we have all the pieces for the final cross validation.
 # First we need to create instances of our data and pipeline.
-# Then we need to wrap our pipeline instance into an :class:`~gaitmap.future.pipelines.Optimize` wrapper.
+# Then we need to wrap our pipeline instance into an :class:`~tpcp.Optimize` wrapper.
 # Finally we can call `cross_validate`.
 from tpcp.optimize import Optimize
 from tpcp.validate import cross_validate

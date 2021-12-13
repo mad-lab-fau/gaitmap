@@ -151,6 +151,7 @@ intersphinx_module_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "tslearn": ("https://tslearn.readthedocs.io/en/stable", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
+    "tpcp": ("https://tpcp.readthedocs.io/en/latest", None)
 }
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0'

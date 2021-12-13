@@ -3,10 +3,10 @@ from inspect import Parameter, signature
 from typing import Any, Dict, Tuple
 
 import pytest
-from tests.conftest import _get_params_without_nested_class
+from tpcp import get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
 
 from gaitmap.base import BaseAlgorithm
-from tpcp import get_action_method, get_results, get_action_methods_names, get_action_params, is_action_applied
+from tests.conftest import _get_params_without_nested_class
 
 
 def _init_getter():
