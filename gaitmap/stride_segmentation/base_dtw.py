@@ -232,7 +232,7 @@ class BaseDtw(BaseAlgorithm):
 
     """
 
-    _action_method = "segment"
+    _action_methods = ("segment",)
 
     template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]]
     max_cost: Optional[float]

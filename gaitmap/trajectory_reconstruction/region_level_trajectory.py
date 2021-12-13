@@ -3,7 +3,7 @@ from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import default
+from tpcp import CloneFactory, is_action_applied
 from typing_extensions import Literal
 
 from gaitmap.base import (
@@ -181,6 +181,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     gaitmap.trajectory_reconstruction: Implemented algorithms for orientation and position estimation
 
     """
+    _action_methods = ("estimate", "estimate_intersect")
 
     align_window_width: int
 
@@ -190,9 +191,9 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
         # TODO: Change default so simple forward integration once this is implemented
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
@@ -328,7 +329,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
             A tuple with the outputs, following the order provided in `return_data`.
 
         """
-        if self._action_is_applied is False:
+        if is_action_applied(self) is False:
             raise ValidationError("You first need to call the `estimate` method before using `intersect`")
         allowed_return_data = ("orientation", "position", "velocity")
         if (

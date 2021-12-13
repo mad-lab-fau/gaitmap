@@ -1,4 +1,5 @@
 import random
+from typing import Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,8 @@ from gaitmap.example_data import (
     get_ms_example_imu_data,
 )
 from tests._regression_utils import PyTestSnapshotTest
+
+from tpcp import BaseTpcpObject
 
 
 @pytest.fixture(autouse=True)
@@ -47,9 +50,13 @@ healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
 healthy_example_position = pytest.fixture()(get_healthy_example_position)
 
 
+def _get_params_without_nested_class(instance: BaseTpcpObject) -> Dict[str, Any]:
+    return {k: v for k, v in instance.get_params().items() if not isinstance(v, BaseTpcpObject)}
+
+
 def compare_algo_objects(a, b):
-    parameters = a._get_params_without_nested_class()
-    b_parameters = b._get_params_without_nested_class()
+    parameters = _get_params_without_nested_class(a)
+    b_parameters = _get_params_without_nested_class(b)
 
     assert set(parameters.keys()) == set(b_parameters.keys())
 

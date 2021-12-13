@@ -2,7 +2,7 @@
 from typing import Optional, TypeVar
 
 from scipy.spatial.transform import Rotation
-from tpcp import default
+from tpcp import CloneFactory
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -131,8 +131,8 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):

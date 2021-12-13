@@ -25,7 +25,7 @@ Here we will just copy the code over.
 """
 import numpy as np
 import pandas as pd
-from tpcp import Dataset, OptimizablePipeline, default
+from tpcp import Dataset, OptimizablePipeline, CloneFactory, OptimizableParameter, Parameter
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
@@ -53,14 +53,14 @@ class MyDataset(Dataset):
 
 
 class MyPipeline(OptimizablePipeline):
-    max_cost: float
-    template: DtwTemplate
+    max_cost: Parameter[float]
+    template: OptimizableParameter[DtwTemplate]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
-    # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = default(BarthOriginalTemplate())):
+    # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
+    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 

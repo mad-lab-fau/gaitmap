@@ -9,7 +9,6 @@ import pandas as pd
 import tpcp
 from joblib import Memory
 from scipy.spatial.transform import Rotation
-from tpcp._utils._general import _EMPTY
 
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
@@ -39,7 +38,7 @@ class _CustomEncoder(json.JSONEncoder):
             return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
-        if o is _EMPTY:
+        if o is tpcp.NOTHING:
             return dict(_obj_type="EmptyDefault")
         if isinstance(o, Memory):
             warnings.warn(
@@ -65,7 +64,7 @@ def _custom_deserialize(json_obj):
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "EmptyDefault":
-            return _EMPTY
+            return tpcp.NOTHING
         raise ValueError("Unknown object type found in serialization!")
     return json_obj
 
@@ -87,7 +86,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
     @classmethod
     def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
         params = json_dict["params"]
-        input_data = {k: params[k] for k in cls._get_param_names() if k in params}
+        input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         instance = cls(**input_data)
         return instance
 
@@ -129,7 +128,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         return instance
 
 
-class BaseAlgorithm(tpcp.BaseAlgorithm, _BaseSerializable):
+class BaseAlgorithm(tpcp.Algorithm, _BaseSerializable):
     """Base class for all algorithms.
 
     All type-specific algorithm classes should inherit from this class and need to
@@ -148,7 +147,7 @@ class BaseAlgorithm(tpcp.BaseAlgorithm, _BaseSerializable):
 class BaseSensorAlignment(BaseAlgorithm):
     """Base class for all sensor alignment algorithms."""
 
-    _action_method = "align"
+    _action_methods = ("align",)
 
     aligned_data_: SensorData
 
@@ -160,7 +159,7 @@ class BaseSensorAlignment(BaseAlgorithm):
 class BaseStrideSegmentation(BaseAlgorithm):
     """Base class for all stride segmentation algorithms."""
 
-    _action_method = "segment"
+    _action_methods = ("segment",)
 
     stride_list_: StrideList
 
@@ -172,7 +171,7 @@ class BaseStrideSegmentation(BaseAlgorithm):
 class BaseEventDetection(BaseAlgorithm):
     """Base class for all event detection algorithms."""
 
-    _action_method = "detect"
+    _action_methods = ("detect",)
 
     def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find gait events in data within strides provided by roi_list."""
@@ -182,7 +181,7 @@ class BaseEventDetection(BaseAlgorithm):
 class BaseOrientationMethod(BaseAlgorithm):
     """Base class for the individual Orientation estimation methods that work on pd.DataFrame data."""
 
-    _action_method = "estimate"
+    _action_methods = ("estimate",)
     orientation_object_: Rotation
 
     @property
@@ -200,7 +199,7 @@ class BaseOrientationMethod(BaseAlgorithm):
 class BasePositionMethod(BaseAlgorithm):
     """Base class for the individual Position estimation methods that work on pd.DataFrame data."""
 
-    _action_method = "estimate"
+    _action_methods = ("estimate",)
     velocity_: VelocityList
     position_: PositionList
 
@@ -219,7 +218,7 @@ class BaseTrajectoryMethod(BasePositionMethod, BaseOrientationMethod):
 class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
     """Base class for method that wrap position and orientation methods to be usable with default datatypes."""
 
-    _action_method = "estimate"
+    _action_methods = ("estimate",)
 
     orientation_: OrientationList
     position_: PositionList
@@ -229,7 +228,7 @@ class BaseTrajectoryReconstructionWrapper(BaseAlgorithm):
 class BaseTemporalParameterCalculation(BaseAlgorithm):
     """Base class for temporal parameters calculation."""
 
-    _action_method = "calculate"
+    _action_methods = ("calculate",)
 
     def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
         """Find temporal parameters in strides after segmentation and detecting events of each stride."""
@@ -239,7 +238,7 @@ class BaseTemporalParameterCalculation(BaseAlgorithm):
 class BaseSpatialParameterCalculation(BaseAlgorithm):
     """Base class for spatial parameters calculation."""
 
-    _action_method = "calculate"
+    _action_methods = ("calculate",)
 
     def calculate(
         self: BaseType,
@@ -255,7 +254,7 @@ class BaseSpatialParameterCalculation(BaseAlgorithm):
 class BaseGaitDetection(BaseAlgorithm):
     """Base class for all gait detection algorithms."""
 
-    _action_method = "detect"
+    _action_methods = ("detect",)
 
     def detect(self: BaseType, data: SensorData, sampling_rate_hz: float) -> BaseType:
         """Find gait sequences or other regions of interest in data."""
@@ -265,7 +264,7 @@ class BaseGaitDetection(BaseAlgorithm):
 class BaseZuptDetector(BaseAlgorithm):
     """Base class for all detection algorithms."""
 
-    _action_method = "detect"
+    _action_methods = ("detect",)
 
     zupts_: pd.DataFrame
     per_sample_zupts_: np.ndarray

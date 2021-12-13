@@ -48,7 +48,7 @@ class MyDataset(Dataset):
         return get_healthy_example_imu_data()[self.index.iloc[0]["foot"] + "_sensor"]
 
     @property
-    def segmented_stride_list_(self):
+    def segmented_stride_list_(self) -> pd.DataFrame:
         self.assert_is_single(None, "data")
         return get_healthy_example_stride_borders()[self.index.iloc[0]["foot"] + "_sensor"].set_index("s_id")
 
@@ -78,13 +78,13 @@ dataset
 # The parameter `max_cost` of this algorithm is exposed and will be optimized as part of the GridSearch.
 #
 # For the final GridSearch, we need an instance of the pipeline object.
-from tpcp import SimplePipeline
+from tpcp import Pipeline
 
 from gaitmap.stride_segmentation import BarthDtw
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 
 
-class MyPipeline(SimplePipeline):
+class MyPipeline(Pipeline):
     max_cost: float
 
     segmented_stride_list_: SingleSensorStrideList
@@ -142,6 +142,7 @@ def score(pipeline: MyPipeline, datapoint: MyDataset):
     matches_df = evaluate_segmented_stride_list(
         ground_truth=datapoint.segmented_stride_list_, segmented_stride_list=pipeline.segmented_stride_list_
     )
+    assert isinstance(matches_df, pd.DataFrame)
     return precision_recall_f1_score(matches_df)
 
 

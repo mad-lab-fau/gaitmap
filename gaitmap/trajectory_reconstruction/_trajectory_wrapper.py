@@ -5,7 +5,7 @@ from typing import Dict, Optional, Sequence, Tuple, TypeVar
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import default
+from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
@@ -42,8 +42,8 @@ class _TrajectoryReconstructionWrapperMixin:
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
     ):
         self.ori_method = ori_method

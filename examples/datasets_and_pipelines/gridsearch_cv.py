@@ -61,17 +61,17 @@ class MyDataset(Dataset):
 # We add an additional parameter `n_train_strides` that controls how many randomly selected strides should be used
 # during training.
 # Modifying this parameter, will change the result of the `self_optimize` step.
-from tpcp import OptimizablePipeline, default
+from tpcp import OptimizablePipeline, CloneFactory, PureParameter, HyperParameter, OptimizableParameter
 
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
-    max_cost: float
-    template: DtwTemplate
-    n_train_strides: Optional[int]
+    max_cost: PureParameter[float]
+    template: OptimizableParameter[DtwTemplate]
+    n_train_strides: HyperParameter[Optional[int]]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
@@ -79,8 +79,8 @@ class MyPipeline(OptimizablePipeline):
     def __init__(
         self,
         max_cost: float = 3,
-        # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
-        template: DtwTemplate = default(BarthOriginalTemplate()),
+        # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
+        template: DtwTemplate = CloneFactory(DtwTemplate()),
         n_train_strides: Optional[int] = None,
     ):
         self.max_cost = max_cost
@@ -266,7 +266,7 @@ gs_cached = GridSearchCV(
     pipeline=MyPipeline(),
     parameter_grid=parameters,
     scoring=score,
-    pure_parameter_names=["max_cost"],
+    pure_parameters=True,
     cv=cv,
     return_optimized="f1_score",
     verbose=2,

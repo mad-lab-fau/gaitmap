@@ -82,7 +82,7 @@ class MyDataset(Dataset):
 #           It further **must** return self.
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
-from tpcp import OptimizablePipeline, default
+from tpcp import OptimizablePipeline, CloneFactory, PureParameter, OptimizableParameter
 
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
@@ -90,14 +90,14 @@ from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
-    max_cost: float
-    template: DtwTemplate
+    max_cost: PureParameter[float]  # This is a pure parameter, as the output of `self_optimize` does not depend on it
+    template: OptimizableParameter[DtwTemplate]  # This is the paramter that is optimized in `self_optimize`
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
-    # We need to wrap the template in a `default` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = default(BarthOriginalTemplate())):
+    # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
+    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 

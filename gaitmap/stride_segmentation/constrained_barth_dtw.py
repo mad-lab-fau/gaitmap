@@ -2,7 +2,7 @@
 from typing import Dict, Optional, Union
 
 from joblib import Memory
-from tpcp import default
+from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.stride_segmentation.barth_dtw import BarthDtw
@@ -129,7 +129,7 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = default(BarthOriginalTemplate()),
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4,

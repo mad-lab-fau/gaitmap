@@ -5,8 +5,7 @@ from typing import Any, Dict, Optional, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import default
-from tpcp._utils._general import _EMPTY
+from tpcp import CloneFactory, NOTHING
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
@@ -196,15 +195,15 @@ class RtsKalman(BaseTrajectoryMethod):
     def __init__(
         self,
         initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
-        zupt_threshold_dps: float = _EMPTY,
+        zupt_threshold_dps: float = NOTHING,
         zupt_variance: float = 10e-8,
         velocity_error_variance: float = 10e5,
         orientation_error_variance: float = 10e-2,
         level_walking: bool = True,
         level_walking_variance: float = 10e-8,
-        zupt_window_length_s: float = _EMPTY,
-        zupt_window_overlap_s: Optional[float] = _EMPTY,
-        zupt_detector=default(
+        zupt_window_length_s: float = NOTHING,
+        zupt_window_overlap_s: Optional[float] = NOTHING,
+        zupt_detector=CloneFactory(
             NormZuptDetector(
                 sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
             )
@@ -242,7 +241,7 @@ class RtsKalman(BaseTrajectoryMethod):
         # Handle deprecation:
         deprecated_arg_overwrite = {}
         for arg in self._deprecated_args:
-            if getattr(self, arg) != _EMPTY:
+            if getattr(self, arg) != NOTHING:
                 deprecated_arg_overwrite[arg] = getattr(self, arg)
         self._zupt_detector = self.zupt_detector.clone()
         if len(deprecated_arg_overwrite) > 0:
