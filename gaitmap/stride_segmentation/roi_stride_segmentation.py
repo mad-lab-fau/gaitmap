@@ -3,6 +3,9 @@ from copy import deepcopy
 from typing import Dict, Generic, Optional, TypeVar, Union
 
 import pandas as pd
+from tpcp import get_action_method
+from typing_extensions import Literal
+
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
@@ -18,8 +21,6 @@ from gaitmap.utils.datatype_helper import (
     is_sensor_data,
 )
 from gaitmap.utils.exceptions import ValidationError
-from tpcp import get_action_method
-from typing_extensions import Literal
 
 StrideSegmentationAlgorithm = TypeVar("StrideSegmentationAlgorithm", bound=BaseStrideSegmentation)
 
@@ -145,7 +146,6 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
         self.action_method = action_method
-        super().__init__()
 
     def segment(  # noqa: arguments-differ
         self: Self,

@@ -114,7 +114,6 @@ class NormZuptDetector(BaseZuptDetector):
         self.window_overlap = window_overlap
         self.metric = metric
         self.inactive_signal_threshold = inactive_signal_threshold
-        super().__init__()
 
     @property
     def zupts_(self) -> pd.DataFrame:

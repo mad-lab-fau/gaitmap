@@ -49,8 +49,6 @@ class _TrajectoryReconstructionWrapperMixin:
         self.ori_method = ori_method
         self.pos_method = pos_method
         self.trajectory_method = trajectory_method
-        # Important to resolve mutable defaults!
-        super().__init__()
 
     def _validate_methods(self):
         if self.trajectory_method:

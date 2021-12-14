@@ -270,4 +270,3 @@ def test_alternative_action_method(action_method):
 
     for a in roi_seg.instances_per_roi_.values():
         assert a.secondary_segment_ == (action_method == "secondary_segment")
-

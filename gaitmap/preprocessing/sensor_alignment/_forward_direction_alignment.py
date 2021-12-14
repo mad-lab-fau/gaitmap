@@ -140,7 +140,6 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         self.ori_method = ori_method
         self.zupt_detector_orientation_init = zupt_detector_orientation_init
         self.pos_method = pos_method
-        super().__init__()
 
     def align(self: Self, data: SensorData, sampling_rate_hz: float, **kwargs) -> Self:  # noqa: arguments-differ
         """Align sensor data."""

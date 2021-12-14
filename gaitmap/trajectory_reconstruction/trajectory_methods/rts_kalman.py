@@ -219,7 +219,6 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupt_window_length_s = zupt_window_length_s
         self.zupt_window_overlap_s = zupt_window_overlap_s
         self.zupt_detector = zupt_detector
-        super().__init__()
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position, velocity and orientation of the sensor.

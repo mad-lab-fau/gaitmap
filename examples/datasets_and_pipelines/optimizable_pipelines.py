@@ -28,14 +28,15 @@ This example shows how such a pipeline should be implemented and how it can be o
 import numpy as np
 import pandas as pd
 
-from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-
 # %%
 # The Dataset
 # -----------
 # We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
 from tpcp import Dataset
+
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
+
 
 class MyDataset(Dataset):
     @property
@@ -81,7 +82,7 @@ class MyDataset(Dataset):
 #           It further **must** return self.
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
-from tpcp import CloneFactory, OptimizableParameter, OptimizablePipeline, PureParameter, Dataset
+from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, PureParameter
 
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf

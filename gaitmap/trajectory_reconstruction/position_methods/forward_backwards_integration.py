@@ -114,7 +114,6 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.steepness = steepness
         self.level_assumption = level_assumption
         self.gravity = gravity
-        super().__init__()
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.
