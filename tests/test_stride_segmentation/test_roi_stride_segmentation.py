@@ -138,6 +138,8 @@ class TestParameterValidation:
 class MockStrideSegmentation(BaseStrideSegmentation):
     """A Mock stride segmentation class for testing."""
 
+    _action_methods = ("segment", "secondary_segment")
+
     def __init__(self, n=3):
         self.n = 3
 
@@ -157,7 +159,14 @@ class MockStrideSegmentation(BaseStrideSegmentation):
             tmp = np.linspace(0, len(data), self.n + 1).astype(int)
             self._stride_list_ = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
 
+        self.secondary_segment_ = False
+
         return self
+
+    def secondary_segment(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
+        out = self.segment(data, sampling_rate_hz, **kwargs)
+        self.secondary_segment_ = True
+        return out
 
     @property
     def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
@@ -249,3 +258,16 @@ class TestCombinedStridelist:
                 for stride in roi_seg.stride_list_[sensor].iterrows():
                     if r[1]["roi_id"] == stride[1]["roi_id"]:
                         assert stride[1]["start"] >= r[1]["start"]
+
+
+@pytest.mark.parametrize("action_method", (None, "segment", "secondary_segment"))
+def test_alternative_action_method(action_method):
+    roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), action_method=action_method)
+    data = pd.concat({"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}, axis=1)
+    roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
+
+    roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
+
+    for a in roi_seg.instances_per_roi_.values():
+        assert a.secondary_segment_ == (action_method == "secondary_segment")
+
