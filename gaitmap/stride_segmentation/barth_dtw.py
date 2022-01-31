@@ -67,10 +67,11 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
         - "min_under_thres"
             Matches the implementation used in the paper [1]_ to detect strides in foot mounted IMUs.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as method.
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
+            method.
         - "find_peaks"
             Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
+            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
             method.
     snap_to_min_win_ms
         The size of the window in ms used to search local minima during the post processing of the stride borders.
