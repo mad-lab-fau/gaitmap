@@ -158,7 +158,7 @@ class RamppEventDetection(BaseEventDetection):
 
     .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
        sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
-       biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211  
+       biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211   
 
     """
 
@@ -336,8 +336,7 @@ def _find_all_events(
 def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
     if min_vel_search_win_size >= len(energy):
-        raise ValueError("Either the value chosen for min_vel_search_win_size_ms is too large (should be 100 ms)"
-                        f"or the passed data of gyr is too short (it has length {len(gyr)}).")
+        raise ValueError(f"min_vel_search_win_size_ms is of length {len(min_vel_search_win_size_ms)}, but gyr data is only of length {len(gyr).}"
     energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
     # find window with lowest summed energy
     min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
