@@ -336,7 +336,12 @@ def _find_all_events(
 def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
     energy = norm(gyr, axis=-1) ** 2
     if min_vel_search_win_size >= len(energy):
-        raise ValueError("The value chosen for min_vel_search_win_size_ms is too large. Should be 100 ms.")
+        raise ValueError(
+            f"min_vel_search_win_size_ms is {min_vel_search_win_size}, but gyr data"
+            f"has only {len(gyr)} samples. The search window should roughly be 100ms"
+            " and the stride time must be larger. If the stride is shorter, something"
+            " went wrong with stride segmentation."
+        )
     energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
     # find window with lowest summed energy
     min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
