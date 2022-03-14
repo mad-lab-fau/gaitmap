@@ -8,7 +8,7 @@ ignore-paths:
   - examples
   - example_data
 
-pep8:
+pycodestyle:
   options:
     max-line-length: 120
   disable:
@@ -16,7 +16,7 @@ pep8:
     - W391
     - E203 # ignoring white space before colon :
 
-pep257:
+pydocstyle:
   options:
     convention: numpy
   disable:
