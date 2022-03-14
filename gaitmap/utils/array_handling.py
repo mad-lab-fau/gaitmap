@@ -166,8 +166,8 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
 
     """
     if threshold:
-        # If not None take the negative value.
-        # If None just pass it like it is to find_peaks
+        # If not None, take the negative value.
+        # If None, just pass it like it is to find_peaks
         threshold *= -1
     return find_peaks(-data, height=threshold, **kwargs)[0]
 
