@@ -240,17 +240,15 @@ def is_sensor_data(
     """
     try:
         is_single_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        return "single"
     except ValidationError as e:
         single_error = e
-    else:
-        return "single"
 
     try:
         is_multi_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        return "multi"
     except ValidationError as e:
         multi_error = e
-    else:
-        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither single- or multi-sensor data. "
@@ -443,17 +441,15 @@ def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = 
     """
     try:
         is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
+        return "single"
     except ValidationError as e:
         single_error = e
-    else:
-        return "single"
 
     try:
         is_multi_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
+        return "multi"
     except ValidationError as e:
         multi_error = e
-    else:
-        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither a single- or a multi-sensor stride list. "
@@ -638,17 +634,15 @@ def is_regions_of_interest_list(
     """
     try:
         is_single_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
+        return "single"
     except ValidationError as e:
         single_error = e
-    else:
-        return "single"
 
     try:
         is_multi_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
+        return "multi"
     except ValidationError as e:
         multi_error = e
-    else:
-        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither a single- or a multi-sensor regions of interest list. "
@@ -772,17 +766,15 @@ def _is_trajectory_list(
 ) -> Literal["single", "multi"]:
     try:
         single_func(traj_list, **kwargs, raise_exception=True)
+        return "single"
     except ValidationError as e:
         single_error = e
-    else:
-        return "single"
 
     try:
         multi_func(traj_list, **kwargs, raise_exception=True)
+        return "multi"
     except ValidationError as e:
         multi_error = e
-    else:
-        return "multi"
 
     raise ValidationError(
         f"The passed object appears to be neither a single- or a multi-sensor {input_datatype}. "

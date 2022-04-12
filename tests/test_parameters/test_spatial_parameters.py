@@ -194,7 +194,7 @@ class TestSpatialParameterCalculation:
     def test_single_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
-        """Test calculate spatial parameters for single sensor """
+        """Test calculate spatial parameters for single sensor"""
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
         # Test that all parameters are at least theoretically calculated

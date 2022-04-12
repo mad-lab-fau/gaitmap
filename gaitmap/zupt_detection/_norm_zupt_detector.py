@@ -13,7 +13,7 @@ from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_st
 
 Self = TypeVar("Self", bound="NormZuptDetector")
 
-SENSOR_NAMES = Literal["acc", "gyr"]
+SENSOR_NAMES = Literal["acc", "gyr"]  # noqa: invalid-name
 
 
 class NormZuptDetector(BaseZuptDetector):

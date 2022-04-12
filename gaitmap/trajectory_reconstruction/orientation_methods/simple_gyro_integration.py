@@ -136,7 +136,7 @@ def _simple_gyro_integration_series(gyro, initial_orientation, sampling_rate_hz)
         qdot = rate_of_change_from_gyro(gyro[i], q)
         # Integrate rate of change of quaternion to yield quaternion
         q += qdot / sampling_rate_hz
-        q /= np.sqrt(np.sum(q ** 2))
+        q /= np.sqrt(np.sum(q**2))
         out[i + 1] = q
 
     return out
