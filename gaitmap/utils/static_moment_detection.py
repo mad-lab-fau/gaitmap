@@ -10,7 +10,7 @@ from gaitmap.utils.array_handling import _bool_fill
 
 # supported metric functions
 _METRIC_FUNCTIONS = {"maximum": np.nanmax, "variance": np.nanvar, "mean": np.nanmean, "median": np.nanmedian}
-METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median"]
+METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median"]  # noqa: invalid-name
 
 
 def find_static_samples(

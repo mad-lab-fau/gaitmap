@@ -24,7 +24,7 @@ from gaitmap.utils.datatype_helper import (
     VelocityList,
 )
 
-BaseType = TypeVar("BaseType", bound="_BaseSerializable")
+BaseType = TypeVar("BaseType", bound="_BaseSerializable")  # noqa: invalid-name
 
 
 class _CustomEncoder(json.JSONEncoder):
