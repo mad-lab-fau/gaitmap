@@ -34,7 +34,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
     In case the vector has a length of 0, the vector is returned without modification.
     """
-    norm = np.sqrt(np.sum(v ** 2))
+    norm = np.sqrt(np.sum(v**2))
     if norm == 0:
         return v
     return v / norm
@@ -48,7 +48,7 @@ def rotate_vector(q: np.ndarray, v: np.ndarray) -> np.ndarray:
     """
     w = q[3]
     u = q[:3]
-    return 2.0 * (np.dot(u, v) * u + w * np.cross(u, v)) + (w ** 2 - np.dot(u, u)) * v
+    return 2.0 * (np.dot(u, v) * u + w * np.cross(u, v)) + (w**2 - np.dot(u, u)) * v
 
 
 @njit()

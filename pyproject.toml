@@ -63,6 +63,7 @@ exclude = '''
     | \.tox
     | \.venv
     | _build
+    | _debug_test
     | docs
     | build
     | dist

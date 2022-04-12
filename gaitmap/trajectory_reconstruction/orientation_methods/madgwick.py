@@ -161,7 +161,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     q1, q2, q3, q0 = q
 
     if beta > 0.0 and not np.all(acc == 0.0):
-        acc = acc / np.sqrt(np.sum(acc ** 2))
+        acc = acc / np.sqrt(np.sum(acc**2))
         ax, ay, az = acc
 
         # Auxiliary variables to avoid repeated arithmetic
@@ -187,16 +187,16 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
         # Switch the component order back
         s = np.array([s1, s2, s3, s0])
-        mag_s = np.sqrt(np.sum(s ** 2))
+        mag_s = np.sqrt(np.sum(s**2))
         if mag_s != 0.0:
-            s /= np.sqrt(np.sum(s ** 2))
+            s /= np.sqrt(np.sum(s**2))
 
         # Apply feedback step
         qdot -= beta * s
 
     # Integrate rate of change of quaternion to yield quaternion
     q = q + qdot / sampling_rate_hz
-    q /= np.sqrt(np.sum(q ** 2))
+    q /= np.sqrt(np.sum(q**2))
 
     return q
 

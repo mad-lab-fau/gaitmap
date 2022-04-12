@@ -67,7 +67,7 @@ class TestTemporalParameterCalculation:
     """Test temporal parameters calculation."""
 
     def test_single_sensor_multiple_strides(self, multiple_stride_list, temporal_parameters_multiple_strides):
-        """Test calculate temporal parameters for single sensor """
+        """Test calculate temporal parameters for single sensor"""
         stride_events_list = multiple_stride_list
         expected_temporal_parameters = temporal_parameters_multiple_strides
         t = TemporalParameterCalculation()
