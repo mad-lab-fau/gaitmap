@@ -61,6 +61,8 @@ class RamppEventDetection(BaseEventDetection):
         corresponds to the min_vel sample of the subsequent stride.
         Strides for which no valid events could be found are removed.
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
+        The 's_id' index is selected according to which segmented stride the pre-ic belongs to.
+
     segmented_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
