@@ -33,7 +33,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     Other Parameters
     ----------------
     stride_event_list
-            Gait events for each stride obtained from Rampp event detection.
+            Gait events for each stride obtained from Rampp event detection as type `min_vel`-stride list.
     sampling_rate_hz
         The sampling rate of the data signal.
 
@@ -41,7 +41,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     -----
     stride_time [s]
         The stride time is the duration of the stride calculated based on the ic events of the stride.
-        If a `min_vel`-stride list is used, the stride time is calculated by subtracting "pre_ic" from "ic".
+        For a `min_vel`-stride the stride time is calculated by subtracting "pre_ic" from "ic".
     swing_time [s]
         The swing time is the time from the tc to the next ic.
         For a `min_vel`-stride this is the time between "tc" and "ic"
