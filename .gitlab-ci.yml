@@ -28,6 +28,7 @@ create_env:
   <<: *python_base
   script:
     - pip install poetry
+    - poetry config virtualenvs.in-project true
     - poetry install --remove-untracked
   artifacts:
     expire_in: 1 day
