@@ -50,7 +50,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     Other Parameters
     ----------------
     stride_event_list
-        Gait events for each stride obtained from event detection.
+        Gait events for each stride obtained from event detection as type `min_vel`-stride list.
     positions
         position of the sensor at each time point as estimated by trajectory reconstruction.
     orientations
