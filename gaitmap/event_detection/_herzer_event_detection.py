@@ -1,5 +1,5 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
-from typing import Optional, Tuple, Dict, Callable, Union
+from typing import Optional, Tuple, Dict, Callable, Union, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,12 @@ from joblib import Memory
 from scipy import signal
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
+from gaitmap.event_detection._event_detection_mixin import _EventDetectionMixin, _detect_min_vel_gyr_energy
+
+
+class FilterParameter(NamedTuple):
+    order: int
+    cutoff_hz: float
 
 
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
@@ -160,21 +165,23 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     min_vel_search_win_size_ms: float
     mid_swing_peak_prominence: Union[Tuple[float, float], float]
     mid_swing_n_considered_peaks: int
+    ic_lowpass_filter_parameter: FilterParameter
     memory: Optional[Memory]
     enforce_consistency: bool
 
     def __init__(
         self,
         min_vel_search_win_size_ms: float = 100,
-        # TODO: Optimize these parameters again
         mid_swing_peak_prominence: Union[Tuple[float, float], float] = 20,
         mid_swing_n_considered_peaks: int = 3,
+        ic_lowpass_filter_parameter: FilterParameter = FilterParameter(order=5, cutoff_hz=5),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
+        self.ic_lowpass_filter_parameter = ic_lowpass_filter_parameter
         super(HerzerEventDetection, self).__init__(memory=memory, enforce_consistency=enforce_consistency)
 
     def _get_detect_kwargs(self) -> Dict[str, int]:  # noqa: no-self-use
@@ -183,6 +190,8 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
             "min_vel_search_win_size": min_vel_search_win_size,
             "mid_swing_peak_prominence": self.mid_swing_peak_prominence,
             "mid_swing_n_considered_peaks": self.mid_swing_n_considered_peaks,
+            "sampling_rate_hz": self.sampling_rate_hz,
+            "ic_lowpass_filter_parameter": self.ic_lowpass_filter_parameter,
         }
 
     def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
@@ -200,6 +209,8 @@ def _find_all_events(
     min_vel_search_win_size: int,
     mid_swing_peak_prominence: Union[Tuple[float, float], float],
     mid_swing_n_considered_peaks: int,
+    ic_lowpass_filter_parameter: FilterParameter,
+    sampling_rate_hz: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
@@ -221,9 +232,17 @@ def _find_all_events(
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
 
-        ic_events.append(
-            start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, mid_swing_peak_prominence, mid_swing_n_considered_peaks)
+        ics = _detect_ic(
+            gyr_ml_sec,
+            acc_sec,
+            gyr_grad,
+            peak_prominence_thresholds=mid_swing_peak_prominence,
+            n_considered_peaks=mid_swing_n_considered_peaks,
+            lowpass_parameter=ic_lowpass_filter_parameter,
+            sampling_rate_hz=sampling_rate_hz,
         )
+
+        ic_events.append(start + ics)
         fc_events.append(tc_start + _detect_tc(gyr_ml_tc_sec))
         min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
@@ -255,6 +274,8 @@ def _detect_ic(
     gyr_ml_grad: np.ndarray,
     peak_prominence_thresholds: Union[Tuple[float, float], float],
     n_considered_peaks: int,
+    lowpass_parameter: FilterParameter,
+    sampling_rate_hz: float,
 ) -> int:
     """Detect IC within the stride.
 
@@ -286,18 +307,13 @@ def _detect_ic(
     )
     refined_search_region_end = np.clip(refined_search_region_end, None, len(gyr_ml))
 
-    # TODO: Fix this! The lowpass filter order is unlikely calculated correctly.
-    #   Makes more sense to use typical motion band cutoffs here and hor performance filter the entire signal outside
-    #   the loop
-    # Low pass filter acc_pa to remove sharp peaks and get the overall shape of the signal.The swing acceleration peak
-    # is now clearly distinguishable from the IC peak, because the latter is too high frequency.
-    # First, design the Butterworth filter
-    wn = 4 * 2 / len(gyr_ml)  # cutoff frequency at 4 * the stride frequency
-    n = 1  # Filter order
-    b, a = signal.butter(n, wn, output="ba")
-
-    # Second, apply the filter
-    acc_pa_filt = signal.filtfilt(b, a, acc_pa)
+    # Low pass filter acc_pa to remove sharp peaks and get the overall shape of the signal.
+    # The swing acceleration peak is now clearly distinguishable from the IC peak, because the latter is too high
+    # frequency.
+    sos = signal.butter(
+        lowpass_parameter.order, lowpass_parameter.cutoff_hz, btype="low", output="sos", fs=sampling_rate_hz
+    )
+    acc_pa_filt = signal.sosfiltfilt(sos, acc_pa)
     try:
         # maximum of acc_pa signal after mid swing gyro peak, before gyro derivative max
         refined_search_region_start = int(
@@ -324,4 +340,4 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
     The search area for the TC is determined in the `_find_all_events` function and
     only the relevant slice of the gyro signal is then passed on to this function.
     """
-    return np.argmin(gyr_ml)
+    return float(np.argmin(gyr_ml))

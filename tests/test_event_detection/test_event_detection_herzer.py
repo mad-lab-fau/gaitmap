@@ -150,7 +150,7 @@ class TestEventDetectionHerzer:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = HerzerEventDetection(min_vel_search_win_size_ms=5000)
-        with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
+        with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is*"):
             ed.detect(data_left, stride_list_left, 204.8)
 
     # def test_valid_ic_search_region_ms(self, healthy_example_imu_data, healthy_example_stride_borders):

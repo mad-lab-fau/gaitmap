@@ -6,7 +6,7 @@ import pandas as pd
 from joblib import Memory
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._base import _EventDetectionMixin, _detect_min_vel_gyr_energy
+from gaitmap.event_detection._event_detection_mixin import _EventDetectionMixin, _detect_min_vel_gyr_energy
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
