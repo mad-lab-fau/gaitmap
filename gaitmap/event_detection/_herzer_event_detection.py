@@ -107,6 +107,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         TODO: Add paper
 
     initial contact (`ic`), also called heel strike (HS):
+        TODO: Update this! We are not looking for the fasted decleration, but the derivative of the acceleration.
         At `ic` the foot decelerates rapidly when the foot hits the ground.
         For the detection of `ic` only the signal between the first prominent maximum and 70% of the
         stride duration is considered.
@@ -152,8 +153,6 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
     different types of strides can be found :ref:`here<stride_list_guide>`.
-
-    TODO: Add Image similar to Rampp
 
 
     .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
@@ -281,15 +280,13 @@ def _detect_ic(
 
     The IC is located at the minimum of the derivative of the low-pass filtered acc_pa signal.
     The search for this minimum starts after the gyro_ml midswing peak and the filtered acc_pa swing peak
-    and ends at the pre-midstance peak in the gyro_ml signal or at the latest at 70% of the stride length.
+    and ends at the pre-midstance peak in the gyro_ml signal or at 70% of the stride time.
     (This is better fit for various walking speeds and stair inclinations.)
     """
     # Determine rough search region
     # use midswing peak instead of global peak (the latter fails for stair descent)
     mid_swing_max = _get_midswing_max(gyr_ml, peak_prominence_thresholds, n_considered_peaks)
     search_region = (mid_swing_max, int(0.7 * len(gyr_ml)))
-
-    # search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
 
     if np.isnan(search_region[0]) or search_region[1] - search_region[0] <= 0:
         # The gyr argmax was not found in the first half of the step
