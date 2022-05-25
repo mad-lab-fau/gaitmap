@@ -75,11 +75,11 @@ segmented_events_left.head()
 
 # %%
 # To get a better understanding of the results, we can plot the data and the gait events.
-# The top row shows the `gyr_ml` axis, the middle row the `acc_pa` axis, and the bottom row the lowpassfiltered
-# derivative of the acc_pa signal, that is used to find the ic point.
+# The top row shows the `gyr_ml` axis, the middle row the `acc_pa` axis, the third row shows the lowpass filtered
+# acc_pa axis and the bottom row the lowpass filtered derivative of the acc_pa signal, that is used to find the ic
+# point.
 #
 # The vertical lines show the start and end of the strides that are overlapping with the min_vel samples.
-#
 # Only the second sequence of strides of the left foot are shown.
 
 import matplotlib.pyplot as plt
@@ -87,11 +87,11 @@ import numpy as np
 from scipy import signal
 
 # calculate the filtered signal:
-sos = signal.butter(ed.ic_lowpass_filter_parameter.order, 0.036, btype="low", output="sos")
+sos = signal.butter(*ed.ic_lowpass_filter_parameter, btype="low", output="sos", fs=sampling_rate_hz)
 acc_pa_low = signal.sosfiltfilt(sos, bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"])
 acc_pa_der = np.diff(acc_pa_low)
 
-fig, axs = plt.subplots(4, sharex=True, figsize=(10, 5))
+fig, axs = plt.subplots(4, sharex=True, figsize=(10, 8))
 axs_data = [
     bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]].to_numpy(),
     bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]].to_numpy(),
@@ -119,6 +119,8 @@ for ax, data in zip(axs, axs_data):
 axs[0].set_title("Events of min_vel strides")
 axs[0].set_ylabel("gyr_ml (°/s)")
 axs[1].set_ylabel("acc_pa [m/s^2]")
+axs[2].set_ylabel("filtered acc_pa [m/s^2]")
+axs[3].set_ylabel("filtered acc_pa derivative")
 axs[0].set_xlim(3600, 7200)
 plt.legend(loc="best")
 
