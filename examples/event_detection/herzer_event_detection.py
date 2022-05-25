@@ -2,7 +2,7 @@ r"""
 .. _example_herzer_event_detection:
 
 Herzer event detection
-=====================
+======================
 
 This example illustrates how the gait event detection by the :class:`~gaitmap.event_detection.HerzerEventDetection`
 can be used to detect gait events within a list of strides and the corresponding IMU signal.
