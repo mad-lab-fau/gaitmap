@@ -67,7 +67,9 @@ class TestEventDetectionRampp:
             return event_list, None
 
         ed = RamppEventDetection(enforce_consistency=var1)
-        with patch("gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func) as mock:
+        with patch(
+            "gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func
+        ) as mock:
             ed.detect(data_left, stride_list_left, 204.8)
 
         assert mock.call_count == output

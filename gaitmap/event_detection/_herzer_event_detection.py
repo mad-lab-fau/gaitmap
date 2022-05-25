@@ -297,8 +297,8 @@ def _detect_ic(
     sampling_rate_hz: float,
 ) -> int:
     """Detect IC within the stride.
-    
-    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition 
+
+    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
     in gaitmap.
     This is because the algorithm was originally developed considering a different coordinate system.
     To keep the logic identical to the original paper, we pass in the inverted signal axis (see parent function)
