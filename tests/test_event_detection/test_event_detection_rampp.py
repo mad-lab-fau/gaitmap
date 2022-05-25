@@ -67,7 +67,7 @@ class TestEventDetectionRampp:
             return event_list, None
 
         ed = RamppEventDetection(enforce_consistency=var1)
-        with patch("gaitmap.event_detection._base.enforce_stride_list_consistency", side_effect=mock_func) as mock:
+        with patch("gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func) as mock:
             ed.detect(data_left, stride_list_left, 204.8)
 
         assert mock.call_count == output
@@ -148,7 +148,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = RamppEventDetection(min_vel_search_win_size_ms=5000)
-        with pytest.raises(ValueError, match=r"The value chosen for min_vel_search_win_size_ms is too large*"):
+        with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is *"):
             ed.detect(data_left, stride_list_left, 204.8)
 
     def test_valid_ic_search_region_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
