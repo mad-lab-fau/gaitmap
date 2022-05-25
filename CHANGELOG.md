@@ -27,6 +27,8 @@ project.
 - An example that explains how to automatically align a sensor to the gaitmap coordinate system, when it was attached in 
   an arbitrary orientation.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/171)
+- The `HerzerEventDetection` - Algorithm, specifically designed to work with stair gait.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/158)
 
 ### Changed
 

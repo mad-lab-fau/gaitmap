@@ -23,7 +23,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     HerzerEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
     features in the foot-mounted sensor signals.
     The method was first developed in the context of the Bachelor Thesis by Liv Herzer (2021) under the supervision of
-    Nils Roth.
+    Nils Roth [3]_.
     It combines techniques used in Rampp et al. (2014) [1]_ and Figueiredo et al. (2018) [2]_ with some original
     approaches.
     The particular goial was to create an Event Detection that worked well during level walking **and** stair
@@ -162,7 +162,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
     different types of strides can be found :ref:`here<stride_list_guide>`.
 
-    Differences to original Implementation (Bachelorthesis by Liv Herzer):
+    Differences to original Implementation (Bachelorthesis by Liv Herzer [3]_):
         1. This implementation does not use an adaptive cut-off for the
            low-pass filter.
         2. Instead of iteratively lowering the detection threshold to find the maximum of the swing phase, we simply use
@@ -177,6 +177,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     .. [2] J. Figueiredo, P. Félix, L. Costa, J. C. Moreno and C. P. Santos, "Gait Event Detection in Controlled and
        Real-Life Situations: Repeated Measures From Healthy Subjects," in IEEE Transactions on Neural Systems and
        Rehabilitation Engineering, vol. 26, no. 10, pp. 1945-1956, Oct. 2018, doi: 10.1109/TNSRE.2018.2868094.
+    .. [3] https://www.mad.tf.fau.de/person/liv-herzer-2/
 
     """
 
