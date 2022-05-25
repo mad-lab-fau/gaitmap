@@ -1,12 +1,12 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Optional, Tuple, Union, Dict, cast, Callable
+from typing import Callable, Dict, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._event_detection_mixin import _EventDetectionMixin, _detect_min_vel_gyr_energy
+from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
@@ -157,7 +157,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        super(RamppEventDetection, self).__init__(memory=memory, enforce_consistency=enforce_consistency)
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency)
 
     def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
         """Select the function to calculate the all events.
@@ -211,8 +211,15 @@ def _find_all_events(
 
 
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
+    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
+    """Find the ic.
+
+    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
+    in gaitmap.
+    This is because the algorithm was originally developed considering a different coordinate system.
+    To keep the logic identical to the original paper, we pass in the inverted signal axis (see parent function)
+    """
     # Determine rough search region
     search_region = (np.argmax(gyr_ml), int(0.6 * gyr_ml.shape[0]))
 
@@ -239,7 +246,7 @@ def _detect_ic(
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
     acc_search_region_end = int(np.min(np.array([gyr_ml.shape[0], heel_strike_candidate + ic_search_region[1]])))
 
-    return float(acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end]))
+    return float(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:

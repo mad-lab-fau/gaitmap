@@ -1,31 +1,30 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
-from typing import TypeVar, Dict, Callable, Any, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from numpy.linalg import norm
+from typing_extensions import Self
 
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    is_sensor_data,
-    is_stride_list,
     SensorData,
     StrideList,
     get_multi_sensor_names,
+    is_sensor_data,
+    is_stride_list,
     set_correct_index,
 )
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    enforce_stride_list_consistency,
     _segmented_stride_list_to_min_vel_single_sensor,
+    enforce_stride_list_consistency,
 )
-
-Self = TypeVar("Self", bound="_EventDetectionMixin")
 
 
 class _EventDetectionMixin:
@@ -47,7 +46,7 @@ class _EventDetectionMixin:
         self.memory = memory
         self.enforce_consistency = enforce_consistency
 
-    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
+    def detect(self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -83,7 +82,7 @@ class _EventDetectionMixin:
         if dataset_type == "single":
             results = self._detect_single_dataset(data, stride_list, detect_kwargs=detect_kwargs, memory=self.memory)
         else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = dict()
+            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
                     data[sensor],
