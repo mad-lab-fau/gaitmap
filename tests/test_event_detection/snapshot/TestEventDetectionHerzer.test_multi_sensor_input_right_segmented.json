@@ -29,7 +29,7 @@
         "primaryKey":[
             "s_id"
         ],
-        "pandas_version":"0.20.0"
+        "pandas_version":"1.4.0"
     },
     "data":[
         {
@@ -268,7 +268,7 @@
             "s_id":57,
             "start":6966,
             "end":7273,
-            "ic":7057.0,
+            "ic":7058.0,
             "tc":6966.0,
             "min_vel":7135.0
         }
