@@ -1,34 +1,15 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Callable, Dict, Optional, Tuple, TypeVar, Union, cast
+from typing import Callable, Dict, Optional, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from numpy.linalg import norm
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
-from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.consts import BF_ACC, BF_GYR, SL_INDEX
-from gaitmap.utils.datatype_helper import (
-    SensorData,
-    StrideList,
-    get_multi_sensor_names,
-    is_sensor_data,
-    is_stride_list,
-    set_correct_index,
-)
-from gaitmap.utils.exceptions import ValidationError
-from gaitmap.utils.stride_list_conversion import (
-    _segmented_stride_list_to_min_vel_single_sensor,
-    enforce_stride_list_consistency,
-)
-
-Self = TypeVar("Self", bound="RamppEventDetection")
+from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 
 
-class RamppEventDetection(BaseEventDetection):
+class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     """Find gait events in the IMU raw signal based on signal characteristics.
 
     RamppEventDetection uses signal processing approaches to find temporal gait events by searching for characteristic
@@ -166,15 +147,6 @@ class RamppEventDetection(BaseEventDetection):
 
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
-    memory: Optional[Memory]
-    enforce_consistency: bool
-
-    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-
-    data: SensorData
-    sampling_rate_hz: float
-    stride_list: pd.DataFrame
 
     def __init__(
         self,
@@ -185,41 +157,16 @@ class RamppEventDetection(BaseEventDetection):
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        self.memory = memory
-        self.enforce_consistency = enforce_consistency
-        super().__init__()
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency)
 
-    def detect(self: Self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
-        """Find gait events in data within strides provided by stride_list.
+    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+        """Select the function to calculate the all events.
 
-        Parameters
-        ----------
-        data
-            The data set holding the imu raw data
-        stride_list
-            A list of strides provided by a stride segmentation method
-        sampling_rate_hz
-            The sampling rate of the data
-
-        Returns
-        -------
-        self
-            The class instance with all result attributes populated
-
+        This is separate method to make it easy to overwrite by a subclass.
         """
-        dataset_type = is_sensor_data(data, frame="body")
-        stride_list_type = is_stride_list(stride_list, stride_type="any")
+        return _find_all_events
 
-        if dataset_type != stride_list_type:
-            raise ValidationError(
-                "An invalid combination of stride list and dataset was provided."
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
-            )
-
-        self.data = data
-        self.sampling_rate_hz = sampling_rate_hz
-        self.stride_list = stride_list
-
+    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:  # noqa: no-self-use
         ic_search_region = cast(
             Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )
@@ -228,79 +175,7 @@ class RamppEventDetection(BaseEventDetection):
                 "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-
-        if dataset_type == "single":
-            results = self._detect_single_dataset(
-                data, stride_list, ic_search_region, min_vel_search_win_size, memory=self.memory
-            )
-        else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
-            for sensor in get_multi_sensor_names(data):
-                results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], ic_search_region, min_vel_search_win_size, memory=self.memory
-                )
-            results = invert_result_dictionary(results_dict)
-
-        # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
-        # and can not be used for anything anyway
-        if not self.enforce_consistency:
-            del results["min_vel_event_list"]
-        set_params_from_dict(self, results, result_formatting=True)
-        return self
-
-    def _detect_single_dataset(
-        self,
-        data: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        ic_search_region: Tuple[int, int],
-        min_vel_search_win_size: int,
-        memory: Memory,
-    ) -> Dict[str, pd.DataFrame]:
-        """Detect gait events for a single sensor data set and put into correct output stride list."""
-        if memory is None:
-            memory = Memory(None)
-
-        acc = data[BF_ACC]
-        gyr = data[BF_GYR]
-
-        stride_list = set_correct_index(stride_list, SL_INDEX)
-
-        # find events in all segments
-        event_detection_func = self._select_all_event_detection_method()
-        event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, ic_search_region, min_vel_search_win_size)
-
-        # build first dict / df based on segment start and end
-        segmented_event_list = {
-            "s_id": stride_list.index,
-            "start": stride_list["start"],
-            "end": stride_list["end"],
-            "ic": ic,
-            "tc": tc,
-            "min_vel": min_vel,
-        }
-        segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
-
-        if self.enforce_consistency:
-            # check for consistency, remove inconsistent strides
-            segmented_event_list, _ = enforce_stride_list_consistency(
-                segmented_event_list, stride_type="segmented", check_stride_list=False
-            )
-
-        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
-            segmented_event_list, target_stride_type="min_vel"
-        )
-
-        min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
-
-        return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
-
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
-        """Select the function to calculate the all events.
-
-        This is separate method to make it easy to overwrite by a subclass.
-        """
-        return _find_all_events
+        return {"ic_search_region": ic_search_region, "min_vel_search_win_size": min_vel_search_win_size}
 
 
 def _find_all_events(
@@ -315,7 +190,7 @@ def _find_all_events(
     gyr = gyr.to_numpy()
     acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
     ic_events = []
-    fc_events = []
+    tc_events = []
     min_vel_events = []
     for _, stride in stride_list.iterrows():
         start = stride["start"]
@@ -325,38 +200,28 @@ def _find_all_events(
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
         ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-        fc_events.append(start + _detect_tc(gyr_ml_sec))
-        min_vel_events.append(start + _detect_min_vel(gyr_sec, min_vel_search_win_size))
+        tc_events.append(start + _detect_tc(gyr_ml_sec))
+        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
     return (
         np.array(ic_events, dtype=float),
-        np.array(fc_events, dtype=float),
+        np.array(tc_events, dtype=float),
         np.array(min_vel_events, dtype=float),
     )
 
 
-def _detect_min_vel(gyr: np.ndarray, min_vel_search_win_size: int) -> float:
-    energy = norm(gyr, axis=-1) ** 2
-    if min_vel_search_win_size >= len(energy):
-        raise ValueError(
-            f"min_vel_search_win_size_ms is {min_vel_search_win_size}, but gyr data"
-            f"has only {len(gyr)} samples. The search window should roughly be 100ms"
-            " and the stride time must be larger. If the stride is shorter, something"
-            " went wrong with stride segmentation."
-        )
-    energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
-    # find window with lowest summed energy
-    min_vel_start = int(np.argmin(np.sum(energy, axis=1)))
-    # min_vel event = middle of this window
-    min_vel_center = min_vel_start + min_vel_search_win_size // 2
-    return min_vel_center
-
-
 def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
+    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
+    """Find the ic.
+
+    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
+    in gaitmap.
+    This is because the algorithm was originally developed considering a different coordinate system.
+    To keep the logic identical to the original paper, we pass in the inverted signal axis (see parent function)
+    """
     # Determine rough search region
-    search_region = (np.argmax(gyr_ml), int(0.6 * len(gyr_ml)))
+    search_region = (np.argmax(gyr_ml), int(0.6 * gyr_ml.shape[0]))
 
     if search_region[1] - search_region[0] <= 0:
         # The gyr argmax was not found in the first half of the step
@@ -379,9 +244,9 @@ def _detect_ic(
 
     # Acc search window
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
-    acc_search_region_end = int(np.min(np.array([len(acc_pa), heel_strike_candidate + ic_search_region[1]])))
+    acc_search_region_end = int(np.min(np.array([gyr_ml.shape[0], heel_strike_candidate + ic_search_region[1]])))
 
-    return float(acc_search_region_start + np.argmin(acc_pa[acc_search_region_start:acc_search_region_end]))
+    return float(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
 
 
 def _detect_tc(gyr_ml: np.ndarray) -> float:

@@ -91,6 +91,9 @@ def clone(
     if algorithm is _EMPTY:
         return _EMPTY
     # XXX: not handling dictionaries
+    # Handle named tuple
+    if isinstance(algorithm, tuple) and hasattr(algorithm, "_asdict") and hasattr(algorithm, "_fields"):
+        return type(algorithm)(*(clone(a, safe=safe) for a in algorithm))  # noqa: to-many-function-args
     if isinstance(algorithm, (list, tuple, set, frozenset)):
         return type(algorithm)([clone(a, safe=safe) for a in algorithm])  # noqa: to-many-function-args
     # Compared to sklearn, we check specifically for _BaseSerializable and not just if `get_params` is defined on the

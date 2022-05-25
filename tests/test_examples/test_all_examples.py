@@ -119,6 +119,15 @@ def test_rampp_event_detection(snapshot):
     snapshot.assert_match(ed.min_vel_event_list_["right_sensor"])
 
 
+def test_herzer_event_detection(snapshot):
+    from examples.event_detection.herzer_event_detection import ed
+
+    assert len(ed.min_vel_event_list_["left_sensor"]) == 26
+    assert len(ed.min_vel_event_list_["right_sensor"]) == 29
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"])
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"])
+
+
 def test_json_example(snapshot):
     from examples.advanced_features.algo_serialize import json_str, loaded_slt, slt
 

@@ -14,3 +14,4 @@ Classes
    :template: class.rst
 
     RamppEventDetection
+    HerzerEventDetection
