@@ -129,7 +129,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         for k, v in mapping.items():
             if not isinstance(k, tuple):
                 k = (k,)
-            tmp = v.transform(data[list(k)], **kwargs)
+            tmp = v.transform(data[list(k)], **kwargs).transformed_data_
             for col in k:
                 results[col] = tmp[[col]]
         self.transformed_data_ = pd.concat(results, axis=1)[data.columns]
