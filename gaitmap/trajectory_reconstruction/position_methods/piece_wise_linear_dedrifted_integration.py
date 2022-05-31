@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.polynomial import polynomial
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
-from tpcp import CloneFactory
+from tpcp import cf
 
 from gaitmap.base import BasePositionMethod, BaseZuptDetector
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
@@ -125,13 +125,13 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     def __init__(
         self,
-        zupt_detector=CloneFactory(
+        zupt_detector=cf(
             NormZuptDetector(
                 sensor="gyr", window_length_s=0.15, window_overlap=0.5, metric="mean", inactive_signal_threshold=15.0
             )
         ),
         level_assumption: bool = True,
-        gravity: Optional[np.ndarray] = GRAV_VEC,
+        gravity: Optional[np.ndarray] = cf(GRAV_VEC),
     ):
         self.zupt_detector = zupt_detector
         self.level_assumption = level_assumption

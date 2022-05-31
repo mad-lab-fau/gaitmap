@@ -5,6 +5,7 @@ from typing import Optional, TypeVar
 import numpy as np
 import pandas as pd
 from scipy.integrate import cumtrapz
+from tpcp import cf
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
@@ -108,7 +109,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         turning_point: float = 0.5,
         steepness: float = 0.08,
         level_assumption: bool = True,
-        gravity: Optional[np.ndarray] = GRAV_VEC,
+        gravity: Optional[np.ndarray] = cf(GRAV_VEC),
     ):
         self.turning_point = turning_point
         self.steepness = steepness

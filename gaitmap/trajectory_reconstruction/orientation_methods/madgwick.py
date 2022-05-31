@@ -5,6 +5,7 @@ import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
+from tpcp import cf
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_ACC, SF_GYR
@@ -101,7 +102,7 @@ class MadgwickAHRS(BaseOrientationMethod):
     def __init__(
         self,
         beta: float = 0.2,
-        initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
+        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
         memory: Optional[Memory] = None,
     ):
         self.initial_orientation = initial_orientation

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import NOTHING, CloneFactory
+from tpcp import NOTHING, cf
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
@@ -194,7 +194,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
     def __init__(
         self,
-        initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
+        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
         zupt_threshold_dps: float = NOTHING,
         zupt_variance: float = 10e-8,
         velocity_error_variance: float = 10e5,
@@ -203,7 +203,7 @@ class RtsKalman(BaseTrajectoryMethod):
         level_walking_variance: float = 10e-8,
         zupt_window_length_s: float = NOTHING,
         zupt_window_overlap_s: Optional[float] = NOTHING,
-        zupt_detector=CloneFactory(
+        zupt_detector=cf(
             NormZuptDetector(
                 sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
             )
