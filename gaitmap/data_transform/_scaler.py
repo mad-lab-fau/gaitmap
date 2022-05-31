@@ -1,5 +1,5 @@
 """Transformers that scale data to certain data ranges."""
-from typing import Dict, Union, Tuple, Sequence, Set, Optional
+from typing import Dict, Union, Tuple, Sequence, Set, Optional, List
 
 import numpy as np
 import pandas as pd
@@ -89,15 +89,16 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     """
 
-    transformer_mapping: OptimizableParameter[Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
+    transformer_mapping: OptimizableParameter[
+        Optional[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]]
+    ]
     keep_all_cols: PureParameter[bool]
-
 
     data: SingleSensorData
 
     def __init__(
         self,
-        transformer_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer] = cf({}),
+        transformer_mapping: Optional[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]] = None,
         keep_all_cols: bool = True,
     ):
         self.transformer_mapping = transformer_mapping
@@ -129,15 +130,22 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
+        if self.transformer_mapping is None:
+            return self
         mapped_cols = self._validate_mapping()
         for d in data:
             self._validate(d, mapped_cols)
-        for k, v in self.transformer_mapping.items():
+        trained_transformers = []
+        for k, v in self.transformer_mapping:
             if isinstance(v, TrainableTransformerMixin):
                 col_select = k
                 if not isinstance(col_select, tuple):
                     col_select = (col_select,)
-                self.transformer_mapping[k] = v.clone().self_optimize([d[list(col_select)] for d in data], **kwargs)
+                # TODO: Should I clone here? Or is inplace modification expected?
+                trained_transformers.append(v.self_optimize([d[list(col_select)] for d in data], **kwargs))
+            else:
+                trained_transformers.append(v)
+        self.transformer_mapping = trained_transformers
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> SingleSensorData:
@@ -148,8 +156,8 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         results = {}
         mapping = self.transformer_mapping
         if self.keep_all_cols:
-            mapping = {**mapping, **{k: IdentityTransformer() for k in set(data.columns) - mapped_cols}}
-        for k, v in mapping.items():
+            mapping = [*mapping, *((k, IdentityTransformer()) for k in set(data.columns) - mapped_cols)]
+        for k, v in mapping:
             if not isinstance(k, tuple):
                 k = (k,)
             tmp = v.transform(data[list(k)], **kwargs).transformed_data_
@@ -161,7 +169,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     def _validate_mapping(self) -> Set[_Hashable]:
         # Check that each column is only mentioned once:
         unique_k = []
-        for k in self.transformer_mapping.keys():
+        for k, _ in self.transformer_mapping:
             if not isinstance(k, tuple):
                 k = (k,)
             for i in k:
@@ -192,7 +200,9 @@ class IdentityTransformer(BaseTransformer):
         The data passed to the transform method.
 
     """
+
     data: SingleSensorData
+
     def transform(self, data: SingleSensorData, **_) -> Self:
         self.data = data
         self.transformed_data_ = data
