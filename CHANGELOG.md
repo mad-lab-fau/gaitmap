@@ -8,6 +8,25 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+## [Unreleased]
+
+### Changed
+
+- All Algorithm classes now build on `tpcp.Algorithm`.
+  This is a major change and might result in some unexpected incompatibilities with older code.
+  The core dunctionality of tpcp should still work as ecpected.
+  If you were using any of the base classes and algorithm helpers, check if they are still available in gaitmap.
+  If not, there is likely a replacement in tpcp.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
+
+### Removed
+
+- We removed the entire `gaitmap.future` package.
+  This was marked experimental anyway.
+  All functionality has been moved into the `tpcp` package.
+  For most methods and functions, it should be enough to just change the import statement.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
+
 ## [1.6.0] - 2022-05-31
 
 ### Scientific Changes
