@@ -8,6 +8,16 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+## [1.6.0] -
+
+### Scientific Changes
+
+- We fixed a bug with the sign of the TC and IC angle.
+  They were flipped for real sensor data.
+  Now they correctly follow the conventions [Kanzler2015](https://pubmed.ncbi.nlm.nih.gov/26737518/)
+  This is a breaking change and your angle results will be different!
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/180)
+
 ## [1.5.0] - 2022-05-31
 
 ### Added
