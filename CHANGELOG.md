@@ -14,7 +14,7 @@ project.
 
 - All Algorithm classes now build on `tpcp.Algorithm`.
   This is a major change and might result in some unexpected incompatibilities with older code.
-  The core dunctionality of tpcp should still work as ecpected.
+  The core functionality of tpcp should still work as expected.
   If you were using any of the base classes and algorithm helpers, check if they are still available in gaitmap.
   If not, there is likely a replacement in tpcp.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
