@@ -6,6 +6,8 @@ https://mad-srv.informatik.uni-erlangen.de/MadLab/data/sensorpositoncomparison
 
 Note: this script is meant to be independent of the gaitmap library and hence has a couple functions copied and pasted
 here.
+Note: This script will only work with older version of the libraries and dataset. Using the most update to date version
+will likely not work. We will leave the script here as documentation, but it is unlikely to be reproducible.
 """
 
 import warnings
@@ -201,3 +203,10 @@ test_orientation = pd.concat(test_orientation)
 test_position = pd.concat(test_position)
 test_orientation.to_csv("./orientation_sample.csv")
 test_position.to_csv("./position_sample.csv")
+
+# Addition to fix the orientation bug #187
+
+test_orientation = pd.read_csv("./orientation_sample.csv", index_col=[0, 1, 2])
+fixed_ori = pd.DataFrame(Rotation.from_quat(test_orientation).inv().as_quat(), columns=["q_x", "q_y", "q_z", "q_w"])
+fixed_ori.index = test_orientation.index
+fixed_ori.to_csv("./orientation_sample.csv")
