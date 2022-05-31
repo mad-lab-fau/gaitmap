@@ -8,7 +8,7 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [1.5.0] -
+## [1.5.0] - 2022-05-31
 
 ### Added
 
@@ -60,7 +60,7 @@ project.
 
 - The parameters `"zupt_threshold_dps", "zupt_window_length_s", "zupt_window_overlap_s"` for `RtsKalman` are now 
   deprecated.
-  Instead a Zupt-Detector instance should be used.
+  Instead, a Zupt-Detector instance should be used.
   When converting from the current parameters to the new `NormZuptDetector` class, note that the overlap is now 
   specified as a fraction of the window length and not in seconds!
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/159)
@@ -75,8 +75,8 @@ project.
 ### Fixed
 
 - Bugfix for `gaitmap.gait_detection.ullrich_gait_sequence_detection`: Now proper handling of cases where margin
- should be added but no gait sequences were detected 
- (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/157) 
+  should be added but no gait sequences were detected 
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/157) 
 
 ### Migration Guide
 
