@@ -25,13 +25,11 @@ class BaseTransformer(_BaseSerializable):
         ----------
         data
             A dataframe representing single sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
-        transformed_data
-            The transformed data
+        self
+            The instance of the transformer with the results attached
 
         """
         raise NotImplementedError()
@@ -104,8 +102,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         ----------
         data
            A sequence of dataframes, each representing single-sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
@@ -202,13 +198,11 @@ class FixedScaler(BaseTransformer):
         ----------
         data
             A dataframe representing single sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
-        transformed_data
-            The scaled dataframe
+        self
+            The instance of the transformer with the results attached
 
         """
         self.transformed_data_ = (data - self.offset) / self.scale
@@ -257,6 +251,7 @@ class TrainableStandardScaler(StandardScaler):
 
 
     """
+
     mean: OptimizableParameter[Optional[float]]
     std: OptimizableParameter[Optional[float]]
 
@@ -284,8 +279,10 @@ class TrainableStandardScaler(StandardScaler):
 
         """
         if self.mean is None or self.std is None:
-            raise ValueError("The mean and std must be set before the data can be transformed. Use `self_optimize` to "
-                             "learn them from a trainingssequence.")
+            raise ValueError(
+                "The mean and std must be set before the data can be transformed. Use `self_optimize` to "
+                "learn them from a trainingssequence."
+            )
         self.transformed_data_ = self._transform_data(data, self.mean, self.std)
         return self
 
@@ -327,8 +324,8 @@ class AbsMaxScaler(BaseTransformer):
 
         Returns
         -------
-        transformed_data
-            The scaled dataframe
+        self
+            The instance of the transformer with the results attached
 
         """
         self.transformed_data_ = self._transform(data, self._get_abs_max(data))
@@ -419,13 +416,11 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
         ----------
         data
             A dataframe representing single sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
-        transformed_data
-            The scaled dataframe
+        self
+            The instance of the transformer with the results attached
 
         """
         if self.data_max is None:
@@ -466,13 +461,11 @@ class MinMaxScaler(BaseTransformer):
         ----------
         data
             A dataframe representing single sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
-        transformed_data
-            The scaled dataframe
+        self
+            The instance of the transformer with the results attached
 
         """
         data_range = self._calc_data_range(data)
@@ -538,8 +531,6 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
         ----------
         data
            A sequence of dataframes, each representing single-sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
@@ -558,13 +549,11 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
         ----------
         data
             A dataframe representing single sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
-        transformed_data
-            The scaled dataframe
+        self
+            The instance of the transformer with the results attached
 
         """
         if self.data_range is None:
