@@ -1,4 +1,5 @@
 """Transformers that scale data to certain data ranges."""
+from copy import copy
 from typing import List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
@@ -148,9 +149,12 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         self.transformer_mapping = trained_transformers
         return self
 
-    def transform(self, data: SingleSensorData, **kwargs) -> SingleSensorData:
+    def transform(self, data: SingleSensorData, **kwargs) -> Self:
         """Transform all data columns based on the selected scalers."""
         self.data = data
+        if self.transformer_mapping is None:
+            self.transformed_data_ = copy(data)
+            return self
         mapped_cols = self._validate_mapping()
         self._validate(data, mapped_cols)
         results = {}
@@ -455,7 +459,7 @@ class AbsMaxScaler(BaseTransformer):
         self.transformed_data_ = self._transform(data, self._get_abs_max(data))
         return self
 
-    def _get_abs_max(self, data: SingleSensorData) -> float: # noqa: no-self-use
+    def _get_abs_max(self, data: SingleSensorData) -> float:  # noqa: no-self-use
         is_single_sensor_data(data, check_gyr=False, check_acc=False, raise_exception=True)
         return float(np.nanmax(np.abs(data.to_numpy())))
 
