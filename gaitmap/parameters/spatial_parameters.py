@@ -329,7 +329,6 @@ def _get_angle_at_index(angle_course: np.ndarray, index_per_stride: pd.Series) -
 
 
 def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
-
     # We need to handle the case of empty orientations df manually
     if orientations.empty:
         angles = pd.Series()
@@ -377,6 +376,9 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
     )
     floor_angle = np.rad2deg(find_unsigned_3d_angle(forward.to_numpy(), np.array([0, 0, 1]))) - 90
     floor_angle = pd.Series(floor_angle, index=forward.index)
+    # Note: We discovered in #187 that due to a series of bugs the sign of these angles is flipped.
+    # To follow the convention that the tc_angle should be smaller than 0 (during healthy walking), we multiply here.
+    floor_angle *= -1
     return floor_angle
 
 
