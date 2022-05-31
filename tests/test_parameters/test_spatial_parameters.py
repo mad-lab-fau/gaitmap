@@ -99,7 +99,7 @@ def single_sensor_sole_angle_course():
     index = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     sample = [0, 1, 2, 0, 1, 2, 0, 1, 2]
     index = pd.MultiIndex.from_arrays([index, sample], names=["s_id", "sample"])
-    angle = [0, 90.0, 0, 0, 0, 0, 0, 0, 0]
+    angle = [0, -90.0, 0, 0, 0, 0, 0, 0, 0]
     return pd.Series(angle, index=index)
 
 
