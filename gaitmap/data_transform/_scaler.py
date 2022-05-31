@@ -220,6 +220,11 @@ class StandardScaler(BaseTransformer):
 
     """
 
+    ddof: Parameter[int] = 1
+
+    def __init__(self, ddof: int = 1):
+        self.ddof = ddof
+
     def transform(self, data: SingleSensorData, **_) -> Self:
         """Scale the data.
 
@@ -234,7 +239,7 @@ class StandardScaler(BaseTransformer):
             The instance of the transformer with the results attached
 
         """
-        self.transformed_data_ = (data - data.mean()) / data.std()
+        self.transformed_data_ = (data - data.to_numpy().mean()) / data.to_numpy().std(ddof=self.ddof)
         return self
 
     def _transform_data(self, data: SingleSensorData, mean, std) -> SingleSensorData:
@@ -253,25 +258,29 @@ class TrainableStandardScaler(StandardScaler):
     mean: OptimizableParameter[Optional[float]]
     std: OptimizableParameter[Optional[float]]
 
-    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None):
+    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None, ddof: int = 1):
         self.mean = mean
         self.std = std
+        super().__init__(ddof=ddof)
 
     def self_optimize(self, data: Sequence[SingleSensorData], **_) -> Self:
-        # Iteratively calculate the overall mean and std
-        # TODO: Test this
-        sum = 0
-        sum_sq = 0
-        n_rows = 0
+        # Iteratively calculate the overall mean and std using a two-pass algorithm
+        # First pass: Calculate the mean:
+        sum_vals = 0
+        count = 0
         for dp in data:
-            is_single_sensor_data(dp, check_acc=False, check_gyr=False, raise_exception=True)
-            dp = dp.to_numpy()
-            sum += dp.sum()
-            sum_sq += (dp ** 2).sum()
-            n_rows += dp.flatten().shape[0]
+            sum_vals += dp.to_numpy().sum()
+            count += dp.to_numpy().size
 
-        self.mean = sum / n_rows
-        self.std = np.sqrt(sum_sq / n_rows - self.mean ** 2)
+        # Second pass: Calculate the std:
+        mean = sum_vals / count
+        sum_vals = 0
+        for dp in data:
+            sum_vals += ((dp - mean) ** 2).sum()
+        std = np.sqrt(sum_vals / (count - self.ddof))
+
+        self.mean = mean
+        self.std = std
         return self
 
     def transform(self, data: SingleSensorData, **_) -> Self:
