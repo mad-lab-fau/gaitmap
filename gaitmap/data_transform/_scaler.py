@@ -1,4 +1,4 @@
-"""Transformers that scale data to certaind ata ranges."""
+"""Transformers that scale data to certain data ranges."""
 from typing import Dict, Union, Tuple, Sequence, Set, Optional
 
 import numpy as np
@@ -14,7 +14,7 @@ from gaitmap.utils.datatype_helper import SensorData, SingleSensorData
 class BaseTransformer(_BaseSerializable):
     """Base class for all data transformers."""
 
-    action_methods = ('transform',)
+    action_methods = ("transform",)
 
     transformed_data_: SingleSensorData
 
@@ -37,7 +37,7 @@ class BaseTransformer(_BaseSerializable):
         raise NotImplementedError()
 
 
-class TrainableTransformerMixin(_BaseSerializable):
+class TrainableTransformerMixin:
     """Mixin for transformers with adaptable parameters."""
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
@@ -78,6 +78,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         Otherwise, only columns that are actually transformed remain in the output.
 
     """
+
     transformer_mapping: OptimizableParameter[Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
     keep_all_cols: PureParameter[bool]
 
@@ -120,9 +121,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
                 col_select = k
                 if not isinstance(col_select, tuple):
                     col_select = (col_select,)
-                self.transformer_mapping[k] = v.clone().self_optimize(
-                    [d[list(col_select)] for d in data], **kwargs
-                )
+                self.transformer_mapping[k] = v.clone().self_optimize([d[list(col_select)] for d in data], **kwargs)
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> SingleSensorData:
@@ -213,6 +212,81 @@ class FixedScaler(BaseTransformer):
 
         """
         self.transformed_data_ = (data - self.offset) / self.scale
+        return self
+
+
+class StandardScaler(BaseTransformer):
+    """Apply a standard scaling to the data.
+
+    The transformed data y is calculated as:
+
+    .. code-block::
+
+        y = (x - x.mean()) / x.std()
+
+    .. note:: Only a single mean and std are calculated over the entire data (i.e. not per column).
+
+    """
+
+    def transform(self, data: SingleSensorData, **_) -> Self:
+        """Scale the data.
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+
+        """
+        self.transformed_data_ = (data - data.mean()) / data.std()
+        return self
+
+    def _transform_data(self, data: SingleSensorData, mean, std) -> SingleSensorData:
+        return (data - mean) / std
+
+
+class TrainableStandardScaler(StandardScaler):
+    """Apply a standard scaling to the data.
+
+    The transformed data y is calculated as:
+
+
+
+    """
+    mean: OptimizableParameter[Optional[float]]
+    std: OptimizableParameter[Optional[float]]
+
+    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None):
+        self.mean = mean
+        self.std = std
+
+    def self_optimize(self, data: SingleSensorData, **_) -> Self:
+        self.mean = data.mean()
+        self.std = data.std()
+        return self
+
+    def transform(self, data: SingleSensorData, **_) -> Self:
+        """Scale the data.
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+
+        """
+        if self.mean is None or self.std is None:
+            raise ValueError("The mean and std must be set before the data can be transformed. Use `self_optimize` to "
+                             "learn them from a trainingssequence.")
+        self.transformed_data_ = self._transform_data(data, self.mean, self.std)
         return self
 
 
@@ -313,6 +387,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
         y = x * feature_max / data_max
 
     """
+
     data_max: OptimizableParameter[Optional[float]]
 
     def __init__(self, feature_max: float = 1, data_max: Optional[float] = None):
@@ -376,11 +451,11 @@ class MinMaxScaler(BaseTransformer):
     I.e. Only a single global scaling factor is applied to all the columns.
 
     """
+
     feature_range: Parameter[Tuple[float, float]]
 
     def __init__(
-        self,
-        feature_range: Tuple[float, float] = (0, 1.0),
+        self, feature_range: Tuple[float, float] = (0, 1.0),
     ):
         self.feature_range = feature_range
 
@@ -447,12 +522,11 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
         y = x * scale + offset
 
     """
+
     feature_range = OptimizableParameter[Optional[Tuple[float, float]]]
 
     def __init__(
-        self,
-        feature_range: Tuple[float, float] = (0, 1.0),
-        data_range: Optional[Tuple[float, float]] = None,
+        self, feature_range: Tuple[float, float] = (0, 1.0), data_range: Optional[Tuple[float, float]] = None,
     ):
         self.data_range = data_range
         super().__init__(feature_range=feature_range)
