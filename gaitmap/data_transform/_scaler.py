@@ -3,7 +3,7 @@ from typing import Dict, Union, Tuple, Sequence, Set, Optional
 
 import numpy as np
 import pandas as pd
-from tpcp import OptimizableParameter, PureParameter, Parameter
+from tpcp import OptimizableParameter, PureParameter, Parameter, cf
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
@@ -14,9 +14,11 @@ from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, is_singl
 class BaseTransformer(_BaseSerializable):
     """Base class for all data transformers."""
 
-    action_methods = ("transform",)
+    _action_methods = ("transform",)
 
     transformed_data_: SingleSensorData
+
+    data: SingleSensorData
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
         """Transform the data using the transformer.
@@ -78,10 +80,11 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     transformer_mapping: OptimizableParameter[Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
     keep_all_cols: PureParameter[bool]
 
+
     def __init__(
         self,
-        transformer_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer],
-        keep_all_cols: bool = False,
+        transformer_mapping: Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer] = cf({}),
+        keep_all_cols: bool = True,
     ):
         self.transformer_mapping = transformer_mapping
         self.keep_all_cols = keep_all_cols
@@ -120,6 +123,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     def transform(self, data: SingleSensorData, **kwargs) -> SingleSensorData:
         """Transform all data columns based on the selected scalers."""
+        self.data = data
         mapped_cols = self._validate_mapping()
         self._validate(data, mapped_cols)
         results = {}
@@ -159,6 +163,7 @@ class IdentityTransformer(BaseTransformer):
     """Dummy Transformer that does not modify the data."""
 
     def transform(self, data: SingleSensorData, **_) -> Self:
+        self.data = data
         self.transformed_data_ = data
         return self
 
@@ -203,6 +208,7 @@ class FixedScaler(BaseTransformer):
             The instance of the transformer with the results attached
 
         """
+        self.data = data
         self.transformed_data_ = (data - self.offset) / self.scale
         return self
 
@@ -239,6 +245,7 @@ class StandardScaler(BaseTransformer):
             The instance of the transformer with the results attached
 
         """
+        self.data = data
         self.transformed_data_ = (data - data.to_numpy().mean()) / data.to_numpy().std(ddof=self.ddof)
         return self
 
@@ -246,7 +253,7 @@ class StandardScaler(BaseTransformer):
         return (data - mean) / std
 
 
-class TrainableStandardScaler(StandardScaler):
+class TrainableStandardScaler(StandardScaler, TrainableTransformerMixin):
     """Apply a standard scaling to the data.
 
     The transformed data y is calculated as:
@@ -297,6 +304,7 @@ class TrainableStandardScaler(StandardScaler):
             The instance of the transformer with the results attached
 
         """
+        self.data = data
         if self.mean is None or self.std is None:
             raise ValueError(
                 "The mean and std must be set before the data can be transformed. Use `self_optimize` to "
@@ -347,6 +355,7 @@ class AbsMaxScaler(BaseTransformer):
             The instance of the transformer with the results attached
 
         """
+        self.data = data
         self.transformed_data_ = self._transform(data, self._get_abs_max(data))
         return self
 
@@ -424,6 +433,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
         """
         if self.data_max is None:
             raise ValueError("data_max not set. Use self_optimize to learn it based on a trainings sequence.")
+        self.data = data
         self.transformed_data_ = self._transform(data, self.data_max)
         return self
 
@@ -467,6 +477,7 @@ class MinMaxScaler(BaseTransformer):
             The instance of the transformer with the results attached
 
         """
+        self.data = data
         data_range = self._calc_data_range(data)
         self.transformed_data_ = self._transform(data, data_range)
         return self
@@ -538,10 +549,10 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
         """
         mins, maxs = zip(*(self._calc_data_range(d) for d in data))
-        self.data_range = np.min(mins), np.maxs(maxs)
+        self.data_range = np.min(mins), np.max(maxs)
         return self
 
-    def transform(self, data: SingleSensorData, **_) -> SingleSensorData:
+    def transform(self, data: SingleSensorData, **_) -> Self:
         """Scale the data.
 
         Parameters
@@ -557,4 +568,6 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
         """
         if self.data_range is None:
             raise ValueError("No data range set. Use self_optimize to learn it based on a trainings sequence.")
-        return self._transform(data, data_range=self.data_range)
+        self.data = data
+        self.transformed_data_ = self._transform(data, data_range=self.data_range)
+        return self
