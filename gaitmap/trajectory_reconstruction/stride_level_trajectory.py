@@ -2,6 +2,7 @@
 from typing import Optional, TypeVar
 
 from scipy.spatial.transform import Rotation
+from tpcp import CloneFactory
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -15,7 +16,6 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError
@@ -131,8 +131,8 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):

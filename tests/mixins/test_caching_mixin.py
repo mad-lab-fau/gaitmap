@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 import joblib
 import pytest
 from joblib import Memory
+from tpcp import get_action_method, get_action_params
 
 from gaitmap.base import BaseType
 
@@ -27,11 +28,11 @@ class TestCachingMixin:
         assert "memory" in after_action_instance.get_params()
 
     def test_cached_call_works(self, after_action_instance, capsys):
-        parameters = after_action_instance.get_other_params()
+        parameters = get_action_params(after_action_instance)
         algo = after_action_instance.clone()
 
         # Call everything without caching
-        results = getattr(algo, after_action_instance._action_method)(**parameters)
+        results = get_action_method(algo)(**parameters)
 
         # We don't expect any print output from caching:
         assert capsys.readouterr().out.count("[Memory]") == 0
@@ -48,7 +49,7 @@ class TestCachingMixin:
 
         # Call the algo the first time.
         # This time we expect the results to be method to be called and stored
-        results = getattr(algo, after_action_instance._action_method)(**parameters)
+        results = get_action_method(algo)(**parameters)
         assert capsys.readouterr().out.count("[Memory] Calling") > 0
 
         after_first_id = id(results)
@@ -61,7 +62,7 @@ class TestCachingMixin:
 
         # Call algo a second time
         # This time all results should be loaded from cache
-        results = getattr(algo, after_action_instance._action_method)(**parameters)
+        results = get_action_method(algo)(**parameters)
         assert len(re.findall(r"[Memory].*: Loading", capsys.readouterr().out)) > 0
 
         after_second_id = id(results)

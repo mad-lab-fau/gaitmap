@@ -9,7 +9,7 @@ GridSearchCV
 When trying to optimize parameters for algorithms that have trainable components, it is required to perform
 the parameter search on a validation set (that is separate from the test set used for the final validation).
 Even better, is to use a cross validation for this step.
-In gaitmap this can be done by using :class:`~gaitmap.future.pipelines.GridSearchCv`.
+In gaitmap this can be done by using :class:`~tpcp.optimize.GridSearchCV`.
 
 This example explains how to use this method.
 To learn more about the concept, review the :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on
@@ -24,14 +24,14 @@ import pandas as pd
 
 random.seed(1)  # We set the random seed for repeatable results
 
-from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-
 # %%
 # Dataset
 # -------
 # As always, we need a dataset, a pipeline, and a scoring method for a parameter search.
 # We reuse the dataset used in other pipeline examples.
-from gaitmap.future.dataset import Dataset
+from tpcp import Dataset
+
+from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 
 
 class MyDataset(Dataset):
@@ -61,16 +61,17 @@ class MyDataset(Dataset):
 # We add an additional parameter `n_train_strides` that controls how many randomly selected strides should be used
 # during training.
 # Modifying this parameter, will change the result of the `self_optimize` step.
-from gaitmap.future.pipelines import OptimizablePipeline
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
+from tpcp import CloneFactory, HyperParameter, OptimizableParameter, OptimizablePipeline, PureParameter
+
+from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
-    max_cost: float
-    template: DtwTemplate
-    n_train_strides: Optional[int]
+    max_cost: PureParameter[float]
+    template: OptimizableParameter[DtwTemplate]
+    n_train_strides: HyperParameter[Optional[int]]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
@@ -78,7 +79,8 @@ class MyPipeline(OptimizablePipeline):
     def __init__(
         self,
         max_cost: float = 3,
-        template: DtwTemplate = BarthOriginalTemplate(),
+        # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
+        template: DtwTemplate = CloneFactory(DtwTemplate()),
         n_train_strides: Optional[int] = None,
     ):
         self.max_cost = max_cost
@@ -180,7 +182,7 @@ parameters = ParameterGrid({"max_cost": [3, 5], "n_train_strides": [None, 1]})  
 # Setting up the GridSearchCV object is similar to the normal GridSearch, we just need to add the additional `cv`
 # parameter.
 # Then we can simply run the search using the `optimize` method.
-from gaitmap.future.pipelines import GridSearchCV
+from tpcp.optimize import GridSearchCV
 
 gs = GridSearchCV(pipeline=MyPipeline(), parameter_grid=parameters, scoring=score, cv=cv, return_optimized="f1_score")
 gs = gs.optimize(MyDataset())
@@ -264,7 +266,7 @@ gs_cached = GridSearchCV(
     pipeline=MyPipeline(),
     parameter_grid=parameters,
     scoring=score,
-    pure_parameter_names=["max_cost"],
+    pure_parameters=True,
     cv=cv,
     return_optimized="f1_score",
     verbose=2,

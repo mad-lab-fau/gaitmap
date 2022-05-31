@@ -7,9 +7,9 @@ import pandas as pd
 from numpy.polynomial import polynomial
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+from tpcp import cf
 
 from gaitmap.base import BasePositionMethod, BaseZuptDetector
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
@@ -125,18 +125,17 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
     def __init__(
         self,
-        zupt_detector=default(
+        zupt_detector=cf(
             NormZuptDetector(
                 sensor="gyr", window_length_s=0.15, window_overlap=0.5, metric="mean", inactive_signal_threshold=15.0
             )
         ),
         level_assumption: bool = True,
-        gravity: Optional[np.ndarray] = GRAV_VEC,
+        gravity: Optional[np.ndarray] = cf(GRAV_VEC),
     ):
         self.zupt_detector = zupt_detector
         self.level_assumption = level_assumption
         self.gravity = gravity
-        super().__init__()
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.

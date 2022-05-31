@@ -5,12 +5,12 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from joblib import Memory
+from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation.base_dtw import BaseDtw
 from gaitmap.stride_segmentation.dtw_templates.templates import BarthOriginalTemplate, DtwTemplate
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import StrideList
@@ -168,7 +168,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = default(BarthOriginalTemplate()),
+        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4.0,

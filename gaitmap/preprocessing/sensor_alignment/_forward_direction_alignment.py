@@ -5,10 +5,11 @@ from typing import Dict, TypeVar, Union
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import CloneFactory
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseSensorAlignment, BaseZuptDetector
 from gaitmap.trajectory_reconstruction import MadgwickAHRS, PieceWiseLinearDedriftedIntegration
-from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, get_multi_sensor_names, is_sensor_data
@@ -121,11 +122,11 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         forward_direction: str = "x",
         rotation_axis: str = "z",
         baseline_velocity_threshold: float = 0.2,
-        ori_method: BaseOrientationMethod = default(MadgwickAHRS(beta=0.1)),
-        zupt_detector_orientation_init=default(
+        ori_method: BaseOrientationMethod = CloneFactory(MadgwickAHRS(beta=0.1)),
+        zupt_detector_orientation_init=CloneFactory(
             NormZuptDetector(sensor="acc", window_length_s=0.15, inactive_signal_threshold=0.01, metric="variance")
         ),
-        pos_method: BasePositionMethod = default(
+        pos_method: BasePositionMethod = CloneFactory(
             PieceWiseLinearDedriftedIntegration(
                 NormZuptDetector(sensor="gyr", window_length_s=0.15, inactive_signal_threshold=15.0, metric="mean"),
                 level_assumption=False,
@@ -139,7 +140,6 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         self.ori_method = ori_method
         self.zupt_detector_orientation_init = zupt_detector_orientation_init
         self.pos_method = pos_method
-        super().__init__()
 
     def align(self: Self, data: SensorData, sampling_rate_hz: float, **kwargs) -> Self:  # noqa: arguments-differ
         """Align sensor data."""

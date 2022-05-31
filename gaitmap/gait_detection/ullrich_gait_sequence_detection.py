@@ -160,7 +160,6 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         self.harmonic_tolerance_hz = harmonic_tolerance_hz
         self.merge_gait_sequences_from_sensors = merge_gait_sequences_from_sensors
         self.additional_margin_s = additional_margin_s
-        super().__init__()
 
     def detect(self: Self, data: SensorData, sampling_rate_hz: float) -> Self:
         """Find gait sequences in data.

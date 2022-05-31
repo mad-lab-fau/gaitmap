@@ -5,12 +5,13 @@ from typing import Dict, Optional, Sequence, Tuple, TypeVar
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default, invert_result_dictionary, set_params_from_dict
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_ORI, GF_POS, GF_VEL, SF_ACC
 from gaitmap.utils.datatype_helper import (
@@ -41,15 +42,13 @@ class _TrajectoryReconstructionWrapperMixin:
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
     ):
         self.ori_method = ori_method
         self.pos_method = pos_method
         self.trajectory_method = trajectory_method
-        # Important to resolve mutable defaults!
-        super().__init__()
 
     def _validate_methods(self):
         if self.trajectory_method:

@@ -5,6 +5,7 @@ import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
+from tpcp import cf
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR
@@ -80,12 +81,11 @@ class SimpleGyroIntegration(BaseOrientationMethod):
 
     def __init__(
         self,
-        initial_orientation: Union[np.ndarray, Rotation] = np.array([0, 0, 0, 1.0]),
+        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
         memory: Optional[Memory] = None,
     ):
         self.initial_orientation = initial_orientation
         self.memory = memory
-        super().__init__()
 
     def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.

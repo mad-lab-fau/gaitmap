@@ -22,7 +22,7 @@ implemented on a pipeline level.
 Helper functions and methods for specific algorithms are of course available to minimize the implementation effort.
 
 This example shows how such a pipeline should be implemented and how it can be optimized using
-:class:`~gaitmap.future.pipelines.Optmize`.
+:class:`~tpcp.Optmize`.
 """
 
 import numpy as np
@@ -33,8 +33,9 @@ import pandas as pd
 # -----------
 # We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
+from tpcp import Dataset
+
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.future.dataset import Dataset
 
 
 class MyDataset(Dataset):
@@ -62,7 +63,7 @@ class MyDataset(Dataset):
 # Our pipeline will implement all the logic on how our algorithms are applied to the data and how algorithms should
 # be optimized based on train data.
 # This requires two methods to be implemented: `run` and `self_optimize`.
-# Further, the pipeline must be a subclass of :class:`~gaitmap.future.pipelines.OptimizablePipeline`.
+# Further, the pipeline must be a subclass of :class:`~tpcp.OptimizablePipeline`.
 #
 # In this example, we implement a simple stride segmentation using :class:`~gaitmap.stride_segmentation.BarthDtw` in
 # the `run` method.
@@ -81,20 +82,22 @@ class MyDataset(Dataset):
 #           It further **must** return self.
 #           `Optimize` uses some checks to try to detect wrong `self_optimize` methods, but it will not be able to
 #           catch all potential issues.
-from gaitmap.future.pipelines import OptimizablePipeline
+from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, PureParameter
+
 from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
-    max_cost: float
-    template: DtwTemplate
+    max_cost: PureParameter[float]  # This is a pure parameter, as the output of `self_optimize` does not depend on it
+    template: OptimizableParameter[DtwTemplate]  # This is the paramter that is optimized in `self_optimize`
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = BarthOriginalTemplate()):
+    # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
+    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 
@@ -168,13 +171,13 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 # Optimization
 # ------------
 # To optimize the pipeline, we will **not** call `self_optimize` directly, but use the
-# :class:`~gaitmap.future.pipelines.Optimize` wrapper.
-# It has the same interface as other optimization methods like :class:`~gaitmap.future.pipelines.GridSearch`.
+# :class:`~gaitmap.optimize.Optimize` wrapper.
+# It has the same interface as other optimization methods like :class:`~gaitmap.optimize.GridSearch`.
 # Further, it makes some checks to catch potential implementation errors of our `self_optimize` method.
 #
 # Note, that the optimize method will perform all optimizations on a copy of the pipeline.
 # The means the pipeline object used as input will not be modified.
-from gaitmap.future.pipelines import Optimize
+from tpcp.optimize import Optimize
 
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)

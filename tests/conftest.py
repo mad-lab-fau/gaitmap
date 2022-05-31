@@ -1,4 +1,5 @@
 import random
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -6,6 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal, assert_series_equal
 from scipy.spatial.transform import Rotation
+from tpcp import BaseTpcpObject
 
 from gaitmap.example_data import (
     get_healthy_example_imu_data,
@@ -47,9 +49,13 @@ healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
 healthy_example_position = pytest.fixture()(get_healthy_example_position)
 
 
+def _get_params_without_nested_class(instance: BaseTpcpObject) -> Dict[str, Any]:
+    return {k: v for k, v in instance.get_params().items() if not isinstance(v, BaseTpcpObject)}
+
+
 def compare_algo_objects(a, b):
-    parameters = a._get_params_without_nested_class()
-    b_parameters = b._get_params_without_nested_class()
+    parameters = _get_params_without_nested_class(a)
+    b_parameters = _get_params_without_nested_class(b)
 
     assert set(parameters.keys()) == set(b_parameters.keys())
 

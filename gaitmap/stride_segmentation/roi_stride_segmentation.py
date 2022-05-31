@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Dict, Generic, Optional, TypeVar, Union
 
 import pandas as pd
+from tpcp import get_action_method
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
@@ -68,6 +69,10 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         In case of "replace" the stride ids created by the stride segmentation algorithms per ROI are removed and
         replaced with an increasing numerical id.
         In case of "prefix" the original ids are kept and prefixed with "{roi_id}_".
+    action_method
+        Controls which action method of the wrapped algorithm should be called.
+        This is only relevant, if the wrapped algorithm offers mutliple action methods.
+        By default the primary action method is used.
 
     Attributes
     ----------
@@ -118,6 +123,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     segmentation_algorithm: Optional[StrideSegmentationAlgorithm]
     s_id_naming: Literal["replace", "prefix"]
+    action_method: Optional[str]
 
     instances_per_roi_: Union[
         Dict[_Hashable, StrideSegmentationAlgorithm], Dict[_Hashable, Dict[_Hashable, StrideSegmentationAlgorithm]]
@@ -135,10 +141,11 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         self,
         segmentation_algorithm: Optional[StrideSegmentationAlgorithm] = None,
         s_id_naming: Literal["replace", "prefix"] = "replace",
+        action_method: Optional[str] = None,
     ):
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
-        super().__init__()
+        self.action_method = action_method
 
     def segment(  # noqa: arguments-differ
         self: Self,
@@ -217,7 +224,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                 # specific segmentation methods.
                 # We basically pass it as a multi-sensor dataset with just a single sensor
                 roi_data = {sensor_name: roi_data}
-            per_roi_algo.segment(data=roi_data, sampling_rate_hz=sampling_rate_hz, **kwargs)
+            per_roi_algo = get_action_method(per_roi_algo, self.action_method)(
+                data=roi_data, sampling_rate_hz=sampling_rate_hz, **kwargs
+            )
             instances_per_roi[index] = per_roi_algo
             stride_list = deepcopy(per_roi_algo.stride_list_)
             if isinstance(stride_list, dict):

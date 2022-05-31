@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
+from tpcp import CloneFactory, is_action_applied
 from typing_extensions import Literal
 
 from gaitmap.base import (
@@ -17,7 +18,6 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 )
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
-from gaitmap.utils._algo_helper import default
 from gaitmap.utils.consts import ROI_ID_COLS, SL_INDEX, TRAJ_TYPE_COLS
 from gaitmap.utils.datatype_helper import (
     OrientationList,
@@ -182,6 +182,8 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
 
     """
 
+    _action_methods = ("estimate", "estimate_intersect")
+
     align_window_width: int
 
     regions_of_interest: RegionsOfInterestList
@@ -190,9 +192,9 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = default(SimpleGyroIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
         # TODO: Change default so simple forward integration once this is implemented
-        pos_method: Optional[BasePositionMethod] = default(ForwardBackwardIntegration()),
+        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
     ):
@@ -328,7 +330,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
             A tuple with the outputs, following the order provided in `return_data`.
 
         """
-        if self._action_is_applied is False:
+        if is_action_applied(self) is False:
             raise ValidationError("You first need to call the `estimate` method before using `intersect`")
         allowed_return_data = ("orientation", "position", "velocity")
         if (

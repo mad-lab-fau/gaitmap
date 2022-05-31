@@ -4,8 +4,9 @@ import inspect
 import joblib
 import pytest
 from numpydoc.docscrape import NumpyDocString
+from tpcp import get_action_method, get_action_params, get_param_names, get_results
 
-from gaitmap.base import BaseType, _BaseSerializable
+from gaitmap.base import BaseAlgorithm, BaseType
 from tests.conftest import compare_algo_objects
 
 
@@ -19,7 +20,7 @@ class TestAlgorithmMixin:
 
     def test_init(self):
         """Test that all init paras are passed through untouched."""
-        field_names = self.algorithm_class._get_param_names()
+        field_names = get_param_names(self.algorithm_class)
         init_dict = {k: k for k in field_names}
 
         test_instance = self.algorithm_class(**init_dict)
@@ -35,7 +36,7 @@ class TestAlgorithmMixin:
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
         documented_names = set(p.name for p in docs["Parameters"])
-        actual_names = set(self.algorithm_class._get_param_names())
+        actual_names = set(get_param_names(self.algorithm_class))
 
         assert documented_names == actual_names
 
@@ -45,7 +46,7 @@ class TestAlgorithmMixin:
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
         documented_names = set(p.name for p in docs["Attributes"])
-        actual_names = set(after_action_instance.get_attributes().keys())
+        actual_names = set(get_results(after_action_instance).keys())
 
         assert documented_names == actual_names
 
@@ -55,20 +56,20 @@ class TestAlgorithmMixin:
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
         documented_names = set(p.name for p in docs["Other Parameters"])
-        actual_names = set(after_action_instance.get_other_params().keys())
+        actual_names = set(get_action_params(after_action_instance).keys())
 
         assert documented_names == actual_names
 
     def test_action_method_returns_self(self, after_action_instance):
         # call the action method a second time to test the output
-        parameters = after_action_instance.get_other_params()
-        results = getattr(after_action_instance, after_action_instance._action_method)(**parameters)
+        parameters = get_action_params(after_action_instance)
+        results = get_action_method(after_action_instance)(**parameters)
 
         assert id(results) == id(after_action_instance)
 
     def test_set_params_valid(self, after_action_instance):
         instance = after_action_instance.clone()
-        valid_names = instance._get_param_names()
+        valid_names = get_param_names(instance)
         values = list(range(len(valid_names)))
         instance.set_params(**dict(zip(valid_names, values)))
 
@@ -113,7 +114,7 @@ class TestAlgorithmMixin:
             for p in init_signature.parameters.values()
             if p.name != "self" and p.kind != p.VAR_KEYWORD
         }
-        nested_algos = {k: v for k, v in parameters.items() if isinstance(v, _BaseSerializable)}
+        nested_algos = {k: v for k, v in parameters.items() if isinstance(v, BaseAlgorithm)}
         if len(nested_algos) == 0:
             pytest.skip()
 

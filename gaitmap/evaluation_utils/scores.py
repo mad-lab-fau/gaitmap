@@ -204,8 +204,8 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 @overload
 def precision_recall_f1_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, _ScoresDict]:
+    matches_df: Dict[str, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> Dict[str, _ScoresDict]:
     ...
 
 

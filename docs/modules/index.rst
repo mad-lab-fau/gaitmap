@@ -20,4 +20,3 @@ This is the API Reference for gaitmap sorted by algorithm types.
     Utils <utils/index>
     Example Data <example_data>
     Base Classes <base_classes>
-    Future <future/index>

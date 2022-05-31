@@ -136,7 +136,6 @@ class PcaAlignment(BaseSensorAlignment):
     def __init__(self, target_axis: str = "y", pca_plane_axis: Sequence[str] = ("gyr_x", "gyr_y")):
         self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
-        super().__init__()
 
     def align(self: Self, data: SensorData, **kwargs) -> Self:
         """Align sensor data."""

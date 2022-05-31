@@ -21,7 +21,7 @@ Datasets work best in combination with `Pipelines` and are further compatible wi
 # %%
 # Defining your own dataset
 # -------------------------
-# Fundamentally you only need to create a subclass of :func:`~gaitmap.future.dataset.Dataset` and define the
+# Fundamentally you only need to create a subclass of :func:`~tpcp.Dataset` and define the
 # `create_index` method.
 # This method should return a dataframe describing all the data-points that should be available in the dataset.
 #
@@ -52,7 +52,7 @@ index
 # Now we use this index as the index of our new dataset.
 # To see the dataset in action, we need to create an instance of it.
 # Its string representation will show us the most important information.
-from gaitmap.future.dataset import Dataset
+from tpcp import Dataset
 
 
 class CustomDataset(Dataset):

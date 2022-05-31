@@ -3,8 +3,10 @@ from inspect import Parameter, signature
 from typing import Any, Dict, Tuple
 
 import pytest
+from tpcp import get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
 
 from gaitmap.base import BaseAlgorithm
+from tests.conftest import _get_params_without_nested_class
 
 
 def _init_getter():
@@ -19,7 +21,7 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
     params = params or {}
     private_params = private_params or {}
 
-    class_dict = {"_action_method": action_method_name, "__init__": _init_getter()}
+    class_dict = {"_action_methods": action_method_name, "__init__": _init_getter()}
     user_set_params = {**params, **private_params}
     if action_method:
         class_dict = {**class_dict, action_method_name: action_method}
@@ -75,18 +77,18 @@ def example_test_class_after_action(example_test_class_initialised) -> Tuple[Bas
 def test_get_action_method(example_test_class_after_action):
     instance, test_parameters = example_test_class_after_action
 
-    assert instance._action_method == test_parameters["action_method_name"]
+    assert get_action_methods_names(instance)[0] == test_parameters["action_method_name"]
     if test_parameters["action_method"] is not None:
-        assert instance._get_action_method()() == test_parameters["action_method"]()
+        assert get_action_method(instance)() == test_parameters["action_method"]()
     else:
         with pytest.raises(AttributeError):
-            instance._get_action_method()
+            get_action_method(instance)
 
 
 def test_get_attributes(example_test_class_after_action):
     instance, test_parameters = example_test_class_after_action
 
-    assert instance.get_attributes() == test_parameters["attributes"]
+    assert get_results(instance) == test_parameters["attributes"]
 
 
 def test_get_parameter(example_test_class_after_action):
@@ -98,7 +100,7 @@ def test_get_parameter(example_test_class_after_action):
 def test_get_other_parameter(example_test_class_after_action):
     instance, test_parameters = example_test_class_after_action
 
-    assert instance.get_other_params() == test_parameters["other_params"]
+    assert get_action_params(instance) == test_parameters["other_params"]
 
 
 def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialised):
@@ -111,7 +113,7 @@ def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialise
 
     assert "result" not in str(e.value)
     assert key in str(e.value)
-    assert instance._action_method not in str(e.value)
+    assert get_action_methods_names(instance)[0] not in str(e.value)
 
 
 @pytest.mark.parametrize("key", ["wrong_with_", "wrong_without"])
@@ -126,13 +128,13 @@ def test_attribute_helper_after_action_wrong(example_test_class_after_action, ke
 
     assert "result" not in str(e.value)
     assert key in str(e.value)
-    assert instance._action_method not in str(e.value)
+    assert get_action_methods_names(instance)[0] not in str(e.value)
 
 
 def test_action_is_not_applied(example_test_class_initialised):
     instance, _ = example_test_class_initialised
 
-    assert instance._action_is_applied is False
+    assert is_action_applied(instance) is False
 
 
 def test_action_is_applied(example_test_class_after_action):
@@ -141,7 +143,7 @@ def test_action_is_applied(example_test_class_after_action):
     if not test_parameters["attributes"]:
         pytest.skip("Invalid fixture for this test")
 
-    assert instance._action_is_applied is True
+    assert is_action_applied(instance) is True
 
 
 def test_nested_get_params():
@@ -189,8 +191,8 @@ def test_nested_clone():
     assert test_instance is not cloned_instance
     assert test_instance.nested_class is not cloned_instance.nested_class
 
-    params = test_instance._get_params_without_nested_class()
-    cloned_params = cloned_instance._get_params_without_nested_class()
+    params = _get_params_without_nested_class(test_instance)
+    cloned_params = _get_params_without_nested_class(cloned_instance)
 
     for k, v in params.items():
         assert cloned_params[k] == v

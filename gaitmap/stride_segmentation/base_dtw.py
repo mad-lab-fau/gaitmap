@@ -232,7 +232,7 @@ class BaseDtw(BaseAlgorithm):
 
     """
 
-    _action_method = "segment"
+    _action_methods = ("segment",)
 
     template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]]
     max_cost: Optional[float]
@@ -297,7 +297,6 @@ class BaseDtw(BaseAlgorithm):
         self.resample_template = resample_template
         self.find_matches_method = find_matches_method
         self.memory = memory
-        super().__init__()
 
     def segment(self: Self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
         """Find matches by warping the provided template to the data.
