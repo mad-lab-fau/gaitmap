@@ -75,11 +75,25 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         unchanged.
         Otherwise, only columns that are actually transformed remain in the output.
 
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
+
+
     """
 
     transformer_mapping: OptimizableParameter[Dict[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
     keep_all_cols: PureParameter[bool]
 
+
+    data: SingleSensorData
 
     def __init__(
         self,
@@ -103,6 +117,11 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         ----------
         data
            A sequence of dataframes, each representing single-sensor data.
+
+        Attributes
+        ----------
+        transformed_data_
+            The transformed data.
 
         Returns
         -------
@@ -160,8 +179,20 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
 
 class IdentityTransformer(BaseTransformer):
-    """Dummy Transformer that does not modify the data."""
+    """Dummy Transformer that does not modify the data.
 
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
+    """
+    data: SingleSensorData
     def transform(self, data: SingleSensorData, **_) -> Self:
         self.data = data
         self.transformed_data_ = data
@@ -184,6 +215,16 @@ class FixedScaler(BaseTransformer):
         The data is divided by this value
     offset
         The offset that should be subtracted from the data.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
 
     """
 
@@ -220,9 +261,24 @@ class StandardScaler(BaseTransformer):
 
     .. code-block::
 
-        y = (x - x.mean()) / x.std()
+        y = (x - x.mean()) / x.std(ddof)
 
     .. note:: Only a single mean and std are calculated over the entire data (i.e. not per column).
+
+    Parameters
+    ----------
+    ddof
+        The degree of freedom used in the standard deviation calculation.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
 
     """
 
@@ -258,7 +314,26 @@ class TrainableStandardScaler(StandardScaler, TrainableTransformerMixin):
 
     The transformed data y is calculated as:
 
+    Parameters
+    ----------
+    mean
+        The mean of the training data.
+        The value can either be set manually or automatically calculated from the training data using `self_optimize`.
+    std
+        The standard deviation of the training data.
+        The value can either be set manually or automatically calculated from the training data using `self_optimize`.
+    ddof
+        The degree of freedom used in the standard deviation calculation.
 
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
 
     """
 
@@ -334,6 +409,16 @@ class AbsMaxScaler(BaseTransformer):
         Note that if the absolute maximum corresponds to a minimum in the data, this minimum will be scaled to
         `-feature_max`.
 
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
     """
 
     feature_max: Parameter[float]
@@ -390,6 +475,27 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
     .. code-block::
 
         y = x * feature_max / data_max
+
+    Parameters
+    ----------
+    feature_max
+        The value the maximum will be scaled to.
+        After scaling the absolute maximum in the data will be equal to this value.
+        Note that if the absolute maximum corresponds to a minimum in the data, this minimum will be scaled to
+        `-feature_max`.
+    data_max
+        The maximum of the training data.
+        The value can either be set manually or automatically calculated from the training data using `self_optimize`.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
 
     """
 
@@ -453,6 +559,21 @@ class MinMaxScaler(BaseTransformer):
 
     Note that the minimum and maximum over **all** columns is calculated.
     I.e. Only a single global scaling factor is applied to all the columns.
+
+    Parameters
+    ----------
+    feature_range
+        The range the data is scaled to.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
 
     """
 
@@ -524,9 +645,27 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
         y = x * scale + offset
 
+    Parameters
+    ----------
+    feature_range
+        The range the data is scaled to.
+    data_range
+        The range of the data used for training.
+        The values can either be set manually or automatically calculated from the training data using `self_optimize`.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
     """
 
-    feature_range = OptimizableParameter[Optional[Tuple[float, float]]]
+    data_range: OptimizableParameter[Optional[Tuple[float, float]]]
 
     def __init__(
         self, feature_range: Tuple[float, float] = (0, 1.0), data_range: Optional[Tuple[float, float]] = None,
