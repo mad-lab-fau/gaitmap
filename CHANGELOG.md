@@ -8,7 +8,7 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [1.6.0] -
+## [1.6.0] - 2022-05-31
 
 ### Scientific Changes
 
