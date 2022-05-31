@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.datatype_helper import SensorData, SingleSensorData
+from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, is_single_sensor_data
 
 
 class BaseTransformer(_BaseSerializable):
@@ -45,8 +45,6 @@ class TrainableTransformerMixin:
         ----------
         data
            A sequence of dataframes, each representing single-sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
 
         Returns
         -------
@@ -259,9 +257,21 @@ class TrainableStandardScaler(StandardScaler):
         self.mean = mean
         self.std = std
 
-    def self_optimize(self, data: SingleSensorData, **_) -> Self:
-        self.mean = data.mean()
-        self.std = data.std()
+    def self_optimize(self, data: Sequence[SingleSensorData], **_) -> Self:
+        # Iteratively calculate the overall mean and std
+        # TODO: Test this
+        sum = 0
+        sum_sq = 0
+        n_rows = 0
+        for dp in data:
+            is_single_sensor_data(dp, check_acc=False, check_gyr=False, raise_exception=True)
+            dp = dp.to_numpy()
+            sum += dp.sum()
+            sum_sq += (dp ** 2).sum()
+            n_rows += dp.flatten().shape[0]
+
+        self.mean = sum / n_rows
+        self.std = np.sqrt(sum_sq / n_rows - self.mean ** 2)
         return self
 
     def transform(self, data: SingleSensorData, **_) -> Self:
@@ -338,26 +348,6 @@ class AbsMaxScaler(BaseTransformer):
         data = data.copy()
         data *= self.feature_max / absmax
         return data
-
-    def self_optimize(self, data: Sequence[SingleSensorData]) -> Self:
-        """Calculate scaling parameters based on a trainings sequence.
-
-        Parameters
-        ----------
-        data
-           A sequence of dataframes, each representing single-sensor data.
-        sampling_rate_hz
-            The sampling rate of the data in Hz
-
-        Returns
-        -------
-        self
-            The trained instance of the transformer
-
-        """
-        max_vals = [self._get_abs_max(d) for d in data]
-        self.feature_max = np.max(max_vals)
-        return self
 
 
 class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
