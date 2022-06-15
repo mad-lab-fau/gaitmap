@@ -14,10 +14,13 @@ Base classes
    :template: class_with_private.rst
 
     BaseTransformer
-    TrainableMinMaxScaler
-    MinMaxScaler
-    GroupedTransformer
     TrainableTransformerMixin
+    GroupedTransformer
+    IdentityTransformer
     FixedScaler
+    StandardScaler
+    TrainableStandardScaler
     AbsMaxScaler
     TrainableAbsMaxScaler
+    MinMaxScaler
+    TrainableMinMaxScaler
