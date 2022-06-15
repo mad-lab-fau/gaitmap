@@ -4,7 +4,7 @@ from typing import List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from tpcp import OptimizableParameter, Parameter, PureParameter
+from tpcp import OptimizableParameter, Parameter, PureParameter, make_action_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
@@ -86,8 +86,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     data
         The data passed to the transform method.
 
-
-
     """
 
     transformer_mapping: OptimizableParameter[
@@ -120,11 +118,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         data
            A sequence of dataframes, each representing single-sensor data.
 
-        Attributes
-        ----------
-        transformed_data_
-            The transformed data.
-
         Returns
         -------
         self
@@ -133,6 +126,18 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         """
         if self.transformer_mapping is None:
             return self
+
+        # Check that all transformers are individual objects and not the same object multiple times
+        transformer_ids = [id(k[1]) for k in self.transformer_mapping]
+
+        if len(set(transformer_ids)) != len(transformer_ids):
+            raise ValueError(
+                "All transformers must be different objects when trying to optimize them. "
+                "At least two transformer instances point to the same object. "
+                "This can cause unexpected results. "
+                "Make sure each transformer is a separate instance of a transformer class."
+            )
+
         mapped_cols = self._validate_mapping()
         for d in data:
             self._validate(d, mapped_cols)
@@ -142,32 +147,46 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
                 col_select = k
                 if not isinstance(col_select, tuple):
                     col_select = (col_select,)
-                # TODO: Should I clone here? Or is inplace modification expected?
-                trained_transformers.append(v.self_optimize([d[list(col_select)] for d in data], **kwargs))
+                trained_transformers.append((k, v.self_optimize([d[list(col_select)] for d in data], **kwargs)))
             else:
-                trained_transformers.append(v)
+                trained_transformers.append((k, v))
         self.transformer_mapping = trained_transformers
         return self
 
+    @make_action_safe
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
-        """Transform all data columns based on the selected scalers."""
+        """Transform all data columns based on the selected transformers.
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+
+        """
         self.data = data
         if self.transformer_mapping is None:
             self.transformed_data_ = copy(data)
             return self
         mapped_cols = self._validate_mapping()
         self._validate(data, mapped_cols)
-        results = {}
+        results = []
         mapping = self.transformer_mapping
         if self.keep_all_cols:
             mapping = [*mapping, *((k, IdentityTransformer()) for k in set(data.columns) - mapped_cols)]
+            mapped_cols = set(data.columns)
         for k, v in mapping:
             if not isinstance(k, tuple):
                 k = (k,)
-            tmp = v.transform(data[list(k)], **kwargs).transformed_data_
+            # We clone here to make sure that we do not modify the "parameters" within the action method
+            tmp = v.clone().transform(data[list(k)], **kwargs).transformed_data_
             for col in k:
-                results[col] = tmp[[col]]
-        self.transformed_data_ = pd.concat(results, axis=1)[data.columns]
+                results.append(tmp[[col]])
+        self.transformed_data_ = pd.concat(results, axis=1)[sorted(mapped_cols, key=list(data.columns).index)]
         return self
 
     def _validate_mapping(self) -> Set[_Hashable]:
@@ -191,7 +210,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
 
 class IdentityTransformer(BaseTransformer):
-    """Dummy Transformer that does not modify the data.
+    """Dummy Transformer that does not modify the data and simply returns a copy of the input.
 
     Attributes
     ----------
@@ -208,8 +227,21 @@ class IdentityTransformer(BaseTransformer):
     data: SingleSensorData
 
     def transform(self, data: SingleSensorData, **_) -> Self:
+        """Transform the data (aka do nothing for this transformer).
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+
+        """
         self.data = data
-        self.transformed_data_ = data
+        self.transformed_data_ = copy(data)
         return self
 
 
