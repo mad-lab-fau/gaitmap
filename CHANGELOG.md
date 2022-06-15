@@ -10,6 +10,13 @@ project.
 
 ## [Unreleased]
 
+### Added
+
+- Data Transforms are added as a new algorithm class.
+  These are simple algorithms that can take a single sensor data as input and provide a `transformed_data_` output.
+  Transforms can be used for normalisations or feature transforms.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/148)
+
 ### Changed
 
 - All Algorithm classes now build on `tpcp.Algorithm`.

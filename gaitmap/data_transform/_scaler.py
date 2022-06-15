@@ -104,12 +104,10 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
         """Train all trainable transformers based on the provided data.
 
-        ... note :: All transformers will get only the data-columns for training that they are applied to.
-                    If a transformer is listed multiple times in `transformer_mapping` it will be called multiple times,
-                    with only the respective columns.
-                    This means you might get different results when using `{("col_a", "col_b"):
-                    transformer_instance}` compared to `{"col_a": transformer_instance, "col_b": transformer_instance},
-                    because in the latter case, two different trained versions of the transformer will be created.
+        ... note :: All transformers will be trained on all columns they are applied to as group.
+                    This means you will get different results when using `(("col_a", "col_b"),
+                    transformer())` compared to `("col_a", transformer()), ("col_b", transformer())`.
+                    In the first case the transformer will be trained over both columns as one.
 
         Parameters
         ----------
