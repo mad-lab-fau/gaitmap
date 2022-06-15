@@ -64,13 +64,11 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     Parameters
     ----------
     transformer_mapping
-        Dict to define which transformers should be applied to which columns.
-        The key can either be the name of the column or a tuple of column names.
-        The value, must be a transformer instance.
+        List of tuples to define which transformers should be applied to which columns.
+        The list should have the shape [(key, transformer), ...] where key is either the name of the column or a
+        tuple of column names.
         If the transformer is trainable, its `self_optimize` method will be called, when `self_optimize` of the
         Grouped Transformer is called.
-        The transformer will be cloned before that and hence, you can provide the same instance of a transformer
-        multiple times in the mapping.
     keep_all_cols
         If `True`, columns that are not mentioned as keys in the `transformer_mapping`, will be added to the output
         unchanged.
