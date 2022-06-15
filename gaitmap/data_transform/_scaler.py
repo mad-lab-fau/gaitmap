@@ -373,7 +373,7 @@ class TrainableStandardScaler(StandardScaler, TrainableTransformerMixin):
         mean = sum_vals / count
         sum_vals = 0
         for dp in data:
-            sum_vals += ((dp - mean) ** 2).sum()
+            sum_vals += ((dp.to_numpy() - mean) ** 2).sum()
         std = np.sqrt(sum_vals / (count - self.ddof))
 
         self.mean = mean
@@ -411,18 +411,18 @@ class AbsMaxScaler(BaseTransformer):
 
     .. code-block::
 
-        y = x * feature_max / max(abs(x))
+        y = x * out_max / max(abs(x))
 
     Note that the maximum over **all** columns is calculated.
     I.e. Only a single global scaling factor is applied to all the columns.
 
     Parameters
     ----------
-    feature_max
+    out_max
         The value the maximum will be scaled to.
         After scaling the absolute maximum in the data will be equal to this value.
         Note that if the absolute maximum corresponds to a minimum in the data, this minimum will be scaled to
-        `-feature_max`.
+        `-out_max`.
 
     Attributes
     ----------
@@ -436,10 +436,10 @@ class AbsMaxScaler(BaseTransformer):
 
     """
 
-    feature_max: Parameter[float]
+    out_max: Parameter[float]
 
-    def __init__(self, feature_max: float = 1):
-        self.feature_max = feature_max
+    def __init__(self, out_max: float = 1):
+        self.out_max = out_max
 
     def transform(self, data: SingleSensorData, **_) -> Self:
         """Scale the data.
@@ -465,7 +465,7 @@ class AbsMaxScaler(BaseTransformer):
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
         data = data.copy()
-        data *= self.feature_max / absmax
+        data *= self.out_max / absmax
         return data
 
 
@@ -475,7 +475,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
     .. warning :: By default, this scaler will not modify the data!
                   Use `self_optimize` to adapt the `data_max` parameter based on a set of training data.
 
-    During training the scaler will calculate the absolute max from the trainigs data,
+    During training the scaler will calculate the absolute max from the trainings data,
     Per provided dataset `data_max` will be calculated.
     The final `data_max` is the max over all train sequences.
 
@@ -490,11 +490,11 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
     .. code-block::
 
-        y = x * feature_max / data_max
+        y = x * out_max / data_max
 
     Parameters
     ----------
-    feature_max
+    out_max
         The value the maximum will be scaled to.
         After scaling the absolute maximum in the data will be equal to this value.
         Note that if the absolute maximum corresponds to a minimum in the data, this minimum will be scaled to
@@ -517,9 +517,9 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
     data_max: OptimizableParameter[Optional[float]]
 
-    def __init__(self, feature_max: float = 1, data_max: Optional[float] = None):
+    def __init__(self, out_max: float = 1, data_max: Optional[float] = None):
         self.data_max = data_max
-        super().__init__(feature_max=feature_max)
+        super().__init__(out_max=out_max)
 
     def self_optimize(self, data: Sequence[SingleSensorData], **_) -> Self:
         """Calculate scaling parameters based on a trainings sequence.
@@ -563,14 +563,14 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 class MinMaxScaler(BaseTransformer):
     """Scale the data by its Min-Max values.
 
-    After the scaling the min of the data is equivalent ot `feature_range[0]` and the max of the data is equivalent
-    to `feature_range[1]`.
+    After the scaling the min of the data is equivalent ot `out_range[0]` and the max of the data is equivalent
+    to `out_range[1]`.
     The output y is calculated as follows:
 
     .. code-block::
 
-        scale = (feature_range[1] - feature_range[0]) / (x.min(), x.max())
-        offset = feature_range[0] - x.min() * transform_scale
+        scale = (out_range[1] - out_range[0]) / (x.min(), x.max())
+        offset = out_range[0] - x.min() * transform_scale
         y = x * scale + offset
 
     Note that the minimum and maximum over **all** columns is calculated.
@@ -578,7 +578,7 @@ class MinMaxScaler(BaseTransformer):
 
     Parameters
     ----------
-    feature_range
+    out_range
         The range the data is scaled to.
 
     Attributes
@@ -593,13 +593,13 @@ class MinMaxScaler(BaseTransformer):
 
     """
 
-    feature_range: Parameter[Tuple[float, float]]
+    out_range: Parameter[Tuple[float, float]]
 
     def __init__(
         self,
-        feature_range: Tuple[float, float] = (0, 1.0),
+        out_range: Tuple[float, float] = (0, 1.0),
     ):
-        self.feature_range = feature_range
+        self.out_range = out_range
 
     def transform(self, data: SingleSensorData, **_) -> Self:
         """Scale the data.
@@ -616,6 +616,9 @@ class MinMaxScaler(BaseTransformer):
 
         """
         self.data = data
+        # Test if out data range is valid
+        if self.out_range[0] >= self.out_range[1]:
+            raise ValueError("out_range[0] (new min) must be smaller than out_range[1] (new max)")
         data_range = self._calc_data_range(data)
         self.transformed_data_ = self._transform(data, data_range)
         return self
@@ -628,7 +631,7 @@ class MinMaxScaler(BaseTransformer):
 
     def _transform(self, data: SingleSensorData, data_range: Tuple[float, float]) -> SingleSensorData:
         data = data.copy()
-        feature_range = self.feature_range
+        feature_range = self.out_range
         data_min, data_max = data_range
         transform_range = (data_max - data_min) or 1.0
         transform_scale = (feature_range[1] - feature_range[0]) / transform_range
@@ -651,8 +654,8 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
     .. code-block::
 
         data_range =  (x_train.min(), x_train.max())
-        scale = (feature_range[1] - feature_range[0]) / (data_range[1] - data_range[0])
-        offset = feature_range[0] - x_train.min() * transform_scale
+        scale = (out_range[1] - out_range[0]) / (data_range[1] - data_range[0])
+        offset = out_range[0] - x_train.min() * transform_scale
 
     Note that the minimum and maximum over **all** columns is calculated.
     I.e. Only a single global scaling factor is applied to all the columns.
@@ -665,7 +668,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
     Parameters
     ----------
-    feature_range
+    out_range
         The range the data is scaled to.
     data_range
         The range of the data used for training.
@@ -687,11 +690,11 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
     def __init__(
         self,
-        feature_range: Tuple[float, float] = (0, 1.0),
+        out_range: Tuple[float, float] = (0, 1.0),
         data_range: Optional[Tuple[float, float]] = None,
     ):
         self.data_range = data_range
-        super().__init__(feature_range=feature_range)
+        super().__init__(out_range=out_range)
 
     def self_optimize(self, data: Sequence[SingleSensorData], **_):
         """Calculate scaling parameters based on a trainings sequence.
