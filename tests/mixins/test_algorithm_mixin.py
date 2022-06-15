@@ -104,7 +104,7 @@ class TestAlgorithmMixin:
         init = self.algorithm_class.__init__
         if init is object.__init__:
             # No explicit constructor to introspect
-            return []
+            pytest.skip()
 
         # introspect the constructor arguments to find the model parameters to represent
         init_signature = inspect.signature(init)
