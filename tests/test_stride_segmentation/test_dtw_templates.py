@@ -262,3 +262,13 @@ class TestCreateInterpolatedTemplate:
         )
 
         assert_array_equal(scaler_instance.opti_data[0], instance.data)
+
+    def test_column_selection(self):
+        data1 = pd.DataFrame(np.ones((5, 3)), columns=["col_1", "col_2", "col_3"])
+        data2 = pd.DataFrame(np.ones((5, 3)), columns=["col_2", "col_1", "col_3"])
+
+        instance = InterpolatedDtwTemplate().self_optimize(
+            [data1, data2], sampling_rate_hz=1, columns=["col_3", "col_1"]
+        )
+
+        assert instance.get_data().columns.tolist() == ["col_3", "col_1"]
