@@ -19,6 +19,9 @@ project.
 - A new helper function `gaitmap.utils.array_handling.iterate_region_data` is added.
   It allows to iterate over the data of multiple strides or ROIs cut from a dataset.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
+- A new helper (`gaitmap.utils.datatype_helper.to_dict_multi_sensor_data`) to convert DataFrame based MultiSensor data 
+  to Dict-based MultiSensor data is added.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
 
 ### Changed
 
