@@ -109,7 +109,8 @@ plt.show()
 #
 # Same scaling factors
 # --------------------
-from gaitmap.data_transform import TrainableStandardScaler, StandardScaler
+from gaitmap.data_transform import StandardScaler, TrainableStandardScaler
+
 template = InterpolatedDtwTemplate(scaling=TrainableStandardScaler())
 
 stride_generator = iterate_region_data(bf_template_data_list, template_stride_borders.values())

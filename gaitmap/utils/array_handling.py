@@ -8,8 +8,14 @@ from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from typing_extensions import Literal
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList, \
-    is_single_sensor_data, is_single_sensor_stride_list, is_single_sensor_regions_of_interest_list
+from gaitmap.utils.datatype_helper import (
+    SingleSensorData,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+    is_single_sensor_data,
+    is_single_sensor_regions_of_interest_list,
+    is_single_sensor_stride_list,
+)
 from gaitmap.utils.exceptions import ValidationError
 
 
