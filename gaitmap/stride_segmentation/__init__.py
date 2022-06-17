@@ -14,8 +14,6 @@ from gaitmap.stride_segmentation.constrained_barth_dtw import ConstrainedBarthDt
 from gaitmap.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     DtwTemplate,
-    create_dtw_template,
-    create_interpolated_dtw_template,
 )
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
 
@@ -25,7 +23,5 @@ __all__ = [
     "BaseDtw",
     "RoiStrideSegmentation",
     "DtwTemplate",
-    "create_dtw_template",
     "BarthOriginalTemplate",
-    "create_interpolated_dtw_template",
 ]

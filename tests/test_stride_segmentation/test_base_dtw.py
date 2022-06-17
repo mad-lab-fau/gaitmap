@@ -19,7 +19,6 @@ from numpy.testing import assert_array_equal
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate, DtwTemplate
 from gaitmap.stride_segmentation.base_dtw import BaseDtw, subsequence_cost_matrix_with_constrains
-from gaitmap.stride_segmentation.dtw_templates import create_dtw_template
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin

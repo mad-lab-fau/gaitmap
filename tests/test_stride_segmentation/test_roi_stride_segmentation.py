@@ -7,7 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, DtwTemplate
 from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
 from gaitmap.utils.datatype_helper import (
     SensorData,
@@ -27,7 +27,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     @pytest.fixture()
     def after_action_instance(self) -> RoiStrideSegmentation:
         # We use a simple dtw to create the instance
-        template = create_dtw_template(pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)
+        template = DtwTemplate(data=pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None)
         data = pd.DataFrame(np.array([0, 1.0, 0]))
         instance = RoiStrideSegmentation(segmentation_algorithm=dtw)

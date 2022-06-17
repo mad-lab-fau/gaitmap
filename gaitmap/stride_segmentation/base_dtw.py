@@ -11,6 +11,7 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
+from gaitmap.stride_segmentation.dtw_templates.templates import BaseDtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
@@ -220,10 +221,10 @@ class BaseDtw(BaseAlgorithm):
     --------
     Running a simple matching using arrays as input:
 
-    >>> from gaitmap.stride_segmentation import create_dtw_template
+    >>> from gaitmap.stride_segmentation import DtwTemplate
     >>> template_data = np.array([1, 2, 1])
     >>> data = np.array([0, 0, 1, 2, 1, 0, 1, 2, 1, 0])
-    >>> template = create_dtw_template(template_data)
+    >>> template = DtwTemplate(template_data)
     >>> dtw = BaseDtw(template=template, max_cost=1, resample_template=False)
     >>> dtw = dtw.segment(data, sampling_rate_hz=1)  # Sampling rate is not important for this example
     >>> dtw.matches_start_end_
@@ -234,7 +235,7 @@ class BaseDtw(BaseAlgorithm):
 
     _action_methods = ("segment",)
 
-    template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]]
+    template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]]
     max_cost: Optional[float]
     resample_template: bool
     min_match_length_s: Optional[float]
