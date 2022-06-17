@@ -4,7 +4,7 @@ from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
-from tpcp import OptimizableParameter, cf, HyperParameter
+from tpcp import HyperParameter, OptimizableParameter, cf
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
@@ -20,7 +20,10 @@ class BaseDtwTemplate(BaseAlgorithm):
     use_cols: Optional[Sequence[Union[str, int]]]
 
     def __init__(
-        self, *, scaling: Optional[BaseTransformer] = None, use_cols: Optional[Sequence[Union[str, int]]] = None,
+        self,
+        *,
+        scaling: Optional[BaseTransformer] = None,
+        use_cols: Optional[Sequence[Union[str, int]]] = None,
     ):
         self.scaling = scaling
         self.use_cols = use_cols
@@ -280,7 +283,10 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
         self.interpolation_method = interpolation_method
         self.n_samples = n_samples
         super().__init__(
-            data=data, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols,
+            data=data,
+            sampling_rate_hz=sampling_rate_hz,
+            scaling=scaling,
+            use_cols=use_cols,
         )
 
     def self_optimize(
@@ -294,7 +300,14 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
         """Create a template from multiple data sequences.
 
         All data sequences will be interpolated to match `self.n_samples` and then averaged.
-        If `self.scaling` is `optimizable`, the scaler will be optimized as well based on the provided data.
+        If `self.scaling` is `optimizable`, the scaler will be optimized as well based on the final template data.
+        Note, that the scaler is not trained or applied to the data, before the template is generated,
+        but only trained on the final template.
+
+        If you need to normalize the data before interpolation, do it on your own and train your own scaler instance.
+        In this case it set `self.scaling` to `None`.
+        To correctly apply the template to new data, make sure that you apply your custom scaler to the data before
+        feeding it into any of the `Dtw` methods.
 
         Parameters
         ----------
@@ -314,7 +327,11 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
 
         """
         template_df, effective_sampling_rate = _create_interpolated_dtw_template(
-            data_sequences, sampling_rate_hz, kind=self.interpolation_method, n_samples=self.n_samples, columns=columns,
+            data_sequences,
+            sampling_rate_hz,
+            kind=self.interpolation_method,
+            n_samples=self.n_samples,
+            columns=columns,
         )
         self.sampling_rate_hz = effective_sampling_rate
         if isinstance(self.scaling, TrainableTransformerMixin):

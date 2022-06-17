@@ -18,6 +18,7 @@ project.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/148)
 - A new helper function `gaitmap.utils.array_handling.iterate_region_data` is added.
   It allows to iterate over the data of multiple strides or ROIs cut from a dataset.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
 
 ### Changed
 
@@ -26,7 +27,13 @@ project.
   The core functionality of tpcp should still work as expected.
   If you were using any of the base classes and algorithm helpers, check if they are still available in gaitmap.
   If not, there is likely a replacement in tpcp.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173)
+- The way DTW - templates are generated has been changed completely.
+  Generation is now handled via BaseClasses instead of helper functions.
+  These baseclasses follow the "optimizable" interface introduced in `tpcp`.
+  Further, all templates now use the new data transforms instead of a fixed scaling factor.
+  In combination, it should be much easier to create new templates and use more complex data normalisations.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
 
 ### Removed
 
@@ -34,16 +41,26 @@ project.
   This was marked experimental anyway.
   All functionality has been moved into the `tpcp` package.
   For most methods and functions, it should be enough to just change the import statement.
-  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/173)
+- We removed `create_dtw_template` and `create_interpolated_dtw_template` as ways to create templates.
+  Instead, you should now use `DtwTemplate` and `InterpolatedDtwTemplate` classes directly.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
 
 ### Migration Guide
 
-- template scaling is now different
-- Use scaler instead
+- If you were creating custom templates, you should now use the `DtwTemplate` and `InterpolatedDtwTemplate` classes.
+  Check the new example (TODO) for more information, on how to use these new classes.
+- If you were using scaling factors for DtwTemplates you should now use the new transformers in `tpcp.data_transforms`
+  instead.
+  To replace a fixed scaling factor, use `FixedScaler(scale=500)`.
+  However, in many cases you might be better off using one of the Trainable scalars to automatically learn the scaling 
+  factors from the template.
+- If you worked with the raw data of the `BarthDtwTemplate`, be aware that the stored data is now **unscaled**
+  (i.e. multiplied by 500 compared to the old version).
+
 
 ### Scientific Changes
 
-- effective sampling rate
 
 ## [1.6.0] - 2022-05-31
 
