@@ -10,6 +10,8 @@ project.
 
 ## [Unreleased]
 
+This release **removes** Python 3.7 support!
+
 ### Added
 
 - Data Transforms are added as a new algorithm class.
@@ -51,6 +53,10 @@ project.
 - We removed `create_dtw_template` and `create_interpolated_dtw_template` as ways to create templates.
   Instead, you should now use `DtwTemplate` and `InterpolatedDtwTemplate` classes directly.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
+- tslearn is dropped as dependency. Instead we have vendored the set of functions we need.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/181)
+- Python 3.7 support is dropped.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/181)
 
 ### Migration Guide
 

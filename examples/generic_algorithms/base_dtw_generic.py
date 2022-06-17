@@ -11,8 +11,7 @@ This can be used to segment the larger signal into smaller pieces for further pr
 
 import matplotlib.pyplot as plt
 import numpy
-from tslearn.generators import random_walks
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+import numpy as np
 
 numpy.random.seed(0)
 
@@ -26,16 +25,15 @@ numpy.random.seed(0)
 
 sampling_rate_hz = 100
 
-n_ts, sz, d = 2, 100, 1
 n_repeat = 5
-dataset = random_walks(n_ts=n_ts, sz=sz, d=d)
-scaler = TimeSeriesScalerMeanVariance(mu=0.0, std=1.0)  # Rescale time series
-dataset_scaled = scaler.fit_transform(dataset)
+sequence_length = 200
+dataset = (np.sin(np.linspace(0, 2 * np.pi, sequence_length)) + np.random.normal(size=200) * 0.1).reshape(-1, 1)
+dataset_scaled = dataset / np.std(dataset)
 
 # We repeat the long sequence multiple times to generate multiple possible
 # matches
-long_sequence = numpy.tile(dataset_scaled[1], (n_repeat, 1))
-short_sequence = dataset_scaled[0]
+long_sequence = numpy.tile(dataset_scaled, (n_repeat, 1))
+short_sequence = dataset_scaled
 
 sz1 = len(long_sequence)
 sz2 = len(short_sequence)
@@ -46,8 +44,8 @@ print("Shape short sequence: {}".format(short_sequence.shape))
 # %%
 # Plot the sequences
 plt.figure(1, figsize=(6, 3))
-plt.plot(short_sequence, label="Short Sequence")
 plt.plot(long_sequence, label="Long Sequence")
+plt.plot(short_sequence, label="Short Sequence")
 plt.legend()
 plt.show()
 
@@ -75,7 +73,7 @@ print(template.sampling_rate_hz)
 
 from gaitmap.stride_segmentation import BaseDtw
 
-dtw = BaseDtw(template, min_match_length_s=0.6 * sz / sampling_rate_hz, max_cost=3)
+dtw = BaseDtw(template, min_match_length_s=0.6 * sequence_length / sampling_rate_hz, max_cost=3)
 
 # %%
 # In a second step we apply the dtw to the long sequence

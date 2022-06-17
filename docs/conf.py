@@ -149,7 +149,6 @@ intersphinx_module_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "tslearn": ("https://tslearn.readthedocs.io/en/stable", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
     "tpcp": ("https://tpcp.readthedocs.io/en/latest", None)
 }
