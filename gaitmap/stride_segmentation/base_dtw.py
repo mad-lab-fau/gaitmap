@@ -10,6 +10,7 @@ from scipy.interpolate import interp1d
 from typing_extensions import Literal
 
 from gaitmap.base import BaseAlgorithm
+from gaitmap.stride_segmentation._vendored_tslearn import _local_squared_dist, subsequence_cost_matrix, subsequence_path
 from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
 from gaitmap.stride_segmentation.dtw_templates.templates import BaseDtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -17,13 +18,14 @@ from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
 
-# We do a late import of tslearn to avoid the annoying error messages
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message="h5py not installed")
-    from tslearn.metrics import subsequence_cost_matrix, subsequence_path
-    from tslearn.utils import to_time_series
-
 Self = TypeVar("Self", bound="BaseDtw")
+
+
+def _timeseries_reshape(data: np.ndarray) -> np.ndarray:
+    """Add a dummy dimension to the time series."""
+    if data.ndim <= 1:
+        data = data.reshape((-1, 1))
+    return data
 
 
 def find_matches_find_peaks(acc_cost_mat: np.ndarray, max_cost: float, min_distance: float) -> np.ndarray:
@@ -420,9 +422,9 @@ class BaseDtw(BaseAlgorithm):
         cost_matrix_method = memory.cache(cost_matrix_method)
 
         # Calculate cost matrix
-        # We need to copy the result tho ensure that it is an actual array and not a view on an array.
+        # We need to copy the result to ensure that it is an actual array and not a view on an array.
         acc_cost_mat_ = cost_matrix_method(
-            to_time_series(final_template), to_time_series(matching_data), **cost_matrix_kwargs
+            _timeseries_reshape(final_template), _timeseries_reshape(matching_data), **cost_matrix_kwargs
         ).copy()
 
         # Find matches and postprocess them
@@ -673,19 +675,6 @@ class BaseDtw(BaseAlgorithm):
         else:
             _max_signal_stretch = np.round(_max_signal_stretch / 1000 * self.sampling_rate_hz)
         return _max_template_stretch, _max_signal_stretch
-
-
-@njit()
-def _local_squared_dist(x, y):
-    """Local sqare distance taken from tslearn.
-
-    This is copied in gaitmap, as it is part of the private api in tslearn that can be changed without notice.
-    """
-    dist = 0.0
-    for di in range(x.shape[0]):
-        diff = x[di] - y[di]
-        dist += diff * diff
-    return dist
 
 
 def subsequence_cost_matrix_with_constrains(

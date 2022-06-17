@@ -16,7 +16,6 @@ authors = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11"
-tslearn = "^0"
 pandas = "^1"
 scipy = ">=1.6.1,<2.0.0"
 typing_extensions = ">=4.1.1"
