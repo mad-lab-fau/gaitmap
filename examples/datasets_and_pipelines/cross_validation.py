@@ -25,11 +25,17 @@ Here we will just copy the code over.
 """
 import numpy as np
 import pandas as pd
-from tpcp import CloneFactory, Dataset, OptimizableAlgorithm, OptimizableParameter, OptimizablePipeline, Parameter
+from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
 
 from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, InterpolatedDtwTemplate
+from gaitmap.stride_segmentation import (
+    BarthDtw,
+    BarthOriginalTemplate,
+    BaseDtwTemplate,
+    InterpolatedDtwTemplate,
+    TrainableTemplateMixin,
+)
 from gaitmap.utils.array_handling import iterate_region_data
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList

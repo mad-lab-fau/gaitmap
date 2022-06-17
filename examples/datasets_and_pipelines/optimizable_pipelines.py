@@ -31,7 +31,7 @@ import pandas as pd
 # -----------
 # We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
-from tpcp import Dataset, OptimizableAlgorithm
+from tpcp import Dataset
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.stride_segmentation.dtw_templates.templates import TrainableTemplateMixin

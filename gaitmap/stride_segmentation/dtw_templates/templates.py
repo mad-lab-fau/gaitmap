@@ -350,9 +350,9 @@ def _create_interpolated_dtw_template(
     expected_col_order = columns
     arrays = []
     for df in signal_sequences:
+        is_single_sensor_data(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
         if expected_col_order is None:
             expected_col_order = df.columns
-        is_single_sensor_data(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
         arrays.append(df.to_numpy())
 
     del signal_sequences

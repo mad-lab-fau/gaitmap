@@ -7,7 +7,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.data_transform import FixedScaler
+from gaitmap.data_transform import BaseTransformer, FixedScaler, IdentityTransformer, TrainableTransformerMixin
 from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
 from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
@@ -76,6 +76,13 @@ class TestTemplateBaseClass:
 
         with pytest.raises(ValueError):
             _ = instance.get_data()
+
+    def test_get_data_applies_scaling(self):
+        template = pd.DataFrame(np.arange(10))
+
+        instance = DtwTemplate(data=template, scaling=FixedScaler(scale=2))
+
+        assert_array_equal(instance.get_data(), template / 2)
 
 
 class TestBartTemplate:
@@ -230,3 +237,28 @@ class TestCreateInterpolatedTemplate:
 
         with pytest.raises(ValidationError, match=r".* SingleSensorData*"):
             InterpolatedDtwTemplate().self_optimize(dataset, kind=self.kind, n_samples=None)
+
+    def test_scaling_retraining(self):
+        class CustomScaler(IdentityTransformer, TrainableTransformerMixin):
+            """Dummy scaler that records the data it is trained with."""
+
+            def __init__(self, opti_data=None):
+                self.opti_data = opti_data
+
+            def self_optimize(self, data, **_):
+                self.opti_data = data
+                return self
+
+        template_data1 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
+        template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
+
+        scaler_instance = CustomScaler()
+
+        instance = InterpolatedDtwTemplate(
+            interpolation_method=self.kind, n_samples=None, scaling=scaler_instance
+        ).self_optimize(
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
+        )
+
+        assert_array_equal(scaler_instance.opti_data[0], instance.data)
