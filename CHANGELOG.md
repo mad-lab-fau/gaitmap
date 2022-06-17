@@ -22,6 +22,9 @@ project.
 - A new helper (`gaitmap.utils.datatype_helper.to_dict_multi_sensor_data`) to convert DataFrame based MultiSensor data 
   to Dict-based MultiSensor data is added.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
+- A new example (`stride_segmentation/barth_dtw_custom_template.py`) is added, which explains how to create custom 
+  dtw-templates from data.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
 
 ### Changed
 
@@ -52,7 +55,7 @@ project.
 ### Migration Guide
 
 - If you were creating custom templates, you should now use the `DtwTemplate` and `InterpolatedDtwTemplate` classes.
-  Check the new example (TODO) for more information, on how to use these new classes.
+  Check the new example (`stride_segmentation/barth_dtw_custom_template`) for more information, on how to use these new classes.
 - If you were using scaling factors for DtwTemplates you should now use the new transformers in `tpcp.data_transforms`
   instead.
   To replace a fixed scaling factor, use `FixedScaler(scale=500)`.
