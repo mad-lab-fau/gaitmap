@@ -1,5 +1,5 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
-from typing import List, Optional, Tuple, Iterable, Union, Generator, Iterator
+from typing import List, Optional, Tuple, Iterable, Union, Generator, Iterator, Sequence
 
 import numba.typed
 import numpy as np
@@ -340,8 +340,8 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
 
 
 def iterate_region_data(
-    signal_sequence: Iterable[SingleSensorData],
-    label_sequences: Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
+    signal_sequence: Sequence[SingleSensorData],
+    label_sequences: Sequence[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
     expected_col_order: Optional[List[str]] = None,
 ) -> Iterator[SingleSensorData]:
     """Iterate over individual strides/ROIs in multiple sensor data sequences.
@@ -351,22 +351,24 @@ def iterate_region_data(
 
     Parameters
     ----------
-    signal_sequence : Iterable[SingleSensorData]
+    signal_sequence : Sequence[SingleSensorData]
         A list/iterable of SingleSensorData objects.
-    label_sequences : Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
+    label_sequences : Sequence[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
         A list/iterable of SingleSensorStrideList or SingleSensorRegionsOfInterestList objects.
         This must have the same length as `signal_sequence` as we expect that the first signal sequence belongs to the
         first label sequence.
     expected_col_order : Optional[List[str]]
         A list of strings that defines the expected column order of the output.
-        This can be helpful to ensure that all output dataframes have the same column order, if it can not be guaranteed
-        that the column order is the same for all input sequences.
+        This ensures that all signal sequences have the same column order.
+        If None, the column order of the first signal sequence is used.
 
     Yields
     ------
     SingleSensorData
         A SingleSensorData object with the data of the next stride/ROI.
+
     """
+    expected_col_order = expected_col_order or signal_sequence[0].columns
     for df, labels in zip(signal_sequence, label_sequences):
         df = df.reindex(columns=expected_col_order)
         for (_, s, e) in labels[["start", "end"]].itertuples():

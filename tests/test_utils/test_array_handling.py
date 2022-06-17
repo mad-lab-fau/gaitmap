@@ -397,8 +397,31 @@ class TestIterateRegionData:
             assert region.shape == (10, 3)
             assert_array_equal(region, data.iloc[rois.start[i]:rois.end[i]])
 
+    def test_multi_data(self):
+        data1 = pd.DataFrame(np.ones((40, 3)))
+        data2 = pd.DataFrame(np.ones((40, 3))) * 2
+
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        region_data = list(iterate_region_data([data1, data2], [rois, rois]))
+        assert len(region_data) == 6
+        for i, region in enumerate(region_data[:3]):
+            assert region.shape == (10, 3)
+            assert_array_equal(region, data1.iloc[rois.start[i]:rois.end[i]])
+        for i, region in enumerate(region_data[3:]):
+            assert region.shape == (10, 3)
+            assert_array_equal(region, data2.iloc[rois.start[i]:rois.end[i]])
+
     def test_col_order(self):
         data = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])
         rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
         region_data = list(iterate_region_data([data], [rois], expected_col_order=["b", "a", "c"]))
         assert region_data[0].columns.tolist() == ["b", "a", "c"]
+
+    def test_data_different_col_order(self):
+        data1 = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])
+        data2 = pd.DataFrame(np.ones((40, 3)), columns=["a", "c", "b"])
+
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        region_data = list(iterate_region_data([data1, data2], [rois, rois], expected_col_order=None))
+        for region in region_data:
+            assert region.columns.tolist() == ["a", "b", "c"]
