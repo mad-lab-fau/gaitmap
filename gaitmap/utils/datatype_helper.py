@@ -57,6 +57,17 @@ MultiSensorOrientationList = Dict[_Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
+def to_dict_multi_sensor_data(sensordata: MultiSensorData) -> Dict[_Hashable, SingleSensorData]:
+    """Convert a multi-sensor data to a dictionary of single sensor datas.
+
+    If it is already in this format, the function will not do anything.
+    """
+    is_multi_sensor_data(sensordata, check_acc=False, check_gyr=False, raise_exception=True)
+    if isinstance(sensordata, dict):
+        return sensordata
+    return {sensor: sensordata[sensor] for sensor in sensordata.columns.levels[0]}
+
+
 def is_single_sensor_data(
     data: SingleSensorData,
     check_acc: bool = True,

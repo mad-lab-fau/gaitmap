@@ -27,8 +27,16 @@ import numpy as np
 import pandas as pd
 from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
 
+from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
+from gaitmap.stride_segmentation import (
+    BarthDtw,
+    BarthOriginalTemplate,
+    BaseDtwTemplate,
+    InterpolatedDtwTemplate,
+    TrainableTemplateMixin,
+)
+from gaitmap.utils.array_handling import iterate_region_data
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
@@ -54,36 +62,39 @@ class MyDataset(Dataset):
 
 class MyPipeline(OptimizablePipeline):
     max_cost: Parameter[float]
-    template: OptimizableParameter[DtwTemplate]
+    template: OptimizableParameter[BaseDtwTemplate]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
     # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
+    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 
     def self_optimize(self, dataset: MyDataset, **kwargs):
+        if not isinstance(self.template, TrainableTemplateMixin):
+            raise ValueError(
+                "The template must be optimizable! If you are using a fixed template (e.g. "
+                "BarthOriginalTemplate), switch to an optimizable base classe."
+            )
         # Our training consists of cutting all strides from the dataset and then creating a new template from all
         # strides in the dataset
 
         # We expect multiple datapoints in the dataset
-        all_strides = []
         sampling_rate = dataset[0].sampling_rate_hz
-        for dp in dataset:
-            data = self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr")
-            # We take the segmented stride list from the reference/ground truth here
-            reference_stride_list = dp.segmented_stride_list_
-            all_strides.extend([data.iloc[s:e] for _, (s, e) in reference_stride_list[["start", "end"]].iterrows()])
-        template = create_interpolated_dtw_template(all_strides, sampling_rate_hz=sampling_rate)
-        # We normalize the template the same way as `BarthOriginalTemplate` is normalized to make them comparable
-        scaling = np.max(np.abs(template.get_data().to_numpy()))
-        template.scaling = scaling
-        template.data /= scaling
+        # We create a generator for the data and the stride labels
+        data_sequences = (
+            self._convert_cord_system(datapoint.data, datapoint.groups[0][1]).filter(like="gyr")
+            for datapoint in dataset
+        )
+        stride_labels = (datapoint.segmented_stride_list_ for datapoint in dataset)
 
-        # We modify the pipeline instance and set the new template
-        self.template = template
+        stride_generator = iterate_region_data(data_sequences, stride_labels)
+
+        self.template.self_optimize(
+            stride_generator, columns=["gyr_pa", "gyr_ml", "gyr_si"], sampling_rate_hz=sampling_rate
+        )
         return self
 
     def _convert_cord_system(self, data, foot):
@@ -145,7 +156,7 @@ from tpcp.optimize import Optimize
 from tpcp.validate import cross_validate
 
 ds = MyDataset()
-pipe = MyPipeline()
+pipe = MyPipeline(template=InterpolatedDtwTemplate(scaling=TrainableAbsMaxScaler()))
 optimizable_pipe = Optimize(pipe)
 
 results = cross_validate(optimizable_pipe, ds, scoring=score, cv=cv, return_optimizer=True, return_train_score=True)

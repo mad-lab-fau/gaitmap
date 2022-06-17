@@ -37,6 +37,7 @@ from gaitmap.utils.datatype_helper import (
     is_stride_list,
     is_velocity_list,
     set_correct_index,
+    to_dict_multi_sensor_data,
 )
 from gaitmap.utils.exceptions import ValidationError
 
@@ -730,3 +731,24 @@ class TestIsRegionsOfInterestList:
     )
     def test_basic_function(self, obj, out):
         assert is_regions_of_interest_list(obj) == out
+
+
+class TestToDictMultiSensorData:
+    def test_convert_simple(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=BF_GYR)
+        data = pd.concat([data, data], axis=1, keys=["s1", "s2"])
+
+        out = to_dict_multi_sensor_data(data)
+
+        assert isinstance(out, dict)
+        assert len(out) == 2
+        assert list(out.keys()) == ["s1", "s2"]
+        assert out["s1"].shape == (10, 3)
+        assert out["s2"].shape == (10, 3)
+
+    def test_dict_is_just_returned(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=BF_GYR)
+        data = {"s1": data, "s2": data}
+
+        out = to_dict_multi_sensor_data(data)
+        assert out is data

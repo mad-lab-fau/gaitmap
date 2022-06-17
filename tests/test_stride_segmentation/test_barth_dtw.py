@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.stride_segmentation import BarthDtw, create_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, DtwTemplate
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 from gaitmap.utils.datatype_helper import is_multi_sensor_stride_list, is_single_sensor_stride_list
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -23,7 +23,7 @@ class MetaTestConfig:
 
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)
         data = np.array([0, 1.0, 0, 0])
         dtw.segment(data, sampling_rate_hz=100)
@@ -112,7 +112,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
     def test_stride_list(self):
         """Test that the output of the stride list is correct."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
 
         expected_stride_list = pd.DataFrame(columns=["s_id", "start", "end"])
@@ -132,7 +132,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
-        template = create_dtw_template(template, sampling_rate_hz=100.0)
+        template = DtwTemplate(data=template, sampling_rate_hz=100.0)
         dtw = self.init_dtw(template=template)
 
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
@@ -147,7 +147,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 
     def test_stride_list_passes_test_func(self):
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
-        template = create_dtw_template(np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
 
         assert is_single_sensor_stride_list(dtw.stride_list_)
@@ -161,7 +161,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
 
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
-        template = create_dtw_template(template, sampling_rate_hz=100.0)
+        template = DtwTemplate(data=template, sampling_rate_hz=100.0)
         dtw = self.init_dtw(template=template)
         dtw = dtw.segment(data=data, sampling_rate_hz=100)
 
@@ -362,7 +362,7 @@ class TestPostProcessing:
         Therefore, this is handled separately.
         """
         sequence = pd.DataFrame([*np.ones(5) * 2, 0, 1.0, 0], columns=["col"])
-        template = create_dtw_template(pd.DataFrame([0, 1.0, 0], columns=["col"]), sampling_rate_hz=1000.0)
+        template = DtwTemplate(data=pd.DataFrame([0, 1.0, 0], columns=["col"]), sampling_rate_hz=1000.0)
         dtw = BarthDtw(
             max_cost=1,
             min_match_length_s=None,

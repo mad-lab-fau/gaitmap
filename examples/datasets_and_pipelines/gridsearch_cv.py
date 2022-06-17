@@ -22,6 +22,9 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from gaitmap.data_transform import TrainableAbsMaxScaler
+from gaitmap.utils.array_handling import iterate_region_data
+
 random.seed(1)  # We set the random seed for repeatable results
 
 # %%
@@ -63,14 +66,14 @@ class MyDataset(Dataset):
 # Modifying this parameter, will change the result of the `self_optimize` step.
 from tpcp import CloneFactory, HyperParameter, OptimizableParameter, OptimizablePipeline, PureParameter
 
-from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, create_interpolated_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, InterpolatedDtwTemplate
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
     max_cost: PureParameter[float]
-    template: OptimizableParameter[DtwTemplate]
+    template: OptimizableParameter[InterpolatedDtwTemplate]
     n_train_strides: HyperParameter[Optional[int]]
 
     segmented_stride_list_: SingleSensorStrideList
@@ -80,7 +83,7 @@ class MyPipeline(OptimizablePipeline):
         self,
         max_cost: float = 3,
         # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-        template: DtwTemplate = CloneFactory(DtwTemplate()),
+        template: InterpolatedDtwTemplate = CloneFactory(InterpolatedDtwTemplate(scaling=TrainableAbsMaxScaler())),
         n_train_strides: Optional[int] = None,
     ):
         self.max_cost = max_cost
@@ -92,25 +95,27 @@ class MyPipeline(OptimizablePipeline):
         # strides in the dataset
 
         # We expect multiple datapoints in the dataset
-        all_strides = []
         sampling_rate = dataset[0].sampling_rate_hz
-        for dp in dataset:
-            data = self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr")
-            # We take the segmented stride list from the reference/ground truth here
-            reference_stride_list = dp.segmented_stride_list_
-            all_strides.extend([data.iloc[s:e] for _, (s, e) in reference_stride_list[["start", "end"]].iterrows()])
+
+        # We create a generator for the data and the stride labels
+        data_sequences = (
+            self._convert_cord_system(datapoint.data, datapoint.groups[0][1]).filter(like="gyr")
+            for datapoint in dataset
+        )
+        stride_labels = (datapoint.segmented_stride_list_ for datapoint in dataset)
+
+        stride_geneator = iterate_region_data(data_sequences, stride_labels)
+
         # This is the new part:
+        # Note, that this is not really optimal, as we force all strides into memory and iterate over them,
+        # but shouldn't really matter.
+        all_strides = list(stride_geneator)
         if self.n_train_strides:
             all_strides = random.sample(all_strides, self.n_train_strides)
 
-        template = create_interpolated_dtw_template(all_strides, sampling_rate_hz=sampling_rate)
-        # We normalize the template the same way as `BarthOriginalTemplate` is normalized to make them comparable
-        scaling = np.max(np.abs(template.get_data().to_numpy()))
-        template.scaling = scaling
-        template.data /= scaling
+        # Note that this will also retrain the scaling based on the new data
+        self.template = self.template.self_optimize(all_strides, sampling_rate_hz=sampling_rate)
 
-        # We modify the pipeline instance and set the new template
-        self.template = template
         return self
 
     def _convert_cord_system(self, data, foot):

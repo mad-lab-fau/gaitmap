@@ -1,5 +1,5 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
-from typing import List, Optional, Tuple
+from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 import numba.typed
 import numpy as np
@@ -7,6 +7,16 @@ from numba import njit
 from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from typing_extensions import Literal
+
+from gaitmap.utils.datatype_helper import (
+    SingleSensorData,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+    is_single_sensor_data,
+    is_single_sensor_regions_of_interest_list,
+    is_single_sensor_stride_list,
+)
+from gaitmap.utils.exceptions import ValidationError
 
 
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_padding: bool = False) -> np.ndarray:
@@ -335,3 +345,57 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
             stack.append(input_array[i])
 
     return stack
+
+
+def iterate_region_data(
+    signal_sequence: Iterable[SingleSensorData],
+    label_sequences: Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
+    expected_col_order: Optional[List[str]] = None,
+) -> Iterator[SingleSensorData]:
+    """Iterate over individual strides/ROIs in multiple sensor data sequences.
+
+    This can be helpful if you want to apply operations to each of these strides or ROIs and there is no other way
+    besides iterating over the data.
+
+    Parameters
+    ----------
+    signal_sequence : Iterable[SingleSensorData]
+        A list/iterable of SingleSensorData objects.
+    label_sequences : Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
+        A list/iterable of SingleSensorStrideList or SingleSensorRegionsOfInterestList objects.
+        This must have the same length as `signal_sequence` as we expect that the first signal sequence belongs to the
+        first label sequence.
+    expected_col_order : Optional[List[str]]
+        A list of strings that defines the expected column order of the output.
+        This ensures that all signal sequences have the same column order.
+        If None, the column order of the first signal sequence is used.
+
+    Yields
+    ------
+    SingleSensorData
+        A SingleSensorData object with the data of the next stride/ROI.
+
+    """
+    for df, labels in zip(signal_sequence, label_sequences):
+        is_single_sensor_data(df, check_acc=False, check_gyr=False, raise_exception=True)
+        try:
+            is_single_sensor_stride_list(labels, raise_exception=True)
+        except ValidationError as e_stride_list:
+            try:
+                is_single_sensor_regions_of_interest_list(labels, raise_exception=True)
+            except ValidationError as e_roi:
+                raise ValidationError(
+                    "The label sequences must be either SingleSensorStrideList or SingleSensorRegionsOfInterestList. "
+                    "\n"
+                    "The validations failed with the following errors: \n\n"
+                    f"Stride List: \n\n{str(e_stride_list)}\n\n"
+                    f"Regions of Interest List: \n\n{str(e_roi)}"
+                ) from e_roi
+        if expected_col_order is None:
+            # In the first iteration we pull the column order.
+            # We don't do that beforehand, because otherwise we could not take a generator as input and force the
+            # user to put all the data in RAM first.
+            expected_col_order = df.columns
+        df = df.reindex(columns=expected_col_order)
+        for (_, s, e) in labels[["start", "end"]].itertuples():
+            yield df.iloc[s:e]

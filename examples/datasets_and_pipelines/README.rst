@@ -2,4 +2,5 @@
 
 Datasets and Pipelines
 ======================
-Examples that show how to work with custom datasets and pipelines
+Examples that show how to to use `tpcp` datasets and pipelines together with gaitmap.
+These are basically the same examples you will find in the tpcp documentation, but adapted to work with gaitmap.

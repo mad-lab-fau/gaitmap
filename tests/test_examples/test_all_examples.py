@@ -24,6 +24,14 @@ def test_barth_dtw_example(snapshot):
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
 
 
+def test_barth_dtw_custom_template(snapshot):
+    from examples.stride_segmentation.barth_dtw_custom_template import dtw
+
+    snapshot.assert_match(dtw.template.get_data()[:10])
+    snapshot.assert_match(dtw.matches_start_end_["left_sensor"])
+    assert dtw.template.scaling.data_max == 524.7659568483249
+
+
 def test_constrained_barth_dtw_example(snapshot):
     from examples.stride_segmentation.constrained_barth_dtw_stride_segmentation import cdtw, default_cdtw, dtw
 

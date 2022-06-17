@@ -59,11 +59,11 @@ plt.show()
 # The easiest way is to use the `create_dtw_template` helper function.
 # We pass the data of the short sequence as the template data.
 
-from gaitmap.stride_segmentation import BaseDtw, create_dtw_template
+from gaitmap.stride_segmentation import DtwTemplate
 
-template = create_dtw_template(short_sequence, sampling_rate_hz=sampling_rate_hz)
+template = DtwTemplate(data=short_sequence, sampling_rate_hz=sampling_rate_hz)
 
-print(template.data.shape)
+print(template.get_data().shape)
 print(template.sampling_rate_hz)
 
 # %%

@@ -16,9 +16,11 @@ Classes
     BaseDtw
     BarthDtw
     ConstrainedBarthDtw
+    RoiStrideSegmentation
+    BaseDtwTemplate
     DtwTemplate
     BarthOriginalTemplate
-    RoiStrideSegmentation
+    InterpolatedDtwTemplate
 
 Functions
 ---------
@@ -28,7 +30,5 @@ Functions
    :toctree: generated/stride_segmentation
    :template: function.rst
 
-    create_dtw_template
-    create_interpolated_dtw_template
     base_dtw.find_matches_find_peaks
     base_dtw.find_matches_min_under_threshold

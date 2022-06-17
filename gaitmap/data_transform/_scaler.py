@@ -7,12 +7,12 @@ import pandas as pd
 from tpcp import OptimizableParameter, Parameter, PureParameter, make_action_safe
 from typing_extensions import Self
 
-from gaitmap.base import _BaseSerializable
+from gaitmap.base import BaseAlgorithm
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, is_single_sensor_data
 
 
-class BaseTransformer(_BaseSerializable):
+class BaseTransformer(BaseAlgorithm):
     """Base class for all data transformers."""
 
     _action_methods = ("transform",)
@@ -41,7 +41,7 @@ class BaseTransformer(_BaseSerializable):
 class TrainableTransformerMixin:
     """Mixin for transformers with adaptable parameters."""
 
-    def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
+    def self_optimize(self, data: Sequence[SingleSensorData], **_) -> Self:
         """Learn the parameters of the transformer based on provided data.
 
         Parameters
