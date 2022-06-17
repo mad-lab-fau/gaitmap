@@ -10,7 +10,7 @@ variables:
 .python_base: &python_base
   tags:
     - docker
-  image: python:3.7
+  image: python:3.8
 
 .cached_python_base: &cached_python_base
   <<: *python_base
