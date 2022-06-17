@@ -131,7 +131,8 @@ class ConstrainedBarthDtw(BarthDtw):
     def __init__(
         self,
         template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
-            BarthOriginalTemplate()),
+            BarthOriginalTemplate()
+        ),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = 4,

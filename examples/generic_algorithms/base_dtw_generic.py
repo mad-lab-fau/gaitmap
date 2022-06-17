@@ -11,7 +11,6 @@ This can be used to segment the larger signal into smaller pieces for further pr
 
 import matplotlib.pyplot as plt
 import numpy
-
 from tslearn.generators import random_walks
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 

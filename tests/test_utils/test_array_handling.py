@@ -7,10 +7,11 @@ from gaitmap.utils.array_handling import (
     bool_array_to_start_end_array,
     find_extrema_in_radius,
     find_local_minima_below_threshold,
+    iterate_region_data,
     merge_intervals,
     multi_array_interpolation,
     sliding_window_view,
-    split_array_at_nan, iterate_region_data,
+    split_array_at_nan,
 )
 
 
@@ -395,7 +396,7 @@ class TestIterateRegionData:
         assert len(region_data) == 3
         for i, region in enumerate(region_data):
             assert region.shape == (10, 3)
-            assert_array_equal(region, data.iloc[rois.start[i]:rois.end[i]])
+            assert_array_equal(region, data.iloc[rois.start[i] : rois.end[i]])
 
     def test_multi_data(self):
         data1 = pd.DataFrame(np.ones((40, 3)))
@@ -406,10 +407,10 @@ class TestIterateRegionData:
         assert len(region_data) == 6
         for i, region in enumerate(region_data[:3]):
             assert region.shape == (10, 3)
-            assert_array_equal(region, data1.iloc[rois.start[i]:rois.end[i]])
+            assert_array_equal(region, data1.iloc[rois.start[i] : rois.end[i]])
         for i, region in enumerate(region_data[3:]):
             assert region.shape == (10, 3)
-            assert_array_equal(region, data2.iloc[rois.start[i]:rois.end[i]])
+            assert_array_equal(region, data2.iloc[rois.start[i] : rois.end[i]])
 
     def test_col_order(self):
         data = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])

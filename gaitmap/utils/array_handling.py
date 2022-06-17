@@ -1,5 +1,5 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
-from typing import List, Optional, Tuple, Iterable, Union, Generator, Iterator, Sequence
+from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 import numba.typed
 import numpy as np
@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from typing_extensions import Literal
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList, SingleSensorRegionsOfInterestList
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
 
 
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_padding: bool = False) -> np.ndarray:

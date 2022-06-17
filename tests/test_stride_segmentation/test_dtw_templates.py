@@ -8,10 +8,7 @@ from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 
 from gaitmap.data_transform import FixedScaler
-from gaitmap.stride_segmentation.dtw_templates import (
-    BarthOriginalTemplate,
-    DtwTemplate,
-)
+from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
 from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import compare_algo_objects
@@ -88,7 +85,7 @@ class TestBartTemplate:
 
         barth_instance = BarthOriginalTemplate()
 
-        assert_frame_equal(barth_instance.get_data(), data / 500.)
+        assert_frame_equal(barth_instance.get_data(), data / 500.0)
         assert barth_instance.sampling_rate_hz == 204.8
         assert barth_instance.scaling.get_params() == FixedScaler(500.0, 0).get_params()
 
@@ -147,7 +144,8 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 1, 0]), columns=["dummy_col"])
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
 
         assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
@@ -160,7 +158,8 @@ class TestCreateInterpolatedTemplate:
         template_data2.index = template_data2.index + 10
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
 
         assert_array_almost_equal(instance.get_data(), template_data1[["dummy_col"]])
@@ -172,7 +171,8 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, -1, -2, -1, 0]), columns=["dummy_col"])
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
 
         result_template_df = pd.DataFrame(np.array([0, 0, 0, 0, 0]), columns=["dummy_col"])
@@ -185,7 +185,8 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=None).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
 
         assert len(instance.get_data()) == 4
@@ -198,7 +199,8 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2]), columns=["dummy_col"])
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=5).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
         assert len(instance.get_data()) == 5
         # Effective sampling rate is calculated based on the number of samples before and after interpolation
@@ -211,7 +213,8 @@ class TestCreateInterpolatedTemplate:
         template_data2 = pd.DataFrame(np.array([0, 1, 2, 3, 4, 5, 6]), columns=["dummy_col"])
 
         instance = InterpolatedDtwTemplate(interpolation_method=self.kind, n_samples=3).self_optimize(
-            [template_data1, template_data2], sampling_rate_hz=1,
+            [template_data1, template_data2],
+            sampling_rate_hz=1,
         )
         assert_array_equal(len(instance.get_data()), 3)
         # Effective sampling rate is calculated based on the number of samples before and after interpolation

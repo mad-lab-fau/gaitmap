@@ -85,7 +85,7 @@ class MyDataset(Dataset):
 #           catch all potential issues.
 from tpcp import CloneFactory, OptimizableParameter, OptimizablePipeline, PureParameter
 
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, InterpolatedDtwTemplate, BaseDtwTemplate
+from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, BaseDtwTemplate, InterpolatedDtwTemplate
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 

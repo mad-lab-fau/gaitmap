@@ -1,25 +1,28 @@
 """Dtw template base classes and helper."""
 from functools import reduce
 from importlib.resources import open_text
-from typing import List, Optional, Tuple, Union, cast, Sequence, Iterable
+from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
-from tpcp import OptimizableParameter, OptimizableAlgorithm, cf
+from tpcp import OptimizableParameter, cf
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.data_transform import BaseTransformer, FixedScaler, TrainableTransformerMixin
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import multi_array_interpolation
-from gaitmap.utils.datatype_helper import is_single_sensor_data, SingleSensorData
+from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 
 
 class BaseDtwTemplate(BaseAlgorithm):
     use_cols: Optional[Sequence[Union[str, int]]]
 
     def __init__(
-        self, *, scaling: Optional[BaseTransformer] = None, use_cols: Optional[Sequence[Union[str, int]]] = None,
+        self,
+        *,
+        scaling: Optional[BaseTransformer] = None,
+        use_cols: Optional[Sequence[Union[str, int]]] = None,
     ):
         self.scaling = scaling
         self.use_cols = use_cols
@@ -95,7 +98,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         return self._apply_scaling(template[list(use_cols)], self.sampling_rate_hz)
 
 
-class DtwTemplate(BaseDtwTemplate, OptimizableAlgorithm):
+class DtwTemplate(BaseDtwTemplate):
     """Wrap all required information about a dtw template.
 
     Parameters
@@ -215,7 +218,10 @@ class InterpolatedDtwTemplate(DtwTemplate):
         self.interpolation_method = interpolation_method
         self.n_samples = n_samples
         super().__init__(
-            data=data, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols,
+            data=data,
+            sampling_rate_hz=sampling_rate_hz,
+            scaling=scaling,
+            use_cols=use_cols,
         )
 
     def self_optimize(
@@ -227,7 +233,11 @@ class InterpolatedDtwTemplate(DtwTemplate):
         **_,
     ):
         template_df, effective_sampling_rate = _create_interpolated_dtw_template(
-            data_sequences, sampling_rate_hz, kind=self.interpolation_method, n_samples=self.n_samples, columns=columns,
+            data_sequences,
+            sampling_rate_hz,
+            kind=self.interpolation_method,
+            n_samples=self.n_samples,
+            columns=columns,
         )
         self.sampling_rate_hz = effective_sampling_rate
         if isinstance(self.scaling, TrainableTransformerMixin):
@@ -270,7 +280,8 @@ def _create_interpolated_dtw_template(
 
 
 def _create_average_template(
-    signal_sequences: Iterable[SingleSensorData], columns: Optional[List[_Hashable]] = None,
+    signal_sequences: Iterable[SingleSensorData],
+    columns: Optional[List[_Hashable]] = None,
 ):
     expected_col_order = columns
     n_sequences = 1

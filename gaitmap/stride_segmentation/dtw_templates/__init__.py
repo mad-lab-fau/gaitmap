@@ -2,9 +2,9 @@
 
 from gaitmap.stride_segmentation.dtw_templates.templates import (
     BarthOriginalTemplate,
+    BaseDtwTemplate,
     DtwTemplate,
     InterpolatedDtwTemplate,
-    BaseDtwTemplate,
 )
 
 __all__ = ["DtwTemplate", "BarthOriginalTemplate", "InterpolatedDtwTemplate", "BaseDtwTemplate"]
