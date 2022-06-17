@@ -34,6 +34,7 @@ import pandas as pd
 from tpcp import Dataset, OptimizableAlgorithm
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
+from gaitmap.stride_segmentation.dtw_templates.templates import TrainableTemplateMixin
 from gaitmap.utils.array_handling import iterate_region_data
 
 
@@ -103,7 +104,7 @@ class MyPipeline(OptimizablePipeline):
         self.template = template
 
     def self_optimize(self, dataset: MyDataset, **kwargs):
-        if not isinstance(self.template, OptimizableAlgorithm):
+        if not isinstance(self.template, TrainableTemplateMixin):
             raise ValueError(
                 "The template must be optimizable! If you are using a fixed template (e.g. "
                 "BarthOriginalTemplate), switch to an optimizable base classe."

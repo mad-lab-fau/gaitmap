@@ -56,18 +56,18 @@ class MyDataset(Dataset):
 
 class MyPipeline(OptimizablePipeline):
     max_cost: Parameter[float]
-    template: OptimizableParameter[DtwTemplate]
+    template: OptimizableParameter[BaseDtwTemplate]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
     # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
+    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(BarthOriginalTemplate())):
         self.max_cost = max_cost
         self.template = template
 
     def self_optimize(self, dataset: MyDataset, **kwargs):
-        if not isinstance(self.template, OptimizableAlgorithm):
+        if not isinstance(self.template, TrainableTemplateMixin):
             raise ValueError(
                 "The template must be optimizable! If you are using a fixed template (e.g. "
                 "BarthOriginalTemplate), switch to an optimizable base classe."

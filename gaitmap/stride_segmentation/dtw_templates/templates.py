@@ -1,11 +1,10 @@
 """Dtw template base classes and helper."""
-from functools import reduce
 from importlib.resources import open_text
 from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
-from tpcp import OptimizableParameter, cf
+from tpcp import OptimizableParameter, cf, HyperParameter
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
@@ -16,18 +15,18 @@ from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_dat
 
 
 class BaseDtwTemplate(BaseAlgorithm):
+    """Base class for dtw templates."""
+
     use_cols: Optional[Sequence[Union[str, int]]]
 
     def __init__(
-        self,
-        *,
-        scaling: Optional[BaseTransformer] = None,
-        use_cols: Optional[Sequence[Union[str, int]]] = None,
+        self, *, scaling: Optional[BaseTransformer] = None, use_cols: Optional[Sequence[Union[str, int]]] = None,
     ):
         self.scaling = scaling
         self.use_cols = use_cols
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
+        """Return the template data."""
         raise NotImplementedError
 
     def _apply_scaling(self, data, sampling_rate_hz: float) -> SingleSensorData:
@@ -41,6 +40,26 @@ class BaseDtwTemplate(BaseAlgorithm):
         return self.scaling.clone().transform(data, sampling_rate_hz=sampling_rate_hz).transformed_data_
 
     def transform_data(self, data: SingleSensorData, sampling_rate_hz: float) -> SingleSensorData:
+        """Transform external data according to the template scaling.
+
+        This method should be applied to the data before the template is matched.
+        There is usually no need to do this manually, as all the implemented Dtw methods do this automatically
+        internally.
+
+        Parameters
+        ----------
+        data : SingleSensorData
+            The data to transform.
+        sampling_rate_hz : float
+            The sampling rate of the data.
+            This will be forwarded to the scaler, incase it is used.
+
+        Returns
+        -------
+        SingleSensorData
+            The transformed data.
+
+        """
         return self._apply_scaling(data, sampling_rate_hz)
 
 
@@ -86,7 +105,10 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         super().__init__(scaling=scaling, use_cols=use_cols)
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
-        """Return the template of the dataset."""
+        """Return the template data.
+
+        This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
+        """
         with open_text("gaitmap.stride_segmentation.dtw_templates", cast(str, self.template_file_name)) as test_data:
             data = pd.read_csv(test_data, header=0)
         template = data
@@ -98,6 +120,21 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         return self._apply_scaling(template[list(use_cols)], self.sampling_rate_hz)
 
 
+class TrainableTemplateMixin:
+    """Mixin for templates that can be optimized/trained/generated from data."""
+
+    def self_optimize(
+        self,
+        data_sequences: Iterable[SingleSensorData],
+        sampling_rate_hz: Optional[float] = None,
+        *,
+        columns: Optional[List[_Hashable]] = None,
+        **_,
+    ) -> Self:
+        """Optimize or recreate the template from data sequences."""
+        raise NotImplementedError
+
+
 class DtwTemplate(BaseDtwTemplate):
     """Wrap all required information about a dtw template.
 
@@ -106,22 +143,26 @@ class DtwTemplate(BaseDtwTemplate):
     data
         The actual data representing the template.
         If this should be a array or a dataframe might depend on your usecase.
-        Usually it is a good idea to scale the data to a range from 0-1 and then use the scale parameter to downscale
-        the signal.
-        Do not use this attribute directly to access the data, but use the `get_data` method instead.
+        This data is the **unscaled** version of the template.
+        Use the `get_data` method to get the correctly scaled template.
     sampling_rate_hz
-        The sampling rate that was used to record the template data
+        The sampling rate that was used to record the template data.
+        This will be overwritten by the sampling rate of provided to the `self_optimize` method.
     scaling
-        A multiplicative factor used to downscale the signal before the template is applied.
-        The downscaled signal should then have the same value range as the template signal.
-        A large scale difference between data and template will result in mismatches.
-        At the moment only homogeneous scaling of all axis is supported.
-        Note that the actual use of the scaling depends on the DTW implementation and not all DTW class might use the
-        scaling factor in the same way.
+        A valid scaler instance, that is used to transform the template data.
+        It is usually a good idea to choose a scaler that maps the template to a range from -1-1.
+        The same scaler must then be applied to the data before matching the template.
+        This can be done using the `transform_data` method.
+
+        Note that the scaler is not adapted to the template in any way for this base `DtwTemplate` class.
+        The scaler will be applied to the data (using `transform_data`) and to the template (using `get_data`) as is.
+        If you want to use a trainable scaler, that is modified based on the template data, use one of the
+        `TrainableTemplateMixin` subclasses and create new templates via the provided `self_optimize` method.
     use_cols
         The columns of the template that should actually be used.
         If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
         must match a subset of these columns.
+        This will affect the return value of the `get_data` method.
 
     See Also
     --------
@@ -149,7 +190,10 @@ class DtwTemplate(BaseDtwTemplate):
         super().__init__(scaling=scaling, use_cols=use_cols)
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
-        """Return the template of the dataset."""
+        """Return the template data.
+
+        This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
+        """
         data = self.data
         if data is None:
             raise ValueError(
@@ -169,41 +213,59 @@ class DtwTemplate(BaseDtwTemplate):
             return np.squeeze(template[:, use_cols])
         return self._apply_scaling(template[use_cols], self.sampling_rate_hz)
 
-    def self_optimize(
-        self,
-        data_sequences: Iterable[SingleSensorData],
-        sampling_rate_hz: Optional[float] = None,
-        *,
-        columns: Optional[List[_Hashable]] = None,
-        **_,
-    ) -> Self:
-        """Create a new template by averaging the data of the given sequences.
 
-        All sequences must have the same length.
-        If this is not the case, you should use `gaitmap.stride_segmentation.InterpolatedDtwTemplate` instead.
+class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
+    """A template that is created by interpolating and then averaging the data of multiple sequences.
 
-        Parameters
-        ----------
-        data_sequences
-            The sequences of data that should be used to create the template.
-        sampling_rate_hz
-            The sampling rate that was used to record the data sequences.
-        columns
-            The columns of the data that should actually be used for the template.
-            If None, all columns will be used.
-        """
-        template_df = _create_average_template(data_sequences, columns=columns)
-        self.sampling_rate_hz = sampling_rate_hz
-        if isinstance(self.scaling, TrainableTransformerMixin):
-            self.scaling = self.scaling.self_optimize([template_df], sampling_rate_hz=self.sampling_rate_hz)
-        self.data = template_df
-        return self
+    Use the self_optimize method to create a template from data.
 
+    Parameters
+    ----------
+    data
+        The actual data representing the template.
+        If this should be a array or a dataframe might depend on your usecase.
+        This data is the **unscaled** version of the template.
+        Use the `get_data` method to get the correctly scaled template.
+    sampling_rate_hz
+        The sampling rate that was used to record the template data.
+        This will be overwritten by the sampling rate of provided to the `self_optimize` method.
+    scaling
+        A valid scaler instance, that is used to transform the template data.
+        It is usually a good idea to choose a scaler that maps the template to a range from -1-1.
+        The same scaler must then be applied to the data before matching the template.
+        This can be done using the `transform_data` method.
 
-class InterpolatedDtwTemplate(DtwTemplate):
+        If the scaling is `optimizable`, its parameters will be optimized when a new template is created using the
+        `self_optimize` method of the template.
+    interpolation_method
+        The method used to interpolate the data, when creating a new template using `self_optimize`.
+        Refer to :func:`~scipy.interpolate.interp1d` for possible options.
+    n_samples
+        The number of samples the created template should have.
+        If `None`, the average length of all provided trainings sequences will be used.
+    use_cols
+        The columns of the template that should actually be used.
+        If the template is an array this must be a list of **int**, if it is a dataframe, the content of `use_cols`
+        must match a subset of these columns.
+        This will affect the return value of the `get_data` method.
+
+    Notes
+    -----
+    This class can be used in combination with :func:`~gaitmap.utils.array_handling.iterate_region_data` to easily
+    create a new template based on a labeled stride list.
+
+    See Also
+    --------
+    gaitmap.stride_segmentation.BaseDtw: How to apply templates
+    gaitmap.stride_segmentation.BarthDtw: How to apply templates for stride segmentation
+
+    """
+
     scaling: OptimizableParameter[Optional[BaseTransformer]]
     data: OptimizableParameter[Optional[Union[np.ndarray, pd.DataFrame]]]
     sampling_rate_hz: OptimizableParameter[Optional[float]]
+    interpolation_method: HyperParameter[str]
+    n_samples: HyperParameter[Optional[int]]
 
     def __init__(
         self,
@@ -218,10 +280,7 @@ class InterpolatedDtwTemplate(DtwTemplate):
         self.interpolation_method = interpolation_method
         self.n_samples = n_samples
         super().__init__(
-            data=data,
-            sampling_rate_hz=sampling_rate_hz,
-            scaling=scaling,
-            use_cols=use_cols,
+            data=data, sampling_rate_hz=sampling_rate_hz, scaling=scaling, use_cols=use_cols,
         )
 
     def self_optimize(
@@ -232,12 +291,30 @@ class InterpolatedDtwTemplate(DtwTemplate):
         columns: Optional[List[_Hashable]] = None,
         **_,
     ):
+        """Create a template from multiple data sequences.
+
+        All data sequences will be interpolated to match `self.n_samples` and then averaged.
+        If `self.scaling` is `optimizable`, the scaler will be optimized as well based on the provided data.
+
+        Parameters
+        ----------
+        data_sequences
+            A sequence of pandas dataframes that contain the data to be used for the template.
+        sampling_rate_hz
+            The sampling rate that was used to record the template data.
+            Note, that the final sampling rate might not match this value exactly, as the effective sampling rate
+            will be approximated based on the actual length of the final template.
+        columns
+            The columns of the data that should be used for the template.
+
+        Returns
+        -------
+        self
+            The template instance with the template data, sampling rate and scaling adapted based on the data.
+
+        """
         template_df, effective_sampling_rate = _create_interpolated_dtw_template(
-            data_sequences,
-            sampling_rate_hz,
-            kind=self.interpolation_method,
-            n_samples=self.n_samples,
-            columns=columns,
+            data_sequences, sampling_rate_hz, kind=self.interpolation_method, n_samples=self.n_samples, columns=columns,
         )
         self.sampling_rate_hz = effective_sampling_rate
         if isinstance(self.scaling, TrainableTransformerMixin):
@@ -277,25 +354,3 @@ def _create_interpolated_dtw_template(
         effective_sampling_rate = n_samples / (mean_stride_samples / sampling_rate_hz)
 
     return template_df, effective_sampling_rate
-
-
-def _create_average_template(
-    signal_sequences: Iterable[SingleSensorData],
-    columns: Optional[List[_Hashable]] = None,
-):
-    expected_col_order = columns
-    n_sequences = 1
-
-    # We do all this fancy logic to avoid creating a list of objects and keep them as generators and iterate only once.
-    def process_single_frame(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
-        nonlocal expected_col_order
-        nonlocal n_sequences
-        n_sequences += 1
-        if expected_col_order is None:
-            expected_col_order = df_new.columns
-        return df_old.add(df_new, fill_value=0)
-
-    df = reduce(process_single_frame, signal_sequences)
-    df /= n_sequences
-
-    return df
