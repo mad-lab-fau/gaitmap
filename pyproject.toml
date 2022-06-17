@@ -48,7 +48,7 @@ toml = "^0.10.1"
 mypy = "^0.790"
 pytest-xdist = "^2.2.0"
 isort = "^5.9.3"
-Sphinx = "^5.0.2"
+Sphinx = "^4"
 
 [tool.black]
 line-length = 120
