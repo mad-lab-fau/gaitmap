@@ -372,16 +372,8 @@ class TestMergeIntervals:
                 np.array([[1, 15], [18, 20]]),
                 2,
             ),
-            (
-                np.array([[-1, 1], [-2, 2], [3, 3], [5, 5], [4, 4]]),
-                np.array([[-2, 5]]),
-                1,
-            ),
-            (
-                np.array([[]]),
-                np.array([[]]),
-                0,
-            ),
+            (np.array([[-1, 1], [-2, 2], [3, 3], [5, 5], [4, 4]]), np.array([[-2, 5]]), 1,),
+            (np.array([[]]), np.array([[]]), 0,),
         ],
     )
     def test_merge_intervals(self, input_array, output_array, gap_size):
@@ -391,7 +383,7 @@ class TestMergeIntervals:
 class TestIterateRegionData:
     def test_simple_case(self):
         data = pd.DataFrame(np.ones((40, 3)))
-        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30], "s_id": [0, 1, 2]},)
         region_data = list(iterate_region_data([data], [rois]))
         assert len(region_data) == 3
         for i, region in enumerate(region_data):
@@ -402,7 +394,7 @@ class TestIterateRegionData:
         data1 = pd.DataFrame(np.ones((40, 3)))
         data2 = pd.DataFrame(np.ones((40, 3))) * 2
 
-        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30], "s_id": [0, 1, 2]},)
         region_data = list(iterate_region_data([data1, data2], [rois, rois]))
         assert len(region_data) == 6
         for i, region in enumerate(region_data[:3]):
@@ -414,7 +406,7 @@ class TestIterateRegionData:
 
     def test_col_order(self):
         data = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])
-        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30], "s_id": [0, 1, 2]},)
         region_data = list(iterate_region_data([data], [rois], expected_col_order=["b", "a", "c"]))
         assert region_data[0].columns.tolist() == ["b", "a", "c"]
 
@@ -422,7 +414,7 @@ class TestIterateRegionData:
         data1 = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])
         data2 = pd.DataFrame(np.ones((40, 3)), columns=["a", "c", "b"])
 
-        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30], "s_id": [0, 1, 2]},)
         region_data = list(iterate_region_data([data1, data2], [rois, rois], expected_col_order=None))
         for region in region_data:
             assert region.columns.tolist() == ["a", "b", "c"]

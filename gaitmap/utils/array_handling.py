@@ -8,7 +8,9 @@ from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from typing_extensions import Literal
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList, \
+    is_single_sensor_data, is_single_sensor_stride_list, is_single_sensor_regions_of_interest_list
+from gaitmap.utils.exceptions import ValidationError
 
 
 def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_padding: bool = False) -> np.ndarray:
@@ -369,6 +371,20 @@ def iterate_region_data(
 
     """
     for df, labels in zip(signal_sequence, label_sequences):
+        is_single_sensor_data(df, check_acc=False, check_gyr=False, raise_exception=True)
+        try:
+            is_single_sensor_stride_list(labels, raise_exception=True)
+        except ValidationError as e_stride_list:
+            try:
+                is_single_sensor_regions_of_interest_list(labels, raise_exception=True)
+            except ValidationError as e_roi:
+                raise ValidationError(
+                    "The label sequences must be either SingleSensorStrideList or SingleSensorRegionsOfInterestList. "
+                    "\n"
+                    "The validations failed with the following errors: \n\n"
+                    f"Stride List: \n\n{str(e_stride_list)}\n\n"
+                    f"Regions of Interest List: \n\n{str(e_roi)}"
+                ) from e_roi
         if expected_col_order is None:
             # In the first iteration we pull the column order.
             # We don't do that beforehand, because otherwise we could not take a generator as input and force the
