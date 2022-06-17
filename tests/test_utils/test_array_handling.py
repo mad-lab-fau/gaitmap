@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
@@ -9,7 +10,7 @@ from gaitmap.utils.array_handling import (
     merge_intervals,
     multi_array_interpolation,
     sliding_window_view,
-    split_array_at_nan,
+    split_array_at_nan, iterate_region_data,
 )
 
 
@@ -384,3 +385,20 @@ class TestMergeIntervals:
     )
     def test_merge_intervals(self, input_array, output_array, gap_size):
         assert_array_equal(output_array, merge_intervals(input_array, gap_size))
+
+
+class TestIterateRegionData:
+    def test_simple_case(self):
+        data = pd.DataFrame(np.ones((40, 3)))
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        region_data = list(iterate_region_data([data], [rois]))
+        assert len(region_data) == 3
+        for i, region in enumerate(region_data):
+            assert region.shape == (10, 3)
+            assert_array_equal(region, data.iloc[rois.start[i]:rois.end[i]])
+
+    def test_col_order(self):
+        data = pd.DataFrame(np.ones((40, 3)), columns=["a", "b", "c"])
+        rois = pd.DataFrame({"start": [0, 10, 20], "end": [10, 20, 30]})
+        region_data = list(iterate_region_data([data], [rois], expected_col_order=["b", "a", "c"]))
+        assert region_data[0].columns.tolist() == ["b", "a", "c"]

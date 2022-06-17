@@ -16,6 +16,8 @@ project.
   These are simple algorithms that can take a single sensor data as input and provide a `transformed_data_` output.
   Transforms can be used for normalisations or feature transforms.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/148)
+- A new helper function `gaitmap.utils.array_handling.iterate_region_data` is added.
+  It allows to iterate over the data of multiple strides or ROIs cut from a dataset.
 
 ### Changed
 
