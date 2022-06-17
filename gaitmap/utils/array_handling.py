@@ -340,8 +340,8 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
 
 
 def iterate_region_data(
-    signal_sequence: Sequence[SingleSensorData],
-    label_sequences: Sequence[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
+    signal_sequence: Iterable[SingleSensorData],
+    label_sequences: Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
     expected_col_order: Optional[List[str]] = None,
 ) -> Iterator[SingleSensorData]:
     """Iterate over individual strides/ROIs in multiple sensor data sequences.
@@ -351,9 +351,9 @@ def iterate_region_data(
 
     Parameters
     ----------
-    signal_sequence : Sequence[SingleSensorData]
+    signal_sequence : Iterable[SingleSensorData]
         A list/iterable of SingleSensorData objects.
-    label_sequences : Sequence[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
+    label_sequences : Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
         A list/iterable of SingleSensorStrideList or SingleSensorRegionsOfInterestList objects.
         This must have the same length as `signal_sequence` as we expect that the first signal sequence belongs to the
         first label sequence.
@@ -368,8 +368,12 @@ def iterate_region_data(
         A SingleSensorData object with the data of the next stride/ROI.
 
     """
-    expected_col_order = expected_col_order or signal_sequence[0].columns
     for df, labels in zip(signal_sequence, label_sequences):
+        if expected_col_order is None:
+            # In the first iteration we pull the column order.
+            # We don't do that beforehand, because otherwise we could not take a generator as input and force the
+            # user to put all the data in RAM first.
+            expected_col_order = df.columns
         df = df.reindex(columns=expected_col_order)
         for (_, s, e) in labels[["start", "end"]].itertuples():
             yield df.iloc[s:e]

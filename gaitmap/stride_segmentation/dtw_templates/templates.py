@@ -1,10 +1,12 @@
 """Dtw template base classes and helper."""
+from functools import reduce
 from importlib.resources import open_text
-from typing import List, Optional, Tuple, Union, cast, Sequence
+from typing import List, Optional, Tuple, Union, cast, Sequence, Iterable
 
 import numpy as np
 import pandas as pd
 from tpcp import OptimizableParameter, OptimizableAlgorithm, cf
+from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.data_transform import BaseTransformer, FixedScaler, TrainableTransformerMixin
@@ -77,9 +79,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(
-        self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Optional[Sequence[Union[str, int]]] = None
-    ):
+    def __init__(self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Optional[Sequence[Union[str, int]]] = None):
         super().__init__(scaling=scaling, use_cols=use_cols)
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
@@ -95,7 +95,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         return self._apply_scaling(template[list(use_cols)], self.sampling_rate_hz)
 
 
-class DtwTemplate(BaseDtwTemplate):
+class DtwTemplate(BaseDtwTemplate, OptimizableAlgorithm):
     """Wrap all required information about a dtw template.
 
     Parameters
@@ -166,8 +166,38 @@ class DtwTemplate(BaseDtwTemplate):
             return np.squeeze(template[:, use_cols])
         return self._apply_scaling(template[use_cols], self.sampling_rate_hz)
 
+    def self_optimize(
+        self,
+        data_sequences: Iterable[SingleSensorData],
+        sampling_rate_hz: Optional[float] = None,
+        *,
+        columns: Optional[List[_Hashable]] = None,
+        **_,
+    ) -> Self:
+        """Create a new template by averaging the data of the given sequences.
 
-class InterpolatedDtwTemplate(DtwTemplate, OptimizableAlgorithm):
+        All sequences must have the same length.
+        If this is not the case, you should use `gaitmap.stride_segmentation.InterpolatedDtwTemplate` instead.
+
+        Parameters
+        ----------
+        data_sequences
+            The sequences of data that should be used to create the template.
+        sampling_rate_hz
+            The sampling rate that was used to record the data sequences.
+        columns
+            The columns of the data that should actually be used for the template.
+            If None, all columns will be used.
+        """
+        template_df = _create_average_template(data_sequences, columns=columns)
+        self.sampling_rate_hz = sampling_rate_hz
+        if isinstance(self.scaling, TrainableTransformerMixin):
+            self.scaling = self.scaling.self_optimize([template_df], sampling_rate_hz=self.sampling_rate_hz)
+        self.data = template_df
+        return self
+
+
+class InterpolatedDtwTemplate(DtwTemplate):
     scaling: OptimizableParameter[Optional[BaseTransformer]]
     data: OptimizableParameter[Optional[Union[np.ndarray, pd.DataFrame]]]
     sampling_rate_hz: OptimizableParameter[Optional[float]]
@@ -190,7 +220,7 @@ class InterpolatedDtwTemplate(DtwTemplate, OptimizableAlgorithm):
 
     def self_optimize(
         self,
-        data_sequences: List[SingleSensorData],
+        data_sequences: Iterable[SingleSensorData],
         sampling_rate_hz: Optional[float] = None,
         *,
         columns: Optional[List[_Hashable]] = None,
@@ -201,24 +231,26 @@ class InterpolatedDtwTemplate(DtwTemplate, OptimizableAlgorithm):
         )
         self.sampling_rate_hz = effective_sampling_rate
         if isinstance(self.scaling, TrainableTransformerMixin):
-            self.scaling = self.scaling.self_optimize(template_df, sampling_rate_hz=self.sampling_rate_hz)
-        self.data = self._apply_scaling(template_df, self.sampling_rate_hz)
+            self.scaling = self.scaling.self_optimize([template_df], sampling_rate_hz=self.sampling_rate_hz)
+        self.data = template_df
         return self
 
 
 def _create_interpolated_dtw_template(
-    signal_sequences: Sequence[SingleSensorData],
+    signal_sequences: Iterable[SingleSensorData],
     sampling_rate_hz: float,
     kind: str = "linear",
     n_samples: Optional[int] = None,
     columns: Optional[List[_Hashable]] = None,
 ) -> Tuple[pd.DataFrame, float]:
+    expected_col_order = columns
+    arrays = []
     for df in signal_sequences:
+        if expected_col_order is None:
+            expected_col_order = df.columns
         is_single_sensor_data(df, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
+        arrays.append(df.to_numpy())
 
-    expected_col_order = columns or signal_sequences[0].columns
-
-    arrays = [df.to_numpy() for df in signal_sequences]
     del signal_sequences
     # get mean stride length over given strides
     mean_stride_samples = int(np.rint(np.mean([len(df) for df in arrays])))
@@ -235,3 +267,24 @@ def _create_interpolated_dtw_template(
         effective_sampling_rate = n_samples / (mean_stride_samples / sampling_rate_hz)
 
     return template_df, effective_sampling_rate
+
+
+def _create_average_template(
+    signal_sequences: Iterable[SingleSensorData], columns: Optional[List[_Hashable]] = None,
+):
+    expected_col_order = columns
+    n_sequences = 1
+
+    # We do all this fancy logic to avoid creating a list of objects and keep them as generators and iterate only once.
+    def process_single_frame(df_old: pd.DataFrame, df_new: pd.DataFrame) -> pd.DataFrame:
+        nonlocal expected_col_order
+        nonlocal n_sequences
+        n_sequences += 1
+        if expected_col_order is None:
+            expected_col_order = df_new.columns
+        return df_old.add(df_new, fill_value=0)
+
+    df = reduce(process_single_frame, signal_sequences)
+    df /= n_sequences
+
+    return df

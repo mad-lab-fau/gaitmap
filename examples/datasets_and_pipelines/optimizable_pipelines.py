@@ -4,8 +4,6 @@ r"""
 Optimizable Pipelines
 =====================
 
-.. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
-
 Some gait analysis algorithms can actively be "trained" to improve their performance or adapt it to a certain dataset.
 In gaitmap we use the term "optimize" instead of "train", as not all algorithms are based on "machine learning" in the
 traditional sense.
@@ -33,11 +31,11 @@ import pandas as pd
 # -----------
 # We will use a simple dataset that considers the left and the right foot of our example data as seperate datapoints.
 # For more information on this dataset see the :ref:`gridsearch guide <grid_search>`.
-from tpcp import Dataset
+from tpcp import Dataset, OptimizableAlgorithm
 
-from gaitmap.data_transform._scaler import AbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
+from gaitmap.utils.array_handling import iterate_region_data
+
 
 class MyDataset(Dataset):
     @property
@@ -76,6 +74,8 @@ class MyDataset(Dataset):
 #
 # For optimization (`self_optimize`), we extract all strides from the provided dataset and average them all into a
 # new template.
+# To decide how to average these strides, we pick a template base-class that has the interpolation method we want.
+# Then we can call `self_optimize` of this template class to generate a template from our data.
 # We apply additional scaling to make the final warping cost comparable to the
 # :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate` that is used as default template.
 #
@@ -85,33 +85,46 @@ class MyDataset(Dataset):
 #           catch all potential issues.
 from tpcp import CloneFactory, OptimizableParameter, OptimizablePipeline, PureParameter
 
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, DtwTemplate, create_interpolated_dtw_template
+from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, InterpolatedDtwTemplate, BaseDtwTemplate
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
 from gaitmap.utils.datatype_helper import SingleSensorStrideList
 
 
 class MyPipeline(OptimizablePipeline):
     max_cost: PureParameter[float]  # This is a pure parameter, as the output of `self_optimize` does not depend on it
-    template: OptimizableParameter[DtwTemplate]  # This is the paramter that is optimized in `self_optimize`
+    template: OptimizableParameter[BaseDtwTemplate]  # This is the parameter that is optimized in `self_optimize`
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
 
     # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: DtwTemplate = CloneFactory(BarthOriginalTemplate())):
+    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(InterpolatedDtwTemplate())):
         self.max_cost = max_cost
         self.template = template
 
     def self_optimize(self, dataset: MyDataset, **kwargs):
+        if not isinstance(self.template, OptimizableAlgorithm):
+            raise ValueError(
+                "The template must be optimizable! If you are using a fixed template (e.g. "
+                "BarthOriginalTemplate), switch to an optimizable base classe."
+            )
         # Our training consists of cutting all strides from the dataset and then creating a new template from all
         # strides in the dataset
 
         # We expect multiple datapoints in the dataset
-        all_strides = []
         sampling_rate = dataset[0].sampling_rate_hz
-        datasets = [self._convert_cord_system(dp.data, dp.groups[0][1]).filter(like="gyr") for dp in dataset]
-        stride_lists = [dp.segmented_stride_list_ for dp in dataset]
-        self.template.create_template(datasets, stride_lists, sampling_rate, columns=["gyr_pa", "gyr_ml", "gyr_si"])
+        # We create a generator for the data and the stride labels
+        data_sequences = (
+            self._convert_cord_system(datapoint.data, datapoint.groups[0][1]).filter(like="gyr")
+            for datapoint in dataset
+        )
+        stride_labels = (datapoint.segmented_stride_list_ for datapoint in dataset)
+
+        stride_generator = iterate_region_data(data_sequences, stride_labels)
+
+        self.template.self_optimize(
+            stride_generator, columns=["gyr_pa", "gyr_ml", "gyr_si"], sampling_rate_hz=sampling_rate
+        )
         return self
 
     def _convert_cord_system(self, data, foot):
@@ -150,9 +163,13 @@ train_set, test_set = train_test_split(ds, train_size=0.5, random_state=0)
 # %%
 # The Baseline
 # ------------
-# For our baseline, we will use the pipeline, but will not apply the optimization.
-# This means, the pipeline will use :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate`.
-pipeline = MyPipeline()
+# For our baseline, we will use the pipeline, but will the use
+# :class:`~gaitmap.stride_segmentation.BarthOriginalTemplate`.
+#
+
+from gaitmap.data_transform._scaler import TrainableAbsMaxScaler
+
+pipeline = MyPipeline(template=BarthOriginalTemplate())
 
 # We use the `safe_run` wrapper instead of just run. This is always a good idea.
 results = pipeline.safe_run(test_set)
@@ -168,9 +185,17 @@ print("Number of Strides:", len(results.segmented_stride_list_))
 #
 # Note, that the optimize method will perform all optimizations on a copy of the pipeline.
 # The means the pipeline object used as input will not be modified.
+#
+# We can change how the template should be generated by changing the `template` parameter of the pipeline.
+# Here we change the scaling, so that the template data will be divided by its maximum value.
+# This value will be calculated when calling `self_optimize` and then used by
+# `:class:`~gaitmap.stride_segmentation.BarthDtw` internally to also scale the actual data correctly to match the
+# template.
 from tpcp.optimize import Optimize
 
-pipeline = MyPipeline(template=InterpolatedDtwTemplate(scaling=AbsMaxScaler()))
+template = InterpolatedDtwTemplate(scaling=TrainableAbsMaxScaler())
+
+pipeline = MyPipeline(template=template)
 # Remember we only optimize on the `train_set`.
 optimized_pipe = Optimize(pipeline).optimize(train_set)
 optimized_results = optimized_pipe.safe_run(test_set)
