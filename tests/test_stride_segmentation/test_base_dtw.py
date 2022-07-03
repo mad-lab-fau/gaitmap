@@ -130,7 +130,7 @@ class TestIOErrors(DtwTestBase):
 
         # To check if the calculation is correct we check the parameter used to call function that calculates the
         # cost mat
-        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+        with patch("gaitmap_mad.stride_segmentation._base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
             mock_func.side_effect = subsequence_cost_matrix_with_constrains
             dtw.segment(data=data, sampling_rate_hz=sampling_rate)
 
@@ -159,7 +159,7 @@ class TestIOErrors(DtwTestBase):
 
         # To check if the calculation is correct we check the parameter used to call function that calculates the
         # cost mat
-        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+        with patch("gaitmap_mad.stride_segmentation._base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
             mock_func.side_effect = subsequence_cost_matrix_with_constrains
             dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
 
@@ -172,7 +172,7 @@ class TestIOErrors(DtwTestBase):
 
         # To check if the calculation is correct we check the parameter used to call function that calculates the
         # cost mat
-        with patch("gaitmap.stride_segmentation.base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
+        with patch("gaitmap_mad.stride_segmentation._base_dtw.subsequence_cost_matrix_with_constrains") as mock_func:
             mock_func.side_effect = subsequence_cost_matrix_with_constrains
             dtw.segment(data=data, sampling_rate_hz=signal_sampling_rate)
 
