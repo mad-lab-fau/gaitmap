@@ -1,3 +1,11 @@
+"""Testing the dynamic import of the gaitmap_mad module.
+
+For some reason, importing this file in a normal testrun creates some issue with Pickling other classes.
+Not sure why this is happening, but it seems to be related to the fact that I am wildly reloading and modifying
+sys.modules.
+
+Hence, these tests are excluded (Leading "_" in filename), but can be run manually.
+"""
 import importlib
 import sys
 
@@ -6,7 +14,7 @@ import pytest
 from gaitmap.utils.exceptions import GaitmapMadImportError
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def _gaitmap_mad_sys_modifier():
     # For the purpose of this test, we can simulate that gaitmap_mad is not installed bz setting its sys.modules
     # entry to None.
@@ -29,7 +37,7 @@ def _gaitmap_mad_sys_modifier():
         importlib.reload(module)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def _gaitmap_mad_change_version():
     import gaitmap_mad
 
