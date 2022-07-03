@@ -29,5 +29,5 @@ __all__ = [
     "BarthOriginalTemplate",
     "TrainableTemplateMixin",
     "find_matches_find_peaks",
-    "find_matches_min_under_threshold"
+    "find_matches_min_under_threshold",
 ]
