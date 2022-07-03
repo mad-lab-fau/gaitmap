@@ -1,7 +1,7 @@
 import pytest
 
 from gaitmap.base import BaseType
-from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
+from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 

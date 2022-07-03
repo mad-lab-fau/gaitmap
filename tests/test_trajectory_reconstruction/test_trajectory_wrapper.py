@@ -10,7 +10,7 @@ from typing_extensions import Literal
 from gaitmap.base import BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orientation_from_start
-from gaitmap.trajectory_reconstruction.stride_level_trajectory import StrideLevelTrajectory
+from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.datatype_helper import (
     is_multi_sensor_orientation_list,

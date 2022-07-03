@@ -3,7 +3,7 @@ import pytest
 
 from gaitmap.base import BaseOrientationMethod, BaseType
 from gaitmap.trajectory_reconstruction import MadgwickAHRS
-from gaitmap.trajectory_reconstruction.orientation_methods.madgwick import _madgwick_update
+from gaitmap.trajectory_reconstruction.orientation_methods._madgwick import _madgwick_update
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_trajectory_reconstruction.test_orientation_methods.test_ori_method_mixin import (
