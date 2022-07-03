@@ -9,7 +9,7 @@ events.
 """
 
 from gaitmap_mad.stride_segmentation._barth_dtw import BarthDtw
-from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
+from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw, find_matches_find_peaks, find_matches_min_under_threshold
 from gaitmap_mad.stride_segmentation._constrained_barth_dtw import ConstrainedBarthDtw
 from gaitmap_mad.stride_segmentation._dtw_templates import (
     BarthOriginalTemplate,
@@ -28,4 +28,6 @@ __all__ = [
     "DtwTemplate",
     "BarthOriginalTemplate",
     "TrainableTemplateMixin",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold"
 ]

@@ -20,6 +20,8 @@ _gaitmap_mad_modules = {
     "DtwTemplate",
     "BarthOriginalTemplate",
     "TrainableTemplateMixin",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold",
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
@@ -32,6 +34,8 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         DtwTemplate,
         InterpolatedDtwTemplate,
         TrainableTemplateMixin,
+        find_matches_find_peaks,
+        find_matches_min_under_threshold,
     )
 
 
@@ -45,4 +49,6 @@ __all__ = [
     "BarthOriginalTemplate",
     "TrainableTemplateMixin",
     "RoiStrideSegmentation",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold",
 ]
