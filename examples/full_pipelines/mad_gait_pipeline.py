@@ -92,7 +92,7 @@ trajectory = trajectory.estimate(
 # Temporal Parameter Calculation
 # ------------------------------
 # Now we have all information to calculate relevant temporal parameters (like stride time)
-from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
+from gaitmap.parameters import TemporalParameterCalculation
 
 temporal_paras = TemporalParameterCalculation()
 temporal_paras = temporal_paras.calculate(stride_event_list=ed.min_vel_event_list_, sampling_rate_hz=sampling_rate_hz)
@@ -101,7 +101,7 @@ temporal_paras = temporal_paras.calculate(stride_event_list=ed.min_vel_event_lis
 # Spatial Parameter Calculation
 # -----------------------------
 # Like the temporal parameters, we can also calculate the spatial parameter.
-from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
+from gaitmap.parameters import SpatialParameterCalculation
 
 spatial_paras = SpatialParameterCalculation()
 spatial_paras = spatial_paras.calculate(
