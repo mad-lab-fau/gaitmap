@@ -8,17 +8,17 @@ algorithm, as implemented in :py:mod:`gaitmap.event_detection`, to be able to pr
 events.
 """
 
-from gaitmap.stride_segmentation.barth_dtw import BarthDtw
-from gaitmap.stride_segmentation.base_dtw import BaseDtw
-from gaitmap.stride_segmentation.constrained_barth_dtw import ConstrainedBarthDtw
-from gaitmap.stride_segmentation.dtw_templates import (
+from gaitmap_mad.stride_segmentation._barth_dtw import BarthDtw
+from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
+from gaitmap_mad.stride_segmentation._constrained_barth_dtw import ConstrainedBarthDtw
+from gaitmap_mad.stride_segmentation.dtw_templates import (
     BarthOriginalTemplate,
     BaseDtwTemplate,
     DtwTemplate,
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
 )
-from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
+from gaitmap_mad.stride_segmentation._roi_stride_segmentation import RoiStrideSegmentation
 
 __all__ = [
     "BarthDtw",
