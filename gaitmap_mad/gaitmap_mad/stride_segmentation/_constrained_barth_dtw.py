@@ -5,10 +5,9 @@ from joblib import Memory
 from tpcp import CloneFactory
 from typing_extensions import Literal
 
-from gaitmap.stride_segmentation.barth_dtw import BarthDtw
-from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate
-from gaitmap.stride_segmentation.dtw_templates.templates import BaseDtwTemplate
 from gaitmap.utils._types import _Hashable
+from gaitmap_mad.stride_segmentation._barth_dtw import BarthDtw
+from gaitmap_mad.stride_segmentation._dtw_templates import BarthOriginalTemplate, BaseDtwTemplate
 
 
 class ConstrainedBarthDtw(BarthDtw):

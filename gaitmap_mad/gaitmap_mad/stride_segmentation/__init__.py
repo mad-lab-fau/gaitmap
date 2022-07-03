@@ -11,20 +11,18 @@ events.
 from gaitmap_mad.stride_segmentation._barth_dtw import BarthDtw
 from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
 from gaitmap_mad.stride_segmentation._constrained_barth_dtw import ConstrainedBarthDtw
-from gaitmap_mad.stride_segmentation.dtw_templates import (
+from gaitmap_mad.stride_segmentation._dtw_templates import (
     BarthOriginalTemplate,
     BaseDtwTemplate,
     DtwTemplate,
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
 )
-from gaitmap_mad.stride_segmentation._roi_stride_segmentation import RoiStrideSegmentation
 
 __all__ = [
     "BarthDtw",
     "ConstrainedBarthDtw",
     "BaseDtw",
-    "RoiStrideSegmentation",
     "BaseDtwTemplate",
     "InterpolatedDtwTemplate",
     "DtwTemplate",
