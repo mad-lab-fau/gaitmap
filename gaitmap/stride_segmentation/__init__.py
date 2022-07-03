@@ -26,18 +26,16 @@ _gaitmap_mad_modules = {
 def patch_gaitmap_mad_import(_gaitmap_mad_modules):
     if bool(find_spec("gaitmap_mad")):
         return None
-    # from gaitmap.utils.exceptions import GaitmapMadImportError
+    from gaitmap.utils.exceptions import GaitmapMadImportError
     def new_getattr(name: str):
         if name in _gaitmap_mad_modules:
-            raise ValueError(name, __name__)
+            raise GaitmapMadImportError(name, __name__)
         return globals()[name]
 
     return new_getattr
 
 
-if overwrite := patch_gaitmap_mad_import(_gaitmap_mad_modules):
-    __getattr__ = overwrite
-else:
+if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules)):
     from gaitmap_mad.stride_segmentation import (
         BarthDtw,
         BarthOriginalTemplate,
