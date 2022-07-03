@@ -11,7 +11,7 @@ def patch_gaitmap_mad_import(_gaitmap_mad_modules, current_module_name):
 
         assert (gm_version := gaitmap_mad.__version__) == (g_version := gaitmap.__version__), (
             "We only support using the exact same version of `gaitmap` and `gaitmap_mad`. "
-            f"Currently you have the versions `gaitmap: {g_version}` and `gaitmap_mad: {gm_version}`."
+            f"Currently you have the versions `gaitmap`: v{g_version} and `gaitmap_mad`: v{gm_version}."
         )
         return None
     from gaitmap.utils.exceptions import GaitmapMadImportError  # noqa: import-outside-toplevel

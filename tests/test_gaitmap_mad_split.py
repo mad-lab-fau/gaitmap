@@ -29,9 +29,21 @@ def _gaitmap_mad_sys_modifier():
         importlib.reload(module)
 
 
+@pytest.fixture()
+def _gaitmap_mad_change_version():
+    import gaitmap_mad
+
+    real_version = gaitmap_mad.__version__
+    gaitmap_mad.__version__ = "0.0.0"
+    yield
+    gaitmap_mad.__version__ = real_version
+    importlib.reload(gaitmap_mad)
+
+
 def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier):
     # First we need to remove gaitmap_mad from sys.modules, so that it is not imported.
-
+    # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap.stride_segmentation", None)
     with pytest.raises(GaitmapMadImportError) as e:
         from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
 
@@ -41,7 +53,16 @@ def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier):
     assert "gaitmap.stride_segmentation" in str(e.value)
 
 
+def test_gaitmap_mad_version_mismatch(_gaitmap_mad_change_version):
+    # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap.stride_segmentation", None)
+    with pytest.raises(AssertionError):
+        from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
+
+
 def test_raises_no_error_gaitmap_mad_installed():
+    # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap.stride_segmentation", None)
     from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
 
     assert True
