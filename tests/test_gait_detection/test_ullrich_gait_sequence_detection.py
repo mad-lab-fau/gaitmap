@@ -5,7 +5,7 @@ from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.gait_detection import UllrichGaitSequenceDetection
-from gaitmap.gait_detection.ullrich_gait_sequence_detection import _gait_sequence_concat
+from gaitmap_mad.gait_detection._ullrich_gait_sequence_detection import _gait_sequence_concat
 from gaitmap.utils import coordinate_conversion
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
