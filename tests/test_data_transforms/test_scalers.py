@@ -6,7 +6,6 @@ from pandas._testing import assert_frame_equal
 from gaitmap.base import BaseType
 from gaitmap.data_transform import (
     AbsMaxScaler,
-    BaseTransformer,
     FixedScaler,
     GroupedTransformer,
     IdentityTransformer,
