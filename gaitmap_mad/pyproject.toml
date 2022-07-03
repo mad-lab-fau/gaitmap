@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "gaitmap_mad"
+version = "1.6.0"
+description = "Specific algorithm implementaions by the mad_lab"
+authors = [
+    "Arne Küderle <arne.kuederle@fau.de>",
+    "Martin Ullrich <martin.ullrich@fau.de>",
+    "Nils Roth <nils.roth@fau.de>",
+    "Felix Kluge <felix.kluge@fau.de>"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
