@@ -9,7 +9,7 @@ _gaitmap_mad_modules = {
     "ForwardDirectionSignAlignment",
 }
 
-if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules)):
+if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
     from gaitmap_mad.preprocessing.sensor_alignment import ForwardDirectionSignAlignment
 
 __all__ = ["align_dataset_to_gravity", "align_heading_of_sensors", "PcaAlignment", "ForwardDirectionSignAlignment"]

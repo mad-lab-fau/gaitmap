@@ -35,7 +35,6 @@ def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier):
     with pytest.raises(GaitmapMadImportError) as e:
         from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
 
-
     assert e.value.object_name == "BarthDtw"
     assert e.value.module_name == "gaitmap.stride_segmentation"
     assert "BarthDtw" in str(e.value)
