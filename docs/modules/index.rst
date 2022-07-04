@@ -17,6 +17,7 @@ This is the API Reference for gaitmap sorted by algorithm types.
     Trajectory Reconstruction <trajectory_reconstruction>
     Parameter Calculation <parameters>
     Evaluation Utils <evaluation_utils>
+    Generic Data Transformations <data_transform>
     Utils <utils/index>
     Example Data <example_data>
     Base Classes <base_classes>
