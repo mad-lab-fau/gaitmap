@@ -8,6 +8,7 @@ _gaitmap_mad_modules = {
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
+    del __getattr__
     from gaitmap_mad.trajectory_reconstruction.position_methods import PieceWiseLinearDedriftedIntegration
 
 

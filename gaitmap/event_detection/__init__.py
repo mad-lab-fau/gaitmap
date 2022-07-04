@@ -11,6 +11,7 @@ _gaitmap_mad_modules = {
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
+    del __getattr__
     from gaitmap_mad.event_detection import RamppEventDetection
 
 __all__ = ["RamppEventDetection", "HerzerEventDetection"]
