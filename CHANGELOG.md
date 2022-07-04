@@ -10,7 +10,10 @@ project.
 
 ## [1.7.0] - 2022-07-04
 
-This release **removes** Python 3.7 support!
+- This release **removes** Python 3.7 support!
+- This release splits gaitmap into two separate packages: gaitmap and gaitmap_mad.
+  To use all algorithms as before, you need to explicitly install **both** packages.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/182)
 
 ### Added
 
@@ -42,6 +45,11 @@ This release **removes** Python 3.7 support!
   Further, all templates now use the new data transforms instead of a fixed scaling factor.
   In combination, it should be much easier to create new templates and use more complex data normalisations.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
+- For most algorithms, direct import via the full module path is now discouraged.
+  Instead import it via the parent module.
+  The individual algorithm files now have a leading `_` to mark them as private.
+  Note, some algorithm files do not exist at all anymore at the old path, as they are moved to `gaitmap_mad`.
+  (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/182)
 
 ### Removed
 

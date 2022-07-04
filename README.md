@@ -15,21 +15,35 @@ Its API is designed to mimic `sklearn` to provide you a familiar and elegant int
 
 ### Installation
 
-*gaitmap* only supports Python 3.7 and newer.
+*gaitmap* only supports Python 3.8 and newer.
 First, install a compatible version of Python.
-Then install the package using pip.
 
-For a stable experience install one of our releases (e.g. 1.4.0):
+Then you need to install the provided packages.
+Gaitmap is split into two packages: `gaitmap` (MIT licenced) and `gaitmap_mad` (AGPL3 licenced).
+To get access to all available algorithms, you need to install both packages.
+
+For a stable experience install one of our releases (e.g. 1.7.0):
 
 For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
 ```
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.4.0 --upgrade
+# gaitmap
+pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.7.0 --upgrade
+# gaitmap_mad
+pip install "git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.7.0#subdirectory=gaitmap_mad" --upgrade
 ```
 
 The latest git (bleeding edge) version:
 ```
+# gaitmap
 pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
+# gaitmap_mad
+pip install "git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git#subdirectory=gaitmap_mad" --upgrade
 ```
+
+To install the package using poetry, make sure you use a version newer than 1.2.0b2.
+This is the first version of poetry that supports subdirectories for git dependencies.
+Note, that even then, there are a couple of bugs with poetry`s subdirectory support.
+Hence, we would recommend to use the package versions of gaitmap and gaitmap_mad and not install them from source.
 
 If you are planning to make any changes to the library, please refer to the developer section below.
 
@@ -59,6 +73,10 @@ Then run the commands below to get the latest source and install the dependencie
 git clone https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git
 poetry install
 ```
+
+Note, that you don't need to care about the `gaitmap_mad` subpackage.
+All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode
+when running `poetry install`.
 
 To run any of the tools required for the development workflow, use the doit commands:
 
