@@ -8,7 +8,7 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [Unreleased]
+## [1.7.0] - 2022-07-04
 
 This release **removes** Python 3.7 support!
 
