@@ -88,6 +88,9 @@ def update_version(version):
         .split(" ", 1)[1]
     )
     update_version_strings(HERE / "gaitmap/__init__.py", new_version)
+    # Update the gaitmap_mad version as well
+    subprocess.run(["poetry", "version", new_version], shell=False, check=True, cwd=HERE / "gaitmap_mad")
+    update_version_strings(HERE / "gaitmap_mad/gaitmap_mad/__init__.py", new_version)
 
 
 def task_update_version():
