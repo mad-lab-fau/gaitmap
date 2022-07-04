@@ -17,6 +17,7 @@ from datetime import datetime
 from importlib import import_module
 from inspect import getsourcefile, getsourcelines
 from pathlib import Path
+from typing import List
 
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
@@ -150,10 +151,10 @@ intersphinx_module_mapping = {
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "sklearn": ("https://scikit-learn.org/stable", None),
-    "tpcp": ("https://tpcp.readthedocs.io/en/latest", None)
+    "tpcp": ("https://tpcp.readthedocs.io/en/latest", None),
 }
 
-user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0'
+user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0"
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
@@ -228,5 +229,28 @@ def skip_properties(app, what, name, obj, skip, options):
         return True
 
 
+GAITMAP_MAD_TEST = """
+
+.. note:: This algorithm is only available via the `gaitmap_mad` package and distributed under a AGPL3 licence.
+          To use it, you need to explicitly install the `gaitmap_mad` package.
+          Learn more about that here: TODO.
+
+"""
+
+
+def add_info_about_origin(app, what, name, obj, options, lines: List[str]):
+    """Add a short info text to all algorithms that are only available via gaitmap_mad."""
+    try:
+        file_name = getsourcefile(obj)
+    except TypeError:
+        return
+    if "gaitmap_mad" in file_name:
+        lines_to_insert = GAITMAP_MAD_TEST.split("\n")
+        lines_to_insert.reverse()
+        for l in lines_to_insert:
+            lines.insert(2, l)
+
+
 def setup(app):
     app.connect("autodoc-skip-member", skip_properties)
+    app.connect("autodoc-process-docstring", add_info_about_origin)
