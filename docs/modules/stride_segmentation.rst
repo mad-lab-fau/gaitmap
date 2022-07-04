@@ -30,5 +30,5 @@ Functions
    :toctree: generated/stride_segmentation
    :template: function.rst
 
-    base_dtw.find_matches_find_peaks
-    base_dtw.find_matches_min_under_threshold
+    find_matches_find_peaks
+    find_matches_min_under_threshold

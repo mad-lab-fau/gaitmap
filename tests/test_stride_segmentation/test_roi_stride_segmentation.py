@@ -7,8 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.stride_segmentation import BarthDtw, DtwTemplate
-from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
+from gaitmap.stride_segmentation import BarthDtw, DtwTemplate, RoiStrideSegmentation
 from gaitmap.utils.datatype_helper import (
     SensorData,
     get_multi_sensor_names,

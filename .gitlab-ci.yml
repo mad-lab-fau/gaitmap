@@ -80,6 +80,7 @@ package:
     - poetry config certificates.gaitmap.cert /tmp/fau.crt
     - poetry run doit create_prerelease
     - poetry publish --build --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
+    - cd gaitmap_mad && poetry publish --build --repository gaitmap -u gitlab-ci-token -p ${CI_JOB_TOKEN}
 
 package_release:
   stage: deploy

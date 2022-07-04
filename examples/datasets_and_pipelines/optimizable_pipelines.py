@@ -34,7 +34,7 @@ import pandas as pd
 from tpcp import Dataset
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
-from gaitmap.stride_segmentation.dtw_templates.templates import TrainableTemplateMixin
+from gaitmap.stride_segmentation import TrainableTemplateMixin
 from gaitmap.utils.array_handling import iterate_region_data
 
 

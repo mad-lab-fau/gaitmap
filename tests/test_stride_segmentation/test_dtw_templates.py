@@ -7,9 +7,8 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.data_transform import BaseTransformer, FixedScaler, IdentityTransformer, TrainableTransformerMixin
-from gaitmap.stride_segmentation.dtw_templates import BarthOriginalTemplate, DtwTemplate
-from gaitmap.stride_segmentation.dtw_templates.templates import InterpolatedDtwTemplate
+from gaitmap.data_transform import FixedScaler, IdentityTransformer, TrainableTransformerMixin
+from gaitmap.stride_segmentation import BarthOriginalTemplate, DtwTemplate, InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import compare_algo_objects
 
@@ -87,7 +86,7 @@ class TestTemplateBaseClass:
 
 class TestBartTemplate:
     def test_load(self):
-        with open_text("gaitmap.stride_segmentation.dtw_templates", "barth_original_template.csv") as test_data:
+        with open_text("gaitmap_mad.stride_segmentation._dtw_templates", "barth_original_template.csv") as test_data:
             data = pd.read_csv(test_data, header=0)
 
         barth_instance = BarthOriginalTemplate()

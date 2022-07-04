@@ -9,11 +9,11 @@ from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
-from gaitmap.stride_segmentation.base_dtw import BaseDtw
-from gaitmap.stride_segmentation.dtw_templates.templates import BarthOriginalTemplate, BaseDtwTemplate
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import StrideList
+from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
+from gaitmap_mad.stride_segmentation._dtw_templates.templates import BarthOriginalTemplate, BaseDtwTemplate
 
 
 class BarthDtw(BaseDtw, BaseStrideSegmentation):

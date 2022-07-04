@@ -2,11 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas._testing import assert_series_equal
-from pandas.core.indexes.frozen import FrozenList
 
 from gaitmap.base import BaseType
-from gaitmap.parameters.spatial_parameters import (
-    SpatialParameterCalculation,
+from gaitmap.parameters import SpatialParameterCalculation
+from gaitmap.parameters._spatial_parameters import (
     _calc_arc_length,
     _calc_gait_velocity,
     _calc_stride_length,

@@ -14,7 +14,7 @@ the :class:`~gaitmap.parameters.TemporalParameterCalculation`.
 #
 # For this we need stride event list that can be obtained from event detection method.
 from gaitmap.example_data import get_healthy_example_stride_events
-from gaitmap.parameters.temporal_parameters import TemporalParameterCalculation
+from gaitmap.parameters import TemporalParameterCalculation
 
 stride_list = get_healthy_example_stride_events()
 

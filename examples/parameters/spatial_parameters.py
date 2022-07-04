@@ -28,7 +28,7 @@ from gaitmap.example_data import (
     get_healthy_example_position,
     get_healthy_example_stride_events,
 )
-from gaitmap.parameters.spatial_parameters import SpatialParameterCalculation
+from gaitmap.parameters import SpatialParameterCalculation
 
 stride_list = get_healthy_example_stride_events()
 positions = get_healthy_example_position()

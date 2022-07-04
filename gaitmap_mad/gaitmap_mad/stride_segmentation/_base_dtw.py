@@ -10,13 +10,16 @@ from scipy.interpolate import interp1d
 from typing_extensions import Literal
 
 from gaitmap.base import BaseAlgorithm
-from gaitmap.stride_segmentation._vendored_tslearn import _local_squared_dist, subsequence_cost_matrix, subsequence_path
-from gaitmap.stride_segmentation.dtw_templates import DtwTemplate
-from gaitmap.stride_segmentation.dtw_templates.templates import BaseDtwTemplate
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
+from gaitmap_mad.stride_segmentation._dtw_templates import BaseDtwTemplate, DtwTemplate
+from gaitmap_mad.stride_segmentation._vendored_tslearn import (
+    _local_squared_dist,
+    subsequence_cost_matrix,
+    subsequence_path,
+)
 
 Self = TypeVar("Self", bound="BaseDtw")
 
@@ -269,7 +272,9 @@ class BaseDtw(BaseAlgorithm):
         return np.sqrt(self.acc_cost_mat_[-1, :])
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    def matches_start_end_original_(
+        self,
+    ) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
         """Return the starts and end directly from the paths.
 
         This will not be effected by potential changes of the postprocessing.
@@ -329,7 +334,10 @@ class BaseDtw(BaseAlgorithm):
         return self
 
     def _segment(
-        self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, memory: Optional[Memory] = None
+        self,
+        data: Union[np.ndarray, SensorData],
+        sampling_rate_hz: float,
+        memory: Optional[Memory] = None,
     ) -> Dict[str, Any]:
         if not memory:
             memory = Memory(None)
@@ -489,7 +497,11 @@ class BaseDtw(BaseAlgorithm):
 
         This is separate method to make it easy to overwrite by a subclass.
         """
-        return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length)
+        return find_matches_method(
+            acc_cost_mat=acc_cost_mat,
+            max_cost=max_cost,
+            min_distance=min_sequence_length,
+        )
 
     def _postprocess_matches(
         self,
@@ -571,18 +583,26 @@ class BaseDtw(BaseAlgorithm):
 
     @staticmethod
     def _resample_template(
-        template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float
+        template_array: np.ndarray,
+        template_sampling_rate_hz: float,
+        new_sampling_rate: float,
     ) -> np.ndarray:
         len_template = template_array.shape[0]
         current_x = np.linspace(0, len_template, len_template)
         template = interp1d(current_x, template_array, axis=0)(
-            np.linspace(0, len_template, int(len_template * new_sampling_rate / template_sampling_rate_hz))
+            np.linspace(
+                0,
+                len_template,
+                int(len_template * new_sampling_rate / template_sampling_rate_hz),
+            )
         )
         return template
 
     @staticmethod
     def _extract_relevant_data_and_template(
-        template: DtwTemplate, data: Union[np.ndarray, pd.DataFrame], sampling_rate_hz: float
+        template: DtwTemplate,
+        data: Union[np.ndarray, pd.DataFrame],
+        sampling_rate_hz: float,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Get the relevant parts of the data based on the provided template and return template and data as array."""
         template_array = template.get_data()

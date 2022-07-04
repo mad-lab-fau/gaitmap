@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from gaitmap.base import BaseType
-from gaitmap.trajectory_reconstruction.region_level_trajectory import RegionLevelTrajectory
+from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
 from gaitmap.utils.consts import GF_POS, SF_COLS
 from gaitmap.utils.datatype_helper import (
     is_multi_sensor_position_list,

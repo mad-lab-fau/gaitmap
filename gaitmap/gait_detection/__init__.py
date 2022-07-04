@@ -2,7 +2,15 @@
 
 Different algorithms for gait sequence detection are going to be collected here.
 """
+from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
-from gaitmap.gait_detection.ullrich_gait_sequence_detection import UllrichGaitSequenceDetection
+_gaitmap_mad_modules = {
+    "UllrichGaitSequenceDetection",
+}
+
+if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
+    del __getattr__
+    from gaitmap_mad.gait_detection import UllrichGaitSequenceDetection
+
 
 __all__ = ["UllrichGaitSequenceDetection"]

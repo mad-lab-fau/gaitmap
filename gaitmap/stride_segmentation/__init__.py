@@ -8,26 +8,48 @@ algorithm, as implemented in :py:mod:`gaitmap.event_detection`, to be able to pr
 events.
 """
 
-from gaitmap.stride_segmentation.barth_dtw import BarthDtw
-from gaitmap.stride_segmentation.base_dtw import BaseDtw
-from gaitmap.stride_segmentation.constrained_barth_dtw import ConstrainedBarthDtw
-from gaitmap.stride_segmentation.dtw_templates import (
-    BarthOriginalTemplate,
-    BaseDtwTemplate,
-    DtwTemplate,
-    InterpolatedDtwTemplate,
-    TrainableTemplateMixin,
-)
-from gaitmap.stride_segmentation.roi_stride_segmentation import RoiStrideSegmentation
+from gaitmap.stride_segmentation._roi_stride_segmentation import RoiStrideSegmentation
+from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
-__all__ = [
+_gaitmap_mad_modules = {
     "BarthDtw",
     "ConstrainedBarthDtw",
     "BaseDtw",
-    "RoiStrideSegmentation",
     "BaseDtwTemplate",
     "InterpolatedDtwTemplate",
     "DtwTemplate",
     "BarthOriginalTemplate",
     "TrainableTemplateMixin",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold",
+}
+
+if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
+    del __getattr__
+    from gaitmap_mad.stride_segmentation import (
+        BarthDtw,
+        BarthOriginalTemplate,
+        BaseDtw,
+        BaseDtwTemplate,
+        ConstrainedBarthDtw,
+        DtwTemplate,
+        InterpolatedDtwTemplate,
+        TrainableTemplateMixin,
+        find_matches_find_peaks,
+        find_matches_min_under_threshold,
+    )
+
+
+__all__ = [
+    "BarthDtw",
+    "ConstrainedBarthDtw",
+    "BaseDtw",
+    "BaseDtwTemplate",
+    "InterpolatedDtwTemplate",
+    "DtwTemplate",
+    "BarthOriginalTemplate",
+    "TrainableTemplateMixin",
+    "RoiStrideSegmentation",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold",
 ]

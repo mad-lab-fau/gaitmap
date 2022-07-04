@@ -7,7 +7,7 @@ from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseSpatialParameterCalculation
-from gaitmap.parameters.temporal_parameters import _calc_stride_time
+from gaitmap.parameters._temporal_parameters import _calc_stride_time
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
 from gaitmap.utils.datatype_helper import (
