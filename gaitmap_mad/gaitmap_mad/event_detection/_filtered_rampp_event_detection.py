@@ -4,7 +4,7 @@ from typing import Dict, Optional, Tuple, Union
 from joblib import Memory
 
 from gaitmap.event_detection._event_detection_mixin import FilterParameter
-from gaitmap_mad.event_detection import RamppEventDetection
+from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
 
 
 class FilteredRamppEventDetection(RamppEventDetection):
