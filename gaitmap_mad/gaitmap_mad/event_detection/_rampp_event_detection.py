@@ -201,7 +201,9 @@ def _find_all_events(
     gyr_ml = gyr["gyr_ml"].to_numpy()
     if gyr_ic_lowpass_filter_parameters is not None:
         order, cutoff_hz = gyr_ic_lowpass_filter_parameters
-        gyr_ml_filtered = _low_pass_filter(data=gyr_ml, sampling_rate_hz=sampling_rate_hz, cutoff_frequency=cutoff_hz)
+        gyr_ml_filtered = _low_pass_filter(
+            data=gyr_ml, sampling_rate_hz=sampling_rate_hz, cutoff_frequency=cutoff_hz, order=order
+        )
     else:
         gyr_ml_filtered = gyr_ml
     gyr = gyr.to_numpy()
