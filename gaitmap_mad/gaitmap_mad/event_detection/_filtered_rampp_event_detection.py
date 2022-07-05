@@ -1,17 +1,15 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Callable, Dict, Optional, Tuple, Union, cast
+from typing import Dict, Optional, Tuple, Union
 
-import numpy as np
-import pandas as pd
 from joblib import Memory
-from scipy.signal import butter, filtfilt
 
-from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
+from gaitmap.event_detection._event_detection_mixin import FilterParameter
+from gaitmap_mad.event_detection import RamppEventDetection
 
 
-class RamppEventDetectionFilter(_EventDetectionMixin, BaseEventDetection):
+class FilteredRamppEventDetection(RamppEventDetection):
     """This addition of the rampp event detection uses a 15 Hz low pass filter on the gyr-ml in ic and tc detection.
+
     However, the min_velocity calculation remians as standard rampp algorithm.
     It is suggested to be used on data containg high frequency noise or artifacts which affects minimum detection in
     rampp algorithm
@@ -64,7 +62,7 @@ class RamppEventDetectionFilter(_EventDetectionMixin, BaseEventDetection):
     sampling_rate_hz
         The sampling rate of the data
     stride_list
-        A list of strides provided by a stride segmentation method. The stride list is expected to have no gaps
+        A list of strides provided by a stride segmentatioRan method. The stride list is expected to have no gaps
         between subsequent strides. That means for subsequent strides the end sample of one stride should be the
         start sample of the next stride.
 
@@ -151,124 +149,24 @@ class RamppEventDetectionFilter(_EventDetectionMixin, BaseEventDetection):
 
     """
 
-    ic_search_region_ms: Tuple[float, float]
-    min_vel_search_win_size_ms: float
+    ic_lowpass_filter_parameter: FilterParameter
 
     def __init__(
         self,
         ic_search_region_ms: Tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
-        cutoff_frequency: float = 15,
+        ic_lowpass_filter_parameter: FilterParameter = FilterParameter(order=10, cutoff_hz=15),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
     ):
-        self.ic_search_region_ms = ic_search_region_ms
-        self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        self.cutoff_frequency = cutoff_frequency
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency)
-
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
-        """Select the function to calculate the all events.
-
-        This is separate method to make it easy to overwrite by a subclass.
-        """
-        return _find_all_events
+        self.ic_lowpass_filter_parameter = ic_lowpass_filter_parameter
+        super().__init__(
+            memory=memory,
+            enforce_consistency=enforce_consistency,
+            ic_search_region_ms=ic_search_region_ms,
+            min_vel_search_win_size_ms=min_vel_search_win_size_ms,
+        )
 
     def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:  # noqa: no-self-use
-        ic_search_region = cast(
-            Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
-        )
-        if all(v == 0 for v in ic_search_region):
-            raise ValueError(
-                "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
-            )
-        min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-        return {"ic_search_region": ic_search_region, "min_vel_search_win_size": min_vel_search_win_size,
-                "sampling_rate_hz":self.sampling_rate_hz, "cutoff_frequency":self.cutoff_frequency}
-
-
-def _find_all_events(
-    gyr: pd.DataFrame,
-    acc: pd.DataFrame,
-    stride_list: pd.DataFrame,
-    ic_search_region: Tuple[float, float],
-    min_vel_search_win_size: int,
-    sampling_rate_hz: float,
-    cutoff_frequency: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Find events in provided data by looping over single strides."""
-    gyr_ml_filtered = _low_pass_filter(data=gyr['gyr_ml'].to_numpy(), sampling_rate_hz=sampling_rate_hz,
-                                       cutoff_frequency=cutoff_frequency)
-    gyr = gyr.to_numpy()
-    acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
-    ic_events = []
-    tc_events = []
-    min_vel_events = []
-    for _, stride in stride_list.iterrows():
-        start = stride["start"]
-        end = stride["end"]
-        gyr_sec = gyr[start:end]
-        gyr_ml_sec = gyr_ml_filtered[start:end]
-        acc_sec = acc_pa[start:end]
-        gyr_grad = np.gradient(gyr_ml_sec)
-        ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
-        tc_events.append(start + _detect_tc(gyr_ml_sec))
-        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
-
-    return (
-        np.array(ic_events, dtype=float),
-        np.array(tc_events, dtype=float),
-        np.array(min_vel_events, dtype=float),
-    )
-
-
-def _detect_ic(
-    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
-) -> float:
-    """Find the ic.
-
-    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
-    in gaitmap.
-    This is because the algorithm was originally developed considering a different coordinate system.
-    To keep the logic identical to the original paper, we pass in the inverted signal axis (see parent function)
-    """
-    # Determine rough search region
-    search_region = (np.argmax(gyr_ml), int(0.6 * gyr_ml.shape[0]))
-
-    if search_region[1] - search_region[0] <= 0:
-        # The gyr argmax was not found in the first half of the step
-        return np.nan
-
-    # alternative:
-    # refined_search_region_start, refined_search_region_end = search_region
-    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)]))
-    refined_search_region_end = int(
-        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start : search_region[1]])
-    )
-
-    if refined_search_region_end - refined_search_region_start <= 0:
-        return np.nan
-
-    # Find heel strike candidate in search region based on gyr
-    heel_strike_candidate = refined_search_region_start + np.argmin(
-        gyr_ml[refined_search_region_start:refined_search_region_end]
-    )
-
-    # Acc search window
-    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
-    acc_search_region_end = int(np.min(np.array([gyr_ml.shape[0], heel_strike_candidate + ic_search_region[1]])))
-
-    return float(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
-
-
-def _detect_tc(gyr_ml: np.ndarray) -> float:
-    try:
-        return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
-    except IndexError:
-        return np.nan
-
-
-def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order=10) -> np.array:
-    numerator, denominator = butter(order, cutoff_frequency, fs=sampling_rate_hz,btype='low', analog=False)
-    filtered_data = filtfilt(numerator, denominator, data)
-    return filtered_data
+        parent_kwargs = super()._get_detect_kwargs()
+        return {**parent_kwargs, "gyr_ic_lowpass_filter_parameters": self.ic_lowpass_filter_parameter}
