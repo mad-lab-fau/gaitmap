@@ -2,10 +2,10 @@ import pytest
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
+from gaitmap.event_detection import FilteredRamppEventDetection
 from gaitmap.utils import coordinate_conversion
 from gaitmap.utils.consts import BF_COLS
-from gaitmap.event_detection import FilteredRamppEventDetection
-from gaitmap_mad.event_detection import RamppEventDetection
+from gaitmap.event_detection import RamppEventDetection
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 from tests.test_event_detection.test_event_detection_rampp import TestEventDetectionRampp
@@ -61,4 +61,3 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
 
         assert ed._get_detect_kwargs()["gyr_ic_lowpass_filter_parameters"] == filter_paras
         assert ed._get_detect_kwargs()["sampling_rate_hz"] == 204.8
-

@@ -42,6 +42,7 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
+
     algorithm_class = RamppEventDetection
 
     def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
