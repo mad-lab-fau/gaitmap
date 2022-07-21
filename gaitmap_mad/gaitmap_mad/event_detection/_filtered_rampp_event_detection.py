@@ -9,10 +9,10 @@ from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetecti
 
 
 class FilteredRamppEventDetection(RamppEventDetection):
-    """This addition uses a lowpass filter only in ic calculation.
+    """This addition uses a lowpass filter on the ml signal for ic calculation.
 
-    It is suggested to be used on data containg high frequency noise or artifacts around the ic part of the strides.
-    The tc and min velocity are calculated from the original signal.
+    This method is suggested to be used on data containing high frequency noise or artifacts occuring around the ic
+    part of the strides.The tc and min velocity are calculated from the original signal.
     For more information on Rampp event detection please visit the original rampp event detection.
 
     Parameters
