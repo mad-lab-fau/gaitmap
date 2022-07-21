@@ -1,5 +1,4 @@
 """The event detection algorithm by Rampp et al. 2014."""
-import dataclasses
 from typing import Dict, Optional, Tuple, Union
 
 from joblib import Memory
