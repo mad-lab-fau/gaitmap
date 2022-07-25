@@ -2,7 +2,7 @@
 
 # gaitmap - The Gait and Movement Analysis Package
 
-*gaitmap* provides a set of algorithms to analyse your IMU movement data without getting into your way.
+*gaitmap* provides a set of algorithms to analyze your IMU movement data without getting into your way.
 Its API is designed to mimic `sklearn` to provide you a familiar and elegant interface.
 
 
@@ -19,31 +19,31 @@ Its API is designed to mimic `sklearn` to provide you a familiar and elegant int
 First, install a compatible version of Python.
 
 Then you need to install the provided packages.
-Gaitmap is split into two packages: `gaitmap` (MIT licenced) and `gaitmap_mad` (AGPL3 licenced).
+Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad`.
 To get access to all available algorithms, you need to install both packages.
 
-For a stable experience install one of our releases (e.g. 1.7.0):
+**For now, simply installing gaitmap will install both packages, but this will change in the future!**
 
-For available versions, see the [release page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
+For a stable experience install one of our releases (e.g. 2.0).
+
+All new releases (>=2.0) can be found on [Github](https://github.com/mad-lab-fau/gaitmap/releases).
+All old releases are available via MaD-Lab internal [Gitlab](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
+
 ```
 # gaitmap
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.7.0 --upgrade
-# gaitmap_mad
-pip install "git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git@v1.7.0#subdirectory=gaitmap_mad" --upgrade
+pip install git+https://github.com/mad-lab-fau/gaitmap.git@v2.0.0 --upgrade
 ```
 
 The latest git (bleeding edge) version:
 ```
 # gaitmap
-pip install git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git --upgrade
-# gaitmap_mad
-pip install "git+https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git#subdirectory=gaitmap_mad" --upgrade
+pip install git+https://github.com/mad-lab-fau/gaitmap.git --upgrade
 ```
 
-To install the package using poetry, make sure you use a version newer than 1.2.0b2.
+<!-- To install the package using poetry, make sure you use a version newer than 1.2.0b2.
 This is the first version of poetry that supports subdirectories for git dependencies.
 Note, that even then, there are a couple of bugs with poetry`s subdirectory support.
-Hence, we would recommend to use the package versions of gaitmap and gaitmap_mad and not install them from source.
+Hence, we would recommend to use the package versions of gaitmap and gaitmap_mad and not install them from source. -->
 
 If you are planning to make any changes to the library, please refer to the developer section below.
 
