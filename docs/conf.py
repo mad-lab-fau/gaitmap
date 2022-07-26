@@ -244,7 +244,7 @@ def add_info_about_origin(app, what, name, obj, options, lines: List[str]):
         file_name = getsourcefile(obj)
     except TypeError:
         return
-    if "gaitmap_mad" in file_name:
+    if file_name and "gaitmap_mad" in file_name:
         lines_to_insert = GAITMAP_MAD_TEST.split("\n")
         lines_to_insert.reverse()
         for l in lines_to_insert:
