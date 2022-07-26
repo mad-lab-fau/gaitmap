@@ -8,7 +8,12 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [Unreleased]
+## [2.0.0] - 2022-07-26
+
+This release is the first release on Github!
+For this release we also had to modify the code history with a nasty rebase to remove some sensitive files from the history.
+This means, the old commit hashes listed in the pull request are not valid anymore.
+To avoid confusion and signal this change, this is a new major version.
 
 - This release splits gaitmap into two separate packages: gaitmap and gaitmap_mad.
   To use all algorithms as before, you need to explicitly install **both** packages.
