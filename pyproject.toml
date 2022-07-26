@@ -34,9 +34,6 @@ joblib = "^1.0.0"
 scikit-learn = "^1.0.1"
 tpcp = ">=0.6.3, <1.0.0"
 
-[tool.poetry.group.dev.dependencies]
-Sphinx = ">=4.0.0,<5.0"
-
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"
 pytest-cov = "^2.8.1"
@@ -57,6 +54,7 @@ gaitmap-mad = {path = "gaitmap_mad", develop = true}
 sphinx-gallery = "^0.10.1"
 pydata-sphinx-theme = "^0.9.0"
 numpydoc = "^1.4.0"
+Sphinx = ">=4.0.0,<5.0"
 
 [tool.black]
 line-length = 120
