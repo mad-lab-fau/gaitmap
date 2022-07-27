@@ -25,8 +25,8 @@ scipy = ">=1.6.1,<2.0.0"
 typing_extensions = ">=4.1.1"
 numba =  [
     {version = "^0", python = "<3.9"},
-    {version = "^0.55", python = "^3.10"},
-    {version = "^0.53", python = ">=3.9,<3.10"},
+    {version = ">=0.55,<1.0.0", python = "^3.10"},
+    {version = ">=0.53,<1.0.0", python = ">=3.9,<3.10"},
     {version = ">=0.55.2,<1.0.0", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'"}
 ]
 numpy = ">=1"
