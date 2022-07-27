@@ -22,9 +22,12 @@ from typing import List
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
 
-import gaitmap
+HERE = Path(__file__)
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, str(HERE.parent))
+sys.path.insert(0, str(HERE.parent.parent))
+
+from sphinxext.githublink import make_linkcode_resolve
 
 
 def replace_gitlab_links(base_url, text):
@@ -40,7 +43,19 @@ def replace_gitlab_links(base_url, text):
     return re.sub(regex, substitute, text)
 
 
-URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/"
+def convert_github_links(base_url, text):
+    regex = base_url + r"/(pull|issues|commit)/(\w+)"
+
+    def substitute(matchobj):
+        if matchobj.group(1) == "commit":
+            return "[{}]({})".format(matchobj.group(2)[:5], matchobj.group(0))
+        return "[#{}]({})".format(matchobj.group(2), matchobj.group(0))
+
+    return re.sub(regex, substitute, text)
+
+
+OLD_URL = "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/"
+URL = "https://github.com/mad-lab-fau/gaitmap/"
 
 # -- Project information -----------------------------------------------------
 
@@ -63,7 +78,8 @@ with (HERE / "README.md").open("w+") as f:
 
 with (HERE.parent / "CHANGELOG.md").open() as f:
     out = f.read()
-out = replace_gitlab_links(URL, out)
+out = replace_gitlab_links(OLD_URL, out)
+out = convert_github_links(URL, out)
 with (HERE / "CHANGELOG.md").open("w+") as f:
     f.write(out)
 
@@ -132,7 +148,7 @@ html_theme = "pydata_sphinx_theme"
 html_favicon = "_static/logo/gaitmap.ico"
 html_logo = "_static/logo/gaitmap_logo.png"
 html_theme_options = {
-    "gitlab_url": "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/blob/master",
+    "github_url": "https://github.com/mad-lab-fau/gaitmap",
     "show_prev_next": False,
 }
 
@@ -200,27 +216,10 @@ def get_nested_attr(obj, attr):
         return get_nested_attr(new_obj, attrs[1])
 
 
-def linkcode_resolve(domain, info):
-    if domain != "py":
-        return None
-    if not info["module"]:
-        return None
-    module = import_module(info["module"])
-    obj = get_nested_attr(module, info["fullname"])
-    code_line = None
-    filename = ""
-    try:
-        filename = str(Path(getsourcefile(obj)).relative_to(Path(getsourcefile(gaitmap)).parent.parent))
-    except:
-        pass
-    try:
-        code_line = getsourcelines(obj)[-1]
-    except:
-        pass
-    if filename:
-        if code_line:
-            return "{}/{}#L{}".format(URL, filename, code_line)
-        return "{}/{}".format(URL, filename)
+linkcode_resolve = make_linkcode_resolve(
+    "gaitmap",
+    f"{URL}/blob/{{revision}}/{{package}}/{{path}}#L{{lineno}}",
+)
 
 
 def skip_properties(app, what, name, obj, skip, options):
