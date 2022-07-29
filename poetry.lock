@@ -372,19 +372,6 @@ unicode = ["unicodedata2 (>=14.0.0)"]
 woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
 
 [[package]]
-name = "gaitmap-mad"
-version = "2.0.0"
-description = "Specific algorithm implementaions by the mad_lab"
-category = "dev"
-optional = false
-python-versions = ">=3.8,<3.11"
-develop = true
-
-[package.source]
-type = "directory"
-url = "gaitmap_mad"
-
-[[package]]
 name = "idna"
 version = "3.3"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1888,7 +1875,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.0,<3.11"
-content-hash = "9c0ca1bf5f1c7eaeb896af92683e2bc921654cb65a5801c6ddb7cf59b962559f"
+content-hash = "82b5997f0b64ad2a4e40e3b144f37e3d60ea737b3bbef23fc02b404c3f343494"
 
 [metadata.files]
 alabaster = [
@@ -2162,7 +2149,6 @@ fonttools = [
     {file = "fonttools-4.34.4-py3-none-any.whl", hash = "sha256:d73f25b283cd8033367451122aa868a23de0734757a01984e4b30b18b9050c72"},
     {file = "fonttools-4.34.4.zip", hash = "sha256:9a1c52488045cd6c6491fd07711a380f932466e317cb8e016fc4e99dc7eac2f0"},
 ]
-gaitmap-mad = []
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},

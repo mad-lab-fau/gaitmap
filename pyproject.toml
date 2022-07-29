@@ -50,7 +50,7 @@ toml = "^0.10.1"
 mypy = "^0.790"
 pytest-xdist = "^2.2.0"
 isort = "^5.9.3"
-gaitmap-mad = {path = "gaitmap_mad", develop = true}
+# gaitmap-mad = {path = "gaitmap_mad", develop = true}
 sphinx-gallery = "^0.10.1"
 pydata-sphinx-theme = "^0.9.0"
 numpydoc = "^1.4.0"
