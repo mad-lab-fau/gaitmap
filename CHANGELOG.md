@@ -8,6 +8,11 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+
+## [2.0.1] - 2022-07-29
+
+Fixed some dependencies and internal links that where broken after the move to Github.
+
 ## [2.0.0] - 2022-07-26
 
 This release is the first release on Github!

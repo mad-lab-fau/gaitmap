@@ -7,4 +7,4 @@ Further, this library does not manage its own dependencies, and you need to inst
 library.
 Note, that we only support using the exact same version of the gaitmap library.
 """
-__version__ = "2.0.0"
+__version__ = "2.0.1"
