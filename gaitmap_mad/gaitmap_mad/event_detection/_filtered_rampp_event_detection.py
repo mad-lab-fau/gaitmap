@@ -8,10 +8,13 @@ from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetecti
 
 
 class FilteredRamppEventDetection(RamppEventDetection):
-    """This addition uses a lowpass filter on the ml signal for ic calculation.
+    """This addition uses a low-pass filter on the ml signal for ic calculation.
 
+    Rampp event detection with an additional low-pass Butterworth filter.
+    The filter has an order of 2 and the cut-off frequency of 15Hz.
     This method is suggested to be used on data containing high frequency noise or artifacts occuring around the ic
-    part of the strides.The tc and min velocity are calculated from the original signal.
+    part of the strides.
+    The tc and min velocity are calculated from the original signal.
     For more information on Rampp event detection please visit the original rampp event detection.
 
     Parameters
@@ -27,7 +30,8 @@ class FilteredRamppEventDetection(RamppEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     ic_lowpass_filter_parameter
         A tuple including the information required for a low pass filter design in the format of
-        (order, cutoff frequency)
+        (order, cutoff frequency).
+        The original design of the filter has a order of 2 and the cut-off of 15 Hz.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
@@ -51,7 +55,6 @@ class FilteredRamppEventDetection(RamppEventDetection):
         for all the detected events.
         Strides for which no valid events could be found are removed.
 
-
     Other Parameters
     ----------------
     data
@@ -59,40 +62,14 @@ class FilteredRamppEventDetection(RamppEventDetection):
     sampling_rate_hz
         The sampling rate of the data
     stride_list
-        A list of strides provided by a stride segmentatioRan method. The stride list is expected to have no gaps
+        A list of strides provided by a stride segmentation method. The stride list is expected to have no gaps
         between subsequent strides. That means for subsequent strides the end sample of one stride should be the
         start sample of the next stride.
 
+
     Notes
-    -----
-    Rampp et al. implemented the detection of three gait events from foot-mounted sensor data:
-
-    terminal contact (`tc`), originally called toe-off (TO) in the paper [1]_:
-        At `tc` the movement of the ankle joint changes from a plantar flexion to a dorsal extension in the sagittal
-        plane.
-        This change results in a zero crossing of the gyr_ml signal.
-        Also refer to the :ref:`image below <fe>`.
-
-    initial contact (`ic`), originally called heel strike (HS) in the paper [1]_:
-        At `ic` the foot decelerates rapidly when the foot hits the ground.
-        For the detection of `ic` only the signal between the absolute maximum and the end of the first half of the
-        gyr_ml signal is considered.
-        Within this segment, `ic` is found by searching for the minimum between the point of the steepest negative
-        slope and the point of the steepest positive slope in the following signal.
-        After that the acc_pa signal is searched for a maximum in the area before and after the described minimum in
-        the gyr_ml signal.
-        In the original implementation of the paper, this was actually a minimum due to flipped sensor coordinate axes.
-        The default search window is set to 80 ms before and 50 ms after the minimum.
-        The search window borders can be adjusted via the `ic_search_region_ms` parameter.
-        Also refer to the :ref:`image below <fe>`.
-
-    minimal velocity (`min_vel_`), originally called mid stance (MS) in the paper [1]_:
-        At `min_vel` the foot has the lowest velocity.
-        It is defined to be the middle of the window with the lowest energy in all axes of the gyr signal.
-        The default window size is set to 100 ms with 50 % overlap.
-        The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
-        Also refer to the :ref:`image below <fe>`.
-
+    ----------------
+    For more and detailed information please visit the Rampp event detection method.
     """
 
     ic_lowpass_filter_parameter: FilterParameter
@@ -101,7 +78,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         self,
         ic_search_region_ms: Tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
-        ic_lowpass_filter_parameter: FilterParameter = FilterParameter(order=10, cutoff_hz=15),
+        ic_lowpass_filter_parameter: FilterParameter = FilterParameter(order=2, cutoff_hz=15),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
     ):
