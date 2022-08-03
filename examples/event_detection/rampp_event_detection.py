@@ -313,10 +313,17 @@ fig.tight_layout()
 plt.legend(loc="upper left")
 fig.show()
 
+# %%
+# ----------------------------------------------------------------------------------------------
+# Filtered Rampp Event Detection
+# ----------------------------------------------------------------------------------------------
 # For signals with high frequency noise and artifact the filtered Rampp event detection can be used.
-# A low pass filter is implemented in this class and is applied on the gyr-ml signal for detecting ic.
-# The designed LP-filter has an order of 10 and cutoff-frequency of 15. To change these parameters, one should
-# pass the new design parameters as a tuple to ic_lowpass_filter_parameter (as it is implemented below).
+# A low pass filter is implemented in this class and is applied on the gyr-ml signal for detecting IC.
+# The IC searches for the "valley" after the swing peak in gyr_ml.
+# The high frequency components near the vally might result in the false detection of IC.
+# For changing the filter parameters a tuple should pass to ic_lowpass_filter_parameter.
+# For this data you don't see a difference.
+# However, when you encounter issues, testing the filtered version might be an option.
 from gaitmap.event_detection import FilteredRamppEventDetection
 
 edfilt = FilteredRamppEventDetection(ic_lowpass_filter_parameter=(10, 15))
@@ -329,7 +336,6 @@ print(
     "Gait events for {} segmented strides using the filtered version were detected.".format(len(segmented_events_left))
 )
 segmented_events_left.head()
-
 fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
 ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]])
 ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
@@ -385,78 +391,3 @@ plt.legend(loc="best")
 fig.tight_layout()
 fig.show()
 
-# %%
-# By reducing the cutoff frequency to one Hz we can observe the change in detecting
-# events by the filtered Rampp event detection
-
-ed2filt = FilteredRamppEventDetection(ic_lowpass_filter_parameter=(10, 1))
-ed2filt = ed2filt.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=sampling_rate_hz)
-min_vel_events_left = ed2filt.min_vel_event_list_["left_sensor"]
-print(
-    "Gait events for {} min_vel strides using the filtered version (CO=1Hz) were detected.".format(
-        len(min_vel_events_left)
-    )
-)
-min_vel_events_left.head()
-segmented_events_left = ed2filt.segmented_event_list_["left_sensor"]
-print(
-    "Gait events for {} segmented strides using the filtered version (CO=1Hz) were detected.".format(
-        len(segmented_events_left)
-    )
-)
-segmented_events_left.head()
-
-fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
-ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]])
-ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
-
-ic_idx = ed2filt.min_vel_event_list_["left_sensor"]["ic"].to_numpy().astype(int)
-tc_idx = ed2filt.min_vel_event_list_["left_sensor"]["tc"].to_numpy().astype(int)
-min_vel_idx = ed2filt.min_vel_event_list_["left_sensor"]["min_vel"].to_numpy().astype(int)
-
-for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
-    for i, stride in ed2filt.min_vel_event_list_["left_sensor"].iterrows():
-        ax.axvline(stride["start"], color="g")
-        ax.axvline(stride["end"], color="r")
-
-    ax.scatter(
-        ic_idx,
-        bf_data["left_sensor"][sensor].to_numpy()[ic_idx],
-        marker="*",
-        s=100,
-        color="r",
-        zorder=3,
-        label="ic",
-    )
-
-    ax.scatter(
-        tc_idx,
-        bf_data["left_sensor"][sensor].to_numpy()[tc_idx],
-        marker="p",
-        s=50,
-        color="g",
-        zorder=3,
-        label="tc",
-    )
-
-    ax.scatter(
-        min_vel_idx,
-        bf_data["left_sensor"][sensor].to_numpy()[min_vel_idx],
-        marker="s",
-        s=50,
-        color="y",
-        zorder=3,
-        label="min_vel",
-    )
-
-    ax.grid(True)
-
-ax1.set_title("Events of min_vel strides using the LP-filtered version of Rampp (CO=1Hz)")
-ax1.set_ylabel("gyr_ml (°/s)")
-ax2.set_ylabel("acc_pa [m/s^2]")
-ax1.set_xlim(3600, 7200)
-# ax1.set_xlim(1150, 1850)
-plt.legend(loc="best")
-
-fig.tight_layout()
-fig.show()
