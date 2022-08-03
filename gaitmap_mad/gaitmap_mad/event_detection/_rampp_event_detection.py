@@ -276,7 +276,7 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
         return np.nan
 
 
-def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order: int = 10) -> np.ndarray:
+def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order: int = 2) -> np.ndarray:
     numerator, denominator = butter(order, cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False)
     filtered_data = filtfilt(numerator, denominator, data)
     return filtered_data
