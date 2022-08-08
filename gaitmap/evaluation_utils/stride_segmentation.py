@@ -4,8 +4,7 @@ from typing import Dict, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from scipy.spatial import minkowski_distance
-from scipy.spatial.ckdtree import cKDTree
+from scipy.spatial import KDTree, minkowski_distance
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SL_INDEX
@@ -55,8 +54,11 @@ def evaluate_segmented_stride_list(
     tolerance
         The allowed tolerance between labels.
         Its unit depends on the units used in the stride lists.
+        The comparison is done as `distance <= tolerance`.
     one_to_one
         If True, only a single unique match per stride is considered.
+        In case of multiple matches, the one with the lowest distance is considered.
+        If case of multiple matches with the same distance, the first match will be considered.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
     stride_list_postfix
@@ -429,7 +431,8 @@ def _match_label_lists(
     list_right : array with shape (m, d)
         An m long array of d-dimensional vectors
     tolerance
-        Max allowed Chebyshev distance between matches
+        Max allowed Chebyshev distance between matches.
+        The comparison is done as "distance <= tolerance".
     one_to_one
         If True only valid one-to-one matches are returned (see more below)
 
@@ -460,6 +463,13 @@ def _match_label_lists(
         If multiple matches are possible based on the tolerance of the Chebyshev distance, the closest match will be
         selected based on the Manhatten distance (aka `np.sum(np.abs(left_match - right_match`).
         Only this match will be returned.
+        This is done, because in case the input arrays are multi-dimensional, the Chebyshev distance is not really
+        well suited for comparison.
+        As an example, in case of gait events, I want all matches, where all gaitevents are within a certain
+        tolerance (Chebyshev distance), but if for multiple strides, the gaitevents are within the tolerance,
+        I want to match the stride where all gaitevents are closest on average (Manhatten distance), not the one with
+        **the** closest single gait event.
+
         Note, that in the implementation, we first get the closest match based on the Manhatten distance and check in a
         second step if this closed match is also valid based on the Chebyshev distance.
 
@@ -467,8 +477,8 @@ def _match_label_lists(
     if len(list_left) == 0 or len(list_right) == 0:
         return np.array([]), np.array([])
 
-    right_tree = cKDTree(list_right)
-    left_tree = cKDTree(list_left)
+    right_tree = KDTree(list_right)
+    left_tree = KDTree(list_left)
 
     if one_to_one is False:
         # p = np.inf is used to select the Chebyshev distance
@@ -479,7 +489,7 @@ def _match_label_lists(
     # one_to_one is True
     # We calculate the closest neighbor based on the Manhatten distance in both directions and then find only the cases
     # were the right side closest neighbor resulted in the same pairing as the left side closest neighbor ensuring
-    # that we have true one-to-one-matches
+    # that we have true one-to-one-matches and we have already the closest match based on our final criteria.
 
     # p = 1 is used to select the Manhatten distance
     l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, workers=-1)
@@ -494,17 +504,19 @@ def _match_label_lists(
     # Check if the remaining matches are inside our Chebyshev tolerance distance.
     # If not, delete them.
     valid_matches_distance = l_nearest_distance[boolean_map]
-    index_large_matches = np.where(valid_matches_distance > tolerance)[0]
+    # First we check if any of the Manhatten distances is larger than the threshold.
+    # If not, all the Chebyshev distances are smaller than the threshold, too.
+    index_large_matches = np.where(~(valid_matches_distance <= tolerance))[0]
     if index_large_matches.size > 0:
         # Minkowski with p = np.inf uses the Chebyshev distance
-        output = (
+        boolean_map = (
             minkowski_distance(
                 list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]], p=np.inf
             )
-            > tolerance
+            <= tolerance
         )
 
-        valid_matches = np.delete(valid_matches, index_large_matches[output], axis=0)
+        valid_matches = np.delete(valid_matches, index_large_matches[~boolean_map], axis=0)
 
     valid_matches = valid_matches.T
 
