@@ -163,10 +163,10 @@ html_static_path = ["_static"]
 # intersphinx configuration
 intersphinx_module_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
+    "matplotlib": (" https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "sklearn": ("https://scikit-learn.org/stable", None),
+    "sklearn": ("https://scikit-learn.org/stable/", None),
     "tpcp": ("https://tpcp.readthedocs.io/en/latest", None),
 }
 
@@ -181,7 +181,7 @@ intersphinx_mapping = {
 sphinx_gallery_conf = {
     "examples_dirs": ["../examples"],
     "gallery_dirs": ["./auto_examples"],
-    "reference_url": {"gaitmap": None, **{k: v[0] for k, v in intersphinx_module_mapping.items()}},
+    "reference_url": {"gaitmap": None},
     # 'default_thumb_file': 'fig/logo.png',
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
