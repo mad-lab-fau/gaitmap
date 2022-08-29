@@ -8,6 +8,9 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+## [2.0.2] - 2022-08-29
+
+Fixed issues with namedtuple inherantance in Python 3.9.
 
 ## [2.0.1] - 2022-07-29
 
