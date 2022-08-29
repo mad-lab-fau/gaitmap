@@ -1,5 +1,5 @@
 """Implementation of the MadgwickAHRS."""
-from typing import Optional, TypeVar, Union, Self
+from typing import Optional, Self, Union
 
 import numpy as np
 from joblib import Memory

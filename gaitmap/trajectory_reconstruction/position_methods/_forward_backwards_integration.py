@@ -1,6 +1,6 @@
 """Estimate the IMU position with dedrifting using Forward-Backwards integration."""
 
-from typing import Optional, TypeVar
+from typing import Optional
 
 import numpy as np
 import pandas as pd

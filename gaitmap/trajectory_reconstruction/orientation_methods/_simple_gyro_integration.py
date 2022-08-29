@@ -1,5 +1,5 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
-from typing import Optional, TypeVar, Union
+from typing import Optional, Union
 
 import numpy as np
 from joblib import Memory

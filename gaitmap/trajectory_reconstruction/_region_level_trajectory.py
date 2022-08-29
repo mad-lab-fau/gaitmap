@@ -200,9 +200,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self.align_window_width = align_window_width
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
-    def estimate(
-        self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
-    ) -> Self:
+    def estimate(self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters

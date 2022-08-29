@@ -1,6 +1,6 @@
 """Helper functions for the RTS Kalman filter."""
 
-from typing import Callable, NamedTuple, Tuple, Any
+from typing import Any, Callable, NamedTuple, Tuple
 
 import numpy as np
 from numba import njit
@@ -64,7 +64,7 @@ def simple_navigation_equations(acc, gyro, orientation, position, velocity, samp
     new_orientation = multiply(orientation, r)
 
     rotated_acc = rotate_vector(new_orientation, acc)
-    new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz ** 2
+    new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz**2
     new_velocity = velocity + (rotated_acc - GRAV_VEC) / sampling_rate_hz
     return new_position, new_velocity, new_orientation
 
