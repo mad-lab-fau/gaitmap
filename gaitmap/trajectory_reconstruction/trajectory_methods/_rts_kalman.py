@@ -1,11 +1,12 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
 import warnings
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import NOTHING, cf
+from typing_extensions import Self
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
@@ -19,8 +20,6 @@ from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
-
-Self = TypeVar("Self", bound="RtsKalman")
 
 
 class RtsKalman(BaseTrajectoryMethod):
@@ -220,7 +219,7 @@ class RtsKalman(BaseTrajectoryMethod):
         self.zupt_window_overlap_s = zupt_window_overlap_s
         self.zupt_detector = zupt_detector
 
-    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
 
         Parameters

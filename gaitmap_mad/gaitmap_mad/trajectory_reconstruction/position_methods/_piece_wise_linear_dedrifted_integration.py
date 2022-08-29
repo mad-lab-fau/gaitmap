@@ -1,6 +1,6 @@
 """Estimate the IMU position with piece wise linear dedrifted integration using zupt updates."""
 
-from typing import Optional, TypeVar
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,14 +8,13 @@ from numpy.polynomial import polynomial
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from tpcp import cf
+from typing_extensions import Self
 
 from gaitmap.base import BasePositionMethod, BaseZuptDetector
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
-
-Self = TypeVar("Self", bound="PieceWiseLinearDedriftedIntegration")
 
 
 class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
@@ -137,7 +136,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.level_assumption = level_assumption
         self.gravity = gravity
 
-    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.
 
         Parameters

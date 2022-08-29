@@ -6,13 +6,12 @@ from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 from tpcp import cf
+from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.fast_quaternion_math import rate_of_change_from_gyro
-
-Self = TypeVar("Self", bound="SimpleGyroIntegration")
 
 
 class SimpleGyroIntegration(BaseOrientationMethod):
@@ -87,7 +86,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         self.initial_orientation = initial_orientation
         self.memory = memory
 
-    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.
 
         Parameters

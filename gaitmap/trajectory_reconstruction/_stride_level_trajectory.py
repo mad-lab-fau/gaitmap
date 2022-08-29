@@ -1,8 +1,9 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
-from typing import Optional, TypeVar
+from typing import Optional
 
 from scipy.spatial.transform import Rotation
 from tpcp import CloneFactory
+from typing_extensions import Self
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -19,8 +20,6 @@ from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIn
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
 from gaitmap.utils.exceptions import ValidationError
-
-Self = TypeVar("Self", bound="StrideLevelTrajectory")
 
 
 class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajectoryReconstructionWrapper):
@@ -140,7 +139,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self.align_window_width = align_window_width
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
-    def estimate(self: Self, data: SensorData, stride_event_list: StrideList, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SensorData, stride_event_list: StrideList, sampling_rate_hz: float) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters

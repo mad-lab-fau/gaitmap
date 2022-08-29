@@ -6,12 +6,11 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import cumtrapz
 from tpcp import cf
+from typing_extensions import Self
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
-
-Self = TypeVar("Self", bound="ForwardBackwardIntegration")
 
 
 class ForwardBackwardIntegration(BasePositionMethod):
@@ -116,7 +115,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         self.level_assumption = level_assumption
         self.gravity = gravity
 
-    def estimate(self: Self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.
 
         Parameters

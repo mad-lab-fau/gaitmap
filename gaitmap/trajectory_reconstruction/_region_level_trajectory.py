@@ -1,10 +1,10 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
-from typing import Dict, Optional, Tuple, TypeVar, Union
+from typing import Dict, Optional, Tuple, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import CloneFactory, is_action_applied
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -44,8 +44,6 @@ from gaitmap.utils.datatype_helper import (
     set_correct_index,
 )
 from gaitmap.utils.exceptions import ValidationError
-
-Self = TypeVar("Self", bound="RegionLevelTrajectory")
 
 
 class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajectoryReconstructionWrapper):
@@ -203,7 +201,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
     def estimate(
-        self: Self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
+        self, data: SensorData, regions_of_interest: RegionsOfInterestList, sampling_rate_hz: float
     ) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
@@ -238,7 +236,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         return self
 
     def estimate_intersect(
-        self: Self,
+        self,
         data: SensorData,
         regions_of_interest: RegionsOfInterestList,
         stride_event_list: StrideList,

@@ -1,12 +1,12 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Dict, Optional, Sequence, Tuple, TypeVar
+from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import CloneFactory
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
@@ -23,8 +23,6 @@ from gaitmap.utils.datatype_helper import (
     set_correct_index,
 )
 from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
-
-Self = TypeVar("Self", bound="_TrajectoryReconstructionWrapperMixin")
 
 
 class _TrajectoryReconstructionWrapperMixin:
@@ -83,7 +81,7 @@ class _TrajectoryReconstructionWrapperMixin:
                 )
             self._combined_algo_mode = False
 
-    def _estimate(self: Self, dataset_type: Literal["single", "multi"]) -> Self:
+    def _estimate(self, dataset_type: Literal["single", "multi"]) -> Self:
         if dataset_type == "single":
             results = self._estimate_single_sensor(self.data, self._integration_regions)
         else:
