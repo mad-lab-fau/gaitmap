@@ -1,11 +1,12 @@
 """Implementation of the MadgwickAHRS."""
-from typing import Optional, Self, Union
+from typing import Optional, Union
 
 import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 from tpcp import cf
+from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_ACC, SF_GYR
