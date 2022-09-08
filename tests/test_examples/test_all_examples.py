@@ -243,3 +243,15 @@ def test_multi_process():
     We do not test the multi process example.
     Unfortunately, it is somehow not possible to execute something that uses multiprocessing in pytest.
     """
+
+
+def test_roth_hmm_stride_segmentation(snapshot):
+    from examples.stride_segmentation.roth_hmm_stride_segmentation import roth_hmm
+
+    snapshot.assert_match(roth_hmm.stride_list_["left_sensor"], "left_sensor")
+    snapshot.assert_match(roth_hmm.stride_list_["right_sensor"], "right_sensor")
+
+def test_segmentation_hmm_training(snapshot):
+    from examples.stride_segmentation.segmentation_hmm_training import segmentation_model
+
+    snapshot.assert_match(segmentation_model.model.to_json())
