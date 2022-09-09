@@ -1,6 +1,6 @@
 """Feature transformation class for HMM."""
 import warnings
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
