@@ -9,9 +9,9 @@ import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.future.hmm.hmm_feature_transform import FeatureTransformHMM
-from gaitmap.future.hmm.simple_model import SimpleHMM
-from gaitmap.future.hmm.utils import (
+from gaitmap_mad.stride_segmentation._hmm.hmm_feature_transform import FeatureTransformHMM
+from gaitmap_mad.stride_segmentation._hmm.simple_model import SimpleHMM
+from gaitmap_mad.stride_segmentation._hmm.utils import (
     add_transition,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
