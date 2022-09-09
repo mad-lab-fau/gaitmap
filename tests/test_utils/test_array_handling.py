@@ -11,7 +11,7 @@ from gaitmap.utils.array_handling import (
     merge_intervals,
     multi_array_interpolation,
     sliding_window_view,
-    split_array_at_nan,
+    split_array_at_nan, start_end_array_to_bool_array,
 )
 
 
