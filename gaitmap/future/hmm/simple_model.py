@@ -13,7 +13,6 @@ from gaitmap.future.hmm.utils import (
     create_transition_matrix_left_right,
     fix_model_names,
     gmms_from_samples,
-
 )
 
 N_JOBS = 1
