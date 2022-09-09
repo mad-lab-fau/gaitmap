@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap.future.hmm.segmentation_model import SimpleSegmentationHMM
+from gaitmap_mad.stride_segmentation._hmm.segmentation_model import SimpleSegmentationHMM
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
