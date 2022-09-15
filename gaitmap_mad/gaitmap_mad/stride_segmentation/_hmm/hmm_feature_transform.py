@@ -18,6 +18,7 @@ def butterwoth_lowpass(
 ) -> Union[pd.DataFrame, np.ndarray]:
     """Apply Butterworth Lowpass filter on array or DataFrame."""
     w = fc / (fs / 2)  # Normalize the frequency
+    # TODO: Switch to SOS and simplify
     b, a = signal.butter(order, w, "low")
 
     if fc >= fs:
@@ -271,7 +272,7 @@ class FeatureTransformHMM(_BaseSerializable):
         return calculate_features(dataset, self.axis, self.features, window_size_samples, self.standardization)
 
     def transform(self, dataset, sampling_rate_hz):
-        """Perform a feature transformation according the the given model requirements."""
+        """Perform a feature transformation according the given model requirements."""
         dataset_type = is_sensor_data(dataset, check_gyr=False, check_acc=False)
 
         if dataset_type in ("single", "array"):

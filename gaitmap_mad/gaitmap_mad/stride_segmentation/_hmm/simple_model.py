@@ -1,11 +1,12 @@
 """Simple model base classes and helper."""
 
 import copy
-from typing import Optional
+from typing import Optional, Tuple, Sequence
 
 import numpy as np
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
+from pomegranate.hmm import History
 
 from gaitmap.base import _BaseSerializable
 from gaitmap_mad.stride_segmentation._hmm.utils import (
@@ -30,25 +31,32 @@ def initialize_hmm(
 ):
     """Model Initialization.
 
-    - data_train_sequence (list of np.ndarrays):
+    Parameters
+    ----------
+    data_train_sequence (list of np.ndarrays)
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
-
-    - labels_initialization_sequence (list of np.ndarrays):
+    labels_initialization_sequence (list of np.ndarrays)
         list of labels which are used to initialize the emission distributions. Note: These labels are just for
         initialization. Distributions will be optimized later in the training process of the model!
         Length of each np.ndarray in "labels_initialization_sequence" needs to match the length of each
         corresponding np.ndarray in "data_train_sequence"
+    n_gmm_components
+        number of components for multivariate distributions
+    architecture
+        type of model architecture, for more details see below
+    n_states
+        number of hidden-states within the model
+    random_seed
+        fix seed for random number generation to make sure that results will be reproducible. Set to None if not used.
+        TODO: check if random_seed is actually only used if we use k-means somewhere...
 
-    - n_gmm_components (integer) : of components for multivariate distributions
-    - architecture     (str)     : type of model architecture, for more details see below
-    - n_states         (integer) : number of hidden-states within the model
-    - random_seed      (float)   : fix seed for random number generation to make sure that results will be
-                                       reproducible. Set to None if not used.
-                                       TODO: check if random_seed is actually only used if we use k-means somewhere...
-
+    Notes
+    -----
     This function supports currently the following "architectures":
-        - "left-right-strict":
+    TODO: Add this documentation also to the model level
+
+    - "left-right-strict":
         This will result in a strictly left-right structure, with no self-transitions and
         start- and end-state bound to the first and last state, respectively.
         Example transition matrix for a 5-state model:
@@ -57,8 +65,7 @@ def initialize_hmm(
                            0  0  1  1  0
                            0  0  0  1  1
                            0  0  0  0  1
-
-        - "left-right-loose":
+    - "left-right-loose":
         This will result in a loose left-right structure, with allowed self-transitions and
         start- and end-state not specified initially.
         Example transition matrix for a 5-state model:
@@ -67,8 +74,7 @@ def initialize_hmm(
                            0  0  1  1  0
                            0  0  0  1  1
                            1  0  0  0  1
-
-         - "fully-connected":
+    - "fully-connected":
         This will result in a fully connected structure where all existing edges are initialized with the same
         probability.
         Example transition matrix for a 5-state model:
@@ -77,39 +83,34 @@ def initialize_hmm(
                            1  1  1  1  1
                            1  1  1  1  1
                            1  1  1  1  1
+
     """
     if architecture not in ["left-right-strict", "left-right-loose", "fully-connected"]:
         raise ValueError(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
 
-    [distributions, _] = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        random_seed=random_seed,
-        verbose=verbose,
+    distributions, _ = gmms_from_samples(
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, random_seed=random_seed, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
     # where the model "loops" (aka state-0 and state-n) so we also will enforce the model to start with "state-0" and
     # always end with "state-n"
     if architecture == "left-right-strict":
-        [transition_matrix, start_probs, end_probs] = create_transition_matrix_left_right(
-            n_states, self_transition=False
-        )
+        transition_matrix, start_probs, end_probs = create_transition_matrix_left_right(n_states, self_transition=False)
 
     # allow transition model to start and end in all states (as we do not have any specific information about
     # "transitions", this could be actually anything in the data which is no stride)
-    if architecture == "left-right-loose":
-        [transition_matrix, _, _] = create_transition_matrix_left_right(n_states, self_transition=True)
+    elif architecture == "left-right-loose":
+        transition_matrix, _, _ = create_transition_matrix_left_right(n_states, self_transition=True)
 
         start_probs = np.ones(n_states).astype(float)
         end_probs = np.ones(n_states).astype(float)
 
     # fully connected model with all transitions initialized equally. Allowing all possible transitions.
-    if architecture == "fully-connected":
-        [transition_matrix, start_probs, end_probs] = create_transition_matrix_fully_connected(n_states)
+    else:  # architecture == "fully-connected"
+        transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
 
     model = pg.HiddenMarkovModel.from_matrix(
         transition_probabilities=transition_matrix,
@@ -130,24 +131,28 @@ def initialize_hmm(
 
 
 def train_hmm(
-    model_untrained, data_train_sequence, max_iterations, stop_threshold, algo_train, name="trained", verbose=True
-):
+    model_untrained: pgHMM,
+    data_train_sequence: Sequence[np.ndarray],
+    max_iterations: int,
+    stop_threshold: float,
+    algo_train: str,
+    name="trained",
+    verbose=True,
+) -> Tuple[pgHMM, History]:
     """Train Model.
 
-    - model_untrained (pomegranate.HiddenMarkovModel):
+    Parameters
+    ----------
+    model_untrained (pomegranate.HiddenMarkovModel)
         pomegranate HiddenMarkovModel object with initialized distributions and transition matrix
-
-    - data_train_sequence (list of np.ndarrays):
+    data_train_sequence (list of np.ndarrays)
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
-
-    - algo_train (str):
+    algo_train (str)
         algorithm for training, can be "viterbi", "baum-welch" or "labeled"
-
-    - stop_threshold (float):
+    stop_threshold (float)
         termination criteria for training improvement e.g. 1e-9
-
-    - max_iterations (int):
+    max_iterations (int)
         termination criteria for training iteration number e.g. 1000
 
     """
@@ -163,6 +168,7 @@ def train_hmm(
     # copy
     model_trained = copy.deepcopy(model_untrained)
 
+    history: History
     _, history = model_trained.fit(
         sequences=np.array(data_train_sequence, dtype=object).copy(),
         labels=None,
@@ -183,26 +189,13 @@ class SimpleHMM(_BaseSerializable):
 
     Parameters
     ----------
-    sampling_rate_hz_model
-        The sampling rate of the data the model was trained with
-    low_pass_cutoff_hz
-        Cutoff frequency of low-pass filter for preprocessing
-    low_pass_order
-        Low-pass filter order
-    axis
-        List of sensor axis which will be used as model input
-    features
-        List of features which will be used as model input
-    window_size_samples
-        window size of moving centered window for feature extraction
-    standardization
-        Flag for feature standardization /  z-score normalization
 
     See Also
     --------
     TBD
 
     """
+    _action_methods = ("predict_hidden_state_sequence",)
 
     n_states: Optional[int]
     n_gmm_components: Optional[int]
@@ -216,10 +209,9 @@ class SimpleHMM(_BaseSerializable):
     name: Optional[str]
     model: Optional[pgHMM]
 
-    history: Optional[pg.callbacks.History]
-
     def __init__(
         self,
+        # TODO: Why all the default None values?
         n_states: Optional[int] = None,
         n_gmm_components: Optional[int] = None,
         algo_train: Optional[str] = None,
@@ -244,7 +236,7 @@ class SimpleHMM(_BaseSerializable):
         self.name = name
         self.model = model
 
-    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
+    def predict_hidden_state_sequence(self, feature_data):
         """Perform prediction based on given data and given model."""
         feature_data = np.ascontiguousarray(feature_data.to_numpy())
 
@@ -253,8 +245,9 @@ class SimpleHMM(_BaseSerializable):
         if not np.array(feature_data).data.c_contiguous:
             raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
+        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+        # TODO: Make this return self and store the information somewhere
         return np.asarray(labels_predicted[1:-1])
 
     def build_model(self, data_sequence, labels_sequence):
@@ -299,22 +292,7 @@ class SimpleHMM(_BaseSerializable):
             verbose=self.verbose,
         )
 
-        self.history = history
+        self.history_ = history
         self.model = model_trained
 
         return self
-
-    @property
-    def history_(self) -> dict:
-        """Return model history."""
-        return {
-            "improvements": self.history.improvements,
-            "total_improvement": self.history.total_improvement,
-            "epoch_start_times": self.history.epoch_start_times,
-            "epoch_end_times": self.history.epoch_end_times,
-            "epoch_durations": self.history.epoch_durations,
-            "epochs": self.history.epochs,
-            "learning_rates": self.history.learning_rates,
-            "n_seen_batches": self.history.n_seen_batches,
-            "initial_log_probablity": self.history.initial_log_probablity,
-        }
