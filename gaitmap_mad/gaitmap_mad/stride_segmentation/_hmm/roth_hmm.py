@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation, BaseType
 from gaitmap_mad.stride_segmentation._hmm.segmentation_model import SimpleSegmentationHMM
@@ -69,8 +70,8 @@ class RothHMM(BaseStrideSegmentation):
 
     """
 
-    snap_to_min: Optional[bool]
-    snap_to_min_axis: Optional[str]
+    snap_to_min_win_s: float
+    snap_to_min_axis: str
     model: Optional[SimpleSegmentationHMM]
 
     data: Union[np.ndarray, SensorData]
@@ -84,8 +85,8 @@ class RothHMM(BaseStrideSegmentation):
     def __init__(
         self,
         model: Optional[SimpleSegmentationHMM] = None,
-        snap_to_min_win_s: Optional[float] = 0.1,
-        snap_to_min_axis: Optional[str] = "gyr_ml",
+        snap_to_min_win_s: float = 0.1,
+        snap_to_min_axis: str = "gyr_ml",
     ):
         self.snap_to_min_win_s = snap_to_min_win_s
         self.snap_to_min_axis = snap_to_min_axis
@@ -121,7 +122,7 @@ class RothHMM(BaseStrideSegmentation):
         as_df.index.name = "s_id"
         return as_df
 
-    def segment(self: BaseType, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> BaseType:
+    def segment(self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
         """Find matches by predicting a hidden state sequence using a pre-trained Hidden Markov Model.
 
         Parameters
@@ -144,7 +145,7 @@ class RothHMM(BaseStrideSegmentation):
 
         dataset_type = is_sensor_data(data, check_gyr=False, check_acc=False)
 
-        if dataset_type in ("single", "array"):
+        if dataset_type == "single":
             # Single sensor: easy
             (
                 self.matches_start_end_,

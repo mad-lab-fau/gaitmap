@@ -107,6 +107,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
     name: Optional[str]
     model: Optional[pgHMM]
 
+    # TODO: What are those?
     n_states: Optional[int]
     history: Optional[pg.callbacks.History]
 
