@@ -173,8 +173,7 @@ class BaseDtw(BaseAlgorithm):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
             method.
     memory
-        An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes and the peak
-        detection.
+        An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes.
 
     Attributes
     ----------
@@ -272,9 +271,7 @@ class BaseDtw(BaseAlgorithm):
         return np.sqrt(self.acc_cost_mat_[-1, :])
 
     @property
-    def matches_start_end_original_(
-        self,
-    ) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    def matches_start_end_original_(self,) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
         """Return the starts and end directly from the paths.
 
         This will not be effected by potential changes of the postprocessing.
@@ -286,7 +283,7 @@ class BaseDtw(BaseAlgorithm):
 
     def __init__(
         self,
-        template: Optional[Union[DtwTemplate, Dict[_Hashable, DtwTemplate]]] = None,
+        template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
@@ -334,10 +331,7 @@ class BaseDtw(BaseAlgorithm):
         return self
 
     def _segment(
-        self,
-        data: Union[np.ndarray, SensorData],
-        sampling_rate_hz: float,
-        memory: Optional[Memory] = None,
+        self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, memory: Optional[Memory] = None,
     ) -> Dict[str, Any]:
         if not memory:
             memory = Memory(None)
@@ -387,22 +381,23 @@ class BaseDtw(BaseAlgorithm):
         return results
 
     def _segment_single_dataset(
-        self, dataset, template, memory: Memory
+        self, dataset, template: Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]], memory: Memory
     ) -> Dict[str, Union[np.ndarray, List[np.ndarray]]]:
-        if self.resample_template and not template.sampling_rate_hz:
+        template_sampling_rate = getattr(template, "sampling_rate_hz", None)
+        if self.resample_template and not template_sampling_rate:
             raise ValueError(
                 "To resample the template (`resample_template=True`), a `sampling_rate_hz` must be specified for the "
                 "template."
             )
         if (
-            template.sampling_rate_hz
-            and self.sampling_rate_hz != template.sampling_rate_hz
+            template_sampling_rate
+            and self.sampling_rate_hz != template_sampling_rate
             and self.resample_template is False
         ):
             warnings.warn(
                 "The data and template sampling rate are different ({} Hz vs. {} Hz), "
                 "but `resample_template` is False. "
-                "This might lead to unexpected results".format(template.sampling_rate_hz, self.sampling_rate_hz)
+                "This might lead to unexpected results".format(template_sampling_rate, self.sampling_rate_hz)
             )
 
         # Extract the parts of the data that is relevant for matching and apply potential data transforms defined in
@@ -413,8 +408,8 @@ class BaseDtw(BaseAlgorithm):
         # Ensure that all values are floats
         template_array = template_array.astype(float)
         matching_data = matching_data.astype(float)
-        if self.resample_template is True and self.sampling_rate_hz != template.sampling_rate_hz:
-            final_template = self._resample_template(template_array, template.sampling_rate_hz, self.sampling_rate_hz)
+        if self.resample_template is True and self.sampling_rate_hz != template_sampling_rate:
+            final_template = self._resample_template(template_array, template_sampling_rate, self.sampling_rate_hz)
         else:
             final_template = template_array
 
@@ -497,11 +492,7 @@ class BaseDtw(BaseAlgorithm):
 
         This is separate method to make it easy to overwrite by a subclass.
         """
-        return find_matches_method(
-            acc_cost_mat=acc_cost_mat,
-            max_cost=max_cost,
-            min_distance=min_sequence_length,
-        )
+        return find_matches_method(acc_cost_mat=acc_cost_mat, max_cost=max_cost, min_distance=min_sequence_length,)
 
     def _postprocess_matches(
         self,
@@ -583,26 +574,18 @@ class BaseDtw(BaseAlgorithm):
 
     @staticmethod
     def _resample_template(
-        template_array: np.ndarray,
-        template_sampling_rate_hz: float,
-        new_sampling_rate: float,
+        template_array: np.ndarray, template_sampling_rate_hz: float, new_sampling_rate: float,
     ) -> np.ndarray:
         len_template = template_array.shape[0]
         current_x = np.linspace(0, len_template, len_template)
         template = interp1d(current_x, template_array, axis=0)(
-            np.linspace(
-                0,
-                len_template,
-                int(len_template * new_sampling_rate / template_sampling_rate_hz),
-            )
+            np.linspace(0, len_template, int(len_template * new_sampling_rate / template_sampling_rate_hz),)
         )
         return template
 
     @staticmethod
     def _extract_relevant_data_and_template(
-        template: DtwTemplate,
-        data: Union[np.ndarray, pd.DataFrame],
-        sampling_rate_hz: float,
+        template: BaseDtwTemplate, data: Union[np.ndarray, pd.DataFrame], sampling_rate_hz: float,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Get the relevant parts of the data based on the provided template and return template and data as array."""
         template_array = template.get_data()
@@ -673,10 +656,11 @@ class BaseDtw(BaseAlgorithm):
                 "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
             )
 
-    def _calculate_constrains(self, template):
+    def _calculate_constrains(self, template: BaseDtwTemplate):
         _max_template_stretch = self.max_template_stretch_ms
         _max_signal_stretch = self.max_signal_stretch_ms
-        if _max_signal_stretch and template.sampling_rate_hz is None:
+        template_sampling_rate = getattr(template, "sampling_rate_hz", None)
+        if _max_signal_stretch and template_sampling_rate is None:
             raise ValueError(
                 "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
                 "the template."
@@ -688,7 +672,7 @@ class BaseDtw(BaseAlgorithm):
             # Use the correct template sampling rate
             sampling_rate = self.sampling_rate_hz
             if self.resample_template is False:
-                sampling_rate = template.sampling_rate_hz
+                sampling_rate = template_sampling_rate
             _max_template_stretch = np.round(_max_template_stretch / 1000 * sampling_rate)
         if _max_signal_stretch is None:
             _max_signal_stretch = np.inf
