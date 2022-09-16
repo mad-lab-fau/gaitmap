@@ -4,7 +4,7 @@ from typing import Callable, Dict, Optional, Tuple, Union, cast
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, sosfiltfilt
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.event_detection._event_detection_mixin import (
@@ -277,6 +277,6 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
 
 
 def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order: int = 2) -> np.ndarray:
-    numerator, denominator = butter(order, cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False)
-    filtered_data = filtfilt(numerator, denominator, data)
+    designed_filter = butter(N=order, Wn=cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False, output='sos')
+    filtered_data = sosfiltfilt(sos=designed_filter, x=data)
     return filtered_data
