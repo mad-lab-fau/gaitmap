@@ -11,11 +11,9 @@ class FilteredRamppEventDetection(RamppEventDetection):
     """This addition uses a low-pass filter on the ml signal for ic calculation.
 
     Rampp event detection with an additional low-pass Butterworth filter.
-    The filter has an order of 2 and the cut-off frequency of 15Hz.
-    This method is suggested to be used on data containing high frequency noise or artifacts occuring around the ic
+    This method is suggested to be used on data containing high frequency noise or artifacts which occur around the ic
     part of the strides.
     The tc and min velocity are calculated from the original signal.
-    For more information on Rampp event detection please visit the original rampp event detection.
 
     Parameters
     ----------
@@ -31,7 +29,6 @@ class FilteredRamppEventDetection(RamppEventDetection):
     ic_lowpass_filter_parameter
         A tuple including the information required for a low pass filter design in the format of
         (order, cutoff frequency).
-        The original design of the filter has a order of 2 and the cut-off of 15 Hz.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
@@ -66,10 +63,15 @@ class FilteredRamppEventDetection(RamppEventDetection):
         between subsequent strides. That means for subsequent strides the end sample of one stride should be the
         start sample of the next stride.
 
-
     Notes
     ----------------
-    For more and detailed information please visit the Rampp event detection method.
+    Due to attachment gears used for IMUs, the sensor might experience bouncing in the time of the heel strike (IC)
+    which leads to high frequency artifacts in the gyr_ml signal and therefore inaccurate IC detection.
+    Since the created artifacts occur in high frequencies a low-pass filter would be able to remove them.
+    This implementation at the same time removes the high frequency artifacts around the IC by the incorporated filter
+     and detects the events according to Rampp event detection.
+    For more and detailed information regarding the Rampp event detection method.
+    :class:`~gaitmap.event_detection.RamppEventDetection`
     """
 
     ic_lowpass_filter_parameter: FilterParameter
