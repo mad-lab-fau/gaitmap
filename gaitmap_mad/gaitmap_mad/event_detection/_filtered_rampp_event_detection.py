@@ -64,7 +64,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         start sample of the next stride.
 
     Notes
-    ----------------
+    -----
     Due to attachment gears used for IMUs, the sensor might experience bouncing in the time of the heel strike (IC)
     which leads to high frequency artifacts in the gyr_ml signal and therefore inaccurate IC detection.
     Since the created artifacts occur in high frequencies a low-pass filter would be able to remove them.
@@ -72,6 +72,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
      and detects the events according to Rampp event detection.
     For more and detailed information regarding the Rampp event detection method.
     :class:`~gaitmap.event_detection.RamppEventDetection`
+
     """
 
     ic_lowpass_filter_parameter: FilterParameter
