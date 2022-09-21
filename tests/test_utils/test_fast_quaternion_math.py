@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
-from scipy.spatial.transform.rotation import Rotation
+from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.fast_quaternion_math import (
     multiply,
