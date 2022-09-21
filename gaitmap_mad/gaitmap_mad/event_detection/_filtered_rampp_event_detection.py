@@ -69,6 +69,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
     the heel strike (IC) which leads to high frequency artifacts in the gyr_ml signal.
     This can lead to an inaccurate IC detection, as it relies on the identification of extrema in the signal.
     To resolve this issue, this event detection method applies a low-pass filter to remove high frequency artifacts.
+    Note, that the lowpass filter is only used for the IC detection and not the detection of other events.
     Other than that, the implementation is identical to the normal Rampp event detection (
     :class:`~gaitmap.event_detection.RamppEventDetection`).
 
