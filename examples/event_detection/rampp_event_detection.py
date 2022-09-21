@@ -390,4 +390,3 @@ plt.legend(loc="best")
 
 fig.tight_layout()
 fig.show()
-

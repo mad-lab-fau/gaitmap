@@ -10,7 +10,7 @@ from gaitmap.base import BaseEventDetection
 from gaitmap.event_detection._event_detection_mixin import (
     FilterParameter,
     _detect_min_vel_gyr_energy,
-    _EventDetectionMixin
+    _EventDetectionMixin,
 )
 
 
@@ -154,11 +154,11 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     min_vel_search_win_size_ms: float
 
     def __init__(
-            self,
-            ic_search_region_ms: Tuple[float, float] = (80, 50),
-            min_vel_search_win_size_ms: float = 100,
-            memory: Optional[Memory] = None,
-            enforce_consistency: bool = True,
+        self,
+        ic_search_region_ms: Tuple[float, float] = (80, 50),
+        min_vel_search_win_size_ms: float = 100,
+        memory: Optional[Memory] = None,
+        enforce_consistency: bool = True,
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
@@ -189,13 +189,13 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
 
 
 def _find_all_events(
-        gyr: pd.DataFrame,
-        acc: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        ic_search_region: Tuple[float, float],
-        min_vel_search_win_size: int,
-        sampling_rate_hz: float,
-        gyr_ic_lowpass_filter_parameters: Optional[FilterParameter],
+    gyr: pd.DataFrame,
+    acc: pd.DataFrame,
+    stride_list: pd.DataFrame,
+    ic_search_region: Tuple[float, float],
+    min_vel_search_win_size: int,
+    sampling_rate_hz: float,
+    gyr_ic_lowpass_filter_parameters: Optional[FilterParameter],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
@@ -231,7 +231,7 @@ def _find_all_events(
 
 
 def _detect_ic(
-        gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
+    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
     """Find the ic.
 
@@ -251,7 +251,7 @@ def _detect_ic(
     # refined_search_region_start, refined_search_region_end = search_region
     refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)]))
     refined_search_region_end = int(
-        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start: search_region[1]])
+        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start : search_region[1]])
     )
 
     if refined_search_region_end - refined_search_region_start <= 0:
@@ -277,6 +277,6 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
 
 
 def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order: int = 2) -> np.ndarray:
-    designed_filter = butter(N=order, Wn=cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False, output='sos')
+    designed_filter = butter(N=order, Wn=cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False, output="sos")
     filtered_data = sosfiltfilt(sos=designed_filter, x=data)
     return filtered_data
