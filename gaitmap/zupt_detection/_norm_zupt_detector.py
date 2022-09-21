@@ -118,7 +118,10 @@ class NormZuptDetector(BaseZuptDetector):
     @property
     def zupts_(self) -> pd.DataFrame:
         """Get the start and end values of all zupts."""
-        return pd.DataFrame(bool_array_to_start_end_array(self.per_sample_zupts_), columns=["start", "end"])
+        start_ends = bool_array_to_start_end_array(self.per_sample_zupts_)
+        if len(start_ends) > 0:
+            return pd.DataFrame(start_ends, columns=["start", "end"])
+        return pd.DataFrame(columns=["start", "end"])
 
     def detect(self: Self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> Self:
         """Detect all ZUPT regions in the data.
