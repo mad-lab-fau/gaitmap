@@ -8,9 +8,29 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+## [2.1.0]
+
+### Added
+- A new version of the `RamppEventDetection` is added. `FilteredRamppEventDetection` adds a lowpass filter before the 
+  detection of the IC to remove potential high-freq artifacts. 
+
+### Changed
+- When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
+  It does not really speed up things and just leads to dozents of cache writes/reads as the chance of a cache match is 
+  really low.
+- The `zupts_` result of `RtsKalmanFilter` is not a pandas dataframe with `start` and `end` columns instead of a 
+  np.ndarray.
+  The content remains the same.
+
+### Removed
+- The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
+  dedicated ZUPT algorithms.
+  The parameters where deprecated since version 1.5
+
+
 ## [2.0.2] - 2022-08-29
 
-Fixed issues with namedtuple inherantance in Python 3.9.
+Fixed issues with namedtuple inheritance in Python 3.9.
 
 ## [2.0.1] - 2022-07-29
 
@@ -27,7 +47,7 @@ To avoid confusion and signal this change, this is a new major version.
   To use all algorithms as before, you need to explicitly install **both** packages.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/182)
 - For most algorithms, direct import via the full module path is now discouraged.
-  Instead import it via the parent module.
+  Instead, import it via the parent module.
   The individual algorithm files now have a leading `_` to mark them as private.
   Note, some algorithm files do not exist at all anymore at the old path, as they are moved to `gaitmap_mad`.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/182)
