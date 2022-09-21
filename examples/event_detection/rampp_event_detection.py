@@ -4,8 +4,9 @@ r"""
 Rampp event detection
 =====================
 
-This example illustrates how the gait event detection by the :class:`~gaitmap.event_detection.RamppEventDetection`
-can be used to detect gait events within a list of strides and the corresponding IMU signal.
+This example illustrates how the gait event detection by the :class:`~gaitmap.event_detection.RamppEventDetection` or
+:class:`~gaitmap.event_detection.FilteredRamppEventDetection` can be used to detect gait events within a list of strides
+and the corresponding IMU signal.
 The used implementation is based on the work of Rampp et al. [1]_.
 
 .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
@@ -311,4 +312,82 @@ ax1.set_xlim(2700, 4650)
 fig.tight_layout()
 
 plt.legend(loc="upper left")
+fig.show()
+
+# %%
+# Filtered Rampp Event Detection
+# ------------------------------
+# For signals with high frequency noise and artifact the :class:`~gaitmap.event_detection.FilteredRamppEventDetection`
+# can be used.
+# A low pass filter is implemented in this class and is applied on the gyr-ml signal for detecting IC.
+# The IC searches for the "valley" after the swing peak in gyr_ml.
+# The high frequency components near the vally might result in the false detection of IC.
+# For changing the filter parameters a tuple should pass to ic_lowpass_filter_parameter.
+# For this data you don't see a difference.
+# However, when you encounter issues, testing the filtered version might be an option.
+from gaitmap.event_detection import FilteredRamppEventDetection, FilterParameter
+
+edfilt = FilteredRamppEventDetection(ic_lowpass_filter_parameter=FilterParameter(10, 15))
+edfilt = edfilt.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=sampling_rate_hz)
+min_vel_events_left = edfilt.min_vel_event_list_["left_sensor"]
+print("Gait events for {} min_vel strides using the filtered version were detected.".format(len(min_vel_events_left)))
+min_vel_events_left.head()
+segmented_events_left = edfilt.segmented_event_list_["left_sensor"]
+print(
+    "Gait events for {} segmented strides using the filtered version were detected.".format(len(segmented_events_left))
+)
+segmented_events_left.head()
+fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
+ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][["gyr_ml"]])
+ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
+
+ic_idx = edfilt.min_vel_event_list_["left_sensor"]["ic"].to_numpy().astype(int)
+tc_idx = edfilt.min_vel_event_list_["left_sensor"]["tc"].to_numpy().astype(int)
+min_vel_idx = edfilt.min_vel_event_list_["left_sensor"]["min_vel"].to_numpy().astype(int)
+
+for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
+    for i, stride in edfilt.min_vel_event_list_["left_sensor"].iterrows():
+        ax.axvline(stride["start"], color="g")
+        ax.axvline(stride["end"], color="r")
+
+    ax.scatter(
+        ic_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[ic_idx],
+        marker="*",
+        s=100,
+        color="r",
+        zorder=3,
+        label="ic",
+    )
+
+    ax.scatter(
+        tc_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[tc_idx],
+        marker="p",
+        s=50,
+        color="g",
+        zorder=3,
+        label="tc",
+    )
+
+    ax.scatter(
+        min_vel_idx,
+        bf_data["left_sensor"][sensor].to_numpy()[min_vel_idx],
+        marker="s",
+        s=50,
+        color="y",
+        zorder=3,
+        label="min_vel",
+    )
+
+    ax.grid(True)
+
+ax1.set_title("Events of min_vel strides using the LP-filtered version of Rampp")
+ax1.set_ylabel("gyr_ml (°/s)")
+ax2.set_ylabel("acc_pa [m/s^2]")
+ax1.set_xlim(3600, 7200)
+# ax1.set_xlim(1150, 1850)
+plt.legend(loc="best")
+
+fig.tight_layout()
 fig.show()

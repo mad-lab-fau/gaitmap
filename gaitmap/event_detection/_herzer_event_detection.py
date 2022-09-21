@@ -1,5 +1,5 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
-from typing import Callable, Dict, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -7,14 +7,11 @@ from joblib import Memory
 from scipy import signal
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
-
-
-class FilterParameter(NamedTuple):
-    """NamedTuple representing filter parameter."""
-
-    order: int
-    cutoff_hz: float
+from gaitmap.event_detection._event_detection_mixin import (
+    FilterParameter,
+    _detect_min_vel_gyr_energy,
+    _EventDetectionMixin,
+)
 
 
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):

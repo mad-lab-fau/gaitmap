@@ -119,12 +119,16 @@ def test_spatial_parameters(snapshot):
 
 
 def test_rampp_event_detection(snapshot):
-    from examples.event_detection.rampp_event_detection import ed
+    from examples.event_detection.rampp_event_detection import ed, edfilt
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"])
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"])
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], name="left")
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right")
+
+    # For this simple case the results should be identical
+    assert_frame_equal(ed.min_vel_event_list_["left_sensor"], edfilt.min_vel_event_list_["left_sensor"])
+    assert_frame_equal(ed.min_vel_event_list_["right_sensor"], edfilt.min_vel_event_list_["right_sensor"])
 
 
 def test_herzer_event_detection(snapshot):

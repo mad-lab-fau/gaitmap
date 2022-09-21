@@ -4,9 +4,14 @@ from typing import Callable, Dict, Optional, Tuple, Union, cast
 import numpy as np
 import pandas as pd
 from joblib import Memory
+from scipy.signal import butter, sosfiltfilt
 
 from gaitmap.base import BaseEventDetection
-from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
+from gaitmap.event_detection._event_detection_mixin import (
+    FilterParameter,
+    _detect_min_vel_gyr_energy,
+    _EventDetectionMixin,
+)
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
@@ -175,7 +180,12 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
                 "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
-        return {"ic_search_region": ic_search_region, "min_vel_search_win_size": min_vel_search_win_size}
+        return {
+            "ic_search_region": ic_search_region,
+            "min_vel_search_win_size": min_vel_search_win_size,
+            "sampling_rate_hz": self.sampling_rate_hz,
+            "gyr_ic_lowpass_filter_parameters": None,
+        }
 
 
 def _find_all_events(
@@ -184,9 +194,18 @@ def _find_all_events(
     stride_list: pd.DataFrame,
     ic_search_region: Tuple[float, float],
     min_vel_search_win_size: int,
+    sampling_rate_hz: float,
+    gyr_ic_lowpass_filter_parameters: Optional[FilterParameter],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
+    if gyr_ic_lowpass_filter_parameters is not None:
+        order, cutoff_hz = gyr_ic_lowpass_filter_parameters
+        gyr_ml_filtered = _low_pass_filter(
+            data=gyr_ml, sampling_rate_hz=sampling_rate_hz, cutoff_frequency=cutoff_hz, order=order
+        )
+    else:
+        gyr_ml_filtered = gyr_ml
     gyr = gyr.to_numpy()
     acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
     ic_events = []
@@ -197,9 +216,10 @@ def _find_all_events(
         end = stride["end"]
         gyr_sec = gyr[start:end]
         gyr_ml_sec = gyr_ml[start:end]
+        gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
-        ic_events.append(start + _detect_ic(gyr_ml_sec, acc_sec, gyr_grad, ic_search_region))
+        ic_events.append(start + _detect_ic(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
         tc_events.append(start + _detect_tc(gyr_ml_sec))
         min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
@@ -254,3 +274,9 @@ def _detect_tc(gyr_ml: np.ndarray) -> float:
         return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
     except IndexError:
         return np.nan
+
+
+def _low_pass_filter(data: np.array, sampling_rate_hz: float, cutoff_frequency: float, order: int = 2) -> np.ndarray:
+    designed_filter = butter(N=order, Wn=cutoff_frequency, fs=sampling_rate_hz, btype="low", analog=False, output="sos")
+    filtered_data = sosfiltfilt(sos=designed_filter, x=data)
+    return filtered_data

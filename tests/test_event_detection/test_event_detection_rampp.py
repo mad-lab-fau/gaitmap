@@ -43,13 +43,15 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 class TestEventDetectionRampp:
     """Test the event detection by Rampp."""
 
+    algorithm_class = RamppEventDetection
+
     def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
         """Dummy test to see if the algorithm is generally working on the example data"""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         ed.detect(data, healthy_example_stride_borders, 204.8)
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
@@ -67,7 +69,7 @@ class TestEventDetectionRampp:
         def mock_func(event_list, *args, **kwargs):
             return event_list, None
 
-        ed = RamppEventDetection(enforce_consistency=var1)
+        ed = self.algorithm_class(enforce_consistency=var1)
         with patch(
             "gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func
         ) as mock:
@@ -84,7 +86,7 @@ class TestEventDetectionRampp:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
 
-        ed = RamppEventDetection(enforce_consistency=enforce_consistency)
+        ed = self.algorithm_class(enforce_consistency=enforce_consistency)
         ed.detect(data_left, stride_list_left, 204.8)
 
         assert hasattr(ed, "min_vel_event_list_") == output
@@ -102,7 +104,7 @@ class TestEventDetectionRampp:
             dict_keys[1]: healthy_example_stride_borders["right_sensor"],
         }
 
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         ed.detect(data_dict, stride_list_dict, 204.8)
 
         assert list(datatype_helper.get_multi_sensor_names(ed.min_vel_event_list_)) == dict_keys
@@ -114,7 +116,7 @@ class TestEventDetectionRampp:
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        ed_df = RamppEventDetection()
+        ed_df = self.algorithm_class()
         ed_df.detect(data, healthy_example_stride_borders, 204.8)
 
         dict_keys = ["l", "r"]
@@ -124,7 +126,7 @@ class TestEventDetectionRampp:
             dict_keys[1]: healthy_example_stride_borders["right_sensor"],
         }
 
-        ed_dict = RamppEventDetection()
+        ed_dict = self.algorithm_class()
         ed_dict.detect(data_dict, stride_list_dict, 204.8)
 
         assert_frame_equal(ed_df.min_vel_event_list_["left_sensor"], ed_dict.min_vel_event_list_["l"])
@@ -133,7 +135,7 @@ class TestEventDetectionRampp:
     def test_valid_input_data(self, healthy_example_stride_borders):
         """Test if error is raised correctly on invalid input data type"""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         with pytest.raises(ValidationError) as e:
             ed.detect(data, healthy_example_stride_borders, 204.8)
 
@@ -150,7 +152,7 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
-        ed = RamppEventDetection(min_vel_search_win_size_ms=5000)
+        ed = self.algorithm_class(min_vel_search_win_size_ms=5000)
         with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is *"):
             ed.detect(data_left, stride_list_left, 204.8)
 
@@ -159,7 +161,7 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
-        ed = RamppEventDetection(ic_search_region_ms=(1, 1))
+        ed = self.algorithm_class(ic_search_region_ms=(1, 1))
         with pytest.raises(ValueError):
             ed.detect(data_left, stride_list_left, 204.8)
 
@@ -169,7 +171,7 @@ class TestEventDetectionRampp:
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         ed.detect(data_left, stride_list_left, 204.8)
         # per default min_vel_event_list_ has 6 columns
         assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 6)
@@ -183,7 +185,7 @@ class TestEventDetectionRampp:
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         # switch s_ids in stride list to random numbers
         stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         ed.detect(data_left, stride_list_left, 204.8)
 
         # Check that all of the old stride ids are still in the new one
@@ -203,7 +205,7 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
@@ -212,7 +214,7 @@ class TestEventDetectionRampp:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
-        ed = RamppEventDetection()
+        ed = self.algorithm_class()
         with pytest.raises(ValidationError):
             ed.detect(data_left, 204.8, stride_list_left)
 
