@@ -14,7 +14,7 @@ from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
-from gaitmap_mad.stride_segmentation._dtw_templates import BaseDtwTemplate, DtwTemplate
+from gaitmap_mad.stride_segmentation._dtw_templates import BaseDtwTemplate
 from gaitmap_mad.stride_segmentation._vendored_tslearn import (
     _local_squared_dist,
     subsequence_cost_matrix,
