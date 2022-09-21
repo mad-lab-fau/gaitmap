@@ -65,13 +65,16 @@ class FilteredRamppEventDetection(RamppEventDetection):
 
     Notes
     -----
-    Due to attachment gears used for IMUs, the sensor might experience bouncing in the time of the heel strike (IC)
-    which leads to high frequency artifacts in the gyr_ml signal and therefore inaccurate IC detection.
-    Since the created artifacts occur in high frequencies a low-pass filter would be able to remove them.
-    This implementation at the same time removes the high frequency artifacts around the IC by the incorporated filter
-     and detects the events according to Rampp event detection.
-    For more and detailed information regarding the Rampp event detection method.
-    :class:`~gaitmap.event_detection.RamppEventDetection`
+    Due to attachment methods used for foot-worn IMUs, the sensor might experience bounce and vibrate at the time of
+    the heel strike (IC) which leads to high frequency artifacts in the gyr_ml signal.
+    This can lead to an inaccurate IC detection, as it relies on the identification of extrema in the signal.
+    To resolve this issue, this event detection method applies a low-pass filter to remove high frequency artifacts.
+    Other than that, the implementation is identical to the normal Rampp event detection (
+    :class:`~gaitmap.event_detection.RamppEventDetection`).
+
+    .. [1] Rampp, A., Barth, J., Schülein, S., Gaßmann, K. G., Klucken, J., & Eskofier, B. M. (2014). Inertial
+       sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
+       biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
 
     """
 
