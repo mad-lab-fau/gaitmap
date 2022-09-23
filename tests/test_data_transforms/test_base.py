@@ -71,7 +71,7 @@ class TestGroupedTransformer:
         t = GroupedTransformer(
             transformer_mapping=[("b", FixedScaler(3)), ("a", FixedScaler(2))], keep_all_cols=keep_all_cols
         )
-        t.transform(data)
+        make_action_safe(t.transform)(t, data)
 
         assert id(t.data) == id(data)
         assert_frame_equal(t.transformed_data_[["a"]], data[["a"]] / 2)
@@ -110,7 +110,7 @@ class TestGroupedTransformer:
         t = GroupedTransformer(
             [("a", TrainableAbsMaxScaler()), ("b", TrainableAbsMaxScaler()), ("c", TrainableAbsMaxScaler())]
         )
-        t.self_optimize([train_data])
+        make_optimize_safe(t.self_optimize)(t, [train_data])
 
         # Train results
         for (_, tr), val in zip(t.transformer_mapping, scale_vals):
