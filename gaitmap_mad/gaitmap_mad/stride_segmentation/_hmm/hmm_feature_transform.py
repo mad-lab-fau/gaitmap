@@ -9,28 +9,9 @@ from scipy import signal
 from sklearn import preprocessing
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.data_transform import ButterworthFilter
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
-
-
-def butterwoth_lowpass(
-    data: Union[pd.DataFrame, np.ndarray], fs: float, fc: float, order: int
-) -> Union[pd.DataFrame, np.ndarray]:
-    """Apply Butterworth Lowpass filter on array or DataFrame."""
-    w = fc / (fs / 2)  # Normalize the frequency
-    # TODO: Switch to SOS and simplify
-    b, a = signal.butter(order, w, "low")
-
-    if fc >= fs:
-        warnings.warn("Filter cutoff frequency is >= sampling frequency! Low-pass filter action will be skipped!")
-        return data
-    if isinstance(data, np.ndarray):
-        data_filtered = signal.filtfilt(b, a, data, axis=0)
-    if isinstance(data, pd.DataFrame):
-        data_filtered = signal.filtfilt(b, a, data.to_numpy(), axis=0)
-        data_filtered = pd.DataFrame(data_filtered, columns=data.columns, index=data.index)
-
-    return data_filtered
 
 
 def decimate(data: Union[pd.DataFrame, np.ndarray], downsampling_factor: int) -> Union[pd.DataFrame, np.ndarray]:
@@ -56,7 +37,7 @@ def decimate(data: Union[pd.DataFrame, np.ndarray], downsampling_factor: int) ->
 
 def preprocess(dataset, fs, fc, filter_order, downsample_factor):
     """Preprocess dataset."""
-    dataset_preprocessed = butterwoth_lowpass(dataset, fs, fc, filter_order)
+    dataset_preprocessed = ButterworthFilter(filter_order, fc).filter(dataset, sampling_rate_hz=fs).filtered_data_
     dataset_preprocessed = decimate(dataset_preprocessed, downsample_factor)
     return dataset_preprocessed
 
