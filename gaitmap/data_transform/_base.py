@@ -1,4 +1,5 @@
 from copy import copy
+from functools import reduce
 from typing import Sequence, Optional, List, Tuple, Union, Set
 
 import pandas as pd
@@ -40,13 +41,15 @@ class BaseTransformer(BaseAlgorithm):
 class TrainableTransformerMixin:
     """Mixin for transformers with adaptable parameters."""
 
-    def self_optimize(self, data: Sequence[SingleSensorData], **_) -> Self:
+    def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
         """Learn the parameters of the transformer based on provided data.
 
         Parameters
         ----------
         data
            A sequence of dataframes, each representing single-sensor data.
+        kwargs
+            Optional keword arguments
 
         Returns
         -------
@@ -202,6 +205,80 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]):  # noqa: no-self-use
         if not set(data.columns).issuperset(selected_cols):
             raise ValueError("You specified transformations for columns that do not exist. This is not supported!")
+
+
+class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
+    """Apply a series of transformations to the input."""
+
+    transformer_chain: OptimizableParameter[Sequence[Union[BaseTransformer, TrainableTransformerMixin]]]
+
+    def __init__(self, transformer_chain: Sequence[Union[BaseTransformer, TrainableTransformerMixin]]):
+        self.transformer_chain = transformer_chain
+
+    def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
+        """Optimize the chained transformers.
+
+        Note, that each transformer only gets the transformed output of the previous trained transformer in the chain.
+
+        Basically, training works as follows:
+
+        1. Optimize transformer 1
+        2. Transform data using optimized transformer 1
+        3. Optimize transformer 2 with transformed data after transformer 1
+        4. ...
+
+        Parameters
+        ----------
+        kwargs
+            All kwargs will be passed to **all** transformers `self_optimize` and `transform` methods called in the
+            process.
+
+        """
+        data = self.data
+        optimized_transformers = []
+
+        for transformer in self.transformer_chain:
+            if isinstance(transformer, TrainableTransformerMixin):
+                transformer = transformer.self_optimize(data, **kwargs)
+            optimized_transformers.append(transformer.clone())
+            data = [transformer.transform(d, **kwargs).transformed_data_ for d in data]
+
+        self.transformer_chain = optimized_transformers
+        return self
+
+    def transform(self, data: SingleSensorData, **kwargs) -> Self:
+        self.transformed_data_ = reduce(lambda t, d: t.transform(d, **kwargs), self.transformer_chain, data)
+        return self
+
+
+class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
+    """Apply multiple different transformation to the input, resulting in multiple outputs.
+
+    Note, all outputs of all transformers must have the same second dimension, so that they can all be combined into
+    a single dataframe.
+    """
+
+    transformers: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
+
+    def __init__(self, transformers: List[Tuple[_Hashable, BaseTransformer]]):
+        self.transformers = transformers
+
+    def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
+        optimized_transformers = []
+        for transformer in self.transformers:
+            if isinstance(transformer, TrainableTransformerMixin):
+                transformer = transformer.self_optimize(data, **kwargs)
+            optimized_transformers.append(transformer.clone())
+
+        self.transformers = optimized_transformers
+        return self
+
+    def transform(self, data: SingleSensorData, **kwargs) -> Self:
+        transformed_data = {k: t.transform(data, **kwargs) for k, t in self.transformers}
+        combined_results = pd.concat(transformed_data)
+        combined_results.columns = [f"{a}__{b}" for a, b in combined_results.columns]
+        self.transformed_data_ = combined_results
+        return self
 
 
 class IdentityTransformer(BaseTransformer):
