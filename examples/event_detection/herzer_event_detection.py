@@ -84,12 +84,11 @@ segmented_events_left.head()
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import signal
 
 # calculate the filtered signal:
 acc_pa_low = ed.ic_lowpass_filter.filter(
     bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"], sampling_rate_hz=sampling_rate_hz
-).filtered_signal_
+).filtered_data_
 acc_pa_der = np.diff(acc_pa_low)
 
 fig, axs = plt.subplots(4, sharex=True, figsize=(10, 8))
@@ -157,23 +156,11 @@ for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
     )
 
     ax.scatter(
-        ic_idx,
-        bf_data["left_sensor"][sensor].to_numpy()[ic_idx],
-        marker="*",
-        s=100,
-        color="r",
-        zorder=3,
-        label="ic",
+        ic_idx, bf_data["left_sensor"][sensor].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
     )
 
     ax.scatter(
-        tc_idx,
-        bf_data["left_sensor"][sensor].to_numpy()[tc_idx],
-        marker="p",
-        s=50,
-        color="g",
-        zorder=3,
-        label="tc",
+        tc_idx, bf_data["left_sensor"][sensor].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
     )
 
     ax.scatter(
@@ -204,14 +191,11 @@ fig.show()
 # Thus, the dropped first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
 # the first stride in the `min_vel_event_list_`.
 # Therefore, the `min_vel_event_list_` list has one stride less than the `segmented_event_list_`.
-from gaitmap.event_detection import HerzerEventDetection
 
 ed2 = HerzerEventDetection()
 segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
 ed2.detect(
-    data=bf_data["left_sensor"],
-    sampling_rate_hz=sampling_rate_hz,
-    stride_list=segmented_stride_list,
+    data=bf_data["left_sensor"], sampling_rate_hz=sampling_rate_hz, stride_list=segmented_stride_list,
 )
 
 fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
@@ -247,23 +231,11 @@ ax2.scatter(
 )
 
 ax2.scatter(
-    ic_idx,
-    bf_data["left_sensor"][sensor_axis].to_numpy()[ic_idx],
-    marker="*",
-    s=100,
-    color="r",
-    zorder=3,
-    label="ic",
+    ic_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[ic_idx], marker="*", s=100, color="r", zorder=3, label="ic",
 )
 
 ax2.scatter(
-    tc_idx,
-    bf_data["left_sensor"][sensor_axis].to_numpy()[tc_idx],
-    marker="p",
-    s=50,
-    color="g",
-    zorder=3,
-    label="tc",
+    tc_idx, bf_data["left_sensor"][sensor_axis].to_numpy()[tc_idx], marker="p", s=50, color="g", zorder=3, label="tc",
 )
 
 ax2.scatter(

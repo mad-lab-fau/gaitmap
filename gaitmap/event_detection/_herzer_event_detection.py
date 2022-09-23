@@ -328,7 +328,7 @@ def _detect_ic(
     # Low pass filter acc_pa to remove sharp peaks and get the overall shape of the signal.
     # The swing acceleration peak is now clearly distinguishable from the IC peak, because the latter is too high
     # frequency.
-    acc_pa_inv_filt = lowpass_filter.filter(acc_pa_inv, sampling_rate_hz=sampling_rate_hz).filtered_signal_
+    acc_pa_inv_filt = lowpass_filter.filter(acc_pa_inv, sampling_rate_hz=sampling_rate_hz).filtered_data_
     try:
         # maximum of acc_pa signal after mid swing gyro peak, before gyro derivative max
         refined_search_region_start = int(
