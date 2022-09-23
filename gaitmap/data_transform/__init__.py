@@ -24,6 +24,7 @@ __all__ = [
     "TrainableAbsMaxScaler",
     "StandardScaler",
     "TrainableStandardScaler",
+    "TrainableTransformerMixin",
     "BaseTransformer",
     "BaseFilter",
     "ButterworthFilter",
