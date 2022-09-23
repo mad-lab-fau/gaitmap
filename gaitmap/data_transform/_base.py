@@ -1,14 +1,14 @@
 from copy import copy
 from functools import reduce
-from typing import Sequence, Optional, List, Tuple, Union, Set
+from typing import List, Optional, Sequence, Set, Tuple, Union
 
 import pandas as pd
 from tpcp import OptimizableParameter, PureParameter, make_action_safe
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
-from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap.utils._types import _Hashable
+from gaitmap.utils.datatype_helper import SingleSensorData
 
 
 class BaseTransformer(BaseAlgorithm):

@@ -7,12 +7,14 @@ from gaitmap.base import BaseType
 from gaitmap.data_transform import (
     AbsMaxScaler,
     FixedScaler,
+    GroupedTransformer,
+    IdentityTransformer,
     MinMaxScaler,
     StandardScaler,
     TrainableAbsMaxScaler,
     TrainableMinMaxScaler,
     TrainableStandardScaler,
-    TrainableTransformerMixin, GroupedTransformer, IdentityTransformer
+    TrainableTransformerMixin,
 )
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
