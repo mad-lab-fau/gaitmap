@@ -11,13 +11,16 @@ from gaitmap.data_transform import (
     TrainableAbsMaxScaler,
     TrainableMinMaxScaler,
     TrainableTransformerMixin,
+    ChainedTransformer,
+    ParallelTransformer,
 )
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 all_base_transformer = [
-    TrainableMinMaxScaler,
     GroupedTransformer,
+    ChainedTransformer,
+    ParallelTransformer,
     IdentityTransformer,
 ]
 
@@ -29,11 +32,22 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     def set_algo_class(self, request):
         self.algorithm_class = request.param
 
+    def test_empty_init(self):
+        pytest.skip()
+
+
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseTransformer:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:10]
         data_left.columns = BF_COLS
-        instance = self.algorithm_class()
+        if self.algorithm_class is GroupedTransformer:
+            instance = self.algorithm_class([(tuple(BF_COLS), IdentityTransformer())])
+        elif self.algorithm_class is ChainedTransformer:
+            instance = self.algorithm_class([IdentityTransformer()])
+        elif self.algorithm_class is ParallelTransformer:
+            instance = self.algorithm_class([("a", IdentityTransformer())])
+        else:
+            instance = self.algorithm_class()
         if isinstance(instance, TrainableTransformerMixin):
             instance = instance.self_optimize([data_left])
         after_instance = instance.transform(data_left)

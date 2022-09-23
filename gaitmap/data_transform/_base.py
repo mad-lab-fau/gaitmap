@@ -88,7 +88,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     """
 
     transformer_mapping: OptimizableParameter[
-        Optional[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]]
+        List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
     ]
     keep_all_cols: PureParameter[bool]
 
@@ -96,7 +96,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     def __init__(
         self,
-        transformer_mapping: Optional[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]] = None,
+        transformer_mapping: List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]],
         keep_all_cols: bool = True,
     ):
         self.transformer_mapping = transformer_mapping
@@ -233,7 +233,6 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
             process.
 
         """
-        data = self.data
         optimized_transformers = []
 
         for transformer in self.transformer_chain:
@@ -246,7 +245,8 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
-        self.transformed_data_ = reduce(lambda t, d: t.clone().transform(d, **kwargs), self.transformer_chain, data)
+        self.data = data
+        self.transformed_data_ = reduce(lambda d, t: t.clone().transform(d, **kwargs), self.transformer_chain, data)
         return self
 
 
@@ -264,15 +264,16 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
         optimized_transformers = []
-        for transformer in self.transformers:
+        for name, transformer in self.transformers:
             if isinstance(transformer, TrainableTransformerMixin):
                 transformer = transformer.self_optimize(data, **kwargs)
-            optimized_transformers.append(transformer.clone())
+            optimized_transformers.append((name, transformer.clone()))
 
         self.transformers = optimized_transformers
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
+        self.data = data
         transformed_data = {k: t.clone().transform(data, **kwargs).transformed_data_ for k, t in self.transformers}
         combined_results = pd.concat(transformed_data, axis=1)
         combined_results.columns = [f"{a}__{b}" for a, b in combined_results.columns]

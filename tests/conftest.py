@@ -61,15 +61,23 @@ def compare_algo_objects(a, b):
 
     for p, value in parameters.items():
         json_val = b_parameters[p]
-        if isinstance(value, np.ndarray):
-            assert_array_equal(value, json_val)
-        elif isinstance(value, (tuple, list)):
-            assert list(value) == list(json_val)
-        elif isinstance(value, Rotation):
-            assert_array_equal(value.as_quat(), json_val.as_quat())
-        elif isinstance(value, pd.DataFrame):
-            assert_frame_equal(value, json_val, check_dtype=False)
-        elif isinstance(value, pd.Series):
-            assert_series_equal(value, json_val)
-        else:
-            assert value == json_val, p
+        compare_val(value, json_val, p)
+
+
+def compare_val(value, json_val, name):
+    if isinstance(value, BaseTpcpObject):
+        compare_algo_objects(value, json_val)
+    elif isinstance(value, np.ndarray):
+        assert_array_equal(value, json_val)
+    elif isinstance(value, (tuple, list)):
+        assert len(value) == len(json_val)
+        for i, (v, j) in enumerate(zip(value, json_val)):
+            compare_val(v, j, f"{name}_{i}")
+    elif isinstance(value, Rotation):
+        assert_array_equal(value.as_quat(), json_val.as_quat())
+    elif isinstance(value, pd.DataFrame):
+        assert_frame_equal(value, json_val, check_dtype=False)
+    elif isinstance(value, pd.Series):
+        assert_series_equal(value, json_val)
+    else:
+        assert value == json_val, name
