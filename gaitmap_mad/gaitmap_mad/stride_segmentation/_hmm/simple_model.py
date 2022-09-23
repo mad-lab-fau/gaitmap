@@ -16,6 +16,7 @@ from gaitmap_mad.stride_segmentation._hmm.utils import (
     gmms_from_samples,
 )
 
+# TODO: Make this configurable
 N_JOBS = 1
 
 
@@ -149,6 +150,7 @@ def train_hmm(
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
     algo_train (str)
+        # TODO: labeled shouldn't work right?
         algorithm for training, can be "viterbi", "baum-welch" or "labeled"
     stop_threshold (float)
         termination criteria for training improvement e.g. 1e-9
@@ -195,6 +197,7 @@ class SimpleHMM(_BaseSerializable):
     TBD
 
     """
+
     _action_methods = ("predict_hidden_state_sequence",)
 
     n_states: Optional[int]
@@ -243,7 +246,9 @@ class SimpleHMM(_BaseSerializable):
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
         if not np.array(feature_data).data.c_contiguous:
-            raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
+            raise ValueError(
+                "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
+            )
 
         labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
@@ -291,7 +296,7 @@ class SimpleHMM(_BaseSerializable):
             name=self.name + "-trained",
             verbose=self.verbose,
         )
-
+        # TODO: Find a solution on where to store additional opti results
         self.history_ = history
         self.model = model_trained
 

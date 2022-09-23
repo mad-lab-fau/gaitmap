@@ -58,7 +58,7 @@ stride_list = get_healthy_example_stride_borders()
 # Here we define the feature space in which model training and later prediction will take place. You can choose
 # different axis and or feature combinations as well as downsampling, filter and standardization steps. The following
 # example has proofed to work well in most cases.
-from gaitmap.future.hmm.hmm_feature_transform import FeatureTransformHMM
+from gaitmap.stride_segmentation.hmm_feature_transform import FeatureTransformHMM
 
 feature_transform = FeatureTransformHMM(
     sampling_rate_feature_space_hz=51.2,
