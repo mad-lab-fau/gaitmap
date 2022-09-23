@@ -43,9 +43,9 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         mid-swing.
         The detected mid-swing peak is used to define the search region for the IC
     ic_lowpass_filter
-        The parameters for the lowpass filter applied to the acc_pa signal before calculating the derivative when
-        detecting the ic point.
-        This should be a tuple with the values `(order, cutoff_hz)` for the internal butterworth filter.
+        An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
+        applied to the acc_pa signal before calculating the derivative when detecting the IC.
+        While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency

@@ -175,10 +175,3 @@ def _detect_min_vel_gyr_energy(gyr: np.ndarray, min_vel_search_win_size: int) ->
     # min_vel event = middle of this window
     min_vel_center = min_vel_start + min_vel_search_win_size // 2
     return min_vel_center
-
-
-class FilterParameter(NamedTuple):
-    """NamedTuple representing filter parameter."""
-
-    order: int
-    cutoff_hz: float

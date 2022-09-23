@@ -28,8 +28,9 @@ class FilteredRamppEventDetection(RamppEventDetection):
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     ic_lowpass_filter
-        A tuple including the information required for a low pass filter design in the format of
-        (order, cutoff frequency).
+        An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
+        applied to the gyr_ml data before the IC is detected.
+        While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
