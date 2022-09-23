@@ -9,36 +9,16 @@ from scipy import signal
 from sklearn import preprocessing
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.data_transform import ButterworthFilter
+from gaitmap.data_transform import ButterworthFilter, Decimate
 from gaitmap.utils.array_handling import sliding_window_view
 from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
 
-
-def decimate(data: Union[pd.DataFrame, np.ndarray], downsampling_factor: int) -> Union[pd.DataFrame, np.ndarray]:
-    """Apply FFT based decimation / downsampling on array or DataFrame."""
-    if downsampling_factor <= 1:
-        warnings.warn("Downsampling factor <= 1! Downsampling action will be skipped!")
-        return data
-
-    if isinstance(data, np.ndarray):
-        data_decimated = signal.decimate(data, downsampling_factor, n=None, ftype="iir", axis=0, zero_phase=True)
-    if isinstance(data, pd.DataFrame):
-        data_decimated = signal.decimate(
-            data.to_numpy(),
-            downsampling_factor,
-            n=None,
-            ftype="iir",
-            axis=0,
-            zero_phase=True,
-        )
-        data_decimated = pd.DataFrame(data_decimated, columns=data.columns)
-    return data_decimated
 
 
 def preprocess(dataset, fs, fc, filter_order, downsample_factor):
     """Preprocess dataset."""
     dataset_preprocessed = ButterworthFilter(filter_order, fc).filter(dataset, sampling_rate_hz=fs).filtered_data_
-    dataset_preprocessed = decimate(dataset_preprocessed, downsample_factor)
+    dataset_preprocessed = Decimate(downsample_factor).transform(dataset_preprocessed).transformed_data_
     return dataset_preprocessed
 
 
