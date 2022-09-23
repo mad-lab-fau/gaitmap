@@ -7,7 +7,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.data_transform import FixedScaler, IdentityTransformer, TrainableTransformerMixin
+from gaitmap.data_transform import FixedScaler, TrainableTransformerMixin, IdentityTransformer
 from gaitmap.stride_segmentation import BarthOriginalTemplate, DtwTemplate, InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import compare_algo_objects

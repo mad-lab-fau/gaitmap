@@ -5,7 +5,7 @@ import numpy as np
 from tpcp import OptimizableParameter, Parameter
 from typing_extensions import Self
 
-from data_transform import BaseTransformer, TrainableTransformerMixin
+from gaitmap.data_transform._base import BaseTransformer, TrainableTransformerMixin
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, is_single_sensor_data
 
 

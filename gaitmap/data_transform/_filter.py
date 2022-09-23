@@ -1,13 +1,18 @@
-from typing import Union, Tuple, Self, Optional, Literal
+from typing import Union, Tuple, Optional, Literal
 
 from scipy.signal import butter, sosfiltfilt
+from typing_extensions import Self
 
-from data_transform import BaseTransformer
-from utils.datatype_helper import SingleSensorData
+from gaitmap.data_transform._base import BaseTransformer
+from gaitmap.utils.datatype_helper import SingleSensorData
 
 
 class BaseFilter(BaseTransformer):
     _action_methods = (*BaseTransformer._action_methods, "filter")
+
+    @property
+    def filtered_signal_(self) -> SingleSensorData:
+        return self.transformed_data_
 
     def filter(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs):
         """Filter the data.
@@ -20,6 +25,7 @@ class BaseFilter(BaseTransformer):
 
 class ButterworthFilter(BaseFilter):
     """Apply a forward-backward (filtfilt) butterworth filter using the transformer interface."""
+
     order: int
     cutoff_freq_hz: Union[float, Tuple[float, float]]
     filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"]
