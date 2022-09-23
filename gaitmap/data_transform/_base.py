@@ -207,7 +207,36 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
 
 class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
-    """Apply a series of transformations to the input."""
+    """Apply a series of transformations to the input.
+
+    Data will be passed from one transformer to the next and the final data result will be returned.
+
+    ... note :: During optimization, each transformer  gets the transformed output of the previous trained
+                transformer in the chain and not the raw original data.
+
+                Basically, training works as follows:
+
+                1. Optimize transformer 1
+                2. Transform data using optimized transformer 1
+                3. Optimize transformer 2 with transformed data after transformer 1
+                4. ...
+
+    Parameters
+    ----------
+    transformer_chain
+        A list of transformers that should be applied to the data in sequence.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
+    """
 
     transformer_chain: OptimizableParameter[Sequence[Union[BaseTransformer, TrainableTransformerMixin]]]
 
@@ -217,20 +246,18 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
         """Optimize the chained transformers.
 
-        Note, that each transformer only gets the transformed output of the previous trained transformer in the chain.
-
-        Basically, training works as follows:
-
-        1. Optimize transformer 1
-        2. Transform data using optimized transformer 1
-        3. Optimize transformer 2 with transformed data after transformer 1
-        4. ...
-
         Parameters
         ----------
+        data
+            The data to be transformed
         kwargs
             All kwargs will be passed to **all** transformers `self_optimize` and `transform` methods called in the
             process.
+
+        Returns
+        -------
+        self
+            The trained instance of the transformer
 
         """
         optimized_transformers = []
@@ -245,6 +272,21 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
+        """Transform the data.
+
+        All transformers in the chain will be called in order and the result of the final transformer will be
+        attached to `self.transformed_data_`
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+        """
         self.data = data
         self.transformed_data_ = reduce(lambda d, t: t.clone().transform(d, **kwargs), self.transformer_chain, data)
         return self
@@ -253,8 +295,27 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
 class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
     """Apply multiple different transformation to the input, resulting in multiple outputs.
 
+    Each transformer is expected to output a Dataframe with one or more columns.
     Note, all outputs of all transformers must have the same second dimension, so that they can all be combined into
     a single dataframe.
+
+    Parameters
+    ----------
+    transformers
+        A list of tuples of the form (name, transformer) that specify the transformers that should be applied.
+        The name is used as a prefix (`{name}__`) for the output columns of the transformers to avoid duplicated
+        column names in the output when multiple transformers return the same output names.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+
     """
 
     transformers: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
@@ -263,6 +324,22 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         self.transformers = transformers
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
+        """Optimize all transformer.
+
+        Each transformer's `self_optimize` method will be called individually with the data.
+
+        Parameters
+        ----------
+        data
+            The data to be transformed
+        kwargs
+            All kwargs will be passed to **all** transformers `self_optimize` methods
+
+        Returns
+        -------
+        self
+            The trained instance of the transformer
+        """
         optimized_transformers = []
         for name, transformer in self.transformers:
             if isinstance(transformer, TrainableTransformerMixin):
@@ -273,6 +350,21 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
+        """Transform the data.
+
+        The results of all transformations will be concatenated into one dataframe.
+
+        Parameters
+        ----------
+        data
+            A dataframe representing single sensor data.
+
+        Returns
+        -------
+        self
+            The instance of the transformer with the results attached
+
+        """
         self.data = data
         transformed_data = {k: t.clone().transform(data, **kwargs).transformed_data_ for k, t in self.transformers}
         combined_results = pd.concat(transformed_data, axis=1)
