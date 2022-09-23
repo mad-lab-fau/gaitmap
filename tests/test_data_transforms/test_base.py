@@ -14,7 +14,7 @@ from gaitmap.data_transform import (
 from gaitmap.utils.consts import BF_COLS
 from mixins.test_algorithm_mixin import TestAlgorithmMixin
 
-all_scaler = [
+all_base_transformer = [
     TrainableMinMaxScaler,
     GroupedTransformer,
     IdentityTransformer,
@@ -24,7 +24,7 @@ all_scaler = [
 class TestMetaFunctionality(TestAlgorithmMixin):
     __test__ = True
 
-    @pytest.fixture(params=all_scaler, autouse=True)
+    @pytest.fixture(params=all_base_transformer, autouse=True)
     def set_algo_class(self, request):
         self.algorithm_class = request.param
 
