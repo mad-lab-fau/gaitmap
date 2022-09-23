@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from mixins.test_algorithm_mixin import TestAlgorithmMixin
 from pandas._testing import assert_frame_equal
 
-from gaitmap.base import BaseType
 from gaitmap.data_transform import (
     BaseTransformer,
     FixedScaler,
@@ -15,6 +13,7 @@ from gaitmap.data_transform import (
     TrainableTransformerMixin,
 )
 from gaitmap.utils.consts import BF_COLS
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 all_base_transformer = [
     TrainableMinMaxScaler,

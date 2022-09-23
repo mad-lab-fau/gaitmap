@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from numpy.testing import assert_equal
 from scipy.signal import butter, sosfiltfilt
 
