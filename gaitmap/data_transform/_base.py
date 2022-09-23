@@ -146,7 +146,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         self.transformer_mapping = trained_transformers
         return self
 
-    @make_action_safe
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
         """Transform all data columns based on the selected transformers.
 
