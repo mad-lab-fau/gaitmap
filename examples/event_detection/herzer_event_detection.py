@@ -87,8 +87,9 @@ import numpy as np
 from scipy import signal
 
 # calculate the filtered signal:
-sos = signal.butter(*ed.ic_lowpass_filter_parameter, btype="low", output="sos", fs=sampling_rate_hz)
-acc_pa_low = signal.sosfiltfilt(sos, bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"])
+acc_pa_low = ed.ic_lowpass_filter.filter(
+    bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"], sampling_rate_hz=sampling_rate_hz
+).filtered_signal_
 acc_pa_der = np.diff(acc_pa_low)
 
 fig, axs = plt.subplots(4, sharex=True, figsize=(10, 8))

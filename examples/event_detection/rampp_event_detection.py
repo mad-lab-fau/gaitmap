@@ -13,7 +13,6 @@ The used implementation is based on the work of Rampp et al. [1]_.
    sensor-based stride parameter calculation from gait sequences in geriatric patients. IEEE transactions on
    biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
 """
-
 # %%
 # Getting some example data
 # -------------------------
@@ -314,6 +313,8 @@ fig.tight_layout()
 plt.legend(loc="upper left")
 fig.show()
 
+from gaitmap.data_transform import ButterworthFilter
+
 # %%
 # Filtered Rampp Event Detection
 # ------------------------------
@@ -322,12 +323,12 @@ fig.show()
 # A low pass filter is implemented in this class and is applied on the gyr-ml signal for detecting IC.
 # The IC searches for the "valley" after the swing peak in gyr_ml.
 # The high frequency components near the vally might result in the false detection of IC.
-# For changing the filter parameters a tuple should pass to ic_lowpass_filter_parameter.
+# For changing the filter parameters a tuple should pass to ic_lowpass_filter.
 # For this data you don't see a difference.
 # However, when you encounter issues, testing the filtered version might be an option.
-from gaitmap.event_detection import FilteredRamppEventDetection, FilterParameter
+from gaitmap.event_detection import FilteredRamppEventDetection
 
-edfilt = FilteredRamppEventDetection(ic_lowpass_filter_parameter=FilterParameter(10, 15))
+edfilt = FilteredRamppEventDetection(ic_lowpass_filter=ButterworthFilter(10, 15))
 edfilt = edfilt.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=sampling_rate_hz)
 min_vel_events_left = edfilt.min_vel_event_list_["left_sensor"]
 print("Gait events for {} min_vel strides using the filtered version were detected.".format(len(min_vel_events_left)))

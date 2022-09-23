@@ -2,6 +2,7 @@ import pytest
 from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
+from gaitmap.data_transform import ButterworthFilter
 from gaitmap.event_detection import FilteredRamppEventDetection, RamppEventDetection
 from gaitmap.utils import coordinate_conversion
 from gaitmap.utils.consts import BF_COLS
@@ -54,9 +55,10 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
+        filter = ButterworthFilter(*filter_paras)
 
-        ed = self.algorithm_class(ic_lowpass_filter_parameter=filter_paras)
+        ed = self.algorithm_class(ic_lowpass_filter=filter)
         ed.detect(data, healthy_example_stride_borders, 204.8)
 
-        assert ed._get_detect_kwargs()["gyr_ic_lowpass_filter_parameters"] == filter_paras
+        assert ed._get_detect_kwargs()["gyr_ic_lowpass_filter"] == filter
         assert ed._get_detect_kwargs()["sampling_rate_hz"] == 204.8
