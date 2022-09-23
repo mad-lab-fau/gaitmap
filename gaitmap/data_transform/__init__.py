@@ -1,4 +1,5 @@
 """Classes representing data transformations as preprocessing for different algorithms."""
+from gaitmap.data_transform._filter import ButterworthFilter, BaseFilter
 from gaitmap.data_transform._scaler import (
     AbsMaxScaler,
     FixedScaler,
@@ -8,7 +9,12 @@ from gaitmap.data_transform._scaler import (
     TrainableMinMaxScaler,
     TrainableStandardScaler,
 )
-from data_transform._base import BaseTransformer, TrainableTransformerMixin, GroupedTransformer, IdentityTransformer
+from gaitmap.data_transform._base import (
+    BaseTransformer,
+    TrainableTransformerMixin,
+    GroupedTransformer,
+    IdentityTransformer,
+)
 
 __all__ = [
     "TrainableMinMaxScaler",
@@ -18,4 +24,6 @@ __all__ = [
     "TrainableAbsMaxScaler",
     "StandardScaler",
     "TrainableStandardScaler",
+    "BaseFilter",
+    "ButterworthFilter"
 ]

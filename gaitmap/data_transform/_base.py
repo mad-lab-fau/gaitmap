@@ -4,12 +4,11 @@ from typing import Sequence, Optional, List, Tuple, Union, Set
 
 import pandas as pd
 from tpcp import OptimizableParameter, PureParameter, make_action_safe
-
 from typing_extensions import Self
 
-from base import BaseAlgorithm
-from utils._types import _Hashable
-from utils.datatype_helper import SingleSensorData
+from gaitmap.base import BaseAlgorithm
+from gaitmap.utils.datatype_helper import SingleSensorData
+from gaitmap.utils._types import _Hashable
 
 
 class BaseTransformer(BaseAlgorithm):
