@@ -176,13 +176,14 @@ class RothHMM(BaseStrideSegmentation):
     def _segment_single_dataset(self, dataset, sampling_rate_hz):
         """Perform Stride Segmentation for a single dataset."""
         # tranform dataset to required feature space as defined by the given model parameters
-        feature_data = self.model.feature_transform.transform(dataset, sampling_rate_hz)
+        model = self.model.clone()
+        feature_data = model.feature_transform.transform(dataset, sampling_rate_hz=sampling_rate_hz).transformed_data_
 
-        hidden_state_sequence = self.model.predict_hidden_state_sequence(feature_data)
+        hidden_state_sequence = model.predict_hidden_state_sequence(feature_data)
 
         # tranform prediction back to original sampling rate!
         downsample_factor = int(
-            np.round(sampling_rate_hz / self.model.feature_transform.sampling_rate_feature_space_hz)
+            np.round(sampling_rate_hz / model.feature_transform.sampling_rate_feature_space_hz)
         )
         hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
 

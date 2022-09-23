@@ -12,6 +12,7 @@ The used implementation is based on the work of Roth et al [1]_
    Hidden Markov Model based Stride Segmentation on Unsupervised Free-living Gait Data in Parkinson’s Disease Patients.
    Journal of NeuroEngineering and Rehabilitation, (JNER).
 """
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
