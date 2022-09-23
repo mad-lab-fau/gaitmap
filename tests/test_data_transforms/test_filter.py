@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from numpy.testing import assert_equal
 from scipy.signal import butter, sosfiltfilt
 
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap.utils.consts import BF_COLS
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
 class TestButterworthMetaFunctionality(TestAlgorithmMixin):

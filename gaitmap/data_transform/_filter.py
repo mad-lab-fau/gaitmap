@@ -16,7 +16,7 @@ class BaseFilter(BaseTransformer):
 
     @property
     def filtered_data_(self) -> SingleSensorData:
-        """The filtered data.
+        """Get filtered data.
 
         This is the same as `transformed_data_` and is just here, as it is easier to remember.
         """

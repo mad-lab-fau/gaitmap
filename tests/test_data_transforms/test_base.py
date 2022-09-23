@@ -5,14 +5,14 @@ from pandas._testing import assert_frame_equal
 
 from gaitmap.data_transform import (
     BaseTransformer,
+    ChainedTransformer,
     FixedScaler,
     GroupedTransformer,
     IdentityTransformer,
+    ParallelTransformer,
     TrainableAbsMaxScaler,
     TrainableMinMaxScaler,
     TrainableTransformerMixin,
-    ChainedTransformer,
-    ParallelTransformer,
 )
 from gaitmap.utils.consts import BF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -34,7 +34,6 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
     def test_empty_init(self):
         pytest.skip()
-
 
     @pytest.fixture()
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseTransformer:

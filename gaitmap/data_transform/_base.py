@@ -1,6 +1,7 @@
+"""Basic transformers for higher level functionality."""
 from copy import copy
 from functools import reduce
-from typing import List, Optional, Sequence, Set, Tuple, Union
+from typing import List, Sequence, Set, Tuple, Union
 
 import pandas as pd
 from tpcp import OptimizableParameter, PureParameter, make_action_safe
@@ -87,9 +88,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     """
 
-    transformer_mapping: OptimizableParameter[
-        List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]
-    ]
+    transformer_mapping: OptimizableParameter[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]]
     keep_all_cols: PureParameter[bool]
 
     data: SingleSensorData
@@ -286,6 +285,7 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
         -------
         self
             The instance of the transformer with the results attached
+
         """
         self.data = data
         self.transformed_data_ = reduce(lambda d, t: t.clone().transform(d, **kwargs), self.transformer_chain, data)
@@ -339,6 +339,7 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         -------
         self
             The trained instance of the transformer
+
         """
         optimized_transformers = []
         for name, transformer in self.transformers:
