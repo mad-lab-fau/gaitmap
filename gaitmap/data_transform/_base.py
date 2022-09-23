@@ -4,7 +4,7 @@ from functools import reduce
 from typing import List, Sequence, Set, Tuple, Union
 
 import pandas as pd
-from tpcp import OptimizableParameter, PureParameter, make_action_safe
+from tpcp import OptimizableParameter, PureParameter
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
@@ -128,7 +128,8 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
                 "All transformers must be different objects when trying to optimize them. "
                 "At least two transformer instances point to the same object. "
                 "This can cause unexpected results. "
-                "Make sure each transformer is a separate instance of a transformer class."
+                "Make sure each transformer is a separate instance of a transformer class. "
+                "You can use `clone` to duplicate an instance."
             )
 
         mapped_cols = self._validate_mapping()
@@ -252,8 +253,18 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
-        optimized_transformers = []
+        transformer_ids = [id(t) for t in self.transformer_chain]
 
+        if len(set(transformer_ids)) != len(transformer_ids):
+            raise ValueError(
+                "All transformers must be different objects when trying to optimize them. "
+                "At least two transformer instances point to the same object. "
+                "This can cause unexpected results. "
+                "Make sure each transformer is a separate instance of a transformer class. "
+                "You can use `clone` to duplicate an instance."
+            )
+
+        optimized_transformers = []
         for transformer in self.transformer_chain:
             if isinstance(transformer, TrainableTransformerMixin):
                 transformer = transformer.self_optimize(data, **kwargs)
@@ -336,6 +347,34 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
+        transformer_ids = [id(t[1]) for t in self.transformers]
+
+        if len(set(transformer_ids)) != len(transformer_ids):
+            raise ValueError(
+                "All transformers must be different objects when trying to optimize them. "
+                "At least two transformer instances point to the same object. "
+                "This can cause unexpected results. "
+                "Make sure each transformer is a separate instance of a transformer class. "
+                "You can use `clone` to duplicate an instance."
+            )
+
+        # We validate the mapping to raise better error messages
+        message = "All items of the transformer list must be tuples of the shape (name, transformer_instance). "
+        for k in self.transformers:
+            if (not isinstance(k, tuple)) or (not len(k) == 2):
+                raise ValueError(f"{message}\n Got `{k}`")
+            if not isinstance(k[1], BaseTransformer):
+                raise ValueError(
+                    f"{message}\n However, in `{k}` the second value is not a transformer instance. "
+                    f"Got {type(k[1])}"
+                )
+            try:
+                str(k[0])
+            except Exception as e:
+                raise ValueError(
+                    f"{message}\n However, in `{k}` the name is not convertible to a string (see error above)"
+                ) from e
+
         optimized_transformers = []
         for name, transformer in self.transformers:
             if isinstance(transformer, TrainableTransformerMixin):
