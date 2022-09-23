@@ -247,7 +247,7 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
-        self.transformed_data_ = reduce(lambda t, d: t.transform(d, **kwargs), self.transformer_chain, data)
+        self.transformed_data_ = reduce(lambda t, d: t.clone().transform(d, **kwargs), self.transformer_chain, data)
         return self
 
 
@@ -274,8 +274,8 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
-        transformed_data = {k: t.transform(data, **kwargs) for k, t in self.transformers}
-        combined_results = pd.concat(transformed_data)
+        transformed_data = {k: t.clone().transform(data, **kwargs).transformed_data_ for k, t in self.transformers}
+        combined_results = pd.concat(transformed_data, axis=1)
         combined_results.columns = [f"{a}__{b}" for a, b in combined_results.columns]
         self.transformed_data_ = combined_results
         return self
