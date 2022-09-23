@@ -1,8 +1,11 @@
+from itertools import product
+
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_equal
 from pandas._testing import assert_frame_equal
-from tpcp import make_optimize_safe, make_action_safe
+from tpcp import make_action_safe, make_optimize_safe
 
 from gaitmap.data_transform import (
     BaseTransformer,
@@ -145,3 +148,52 @@ class TestChainedTransformer:
         t.transform(data)
 
         assert_frame_equal(t.transformed_data_, data / 5)
+
+    def test_error_when_transformer_not_unique(self):
+        scaler = FixedScaler(3)
+        t = ChainedTransformer([scaler, scaler])
+        with pytest.raises(ValueError):
+            t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
+
+
+class TestParallelTransformer:
+    def test_simple_parallel(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
+        t = ParallelTransformer([("x", FixedScaler(2)), ("y", FixedScaler(3))])
+
+        make_action_safe(t.transform)(t, data)
+
+        assert id(t.data) == id(data)
+        assert t.transformed_data_.shape == (len(data), data.shape[1] * len(t.transformers))
+        assert set(t.transformed_data_.columns) == set(f"{p}__{a}" for p, a in product(list("xy"), data.columns))
+
+        assert_equal(t.transformed_data_.filter(like="x__").to_numpy(), data.to_numpy() / 2)
+        assert_equal(t.transformed_data_.filter(like="y__").to_numpy(), data.to_numpy() / 3)
+
+    def test_with_optimization(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
+        train_data = pd.DataFrame(np.ones((10, 3)), columns=list("abc")) * 5
+        # Both scaler are trained independently and should learn the same thing.
+        t = ParallelTransformer([("x", TrainableAbsMaxScaler()), ("y", TrainableAbsMaxScaler())])
+        make_optimize_safe(t.self_optimize)(t, [train_data])
+
+        # Train results
+        assert t.transformers[0][1].data_max == 5
+        assert t.transformers[1][1].data_max == 5
+
+        t.transform(data)
+
+        assert_equal(t.transformed_data_.filter(like="x__").to_numpy(), data.to_numpy() / 5)
+        assert_equal(t.transformed_data_.filter(like="y__").to_numpy(), data.to_numpy() / 5)
+
+    def test_error_when_transformer_not_unique(self):
+        scaler = FixedScaler(3)
+        t = ParallelTransformer([("b", scaler), ("a", scaler)])
+        with pytest.raises(ValueError):
+            t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
+
+    @pytest.mark.parametrize("transformer", (["bla"], [("x", FixedScaler()), ("x", 3)]))
+    def test_invalid_transformer_mappings(self, transformer):
+        t = ParallelTransformer(transformer)
+        with pytest.raises(ValueError):
+            t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
