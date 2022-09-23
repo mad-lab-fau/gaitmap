@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas._testing import assert_frame_equal
+from tpcp import make_optimize_safe, make_action_safe
 
 from gaitmap.data_transform import (
     BaseTransformer,
@@ -11,7 +12,6 @@ from gaitmap.data_transform import (
     IdentityTransformer,
     ParallelTransformer,
     TrainableAbsMaxScaler,
-    TrainableMinMaxScaler,
     TrainableTransformerMixin,
 )
 from gaitmap.utils.consts import BF_COLS
@@ -62,40 +62,6 @@ class TestIdentityTransformer:
         assert_frame_equal(t.transformed_data_, data)
         assert id(t.data) == id(data)
         assert id(t.transformed_data_) != id(data)
-
-
-class TestTrainableMinMaxScaler:
-    @pytest.mark.parametrize("out_range", [(0, 1), (0, 2), (-1, 1), (-1, 2)])
-    def test_transform(self, out_range):
-        t = TrainableMinMaxScaler(out_range=out_range)
-        train_data = pd.DataFrame(np.random.rand(10, 10))
-        test_data = pd.DataFrame(np.random.rand(10, 10))
-        t.self_optimize([train_data])
-
-        # Train results
-        assert t.data_range == (train_data.to_numpy().min(), train_data.to_numpy().max())
-
-        # On train data
-        t.transform(train_data)
-        assert id(t.data) == id(train_data)
-        assert t.transformed_data_.to_numpy().min() == pytest.approx(out_range[0], rel=1e-3)
-        assert t.transformed_data_.to_numpy().max() == pytest.approx(out_range[1], rel=1e-3)
-
-        # On test data
-        t.transform(test_data)
-        assert id(t.data) == id(test_data)
-        assert_frame_equal(
-            t.transformed_data_,
-            (test_data - train_data.to_numpy().min())
-            / (train_data.to_numpy().max() - train_data.to_numpy().min())
-            * (out_range[1] - out_range[0])
-            + out_range[0],
-        )
-
-    def test_raise_error_before_optimization(self):
-        t = TrainableMinMaxScaler()
-        with pytest.raises(ValueError):
-            t.transform(pd.DataFrame(np.random.rand(10, 10)))
 
 
 class TestGroupedTransformer:
@@ -154,12 +120,28 @@ class TestGroupedTransformer:
 
         assert_frame_equal(t.transformed_data_, data / np.array(scale_vals))
 
-    def test_none_transformer(self):
-        t = GroupedTransformer(None)
-        data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
-        t.self_optimize([data])
-        t.transform(data)
+
+class TestChainedTransformer:
+    def test_simple_chaining(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=list("abc")) * 2
+        t = ChainedTransformer(transformer_chain=[FixedScaler(3, 1), FixedScaler(2)])
+        make_action_safe(t.transform)(t, data)
 
         assert id(t.data) == id(data)
-        assert id(t.transformed_data_) != id(data)
-        assert_frame_equal(t.transformed_data_, data)
+        assert_frame_equal(t.transformed_data_, (data - 1) / 3 / 2)
+
+    def test_chaining_with_training(self):
+        data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
+        train_data = pd.DataFrame(np.ones((10, 3)), columns=list("abc")) * 5
+        # The first scaler is expected to learn the original data scale (5), the second scaler is ecpected to learn
+        # the output of the first (3)
+        t = ChainedTransformer([TrainableAbsMaxScaler(out_max=3), TrainableAbsMaxScaler()])
+        make_optimize_safe(t.self_optimize)(t, [train_data])
+
+        # Train results
+        assert t.transformer_chain[0].data_max == 5
+        assert t.transformer_chain[1].data_max == 3
+
+        t.transform(data)
+
+        assert_frame_equal(t.transformed_data_, data / 5)
