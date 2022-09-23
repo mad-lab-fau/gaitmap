@@ -170,3 +170,37 @@ class TestMinMaxScaler:
         t = MinMaxScaler(out_range=out_range)
         with pytest.raises(ValueError):
             t.transform(data)
+
+
+class TestTrainableMinMaxScaler:
+    @pytest.mark.parametrize("out_range", [(0, 1), (0, 2), (-1, 1), (-1, 2)])
+    def test_transform(self, out_range):
+        t = TrainableMinMaxScaler(out_range=out_range)
+        train_data = pd.DataFrame(np.random.rand(10, 10))
+        test_data = pd.DataFrame(np.random.rand(10, 10))
+        t.self_optimize([train_data])
+
+        # Train results
+        assert t.data_range == (train_data.to_numpy().min(), train_data.to_numpy().max())
+
+        # On train data
+        t.transform(train_data)
+        assert id(t.data) == id(train_data)
+        assert t.transformed_data_.to_numpy().min() == pytest.approx(out_range[0], rel=1e-3)
+        assert t.transformed_data_.to_numpy().max() == pytest.approx(out_range[1], rel=1e-3)
+
+        # On test data
+        t.transform(test_data)
+        assert id(t.data) == id(test_data)
+        assert_frame_equal(
+            t.transformed_data_,
+            (test_data - train_data.to_numpy().min())
+            / (train_data.to_numpy().max() - train_data.to_numpy().min())
+            * (out_range[1] - out_range[0])
+            + out_range[0],
+        )
+
+    def test_raise_error_before_optimization(self):
+        t = TrainableMinMaxScaler()
+        with pytest.raises(ValueError):
+            t.transform(pd.DataFrame(np.random.rand(10, 10)))

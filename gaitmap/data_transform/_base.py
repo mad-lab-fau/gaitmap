@@ -120,9 +120,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
-        if self.transformer_mapping is None:
-            return self
-
         # Check that all transformers are individual objects and not the same object multiple times
         transformer_ids = [id(k[1]) for k in self.transformer_mapping]
 
@@ -165,9 +162,6 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
         """
         self.data = data
-        if self.transformer_mapping is None:
-            self.transformed_data_ = copy(data)
-            return self
         mapped_cols = self._validate_mapping()
         self._validate(data, mapped_cols)
         results = []
@@ -288,7 +282,9 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
 
         """
         self.data = data
-        self.transformed_data_ = reduce(lambda d, t: t.clone().transform(d, **kwargs), self.transformer_chain, data)
+        self.transformed_data_ = reduce(
+            lambda d, t: t.clone().transform(d, **kwargs).transformed_data_, self.transformer_chain, data
+        )
         return self
 
 
