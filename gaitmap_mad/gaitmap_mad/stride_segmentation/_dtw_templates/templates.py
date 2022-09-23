@@ -8,8 +8,7 @@ from tpcp import HyperParameter, OptimizableParameter, cf
 from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
-from gaitmap.data_transform import FixedScaler
-from data_transform import BaseTransformer, TrainableTransformerMixin
+from gaitmap.data_transform import FixedScaler, BaseTransformer, TrainableTransformerMixin
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import multi_array_interpolation
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
