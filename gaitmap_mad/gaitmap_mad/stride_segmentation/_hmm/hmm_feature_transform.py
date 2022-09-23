@@ -1,177 +1,29 @@
 """Feature transformation class for HMM."""
-import warnings
-from typing import List, Optional, Union
+from typing import List, Optional
 
-import numpy as np
 import pandas as pd
-from numpy.polynomial import polynomial
-from scipy import signal
 from sklearn import preprocessing
 
-from gaitmap.base import _BaseSerializable
-from gaitmap.data_transform import ButterworthFilter, Decimate
-from gaitmap.utils.array_handling import sliding_window_view
+from gaitmap.data_transform import (
+    ButterworthFilter,
+    Decimate,
+    ChainedTransformer,
+    ParallelTransformer,
+    IdentityTransformer, BaseTransformer, SlidingWindowGradient,
+)
 from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
 
-
-
-def preprocess(dataset, fs, fc, filter_order, downsample_factor):
-    """Preprocess dataset."""
-    dataset_preprocessed = ButterworthFilter(filter_order, fc).filter(dataset, sampling_rate_hz=fs).filtered_data_
-    dataset_preprocessed = Decimate(downsample_factor).transform(dataset_preprocessed).transformed_data_
-    return dataset_preprocessed
-
-
-def centered_window_view(arr, window_size_samples, pad_value=0.0):
-    """Create a centered window view by zero-padding data before applying sliding window."""
-    if not window_size_samples % 2:
-        raise ValueError("Window size must be odd for centered windows, but is %d" % window_size_samples)
-    pad_length = int(np.floor(window_size_samples / 2))
-
-    if arr.ndim == 1:
-        arr = np.pad(arr.astype(float), (pad_length, pad_length), constant_values=pad_value)
-    else:
-        arr = np.pad(arr.astype(float), [(pad_length, pad_length), (0, 0)], constant_values=pad_value)
-
-    return sliding_window_view(arr, window_size_samples, window_size_samples - 1)
-
-
-def sliding_window_gradient(data, window_size_samples):
-    """Extract sliding window based linear gradient fit as feature vector."""
-    window_view = centered_window_view(data, window_size_samples)
-    gradient = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 1) for w in window_view])[:, -1]
-    return pd.DataFrame(gradient, columns=["gradient"])
-
-
-def sliding_window_polyfit2(data, window_size_samples):
-    """Extract sliding window based 2nd order polynomial fit as feature vector."""
-    window_view = centered_window_view(data, window_size_samples)
-    poly_coefs = np.asarray([polynomial.polyfit(np.arange(window_size_samples), w, 2) for w in window_view])
-    return pd.DataFrame(poly_coefs, columns=["polyfit2_a", "polyfit2_b", "polyfit2_c"])
-
-
-def sliding_window_mean(data, window_size_samples):
-    """Extract sliding window based mean as feature vector."""
-    return pd.DataFrame(data, columns=["mean"]).rolling(window_size_samples, min_periods=1, center=True).mean()
-
-
-def sliding_window_var(data, window_size_samples):
-    """Extract sliding window based variance as feature vector."""
-    return pd.DataFrame(data, columns=["var"]).rolling(window_size_samples, min_periods=1, center=True).var()
-
-
-def sliding_window_std(data, window_size_samples):
-    """Extract sliding window based standard deviation as feature vector."""
-    return pd.DataFrame(data, columns=["std"]).rolling(window_size_samples, min_periods=1, center=True).std()
-
-
-def sliding_window_raw(data):
-    """Extract raw data as feature vector."""
-    return pd.DataFrame(data, columns=["raw"])
-
-
-_FEATURE_FUNCTIONS = {
-    "gradient": sliding_window_gradient,
-    "polyfit2": sliding_window_polyfit2,
-    "mean": sliding_window_mean,
-    "std": sliding_window_std,
-    "var": sliding_window_var,
-    "raw": sliding_window_raw,
+_feature_map = {
+    "raw": lambda win_size: IdentityTransformer(), "gradient": lambda win_size: SlidingWindowGradient(win_size)
 }
 
 
-def calculate_features_for_axis(data, window_size_samples, features, standardization=False):
-    """Calculate feature matrix on a single sensor axis.
-
-    For feature calculation a centered sliding window with shift of one sample per window is used.
-
-    Available features are:
-    - 'raw': raw data itself or "raw data point of window center"
-    - 'gradient': first order poly fit = gradient of linear fit within window
-    - 'std': standard deviation of each window
-    - 'var': variance of each window
-    - 'mean': mean of each window
-    - 'polyfit2' : 2nd order polynomial fit for each window
-    """
-    feature_matrix_df = pd.DataFrame()
-
-    if not isinstance(features, list):
-        features = [features]
-
-    for feature in features:
-        method = _FEATURE_FUNCTIONS[feature]
-        if feature == "raw":
-            feature_matrix_df = pd.concat([feature_matrix_df, method(data)], axis=1)
-        else:
-            feature_matrix_df = pd.concat([feature_matrix_df, method(data, window_size_samples)], axis=1)
-
-    if standardization:
-        feature_matrix_df = pd.DataFrame(preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns)
-
-    return feature_matrix_df
-
-
-def _calculate_features_single_dataset(dataset, axis, features, window_size_samples, standardization):
-    if not isinstance(axis, list):
-        axis = [axis]
-
-    axis_feature_dict = {}
-
-    # TODO: Add a check if the requested axis are actually within the given dataset
-    for ax in axis:
-        # extract features from data
-        feature_axis = calculate_features_for_axis(
-            dataset[ax].to_numpy(),
-            window_size_samples,
-            features,
-            standardization,
-        )
-        axis_feature_dict[ax] = feature_axis
-
-    return pd.concat(axis_feature_dict, axis=1)
-
-
-def calculate_features(dataset, axis, features, window_size_samples, standardization=False):
-    """Calculate features on given gaitmap definition dataset.
-
-    data_set: pd.DataFrame
-        multisensor dataset in gaitmap bodyframe convention
-
-    Returns
-    -------
-    feature_dataset: pd.DataFrame
-        multicolumn dataset with each column being a calculated feature
-
-    schema of a possible returned pd.DataFrame with 3-level header
-        1.-level: sensor
-        2.-level: axis
-        3.-level: feature
-
-        left_sensor                     right_sensor
-        acc_pa          gyr_ml          acc_pa         gyr_ml
-        raw     var     raw     var     raw    var     raw      var
-        0.1     0.1     0.1     0.1     0.1     0.1     0.1     0.1
-        0.1     0.1     0.1     0.1     0.1     0.1     0.1     0.1
-        0.1     0.1     0.1     0.1     0.1     0.1     0.1     0.1
-
-    """
-    if is_sensor_data(dataset, check_gyr=False, check_acc=False) == "single":
-        return _calculate_features_single_dataset(dataset, axis, features, window_size_samples, standardization)
-
-    feature_dict = {}
-    for sensor_name in np.unique(dataset.columns.get_level_values(0)):
-        feature_dict[sensor_name] = _calculate_features_single_dataset(
-            dataset[sensor_name], axis, features, window_size_samples, standardization
-        )
-    return pd.concat(feature_dict, axis=1)
-
-
-class FeatureTransformHMM(_BaseSerializable):
+class FeatureTransformHMM(BaseTransformer):
     """Wrap all required information to train a new HMM.
 
     Parameters
     ----------
-    sampling_rate_hz_model
+    sampling_rate_feature_space_hz
         The sampling rate of the data the model was trained with
     low_pass_cutoff_hz
         Cutoff frequency of low-pass filter for preprocessing
@@ -181,7 +33,7 @@ class FeatureTransformHMM(_BaseSerializable):
         List of sensor axis which will be used as model input
     features
         List of features which will be used as model input
-    window_size_samples
+    window_size_s
         window size of moving centered window for feature extraction
     standardization
         Flag for feature standardization /  z-score normalization
@@ -191,7 +43,7 @@ class FeatureTransformHMM(_BaseSerializable):
     TBD
 
     """
-
+    # TODO: Find a way to expose the internal objects instead of exposing just parameters.
     sampling_rate_feature_space_hz: Optional[float]
     low_pass_cutoff_hz: Optional[float]
     low_pass_order: Optional[int]
@@ -200,15 +52,17 @@ class FeatureTransformHMM(_BaseSerializable):
     window_size_s: Optional[int]
     standardization: Optional[bool]
 
+    sampling_rate_hz: float
+
     def __init__(
-        self,
-        sampling_rate_feature_space_hz: Optional[float] = None,
-        low_pass_cutoff_hz: Optional[float] = None,
-        low_pass_order: Optional[int] = None,
-        axis: Optional[List[str]] = None,
-        features: Optional[List[str]] = None,
-        window_size_s: Optional[int] = None,
-        standardization: Optional[bool] = None,
+            self,
+            sampling_rate_feature_space_hz: Optional[float] = None,
+            low_pass_cutoff_hz: Optional[float] = None,
+            low_pass_order: Optional[int] = None,
+            axis: Optional[List[str]] = None,
+            features: Optional[List[str]] = None,
+            window_size_s: Optional[int] = None,
+            standardization: Optional[bool] = None,
     ):
         self.sampling_rate_feature_space_hz = sampling_rate_feature_space_hz
         self.low_pass_cutoff_hz = low_pass_cutoff_hz
@@ -218,31 +72,34 @@ class FeatureTransformHMM(_BaseSerializable):
         self.window_size_s = window_size_s
         self.standardization = standardization
 
-    def _transform_single_dataset(self, dataset, sampling_rate_hz):
+    def transform(self, data, *, sampling_rate_hz=None):
         """Perform Feature Transformation for a single dataset."""
-        is_sensor_data(dataset, check_acc=True, check_gyr=True, frame="body")
+        self.sampling_rate_hz = sampling_rate_hz
+        self.data = data
+        if sampling_rate_hz is None:
+            raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
-        downsample_factor = int(np.round(sampling_rate_hz / self.sampling_rate_feature_space_hz))
-        dataset = preprocess(dataset, sampling_rate_hz, self.low_pass_cutoff_hz, self.low_pass_order, downsample_factor)
+        preprocessor = ChainedTransformer(
+            [
+                ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz),
+                Decimate(self.sampling_rate_feature_space_hz),
+            ]
+        )
+        preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
 
-        window_size_samples = int(np.round(self.window_size_s * self.sampling_rate_feature_space_hz))
-        # window size must be odd for centered windows
-        if window_size_samples % 2 == 0:
-            window_size_samples = window_size_samples + 1
+        dataset = preprocessor.transformed_data_
 
-        return calculate_features(dataset, self.axis, self.features, window_size_samples, self.standardization)
+        # All Feature transformers we use work on multiple axis at once.
+        # This means, we can just extract the axis we want and throw the result the transformers all at once.
+        downsampled_dataset = dataset[self.axis]
+        feature_calculator = ParallelTransformer([(k, _feature_map[k](self.window_size_s)) for k in self.features])
+        # Note we need the sampling rate of the downsampled dataset here
+        feature_matrix_df = feature_calculator.transform(
+            downsampled_dataset, sampling_rate_hz=self.sampling_rate_feature_space_hz
+        ).transformed_data_
+        if self.standardization:
+            feature_matrix_df = pd.DataFrame(preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns)
 
-    def transform(self, dataset, sampling_rate_hz):
-        """Perform a feature transformation according the given model requirements."""
-        dataset_type = is_sensor_data(dataset, check_gyr=False, check_acc=False)
+        self.transformed_data_ = feature_matrix_df
 
-        if dataset_type in ("single", "array"):
-            # Single template single sensor: easy
-            return self._transform_single_dataset(dataset, sampling_rate_hz)
-
-        # Multisensor
-        feature_transformed_dataset = dict()
-        for sensor in get_multi_sensor_names(dataset):
-            feature_transformed_dataset[sensor] = self._transform_single_dataset(dataset[sensor], sampling_rate_hz)
-
-        return feature_transformed_dataset
+        return self

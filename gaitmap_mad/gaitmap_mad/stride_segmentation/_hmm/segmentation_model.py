@@ -85,7 +85,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
         List of sensor axis which will be used as model input
     features
         List of features which will be used as model input
-    window_size_samples
+    window_size_s
         window size of moving centered window for feature extraction
     standardization
         Flag for feature standardization /  z-score normalization
@@ -173,7 +173,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
             raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
 
         data_sequence_feature_space = [
-            self.feature_transform.transform(dataset, sampling_frequency_hz) for dataset in data_sequence
+            self.feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz) for dataset in data_sequence
         ]
 
         stride_list_feature_space = None
@@ -337,5 +337,5 @@ class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
         # try to load models
         with open_text("gaitmap_mad.stride_segmentation._hmm._pre_trained_models", model_file_name) as test_data:
             with open(test_data.name) as f:
-                model_json = json.load(f)
+                model_json = f.read()
         return SimpleSegmentationHMM.from_json(model_json)

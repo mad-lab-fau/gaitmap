@@ -57,7 +57,7 @@ class _CustomEncoder(json.JSONEncoder):
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
         if isinstance(o, HiddenMarkovModel):
-            return dict(_obj_type="HiddenMarkovModel", hmm=o.to_json())
+            return dict(_obj_type="HiddenMarkovModel", hmm=json.loads(o.to_json()))
         if o is tpcp.NOTHING:
             return dict(_obj_type="EmptyDefault")
         if isinstance(o, Memory):
@@ -84,7 +84,7 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "HiddenMarkovModel":
-            return HiddenMarkovModel.from_json(json_obj["hmm"])
+            return HiddenMarkovModel.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
         if json_obj["_obj_type"] == "Tuple":
