@@ -3,7 +3,7 @@ from gaitmap.data_transform._base import (
     BaseTransformer,
     GroupedTransformer,
     IdentityTransformer,
-    TrainableTransformerMixin,
+    TrainableTransformerMixin, ChainedTransformer, ParallelTransformer,
 )
 from gaitmap.data_transform._filter import BaseFilter, ButterworthFilter
 from gaitmap.data_transform._scaler import (
@@ -26,6 +26,9 @@ __all__ = [
     "TrainableStandardScaler",
     "TrainableTransformerMixin",
     "BaseTransformer",
+    "IdentityTransformer",
+    "ChainedTransformer",
+    "ParallelTransformer",
     "BaseFilter",
     "ButterworthFilter",
     "GroupedTransformer",
