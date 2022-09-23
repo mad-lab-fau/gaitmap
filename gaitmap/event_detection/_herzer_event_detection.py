@@ -9,10 +9,7 @@ from tpcp import cf
 
 from gaitmap.base import BaseEventDetection
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
-from gaitmap.event_detection._event_detection_mixin import (
-    _detect_min_vel_gyr_energy,
-    _EventDetectionMixin,
-)
+from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 
 
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):

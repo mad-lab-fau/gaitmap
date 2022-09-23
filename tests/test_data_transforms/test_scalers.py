@@ -170,5 +170,3 @@ class TestMinMaxScaler:
         t = MinMaxScaler(out_range=out_range)
         with pytest.raises(ValueError):
             t.transform(data)
-
-
