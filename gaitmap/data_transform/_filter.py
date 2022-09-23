@@ -1,3 +1,4 @@
+"""A set of filters that can be applied to data."""
 from typing import Literal, Optional, Tuple, Union
 
 import pandas as pd
@@ -10,10 +11,15 @@ from gaitmap.utils.datatype_helper import SingleSensorData
 
 class BaseFilter(BaseTransformer):
     """Base class for all filters."""
+
     _action_methods = (*BaseTransformer._action_methods, "filter")
 
     @property
     def filtered_data_(self) -> SingleSensorData:
+        """The filtered data.
+
+        This is the same as `transformed_data_` and is just here, as it is easier to remember.
+        """
         return self.transformed_data_
 
     def filter(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:

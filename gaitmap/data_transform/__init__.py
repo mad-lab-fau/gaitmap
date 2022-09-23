@@ -28,4 +28,5 @@ __all__ = [
     "BaseTransformer",
     "BaseFilter",
     "ButterworthFilter",
+    "GroupedTransformer",
 ]

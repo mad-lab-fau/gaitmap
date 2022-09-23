@@ -1,6 +1,6 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
-from typing import Any, Callable, Dict, NamedTuple, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
