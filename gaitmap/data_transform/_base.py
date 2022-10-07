@@ -216,8 +216,10 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     Parameters
     ----------
-    transformer_chain
-        A list of transformers that should be applied to the data in sequence.
+    chain
+        A list of tuples of the form (name, transformer) that specify the transformers that should be applied.
+        The name is used as a prefix (`{name}__`) when using `get_param` or `set_param` to uniquly target the
+        respective steps.
 
     Attributes
     ----------
@@ -231,10 +233,12 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     """
 
-    transformer_chain: OptimizableParameter[Sequence[Union[BaseTransformer, TrainableTransformerMixin]]]
+    _composite_params = ("chain",)
 
-    def __init__(self, transformer_chain: Sequence[Union[BaseTransformer, TrainableTransformerMixin]]):
-        self.transformer_chain = transformer_chain
+    chain: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
+
+    def __init__(self, chain: List[Tuple[_Hashable, BaseTransformer]]):
+        self.chain = chain
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
         """Optimize the chained transformers.
@@ -253,7 +257,7 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
-        transformer_ids = [id(t) for t in self.transformer_chain]
+        transformer_ids = [id(t[1]) for t in self.chain]
 
         if len(set(transformer_ids)) != len(transformer_ids):
             raise ValueError(
@@ -265,13 +269,13 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
             )
 
         optimized_transformers = []
-        for transformer in self.transformer_chain:
+        for name, transformer in self.chain:
             if isinstance(transformer, TrainableTransformerMixin):
                 transformer = transformer.self_optimize(data, **kwargs)
-            optimized_transformers.append(transformer.clone())
+            optimized_transformers.append((name, transformer.clone()))
             data = [transformer.transform(d, **kwargs).transformed_data_ for d in data]
 
-        self.transformer_chain = optimized_transformers
+        self.chain = optimized_transformers
         return self
 
     def transform(self, data: SingleSensorData, **kwargs) -> Self:
@@ -293,7 +297,7 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
         """
         self.data = data
         self.transformed_data_ = reduce(
-            lambda d, t: t.clone().transform(d, **kwargs).transformed_data_, self.transformer_chain, data
+            lambda d, t: t[1].clone().transform(d, **kwargs).transformed_data_, self.chain, data
         )
         return self
 
@@ -323,6 +327,8 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         The data passed to the transform method.
 
     """
+
+    _composite_params = ("transformers",)
 
     transformers: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
 
