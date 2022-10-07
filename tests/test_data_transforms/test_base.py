@@ -44,9 +44,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         data_left.columns = BF_COLS
         if self.algorithm_class is GroupedTransformer:
             instance = self.algorithm_class([(tuple(BF_COLS), IdentityTransformer())])
-        elif self.algorithm_class is ChainedTransformer:
-            instance = self.algorithm_class([IdentityTransformer()])
-        elif self.algorithm_class is ParallelTransformer:
+        elif self.algorithm_class in (ChainedTransformer, ParallelTransformer):
             instance = self.algorithm_class([("a", IdentityTransformer())])
         else:
             instance = self.algorithm_class()
@@ -127,7 +125,7 @@ class TestGroupedTransformer:
 class TestChainedTransformer:
     def test_simple_chaining(self):
         data = pd.DataFrame(np.ones((10, 3)), columns=list("abc")) * 2
-        t = ChainedTransformer(transformer_chain=[FixedScaler(3, 1), FixedScaler(2)])
+        t = ChainedTransformer(chain=[("first", FixedScaler(3, 1)), ("second", FixedScaler(2))])
         make_action_safe(t.transform)(t, data)
 
         assert id(t.data) == id(data)
@@ -138,12 +136,12 @@ class TestChainedTransformer:
         train_data = pd.DataFrame(np.ones((10, 3)), columns=list("abc")) * 5
         # The first scaler is expected to learn the original data scale (5), the second scaler is ecpected to learn
         # the output of the first (3)
-        t = ChainedTransformer([TrainableAbsMaxScaler(out_max=3), TrainableAbsMaxScaler()])
+        t = ChainedTransformer([("first", TrainableAbsMaxScaler(out_max=3)), ("second", TrainableAbsMaxScaler())])
         make_optimize_safe(t.self_optimize)(t, [train_data])
 
         # Train results
-        assert t.transformer_chain[0].data_max == 5
-        assert t.transformer_chain[1].data_max == 3
+        assert t.get_params()["chain__first"].data_max == 5
+        assert t.get_params()["chain__second"].data_max == 3
 
         t.transform(data)
 
@@ -151,11 +149,17 @@ class TestChainedTransformer:
 
     def test_error_when_transformer_not_unique(self):
         scaler = FixedScaler(3)
-        t = ChainedTransformer([scaler, scaler])
+        t = ChainedTransformer(chain=[("first", scaler), ("second", scaler)])
         with pytest.raises(ValueError):
             t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
 
-
+    def test_composite_get_set(self):
+        t = ChainedTransformer(chain=[("x", FixedScaler()), ("y", FixedScaler(2))])
+        t.set_params(chain__y__offset = 1)
+        params = t.get_params()
+        assert params["chain__x__scale"] == 1
+        assert params["chain__y__scale"] == 2
+        assert params["chain__y__offset"] == 1
 class TestParallelTransformer:
     def test_simple_parallel(self):
         data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
@@ -197,3 +201,12 @@ class TestParallelTransformer:
         t = ParallelTransformer(transformer)
         with pytest.raises(ValueError):
             t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
+
+
+    def test_composite_get_set(self):
+        t = ParallelTransformer(transformers=[("x", FixedScaler()), ("y", FixedScaler(2))])
+        t.set_params(transformers__y__offset = 1)
+        params = t.get_params()
+        assert params["transformers__x__scale"] == 1
+        assert params["transformers__y__scale"] == 2
+        assert params["transformers__y__offset"] == 1
