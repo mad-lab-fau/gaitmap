@@ -17,6 +17,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 np.random.seed(0)
 
 # %%
@@ -50,7 +51,7 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # This library ships with pre-trained models that can be directly used for prediction/ segmentation.
 # It is generated based on manually segmented strides from healthy participants and PD patients.
 # We can load the model an look at some of its parameters
-from gaitmap_mad.stride_segmentation._hmm.segmentation_model import PreTrainedSegmentationHMM
+from gaitmap.stride_segmentation.hmm import PreTrainedSegmentationHMM
 
 segmentation_model = PreTrainedSegmentationHMM("fallriskpd_at_lab_model.json")
 
@@ -62,7 +63,7 @@ print("Number of states, transition-model: %d" % PreTrainedSegmentationHMM().tra
 # ----------------
 # First we need to pass the pre-trained segmentation model to the roth-HMM wrapper, which will take care of all steps
 # needed to get from the hidden state sequences to actual stride borders
-from gaitmap_mad.stride_segmentation._hmm.roth_hmm import RothHMM
+from gaitmap.stride_segmentation.hmm import RothHMM
 
 roth_hmm = RothHMM(segmentation_model, snap_to_min_win_s=0.3, snap_to_min_axis="gyr_ml")
 roth_hmm = roth_hmm.segment(bf_data, sampling_rate_hz)

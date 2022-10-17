@@ -9,9 +9,9 @@ import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 
 from gaitmap.base import _BaseSerializable
-from gaitmap_mad.stride_segmentation._hmm.hmm_feature_transform import FeatureTransformHMM
-from gaitmap_mad.stride_segmentation._hmm.simple_model import SimpleHMM
-from gaitmap_mad.stride_segmentation._hmm.utils import (
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTransformHMM
+from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
+from gaitmap_mad.stride_segmentation.hmm._utils import (
     add_transition,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
@@ -173,7 +173,8 @@ class SimpleSegmentationHMM(_BaseSerializable):
             raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
 
         data_sequence_feature_space = [
-            self.feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz) for dataset in data_sequence
+            self.feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz).transformed_data_
+            for dataset in data_sequence
         ]
 
         stride_list_feature_space = None
@@ -335,7 +336,7 @@ class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
 
     def __new__(cls, model_file_name="fallriskpd_at_lab_model.json"):
         # try to load models
-        with open_text("gaitmap_mad.stride_segmentation._hmm._pre_trained_models", model_file_name) as test_data:
+        with open_text("gaitmap_mad.stride_segmentation.hmm._pre_trained_models", model_file_name) as test_data:
             with open(test_data.name) as f:
                 model_json = f.read()
         return SimpleSegmentationHMM.from_json(model_json)

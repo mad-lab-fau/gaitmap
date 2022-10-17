@@ -58,7 +58,7 @@ stride_list = get_healthy_example_stride_borders()
 # Here we define the feature space in which model training and later prediction will take place. You can choose
 # different axis and or feature combinations as well as downsampling, filter and standardization steps. The following
 # example has proofed to work well in most cases.
-from gaitmap.stride_segmentation.hmm_feature_transform import FeatureTransformHMM
+from gaitmap.stride_segmentation.hmm import FeatureTransformHMM
 
 feature_transform = FeatureTransformHMM(
     sampling_rate_feature_space_hz=51.2,
@@ -78,7 +78,7 @@ feature_transform = FeatureTransformHMM(
 # define a seperate HMM and define all its components. Notice that the stride and transition model are different in
 # architecture, number of states or number of gaussian mixture model (GMM) components. In this example all configurable
 # parameters are exposed. These parameters might require optimization for your specific type of dataset!
-from gaitmap.future.hmm.simple_model import SimpleHMM
+from gaitmap.stride_segmentation.hmm import SimpleHMM
 
 stride_model = SimpleHMM(
     n_states=20,
@@ -115,7 +115,7 @@ transition_model = SimpleHMM(
 # Finally we can combine the feature extraction and our defined sub-HMMs to the actual segmentation model were we can
 # invoke the training process. Again, all configurable parameters are exposed for demonstration purpose. These
 # parameters should again work for most usecases.
-from gaitmap.future.hmm.segmentation_model import SimpleSegmentationHMM
+from gaitmap.stride_segmentation.hmm import SimpleSegmentationHMM
 
 segmentation_model = SimpleSegmentationHMM(
     stride_model=stride_model,

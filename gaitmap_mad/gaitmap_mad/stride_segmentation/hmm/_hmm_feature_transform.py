@@ -61,7 +61,7 @@ class FeatureTransformHMM(BaseTransformer):
             low_pass_order: Optional[int] = None,
             axis: Optional[List[str]] = None,
             features: Optional[List[str]] = None,
-            window_size_s: Optional[int] = None,
+            window_size_s: Optional[float] = None,
             standardization: Optional[bool] = None,
     ):
         self.sampling_rate_feature_space_hz = sampling_rate_feature_space_hz
