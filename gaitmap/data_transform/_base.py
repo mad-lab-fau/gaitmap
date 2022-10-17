@@ -60,6 +60,7 @@ class TrainableTransformerMixin:
         raise NotImplementedError()
 
 
+# TODO: Find a way to make the Grouped Transformer a proper composite transformer
 class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
     """Apply specific transformations to specific groups of columns.
 
