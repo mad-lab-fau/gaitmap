@@ -944,6 +944,21 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "networkx"
+version = "2.8.8"
+description = "Python package for creating and manipulating graphs and networks"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+default = ["matplotlib (>=3.4)", "numpy (>=1.19)", "pandas (>=1.3)", "scipy (>=1.8)"]
+developer = ["mypy (>=0.982)", "pre-commit (>=2.20)"]
+doc = ["nb2plots (>=0.6)", "numpydoc (>=1.5)", "pillow (>=9.2)", "pydata-sphinx-theme (>=0.11)", "sphinx (>=5.2)", "sphinx-gallery (>=0.11)", "texext (>=0.6.6)"]
+extra = ["lxml (>=4.6)", "pydot (>=1.4.2)", "pygraphviz (>=1.9)", "sympy (>=1.10)"]
+test = ["codecov (>=2.1)", "pytest (>=7.2)", "pytest-cov (>=4.0)"]
+
+[[package]]
 name = "notebook"
 version = "6.5.2"
 description = "A web-based notebook environment for interactive computing"
@@ -1164,6 +1179,25 @@ python-versions = ">=3.6"
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
+
+[[package]]
+name = "pomegranate"
+version = "0.14.6"
+description = "Pomegranate is a graphical models library for Python, implemented in Cython for speed."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+joblib = ">=0.9.0b4"
+networkx = ">=2.4"
+numpy = ">=1.20.0"
+pyyaml = "*"
+scipy = ">=0.17.0"
+
+[package.extras]
+gpu = ["cupy"]
+plotting = ["matplotlib", "pygraphviz"]
 
 [[package]]
 name = "prometheus-client"
@@ -1523,7 +1557,7 @@ python-versions = ">=3.7"
 name = "PyYAML"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -2032,7 +2066,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.0,<4.0"
-content-hash = "24bc38d0db752d1bd9c740893adf5b49ca4eea945fcbfbeaffd4bc2d93929e1d"
+content-hash = "5ff172d96540b2af0b200405d6974277a9dd6978f343a2468d9e173e8ad3c449"
 
 [metadata.files]
 alabaster = [
@@ -2723,6 +2757,10 @@ nest-asyncio = [
     {file = "nest_asyncio-1.5.6-py3-none-any.whl", hash = "sha256:b9a953fb40dceaa587d109609098db21900182b16440652454a146cffb06e8b8"},
     {file = "nest_asyncio-1.5.6.tar.gz", hash = "sha256:d267cc1ff794403f7df692964d1d2a3fa9418ffea2a3f6859a439ff482fef290"},
 ]
+networkx = [
+    {file = "networkx-2.8.8-py3-none-any.whl", hash = "sha256:e435dfa75b1d7195c7b8378c3859f0445cd88c6b0375c181ed66823a9ceb7524"},
+    {file = "networkx-2.8.8.tar.gz", hash = "sha256:230d388117af870fce5647a3c52401fcf753e94720e6ea6b4197a5355648885e"},
+]
 notebook = [
     {file = "notebook-6.5.2-py3-none-any.whl", hash = "sha256:e04f9018ceb86e4fa841e92ea8fb214f8d23c1cedfde530cc96f92446924f0e4"},
     {file = "notebook-6.5.2.tar.gz", hash = "sha256:c1897e5317e225fc78b45549a6ab4b668e4c996fd03a04e938fe5e7af2bfffd0"},
@@ -2930,6 +2968,29 @@ platformdirs = [
 pluggy = [
     {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
+]
+pomegranate = [
+    {file = "pomegranate-0.14.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:26acc43a83b689bc00e3637c43c722026a4aba46da1ffbab82a1c3e910d1b957"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:8f491627610577905b8e07ca8fdf726bbc2b68e34452e9c195195638ef26bebe"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:43a16e5f8cf0aeb08f5bdac7557e5a9b83627768dae764b83f62a6fa6fd5fd7b"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:dc4679423454d956743d23d7bdf09de1f5d4c68458e8186d4c651d399411f6d7"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:4bd41328eefd4b5244a2497f431c62c30629a7aa146ec5dacf089c1120621ada"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-win32.whl", hash = "sha256:b590b6a70987c198b2e0e92fddbc588585ea1ce3528db44d68acd6b5820facc8"},
+    {file = "pomegranate-0.14.6-cp37-cp37m-win_amd64.whl", hash = "sha256:5eaa475b58beffad82fe2bec1eb23c131d7a3128887b0090f375e46995472366"},
+    {file = "pomegranate-0.14.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:6242be63058f39ee66e2e815531020813e6ff22ad96503f3d15f357f42b345aa"},
+    {file = "pomegranate-0.14.6-cp38-cp38-manylinux1_i686.whl", hash = "sha256:132e02f3c298f2c25d4ac9275fa067207d251093fbdf272d6e439f5fe9d49679"},
+    {file = "pomegranate-0.14.6-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:feb35d2c7898887f951790236e76f9b88904e0bf12f9725e3b02a79f332e995c"},
+    {file = "pomegranate-0.14.6-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:44851e35362430a006d5aac28af8100ad9009aef93d88547a67346efe6fe6bdf"},
+    {file = "pomegranate-0.14.6-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:6c9abfca7b5fd59741609b8d0c2a6e60ca08ee60d7c490d21c758b9286820289"},
+    {file = "pomegranate-0.14.6-cp38-cp38-win32.whl", hash = "sha256:cbfa4a7424e4b15c45089e05f3b02cfb817263ad4421e8b4e9c3aee1ef113489"},
+    {file = "pomegranate-0.14.6-cp38-cp38-win_amd64.whl", hash = "sha256:6ed7ed193fcd49098db1a187e08a93323b97fba254393e4ac929241cc1b07635"},
+    {file = "pomegranate-0.14.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:f52e114ce9697ecc2f20459af0c8c1f3673ca15f971e5bf023e9d1c1050d9abe"},
+    {file = "pomegranate-0.14.6-cp39-cp39-manylinux1_i686.whl", hash = "sha256:df45a694d7f34feafbdbf31d4363c5e7a32f19be5abe0636b66ec064e7393ecb"},
+    {file = "pomegranate-0.14.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:3233d73b215aa626ad0d02cb640786bb951856ab381031d7a3331e327d50f239"},
+    {file = "pomegranate-0.14.6-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:e1a1416ef4ec540b2ed56c6f90300a528ea9db9a4e89b8e53f19c5813f34299a"},
+    {file = "pomegranate-0.14.6-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:031c70914f5dfa3532500ce551581b2932e5752e88c82c37fcdef7d52ea90d9e"},
+    {file = "pomegranate-0.14.6-cp39-cp39-win32.whl", hash = "sha256:2157e55baccafc12b354a0b19089a56d2aa5fa6ccd12d548452ace17e5be64e1"},
+    {file = "pomegranate-0.14.6-cp39-cp39-win_amd64.whl", hash = "sha256:d14ed36ac12d782763b97ec3bd8cb1934ccad919ecc1e8008686d19591367ffd"},
 ]
 prometheus-client = [
     {file = "prometheus_client-0.15.0-py3-none-any.whl", hash = "sha256:db7c05cbd13a0f79975592d112320f2605a325969b270a94b71dcabc47b931d2"},
