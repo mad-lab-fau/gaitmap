@@ -155,11 +155,13 @@ class TestChainedTransformer:
 
     def test_composite_get_set(self):
         t = ChainedTransformer(chain=[("x", FixedScaler()), ("y", FixedScaler(2))])
-        t.set_params(chain__y__offset = 1)
+        t.set_params(chain__y__offset=1)
         params = t.get_params()
         assert params["chain__x__scale"] == 1
         assert params["chain__y__scale"] == 2
         assert params["chain__y__offset"] == 1
+
+
 class TestParallelTransformer:
     def test_simple_parallel(self):
         data = pd.DataFrame(np.ones((10, 3)), columns=list("abc"))
@@ -202,10 +204,9 @@ class TestParallelTransformer:
         with pytest.raises(ValueError):
             t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
 
-
     def test_composite_get_set(self):
         t = ParallelTransformer(transformers=[("x", FixedScaler()), ("y", FixedScaler(2))])
-        t.set_params(transformers__y__offset = 1)
+        t.set_params(transformers__y__offset=1)
         params = t.get_params()
         assert params["transformers__x__scale"] == 1
         assert params["transformers__y__scale"] == 2
