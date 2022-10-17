@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 from typing_extensions import Self
 
-from gaitmap.base import BaseStrideSegmentation, BaseType
-from gaitmap_mad.stride_segmentation._hmm.segmentation_model import SimpleSegmentationHMM
+from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SimpleSegmentationHMM
 
 
 class RothHMM(BaseStrideSegmentation):

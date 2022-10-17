@@ -9,7 +9,7 @@ from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
 
 from gaitmap.base import _BaseSerializable
-from gaitmap_mad.stride_segmentation._hmm.utils import (
+from gaitmap_mad.stride_segmentation.hmm._utils import (
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     fix_model_names,
