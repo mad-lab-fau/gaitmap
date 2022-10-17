@@ -81,8 +81,8 @@ class FeatureTransformHMM(BaseTransformer):
 
         preprocessor = ChainedTransformer(
             [
-                ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz),
-                Decimate(self.sampling_rate_feature_space_hz),
+                ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
+                ("decimate", Decimate(self.sampling_rate_feature_space_hz)),
             ]
         )
         preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
