@@ -16,9 +16,6 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     gmms_from_samples,
 )
 
-# TODO: Make this configurable
-N_JOBS = 1
-
 
 def initialize_hmm(
     data_train_sequence,
@@ -26,7 +23,6 @@ def initialize_hmm(
     n_states,
     n_gmm_components,
     architecture,
-    random_seed=None,
     name="untrained",
     verbose=False,
 ):
@@ -48,7 +44,7 @@ def initialize_hmm(
         type of model architecture, for more details see below
     n_states
         number of hidden-states within the model
-    random_seed
+    random_state
         fix seed for random number generation to make sure that results will be reproducible. Set to None if not used.
         TODO: check if random_seed is actually only used if we use k-means somewhere...
 
@@ -91,12 +87,10 @@ def initialize_hmm(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
 
+    # Note: In the past we used a fixed ransom state when generating the gmms.
+    # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        random_seed=random_seed,
-        verbose=verbose,
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -143,6 +137,7 @@ def train_hmm(
     algo_train: str,
     name="trained",
     verbose=True,
+    n_jobs: int = 1,
 ) -> Tuple[pgHMM, History]:
     """Train Model.
 
@@ -183,7 +178,7 @@ def train_hmm(
         max_iterations=max_iterations,
         return_history=True,
         verbose=verbose,
-        n_jobs=N_JOBS,
+        n_jobs=n_jobs,
     )
     model_trained.name = name
 
@@ -209,7 +204,6 @@ class SimpleHMM(_BaseSerializable):
     algo_train: Optional[str]
     stop_threshold: Optional[float]
     max_iterations: Optional[int]
-    random_seed: Optional[float]
     architecture: Optional[str]
     verbose: bool
     name: Optional[str]
@@ -223,7 +217,6 @@ class SimpleHMM(_BaseSerializable):
         algo_train: Optional[str] = None,
         stop_threshold: Optional[float] = None,
         max_iterations: Optional[int] = None,
-        random_seed: Optional[float] = None,
         architecture: Optional[str] = None,
         verbose: bool = True,
         name: Optional[str] = None,
@@ -234,7 +227,6 @@ class SimpleHMM(_BaseSerializable):
         self.algo_train = algo_train
         self.stop_threshold = stop_threshold
         self.max_iterations = max_iterations
-        self.random_seed = random_seed
         self.architecture = architecture
         self.verbose = verbose
         self.name = name
@@ -261,15 +253,16 @@ class SimpleHMM(_BaseSerializable):
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
                 "The given training sequence and initial training labels do not match in their number of individual "
-                "sequences! len(data_train_sequence_list) = %d !=  %d = len(initial_hidden_states_sequence_list)"
-                % (len(data_sequence), len(labels_sequence))
+                "sequences! len(data_train_sequence_list) = {:d} !=  {:d} = len(initial_hidden_states_sequence_list)".format(
+                    len(data_sequence), len(labels_sequence)
+                )
             )
 
         for data in data_sequence:
             if len(data) < self.n_states:
                 raise ValueError(
                     "Invalid Training Sequence! At least one training sequence has less samples than the specified "
-                    "value of states! n_states = %d > %d = len(data)" % (self.n_states, len(data))
+                    "value of states! n_states = {:d} > {:d} = len(data)".format(self.n_states, len(data))
                 )
 
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
@@ -283,7 +276,6 @@ class SimpleHMM(_BaseSerializable):
             self.n_states,
             self.n_gmm_components,
             self.architecture,
-            random_seed=self.random_seed,
             name=self.name + "-untrained",
         )
 
