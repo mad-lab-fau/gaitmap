@@ -183,7 +183,7 @@ class RothHMM(BaseStrideSegmentation):
 
         # tranform prediction back to original sampling rate!
         downsample_factor = int(
-            np.round(sampling_rate_hz / model.feature_transform.sampling_rate_feature_space_hz)
+            np.round(sampling_rate_hz / model.feature_transform.sampling_frequency_feature_space_hz)
         )
         hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
 

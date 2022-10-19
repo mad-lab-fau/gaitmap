@@ -5,16 +5,19 @@ import pandas as pd
 from sklearn import preprocessing
 
 from gaitmap.data_transform import (
+    BaseTransformer,
     ButterworthFilter,
-    Decimate,
     ChainedTransformer,
+    Decimate,
+    IdentityTransformer,
     ParallelTransformer,
-    IdentityTransformer, BaseTransformer, SlidingWindowGradient,
+    SlidingWindowGradient,
 )
 from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
 
 _feature_map = {
-    "raw": lambda win_size: IdentityTransformer(), "gradient": lambda win_size: SlidingWindowGradient(win_size)
+    "raw": lambda win_size: IdentityTransformer(),
+    "gradient": lambda win_size: SlidingWindowGradient(win_size),
 }
 
 
@@ -23,7 +26,7 @@ class FeatureTransformHMM(BaseTransformer):
 
     Parameters
     ----------
-    sampling_rate_feature_space_hz
+    sampling_frequency_feature_space_hz
         The sampling rate of the data the model was trained with
     low_pass_cutoff_hz
         Cutoff frequency of low-pass filter for preprocessing
@@ -43,8 +46,9 @@ class FeatureTransformHMM(BaseTransformer):
     TBD
 
     """
+
     # TODO: Find a way to expose the internal objects instead of exposing just parameters.
-    sampling_rate_feature_space_hz: Optional[float]
+    sampling_frequency_feature_space_hz: Optional[float]
     low_pass_cutoff_hz: Optional[float]
     low_pass_order: Optional[int]
     axis: Optional[List[str]]
@@ -55,16 +59,16 @@ class FeatureTransformHMM(BaseTransformer):
     sampling_rate_hz: float
 
     def __init__(
-            self,
-            sampling_rate_feature_space_hz: Optional[float] = None,
-            low_pass_cutoff_hz: Optional[float] = None,
-            low_pass_order: Optional[int] = None,
-            axis: Optional[List[str]] = None,
-            features: Optional[List[str]] = None,
-            window_size_s: Optional[float] = None,
-            standardization: Optional[bool] = None,
+        self,
+        sampling_frequency_feature_space_hz: Optional[float] = None,
+        low_pass_cutoff_hz: Optional[float] = None,
+        low_pass_order: Optional[int] = None,
+        axis: Optional[List[str]] = None,
+        features: Optional[List[str]] = None,
+        window_size_s: Optional[float] = None,
+        standardization: Optional[bool] = None,
     ):
-        self.sampling_rate_feature_space_hz = sampling_rate_feature_space_hz
+        self.sampling_frequency_feature_space_hz = sampling_frequency_feature_space_hz
         self.low_pass_cutoff_hz = low_pass_cutoff_hz
         self.low_pass_order = low_pass_order
         self.axis = axis
@@ -82,7 +86,7 @@ class FeatureTransformHMM(BaseTransformer):
         preprocessor = ChainedTransformer(
             [
                 ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
-                ("decimate", Decimate(self.sampling_rate_feature_space_hz)),
+                ("decimate", Decimate(self.sampling_frequency_feature_space_hz)),
             ]
         )
         preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
@@ -95,7 +99,7 @@ class FeatureTransformHMM(BaseTransformer):
         feature_calculator = ParallelTransformer([(k, _feature_map[k](self.window_size_s)) for k in self.features])
         # Note we need the sampling rate of the downsampled dataset here
         feature_matrix_df = feature_calculator.transform(
-            downsampled_dataset, sampling_rate_hz=self.sampling_rate_feature_space_hz
+            downsampled_dataset, sampling_rate_hz=self.sampling_frequency_feature_space_hz
         ).transformed_data_
         if self.standardization:
             feature_matrix_df = pd.DataFrame(preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns)

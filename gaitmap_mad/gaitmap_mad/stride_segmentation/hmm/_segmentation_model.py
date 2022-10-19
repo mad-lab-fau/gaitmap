@@ -9,6 +9,7 @@ import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTransformHMM
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
@@ -21,7 +22,6 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_transitions,
     labels_to_strings,
 )
-from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 
 N_JOBS = 1
 
@@ -161,16 +161,16 @@ class SimpleSegmentationHMM(_BaseSerializable):
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
         if not np.array(feature_data).data.c_contiguous:
-            raise ValueError("Memory Layout of given input data is not contiguois! Consider using ")
+            raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
 
         labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
-        # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+        # pomegranate always adds a label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
     def transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
         """Perform feature transformation."""
         if not isinstance(data_sequence, list):
-            raise ValueError("Input into transform must be a list of valid gaitmapt sensordata objects!")
+            raise ValueError("Input into transform must be a list of valid gaitmap sensordata objects!")
 
         data_sequence_feature_space = [
             self.feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz).transformed_data_
@@ -180,12 +180,12 @@ class SimpleSegmentationHMM(_BaseSerializable):
         stride_list_feature_space = None
         if stride_list_sequence:
             downsample_factor = int(
-                np.round(sampling_frequency_hz / self.feature_transform.sampling_rate_feature_space_hz)
+                np.round(sampling_frequency_hz / self.feature_transform.sampling_frequency_feature_space_hz)
             )
             stride_list_feature_space = [
                 (stride_list[["start", "end"]] / downsample_factor).astype(int) for stride_list in stride_list_sequence
             ]
-        return [data_sequence_feature_space, stride_list_feature_space]
+        return data_sequence_feature_space, stride_list_feature_space
 
     def train(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
         """Train HMM."""
@@ -247,7 +247,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
                 verbose=self.verbose,
             )
 
-        if self.initialization == "labels":
+        elif self.initialization == "labels":
             # combine already trained transition matrices -> zero pad "stride" transition matrix to the left
             trans_mat_stride = stride_model_trained.model.dense_transition_matrix()[:-2, :-2]
             transmat_stride = np.pad(
@@ -285,7 +285,9 @@ class SimpleSegmentationHMM(_BaseSerializable):
                 # if edge already exists, skip
                 if not model_untrained.dense_transition_matrix()[trans[0], trans[1]]:
                     add_transition(model_untrained, ["s%d" % (trans[0]), "s%d" % (trans[1])], 0.1)
-
+        else:
+            # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
+            raise ValueError()
         # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order
         # like s0, s1, s10, s2 usw..)
         model_untrained = fix_model_names(model_untrained)
@@ -321,11 +323,6 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.model = model_trained
 
         return self
-
-    def export_json(self, path):
-        """Export HMM to json file."""
-        with open(path, "w") as f:
-            json.dump(self.to_json(), f)
 
 
 class PreTrainedSegmentationHMM(SimpleSegmentationHMM):

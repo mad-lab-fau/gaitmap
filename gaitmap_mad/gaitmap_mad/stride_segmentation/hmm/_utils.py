@@ -103,10 +103,10 @@ def gmms_from_samples(data, labels, n_components, random_seed=None, verbose=Fals
         ]  # calculate Mixture Model for each state, clustered by labels
     else:
         # if n components is just 1 we do not need a mixture model and just build either univariate or multivariate
-        # Normal Distributiion depending on the input data dimension
+        # Normal Distribution depending on the input data dimension
         distributions = [pg_dist_type.from_samples(dataset) for dataset in clustered_data]
 
-    return [distributions, clustered_data]
+    return distributions, clustered_data
 
 
 def norm_dist_from_samples(data, labels, random_seed=None):
