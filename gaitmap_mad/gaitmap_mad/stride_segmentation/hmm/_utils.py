@@ -75,7 +75,6 @@ def gmms_from_samples(
     data,
     labels,
     n_components: int,
-    random_seed: Optional[float] = None,
     verbose: bool = False,
     n_init: int = 5,
     n_jobs: int = 1,
@@ -90,9 +89,6 @@ def gmms_from_samples(
         raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
 
     clustered_data = cluster_data_by_labels(data, labels)
-
-    if random_seed:
-        np.random.seed(random_seed)
 
     # select correct distribution type based on dimensionality of the given data
     if data[0].ndim == 1:
@@ -112,7 +108,8 @@ def gmms_from_samples(
                 verbose=verbose,
                 n_jobs=n_jobs,
                 n_init=n_init,
-                init="first-k",
+                init="first-k",  # With this initialisation, we don't have any randomnes! -> No need for any random
+                # seed.
             )
             for dataset in clustered_data
         ]
@@ -133,7 +130,7 @@ def norm_dist_from_samples(data, labels, random_seed=None):
     distributions = [
         pg.NormalDistribution.from_samples(dataset) for dataset in clustered_data
     ]  # calculate Mixture Model for each state, clustered by labels
-    return [distributions, clustered_data]
+    return distributions, clustered_data
 
 
 def fix_model_names(model):
@@ -175,10 +172,10 @@ def predict(model, data, algorithm="viterbi"):
     # need to check if memory layout of given data is
     # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
     if not np.array(data, dtype=object).data.c_contiguous:
-        raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
+        raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
 
     labels_predicted = np.asarray(model.predict(data, algorithm=algorithm))
-    # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+    # pomegranate always adds a label for the start- and end-state, which can be ignored here!
     return np.asarray(labels_predicted[1:-1])
 
 
@@ -205,7 +202,7 @@ def labels_to_strings(labelsequence):
         if sequence is None:
             labelsequence_str.append(sequence)
             continue
-        labelsequence_str.append(["s%02d" % i for i in sequence])
+        labelsequence_str.append([f"s{i:02d}" for i in sequence])
     return labelsequence_str
 
 
