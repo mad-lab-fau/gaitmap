@@ -1,10 +1,10 @@
 """Utils and helper functions for HMM classes."""
+from typing import Optional
+
 import numpy as np
 import pomegranate as pg
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
-
-N_JOBS = 1
 
 
 def create_transition_matrix_fully_connected(n_states):
@@ -71,7 +71,15 @@ def cluster_data_by_labels(data_list, label_list):
     return clustered_data
 
 
-def gmms_from_samples(data, labels, n_components, random_seed=None, verbose=False):
+def gmms_from_samples(
+    data,
+    labels,
+    n_components: int,
+    random_seed: Optional[float] = None,
+    verbose: bool = False,
+    n_init: int = 5,
+    n_jobs: int = 1,
+):
     """Create Gaussian Mixtrue Models from samples.
 
     This function clusteres the data by the given labels and fits either univariate or multivariate
@@ -95,12 +103,19 @@ def gmms_from_samples(data, labels, n_components, random_seed=None, verbose=Fals
         pg_dist_type = pg.MultivariateGaussianDistribution
 
     if n_components > 1:
+        # calculate Mixture Model for each state, clustered by labels
         distributions = [
             pg.GeneralMixtureModel.from_samples(
-                pg_dist_type, n_components=n_components, X=dataset, verbose=verbose, n_jobs=N_JOBS
+                pg_dist_type,
+                n_components=n_components,
+                X=dataset,
+                verbose=verbose,
+                n_jobs=n_jobs,
+                n_init=n_init,
+                init="first-k",
             )
             for dataset in clustered_data
-        ]  # calculate Mixture Model for each state, clustered by labels
+        ]
     else:
         # if n components is just 1 we do not need a mixture model and just build either univariate or multivariate
         # Normal Distribution depending on the input data dimension
@@ -151,9 +166,7 @@ def add_transition(model, transition, transition_probability):
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
+        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
     )
 
 
