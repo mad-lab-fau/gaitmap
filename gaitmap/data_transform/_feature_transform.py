@@ -1,5 +1,5 @@
 from copy import copy
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -10,21 +10,21 @@ from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.datatype_helper import SingleSensorData
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
 
 
 class Decimate(BaseTransformer):
-    target_sampling_rate: float
+    target_sampling_rate_hz: float
 
     sampling_rate_hz: float
 
-    def __init__(self, target_sampling_rate: float):
-        self.target_sampling_rate = target_sampling_rate
+    def __init__(self, target_sampling_rate_hz: float):
+        self.target_sampling_rate_hz = target_sampling_rate_hz
 
     @property
     def downsampling_factor_(self) -> int:
         """Get the effective downsampling factor based on the target sampling rate."""
-        return int(np.round(self.sampling_rate_hz / self.target_sampling_rate))
+        return int(np.round(self.sampling_rate_hz / self.target_sampling_rate_hz))
 
     @property
     def exact_target_sampling_rate_hz_(self) -> float:
@@ -44,7 +44,14 @@ class Decimate(BaseTransformer):
             self.transformed_data_ = copy(data)
             return self
 
-        data_decimated = signal.decimate(data, downsampling_factor, n=None, ftype="iir", axis=0, zero_phase=True,)
+        data_decimated = signal.decimate(
+            data,
+            downsampling_factor,
+            n=None,
+            ftype="iir",
+            axis=0,
+            zero_phase=True,
+        )
         if isinstance(data, pd.DataFrame):
             data_decimated = pd.DataFrame(data_decimated, columns=data.columns)
         elif isinstance(data, pd.Series):
@@ -53,6 +60,8 @@ class Decimate(BaseTransformer):
         self.transformed_data_ = data_decimated
 
         return self
+
+    # def transform_roi_list(self, roi_list: Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]):
 
 
 class BaseSlidingWindowFeatureTransform(BaseTransformer):
@@ -106,7 +115,7 @@ class _PandasRollingFeatureTransform(BaseSlidingWindowFeatureTransform):
         raise ValueError("Unexpected return value from data.rolling")
 
     def _apply_rolling(self, rolling: Rolling) -> SingleSensorData:
-        return getattr(Rolling, self._rolling_method_name)()
+        return getattr(rolling, self._rolling_method_name)()
 
 
 class SlidingWindowMean(_PandasRollingFeatureTransform):

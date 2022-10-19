@@ -3742,7 +3742,6 @@
         "stride_model": {
             "_gaitmap_obj": "SimpleHMM",
             "params": {
-                "algo_predict": "viterbi",
                 "algo_train": "baum-welch",
                 "architecture": "left-right-strict",
                 "max_iterations": 10,
@@ -6963,7 +6962,6 @@
         "transition_model": {
             "_gaitmap_obj": "SimpleHMM",
             "params": {
-                "algo_predict": "viterbi",
                 "algo_train": "baum-welch",
                 "architecture": "left-right-loose",
                 "max_iterations": 10,

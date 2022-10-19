@@ -17,7 +17,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 np.random.seed(0)
 
 # %%
@@ -50,13 +49,13 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # --------------------
 # This library ships with pre-trained models that can be directly used for prediction/ segmentation.
 # It is generated based on manually segmented strides from healthy participants and PD patients.
-# We can load the model an look at some of its parameters
+# We can load the model a look at some of its parameters
 from gaitmap.stride_segmentation.hmm import PreTrainedSegmentationHMM
 
 segmentation_model = PreTrainedSegmentationHMM("fallriskpd_at_lab_model.json")
 
-print("Number of states, stride-model: %d" % PreTrainedSegmentationHMM().stride_model.n_states)
-print("Number of states, transition-model: %d" % PreTrainedSegmentationHMM().transition_model.n_states)
+print(f"Number of states, stride-model: {PreTrainedSegmentationHMM().stride_model.n_states:d}")
+print(f"Number of states, transition-model: {PreTrainedSegmentationHMM().transition_model.n_states:d}")
 
 # %%
 # Predicting hidden states / Stride borders
@@ -115,7 +114,7 @@ plt.show()
 
 fig, ax1 = plt.subplots(figsize=(10, 3))
 plt.title("HMM Feature Space")
-ax1.set_xlabel("Samples Features Space @ %d Hz" % roth_hmm.model.feature_transform.sampling_rate_feature_space_hz)
+ax1.set_xlabel(f"Samples Features Space @ {roth_hmm.model.feature_transform.sampling_frequency_feature_space_hz:d} Hz")
 ax1.set_ylabel("Z-Transform [a.u.]")
 ax1.plot(roth_hmm.dataset_feature_space_[sensor])
 ax1.legend(roth_hmm.dataset_feature_space_[sensor].columns.to_list())

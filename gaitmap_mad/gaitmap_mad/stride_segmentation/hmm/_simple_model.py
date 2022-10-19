@@ -1,7 +1,7 @@
 """Simple model base classes and helper."""
 
 import copy
-from typing import Optional, Tuple, Sequence
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 import pomegranate as pg
@@ -92,7 +92,11 @@ def initialize_hmm(
         )
 
     distributions, _ = gmms_from_samples(
-        data_train_sequence, labels_initialization_sequence, n_gmm_components, random_seed=random_seed, verbose=verbose,
+        data_train_sequence,
+        labels_initialization_sequence,
+        n_gmm_components,
+        random_seed=random_seed,
+        verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -203,7 +207,6 @@ class SimpleHMM(_BaseSerializable):
     n_states: Optional[int]
     n_gmm_components: Optional[int]
     algo_train: Optional[str]
-    algo_predict: Optional[str]
     stop_threshold: Optional[float]
     max_iterations: Optional[int]
     random_seed: Optional[float]
@@ -218,7 +221,6 @@ class SimpleHMM(_BaseSerializable):
         n_states: Optional[int] = None,
         n_gmm_components: Optional[int] = None,
         algo_train: Optional[str] = None,
-        algo_predict: Optional[str] = None,
         stop_threshold: Optional[float] = None,
         max_iterations: Optional[int] = None,
         random_seed: Optional[float] = None,
@@ -230,7 +232,6 @@ class SimpleHMM(_BaseSerializable):
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
         self.algo_train = algo_train
-        self.algo_predict = algo_predict
         self.stop_threshold = stop_threshold
         self.max_iterations = max_iterations
         self.random_seed = random_seed
@@ -239,7 +240,7 @@ class SimpleHMM(_BaseSerializable):
         self.name = name
         self.model = model
 
-    def predict_hidden_state_sequence(self, feature_data):
+    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
         """Perform prediction based on given data and given model."""
         feature_data = np.ascontiguousarray(feature_data.to_numpy())
 
@@ -250,7 +251,7 @@ class SimpleHMM(_BaseSerializable):
                 "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
             )
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
+        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         # TODO: Make this return self and store the information somewhere
         return np.asarray(labels_predicted[1:-1])

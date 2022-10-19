@@ -57,11 +57,11 @@ stride_list = get_healthy_example_stride_borders()
 #
 # Here we define the feature space in which model training and later prediction will take place. You can choose
 # different axis and or feature combinations as well as downsampling, filter and standardization steps. The following
-# example has proofed to work well in most cases.
+# example has proved to work well in most cases.
 from gaitmap.stride_segmentation.hmm import FeatureTransformHMM
 
 feature_transform = FeatureTransformHMM(
-    sampling_rate_feature_space_hz=51.2,
+    sampling_frequency_feature_space_hz=51.2,
     axis=["gyr_ml"],
     features=["raw", "gradient"],
     low_pass_cutoff_hz=10,
@@ -75,7 +75,7 @@ feature_transform = FeatureTransformHMM(
 # --------------------------------------
 #
 # The segmentation process is defined as a two-class problem, namely "strides" and "transitions/null". For each class we
-# define a seperate HMM and define all its components. Notice that the stride and transition model are different in
+# define a separate HMM and define all its components. Notice that the stride and transition model are different in
 # architecture, number of states or number of gaussian mixture model (GMM) components. In this example all configurable
 # parameters are exposed. These parameters might require optimization for your specific type of dataset!
 from gaitmap.stride_segmentation.hmm import SimpleHMM
@@ -84,10 +84,9 @@ stride_model = SimpleHMM(
     n_states=20,
     n_gmm_components=6,
     algo_train="baum-welch",
-    algo_predict="viterbi",
     stop_threshold=1e-9,
     max_iterations=5,
-    random_seed=1,
+    random_seed=2,
     architecture="left-right-strict",
     verbose=True,
     name="stride_model",
@@ -98,10 +97,9 @@ transition_model = SimpleHMM(
     n_states=5,
     n_gmm_components=3,
     algo_train="baum-welch",
-    algo_predict="viterbi",
     stop_threshold=1e-9,
     max_iterations=5,
-    random_seed=1,
+    random_seed=2,
     architecture="left-right-loose",
     verbose=True,
     name="transition_model",
@@ -139,7 +137,7 @@ segmentation_model = SimpleSegmentationHMM(
 # convention!). The main input format for the training process are gait sequences which include transitions as well as
 # valid strides. To train on multiple sequences, we can just feed a list of gaitsequences into the model for training.
 # For each gait sequence we also need to have a valid stride list. In this example we handle the data from the left and
-# right foot as seperate gaitsequences and add them to a simple list. We have to do the same for the stride lists.
+# right foot as separate gait sequences and add them to a simple list. We have to do the same for the stride lists.
 
 data_train_sequence = [bf_data["left_sensor"], bf_data["right_sensor"]]
 stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
@@ -150,7 +148,7 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 #
 # Finally! Sit back relax and let the magic happen (depending on the number of input sequences this can take up to
 # >30min). However, this small example runs quite fast! The model will internally perform the feature transformation of
-# the dataset, train the individual sub models and finally combine them to a flatten segmentation model.
+# the dataset, train the individual sub models and finally combine them to a flatted segmentation model.
 
 segmentation_model = segmentation_model.train(
     data_train_sequence, stride_list_sequence, sampling_frequency_hz=sampling_rate_hz
