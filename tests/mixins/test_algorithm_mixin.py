@@ -106,7 +106,7 @@ class TestAlgorithmMixin:
             # No explicit constructor to introspect
             pytest.skip()
 
-        # introspect the constructor arguments to find the model parameters to represent
+        # introspect the constructor arguments to find the _model parameters to represent
         init_signature = inspect.signature(init)
         # Consider the constructor parameters excluding 'self'
         parameters = {

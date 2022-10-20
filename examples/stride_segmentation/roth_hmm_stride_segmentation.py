@@ -49,18 +49,18 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # --------------------
 # This library ships with pre-trained models that can be directly used for prediction/ segmentation.
 # It is generated based on manually segmented strides from healthy participants and PD patients.
-# We can load the model a look at some of its parameters
+# We can load the _model a look at some of its parameters
 from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 
 segmentation_model = PreTrainedRothSegmentationModel()
 
-print(f"Number of states, stride-model: {PreTrainedRothSegmentationModel().stride_model.n_states:d}")
-print(f"Number of states, transition-model: {PreTrainedRothSegmentationModel().transition_model.n_states:d}")
+print(f"Number of states, stride-_model: {PreTrainedRothSegmentationModel().stride_model.n_states:d}")
+print(f"Number of states, transition-_model: {PreTrainedRothSegmentationModel().transition_model.n_states:d}")
 
 # %%
 # Predicting hidden states / Stride borders
 # ----------------
-# First we need to pass the pre-trained segmentation model to the roth-HMM wrapper, which will take care of all steps
+# First we need to pass the pre-trained segmentation _model to the roth-HMM wrapper, which will take care of all steps
 # needed to get from the hidden state sequences to actual stride borders
 from gaitmap.stride_segmentation.hmm import RothHMM
 

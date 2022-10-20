@@ -89,7 +89,6 @@ stride_model = SimpleHMM(
     architecture="left-right-strict",
     verbose=True,
     name="stride_model",
-    model=None,
 )
 
 transition_model = SimpleHMM(
@@ -101,7 +100,6 @@ transition_model = SimpleHMM(
     architecture="left-right-loose",
     verbose=True,
     name="transition_model",
-    model=None,
 )
 
 # %%
@@ -124,7 +122,6 @@ segmentation_model = SimpleSegmentationHMM(
     initialization="labels",
     verbose=True,
     name="segmentation_model",
-    model=None,
 )
 
 # %%
@@ -148,7 +145,7 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 # >30min). However, this small example runs quite fast! The model will internally perform the feature transformation of
 # the dataset, train the individual sub models and finally combine them to a flatted segmentation model.
 
-segmentation_model = segmentation_model.train(
+segmentation_model = segmentation_model.self_optimize(
     data_train_sequence, stride_list_sequence, sampling_frequency_hz=sampling_rate_hz
 )
 

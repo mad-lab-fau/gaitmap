@@ -17,7 +17,7 @@ from gaitmap.data_transform import (
     SlidingWindowStd,
     SlidingWindowVar,
 )
-from gaitmap.utils.datatype_helper import SingleSensorRegionsOfInterestList, SingleSensorData
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList
 
 _feature_map = {
     "raw": lambda win_size: IdentityTransformer(),
@@ -108,7 +108,7 @@ class FeatureTransformHMM(BaseTransformer):
     def __init__(
         self,
         sampling_frequency_feature_space_hz: float = 51.2,
-        low_pass_cutoff_hz: float = 10.,
+        low_pass_cutoff_hz: float = 10.0,
         low_pass_order: int = 4,
         axis: List[str] = cf(["gyr_ml"]),
         features: List[str] = cf(["raw", "gradient"]),
