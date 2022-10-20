@@ -1,9 +1,11 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 import copy
+from importlib.resources import open_text
 from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
+from tpcp import cf
 from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
@@ -11,6 +13,19 @@ from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SimpleSegmentationHMM
+
+
+class PreTrainedRothSegmentationModel(SimpleSegmentationHMM):
+    """Load a pre-trained stride segmentation HMM."""
+
+    def __new__(cls):
+        # try to load models
+        with open_text(
+            "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
+        ) as test_data:
+            with open(test_data.name) as f:
+                model_json = f.read()
+        return SimpleSegmentationHMM.from_json(model_json)
 
 
 class RothHMM(BaseStrideSegmentation):
@@ -84,7 +99,7 @@ class RothHMM(BaseStrideSegmentation):
 
     def __init__(
         self,
-        model: Optional[SimpleSegmentationHMM] = None,
+        model: SimpleSegmentationHMM = cf(PreTrainedRothSegmentationModel()),
         snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
     ):
