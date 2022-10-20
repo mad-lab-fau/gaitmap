@@ -1,14 +1,14 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 import copy
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
 from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
+from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SimpleSegmentationHMM
 
@@ -22,7 +22,7 @@ class RothHMM(BaseStrideSegmentation):
     ----------
     model
         The HMM class need a valid pre-trained model to segment strides
-    snap_to_min_win_s
+    snap_to_min_win_ms
         The size of the window in seconds used to search local minima during the post processing of the stride borders.
         If this is set to None, this postprocessing step is skipped.
         Refer to the Notes section for more details.
@@ -70,7 +70,7 @@ class RothHMM(BaseStrideSegmentation):
 
     """
 
-    snap_to_min_win_s: float
+    snap_to_min_win_ms: float
     snap_to_min_axis: str
     model: Optional[SimpleSegmentationHMM]
 
@@ -85,10 +85,10 @@ class RothHMM(BaseStrideSegmentation):
     def __init__(
         self,
         model: Optional[SimpleSegmentationHMM] = None,
-        snap_to_min_win_s: float = 0.1,
+        snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
     ):
-        self.snap_to_min_win_s = snap_to_min_win_s
+        self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
         self.model = model
 
@@ -187,10 +187,9 @@ class RothHMM(BaseStrideSegmentation):
         )
         hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
 
-        matches_start_end_ = self._hidden_states_to_matches_start_end(hidden_state_sequence_upsampled)
-
+        matches_start_end = self._hidden_states_to_matches_start_end(hidden_state_sequence_upsampled)
         return (
-            self._postprocess_matches(matches_start_end_, dataset),
+            self._postprocess_matches(dataset, matches_start_end),
             hidden_state_sequence_upsampled,
             feature_data,
             hidden_state_sequence,
@@ -198,6 +197,7 @@ class RothHMM(BaseStrideSegmentation):
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted):
         """Convert a hidden state sequence to a list of potential borders."""
+        # TODO: Figure out if the strides are inclusive or exclusive the last sample
         stride_start_state = self.model.stride_states_[0]
         stride_end_state = self.model.stride_states_[-1]
 
@@ -218,28 +218,13 @@ class RothHMM(BaseStrideSegmentation):
 
         return np.column_stack([matches_starts, matches_ends])
 
-    def _postprocess_matches(self, matches_start_end, dataset) -> Tuple[np.ndarray, np.ndarray]:
+    def _postprocess_matches(self, data, matches_start_end) -> np.ndarray:
         """Perform postprocessing step by snapping the stride border candidates to minima within the given data."""
-        if self.snap_to_min_win_s and len(matches_start_end) > 0:
-            # Apply snap to minimum
-            snap_to_min_data = dataset[self.snap_to_min_axis].to_numpy()
-            snap_to_min_win_samples = int(np.round(self.sampling_rate_hz * self.snap_to_min_win_s))
-
-            # snap stride starts
-            starts = find_extrema_in_radius(
-                snap_to_min_data,
-                indices=matches_start_end[:, 0],
-                radius=int(snap_to_min_win_samples / 2),
-                extrema_type="min",
+        if self.snap_to_min_win_ms and len(matches_start_end) > 0:
+            matches_start_end = snap_to_min(
+                data[self.snap_to_min_axis].to_numpy(),
+                matches_start_end,
+                snap_to_min_win_samples=int(self.snap_to_min_win_ms / 1000 * self.sampling_rate_hz),
             )
-            # snap stride ends
-            ends = find_extrema_in_radius(
-                snap_to_min_data,
-                indices=matches_start_end[:, 1],
-                radius=int(snap_to_min_win_samples / 2),
-                extrema_type="min",
-            )
-
-            return np.column_stack([starts, ends])
 
         return matches_start_end
