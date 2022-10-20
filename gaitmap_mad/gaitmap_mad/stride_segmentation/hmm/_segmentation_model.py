@@ -178,11 +178,11 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         stride_list_feature_space = None
         if stride_list_sequence:
-            downsample_factor = int(
-                np.round(sampling_frequency_hz / self.feature_transform.sampling_frequency_feature_space_hz)
-            )
             stride_list_feature_space = [
-                (stride_list[["start", "end"]] / downsample_factor).astype(int) for stride_list in stride_list_sequence
+                self.feature_transform.transform(
+                    roi_list=stride_list, sampling_rate_hz=sampling_frequency_hz
+                ).transformed_roi_list_
+                for stride_list in stride_list_sequence
             ]
         return data_sequence_feature_space, stride_list_feature_space
 

@@ -12,48 +12,101 @@ from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.datatype_helper import SingleSensorData
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList
 
 
 class Resample(BaseTransformer):
-    """Resample a time series using the scipy resample method."""
+    """Resample a time series using the scipy resample method.
+
+    Optionally this method can also convert a ROI list (with start end values) into the same new sampling rate so
+    that it still matches the resampled data.
+
+    Parameters
+    ----------
+    target_sampling_rate_hz
+        The target sampling rate the data should be resampled to.
+        Note that we don't apply any checks on that.
+        If you upsample your data to far, you will likely get poor results.
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+    transformed_roi_list_
+        If a roi_list was provided, this will be the transformed roi list in the new sampling rate
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+    sampling_rate_hz
+        The sampling rate of the input data
+
+    """
 
     target_sampling_rate_hz: float
 
     sampling_rate_hz: float
+    roi_list: SingleSensorRegionsOfInterestList
 
-    def __init__(self, target_sampling_rate_hz: float, ):
+    transformed_roi_list_: SingleSensorRegionsOfInterestList
+
+    def __init__(
+        self,
+        target_sampling_rate_hz: float,
+    ):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
-    @property
-    def new_timeseries_(self):
-        return
+    def transform(
+        self,
+        data: Optional[SingleSensorData] = None,
+        *,
+        roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
+        sampling_rate_hz: Optional[float] = None,
+        **_,
+    ) -> Self:
+        """Resample the data.
 
-
-    def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+        Parameters
+        ----------
+        data
+            data to be filtered
+        roi_list
+            Optional roi list (with values in samples), that will also be resampled to match the data at the new
+            sampling rate.
+            Note, that only the start and end columns will be modified.
+            Other columns remain untouched.
+        sampling_rate_hz
+            The sampling rate of the data in Hz
+        """
         if sampling_rate_hz is None:
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
-        self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        if sampling_rate_hz == self.target_sampling_rate_hz:
-            self.transformed_data_ = copy(data)
-            return self
+        if data is not None:
+            self.data = data
+            if sampling_rate_hz == self.target_sampling_rate_hz:
+                self.transformed_data_ = copy(data)
+                return self
 
-        n_samples = int(np.round(len(data) * self.target_sampling_rate_hz / self.sampling_rate_hz))
+            n_samples = int(np.round(len(data) * self.target_sampling_rate_hz / self.sampling_rate_hz))
 
-        data_resampled = signal.resample(data, n_samples, axis=0)
-        if isinstance(data, pd.DataFrame):
-            data_resampled = pd.DataFrame(data_resampled, columns=data.columns)
-        elif isinstance(data, pd.Series):
-            data_resampled = pd.Series(data_resampled, name=data.name)
+            data_resampled = signal.resample(data, n_samples, axis=0)
+            if isinstance(data, pd.DataFrame):
+                data_resampled = pd.DataFrame(data_resampled, columns=data.columns)
+            elif isinstance(data, pd.Series):
+                data_resampled = pd.Series(data_resampled, name=data.name)
 
-        self.transformed_data_ = data_resampled
-
+            self.transformed_data_ = data_resampled
+        if roi_list is not None:
+            self.roi_list = roi_list
+            out = roi_list.copy()
+            out.loc[["start", "end"]] = (
+                (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round().astype(int)
+            )
+            self.transformed_roi_list_ = out
         return self
-
-    # def transform_roi_list(self, roi_list: Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]):
 
 
 class BaseSlidingWindowFeatureTransform(BaseTransformer):
