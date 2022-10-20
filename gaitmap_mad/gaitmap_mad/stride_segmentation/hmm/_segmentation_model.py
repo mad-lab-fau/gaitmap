@@ -1,17 +1,21 @@
-"""Segmentation model base classes and helper."""
+"""Segmentation _model base classes and helper."""
 import copy
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
+from tpcp import OptiPara, cf, make_optimize_safe
+from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTransformHMM
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     add_transition,
+    clone_model,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
@@ -94,34 +98,33 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
     """
 
-    stride_model: Optional[SimpleHMM]
-    transition_model: Optional[SimpleHMM]
-    feature_transform: Optional[FeatureTransformHMM]
+    _action_methods = ("predict_hidden_state_sequence",)
+
+    stride_model: OptiPara[Optional[SimpleHMM]]
+    transition_model: OptiPara[Optional[SimpleHMM]]
+    feature_transform: FeatureTransformHMM
     algo_predict: Optional[str]
     algo_train: Optional[str]
     stop_threshold: Optional[float]
     max_iterations: Optional[int]
     initialization: Optional[str]
     name: Optional[str]
-    model: Optional[pgHMM]
-
-    # TODO: What are those?
-    n_states: Optional[int]
-    history: Optional[pg.callbacks.History]
+    _model: OptiPara[Optional[pgHMM]]
 
     def __init__(
         self,
         stride_model: Optional[SimpleHMM] = None,
         transition_model: Optional[SimpleHMM] = None,
-        feature_transform: Optional[FeatureTransformHMM] = None,
+        feature_transform: FeatureTransformHMM = cf(FeatureTransformHMM()),
         algo_predict: Optional[str] = None,
         algo_train: Optional[str] = None,
         stop_threshold: Optional[float] = None,
         max_iterations: Optional[int] = None,
         initialization: Optional[str] = None,
         verbose: bool = True,
+        # n_jobs: int = 1,
         name: Optional[str] = None,
-        model: Optional[pgHMM] = None,
+        _model: Optional[pgHMM] = None,
     ):
         self.stride_model = stride_model
         self.transition_model = transition_model
@@ -133,7 +136,11 @@ class SimpleSegmentationHMM(_BaseSerializable):
         self.initialization = initialization
         self.verbose = verbose
         self.name = name
-        self.model = model
+        self._model = _model
+
+    @property
+    def n_states(self) -> int:
+        return self.transition_model.n_states + self.stride_model.n_states
 
     @property
     def stride_states_(self) -> dict:
@@ -147,11 +154,11 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
     def predict_hidden_state_sequence(self, feature_data):
         """Perform prediction based on given data and given model."""
-        if self.model is None:
+        if self._model is None:
             raise ValueError(
-                "No trained model for prediction available! You must either provide a pre-trained model "
+                "No trained _model for prediction available! You must either provide a pre-trained _model "
                 "during class initialization or call the train method with appropriate training data to "
-                "generate a new trained model."
+                "generate a new trained _model."
             )
 
         feature_data = np.ascontiguousarray(feature_data.to_numpy())
@@ -161,34 +168,50 @@ class SimpleSegmentationHMM(_BaseSerializable):
         if not np.array(feature_data).data.c_contiguous:
             raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
+        labels_predicted = np.asarray(self._model.predict(feature_data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds a label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
-    def transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
+    def _transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
         """Perform feature transformation."""
         if not isinstance(data_sequence, list):
             raise ValueError("Input into transform must be a list of valid gaitmap sensordata objects!")
 
+        feature_transform = self.feature_transform.clone()
+
         data_sequence_feature_space = [
-            self.feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz).transformed_data_
+            feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz).transformed_data_
             for dataset in data_sequence
         ]
 
         stride_list_feature_space = None
         if stride_list_sequence:
             stride_list_feature_space = [
-                self.feature_transform.transform(
+                feature_transform.transform(
                     roi_list=stride_list, sampling_rate_hz=sampling_frequency_hz
                 ).transformed_roi_list_
                 for stride_list in stride_list_sequence
             ]
         return data_sequence_feature_space, stride_list_feature_space
 
-    def train(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
+    @make_optimize_safe
+    def self_optimize(
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        labels_sequence: Sequence[SingleSensorStrideList],
+        sampling_frequency_hz: float,
+    ) -> Self:
+        return self.self_optimize_with_info(data_sequence, labels_sequence, sampling_frequency_hz)[0]
+
+    def self_optimize_with_info(
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        stride_list_sequence: Sequence[SingleSensorStrideList],
+        sampling_frequency_hz: float,
+    ):
         """Train HMM."""
         # perform feature transformation
-        data_sequence_feature_space, stride_list_feature_space = self.transform(
+        data_sequence_feature_space, stride_list_feature_space = self._transform(
             data_sequence, stride_list_sequence, sampling_frequency_hz
         )
 
@@ -200,27 +223,30 @@ class SimpleSegmentationHMM(_BaseSerializable):
             data_sequence_feature_space, stride_list_feature_space, self.stride_model.n_states
         )
 
-        stride_model_trained = self.stride_model.build_model(strides_sequence, init_stride_state_labels)
+        stride_model_trained, stride_model_history = self.stride_model.self_optimize_with_info(
+            strides_sequence, init_stride_state_labels
+        )
 
-        # train sub transition model
+        # train sub transition _model
         transition_sequence, init_trans_state_labels = get_train_data_sequences_transitions(
             data_sequence_feature_space, stride_list_feature_space, self.transition_model.n_states
         )
 
-        transition_model_trained = self.transition_model.build_model(transition_sequence, init_trans_state_labels)
+        transition_model_trained, transition_model_history = self.transition_model.self_optimize_with_info(
+            transition_sequence, init_trans_state_labels
+        )
 
         # For model combination actually only the transition probabilities will be updated, while keeping the already
         # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
         # number of transitions will be counted.
 
         # some initialization stuff...
-        self.n_states = transition_model_trained.n_states + stride_model_trained.n_states
         n_states_transition = transition_model_trained.n_states
         n_states_stride = stride_model_trained.n_states
 
         # extract fitted distributions from both separate trained models
-        distributions = get_model_distributions(transition_model_trained.model) + get_model_distributions(
-            stride_model_trained.model
+        distributions = get_model_distributions(transition_model_trained._model) + get_model_distributions(
+            stride_model_trained._model
         )
 
         # predict hidden state labels for complete walking bouts
@@ -247,20 +273,20 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         elif self.initialization == "labels":
             # combine already trained transition matrices -> zero pad "stride" transition matrix to the left
-            trans_mat_stride = stride_model_trained.model.dense_transition_matrix()[:-2, :-2]
+            trans_mat_stride = stride_model_trained._model.dense_transition_matrix()[:-2, :-2]
             transmat_stride = np.pad(
                 trans_mat_stride, [(n_states_transition, 0), (n_states_transition, 0)], mode="constant"
             )
 
             # zero-pad "transition" transition matrix to the right
-            trans_mat_transition = transition_model_trained.model.dense_transition_matrix()[:-2, :-2]
+            trans_mat_transition = transition_model_trained._model.dense_transition_matrix()[:-2, :-2]
             transmat_trans = np.pad(trans_mat_transition, [(0, n_states_stride), (0, n_states_stride)], mode="constant")
 
             # after correct zero padding we can combine both transition matrices just by "adding" them together!
             trans_mat = transmat_trans + transmat_stride
 
             # find missing transitions from labels
-            [transitions, starts, ends] = extract_transitions_starts_stops_from_hidden_state_sequence(
+            transitions, starts, ends = extract_transitions_starts_stops_from_hidden_state_sequence(
                 labels_train_sequence
             )
 
@@ -294,7 +320,7 @@ class SimpleSegmentationHMM(_BaseSerializable):
         # make sure we do not change our distributions anymore!
         model_untrained.freeze_distributions()
 
-        model_trained = copy.deepcopy(model_untrained)
+        model_trained = clone_model(model_untrained)
 
         # convert labels to state-names
         labels_train_sequence_str = labels_to_strings(labels_train_sequence)
@@ -317,9 +343,13 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         model_trained.name = self.name
 
-        self.history = history
-        self.model = model_trained
+        self._model = model_trained
 
-        return self
+        # TODO: Add the history elements of the inner optimizations
+        return self, history
 
-
+    @classmethod
+    def __clone_param__(cls, name: str, value: Any) -> Any:
+        if isinstance(value, pg.HiddenMarkovModel):
+            return clone_model(value)
+        return super().__clone_param__(name, value)

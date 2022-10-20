@@ -255,4 +255,4 @@ def test_roth_hmm_stride_segmentation(snapshot):
 def test_segmentation_hmm_training(snapshot):
     from examples.stride_segmentation.segmentation_hmm_training import segmentation_model
 
-    snapshot.assert_match(segmentation_model.model.to_json())
+    snapshot.assert_match(segmentation_model._model.to_json())

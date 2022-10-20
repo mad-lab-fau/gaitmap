@@ -1,15 +1,19 @@
-"""Simple model base classes and helper."""
+"""Simple _model base classes and helper."""
 
 import copy
-from typing import Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple
 
 import numpy as np
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
+from tpcp import OptiPara, make_optimize_safe
+from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._utils import (
+    clone_model,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     fix_model_names,
@@ -165,12 +169,12 @@ def train_hmm(
     length_of_training_sequences = np.array([len(data) for data in data_train_sequence])
     if np.any(length_of_training_sequences < (len(model_untrained.states) - 2)):
         raise ValueError(
-            "Length of all training sequences must be equal or larger than the number of states in the given model!"
+            "Length of all training sequences must be equal or larger than the number of states in the given _model!"
         )
 
     # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a
     # copy
-    model_trained = copy.deepcopy(model_untrained)
+    model_trained = clone_model(model_untrained)
 
     history: History
     _, history = model_trained.fit(
@@ -210,7 +214,7 @@ class SimpleHMM(_BaseSerializable):
     architecture: Optional[str]
     verbose: bool
     name: Optional[str]
-    model: Optional[pgHMM]
+    _model: OptiPara[Optional[pgHMM]]
 
     def __init__(
         self,
@@ -223,7 +227,7 @@ class SimpleHMM(_BaseSerializable):
         architecture: Optional[str] = None,
         verbose: bool = True,
         name: Optional[str] = None,
-        model: Optional[pgHMM] = None,
+        _model: Optional[pgHMM] = None,
     ):
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -233,7 +237,7 @@ class SimpleHMM(_BaseSerializable):
         self.architecture = architecture
         self.verbose = verbose
         self.name = name
-        self.model = model
+        self._model = _model
 
     def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
         """Perform prediction based on given data and given model."""
@@ -246,12 +250,20 @@ class SimpleHMM(_BaseSerializable):
                 "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
             )
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
+        labels_predicted = np.asarray(self._model.predict(feature_data.copy(), algorithm=algorithm))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         # TODO: Make this return self and store the information somewhere
         return np.asarray(labels_predicted[1:-1])
 
-    def build_model(self, data_sequence, labels_sequence):
+    @make_optimize_safe
+    def self_optimize(
+        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
+    ) -> Self:
+        return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
+
+    def self_optimize_with_info(
+        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
+    ) -> Tuple[Self, History]:
         """Build model."""
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
@@ -292,8 +304,12 @@ class SimpleHMM(_BaseSerializable):
             name=self.name + "-trained",
             verbose=self.verbose,
         )
-        # TODO: Find a solution on where to store additional opti results
-        self.history_ = history
-        self.model = model_trained
+        self._model = model_trained
 
-        return self
+        return self, history
+
+    @classmethod
+    def __clone_param__(cls, name: str, value: Any) -> Any:
+        if isinstance(value, pg.HiddenMarkovModel):
+            return clone_model(value)
+        return super().__clone_param__(name, value)

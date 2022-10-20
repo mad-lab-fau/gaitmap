@@ -1,9 +1,51 @@
 """Utils and helper functions for HMM classes."""
+import json
 
 import numpy as np
 import pomegranate as pg
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
+
+
+def _add_transition(model, a, b, probability, pseudocount, group):
+    pseudocount = pseudocount or probability
+    model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
+
+
+def clone_model(orig_model):
+    d = json.loads(orig_model.to_json())
+
+    # Make a new generic HMM
+    model = pg.HiddenMarkovModel(str(d["name"]))
+
+    states = [pg.State.from_dict(j) for j in d["states"]]
+
+    for cloned_state, state in zip(states, orig_model.states):
+        if isinstance(state.distribution, pg.GeneralMixtureModel):
+            # Fix the distribution weights
+            # Note the `[:]`! This is important, because pg keeps a pointer to the original weights vector internally.
+            # If we would reassign weights (and not just its content), we would update weights, but pg would still
+            # use the old values internally, as it uses the pointer to access it.
+            cloned_state.distribution.weights[:] = np.copy(state.distribution.weights)
+
+    for i, j in d["distribution ties"]:
+        # Tie appropriate states together
+        states[i].tie(states[j])
+
+    # Add all the states to the model
+    model.add_states(states)
+
+    # Indicate appropriate start and end states
+    model.start = states[d["start_index"]]
+    model.end = states[d["end_index"]]
+
+    # Add all the edges to the model
+    for (start, end, _, _, group), (_, _, data) in zip(d["edges"], list(orig_model.graph.edges(data=True))):
+        _add_transition(model, states[start], states[end], data["probability"], data["pseudocount"], group)
+
+    # Bake the model
+    model.bake(verbose=False)
+    return model
 
 
 def create_transition_matrix_fully_connected(n_states):
@@ -34,7 +76,7 @@ def create_transition_matrix_left_right(n_states, self_transition=True):
 
 
 def print_transition_matrix(model, precision=3):
-    """Print model transition matrix in user friendly format."""
+    """Print model transition matrix in user-friendly format."""
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision)
     if isinstance(model, pg.HiddenMarkovModel):
@@ -152,7 +194,7 @@ def get_state_by_name(model, state_name):
     for state in model.states:
         if state.name == state_name:
             return state
-    raise ValueError("State %s not found within given model!" % state_name)
+    raise ValueError("State %s not found within given _model!" % state_name)
 
 
 def add_transition(model, transition, transition_probability):

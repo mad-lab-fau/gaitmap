@@ -3,9 +3,11 @@ from inspect import Parameter, signature
 from typing import Any, Dict, Tuple
 
 import pytest
-from tpcp import get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
+from tpcp import clone, get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
+from tpcp._hash import custom_hash
 
 from gaitmap.base import BaseAlgorithm
+from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 from tests.conftest import _get_params_without_nested_class
 
 
@@ -196,3 +198,8 @@ def test_nested_clone():
 
     for k, v in params.items():
         assert cloned_params[k] == v
+
+
+def test_clone_pomegranate():
+    hmm_model = PreTrainedRothSegmentationModel()
+    assert custom_hash(clone(hmm_model)) == custom_hash(hmm_model)

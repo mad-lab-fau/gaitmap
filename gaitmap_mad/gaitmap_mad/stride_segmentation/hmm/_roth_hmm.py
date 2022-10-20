@@ -5,7 +5,7 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 import pandas as pd
-from tpcp import cf
+from tpcp import cf, make_action_safe
 from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
@@ -137,6 +137,7 @@ class RothHMM(BaseStrideSegmentation):
         as_df.index.name = "s_id"
         return as_df
 
+    @make_action_safe
     def segment(self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
         """Find matches by predicting a hidden state sequence using a pre-trained Hidden Markov Model.
 
