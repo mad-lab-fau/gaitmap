@@ -9,7 +9,7 @@ from gaitmap.data_transform._base import (
 )
 from gaitmap.data_transform._feature_transform import (
     BaseSlidingWindowFeatureTransform,
-    Decimate,
+    Resample,
     SlidingWindowGradient,
     SlidingWindowMean,
     SlidingWindowStd,
@@ -42,7 +42,7 @@ __all__ = [
     "BaseFilter",
     "ButterworthFilter",
     "GroupedTransformer",
-    "Decimate",
+    "Resample",
     "BaseSlidingWindowFeatureTransform",
     "SlidingWindowMean",
     "SlidingWindowVar",
