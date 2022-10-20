@@ -1,6 +1,5 @@
 """Segmentation model base classes and helper."""
 import copy
-from importlib.resources import open_text
 from typing import Optional
 
 import numpy as np
@@ -324,15 +323,3 @@ class SimpleSegmentationHMM(_BaseSerializable):
         return self
 
 
-class PreTrainedSegmentationHMM(SimpleSegmentationHMM):
-    """Load a pre-trained stride segmentation HMM."""
-
-    def __init__(self):
-        super().__init__()
-
-    def __new__(cls, model_file_name="fallriskpd_at_lab_model.json"):
-        # try to load models
-        with open_text("gaitmap_mad.stride_segmentation.hmm._pre_trained_models", model_file_name) as test_data:
-            with open(test_data.name) as f:
-                model_json = f.read()
-        return SimpleSegmentationHMM.from_json(model_json)
