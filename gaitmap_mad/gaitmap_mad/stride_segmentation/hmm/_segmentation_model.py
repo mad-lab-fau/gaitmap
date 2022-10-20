@@ -1,6 +1,5 @@
 """Segmentation model base classes and helper."""
 import copy
-import json
 from importlib.resources import open_text
 from typing import Optional
 
