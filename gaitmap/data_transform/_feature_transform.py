@@ -1,5 +1,4 @@
 """A set of transformers that can be used to calculate traditional features from a timeseries."""
-import warnings
 from copy import copy
 from typing import Optional
 
@@ -39,6 +38,8 @@ class Resample(BaseTransformer):
     ----------------
     data
         The data passed to the transform method.
+    roi_list
+        Optional roi list (with values in samples) passed to the transform method
     sampling_rate_hz
         The sampling rate of the input data
 
@@ -52,8 +53,7 @@ class Resample(BaseTransformer):
     transformed_roi_list_: SingleSensorRegionsOfInterestList
 
     def __init__(
-        self,
-        target_sampling_rate_hz: float,
+        self, target_sampling_rate_hz: float,
     ):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
@@ -63,7 +63,7 @@ class Resample(BaseTransformer):
         *,
         roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
         sampling_rate_hz: Optional[float] = None,
-        **_,
+        **kwargs,
     ) -> Self:
         """Resample the data.
 
@@ -78,6 +78,7 @@ class Resample(BaseTransformer):
             Other columns remain untouched.
         sampling_rate_hz
             The sampling rate of the data in Hz
+
         """
         if sampling_rate_hz is None:
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
@@ -121,6 +122,7 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
 
     @property
     def effective_window_size_samples_(self) -> int:
+        """Get the real sample size of the window in samples after rounding effects."""
         win_size = int(np.round(self.sampling_rate_hz * self.window_size_s))
         if win_size % 2 == 0:
             # We always want to have an odd window size to make sure that we can get a centered view.
@@ -128,6 +130,16 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
         return win_size
 
     def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+        """Apply the transformation on each sliding window.
+
+        Parameters
+        ----------
+        data
+            data to be filtered
+        sampling_rate_hz
+            The sampling rate of the data in Hz
+
+        """
         if sampling_rate_hz is None:
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
@@ -144,6 +156,8 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
 
 
 class _PandasRollingFeatureTransform(BaseSlidingWindowFeatureTransform):
+    """Baseclass for sliding window transforms, that directly use pandas rolling."""
+
     _rolling_method_name: str
     _prefix: str
 
@@ -164,16 +178,85 @@ class _PandasRollingFeatureTransform(BaseSlidingWindowFeatureTransform):
 
 
 class SlidingWindowMean(_PandasRollingFeatureTransform):
+    """Calculate a sliding window mean.
+
+    Parameters
+    ----------
+    window_size_s
+        The window size in seconds
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+    effective_window_size_samples_
+        The effective length window in samples after rounding effects are taking into account.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+    sampling_rate_hz
+        The sampling rate of the input data
+
+    """
+
     _rolling_method_name = "mean"
     _prefix = "mean"
 
 
 class SlidingWindowVar(_PandasRollingFeatureTransform):
+    """Calculate a sliding window variance.
+
+    Parameters
+    ----------
+    window_size_s
+        The window size in seconds
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+    effective_window_size_samples_
+        The effective length window in samples after rounding effects are taking into account.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+    sampling_rate_hz
+        The sampling rate of the input data
+
+    """
+
     _rolling_method_name = "var"
     _prefix = "var"
 
 
 class SlidingWindowStd(_PandasRollingFeatureTransform):
+    """Calculate a sliding window standard deviation.
+
+    Parameters
+    ----------
+    window_size_s
+        The window size in seconds
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+    effective_window_size_samples_
+        The effective length window in samples after rounding effects are taking into account.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+    sampling_rate_hz
+        The sampling rate of the input data
+
+    """
+
     _rolling_method_name = "std"
     _prefix = "std"
 
@@ -202,6 +285,29 @@ class _CustomSlidingWindowTransform(BaseSlidingWindowFeatureTransform):
 
 
 class SlidingWindowGradient(_CustomSlidingWindowTransform):
+    """Calculate a sliding gradient by fitting a linear function on every sliding window.
+
+    Parameters
+    ----------
+    window_size_s
+        The window size in seconds
+
+    Attributes
+    ----------
+    transformed_data_
+        The transformed data.
+    effective_window_size_samples_
+        The effective length window in samples after rounding effects are taking into account.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the transform method.
+    sampling_rate_hz
+        The sampling rate of the input data
+
+    """
+
     def _apply_to_window_view(self, windowed_view: np.ndarray, data: pd.DataFrame):
         # TODO: This only works with 1D input arrays -> 2D windowed views, but not 2D input arrays -> 3D windowed views.
         fit_coefs = polyfit(np.arange(self.effective_window_size_samples_), windowed_view.T, 1)[0]
