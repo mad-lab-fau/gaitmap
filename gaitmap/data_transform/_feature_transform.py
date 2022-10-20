@@ -1,5 +1,7 @@
+"""A set of transformers that can be used to calculate traditional features from a timeseries."""
+import warnings
 from copy import copy
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -10,25 +12,23 @@ from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer
 from gaitmap.utils.array_handling import sliding_window_view
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import SingleSensorData
 
 
-class Decimate(BaseTransformer):
+class Resample(BaseTransformer):
+    """Resample a time series using the scipy resample method."""
+
     target_sampling_rate_hz: float
 
     sampling_rate_hz: float
 
-    def __init__(self, target_sampling_rate_hz: float):
+    def __init__(self, target_sampling_rate_hz: float, ):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
     @property
-    def downsampling_factor_(self) -> int:
-        """Get the effective downsampling factor based on the target sampling rate."""
-        return int(np.round(self.sampling_rate_hz / self.target_sampling_rate_hz))
+    def new_timeseries_(self):
+        return
 
-    @property
-    def exact_target_sampling_rate_hz_(self) -> float:
-        return self.sampling_rate_hz / self.downsampling_factor_
 
     def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
         if sampling_rate_hz is None:
@@ -36,28 +36,20 @@ class Decimate(BaseTransformer):
 
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
-        downsampling_factor = self.downsampling_factor_
-        if downsampling_factor < 1:
-            raise ValueError("Downsampling factor must be >=1!")
 
-        if downsampling_factor == 1:
+        if sampling_rate_hz == self.target_sampling_rate_hz:
             self.transformed_data_ = copy(data)
             return self
 
-        data_decimated = signal.decimate(
-            data,
-            downsampling_factor,
-            n=None,
-            ftype="iir",
-            axis=0,
-            zero_phase=True,
-        )
-        if isinstance(data, pd.DataFrame):
-            data_decimated = pd.DataFrame(data_decimated, columns=data.columns)
-        elif isinstance(data, pd.Series):
-            data_decimated = pd.Series(data_decimated, name=data.name)
+        n_samples = int(np.round(len(data) * self.target_sampling_rate_hz / self.sampling_rate_hz))
 
-        self.transformed_data_ = data_decimated
+        data_resampled = signal.resample(data, n_samples, axis=0)
+        if isinstance(data, pd.DataFrame):
+            data_resampled = pd.DataFrame(data_resampled, columns=data.columns)
+        elif isinstance(data, pd.Series):
+            data_resampled = pd.Series(data_resampled, name=data.name)
+
+        self.transformed_data_ = data_resampled
 
         return self
 

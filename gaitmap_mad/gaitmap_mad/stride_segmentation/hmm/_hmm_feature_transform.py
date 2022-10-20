@@ -8,12 +8,11 @@ from gaitmap.data_transform import (
     BaseTransformer,
     ButterworthFilter,
     ChainedTransformer,
-    Decimate,
+    Resample,
     IdentityTransformer,
     ParallelTransformer,
     SlidingWindowGradient,
 )
-from gaitmap.utils.datatype_helper import get_multi_sensor_names, is_sensor_data
 
 _feature_map = {
     "raw": lambda win_size: IdentityTransformer(),
@@ -86,7 +85,7 @@ class FeatureTransformHMM(BaseTransformer):
         preprocessor = ChainedTransformer(
             [
                 ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
-                ("decimate", Decimate(self.sampling_frequency_feature_space_hz)),
+                ("resample", Resample(self.sampling_frequency_feature_space_hz)),
             ]
         )
         preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
