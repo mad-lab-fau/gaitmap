@@ -64,7 +64,7 @@ print(f"Number of states, transition-model: {PreTrainedSegmentationHMM().transit
 # needed to get from the hidden state sequences to actual stride borders
 from gaitmap.stride_segmentation.hmm import RothHMM
 
-roth_hmm = RothHMM(segmentation_model, snap_to_min_win_s=0.3, snap_to_min_axis="gyr_ml")
+roth_hmm = RothHMM(segmentation_model, snap_to_min_win_ms=300, snap_to_min_axis="gyr_ml")
 roth_hmm = roth_hmm.segment(bf_data, sampling_rate_hz)
 
 # %%
@@ -114,7 +114,7 @@ plt.show()
 
 fig, ax1 = plt.subplots(figsize=(10, 3))
 plt.title("HMM Feature Space")
-ax1.set_xlabel(f"Samples Features Space @ {roth_hmm.model.feature_transform.sampling_frequency_feature_space_hz:d} Hz")
+ax1.set_xlabel(f"Samples Features Space @ {roth_hmm.model.feature_transform.sampling_frequency_feature_space_hz} Hz")
 ax1.set_ylabel("Z-Transform [a.u.]")
 ax1.plot(roth_hmm.dataset_feature_space_[sensor])
 ax1.legend(roth_hmm.dataset_feature_space_[sensor].columns.to_list())

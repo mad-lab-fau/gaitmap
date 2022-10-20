@@ -15,7 +15,7 @@
                 ],
                 "low_pass_cutoff_hz": 10,
                 "low_pass_order": 4,
-                "sampling_rate_feature_space_hz": 51.2,
+                "sampling_frequency_feature_space_hz": 51.2,
                 "standardization": true,
                 "window_size_s": 0.2
             }
