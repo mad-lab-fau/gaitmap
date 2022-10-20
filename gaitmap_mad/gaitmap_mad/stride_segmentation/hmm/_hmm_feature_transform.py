@@ -8,9 +8,9 @@ from gaitmap.data_transform import (
     BaseTransformer,
     ButterworthFilter,
     ChainedTransformer,
-    Resample,
     IdentityTransformer,
     ParallelTransformer,
+    Resample,
     SlidingWindowGradient,
 )
 
@@ -75,34 +75,43 @@ class FeatureTransformHMM(BaseTransformer):
         self.window_size_s = window_size_s
         self.standardization = standardization
 
-    def transform(self, data, *, sampling_rate_hz=None):
+    def transform(self, data=None, *, roi_list=None, sampling_rate_hz=None):
         """Perform Feature Transformation for a single dataset."""
         self.sampling_rate_hz = sampling_rate_hz
-        self.data = data
-        if sampling_rate_hz is None:
-            raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
+        if data is not None:
+            self.data = data
+            if sampling_rate_hz is None:
+                raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
-        preprocessor = ChainedTransformer(
-            [
-                ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
-                ("resample", Resample(self.sampling_frequency_feature_space_hz)),
-            ]
-        )
-        preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
+            preprocessor = ChainedTransformer(
+                [
+                    ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
+                    ("resample", Resample(self.sampling_frequency_feature_space_hz)),
+                ]
+            )
+            preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
 
-        dataset = preprocessor.transformed_data_
+            dataset = preprocessor.transformed_data_
 
-        # All Feature transformers we use work on multiple axis at once.
-        # This means, we can just extract the axis we want and throw the result the transformers all at once.
-        downsampled_dataset = dataset[self.axis]
-        feature_calculator = ParallelTransformer([(k, _feature_map[k](self.window_size_s)) for k in self.features])
-        # Note we need the sampling rate of the downsampled dataset here
-        feature_matrix_df = feature_calculator.transform(
-            downsampled_dataset, sampling_rate_hz=self.sampling_frequency_feature_space_hz
-        ).transformed_data_
-        if self.standardization:
-            feature_matrix_df = pd.DataFrame(preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns)
+            # All Feature transformers we use work on multiple axis at once.
+            # This means, we can just extract the axis we want and throw the result the transformers all at once.
+            downsampled_dataset = dataset[self.axis]
+            feature_calculator = ParallelTransformer([(k, _feature_map[k](self.window_size_s)) for k in self.features])
+            # Note we need the sampling rate of the downsampled dataset here
+            feature_matrix_df = feature_calculator.transform(
+                downsampled_dataset, sampling_rate_hz=self.sampling_frequency_feature_space_hz
+            ).transformed_data_
+            if self.standardization:
+                feature_matrix_df = pd.DataFrame(
+                    preprocessing.scale(feature_matrix_df), columns=feature_matrix_df.columns
+                )
 
-        self.transformed_data_ = feature_matrix_df
+            self.transformed_data_ = feature_matrix_df
+        if roi_list is not None:
+            self.transformed_roi_list_ = (
+                Resample(self.sampling_frequency_feature_space_hz)
+                .transform(roi_list=roi_list, sampling_rate_hz=sampling_rate_hz)
+                .transformed_roi_list_
+            )
 
         return self
