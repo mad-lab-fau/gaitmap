@@ -1,5 +1,4 @@
 """Utils and helper functions for HMM classes."""
-from typing import Optional
 
 import numpy as np
 import pomegranate as pg
@@ -163,7 +162,9 @@ def add_transition(model, transition, transition_probability):
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
+        get_state_by_name(model, transition[0]),
+        get_state_by_name(model, transition[1]),
+        transition_probability,
     )
 
 
@@ -202,7 +203,7 @@ def labels_to_strings(labelsequence):
         if sequence is None:
             labelsequence_str.append(sequence)
             continue
-        labelsequence_str.append([f"s{i:02d}" for i in sequence])
+        labelsequence_str.append([f"s{i:02}" for i in sequence])
     return labelsequence_str
 
 
