@@ -198,9 +198,6 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     TBD
 
     """
-
-    _action_methods = ("predict_hidden_state_sequence",)
-
     n_states: Optional[int]
     n_gmm_components: Optional[int]
     algo_train: Optional[str]
@@ -236,18 +233,25 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
         """Perform prediction based on given data and given model."""
+        # XXX: We don't consider this method a "action method" by definition, as it requires the algorithm to be
+        # specified and does not return self.
+        # The reason for that is, that we regularly need to call this method with different algorithms on the same
+        # model.
+        # Hence, it felt more natural to do it that way.
+        # However, as this means this model should always be wrapped in a `SimpleSegmentationHMM` to be used with a
+        # standardized API.
         feature_data = np.ascontiguousarray(feature_data.to_numpy())
 
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
         if not np.array(feature_data).data.c_contiguous:
-            raise ValueError(
+            # XXX: We should never end up here... But let's keep the check, just to be sure!
+            raise RuntimeError(
                 "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
             )
 
         labels_predicted = np.asarray(self._model.predict(feature_data.copy(), algorithm=algorithm))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
-        # TODO: Make this return self and store the information somewhere
         return np.asarray(labels_predicted[1:-1])
 
     @make_optimize_safe
