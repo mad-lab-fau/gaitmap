@@ -1,8 +1,10 @@
 """Utils and helper functions for HMM classes."""
 import json
+from typing import Any
 
 import numpy as np
 import pomegranate as pg
+from tpcp import BaseTpcpObject
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 
@@ -18,7 +20,8 @@ def clone_model(orig_model):
     # Make a new generic HMM
     model = pg.HiddenMarkovModel(str(d["name"]))
 
-    states = [pg.State.from_dict(j) for j in d["states"]]
+    with np.errstate(divide="ignore"):
+        states = [pg.State.from_dict(j) for j in d["states"]]
 
     for cloned_state, state in zip(states, orig_model.states):
         if isinstance(state.distribution, pg.GeneralMixtureModel):
@@ -46,6 +49,22 @@ def clone_model(orig_model):
     # Bake the model
     model.bake(verbose=False)
     return model
+
+
+class _HackyClonableHMMFix(BaseTpcpObject):
+    @classmethod
+    def __clone_param__(cls, name: str, value: Any) -> Any:
+        """Overwrite cloning for HMM models.
+
+        XXX: This is hacky shit and it is stupid that I have to do it in the first place, but there is no build in
+        way in pomegrante to properly deepcopy a HMM.
+        For several reasons, a deepcopied HMM will only be approximately identical to the original (rounding issues).
+        Our cloning implementation, does some bad stuff (and should always be covered by tests), but seems to
+        properly clone the objects (so that the hashs are identical).
+        """
+        if isinstance(value, pg.HiddenMarkovModel):
+            return clone_model(value)
+        return super().__clone_param__(name, value)
 
 
 def create_transition_matrix_fully_connected(n_states):
@@ -113,12 +132,7 @@ def cluster_data_by_labels(data_list, label_list):
 
 
 def gmms_from_samples(
-    data,
-    labels,
-    n_components: int,
-    verbose: bool = False,
-    n_init: int = 5,
-    n_jobs: int = 1,
+    data, labels, n_components: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
 ):
     """Create Gaussian Mixtrue Models from samples.
 
@@ -204,9 +218,7 @@ def add_transition(model, transition, transition_probability):
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
+        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
     )
 
 

@@ -18,12 +18,13 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     create_transition_matrix_left_right,
     fix_model_names,
     gmms_from_samples,
+    _HackyClonableHMMFix,
 )
 
 
 def initialize_hmm(
-    data_train_sequence,
-    labels_initialization_sequence,
+    data_train_sequence: Sequence[np.ndarray],
+    labels_initialization_sequence: Sequence[np.ndarray],
     n_states,
     n_gmm_components,
     architecture,
@@ -34,10 +35,10 @@ def initialize_hmm(
 
     Parameters
     ----------
-    data_train_sequence (list of np.ndarrays)
+    data_train_sequence
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
-    labels_initialization_sequence (list of np.ndarrays)
+    labels_initialization_sequence
         list of labels which are used to initialize the emission distributions. Note: These labels are just for
         initialization. Distributions will be optimized later in the training process of the model!
         Length of each np.ndarray in "labels_initialization_sequence" needs to match the length of each
@@ -48,9 +49,6 @@ def initialize_hmm(
         type of model architecture, for more details see below
     n_states
         number of hidden-states within the model
-    random_state
-        fix seed for random number generation to make sure that results will be reproducible. Set to None if not used.
-        TODO: check if random_seed is actually only used if we use k-means somewhere...
 
     Notes
     -----
@@ -94,10 +92,7 @@ def initialize_hmm(
     # Note: In the past we used a fixed ransom state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        verbose=verbose,
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -192,7 +187,7 @@ def train_hmm(
     return model_trained, history
 
 
-class SimpleHMM(_BaseSerializable):
+class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     """Wrap all required information to train a new HMM.
 
     Parameters
@@ -307,9 +302,3 @@ class SimpleHMM(_BaseSerializable):
         self._model = model_trained
 
         return self, history
-
-    @classmethod
-    def __clone_param__(cls, name: str, value: Any) -> Any:
-        if isinstance(value, pg.HiddenMarkovModel):
-            return clone_model(value)
-        return super().__clone_param__(name, value)

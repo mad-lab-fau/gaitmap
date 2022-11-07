@@ -23,6 +23,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     labels_to_strings,
+    _HackyClonableHMMFix,
 )
 
 N_JOBS = 1
@@ -72,7 +73,7 @@ def create_fully_labeled_gait_sequences(
     return labels_train_sequence
 
 
-class SimpleSegmentationHMM(_BaseSerializable):
+class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     """Wrap all required information to train a new HMM.
 
     Parameters
@@ -347,9 +348,3 @@ class SimpleSegmentationHMM(_BaseSerializable):
 
         # TODO: Add the history elements of the inner optimizations
         return self, history
-
-    @classmethod
-    def __clone_param__(cls, name: str, value: Any) -> Any:
-        if isinstance(value, pg.HiddenMarkovModel):
-            return clone_model(value)
-        return super().__clone_param__(name, value)
