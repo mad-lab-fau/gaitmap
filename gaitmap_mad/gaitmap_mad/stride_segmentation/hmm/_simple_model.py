@@ -1,7 +1,7 @@
 """Simple _model base classes and helper."""
 
 import copy
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple, Literal
 
 import numpy as np
 import pomegranate as pg
@@ -25,11 +25,12 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
 def initialize_hmm(
     data_train_sequence: Sequence[np.ndarray],
     labels_initialization_sequence: Sequence[np.ndarray],
-    n_states,
-    n_gmm_components,
-    architecture,
-    name="untrained",
-    verbose=False,
+    *,
+    n_states: int,
+    n_gmm_components: int,
+    architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
+    name: str = "untrained",
+    verbose: bool = False,
 ):
     """Model Initialization.
 
@@ -43,12 +44,17 @@ def initialize_hmm(
         initialization. Distributions will be optimized later in the training process of the model!
         Length of each np.ndarray in "labels_initialization_sequence" needs to match the length of each
         corresponding np.ndarray in "data_train_sequence"
+    n_states
+        number of hidden-states within the model
     n_gmm_components
         number of components for multivariate distributions
     architecture
         type of model architecture, for more details see below
-    n_states
-        number of hidden-states within the model
+    name
+        The name of the final model object
+    verbose
+        Whether info should be printed to stdout
+
 
     Notes
     -----
@@ -134,11 +140,12 @@ def initialize_hmm(
 def train_hmm(
     model_untrained: pgHMM,
     data_train_sequence: Sequence[np.ndarray],
+    *,
     max_iterations: int,
     stop_threshold: float,
-    algo_train: str,
-    name="trained",
-    verbose=True,
+    algo_train: Literal["viterbi", "baum-welch"],
+    name: str = "trained",
+    verbose: bool = True,
     n_jobs: int = 1,
 ) -> Tuple[pgHMM, History]:
     """Train Model.
@@ -151,8 +158,7 @@ def train_hmm(
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
     algo_train (str)
-        # TODO: labeled shouldn't work right?
-        algorithm for training, can be "viterbi", "baum-welch" or "labeled"
+        algorithm for training, can be "viterbi", "baum-welch"
     stop_threshold (float)
         termination criteria for training improvement e.g. 1e-9
     max_iterations (int)
@@ -199,28 +205,30 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     TBD
 
     """
-    n_states: Optional[int]
-    n_gmm_components: Optional[int]
-    algo_train: Optional[str]
-    stop_threshold: Optional[float]
+
+    n_states: int
+    n_gmm_components: int
+    algo_train: Literal["viterbi", "baum-welch"]
+    stop_threshold: float
     max_iterations: Optional[int]
-    architecture: Optional[str]
+    architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
     verbose: bool
+    n_jobs: int
     name: Optional[str]
-    _model: OptiPara[Optional[pgHMM]]
+    model: OptiPara[Optional[pgHMM]]
 
     def __init__(
         self,
-        # TODO: Why all the default None values?
-        n_states: Optional[int] = None,
-        n_gmm_components: Optional[int] = None,
-        algo_train: Optional[str] = None,
-        stop_threshold: Optional[float] = None,
+        n_states: int,
+        n_gmm_components: int = None,
+        algo_train: Literal["viterbi", "baum-welch"] = "viterbi",
+        stop_threshold: float = 1e-9,
         max_iterations: Optional[int] = None,
-        architecture: Optional[str] = None,
+        architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
         verbose: bool = True,
-        name: Optional[str] = None,
-        _model: Optional[pgHMM] = None,
+        n_jobs: int = 1,
+        name: str = "my_model",
+        model: Optional[pgHMM] = None,
     ):
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -229,10 +237,11 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.max_iterations = max_iterations
         self.architecture = architecture
         self.verbose = verbose
+        self.n_jobs = n_jobs
         self.name = name
-        self._model = _model
+        self.model = model
 
-    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
+    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi") -> np.ndarray:
         """Perform prediction based on given data and given model."""
         # NOTE: We don't consider this method a "action method" by definition, as it requires the algorithm to be
         # specified and does not return self.
@@ -251,7 +260,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
                 "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
             )
 
-        labels_predicted = np.asarray(self._model.predict(feature_data.copy(), algorithm=algorithm))
+        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
         # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
         return np.asarray(labels_predicted[1:-1])
 
@@ -288,9 +297,9 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         model_untrained = initialize_hmm(
             data_sequence_train,
             labels_sequence,
-            self.n_states,
-            self.n_gmm_components,
-            self.architecture,
+            n_states=self.n_states,
+            n_gmm_components=self.n_gmm_components,
+            architecture=self.architecture,
             name=self.name + "-untrained",
         )
 
@@ -298,12 +307,13 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         model_trained, history = train_hmm(
             model_untrained,
             data_sequence_train,
-            self.max_iterations,
-            self.stop_threshold,
-            self.algo_train,
+            max_iterations=self.max_iterations,
+            stop_threshold=self.stop_threshold,
+            algo_train=self.algo_train,
             name=self.name + "-trained",
             verbose=self.verbose,
+            n_jobs=self.n_jobs,
         )
-        self._model = model_trained
+        self.model = model_trained
 
         return self, history
