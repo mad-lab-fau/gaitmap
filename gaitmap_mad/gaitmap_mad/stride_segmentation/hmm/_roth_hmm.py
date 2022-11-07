@@ -23,7 +23,7 @@ class PreTrainedRothSegmentationModel(SimpleSegmentationHMM):
         with open_text(
             "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
         ) as test_data:
-            with open(test_data.name) as f:
+            with open(test_data.name, encoding="utf8") as f:
                 model_json = f.read()
         return SimpleSegmentationHMM.from_json(model_json)
 
@@ -170,10 +170,10 @@ class RothHMM(BaseStrideSegmentation):
                 self.hidden_state_sequence_feature_space_,
             ) = self._segment_single_dataset(data, sampling_rate_hz)
         else:  # Multisensor
-            self.hidden_state_sequence_ = dict()
-            self.matches_start_end_ = dict()
-            self.dataset_feature_space_ = dict()
-            self.hidden_state_sequence_feature_space_ = dict()
+            self.hidden_state_sequence_ = {}
+            self.matches_start_end_ = {}
+            self.dataset_feature_space_ = {}
+            self.hidden_state_sequence_feature_space_ = {}
 
             for sensor in get_multi_sensor_names(data):
                 (

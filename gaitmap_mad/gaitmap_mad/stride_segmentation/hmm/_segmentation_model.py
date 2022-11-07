@@ -1,10 +1,11 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Any, Optional, Sequence, Tuple, Dict, Literal
+from typing import Dict, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
+from pomegranate.hmm import History
 from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
 
@@ -14,8 +15,9 @@ from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideLi
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTransformHMM
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    add_transition,
     _clone_model,
+    _HackyClonableHMMFix,
+    add_transition,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
@@ -23,7 +25,6 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     labels_to_strings,
-    _HackyClonableHMMFix,
 )
 
 
@@ -235,7 +236,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_frequency_hz: float,
-    ) -> Tuple[Self, Dict[str, pg.hmm.History]]:
+    ) -> Tuple[Self, Dict[str, History]]:
         """Train HMM."""
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(

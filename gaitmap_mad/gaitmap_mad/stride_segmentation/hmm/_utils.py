@@ -15,7 +15,7 @@ def _add_transition(model, a, b, probability, pseudocount, group):
 
 
 def _clone_model(orig_model: pg.HiddenMarkovModel):
-    """A hacky way to actually clone a HMM without changing its values.
+    """Clone a HMM without changing its values using a hacky way.
 
     XXX: This method can clone a HMM by copying over all values individually.
     It skips the init of the models, as using them lead to rounding issues, that result in models that are not
@@ -89,8 +89,9 @@ class _HackyClonableHMMFix(BaseTpcpObject):
     For more information see the `_clone_model` function.
 
     """
+
     @classmethod
-    def __clone_param__(cls, name: str, value: Any) -> Any:
+    def __clone_param__(cls, param_name: str, value: Any) -> Any:
         """Overwrite cloning for HMM models.
 
         XXX: This is hacky shit and it is stupid that I have to do it in the first place, but there is no build in
@@ -101,7 +102,7 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         """
         if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
-        return super().__clone_param__(name, value)
+        return super().__clone_param__(param_name, value)
 
 
 def create_transition_matrix_fully_connected(n_states):
@@ -169,7 +170,12 @@ def cluster_data_by_labels(data_list, label_list):
 
 
 def gmms_from_samples(
-    data, labels, n_components: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
+    data,
+    labels,
+    n_components: int,
+    verbose: bool = False,
+    n_init: int = 5,
+    n_jobs: int = 1,
 ):
     """Create Gaussian Mixtrue Models from samples.
 
@@ -255,7 +261,9 @@ def add_transition(model, transition, transition_probability):
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
+        get_state_by_name(model, transition[0]),
+        get_state_by_name(model, transition[1]),
+        transition_probability,
     )
 
 
