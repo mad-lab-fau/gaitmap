@@ -15,7 +15,7 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTr
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     add_transition,
-    clone_model,
+    _clone_model,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
@@ -321,7 +321,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         # make sure we do not change our distributions anymore!
         model_untrained.freeze_distributions()
 
-        model_trained = clone_model(model_untrained)
+        model_trained = _clone_model(model_untrained)
 
         # convert labels to state-names
         labels_train_sequence_str = labels_to_strings(labels_train_sequence)
