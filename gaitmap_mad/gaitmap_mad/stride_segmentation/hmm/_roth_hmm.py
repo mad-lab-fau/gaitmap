@@ -117,7 +117,7 @@ class RothHMM(BaseStrideSegmentation):
 
     @property
     def matches_start_end_original_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
-        """Return the starts and end directly from the paths.
+        """Return the starts and end directly from the hidden state sequence.
 
         This will not be effected by potential changes of the postprocessing.
         """
@@ -192,12 +192,12 @@ class RothHMM(BaseStrideSegmentation):
     def _segment_single_dataset(self, dataset, sampling_rate_hz):
         """Perform Stride Segmentation for a single dataset."""
         # tranform dataset to required feature space as defined by the given model parameters
-        model = self.model.clone()
+        model: SimpleSegmentationHMM = self.model.clone()
         feature_data = model.feature_transform.transform(dataset, sampling_rate_hz=sampling_rate_hz).transformed_data_
 
-        hidden_state_sequence = model.predict_hidden_state_sequence(feature_data)
+        hidden_state_sequence = model.predict(feature_data).state_sequence_
 
-        # tranform prediction back to original sampling rate!
+        # transform prediction back to original sampling rate!
         downsample_factor = int(
             np.round(sampling_rate_hz / model.feature_transform.sampling_frequency_feature_space_hz)
         )
@@ -229,6 +229,7 @@ class RothHMM(BaseStrideSegmentation):
 
         # special case where the very last part of the data is just half a stride, so the model finds a begin of a
         # stride but no end! We need to add this end manually
+        # TODO: Do we want that? I think we should remove unfinished strides!
         if len(matches_starts) > len(matches_ends):
             matches_ends = np.append(matches_ends, len(hidden_states_predicted))
 

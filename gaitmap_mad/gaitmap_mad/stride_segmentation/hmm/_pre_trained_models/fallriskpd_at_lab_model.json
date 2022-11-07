@@ -22,7 +22,7 @@
         },
         "initialization": "labels",
         "max_iterations": 1,
-        "_model": {
+        "model": {
             "_obj_type": "HiddenMarkovModel",
             "hmm": {
                 "class": "HiddenMarkovModel",
