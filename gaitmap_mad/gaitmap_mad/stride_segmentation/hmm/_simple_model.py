@@ -1,7 +1,7 @@
 """Simple _model base classes and helper."""
 
 import copy
-from typing import Any, Optional, Sequence, Tuple, Literal
+from typing import Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import pomegranate as pg
@@ -14,11 +14,11 @@ from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _clone_model,
+    _HackyClonableHMMFix,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     fix_model_names,
     gmms_from_samples,
-    _HackyClonableHMMFix,
 )
 
 
@@ -277,16 +277,15 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
                 "The given training sequence and initial training labels do not match in their number of individual "
-                "sequences! len(data_train_sequence_list) = {:d} !=  {:d} = len(initial_hidden_states_sequence_list)".format(
-                    len(data_sequence), len(labels_sequence)
-                )
+                f"sequences! len(data_train_sequence_list) = {len(data_sequence)} !=  {len(labels_sequence)} = len("
+                "initial_hidden_states_sequence_list)"
             )
 
         for data in data_sequence:
             if len(data) < self.n_states:
                 raise ValueError(
                     "Invalid Training Sequence! At least one training sequence has less samples than the specified "
-                    "value of states! n_states = {:d} > {:d} = len(data)".format(self.n_states, len(data))
+                    f"value of states! n_states = {self.n_states} > {len(data)} = len(data)"
                 )
 
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
