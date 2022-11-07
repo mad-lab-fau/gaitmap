@@ -13,7 +13,7 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    clone_model,
+    _clone_model,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     fix_model_names,
@@ -162,6 +162,7 @@ def train_hmm(
     # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead
     # to unexpected behaviour!
     length_of_training_sequences = np.array([len(data) for data in data_train_sequence])
+    # -2 here is because the number of states contains an implicit start and end state which we don't need.
     if np.any(length_of_training_sequences < (len(model_untrained.states) - 2)):
         raise ValueError(
             "Length of all training sequences must be equal or larger than the number of states in the given _model!"
@@ -169,7 +170,7 @@ def train_hmm(
 
     # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a
     # copy
-    model_trained = clone_model(model_untrained)
+    model_trained = _clone_model(model_untrained)
 
     history: History
     _, history = model_trained.fit(
@@ -233,7 +234,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi"):
         """Perform prediction based on given data and given model."""
-        # XXX: We don't consider this method a "action method" by definition, as it requires the algorithm to be
+        # NOTE: We don't consider this method a "action method" by definition, as it requires the algorithm to be
         # specified and does not return self.
         # The reason for that is, that we regularly need to call this method with different algorithms on the same
         # model.
@@ -245,7 +246,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
         if not np.array(feature_data).data.c_contiguous:
-            # XXX: We should never end up here... But let's keep the check, just to be sure!
+            # NOTE: We should never end up here... But let's keep the check, just to be sure!
             raise RuntimeError(
                 "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
             )

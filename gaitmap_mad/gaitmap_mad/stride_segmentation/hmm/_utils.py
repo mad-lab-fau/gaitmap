@@ -14,7 +14,34 @@ def _add_transition(model, a, b, probability, pseudocount, group):
     model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
 
 
-def clone_model(orig_model):
+def _clone_model(orig_model: pg.HiddenMarkovModel):
+    """A hacky way to actually clone a HMM without changing its values.
+
+    XXX: This method can clone a HMM by copying over all values individually.
+    It skips the init of the models, as using them lead to rounding issues, that result in models that are not
+    strictly identical.
+    This should not be a problem mathematically (as the rounding errors are small), but if you expect to get an
+    exact copy, this method can help you.
+
+    This should only be used internally! If you have a tpcp/gaitmap algorithm that contains a HMM as input param,
+    you should use `_clone_model` in the implementation, when you need a copy.
+    To make your algorithm itself properly clonable (including your HMM model), the algorithm needs to inherit from
+    `_HackyClonableHMMFix`.
+    This will overwrite how your algorithm handles `tpcp.clone`.
+    Note, it will not fix how deepcopy (`copy.deepcopy`) is handled.
+
+    Parameters
+    ----------
+    orig_model
+        The HMM model to clone
+
+    Returns
+    -------
+    model
+        A deepcopy of the HMM model.
+
+
+    """
     d = json.loads(orig_model.to_json())
 
     # Make a new generic HMM
@@ -52,6 +79,16 @@ def clone_model(orig_model):
 
 
 class _HackyClonableHMMFix(BaseTpcpObject):
+    """A hacky implementation to ensure that HMM parameters are actually cloned, when cloning the algorithm.
+
+    This implements and alternative cloning method for all parameters that are of type `pg.HiddenMarkovModel` that is
+    used when `tpcp.clone` is used.
+    When you implement an algorithm with a `pg.HiddenMarkovModel` as parameter, you should inherit from this class.
+    In addition, you should use `_clone_model` internally, when you need a identical copy/clone of your hmm.
+
+    For more information see the `_clone_model` function.
+
+    """
     @classmethod
     def __clone_param__(cls, name: str, value: Any) -> Any:
         """Overwrite cloning for HMM models.
@@ -63,7 +100,7 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         properly clone the objects (so that the hashs are identical).
         """
         if isinstance(value, pg.HiddenMarkovModel):
-            return clone_model(value)
+            return _clone_model(value)
         return super().__clone_param__(name, value)
 
 
