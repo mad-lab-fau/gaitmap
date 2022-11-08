@@ -57,6 +57,12 @@ class _CustomEncoder(json.JSONEncoder):
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
         if isinstance(o, HiddenMarkovModel):
+            warnings.warn(
+                "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
+                "round-trips. I.e. sometimes values (in particular weightings of distributions) might change slightly "
+                "in the re-imported model due to rounding issue. "
+                "This is a limitation of the underlying pomegrante library."
+            )
             return dict(_obj_type="HiddenMarkovModel", hmm=json.loads(o.to_json()))
         if o is tpcp.NOTHING:
             return dict(_obj_type="EmptyDefault")

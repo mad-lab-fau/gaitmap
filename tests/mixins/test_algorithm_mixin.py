@@ -4,7 +4,7 @@ import inspect
 import joblib
 import pytest
 from numpydoc.docscrape import NumpyDocString
-from tpcp import get_action_method, get_action_params, get_param_names, get_results
+from tpcp import get_action_method, get_action_params, get_param_names, get_results, BaseFactory
 
 from gaitmap.base import BaseAlgorithm, BaseType
 from tests.conftest import compare_algo_objects
@@ -114,7 +114,7 @@ class TestAlgorithmMixin:
             for p in init_signature.parameters.values()
             if p.name != "self" and p.kind != p.VAR_KEYWORD
         }
-        nested_algos = {k: v for k, v in parameters.items() if isinstance(v, BaseAlgorithm)}
+        nested_algos = {k: v for k, v in parameters.items() if isinstance(v, (BaseAlgorithm, BaseFactory))}
         if len(nested_algos) == 0:
             pytest.skip()
 
