@@ -117,7 +117,9 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     model: OptiPara[Optional[pgHMM]]
 
     data: pd.DataFrame
+    sampling_rate_hz: float
 
+    feature_space_data_: pd.DataFrame
     state_sequence_: np.ndarray
 
     def __init__(
@@ -173,18 +175,24 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         return self.transition_model.n_states + self.stride_model.n_states
 
     @property
-    def stride_states_(self) -> dict:
+    def stride_states_(self) -> np.ndarray:
         """Return stride states."""
         return np.arange(self.stride_model.n_states) + self.transition_model.n_states
 
     @property
-    def transition_states_(self) -> dict:
+    def transition_states_(self) -> np.ndarray:
         """Return transition states."""
         return np.arange(self.transition_model.n_states)
 
-    def predict(self, data: pd.DataFrame, **_) -> Self:
+    def predict(self, data: pd.DataFrame, *, sampling_rate_hz: float) -> Self:
         """Perform prediction based on given data and given model."""
         self.data = data
+        self.sampling_rate_hz = sampling_rate_hz
+
+        feature_data, _ = self._transform([data], None, sampling_rate_hz=sampling_rate_hz)
+        feature_data = feature_data[0]
+        self.feature_space_data_ = feature_data
+
         if self.model is None:
             raise ValueError(
                 "No trained model for prediction available! You must either provide a pre-trained model "
@@ -192,7 +200,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
                 "generate a new trained model."
             )
 
-        data = np.ascontiguousarray(data.to_numpy())
+        data = np.ascontiguousarray(feature_data.to_numpy())
 
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
@@ -204,7 +212,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.state_sequence_ = np.asarray(labels_predicted[1:-1])
         return self
 
-    def _transform(self, data_sequence, stride_list_sequence, sampling_frequency_hz):
+    def _transform(self, data_sequence, stride_list_sequence, sampling_rate_hz):
         """Perform feature transformation."""
         if not isinstance(data_sequence, list):
             raise ValueError("Input into transform must be a list of valid gaitmap sensordata objects!")
@@ -212,7 +220,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         feature_transform = self.feature_transform.clone()
 
         data_sequence_feature_space = [
-            feature_transform.transform(dataset, sampling_rate_hz=sampling_frequency_hz).transformed_data_
+            feature_transform.transform(dataset, sampling_rate_hz=sampling_rate_hz).transformed_data_
             for dataset in data_sequence
         ]
 
@@ -220,7 +228,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         if stride_list_sequence:
             stride_list_feature_space = [
                 feature_transform.transform(
-                    roi_list=stride_list, sampling_rate_hz=sampling_frequency_hz
+                    roi_list=stride_list, sampling_rate_hz=sampling_rate_hz
                 ).transformed_roi_list_
                 for stride_list in stride_list_sequence
             ]
