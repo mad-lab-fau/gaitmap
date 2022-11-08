@@ -25,8 +25,7 @@ class TestMetaFunctionalityRothHmm(TestAlgorithmMixin):
     algorithm_class = RothHMM
 
     @pytest.fixture()
-    def after_action_instance(self) -> RothHMM:
+    def after_action_instance(self, healthy_example_imu_data) -> RothHMM:
         hmm = RothHMM()
-        data = pd.DataFrame(np.random.rand(hmm.model.feature_transform.n_features, 1000).T)
-        hmm.segment(data, sampling_rate_hz=100)
+        hmm.segment(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
         return hmm
