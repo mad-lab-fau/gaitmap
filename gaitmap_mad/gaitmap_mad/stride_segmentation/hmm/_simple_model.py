@@ -309,7 +309,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
             max_iterations=self.max_iterations,
             stop_threshold=self.stop_threshold,
             algo_train=self.algo_train,
-            name=self.name + "-trained",
+            name=self.name + "_trained",
             verbose=self.verbose,
             n_jobs=self.n_jobs,
         )
