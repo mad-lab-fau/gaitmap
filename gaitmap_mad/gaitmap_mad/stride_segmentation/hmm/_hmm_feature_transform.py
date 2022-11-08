@@ -123,6 +123,10 @@ class FeatureTransformHMM(BaseTransformer):
         self.window_size_s = window_size_s
         self.standardization = standardization
 
+    @property
+    def n_features(self) -> int:
+        return len(self.axis) * len(self.features)
+
     def transform(
         self,
         data: Optional[SingleSensorData] = None,
