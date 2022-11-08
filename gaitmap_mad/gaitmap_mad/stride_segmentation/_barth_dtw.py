@@ -9,7 +9,6 @@ from tpcp import CloneFactory
 from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
-from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import StrideList
 from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
@@ -236,6 +235,9 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
     ) -> Tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
+            # Late import to avoid circular import
+            from gaitmap.stride_segmentation._utils import snap_to_min
+
             matches_start_end = snap_to_min(
                 data[self.snap_to_min_axis].to_numpy(),
                 matches_start_end,
