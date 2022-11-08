@@ -59,7 +59,7 @@ class RothHMM(BaseStrideSegmentation):
         The cost value associated with each stride.
     matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if `snap_to_min` is equal to `False`.
-        Otherwise, it return the start and end values before the sanpping is applied.
+        Otherwise, it returns the start and end values before the snapping is applied.
 
     Other Parameters
     ----------------
@@ -138,7 +138,7 @@ class RothHMM(BaseStrideSegmentation):
         return as_df
 
     @make_action_safe
-    def segment(self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
+    def segment(self, data: SensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Find matches by predicting a hidden state sequence using a pre-trained Hidden Markov Model.
 
         Parameters
@@ -168,7 +168,7 @@ class RothHMM(BaseStrideSegmentation):
                 self.hidden_state_sequence_,
                 self.dataset_feature_space_,
                 self.hidden_state_sequence_feature_space_,
-            ) = self._segment_single_dataset(data, sampling_rate_hz)
+            ) = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
         else:  # Multisensor
             self.hidden_state_sequence_ = {}
             self.matches_start_end_ = {}
@@ -181,7 +181,7 @@ class RothHMM(BaseStrideSegmentation):
                     hidden_state_sequence,
                     dataset_feature_space,
                     hidden_state_seq_feature_space,
-                ) = self._segment_single_dataset(data[sensor], sampling_rate_hz)
+                ) = self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
                 self.dataset_feature_space_[sensor] = dataset_feature_space
@@ -193,7 +193,9 @@ class RothHMM(BaseStrideSegmentation):
         """Perform Stride Segmentation for a single dataset."""
         # tranform dataset to required feature space as defined by the given model parameters
         model: SimpleSegmentationHMM = self.model.clone()
-        hidden_state_sequence = model.predict(dataset, sampling_rate_hz=sampling_rate_hz).state_sequence_
+        model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
+        feature_data = model.feature_space_data_
+        hidden_state_sequence = model.state_sequence_
 
         # transform prediction back to original sampling rate!
         downsample_factor = int(
