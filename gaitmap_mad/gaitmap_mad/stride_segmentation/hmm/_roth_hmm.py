@@ -211,21 +211,17 @@ class RothHMM(BaseStrideSegmentation):
             hidden_state_sequence,
         )
 
-    def _hidden_states_to_matches_start_end(self, hidden_states_predicted):
+    def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
         """Convert a hidden state sequence to a list of potential borders."""
         # TODO: Figure out if the strides are inclusive or exclusive the last sample
         stride_start_state = self.model.stride_states_[0]
         stride_end_state = self.model.stride_states_[-1]
 
         # find rising edge of stride start state sequence
-        state_sequence_starts = copy.deepcopy(hidden_states_predicted)
-        state_sequence_starts[state_sequence_starts != stride_start_state] = 0
-        matches_starts = np.argwhere(np.diff(state_sequence_starts) > 0)
+        matches_starts = np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype(int)) > 0)
 
         # find falling edge of stride end state sequence
-        state_sequence_ends = copy.deepcopy(hidden_states_predicted)
-        state_sequence_ends[state_sequence_ends != stride_end_state] = 0
-        matches_ends = np.argwhere(np.diff(state_sequence_ends) < 0)
+        matches_ends = np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype(int)) < 0)
 
         # special case where the very last part of the data is just half a stride, so the model finds a begin of a
         # stride but no end! We need to add this end manually
