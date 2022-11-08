@@ -3,6 +3,7 @@ import copy
 from typing import Dict, Literal, Optional, Sequence, Tuple
 
 import numpy as np
+import pandas as pd
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
@@ -115,6 +116,8 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
 
+    data: pd.DataFrame
+
     state_sequence_: np.ndarray
 
     def __init__(
@@ -179,23 +182,24 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         """Return transition states."""
         return np.arange(self.transition_model.n_states)
 
-    def predict(self, feature_data) -> Self:
+    def predict(self, data: pd.DataFrame, **_) -> Self:
         """Perform prediction based on given data and given model."""
+        self.data = data
         if self.model is None:
             raise ValueError(
-                "No trained _model for prediction available! You must either provide a pre-trained _model "
-                "during class initialization or call the train method with appropriate training data to "
-                "generate a new trained _model."
+                "No trained model for prediction available! You must either provide a pre-trained model "
+                "during class initialization or call the `self_optimize` method with appropriate training data to "
+                "generate a new trained model."
             )
 
-        feature_data = np.ascontiguousarray(feature_data.to_numpy())
+        data = np.ascontiguousarray(data.to_numpy())
 
         # need to check if memory layout of given data is
         # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-        if not np.array(feature_data).data.c_contiguous:
+        if not np.array(data).data.c_contiguous:
             raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
 
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=self.algo_predict))
+        labels_predicted = np.asarray(self.model.predict(data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds a label for the start- and end-state, which can be ignored here!
         self.state_sequence_ = np.asarray(labels_predicted[1:-1])
         return self
