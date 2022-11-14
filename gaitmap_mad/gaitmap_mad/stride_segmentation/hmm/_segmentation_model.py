@@ -16,6 +16,7 @@ from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideLi
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
+    _clone_model,
     _HackyClonableHMMFix,
     add_transition,
     create_transition_matrix_fully_connected,
@@ -26,7 +27,6 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_transitions,
     labels_to_strings,
     predict,
-    _clone_model,
 )
 
 
@@ -159,10 +159,6 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     sampling_rate_hz
         The sampling rate of the data
 
-    See Also
-    --------
-    TBD
-
     """
 
     _action_methods = ("predict",)
@@ -258,7 +254,7 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         """Return the ids of the transition states."""
         return np.arange(self.transition_model.n_states)
 
-    def predict(self, data: pd.DataFrame, *, sampling_rate_hz: float) -> Self:
+    def predict(self, data: pd.DataFrame, sampling_rate_hz: float) -> Self:
         """Perform prediction based on given data and given model."""
         if self.model is None:
             # We perform this check early to terminate before the potentially costly feature transform
@@ -314,10 +310,35 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     def self_optimize(
         self,
         data_sequence: Sequence[SingleSensorData],
-        labels_sequence: Sequence[SingleSensorStrideList],
+        stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_frequency_hz: float,
     ) -> Self:
-        return self.self_optimize_with_info(data_sequence, labels_sequence, sampling_frequency_hz)[0]
+        """Create and train the HMM model based on the given data and labels.
+
+        This will first apply the feature transformation to the given data and then train the HMM model in three steps:
+
+        1. Train the stride model on the stride data
+        2. Train the transition model on the transition data
+        3. Assemble the final model by combining the stride and transition model and train it for a couple further
+           iterations
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        stride_list_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        sampling_frequency_hz
+            Sampling frequency of the data.
+
+        Returns
+        -------
+        self
+            The trained model instance.
+
+        """
+        return self.self_optimize_with_info(data_sequence, stride_list_sequence, sampling_frequency_hz)[0]
 
     @make_optimize_safe
     def self_optimize_with_info(
@@ -326,7 +347,30 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_frequency_hz: float,
     ) -> Tuple[Self, Dict[Literal["self", "transition_model", "stride_model"], History]]:
-        """Train HMM."""
+        """Create and train the HMM model based on the given data and labels.
+
+        This is identical to `self_optimize`, but returns additional information about the training process.
+        The dictionary returned as second parameter contains the training history for each of the three models (
+        stride-model, transition-model, and the combined final model "self").
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        stride_list_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        sampling_frequency_hz
+            Sampling frequency of the data.
+
+        Returns
+        -------
+        self
+            The trained model instance.
+        history
+            Dictionary containing the training history for each of the three models
+
+        """
         if self.initialization not in ["labels", "fully-connected"]:
             raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
 

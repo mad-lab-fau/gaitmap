@@ -99,7 +99,10 @@ def initialize_hmm(
     # Note: In the past we used a fixed ransom state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence, labels_initialization_sequence, n_gmm_components, verbose=verbose,
+        data_train_sequence,
+        labels_initialization_sequence,
+        n_gmm_components,
+        verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -153,17 +156,23 @@ def train_hmm(
 
     Parameters
     ----------
-    model_untrained (pomegranate.HiddenMarkovModel)
+    model_untrained
         pomegranate HiddenMarkovModel object with initialized distributions and transition matrix
-    data_train_sequence (list of np.ndarrays)
+    data_train_sequence
         list of training sequences this might be e.g. a list of strides where each strides is represented by one
         np.ndarray (which might contain multiple dimensions)
-    algo_train (str)
+    algo_train
         algorithm for training, can be "viterbi", "baum-welch"
-    stop_threshold (float)
+    stop_threshold
         termination criteria for training improvement e.g. 1e-9
-    max_iterations (int)
+    max_iterations
         termination criteria for training iteration number e.g. 1000
+    name
+        The name of the final model object
+    verbose
+        Whether info should be printed to stdout
+    n_jobs
+        Number of parallel jobs to use for training.
 
     """
     # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead
@@ -341,12 +350,47 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     def self_optimize(
         self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
     ) -> Self:
+        """Create and train the HMM model based on the given data and labels.
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        labels_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+
+        Returns
+        -------
+        self
+            The trained model instance.
+
+        """
         return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
 
     def self_optimize_with_info(
         self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
     ) -> Tuple[Self, History]:
-        """Build model."""
+        """Create and train the HMM model based on the given data and labels.
+
+        This is identical to `self_optimize`, but returns additional information about the training process.
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        labels_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+
+        Returns
+        -------
+        self
+            The trained model instance.
+        history
+            The history callback containing the training history.
+
+        """
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
                 "The given training sequence and initial training labels do not match in their number of individual "
