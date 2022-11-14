@@ -90,7 +90,11 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "HiddenMarkovModel":
-            return HiddenMarkovModel.from_dict(json_obj["hmm"])
+            with np.errstate(divide="ignore"):
+                # Sometimes probabilities are zeror which can lead to warnings when the log-probabilities are
+                # calculated.
+                # We ignore these warnings here to avoid clutter in the output.
+                return HiddenMarkovModel.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
         if json_obj["_obj_type"] == "Tuple":
