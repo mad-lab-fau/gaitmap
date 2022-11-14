@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
-from gaitmap_mad.stride_segmentation.hmm import SimpleSegmentationHMM, PreTrainedRothSegmentationModel, RothHMM
+from gaitmap_mad.stride_segmentation.hmm import PreTrainedRothSegmentationModel, RothHMM, SimpleSegmentationHMM
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 

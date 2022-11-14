@@ -177,9 +177,9 @@ def gmms_from_samples(
     n_init: int = 5,
     n_jobs: int = 1,
 ):
-    """Create Gaussian Mixtrue Models from samples.
+    """Create Gaussian Mixture Models from samples.
 
-    This function clusteres the data by the given labels and fits either univariate or multivariate
+    This function clusters the data by the given labels and fits either univariate or multivariate
     Normal Distributions for each cluster. If n_components is > 1 then a Mixture Model of n-univariate or n-multivariate
     Gaussian Distributions will be fitted.
     """
