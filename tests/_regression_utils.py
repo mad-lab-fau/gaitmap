@@ -115,7 +115,12 @@ class PyTestSnapshotTest:
                 elif value_dtype == np.ndarray:
                     np.testing.assert_array_almost_equal(value, prev_snapshot, **kwargs)
                 elif value_dtype == str:
-                    assert value == prev_snapshot
+                    # Display the string diff line by line as part of error message using difflib
+                    import difflib
+
+                    diff = difflib.ndiff(value.splitlines(keepends=True), prev_snapshot.splitlines(keepends=True))
+                    diff = "".join(diff)
+                    assert value == prev_snapshot, diff
                 else:
                     raise ValueError("The dtype {} is not supported for snapshot testing".format(value_dtype))
 
