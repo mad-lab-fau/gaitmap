@@ -25,7 +25,8 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     labels_to_strings,
-    predict, _clone_model,
+    predict,
+    _clone_model,
 )
 
 
@@ -216,6 +217,7 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             )
         ),
         feature_transform: RothHMMFeatureTransformer = cf(RothHMMFeatureTransformer()),
+        *,
         algo_predict: Literal["viterbi", "map"] = "viterbi",
         algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
         stop_threshold: float = 1e-9,

@@ -5,7 +5,7 @@ from gaitmap_mad.stride_segmentation.hmm import (
     PreTrainedRothSegmentationModel,
     RothHMM,
     RothHMMFeatureTransformer,
-    SegmentationHMM,
+    SegmentationHMM, SimpleHMM,
 )
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -50,3 +50,18 @@ class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
             sampling_rate_hz=100,
         )
         return transform
+
+class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
+    __test__ = True
+
+    algorithm_class = SimpleHMM
+
+    @pytest.fixture()
+    def valid_instance(self, after_action_instance):
+        return SimpleHMM(n_states=5, n_gmm_components=3)
+
+    def test_empty_init(self):
+        pytest.skip()
+
+
+
