@@ -1,20 +1,22 @@
 """Utils and helper functions for HMM classes."""
 import json
-from typing import Any
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import pomegranate as pg
 from tpcp import BaseTpcpObject
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 
 
 def _add_transition(model, a, b, probability, pseudocount, group):
+    """Hacky way to add a transition when cloning a model in the "wrong" way."""
     pseudocount = pseudocount or probability
     model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
 
 
-def _clone_model(orig_model: pg.HiddenMarkovModel):
+def _clone_model(orig_model: pg.HiddenMarkovModel) -> pg.HiddenMarkovModel:
     """Clone a HMM without changing its values using a hacky way.
 
     XXX: This method can clone a HMM by copying over all values individually.
@@ -105,16 +107,18 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         return super().__clone_param__(param_name, value)
 
 
-def create_transition_matrix_fully_connected(n_states):
+def create_transition_matrix_fully_connected(n_states: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition matrix with only 1 entries."""
     transition_matrix = np.ones((n_states, n_states)) / n_states
     start_probs = np.ones(n_states)
     end_probs = np.ones(n_states)
 
-    return [transition_matrix, start_probs, end_probs]
+    return transition_matrix, start_probs, end_probs
 
 
-def create_transition_matrix_left_right(n_states, self_transition=True):
+def create_transition_matrix_left_right(
+    n_states: int, self_transition: bool = True
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition for left to right model."""
     transition_matrix = np.zeros((n_states, n_states))
     transition_matrix[range(n_states - 1), range(1, n_states)] = 1
@@ -129,10 +133,10 @@ def create_transition_matrix_left_right(n_states, self_transition=True):
     end_probs = np.zeros(n_states)
     end_probs[-1] = 1
 
-    return [transition_matrix, start_probs, end_probs]
+    return transition_matrix, start_probs, end_probs
 
 
-def print_transition_matrix(model, precision=3):
+def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3):
     """Print model transition matrix in user-friendly format."""
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision)
@@ -142,17 +146,12 @@ def print_transition_matrix(model, precision=3):
         print(model)
 
 
-def cluster_data_by_labels(data_list, label_list):
+def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndarray]):
     """Cluster data by labels."""
-    # just check everything for correct types
-    if not isinstance(label_list, list):
-        label_list = [label_list]
+    assert isinstance(label_list, list), "label_list must be list!"
+    assert isinstance(data_list, list), "data_list must be list!"
 
     label_list = [np.asarray(label).tolist() for label in label_list]
-
-    if not isinstance(data_list, list):
-        data_list = [label_list]
-
     data_list = [np.asarray(data).tolist() for data in data_list]
 
     # remove datasets where the labellist is None
@@ -246,18 +245,18 @@ def fix_model_names(model):
     return model
 
 
-def get_state_by_name(model, state_name):
+def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
     """Get state object from model by name."""
     for state in model.states:
         if state.name == state_name:
             return state
-    raise ValueError("State %s not found within given _model!" % state_name)
+    raise ValueError(f"State {state_name} not found within given _model!")
 
 
-def add_transition(model, transition, transition_probability):
+def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], transition_probability: float):
     """Add a transition to an existing model by state-names.
 
-    add_transition(model, transition = ["s0","s1"], transition_probability = 0.5)
+    add_transition(model, transition = ("s0","s1"), transition_probability = 0.5)
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
@@ -267,19 +266,7 @@ def add_transition(model, transition, transition_probability):
     )
 
 
-def predict(model, data, algorithm="viterbi"):
-    """Perform prediction based on given data and given model."""
-    # need to check if memory layout of given data is
-    # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-    if not np.array(data, dtype=object).data.c_contiguous:
-        raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
-
-    labels_predicted = np.asarray(model.predict(data, algorithm=algorithm))
-    # pomegranate always adds a label for the start- and end-state, which can be ignored here!
-    return np.asarray(labels_predicted[1:-1])
-
-
-def get_model_distributions(model):
+def get_model_distributions(model: pg.HiddenMarkovModel) -> List[pg.Distribution]:
     """Return all not None distributions as list from given model."""
     distributions = []
     for state in model.states:
@@ -288,14 +275,13 @@ def get_model_distributions(model):
     return distributions
 
 
-def labels_to_strings(labelsequence):
+def labels_to_strings(labelsequence: List[Optional[np.ndarray]]) -> List[Optional[List[str]]]:
     """Convert label sequence of ints to strings.
 
     Pomegranated messes up sorting of states: it will sort like this: s0, s1, s10, s2.... which can lead to unexpected
     behaviour.
     """
-    if not isinstance(labelsequence, list):
-        labelsequence = [labelsequence]
+    assert isinstance(labelsequence, list), "labelsequence must be list!"
 
     labelsequence_str = []
     for sequence in labelsequence:
@@ -306,7 +292,9 @@ def labels_to_strings(labelsequence):
     return labelsequence_str
 
 
-def extract_transitions_starts_stops_from_hidden_state_sequence(hidden_state_sequence):
+def extract_transitions_starts_stops_from_hidden_state_sequence(
+    hidden_state_sequence: List[np.ndarray],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Extract transitions from hidden state sequence.
 
     This function will return a list of transitions as well as start and stop labels that can be found within the
@@ -324,8 +312,7 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(hidden_state_seq
     output_starts = [1,0]
     output_stops = [5,6]
     """
-    if not isinstance(hidden_state_sequence, list):
-        hidden_state_sequence = [hidden_state_sequence]
+    assert isinstance(hidden_state_sequence, list), "Hidden state sequence must be list!"
 
     transitions = []
     starts = []
@@ -341,32 +328,10 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(hidden_state_seq
     starts = np.unique(starts).astype(int)
     ends = np.unique(ends).astype(int)
 
-    return [transitions, starts, ends]
+    return transitions, starts, ends
 
 
-def create_equidistant_labels_from_label_list(data, label_list, n_states, state_offset=1):
-    """Create equidistant labels for input data.
-
-    This function takes a single data sequence e.g. one gait bout and a corresponding label_list with "start-end"
-    values as input. Retrun value will be labels for the given dataset with stair like ascending labels for each stride
-    with equidistance step width.
-    """
-    labels = np.zeros(len(data))
-
-    for label in label_list:
-        length = label[1] - label[0]
-        n_samples = int(round(length / n_states))
-
-        state = None
-        for state in np.arange(0, n_states):
-            start = label[0] + state * n_samples
-            labels[start : start + n_samples] = state + state_offset
-        labels[start + n_samples : label[1]] = state + state_offset
-
-    return labels
-
-
-def create_equidistant_label_sequence(n_labels, n_states):
+def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarray:
     """Create equidistant label sequence.
 
     create label sequence of length n_states with n_labels unique labels. This can be used to e.g. initialize labels
@@ -378,17 +343,23 @@ def create_equidistant_label_sequence(n_labels, n_states):
     label_sequence = np.zeros(n_labels)
 
     state = None
-    for state in np.arange(0, n_states):
-        start = state * n_labels_per_state
-        label_sequence[start : start + n_labels_per_state] = state
+    if n_states < 1:
+        raise ValueError("Number of states must be at least 1!")
 
+    end = 0
+    for state in range(0, n_states):
+        start = state * n_labels_per_state
+        end = start + n_labels_per_state
+        label_sequence[start:end] = state
     # fill remaining array with last state
-    label_sequence[start + n_labels_per_state :] = state
+    label_sequence[end:] = state
 
     return label_sequence
 
 
-def get_train_data_sequences_transitions(data_train_sequence, stride_list_sequence, n_states):
+def get_train_data_sequences_transitions(
+    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Extract Transition Training set.
 
     - data_train_sequence: list of datasets in feature space
@@ -421,7 +392,9 @@ def get_train_data_sequences_transitions(data_train_sequence, stride_list_sequen
     return trans_data_train_sequence, trans_labels_train_sequence
 
 
-def get_train_data_sequences_strides(data_train_sequence, stride_list_sequence, n_states):
+def get_train_data_sequences_strides(
+    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Extract Transition Training set.
 
     - data_train_sequence: list of datasets in feature space
