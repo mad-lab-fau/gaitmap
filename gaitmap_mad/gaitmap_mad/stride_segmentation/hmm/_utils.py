@@ -45,12 +45,16 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
     ----------
     orig_model
         The HMM model to clone
+    assert_correct
+        If True, the cloned model will be compared to the original model and an AssertionError will be raised if they
+        not identical.
+        In general, this should be True, however, when you want to clone a model with certain edges that are not
+        fully covered, you can set this to False at your own risk.
 
     Returns
     -------
     model
         A deepcopy of the HMM model.
-
 
     """
     d = json.loads(orig_model.to_json())
@@ -194,7 +198,12 @@ def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndar
 
 
 def gmms_from_samples(
-    data, labels, n_components: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
+    data,
+    labels,
+    n_components: int,
+    verbose: bool = False,
+    n_init: int = 5,
+    n_jobs: int = 1,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -280,7 +289,9 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
+        get_state_by_name(model, transition[0]),
+        get_state_by_name(model, transition[1]),
+        transition_probability,
     )
 
 
@@ -456,6 +467,7 @@ def predict(
     -------
     hidden_state_sequence
         A numpy array containing the predicted hidden state sequence.
+
     """
     if model is None:
         raise ValueError(

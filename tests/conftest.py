@@ -9,7 +9,6 @@ from pandas._testing import assert_frame_equal, assert_series_equal
 from pomegranate import GeneralMixtureModel, State
 from scipy.spatial.transform import Rotation
 from tpcp import BaseTpcpObject
-from tpcp._hash import custom_hash
 
 from gaitmap.example_data import (
     get_healthy_example_imu_data,

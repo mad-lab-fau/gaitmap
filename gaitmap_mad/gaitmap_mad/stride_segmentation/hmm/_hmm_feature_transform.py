@@ -60,7 +60,6 @@ class HMMFeatureTransformer(BaseTransformer):
         If now down-sampling is required, set `self.transformed_roi_list_` to `roi_list`.
 
         """
-
         raise NotImplementedError()
 
     def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, sampling_rate_hz: float) -> np.ndarray:
@@ -175,6 +174,7 @@ class RothHMMFeatureTransformer(HMMFeatureTransformer):
 
     @property
     def n_features(self) -> int:
+        """Get the number of features in the transformed data."""
         return len(self.axis) * len(self.features)
 
     def transform(
@@ -185,7 +185,7 @@ class RothHMMFeatureTransformer(HMMFeatureTransformer):
         sampling_rate_hz: Optional[float] = None,
         **kwargs,
     ):
-        """Perform Feature transformation for a single dataset and/or Stride list.
+        """Perform feature transformation for a single dataset and/or stride list.
 
         Parameters
         ----------

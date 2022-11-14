@@ -145,7 +145,7 @@ class RothHMM(BaseStrideSegmentation):
         return as_df
 
     @make_action_safe
-    def segment(self, data: SensorData, *, sampling_rate_hz: float, **_) -> Self:
+    def segment(self, data: SensorData, sampling_rate_hz: float, **_) -> Self:
         """Find matches by predicting a hidden state sequence using a pre-trained Hidden Markov Model.
 
         Parameters
@@ -202,15 +202,15 @@ class RothHMM(BaseStrideSegmentation):
         model: SegmentationHMM = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
         feature_data = model.feature_space_data_
-        hidden_state_sequence_feature_space = model.hidden_state_sequence_feature_space_
-        hidden_state_sequence = model.hidden_state_sequence_
+        state_sequence_feature_space = model.hidden_state_sequence_feature_space_
+        state_sequence = model.hidden_state_sequence_
 
-        matches_start_end = self._hidden_states_to_matches_start_end(hidden_state_sequence)
+        matches_start_end = self._hidden_states_to_matches_start_end(state_sequence)
         return (
             self._postprocess_matches(dataset, matches_start_end),
-            hidden_state_sequence,
+            state_sequence,
             feature_data,
-            hidden_state_sequence_feature_space,
+            state_sequence_feature_space,
         )
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
