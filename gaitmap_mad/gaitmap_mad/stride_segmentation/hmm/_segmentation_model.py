@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Dict, Literal, Optional, Sequence, Tuple
+from typing import Dict, Literal, Optional, Sequence, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -84,20 +84,82 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     Parameters
     ----------
-    sampling_rate_hz_model
-        The sampling rate of the data the model was trained with
-    low_pass_cutoff_hz
-        Cutoff frequency of low-pass filter for preprocessing
-    low_pass_order
-        Low-pass filter order
-    axis
-        List of sensor axis which will be used as model input
-    features
-        List of features which will be used as model input
-    window_size_s
-        window size of moving centered window for feature extraction
-    standardization
-        Flag for feature standardization /  z-score normalization
+    stride_model
+        The (untrained) hmm representing the strides in the data.
+        This will be updated during the optimization step (see notes).
+    transition_model
+        The (untrained) hmm representing the transitions in the data.
+        This will be updated during the optimization step (see notes).
+    feature_transform
+        An instance of a feature transform class that can transform the data (and the labeled stride list) into the
+        feature space required by the HMM.
+        In general this can be any feature transform, but we recommend using the
+        :class:`~gaitmap.stride_segmentation.hmm.FeatureTransformHMM` class until the transformation interface is
+        further finalized.
+    algo_train
+        The algorithm to use for training the HMM.
+    algo_predict
+        The algorithm to use for prediction with the HMM.
+    stop_threshold
+        The loss threshold to stop the optimization.
+        Note, that is the threshold for the "combined" training of the final model.
+        This is less important, as we recommend to train the combined model only for a single iteration anyway.
+        If you want to adjust the stop threshold for the individual models, you can do so by adjusting the respective
+        parameters of the stride and transition model (`stride_model.stop_threshold` and
+        `transition_model.stop_threshold`).
+    max_iterations
+        The maximum number of iterations to perform during the optimization.
+        Note, that this is the value for the "combined" training of the final model.
+        We recommend keeping this value at 1, as the combined model training only adjusts the transition matrix.
+        If you want to adjust the max iterations for the individual models, you can do so by adjusting the respective
+        parameters of the stride and transition model (`stride_model.max_iterations` and
+        `transition_model.max_iterations`).
+    initialization
+        The initialization method to use for the HMM during optimization.
+        `fully-connected` assumes that all states are reachable from any other state with the same probability.
+        `labels` will derive the allowed transitions and probabilities from the given labels.
+        In both cases, distributions will be derived from the data during optimization.
+        We recommend using `labels` here, as this is kind of the default mode we expect these segmentation models to be
+        used.
+        If you select `fully-connected`, you might want to increase the `max_iterations` parameter to allow the model to
+        actually be trained.
+    verbose
+        If True, print additional information during optimization.
+    n_jobs
+        The number of parallel jobs to use during optimization.
+        If set to -1, all available cores will be used.
+    name
+        The name of the final pomegranate model.
+    model
+        The actual pomegranate HMM model.
+        This can be set to `None` initially.
+        A model will then be created during the optimization step.
+        If you want to use a pre-trained model, you can set this parameter to the respective model.
+        However, we recommend to ideally export this entire class instead of just the model to make sure that things
+        like the feature transform are also exported/stored.
+    data_columns
+        The expected columns of the input data in feature space.
+        This will be automatically set based on the feature transform output during the optimization step.
+        This does not affect the output, but is used as a sanity check to ensure that valid input data is provided
+        and that the column order is correct.
+
+    Attributes
+    ----------
+    feature_space_data_
+        The data in feature space.
+        This is only here for debugging purposes.
+    hidden_state_sequence_
+        The hidden state sequence predicted by the model with the same sampling rate as the input data.
+    hidden_state_sequence_feature_space_
+        The predicted hidden-state sequence in feature space.
+
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the `segment` method.
+    sampling_rate_hz
+        The sampling rate of the data
 
     See Also
     --------
@@ -129,7 +191,8 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     sampling_rate_hz: float
 
     feature_space_data_: pd.DataFrame
-    state_sequence_: np.ndarray
+    hidden_state_sequence_: np.ndarray
+    hidden_state_sequence_feature_space_: np.ndarray
 
     def __init__(
         self,
@@ -156,7 +219,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             )
         ),
         feature_transform: FeatureTransformHMM = cf(FeatureTransformHMM()),
-        algo_predict: Literal["viterbi", "baum-welch"] = "viterbi",
+        algo_predict: Literal["viterbi", "map"] = "viterbi",
         algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
         stop_threshold: float = 1e-9,
         max_iterations: int = 1,
@@ -183,16 +246,17 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     @property
     def n_states(self) -> int:
+        """Return the number of states of the final model."""
         return self.transition_model.n_states + self.stride_model.n_states
 
     @property
-    def stride_states_(self) -> np.ndarray:
-        """Return stride states."""
+    def stride_states(self) -> np.ndarray:
+        """Return the ids of the stride states."""
         return np.arange(self.stride_model.n_states) + self.transition_model.n_states
 
     @property
-    def transition_states_(self) -> np.ndarray:
-        """Return transition states."""
+    def transition_states(self) -> np.ndarray:
+        """Return the ids of the transition states."""
         return np.arange(self.transition_model.n_states)
 
     def predict(self, data: pd.DataFrame, *, sampling_rate_hz: float) -> Self:
@@ -213,12 +277,20 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.feature_space_data_ = feature_data
 
         # pomegranate always adds a label for the start- and end-state, which can be ignored here!
-        self.state_sequence_ = predict(
+        self.hidden_state_sequence_feature_space_ = predict(
             self.model, feature_data, expected_columns=self.data_columns, algorithm=self.algo_predict
+        )
+        self.hidden_state_sequence_ = self.feature_transform.inverse_transform_state_sequence(
+            self.hidden_state_sequence_feature_space_, sampling_rate_hz=sampling_rate_hz
         )
         return self
 
-    def _transform(self, data_sequence, stride_list_sequence, sampling_rate_hz):
+    def _transform(
+        self,
+        data_sequence: Sequence[pd.DataFrame],
+        stride_list_sequence: Optional[Sequence[pd.DataFrame]],
+        sampling_rate_hz: float,
+    ):
         """Perform feature transformation."""
         if not isinstance(data_sequence, list):
             raise ValueError("Input into transform must be a list of valid gaitmap sensordata objects!")
@@ -262,7 +334,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         )
 
         if self.initialization not in ["labels", "fully-connected"]:
-            raise ValueError('Invalid value for initialization! Must be one of "labels" or "fully-connected"')
+            raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
 
         # train sub stride model
         strides_sequence, init_stride_state_labels = get_train_data_sequences_strides(
@@ -308,7 +380,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         if self.initialization == "fully-connected":
             trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(self.n_states)
 
-            model_untrained = pg.HiddenMarkovModel.from_matrix(
+            new_model = pg.HiddenMarkovModel.from_matrix(
                 transition_probabilities=copy.deepcopy(trans_mat),
                 distributions=copy.deepcopy(distributions),
                 starts=start_probs,
@@ -341,7 +413,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             end_probs = np.zeros(self.n_states)
             end_probs[ends] = 1.0
 
-            model_untrained = pg.HiddenMarkovModel.from_matrix(
+            new_model = pg.HiddenMarkovModel.from_matrix(
                 transition_probabilities=copy.deepcopy(trans_mat),
                 distributions=copy.deepcopy(distributions),
                 starts=start_probs,
@@ -353,20 +425,18 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             # Add missing transitions which will "connect" transition-hmm and stride-hmm
             for trans in transitions:
                 # if edge already exists, skip
-                if not model_untrained.dense_transition_matrix()[trans[0], trans[1]]:
-                    add_transition(model_untrained, (f"s{trans[0]:d}", f"s{trans[1]:d}"), 0.1)
+                if not new_model.dense_transition_matrix()[trans[0], trans[1]]:
+                    add_transition(new_model, (f"s{trans[0]:d}", f"s{trans[1]:d}"), 0.1)
         else:
             # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
             raise RuntimeError()
         # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order
         # like s0, s1, s10, s2 usw..)
-        model_untrained = fix_model_names(model_untrained)
-        model_untrained.bake()
+        new_model = fix_model_names(new_model)
+        new_model.bake()
 
         # make sure we do not change our distributions anymore!
-        model_untrained.freeze_distributions()
-
-        model_trained = _clone_model(model_untrained)
+        new_model.freeze_distributions()
 
         # convert labels to state-names
         labels_train_sequence_str = labels_to_strings(labels_train_sequence)
@@ -376,7 +446,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             np.ascontiguousarray(copy.deepcopy(feature_data.to_numpy())) for feature_data in data_sequence_feature_space
         ]
 
-        _, history = model_trained.fit(
+        _, history = new_model.fit(
             sequences=data_train_sequence,
             labels=labels_train_sequence_str.copy(),
             algorithm=self.algo_train,
@@ -387,9 +457,9 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             n_jobs=self.n_jobs,
         )
 
-        model_trained.name = self.name
+        new_model.name = self.name
 
-        self.model = model_trained
+        self.model = new_model
 
         return (
             self,
