@@ -13,6 +13,7 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._utils import (
+    ShortenedHMMPrint,
     _clone_model,
     _HackyClonableHMMFix,
     create_transition_matrix_fully_connected,
@@ -204,7 +205,7 @@ def train_hmm(
     return model_trained, history
 
 
-class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
+class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
     This is a thin wrapper around the pomegranate HiddenMarkovModel class and basically calls out the pomegranate for
@@ -261,32 +262,43 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     This model supports currently the following "architectures":
 
     - "left-right-strict":
-        This will result in a strictly left-right structure, with no self-transitions and
-        start- and end-state bound to the first and last state, respectively.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  0  0  0   starts: 1  0  0  0  0
-                           0  1  1  0  0   stops:  0  0  0  0  1
-                           0  0  1  1  0
-                           0  0  0  1  1
-                           0  0  0  0  1
+      This will result in a strictly left-right structure, with no self-transitions and
+      start- and end-state bound to the first and last state, respectively.
+      Example transition matrix for a 5-state model:
+
+      .. code::
+
+          transition_matrix: 1  1  0  0  0   starts: 1  0  0  0  0
+                             0  1  1  0  0   stops:  0  0  0  0  1
+                             0  0  1  1  0
+                             0  0  0  1  1
+                             0  0  0  0  1
+
     - "left-right-loose":
-        This will result in a loose left-right structure, with allowed self-transitions and
-        start- and end-state not specified initially.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  0  0  0   starts: 1  1  1  1  1
-                           0  1  1  0  0   stops:  1  1  1  1  1
-                           0  0  1  1  0
-                           0  0  0  1  1
-                           1  0  0  0  1
+      This will result in a loose left-right structure, with allowed self-transitions and
+      start- and end-state not specified initially.
+      Example transition matrix for a 5-state model:
+
+      .. code::
+
+          transition_matrix: 1  1  0  0  0   starts: 1  1  1  1  1
+                             0  1  1  0  0   stops:  1  1  1  1  1
+                             0  0  1  1  0
+                             0  0  0  1  1
+                             1  0  0  0  1
+
     - "fully-connected":
-        This will result in a fully connected structure where all existing edges are initialized with the same
-        probability.
-        Example transition matrix for a 5-state model:
-        transition_matrix: 1  1  1  1  1   starts: 1  1  1  1  1
-                           1  1  1  1  1   stops:  1  1  1  1  1
-                           1  1  1  1  1
-                           1  1  1  1  1
-                           1  1  1  1  1
+      This will result in a fully connected structure where all existing edges are initialized with the same
+      probability.
+      Example transition matrix for a 5-state model:
+
+      .. code::
+
+          transition_matrix: 1  1  1  1  1   starts: 1  1  1  1  1
+                             1  1  1  1  1   stops:  1  1  1  1  1
+                             1  1  1  1  1
+                             1  1  1  1  1
+                             1  1  1  1  1
 
     See Also
     --------

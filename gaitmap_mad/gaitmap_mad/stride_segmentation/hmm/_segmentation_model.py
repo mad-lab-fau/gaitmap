@@ -16,6 +16,7 @@ from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideLi
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
+    ShortenedHMMPrint,
     _clone_model,
     _HackyClonableHMMFix,
     add_transition,
@@ -74,7 +75,7 @@ def create_fully_labeled_gait_sequences(
     return labels_train_sequence
 
 
-class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
+class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
     Note, that we are also store the trained stride and transition model during the optimization step.

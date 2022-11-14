@@ -5,7 +5,7 @@ from typing import Any, List, Literal, Optional, Tuple
 import numpy as np
 import pandas as pd
 import pomegranate as pg
-from tpcp import BaseTpcpObject
+from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
@@ -134,6 +134,19 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
         return super().__clone_param__(param_name, value)
+
+
+class ShortenedHMMPrint(BaseTpcpObject):
+    """Mixin class to better format pg.HMM models when printing them."""
+
+    def __repr_parameter__(self, name: str, value: Any) -> str:
+        """Representation with specific care for HMM models."""
+        if name == "model":
+            if isinstance(value, pg.HiddenMarkovModel):
+                return f"{name}=HiddenMarkovModel[name={value.name}](...)"
+            if isinstance(value, CloneFactory) and isinstance(value.default_value, pg.HiddenMarkovModel):
+                return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
+        return super().__repr_parameter__(name, value)
 
 
 def create_transition_matrix_fully_connected(n_states: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
