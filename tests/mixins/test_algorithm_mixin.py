@@ -15,6 +15,10 @@ class TestAlgorithmMixin:
     __test__ = False
 
     @pytest.fixture()
+    def valid_instance(self, after_action_instance):
+        return after_action_instance
+
+    @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         pass
 
@@ -62,13 +66,15 @@ class TestAlgorithmMixin:
 
     def test_action_method_returns_self(self, after_action_instance):
         # call the action method a second time to test the output
+        if not after_action_instance:
+            pytest.skip("The testclass did not implement the correct `after_action_instance` fixture.")
         parameters = get_action_params(after_action_instance)
         results = get_action_method(after_action_instance)(**parameters)
 
         assert id(results) == id(after_action_instance)
 
-    def test_set_params_valid(self, after_action_instance):
-        instance = after_action_instance.clone()
+    def test_set_params_valid(self, valid_instance):
+        instance = valid_instance.clone()
         valid_names = get_param_names(instance)
         values = list(range(len(valid_names)))
         instance.set_params(**dict(zip(valid_names, values)))
@@ -76,8 +82,8 @@ class TestAlgorithmMixin:
         for k, v in zip(valid_names, values):
             assert getattr(instance, k) == v, k
 
-    def test_set_params_invalid(self, after_action_instance):
-        instance = after_action_instance.clone()
+    def test_set_params_invalid(self, valid_instance):
+        instance = valid_instance.clone()
 
         with pytest.raises(ValueError) as e:
             instance.set_params(an_invalid_name=1)
@@ -85,8 +91,8 @@ class TestAlgorithmMixin:
         assert "an_invalid_name" in str(e)
         assert self.algorithm_class.__name__ in str(e)
 
-    def test_json_roundtrip(self, after_action_instance):
-        instance = after_action_instance.clone()
+    def test_json_roundtrip(self, valid_instance):
+        instance = valid_instance.clone()
 
         json_str = instance.to_json()
 
@@ -94,9 +100,9 @@ class TestAlgorithmMixin:
 
         compare_algo_objects(instance, instance_from_json)
 
-    def test_hashing(self, after_action_instance):
+    def test_hashing(self, valid_instance):
         """This checks if caching with joblib will work as expected."""
-        instance = after_action_instance.clone()
+        instance = valid_instance.clone()
 
         assert joblib.hash(instance) == joblib.hash(instance.clone())
 
