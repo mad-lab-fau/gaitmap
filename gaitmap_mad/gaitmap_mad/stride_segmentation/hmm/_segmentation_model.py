@@ -26,6 +26,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     labels_to_strings,
+    predict,
 )
 
 
@@ -76,6 +77,11 @@ def create_fully_labeled_gait_sequences(
 class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     """Wrap all required information to train a new HMM.
 
+    Note, that we are also store the trained stride and transition model during the optimization step.
+    These are not required for prediction, as all there information is also contained in the fused model.
+    However, inspecting the trained models might provide further inside into possible training issues.
+    As the models are generally small, this should not impact RAM (or disk usage during export) in a relevant way.
+
     Parameters
     ----------
     sampling_rate_hz_model
@@ -103,8 +109,10 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     stride_model: SimpleHMM
     stride_model__model: OptiPara
+    stride_model__data_columns: OptiPara
     transition_model: SimpleHMM
     transition_model__model: OptiPara
+    transition_model__data_columns: OptiPara
     feature_transform: FeatureTransformHMM
     algo_predict: Literal["viterbi", "baum-welch"]
     algo_train: Literal["viterbi", "baum-welch"]
@@ -115,6 +123,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     n_jobs: int
     name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
+    data_columns: OptiPara[Optional[Tuple[str, ...]]]
 
     data: pd.DataFrame
     sampling_rate_hz: float
@@ -156,6 +165,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         n_jobs: int = 1,
         name: str = "segmentation_model",
         model: Optional[pgHMM] = None,
+        data_columns: Optional[Tuple[str, ...]] = None,
     ):
         self.stride_model = stride_model
         self.transition_model = transition_model
@@ -169,6 +179,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.n_jobs = n_jobs
         self.name = name
         self.model = model
+        self.data_columns = data_columns
 
     @property
     def n_states(self) -> int:
@@ -186,6 +197,14 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     def predict(self, data: pd.DataFrame, *, sampling_rate_hz: float) -> Self:
         """Perform prediction based on given data and given model."""
+        if self.model is None:
+            # We perform this check early to terminate before the potentially costly feature transform
+            raise ValueError(
+                "No trained model for prediction available! You must either provide a pre-trained model "
+                "during class initialization or call the `self_optimize`/`self_optimize_with_info` method with "
+                "appropriate training data to generate a new trained model."
+            )
+
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
@@ -193,23 +212,10 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         feature_data = feature_data[0]
         self.feature_space_data_ = feature_data
 
-        if self.model is None:
-            raise ValueError(
-                "No trained model for prediction available! You must either provide a pre-trained model "
-                "during class initialization or call the `self_optimize` method with appropriate training data to "
-                "generate a new trained model."
-            )
-
-        data = np.ascontiguousarray(feature_data.to_numpy())
-
-        # need to check if memory layout of given data is
-        # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-        if not np.array(data).data.c_contiguous:
-            raise ValueError("Memory Layout of given input data is not contiguous! Consider using ")
-
-        labels_predicted = np.asarray(self.model.predict(data.copy(), algorithm=self.algo_predict))
         # pomegranate always adds a label for the start- and end-state, which can be ignored here!
-        self.state_sequence_ = np.asarray(labels_predicted[1:-1])
+        self.state_sequence_ = predict(
+            self.model, feature_data, expected_columns=self.data_columns, algorithm=self.algo_predict
+        )
         return self
 
     def _transform(self, data_sequence, stride_list_sequence, sampling_rate_hz):
@@ -248,7 +254,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_frequency_hz: float,
-    ) -> Tuple[Self, Dict[str, History]]:
+    ) -> Tuple[Self, Dict[Literal["self", "transition_model", "stride_model"], History]]:
         """Train HMM."""
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(
@@ -385,7 +391,6 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
 
         self.model = model_trained
 
-        # TODO: Add the history elements of the inner optimizations
         return (
             self,
             {"self": history, "transition_model": transition_model_history, "stride_model": stride_model_history},

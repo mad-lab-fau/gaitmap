@@ -19,6 +19,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     create_transition_matrix_left_right,
     fix_model_names,
     gmms_from_samples,
+    predict,
 )
 
 
@@ -98,10 +99,7 @@ def initialize_hmm(
     # Note: In the past we used a fixed ransom state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        verbose=verbose,
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -219,6 +217,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     n_jobs: int
     name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
+    data_columns: OptiPara[Optional[Tuple[str, ...]]]
 
     def __init__(
         self,
@@ -232,6 +231,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         n_jobs: int = 1,
         name: str = "my_model",
         model: Optional[pgHMM] = None,
+        data_columns: Optional[Tuple[str, ...]] = None,
     ):
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -243,8 +243,11 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.n_jobs = n_jobs
         self.name = name
         self.model = model
+        self.data_columns = data_columns
 
-    def predict_hidden_state_sequence(self, feature_data: SingleSensorData, algorithm="viterbi") -> np.ndarray:
+    def predict_hidden_state_sequence(
+        self, feature_data: SingleSensorData, algorithm: Literal["viterbi", "map"] = "viterbi"
+    ) -> np.ndarray:
         """Perform prediction based on given data and given model."""
         # NOTE: We don't consider this method an "action method" by definition, as it requires the algorithm to be
         # specified and does not return self.
@@ -253,19 +256,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         # Hence, it felt more natural to do it that way.
         # However, as this means this model should always be wrapped in a `SimpleSegmentationHMM` to be used with a
         # standardized API.
-        feature_data = np.ascontiguousarray(feature_data.to_numpy())
-
-        # need to check if memory layout of given data is
-        # see related pomegranate issue: https://github.com/jmschrei/pomegranate/issues/717
-        if not np.array(feature_data).data.c_contiguous:
-            # NOTE: We should never end up here... But let's keep the check, just to be sure!
-            raise RuntimeError(
-                "Memory Layout of given input data is not contiguous! Consider using `np.ascontiguousarray`"
-            )
-
-        labels_predicted = np.asarray(self.model.predict(feature_data.copy(), algorithm=algorithm))
-        # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
-        return np.asarray(labels_predicted[1:-1])
+        return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
 
     @make_optimize_safe
     def self_optimize(
@@ -291,9 +282,13 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
                     f"value of states! n_states = {self.n_states} > {len(data)} = len(data)"
                 )
 
+        self.data_columns = tuple(data_sequence[0].columns)
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
-        data_sequence_train = [np.ascontiguousarray(dataset.to_numpy().copy()) for dataset in data_sequence]
+        # We also ensure that in all provided dataframes the same columns and column order exists
+        data_sequence_train = [
+            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy()) for dataset in data_sequence
+        ]
 
         # initialize model by naive equidistant labels
         model_untrained = initialize_hmm(
