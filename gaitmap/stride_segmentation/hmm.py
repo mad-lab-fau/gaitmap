@@ -20,8 +20,8 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         PreTrainedRothSegmentationModel,
         RothHMM,
         RothHMMFeatureTransformer,
-        SimpleHMM,
         SegmentationHMM,
+        SimpleHMM,
     )
 
 

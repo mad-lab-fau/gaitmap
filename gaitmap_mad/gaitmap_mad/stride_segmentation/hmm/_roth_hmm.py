@@ -1,5 +1,4 @@
 """HMM based stride segmentation by Roth et al. 2021."""
-import copy
 from importlib.resources import open_text
 from typing import Dict, Optional, Union
 
