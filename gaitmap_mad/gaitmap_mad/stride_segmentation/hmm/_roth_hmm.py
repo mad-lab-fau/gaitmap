@@ -12,10 +12,10 @@ from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SimpleSegmentationHMM
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SegmentationHMM
 
 
-class PreTrainedRothSegmentationModel(SimpleSegmentationHMM):
+class PreTrainedRothSegmentationModel(SegmentationHMM):
     """Load a pre-trained stride segmentation HMM."""
 
     def __new__(cls):
@@ -25,7 +25,7 @@ class PreTrainedRothSegmentationModel(SimpleSegmentationHMM):
         ) as test_data:
             with open(test_data.name, encoding="utf8") as f:
                 model_json = f.read()
-        return SimpleSegmentationHMM.from_json(model_json)
+        return SegmentationHMM.from_json(model_json)
 
 
 class RothHMM(BaseStrideSegmentation):
@@ -94,7 +94,7 @@ class RothHMM(BaseStrideSegmentation):
 
     snap_to_min_win_ms: float
     snap_to_min_axis: str
-    model: Optional[SimpleSegmentationHMM]
+    model: Optional[SegmentationHMM]
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
@@ -106,7 +106,7 @@ class RothHMM(BaseStrideSegmentation):
 
     def __init__(
         self,
-        model: SimpleSegmentationHMM = cf(PreTrainedRothSegmentationModel()),
+        model: SegmentationHMM = cf(PreTrainedRothSegmentationModel()),
         snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
     ):
@@ -199,7 +199,7 @@ class RothHMM(BaseStrideSegmentation):
     def _segment_single_dataset(self, dataset, *, sampling_rate_hz: float):
         """Perform Stride Segmentation for a single dataset."""
         # tranform dataset to required feature space as defined by the given model parameters
-        model: SimpleSegmentationHMM = self.model.clone()
+        model: SegmentationHMM = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
         feature_data = model.feature_space_data_
         hidden_state_sequence_feature_space = model.hidden_state_sequence_feature_space_

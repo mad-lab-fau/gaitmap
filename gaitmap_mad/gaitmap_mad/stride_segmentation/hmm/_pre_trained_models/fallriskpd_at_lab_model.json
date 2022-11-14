@@ -1,5 +1,5 @@
 {
-    "_gaitmap_obj": "SimpleSegmentationHMM",
+    "_gaitmap_obj": "SegmentationHMM",
     "params": {
         "algo_predict": "viterbi",
         "algo_train": "baum-welch",
@@ -3745,6 +3745,7 @@
             "params": {
                 "algo_train": "baum-welch",
                 "architecture": "left-right-strict",
+                "data_columns": ["raw__gyr_ml", "gradient__gradient__gyr_ml"],
                 "max_iterations": 10,
                 "model": {
                     "_obj_type": "HiddenMarkovModel",
@@ -6965,6 +6966,7 @@
             "params": {
                 "algo_train": "baum-welch",
                 "architecture": "left-right-loose",
+                "data_columns": ["raw__gyr_ml", "gradient__gradient__gyr_ml"],
                 "max_iterations": 10,
                 "model": {
                     "_obj_type": "HiddenMarkovModel",
