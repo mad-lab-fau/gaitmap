@@ -1,6 +1,7 @@
 """Feature transformation class for HMM."""
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 from tpcp import cf
@@ -197,3 +198,22 @@ class FeatureTransformHMM(BaseTransformer):
             )
 
         return self
+
+    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, sampling_rate_hz: float) -> np.ndarray:
+        """Inverse transform a state sequence to the original sampling rate.
+
+        Parameters
+        ----------
+        state_sequence
+            The state sequence to be transformed back to the original sampling rate.
+            This is done by repeating each state for the number of samples it was downsampled to.
+        sampling_rate_hz
+            The sampling rate of the original data in Hz
+
+        Returns
+        -------
+        The state sequence in the original sampling rate
+
+        """
+        return np.repeat(state_sequence, sampling_rate_hz / self.sampling_frequency_feature_space_hz)
+

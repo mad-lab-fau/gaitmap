@@ -60,7 +60,7 @@ class RothHMM(BaseStrideSegmentation):
         Otherwise, it returns the start and end values before the snapping is applied.
     hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
-    dataset_feature_space_
+    feature_space_data_
         The dataset after the transformation to the feature space.
     hidden_state_sequence_feature_space_
         The predicted hidden state sequence in the feature space.
@@ -101,7 +101,7 @@ class RothHMM(BaseStrideSegmentation):
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    dataset_feature_space_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    feature_space_data_: SensorData
     hidden_state_sequence_feature_space_: Union[np.ndarray, Dict[str, np.ndarray]]
 
     def __init__(
@@ -173,13 +173,13 @@ class RothHMM(BaseStrideSegmentation):
             (
                 self.matches_start_end_,
                 self.hidden_state_sequence_,
-                self.dataset_feature_space_,
+                self.feature_space_data_,
                 self.hidden_state_sequence_feature_space_,
             ) = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
         else:  # Multisensor
             self.hidden_state_sequence_ = {}
             self.matches_start_end_ = {}
-            self.dataset_feature_space_ = {}
+            self.feature_space_data_ = {}
             self.hidden_state_sequence_feature_space_ = {}
 
             for sensor in get_multi_sensor_names(data):
@@ -191,7 +191,7 @@ class RothHMM(BaseStrideSegmentation):
                 ) = self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
-                self.dataset_feature_space_[sensor] = dataset_feature_space
+                self.feature_space_data_[sensor] = dataset_feature_space
                 self.hidden_state_sequence_feature_space_[sensor] = hidden_state_seq_feature_space
 
         return self
@@ -202,27 +202,22 @@ class RothHMM(BaseStrideSegmentation):
         model: SimpleSegmentationHMM = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
         feature_data = model.feature_space_data_
-        hidden_state_sequence = model.state_sequence_
+        hidden_state_sequence_feature_space = model.hidden_state_sequence_feature_space_
+        hidden_state_sequence = model.hidden_state_sequence_
 
-        # transform prediction back to original sampling rate!
-        downsample_factor = int(
-            np.round(sampling_rate_hz / model.feature_transform.sampling_frequency_feature_space_hz)
-        )
-        hidden_state_sequence_upsampled = np.repeat(hidden_state_sequence, downsample_factor)
-
-        matches_start_end = self._hidden_states_to_matches_start_end(hidden_state_sequence_upsampled)
+        matches_start_end = self._hidden_states_to_matches_start_end(hidden_state_sequence)
         return (
             self._postprocess_matches(dataset, matches_start_end),
-            hidden_state_sequence_upsampled,
-            feature_data,
             hidden_state_sequence,
+            feature_data,
+            hidden_state_sequence_feature_space,
         )
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
         """Convert a hidden state sequence to a list of potential borders."""
         # TODO: Figure out if the strides are inclusive or exclusive the last sample
-        stride_start_state = self.model.stride_states_[0]
-        stride_end_state = self.model.stride_states_[-1]
+        stride_start_state = self.model.stride_states[0]
+        stride_end_state = self.model.stride_states[-1]
 
         # find rising edge of stride start state sequence
         matches_starts = np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype(int)) > 0)
