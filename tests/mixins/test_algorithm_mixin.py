@@ -4,7 +4,7 @@ import inspect
 import joblib
 import pytest
 from numpydoc.docscrape import NumpyDocString
-from tpcp import get_action_method, get_action_params, get_param_names, get_results, BaseFactory
+from tpcp import BaseFactory, get_action_method, get_action_params, get_param_names, get_results
 
 from gaitmap.base import BaseAlgorithm, BaseType
 from tests.conftest import compare_algo_objects
