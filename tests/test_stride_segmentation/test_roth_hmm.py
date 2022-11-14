@@ -1,13 +1,11 @@
-import numpy as np
-import pandas as pd
 import pytest
 
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 from gaitmap_mad.stride_segmentation.hmm import (
     PreTrainedRothSegmentationModel,
     RothHMM,
-    SegmentationHMM,
     RothHMMFeatureTransformer,
+    SegmentationHMM,
 )
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
