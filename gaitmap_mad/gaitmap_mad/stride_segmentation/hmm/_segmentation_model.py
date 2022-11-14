@@ -348,7 +348,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
             for trans in transitions:
                 # if edge already exists, skip
                 if not model_untrained.dense_transition_matrix()[trans[0], trans[1]]:
-                    add_transition(model_untrained, [f"s{trans[0]:d}", f"s{trans[1]:d}"], 0.1)
+                    add_transition(model_untrained, (f"s{trans[0]:d}", f"s{trans[1]:d}"), 0.1)
         else:
             # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
             raise RuntimeError()

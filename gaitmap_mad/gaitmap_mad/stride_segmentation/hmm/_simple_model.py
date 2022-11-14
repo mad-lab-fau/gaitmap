@@ -244,9 +244,9 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         self.name = name
         self.model = model
 
-    def predict_hidden_state_sequence(self, feature_data, algorithm="viterbi") -> np.ndarray:
+    def predict_hidden_state_sequence(self, feature_data: SingleSensorData, algorithm="viterbi") -> np.ndarray:
         """Perform prediction based on given data and given model."""
-        # NOTE: We don't consider this method a "action method" by definition, as it requires the algorithm to be
+        # NOTE: We don't consider this method an "action method" by definition, as it requires the algorithm to be
         # specified and does not return self.
         # The reason for that is, that we regularly need to call this method with different algorithms on the same
         # model.
