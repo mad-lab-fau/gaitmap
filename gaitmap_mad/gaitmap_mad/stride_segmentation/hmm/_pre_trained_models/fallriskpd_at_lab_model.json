@@ -5,7 +5,7 @@
         "algo_train": "baum-welch",
         "data_columns": ["raw__gyr_ml", "gradient__gradient__gyr_ml"],
         "feature_transform": {
-            "_gaitmap_obj": "FeatureTransformHMM",
+            "_gaitmap_obj": "RothHMMFeatureTransformer",
             "params": {
                 "axis": [
                     "gyr_ml"
