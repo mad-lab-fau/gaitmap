@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Dict, Literal, Optional, Sequence, Tuple, List
+from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
-from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import FeatureTransformHMM
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _clone_model,
@@ -91,11 +91,9 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         The (untrained) hmm representing the transitions in the data.
         This will be updated during the optimization step (see notes).
     feature_transform
-        An instance of a feature transform class that can transform the data (and the labeled stride list) into the
-        feature space required by the HMM.
-        In general this can be any feature transform, but we recommend using the
-        :class:`~gaitmap.stride_segmentation.hmm.FeatureTransformHMM` class until the transformation interface is
-        further finalized.
+        An instance of a :class:`~gaitmap.stride_segmentation.hmm.FeatureTransformHMM` that can transform the data
+        (and the labeled stride list) into the feature space required by the HMM.
+        If you want to use custome feature extraction,
     algo_train
         The algorithm to use for training the HMM.
     algo_predict
@@ -175,7 +173,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     transition_model: SimpleHMM
     transition_model__model: OptiPara
     transition_model__data_columns: OptiPara
-    feature_transform: FeatureTransformHMM
+    feature_transform: HMMFeatureTransformer
     algo_predict: Literal["viterbi", "baum-welch"]
     algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float
@@ -218,7 +216,7 @@ class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
                 name="transition_model",
             )
         ),
-        feature_transform: FeatureTransformHMM = cf(FeatureTransformHMM()),
+        feature_transform: RothHMMFeatureTransformer = cf(RothHMMFeatureTransformer()),
         algo_predict: Literal["viterbi", "map"] = "viterbi",
         algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
         stop_threshold: float = 1e-9,

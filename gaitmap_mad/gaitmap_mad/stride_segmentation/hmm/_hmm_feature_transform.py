@@ -29,7 +29,60 @@ _feature_map = {
 }
 
 
-class FeatureTransformHMM(BaseTransformer):
+class HMMFeatureTransformer(BaseTransformer):
+    """Baseclass for HMM feature transformers used in combination with `SimpleSegmentationModel`.
+
+    This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransform`
+    is not sufficient for your use case, when using :class:`~gaitmap.stride_segmentation.hmm.SimpleSegmentationModel`.
+
+    In this case implement a custom subclass and pass it to the `feature_transform` parameter of
+    `SimpleSegmentationModel`.
+    Note, that you need to implement the `transform` and `inverse_transform_state_sequence` methods.
+    """
+
+    sampling_rate_hz: float
+    roi_list: SingleSensorRegionsOfInterestList
+
+    transformed_roi_list_: SingleSensorRegionsOfInterestList
+
+    def transform(
+        self,
+        data: Optional[SingleSensorData] = None,
+        *,
+        roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
+        sampling_rate_hz: Optional[float] = None,
+        **kwargs,
+    ):
+        """Transform the data and the roi/stride list into to the feature space.
+
+        Transforming the roi/stride list is only required, if the sampling rate of the features space is different from
+        the data space.
+        If now down-sampling is required, set `self.transformed_roi_list_` to `roi_list`.
+
+        """
+
+        raise NotImplementedError()
+
+    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, sampling_rate_hz: float) -> np.ndarray:
+        """Inverse transform a state sequence to the original sampling rate.
+
+        Parameters
+        ----------
+        state_sequence
+            The state sequence to be transformed back to the original sampling rate.
+            This is done by repeating each state for the number of samples it was downsampled to.
+        sampling_rate_hz
+            The sampling rate of the original data in Hz
+
+        Returns
+        -------
+        The state sequence in the original sampling rate
+
+        """
+        raise NotImplementedError()
+
+
+class RothHMMFeatureTransformer(HMMFeatureTransformer):
     """Transform all data and stride labels into the feature space required for training an HMM.
 
     Default values of all parameters are set based on the work of Nils Roth [1]_
@@ -101,10 +154,6 @@ class FeatureTransformHMM(BaseTransformer):
     features: List[str]
     window_size_s: float
     standardization: bool
-
-    sampling_rate_hz: float
-
-    transformed_roi_list_: SingleSensorRegionsOfInterestList
 
     def __init__(
         self,
@@ -191,6 +240,7 @@ class FeatureTransformHMM(BaseTransformer):
 
             self.transformed_data_ = feature_matrix_df
         if roi_list is not None:
+            self.roi_list = roi_list
             self.transformed_roi_list_ = (
                 Resample(self.sampling_frequency_feature_space_hz)
                 .transform(roi_list=roi_list, sampling_rate_hz=sampling_rate_hz)
@@ -216,4 +266,3 @@ class FeatureTransformHMM(BaseTransformer):
 
         """
         return np.repeat(state_sequence, sampling_rate_hz / self.sampling_frequency_feature_space_hz)
-
