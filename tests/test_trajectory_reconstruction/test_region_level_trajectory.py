@@ -14,7 +14,6 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
-
 # For further test see ./test_trajectory_wrapper.py
 
 
