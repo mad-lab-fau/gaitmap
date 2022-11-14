@@ -48,18 +48,25 @@ class RothHMM(BaseStrideSegmentation):
 
     Attributes
     ----------
+    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
+        The start (column 1) and end (column 2) of each detected stride.
     stride_list_ : A stride list or dictionary with such values
         The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
         other algorithms.
         If `snap_to_min` is `True`, the start and end value might not match to the output of `hidden_state_sequence_`.
         Refer to `matches_start_end_original_` for the unmodified start and end values.
-    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        The start (column 1) and end (column 2) of each detected stride.
-    hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
-        The cost value associated with each stride.
     matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
         Identical to `matches_start_end_` if `snap_to_min` is equal to `False`.
         Otherwise, it returns the start and end values before the snapping is applied.
+    hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
+        The cost value associated with each stride.
+    dataset_feature_space_
+        The dataset after the transformation to the feature space.
+    hidden_state_sequence_feature_space_
+        The predicted hidden state sequence in the feature space.
+        Compared to `hidden_state_sequence_`, this sequence is not upsampled to the data sampling rate, but rather
+        has the same sampling rate as the feature space.
+
 
     Other Parameters
     ----------------
