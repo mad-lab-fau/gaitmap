@@ -74,7 +74,7 @@ def create_fully_labeled_gait_sequences(
     return labels_train_sequence
 
 
-class SimpleSegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
+class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
     """Wrap all required information to train a new HMM.
 
     Note, that we are also store the trained stride and transition model during the optimization step.

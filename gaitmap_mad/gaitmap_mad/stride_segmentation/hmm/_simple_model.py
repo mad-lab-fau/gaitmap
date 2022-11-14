@@ -257,7 +257,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
         # The reason for that is, that we regularly need to call this method with different algorithms on the same
         # model.
         # Hence, it felt more natural to do it that way.
-        # However, as this means this model should always be wrapped in a `SimpleSegmentationHMM` to be used with a
+        # However, as this means this model should always be wrapped in a `SegmentationHMM` to be used with a
         # standardized API.
         return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
 
