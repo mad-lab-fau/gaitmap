@@ -1,8 +1,9 @@
 """Utils and helper functions for HMM classes."""
 import json
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Literal
 
 import numpy as np
+import pandas as pd
 import pomegranate as pg
 from tpcp import BaseTpcpObject
 
@@ -169,12 +170,7 @@ def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndar
 
 
 def gmms_from_samples(
-    data,
-    labels,
-    n_components: int,
-    verbose: bool = False,
-    n_init: int = 5,
-    n_jobs: int = 1,
+    data, labels, n_components: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -260,9 +256,7 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
+        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
     )
 
 
@@ -411,3 +405,32 @@ def get_train_data_sequences_strides(
             stride_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
 
     return stride_data_train_sequence, stride_labels_train_sequence
+
+
+def predict(
+    model: Optional[pg.HiddenMarkovModel],
+    data: pd.DataFrame,
+    *,
+    expected_columns: Tuple[str, ...],
+    algorithm: Literal["viterbi", "map"],
+):
+    if model is None:
+        raise ValueError(
+            "You need to train the HMM before calling `predict_hidden_state_sequence`. "
+            "Use `self_optimize` or `self_optimize_with_info` for that."
+        )
+
+    try:
+        data = data[list(expected_columns)]
+    except KeyError as e:
+        raise ValueError(
+            "The provided feature data is expected to have the following columns:\n\n"
+            f"{expected_columns}\n\n"
+            "But it only has the following columns:\n\n"
+            f"{data.columns}"
+        ) from e
+
+    data = np.ascontiguousarray(data.to_numpy())
+    labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
+    # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
+    return np.asarray(labels_predicted[1:-1])

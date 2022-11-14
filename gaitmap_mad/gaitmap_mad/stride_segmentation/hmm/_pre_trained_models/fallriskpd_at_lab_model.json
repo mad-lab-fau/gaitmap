@@ -3,6 +3,7 @@
     "params": {
         "algo_predict": "viterbi",
         "algo_train": "baum-welch",
+        "data_columns": ["raw__gyr_ml", "gradient__gradient__gyr_ml"],
         "feature_transform": {
             "_gaitmap_obj": "FeatureTransformHMM",
             "params": {
