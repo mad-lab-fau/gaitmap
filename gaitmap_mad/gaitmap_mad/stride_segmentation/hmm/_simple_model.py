@@ -99,10 +99,7 @@ def initialize_hmm(
     # Note: In the past we used a fixed ransom state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        verbose=verbose,
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -201,8 +198,86 @@ def train_hmm(
 class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     """Wrap all required information to train a new HMM.
 
+    This is a thin wrapper around the pomegranate HiddenMarkovModel class and basically calls out the pomegranate for
+    all core functionality.
+
+    .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
+              :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.
+              `SimpleHMM` therefore does not provide the same interface as other gaitmap algorithms.
+              It does not have a dedicated action method, but only has a `predict_hidden_state_sequence` method that
+              directly returns the hidden state sequence and does not store it on the object.
+              The reason for that is, that we regularly need to call this method with different algorithms on the same
+              model.
+              Hence, it felt more natural to do it that way.
+
     Parameters
     ----------
+    n_states
+        The number of states in the model.
+    n_gmm_components
+        The number of components in the GMMs.
+        Each state will be represented by its own GMM with this number of components.
+    architecture
+        The architecture of the model. Can be either "left-right-strict", "left-right-loose" or "fully-connected".
+        See Notes for more information.
+    algo_train
+        The algorithm to use for training.
+        Can be either "viterbi" or "baum-welch".
+    stop_threshold
+        The threshold for the training algorithm to stop.
+    max_iterations
+        The maximum number of iterations for the training algorithm.
+    name
+        The name of the model.
+    verbose
+        Whether to print progress information during training.
+    n_jobs
+        The number of jobs to use for training.
+        If set to -1, all available cores will be used.
+    model
+        The actual pomegranate HMM model.
+        This can be set to `None` initially.
+        A model will then be created during the optimization step.
+        If you want to use a pre-trained model, you can set this parameter to the respective model.
+        However, we recommend to ideally export this entire class instead of just the model to make sure that things
+        like the feature transform are also exported/stored.
+    data_columns
+        The expected columns of the input data in feature space.
+        This will be automatically set based on the feature transform output during the optimization step.
+        This does not affect the output, but is used as a sanity check to ensure that valid input data is provided
+        and that the column order is correct.
+
+    Notes
+    -----
+    This model supports currently the following "architectures":
+
+    - "left-right-strict":
+        This will result in a strictly left-right structure, with no self-transitions and
+        start- and end-state bound to the first and last state, respectively.
+        Example transition matrix for a 5-state model:
+        transition_matrix: 1  1  0  0  0   starts: 1  0  0  0  0
+                           0  1  1  0  0   stops:  0  0  0  0  1
+                           0  0  1  1  0
+                           0  0  0  1  1
+                           0  0  0  0  1
+    - "left-right-loose":
+        This will result in a loose left-right structure, with allowed self-transitions and
+        start- and end-state not specified initially.
+        Example transition matrix for a 5-state model:
+        transition_matrix: 1  1  0  0  0   starts: 1  1  1  1  1
+                           0  1  1  0  0   stops:  1  1  1  1  1
+                           0  0  1  1  0
+                           0  0  0  1  1
+                           1  0  0  0  1
+    - "fully-connected":
+        This will result in a fully connected structure where all existing edges are initialized with the same
+        probability.
+        Example transition matrix for a 5-state model:
+        transition_matrix: 1  1  1  1  1   starts: 1  1  1  1  1
+                           1  1  1  1  1   stops:  1  1  1  1  1
+                           1  1  1  1  1
+                           1  1  1  1  1
+                           1  1  1  1  1
 
     See Also
     --------
@@ -212,10 +287,10 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
 
     n_states: int
     n_gmm_components: int
+    architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
     algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float
     max_iterations: Optional[int]
-    architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
     verbose: bool
     n_jobs: int
     name: Optional[str]
@@ -225,11 +300,12 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix):
     def __init__(
         self,
         n_states: int,
-        n_gmm_components: int = None,
+        n_gmm_components: int,
+        *,
+        architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
         algo_train: Literal["viterbi", "baum-welch"] = "viterbi",
         stop_threshold: float = 1e-9,
         max_iterations: Optional[int] = None,
-        architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",

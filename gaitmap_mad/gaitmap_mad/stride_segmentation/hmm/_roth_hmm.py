@@ -106,6 +106,7 @@ class RothHMM(BaseStrideSegmentation):
     def __init__(
         self,
         model: SegmentationHMM = cf(PreTrainedRothSegmentationModel()),
+        *,
         snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
     ):
