@@ -180,7 +180,7 @@ def train_hmm(
 
     # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a
     # copy
-    model_trained = _clone_model(model_untrained)
+    model_trained = _clone_model(model_untrained, assert_correct=False)
 
     history: History
     _, history = model_trained.fit(

@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Dict, List, Literal, Optional, Sequence, Tuple
+from typing import Dict, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,6 @@ from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideLi
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    _clone_model,
     _HackyClonableHMMFix,
     add_transition,
     create_transition_matrix_fully_connected,
@@ -26,7 +25,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     labels_to_strings,
-    predict,
+    predict, _clone_model,
 )
 
 
@@ -326,13 +325,13 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         sampling_frequency_hz: float,
     ) -> Tuple[Self, Dict[Literal["self", "transition_model", "stride_model"], History]]:
         """Train HMM."""
+        if self.initialization not in ["labels", "fully-connected"]:
+            raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
+
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(
             data_sequence, stride_list_sequence, sampling_frequency_hz
         )
-
-        if self.initialization not in ["labels", "fully-connected"]:
-            raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
 
         # train sub stride model
         strides_sequence, init_stride_state_labels = get_train_data_sequences_strides(
@@ -436,12 +435,17 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix):
         # make sure we do not change our distributions anymore!
         new_model.freeze_distributions()
 
+        # We clone the model here, as this changes the order of edges to be sorted somehow...
+        new_model = _clone_model(new_model, assert_correct=False)
         # convert labels to state-names
         labels_train_sequence_str = labels_to_strings(labels_train_sequence)
 
+        self.data_columns = tuple(data_sequence_feature_space[0].columns)
+
         # make sure data is in an pomegranate compatible format!
         data_train_sequence = [
-            np.ascontiguousarray(copy.deepcopy(feature_data.to_numpy())) for feature_data in data_sequence_feature_space
+            np.ascontiguousarray(feature_data[list(self.data_columns)].to_numpy().copy())
+            for feature_data in data_sequence_feature_space
         ]
 
         _, history = new_model.fit(
