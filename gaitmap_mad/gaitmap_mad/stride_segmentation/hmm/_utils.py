@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pomegranate as pg
 from tpcp import BaseTpcpObject
+from tpcp._hash import custom_hash
 
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
@@ -17,7 +18,7 @@ def _add_transition(model, a, b, probability, pseudocount, group):
     model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
 
 
-def _clone_model(orig_model: pg.HiddenMarkovModel) -> pg.HiddenMarkovModel:
+def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) -> pg.HiddenMarkovModel:
     """Clone a HMM without changing its values using a hacky way.
 
     XXX: This method can clone a HMM by copying over all values individually.
@@ -32,6 +33,13 @@ def _clone_model(orig_model: pg.HiddenMarkovModel) -> pg.HiddenMarkovModel:
     `_HackyClonableHMMFix`.
     This will overwrite how your algorithm handles `tpcp.clone`.
     Note, it will not fix how deepcopy (`copy.deepcopy`) is handled.
+
+    .. warning:: This will not work all the time! In particular when transitions are added to the model after the
+                 initial creation, it seems like it is impossible to clone the model correctly, because the order of
+                 the edges can not be restored.
+                 A possible workaround in this case is to clone the model twice.
+                 The first clone will reorder the edges in a predictable way and the order will stay consistent
+                 afterwards.
 
     Parameters
     ----------
@@ -54,6 +62,7 @@ def _clone_model(orig_model: pg.HiddenMarkovModel) -> pg.HiddenMarkovModel:
         states = [pg.State.from_dict(j) for j in d["states"]]
 
     for cloned_state, state in zip(states, orig_model.states):
+        assert cloned_state.name == state.name
         if isinstance(state.distribution, pg.GeneralMixtureModel):
             # Fix the distribution weights
             # Note the `[:]`! This is important, because pg keeps a pointer to the original weights vector internally.
@@ -72,12 +81,27 @@ def _clone_model(orig_model: pg.HiddenMarkovModel) -> pg.HiddenMarkovModel:
     model.start = states[d["start_index"]]
     model.end = states[d["end_index"]]
 
+    new_state_order = [state.name for state in states]
+
     # Add all the edges to the model
-    for (start, end, _, _, group), (_, _, data) in zip(d["edges"], list(orig_model.graph.edges(data=True))):
-        _add_transition(model, states[start], states[end], data["probability"], data["pseudocount"], group)
+    for (start, end, data) in list(orig_model.graph.edges(data=True)):
+        _add_transition(
+            model,
+            states[new_state_order.index(start.name)],
+            states[new_state_order.index(end.name)],
+            data["probability"],
+            data["pseudocount"],
+            data["group"],
+        )
 
     # Bake the model
     model.bake(verbose=False)
+
+    if assert_correct:
+        assert custom_hash(model) == custom_hash(
+            orig_model
+        ), "Cloning the provided HMM model failed! Please open an issue on github with an example."
+
     return model
 
 
@@ -170,12 +194,7 @@ def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndar
 
 
 def gmms_from_samples(
-    data,
-    labels,
-    n_components: int,
-    verbose: bool = False,
-    n_init: int = 5,
-    n_jobs: int = 1,
+    data, labels, n_components: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -261,9 +280,7 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
+        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
     )
 
 
@@ -420,7 +437,26 @@ def predict(
     *,
     expected_columns: Tuple[str, ...],
     algorithm: Literal["viterbi", "map"],
-):
+) -> np.ndarray:
+    """Predict the hidden state sequence for the given data.
+
+    Parameters
+    ----------
+    model
+        The hidden markov model to use for prediction.
+    data
+        The data to predict the hidden state sequence for.
+    expected_columns
+        The expected columns of the data.
+        This is used to check if the data has the correct format and re-order the columns if necessary.
+    algorithm
+        The algorithm to use for prediction.
+
+    Returns
+    -------
+    hidden_state_sequence
+        A numpy array containing the predicted hidden state sequence.
+    """
     if model is None:
         raise ValueError(
             "You need to train the HMM before calling `predict_hidden_state_sequence`. "
