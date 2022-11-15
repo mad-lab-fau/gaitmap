@@ -59,12 +59,8 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         Otherwise, it returns the start and end values before the snapping is applied.
     hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
-    feature_space_data_
-        The dataset after the transformation to the feature space.
-    hidden_state_sequence_feature_space_
-        The predicted hidden state sequence in the feature space.
-        Compared to `hidden_state_sequence_`, this sequence is not upsampled to the data sampling rate, but rather
-        has the same sampling rate as the feature space.
+    result_models_
+        The copy of the model used for the segmentation with all the result parameters attached.
 
 
     Other Parameters
@@ -100,7 +96,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    result_model_: Union[BaseSegmentationHmm, Dict[str, BaseSegmentationHmm]]
+    result_models_: Union[BaseSegmentationHmm, Dict[str, BaseSegmentationHmm]]
 
     def __init__(
         self,
@@ -172,12 +168,12 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
             (
                 self.matches_start_end_,
                 self.hidden_state_sequence_,
-                self.result_model_,
+                self.result_models_,
             ) = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
         else:  # Multisensor
             self.hidden_state_sequence_ = {}
             self.matches_start_end_ = {}
-            self.result_model_ = {}
+            self.result_models_ = {}
 
             for sensor in get_multi_sensor_names(data):
                 (
@@ -187,7 +183,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
                 ) = self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
-                self.result_model_[sensor] = result_model
+                self.result_models_[sensor] = result_model
 
         return self
 
