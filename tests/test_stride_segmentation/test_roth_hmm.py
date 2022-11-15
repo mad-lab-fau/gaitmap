@@ -11,7 +11,7 @@ from gaitmap_mad.stride_segmentation.hmm import (
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-class TestMetaFunctionalitySegmentationModel(TestAlgorithmMixin):
+class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
     __test__ = True
 
     algorithm_class = RothSegmentationHmm
@@ -23,7 +23,7 @@ class TestMetaFunctionalitySegmentationModel(TestAlgorithmMixin):
         return hmm
 
 
-class TestMetaFunctionalityRothHmm(TestAlgorithmMixin):
+class TestMetaFunctionalityHmmStrideSegmentation(TestAlgorithmMixin):
     __test__ = True
 
     algorithm_class = HmmStrideSegmentation
