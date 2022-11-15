@@ -11,6 +11,18 @@ project.
 ## [2.1.0]
 
 ### Added
+- **HIGHLIGHT**: Finally reworked the HMM branch, added tests and documentation and adapted the API to fit the rest of 
+  the gaitmap and tpcp ecosystem better.
+  (https://github.com/mad-lab-fau/gaitmap/pull/3).
+  On the way, there were also some bugs fixed and internal computations were optimized.
+  If you were using the HMM branch before, read through the HMM examples again before updating!
+  All the classes and methods have new names and import paths.
+  Further, you will likely not get exactly the same results.
+  However, when using the pretrained model, changes should be minimal.
+  If you were training your own model, it might be that you get different results, as you might have been effected by
+  a bug in the training code when using "labeled" training with the composite model
+  (https://github.com/mad-lab-fau/gaitmap/issues/4).
+  This is fixed now! So please retrain your models.
 - A new version of the `RamppEventDetection` is added. `FilteredRamppEventDetection` adds a lowpass filter before the 
   detection of the IC to remove potential high-freq artifacts.
 - New higher level transformers that allow for complex combinations and chaining of transformers.
