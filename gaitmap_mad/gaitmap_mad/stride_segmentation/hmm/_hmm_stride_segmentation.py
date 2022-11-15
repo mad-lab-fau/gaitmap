@@ -11,10 +11,10 @@ from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SegmentationHMM
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import RothSegmentationHmm, BaseSegmentationHmm
 
 
-class PreTrainedRothSegmentationModel(SegmentationHMM):
+class PreTrainedRothSegmentationModel(RothSegmentationHmm):
     """Load a pre-trained stride segmentation HMM."""
 
     def __new__(cls):
@@ -24,10 +24,10 @@ class PreTrainedRothSegmentationModel(SegmentationHMM):
         ) as test_data:
             with open(test_data.name, encoding="utf8") as f:
                 model_json = f.read()
-        return SegmentationHMM.from_json(model_json)
+        return RothSegmentationHmm.from_json(model_json)
 
 
-class RothHMM(BaseStrideSegmentation):
+class HmmStrideSegmentation(BaseStrideSegmentation):
     """Segment strides using a pre-trained Hidden Markov Model.
 
     TBD: short description of HMM
@@ -93,19 +93,18 @@ class RothHMM(BaseStrideSegmentation):
 
     snap_to_min_win_ms: float
     snap_to_min_axis: str
-    model: Optional[SegmentationHMM]
+    model: BaseSegmentationHmm
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    feature_space_data_: SensorData
-    hidden_state_sequence_feature_space_: Union[np.ndarray, Dict[str, np.ndarray]]
+    result_model_: Union[BaseSegmentationHmm, Dict[str, BaseSegmentationHmm]]
 
     def __init__(
         self,
-        model: SegmentationHMM = cf(PreTrainedRothSegmentationModel()),
+        model: BaseSegmentationHmm = cf(PreTrainedRothSegmentationModel()),
         *,
         snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
@@ -173,44 +172,37 @@ class RothHMM(BaseStrideSegmentation):
             (
                 self.matches_start_end_,
                 self.hidden_state_sequence_,
-                self.feature_space_data_,
-                self.hidden_state_sequence_feature_space_,
+                self.result_model_,
             ) = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
         else:  # Multisensor
             self.hidden_state_sequence_ = {}
             self.matches_start_end_ = {}
-            self.feature_space_data_ = {}
-            self.hidden_state_sequence_feature_space_ = {}
+            self.result_model_ = {}
 
             for sensor in get_multi_sensor_names(data):
                 (
                     matches_start_end,
                     hidden_state_sequence,
-                    dataset_feature_space,
-                    hidden_state_seq_feature_space,
+                    result_model,
                 ) = self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
                 self.hidden_state_sequence_[sensor] = hidden_state_sequence
                 self.matches_start_end_[sensor] = matches_start_end
-                self.feature_space_data_[sensor] = dataset_feature_space
-                self.hidden_state_sequence_feature_space_[sensor] = hidden_state_seq_feature_space
+                self.result_model_[sensor] = result_model
 
         return self
 
     def _segment_single_dataset(self, dataset, *, sampling_rate_hz: float):
         """Perform Stride Segmentation for a single dataset."""
         # tranform dataset to required feature space as defined by the given model parameters
-        model: SegmentationHMM = self.model.clone()
+        model: BaseSegmentationHmm = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
-        feature_data = model.feature_space_data_
-        state_sequence_feature_space = model.hidden_state_sequence_feature_space_
         state_sequence = model.hidden_state_sequence_
 
         matches_start_end = self._hidden_states_to_matches_start_end(state_sequence)
         return (
             self._postprocess_matches(dataset, matches_start_end),
             state_sequence,
-            feature_data,
-            state_sequence_feature_space,
+            model,
         )
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):

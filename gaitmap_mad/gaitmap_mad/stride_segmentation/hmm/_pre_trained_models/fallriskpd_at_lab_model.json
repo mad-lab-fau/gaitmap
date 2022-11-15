@@ -1,11 +1,11 @@
 {
-    "_gaitmap_obj": "SegmentationHMM",
+    "_gaitmap_obj": "RothSegmentationHmm",
     "params": {
         "algo_predict": "viterbi",
         "algo_train": "baum-welch",
         "data_columns": ["raw__gyr_ml", "gradient__gradient__gyr_ml"],
         "feature_transform": {
-            "_gaitmap_obj": "RothHMMFeatureTransformer",
+            "_gaitmap_obj": "RothHmmFeatureTransformer",
             "params": {
                 "axis": [
                     "gyr_ml"
@@ -3741,7 +3741,7 @@
         "name": "segmentation_model",
         "stop_threshold": 1e-09,
         "stride_model": {
-            "_gaitmap_obj": "SimpleHMM",
+            "_gaitmap_obj": "SimpleHmm",
             "params": {
                 "algo_train": "baum-welch",
                 "architecture": "left-right-strict",
@@ -6962,7 +6962,7 @@
             }
         },
         "transition_model": {
-            "_gaitmap_obj": "SimpleHMM",
+            "_gaitmap_obj": "SimpleHmm",
             "params": {
                 "algo_train": "baum-welch",
                 "architecture": "left-right-loose",

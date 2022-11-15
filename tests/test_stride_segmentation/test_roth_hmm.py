@@ -3,10 +3,10 @@ import pytest
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 from gaitmap_mad.stride_segmentation.hmm import (
     PreTrainedRothSegmentationModel,
-    RothHMM,
-    RothHMMFeatureTransformer,
-    SegmentationHMM,
-    SimpleHMM,
+    HmmStrideSegmentation,
+    RothHmmFeatureTransformer,
+    RothSegmentationHmm,
+    SimpleHmm,
 )
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
@@ -14,10 +14,10 @@ from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 class TestMetaFunctionalitySegmentationModel(TestAlgorithmMixin):
     __test__ = True
 
-    algorithm_class = SegmentationHMM
+    algorithm_class = RothSegmentationHmm
 
     @pytest.fixture()
-    def after_action_instance(self, healthy_example_imu_data) -> SegmentationHMM:
+    def after_action_instance(self, healthy_example_imu_data) -> RothSegmentationHmm:
         hmm = PreTrainedRothSegmentationModel()
         hmm.predict(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
         return hmm
@@ -26,11 +26,11 @@ class TestMetaFunctionalitySegmentationModel(TestAlgorithmMixin):
 class TestMetaFunctionalityRothHmm(TestAlgorithmMixin):
     __test__ = True
 
-    algorithm_class = RothHMM
+    algorithm_class = HmmStrideSegmentation
 
     @pytest.fixture()
-    def after_action_instance(self, healthy_example_imu_data) -> RothHMM:
-        hmm = RothHMM()
+    def after_action_instance(self, healthy_example_imu_data) -> HmmStrideSegmentation:
+        hmm = HmmStrideSegmentation()
         hmm.segment(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
         return hmm
 
@@ -38,13 +38,13 @@ class TestMetaFunctionalityRothHmm(TestAlgorithmMixin):
 class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
     __test__ = True
 
-    algorithm_class = RothHMMFeatureTransformer
+    algorithm_class = RothHmmFeatureTransformer
 
     @pytest.fixture()
     def after_action_instance(
         self, healthy_example_imu_data, healthy_example_stride_borders
-    ) -> RothHMMFeatureTransformer:
-        transform = RothHMMFeatureTransformer()
+    ) -> RothHmmFeatureTransformer:
+        transform = RothHmmFeatureTransformer()
         transform.transform(
             convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]),
             roi_list=healthy_example_stride_borders["left_sensor"],
@@ -56,11 +56,11 @@ class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
 class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
     __test__ = True
 
-    algorithm_class = SimpleHMM
+    algorithm_class = SimpleHmm
 
     @pytest.fixture()
     def valid_instance(self, after_action_instance):
-        return SimpleHMM(n_states=5, n_gmm_components=3)
+        return SimpleHmm(n_states=5, n_gmm_components=3)
 
     def test_empty_init(self):
         pytest.skip()

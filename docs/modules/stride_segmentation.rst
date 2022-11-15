@@ -46,9 +46,9 @@ HMM Stride Segmentation
    :toctree: generated/stride_segmentation/hmm
    :template: class.rst
 
-    RothHMM
-    SegmentationHMM
-    SimpleHMM
-    RothHMMFeatureTransformer
+    HmmStrideSegmentation
+    RothSegmentationHmm
+    SimpleHmm
+    RothHmmFeatureTransformer
     PreTrainedRothSegmentationModel
-    HMMFeatureTransformer
+    HmmFeatureTransformer
