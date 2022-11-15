@@ -21,19 +21,18 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8.0,<3.11"
 pandas = ">=1"
-scipy = ">=1.6.1,<2.0.0"
+scipy = ">=1.6.1"
 typing_extensions = ">=4.1.1"
 numba =  [
     {version = "^0", python = "<3.9"},
-    {version = ">=0.55,<1.0.0", python = "^3.10"},
-    {version = ">=0.53,<1.0.0", python = ">=3.9,<3.10"},
-    {version = ">=0.55.2,<1.0.0", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'"}
+    {version = ">=0.55", python = "^3.10"},
+    {version = ">=0.53", python = ">=3.9,<3.10"},
+    {version = ">=0.55.2", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'"}
 ]
 numpy = ">=1"
-joblib = "^1.0.0"
-scikit-learn = "^1.0.1"
-#tpcp = ">=0.6.3, <1.0.0, !=0.9"
-tpcp = {git = "https://github.com/mad-lab-fau/tpcp.git", rev = "main"}
+joblib = ">=1.2.0"
+scikit-learn = ">=1.0.1"
+tpcp = ">=0.11, !=0.9"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"
