@@ -118,7 +118,10 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     window_size_s
         window size of moving centered window for feature extraction
     standardization
-        Flag for feature standardization /  z-score normalization
+        Flag for feature standardization /  z-score normalization.
+        Note, that this is done individually for "train" and "test" data.
+        I.e., we don't store the standardization parameters from the "train" data.
+        In the particular case of the Roth HMM this worked well, as sufficient data was available for testing.
 
     Attributes
     ----------
