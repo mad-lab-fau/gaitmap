@@ -12,7 +12,14 @@ project.
 
 ### Added
 - A new version of the `RamppEventDetection` is added. `FilteredRamppEventDetection` adds a lowpass filter before the 
-  detection of the IC to remove potential high-freq artifacts. 
+  detection of the IC to remove potential high-freq artifacts.
+- New higher level transformers that allow for complex combinations and chaining of transformers.
+  Most of them make use of the new `tpcp` composite Algorithm feature that allows to easily get and set complicated 
+  nested parameters.
+  New transformers include: `ChainedTransformer`, `ParallelTransformer`
+  (https://github.com/mad-lab-fau/gaitmap/pull/2)
+- New implementation of a Filter class and a `ButterworthFilter` implementation on top of the transformer API.
+  (https://github.com/mad-lab-fau/gaitmap/pull/2)
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
