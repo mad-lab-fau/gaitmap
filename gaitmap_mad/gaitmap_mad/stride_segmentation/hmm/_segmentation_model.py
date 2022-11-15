@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Dict, Literal, Optional, Sequence, Tuple
+from typing import Dict, Literal, Optional, Sequence, Tuple, List, Any
 
 import numpy as np
 import pandas as pd
@@ -13,8 +13,8 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
-from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HmmFeatureTransformer, RothHmmFeatureTransformer
+from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
@@ -75,8 +75,101 @@ def create_fully_labeled_gait_sequences(
     return labels_train_sequence
 
 
-class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
-    """Wrap all required information to train a new HMM.
+class BaseSegmentationHmm(_BaseSerializable):
+    _action_methods = ("predict",)
+
+    hidden_state_sequence_: np.ndarray
+
+    data: pd.DataFrame
+    sampling_rate_hz: float
+
+    @property
+    def stride_states(self) -> List[int]:
+        """Get the indexes of the states in the hidden state sequence corresponding to strides."""
+        raise NotImplementedError
+
+    def predict(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+        """Perform prediction based on given data and given model.
+
+        Parameters
+        ----------
+        data
+            The data to predict the hidden state sequence for.
+        sampling_rate_hz
+            The sampling rate of the data.
+
+        Returns
+        -------
+        self
+            The instance with the result objects attached.
+
+        """
+        raise NotImplementedError
+
+    def self_optimize(
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        stride_list_sequence: Sequence[SingleSensorStrideList],
+        sampling_frequency_hz: float,
+    ) -> Self:
+        """Create and train the HMM model based on the given data and labels.
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        stride_list_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        sampling_frequency_hz
+            Sampling frequency of the data.
+
+        Returns
+        -------
+        self
+            The trained model instance.
+
+        """
+        raise NotImplementedError
+
+    def self_optimize_with_info(
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        stride_list_sequence: Sequence[SingleSensorStrideList],
+        sampling_frequency_hz: float,
+    ) -> Tuple[Self, Any]:
+        """Create and train the HMM model based on the given data and labels.
+
+        This is identical to `self_optimize`, but can return additional information about the training process.
+
+        Parameters
+        ----------
+        data_sequence
+            Sequence of gaitmap sensordata objects.
+        stride_list_sequence
+            Sequence of gaitmap stride lists.
+            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        sampling_frequency_hz
+            Sampling frequency of the data.
+
+        Returns
+        -------
+        self
+            The trained model instance.
+        training_info
+            An abitary object containing training information.
+
+        """
+        raise NotImplementedError
+
+
+class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
+    """A hierarchical HMM model for stride segmentation proposed by Roth et al. (2019).
+
+    This model differentiates between strides and transitions.
+    Both data sections are modeled by individual HMMs and are trained seperately.
+    A final model is created by combining the transition matrizes of the two models and allowing for transitions between
+    these higher level states at the start or end of a stride.
 
     Note, that we are also store the trained stride and transition model during the optimization step.
     These are not required for prediction, as all there information is also contained in the fused model.
@@ -162,15 +255,13 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint
 
     """
 
-    _action_methods = ("predict",)
-
-    stride_model: SimpleHMM
+    stride_model: SimpleHmm
     stride_model__model: OptiPara
     stride_model__data_columns: OptiPara
-    transition_model: SimpleHMM
+    transition_model: SimpleHmm
     transition_model__model: OptiPara
     transition_model__data_columns: OptiPara
-    feature_transform: HMMFeatureTransformer
+    feature_transform: HmmFeatureTransformer
     algo_predict: Literal["viterbi", "baum-welch"]
     algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float
@@ -182,17 +273,13 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint
     model: OptiPara[Optional[pgHMM]]
     data_columns: OptiPara[Optional[Tuple[str, ...]]]
 
-    data: pd.DataFrame
-    sampling_rate_hz: float
-
     feature_space_data_: pd.DataFrame
-    hidden_state_sequence_: np.ndarray
     hidden_state_sequence_feature_space_: np.ndarray
 
     def __init__(
         self,
-        stride_model: SimpleHMM = cf(
-            SimpleHMM(
+        stride_model: SimpleHmm = cf(
+            SimpleHmm(
                 n_states=20,
                 n_gmm_components=6,
                 algo_train="baum-welch",
@@ -202,8 +289,8 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint
                 name="stride_model",
             )
         ),
-        transition_model: SimpleHMM = cf(
-            SimpleHMM(
+        transition_model: SimpleHmm = cf(
+            SimpleHmm(
                 n_states=5,
                 n_gmm_components=3,
                 algo_train="baum-welch",
@@ -213,7 +300,7 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint
                 name="transition_model",
             )
         ),
-        feature_transform: RothHMMFeatureTransformer = cf(RothHMMFeatureTransformer()),
+        feature_transform: RothHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
         *,
         algo_predict: Literal["viterbi", "map"] = "viterbi",
         algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
@@ -246,17 +333,36 @@ class SegmentationHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint
         return self.transition_model.n_states + self.stride_model.n_states
 
     @property
-    def stride_states(self) -> np.ndarray:
+    def stride_states(self) -> List[int]:
         """Return the ids of the stride states."""
-        return np.arange(self.stride_model.n_states) + self.transition_model.n_states
+        return (np.arange(self.stride_model.n_states) + self.transition_model.n_states).tolist()
 
     @property
-    def transition_states(self) -> np.ndarray:
+    def transition_states(self) -> List[int]:
         """Return the ids of the transition states."""
-        return np.arange(self.transition_model.n_states)
+        return np.arange(self.transition_model.n_states).tolist()
 
-    def predict(self, data: pd.DataFrame, sampling_rate_hz: float) -> Self:
-        """Perform prediction based on given data and given model."""
+    def predict(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+        """Perform prediction based on given data and given model.
+
+        This generates the hidden state sequence and stores it in the `hidden_state_sequence_` attribute.
+        Data will first be transformed using the feature transform and then the trained model will be used to predict
+        the individual hidden states.
+
+        Parameters
+        ----------
+        data
+            The data to predict the hidden state sequence for.
+            Note, that this must have the same columns than the data used during training.
+        sampling_rate_hz
+            The sampling rate of the data.
+
+        Returns
+        -------
+        self
+            The instance with the result objects attached.
+
+        """
         if self.model is None:
             # We perform this check early to terminate before the potentially costly feature transform
             raise ValueError(

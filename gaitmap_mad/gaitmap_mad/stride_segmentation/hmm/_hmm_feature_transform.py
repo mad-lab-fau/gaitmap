@@ -29,7 +29,7 @@ _feature_map = {
 }
 
 
-class HMMFeatureTransformer(BaseTransformer):
+class HmmFeatureTransformer(BaseTransformer):
     """Baseclass for HMM feature transformers used in combination with `SimpleSegmentationModel`.
 
     This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransform`
@@ -81,7 +81,7 @@ class HMMFeatureTransformer(BaseTransformer):
         raise NotImplementedError()
 
 
-class RothHMMFeatureTransformer(HMMFeatureTransformer):
+class RothHmmFeatureTransformer(HmmFeatureTransformer):
     """Transform all data and stride labels into the feature space required for training an HMM.
 
     Default values of all parameters are set based on the work of Nils Roth [1]_

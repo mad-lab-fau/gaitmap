@@ -1,14 +1,18 @@
 """Roth et al. HMM based stride segmentation model."""
-from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HMMFeatureTransformer, RothHMMFeatureTransformer
-from gaitmap_mad.stride_segmentation.hmm._roth_hmm import PreTrainedRothSegmentationModel, RothHMM
-from gaitmap_mad.stride_segmentation.hmm._segmentation_model import SegmentationHMM
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHMM
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HmmFeatureTransformer, RothHmmFeatureTransformer
+from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
+    PreTrainedRothSegmentationModel,
+    HmmStrideSegmentation,
+)
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import RothSegmentationHmm, BaseSegmentationHmm
+from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 
 __all__ = [
-    "RothHMMFeatureTransformer",
-    "RothHMM",
-    "SimpleHMM",
-    "SegmentationHMM",
+    "RothHmmFeatureTransformer",
+    "HmmStrideSegmentation",
+    "SimpleHmm",
+    "BaseSegmentationHmm",
+    "RothSegmentationHmm",
     "PreTrainedRothSegmentationModel",
-    "HMMFeatureTransformer",
+    "HmmFeatureTransformer",
 ]

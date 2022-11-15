@@ -205,7 +205,7 @@ def train_hmm(
     return model_trained, history
 
 
-class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
+class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
     This is a thin wrapper around the pomegranate HiddenMarkovModel class and basically calls out the pomegranate for
@@ -213,7 +213,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
 
     .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
               :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.
-              `SimpleHMM` therefore does not provide the same interface as other gaitmap algorithms.
+              `SimpleHmm` therefore does not provide the same interface as other gaitmap algorithms.
               It does not have a dedicated action method, but only has a `predict_hidden_state_sequence` method that
               directly returns the hidden state sequence and does not store it on the object.
               The reason for that is, that we regularly need to call this method with different algorithms on the same
@@ -354,7 +354,7 @@ class SimpleHMM(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         # The reason for that is, that we regularly need to call this method with different algorithms on the same
         # model.
         # Hence, it felt more natural to do it that way.
-        # However, as this means this model should always be wrapped in a `SegmentationHMM` to be used with a
+        # However, as this means this model should always be wrapped in a `RothSegmentationHmm` to be used with a
         # standardized API.
         return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
 
