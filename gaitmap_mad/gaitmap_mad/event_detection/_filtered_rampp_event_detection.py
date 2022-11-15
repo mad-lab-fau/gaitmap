@@ -1,9 +1,10 @@
 """The event detection algorithm by Rampp et al. 2014."""
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 from joblib import Memory
+from tpcp import cf
 
-from gaitmap.event_detection._event_detection_mixin import FilterParameter
+from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
 
 
@@ -26,9 +27,10 @@ class FilteredRamppEventDetection(RamppEventDetection):
         (1/`sampling_rate_hz`).
     min_vel_search_win_size_ms
         The size of the sliding window for finding the minimum gyroscope energy in ms.
-    ic_lowpass_filter_parameter
-        A tuple including the information required for a low pass filter design in the format of
-        (order, cutoff frequency).
+    ic_lowpass_filter
+        An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
+        applied to the gyr_ml data before the IC is detected.
+        While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
     enforce_consistency
@@ -79,17 +81,17 @@ class FilteredRamppEventDetection(RamppEventDetection):
 
     """
 
-    ic_lowpass_filter_parameter: FilterParameter
+    ic_lowpass_filter: BaseFilter
 
     def __init__(
         self,
         ic_search_region_ms: Tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
-        ic_lowpass_filter_parameter: FilterParameter = FilterParameter(order=2, cutoff_hz=15),
+        ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
     ):
-        self.ic_lowpass_filter_parameter = ic_lowpass_filter_parameter
+        self.ic_lowpass_filter = ic_lowpass_filter
         super().__init__(
             memory=memory,
             enforce_consistency=enforce_consistency,
@@ -97,6 +99,6 @@ class FilteredRamppEventDetection(RamppEventDetection):
             min_vel_search_win_size_ms=min_vel_search_win_size_ms,
         )
 
-    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:  # noqa: no-self-use
+    def _get_detect_kwargs(self) -> Dict:  # noqa: no-self-use
         parent_kwargs = super()._get_detect_kwargs()
-        return {**parent_kwargs, "gyr_ic_lowpass_filter_parameters": self.ic_lowpass_filter_parameter}
+        return {**parent_kwargs, "gyr_ic_lowpass_filter": self.ic_lowpass_filter}

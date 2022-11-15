@@ -24,7 +24,24 @@ from gaitmap.utils.datatype_helper import (
 BaseType = TypeVar("BaseType", bound="_BaseSerializable")  # noqa: invalid-name
 
 
+def _hint_tuples(item):
+    """Encode tuple values for json serialization.
+
+    Modified based on: https://stackoverflow.com/questions/15721363/preserve-python-tuples-with-json
+    """
+    if isinstance(item, tuple):
+        return dict(_obj_type="Tuple", tuple=item)
+    if isinstance(item, list):
+        return [_hint_tuples(e) for e in item]
+    if isinstance(item, dict):
+        return {key: _hint_tuples(value) for key, value in item.items()}
+    return item
+
+
 class _CustomEncoder(json.JSONEncoder):
+    def encode(self, o: Any) -> str:
+        return super().encode(_hint_tuples(o))
+
     def default(self, o):  # noqa: method-hidden
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
@@ -49,10 +66,10 @@ class _CustomEncoder(json.JSONEncoder):
             )
             return None
         # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, o)
+        return super().default(o)
 
 
-def _custom_deserialize(json_obj):
+def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
     if "_gaitmap_obj" in json_obj:
         return _BaseSerializable._find_subclass(json_obj["_gaitmap_obj"])._from_json_dict(json_obj)
     if "_obj_type" in json_obj:
@@ -65,6 +82,8 @@ def _custom_deserialize(json_obj):
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
+        if json_obj["_obj_type"] == "Tuple":
+            return tuple(json_obj["tuple"])
         raise ValueError("Unknown object type found in serialization!")
     return json_obj
 

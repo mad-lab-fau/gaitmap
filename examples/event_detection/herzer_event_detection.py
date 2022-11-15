@@ -84,11 +84,11 @@ segmented_events_left.head()
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import signal
 
 # calculate the filtered signal:
-sos = signal.butter(*ed.ic_lowpass_filter_parameter, btype="low", output="sos", fs=sampling_rate_hz)
-acc_pa_low = signal.sosfiltfilt(sos, bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"])
+acc_pa_low = ed.ic_lowpass_filter.filter(
+    bf_data.reset_index(drop=True)["left_sensor"]["acc_pa"], sampling_rate_hz=sampling_rate_hz
+).filtered_data_
 acc_pa_der = np.diff(acc_pa_low)
 
 fig, axs = plt.subplots(4, sharex=True, figsize=(10, 8))
@@ -203,7 +203,6 @@ fig.show()
 # Thus, the dropped first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
 # the first stride in the `min_vel_event_list_`.
 # Therefore, the `min_vel_event_list_` list has one stride less than the `segmented_event_list_`.
-from gaitmap.event_detection import HerzerEventDetection
 
 ed2 = HerzerEventDetection()
 segmented_stride_list = stride_list["left_sensor"].iloc[[11, 12, 13, 14, 15, 16]]
