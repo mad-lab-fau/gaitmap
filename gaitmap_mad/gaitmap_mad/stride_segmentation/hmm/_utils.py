@@ -1,6 +1,6 @@
 """Utils and helper functions for HMM classes."""
 import json
-from typing import Any, List, Literal, Optional, Tuple
+from typing import Any, List, Literal, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -336,7 +336,7 @@ def labels_to_strings(labelsequence: List[Optional[np.ndarray]]) -> List[Optiona
 
 def extract_transitions_starts_stops_from_hidden_state_sequence(
     hidden_state_sequence: List[np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[Set[Tuple[str, str]], np.ndarray, np.ndarray]:
     """Extract transitions from hidden state sequence.
 
     This function will return a list of transitions as well as start and stop labels that can be found within the
@@ -344,12 +344,12 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
 
     input = [[1,1,1,1,1,3,3,3,3,2,2,2,2,4,4,4,4,5,5],
              [0,0,1,1,1,3,3,3,3,2,2,2,6]]
-    output_transitions = [[1,3],
-                          [3,2],
-                          [2,4],
-                          [4,5],
-                          [0,1],
-                          [2,6]]
+    output_transitions = [[s1,s3],
+                          [s3,s2],
+                          [s2,s4],
+                          [s4,s5],
+                          [s0,s1],
+                          [s2,s6]]
 
     output_starts = [1,0]
     output_stops = [5,6]
@@ -363,10 +363,10 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
         starts.append(labels[0])
         ends.append(labels[-1])
         for idx in np.where(abs(np.diff(labels)) > 0)[0]:
-            transitions.append([labels[idx], labels[idx + 1]])
+            transitions.append((f"s{int(labels[idx])}", f"s{int(labels[idx + 1])}"))
 
     if len(transitions) > 0:
-        transitions = np.unique(transitions, axis=0).astype(int)
+        transitions = set(transitions)
     starts = np.unique(starts).astype(int)
     ends = np.unique(ends).astype(int)
 
