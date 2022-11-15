@@ -1,11 +1,12 @@
 r"""
 .. _example_roth_stride_segmentation:
 
-RothHMM stride segmentation
-============================
+HMM stride segmentation - Prediction with pre-trained model
+===========================================================
 
 This example illustrates how a Hidden Markov Model (HMM) implemented by the
-:class:`~gaitmap.gaitmap.future.hmm.roth_hmm` can be used to detect strides in a continuous signal of an IMU signal.
+:class:`~gaitmap.stride_segmentation.hmm.HmmStrideSegmentation` can be used to detect strides in a continuous signal of
+an IMU signal.
 The used implementation is based on the work of Roth et al [1]_
 
 .. [1] Roth, N., Küderle, A., Ullrich, M., Gladow, T., Marxreiter F., Klucken, J., Eskofier, B. & Kluge F. (2021).
@@ -46,33 +47,36 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 
 # %%
 # Selecting a pre-trained model
-# --------------------
+# -----------------------------
 # This library ships with pre-trained models that can be directly used for prediction/ segmentation.
 # It is generated based on manually segmented strides from healthy participants and PD patients.
-# We can load the _model a look at some of its parameters
+# We can load the model a look at some of its parameters
+
 from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 
-segmentation_model = PreTrainedRothSegmentationModel()
+roth_hmm_model = PreTrainedRothSegmentationModel()
 
-print(f"Number of states, stride-_model: {PreTrainedRothSegmentationModel().stride_model.n_states:d}")
-print(f"Number of states, transition-_model: {PreTrainedRothSegmentationModel().transition_model.n_states:d}")
+print(f"Number of states, stride-model: {roth_hmm_model.stride_model.n_states:d}")
+print(f"Number of states, transition-model: {roth_hmm_model.transition_model.n_states:d}")
+np.set_printoptions(precision=3, linewidth=180, suppress=True)
+print(f"Transition matrix:\n{roth_hmm_model.model.dense_transition_matrix()[0:-2, 0:-2]}")
 
 # %%
 # Predicting hidden states / Stride borders
-# ----------------
-# First we need to pass the pre-trained segmentation _model to the roth-HMM wrapper, which will take care of all steps
-# needed to get from the hidden state sequences to actual stride borders
-from gaitmap.stride_segmentation.hmm import RothHMM
+# -----------------------------------------
+# To use this model to actually segment the data, we wrap it in the `HmmStrideSegmentation` class.
+# This class provides a interface and post-processing similar to other Stride Segmentation algorithms.
+from gaitmap.stride_segmentation.hmm import HmmStrideSegmentation
 
-roth_hmm = RothHMM(segmentation_model, snap_to_min_win_ms=300, snap_to_min_axis="gyr_ml")
-roth_hmm = roth_hmm.segment(bf_data, sampling_rate_hz)
+hmm_seg = HmmStrideSegmentation(roth_hmm_model, snap_to_min_win_ms=300, snap_to_min_axis="gyr_ml")
+hmm_seg = hmm_seg.segment(bf_data, sampling_rate_hz=sampling_rate_hz)
 
 # %%
 # Inspecting the results
 # ----------------------
 # The main output is the `stride_list_`, which contains the start and the end of all identified strides.
 # As we passed a dataset with two sensors, the output will be a dictionary.
-stride_list_left = roth_hmm.stride_list_["left_sensor"]
+stride_list_left = hmm_seg.stride_list_["left_sensor"]
 print("{} strides were detected.".format(len(stride_list_left)))
 stride_list_left.head()
 
@@ -80,10 +84,13 @@ stride_list_left.head()
 # To get a better understanding of the results, we can plot additional information about the results.
 # The top row shows the `gyr_ml` axis with the segmented strides plotted on top.
 # They are postprocessed to snap to the closed data minimum.
-# In the second row the predicted hidden state sequence of the HMM is plotted (this is the tranformed version, matching the input signal)
+# In the second row the predicted hidden state sequence of the HMM is plotted (this is the transformed version, matching
+# the input signal).
 # Each transition from the last (n=25) to the first (n=5) stride state marks a potential start/end of a stride.
-# The second plot shows the results in the feature space (which will depend on the feature space setting during the training step)
-# Here this is a downsampled and filtered representative of the gyr_ml signal as well as its window based gradient. All features are z-transformed.
+# The second plot shows the results in the feature space (which will depend on the feature space setting during the
+# training step).
+# Here this is a downsampled and filtered representative of the gyr_ml signal as well as its window based gradient.
+# All features are z-transformed (note we z-transform the new data independently from the training data).
 # Again, the predicted hidden state sequence is plotted together with the data.
 #
 # Only the first couple of strides of the left foot are shown.
@@ -93,15 +100,15 @@ sensor = "left_sensor"
 fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(10, 5))
 axs[0].set_title("gaitmap Body Frame Dataset")
 axs[0].plot(bf_data.reset_index(drop=True)[sensor]["gyr_ml"])
-for start, end in roth_hmm.stride_list_["left_sensor"].to_numpy():
+for start, end in hmm_seg.stride_list_["left_sensor"].to_numpy():
     axs[0].axvline(start, c="r")
     axs[0].axvline(end, c="r")
     axs[0].axvspan(start, end, alpha=0.2)
 axs[0].set_ylabel("gyr-ml [deg/s]")
 
 axs[1].set_title("Predicted Hidden State Sequence")
-axs[1].plot(roth_hmm.hidden_state_sequence_[sensor])
-for start, end in roth_hmm.matches_start_end_original_[sensor]:
+axs[1].plot(hmm_seg.hidden_state_sequence_[sensor])
+for start, end in hmm_seg.matches_start_end_original_[sensor]:
     axs[1].axvline(start, c="g")
     axs[1].axvline(end, c="g")
     axs[1].axvspan(start, end, alpha=0.2)
@@ -114,14 +121,16 @@ plt.show()
 
 fig, ax1 = plt.subplots(figsize=(10, 3))
 plt.title("HMM Feature Space")
-ax1.set_xlabel(f"Samples Features Space @ {roth_hmm.model.feature_transform.sampling_frequency_feature_space_hz} Hz")
+ax1.set_xlabel(f"Samples Features Space @ {hmm_seg.model.feature_transform.sampling_frequency_feature_space_hz} Hz")
 ax1.set_ylabel("Z-Transform [a.u.]")
-ax1.plot(roth_hmm.dataset_feature_space_[sensor])
-ax1.legend(roth_hmm.dataset_feature_space_[sensor].columns.to_list())
+feature_space_date = hmm_seg.result_models_[sensor].feature_space_data_
+ax1.plot(feature_space_date)
+ax1.legend(feature_space_date.columns.to_list())
 
 ax2 = ax1.twinx()
 ax2.set_ylabel("Hidden State Sequence", color="tab:green")
-ax2.plot(roth_hmm.hidden_state_sequence_feature_space_["left_sensor"], color="tab:green")
+hidden_state_sequence_feature_space = hmm_seg.result_models_[sensor].hidden_state_sequence_feature_space_
+ax2.plot(hidden_state_sequence_feature_space, color="tab:green")
 ax2.tick_params(axis="y", labelcolor="tab:green")
 
 plt.xlim([0, 500])
