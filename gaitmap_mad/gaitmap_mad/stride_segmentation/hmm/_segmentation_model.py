@@ -582,11 +582,13 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                 verbose=self.verbose,
             )
 
+            existing_transitions = {(start.name, end.name) for start, end in new_model.graph.edges()}
+            missing_transitions = transitions - existing_transitions
             # Add missing transitions which will "connect" transition-hmm and stride-hmm
-            for trans in transitions:
-                # if edge already exists, skip
-                if not new_model.dense_transition_matrix()[trans[0], trans[1]]:
-                    add_transition(new_model, (f"s{trans[0]:d}", f"s{trans[1]:d}"), 0.1)
+            # We initialize with a very small probability, so that the model can learn the correct values in the next
+            # step.
+            for trans in missing_transitions:
+                add_transition(new_model, trans, 0.1)
         else:
             # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
             raise RuntimeError()
