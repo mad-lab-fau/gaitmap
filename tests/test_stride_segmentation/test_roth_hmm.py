@@ -2,8 +2,8 @@ import pytest
 
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 from gaitmap_mad.stride_segmentation.hmm import (
-    PreTrainedRothSegmentationModel,
     HmmStrideSegmentation,
+    PreTrainedRothSegmentationModel,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
     SimpleHmm,
