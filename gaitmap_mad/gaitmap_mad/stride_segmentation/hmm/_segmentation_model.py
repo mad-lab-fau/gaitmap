@@ -157,7 +157,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         self
             The trained model instance.
         training_info
-            An abitary object containing training information.
+            An arbitrary object containing training information.
 
         """
         raise NotImplementedError
