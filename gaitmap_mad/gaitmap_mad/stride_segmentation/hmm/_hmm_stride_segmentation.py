@@ -1,6 +1,6 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 from importlib.resources import open_text
-from typing import Dict, Optional, Union
+from typing import Dict, TypeVar, Union, Generic
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-from gaitmap_mad.stride_segmentation.hmm._segmentation_model import RothSegmentationHmm, BaseSegmentationHmm
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
 
 
 class PreTrainedRothSegmentationModel(RothSegmentationHmm):
@@ -27,7 +27,10 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
         return RothSegmentationHmm.from_json(model_json)
 
 
-class HmmStrideSegmentation(BaseStrideSegmentation):
+BaseSegmentationHmmT = TypeVar("BaseSegmentationHmmT", bound=BaseSegmentationHmm)
+
+
+class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT]):
     """Segment strides using a pre-trained Hidden Markov Model.
 
     TBD: short description of HMM
@@ -89,18 +92,18 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
 
     snap_to_min_win_ms: float
     snap_to_min_axis: str
-    model: BaseSegmentationHmm
+    model: BaseSegmentationHmmT
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    result_models_: Union[BaseSegmentationHmm, Dict[str, BaseSegmentationHmm]]
+    result_models_: Union[BaseSegmentationHmmT, Dict[str, BaseSegmentationHmmT]]
 
     def __init__(
         self,
-        model: BaseSegmentationHmm = cf(PreTrainedRothSegmentationModel()),
+        model: BaseSegmentationHmmT = cf(PreTrainedRothSegmentationModel()),
         *,
         snap_to_min_win_ms: float = 100,
         snap_to_min_axis: str = "gyr_ml",
