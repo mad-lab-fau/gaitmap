@@ -5,6 +5,9 @@ gaitmap.data_transform: Scaler and Feature Transforms for IMU data
     :no-members:
     :no-inherited-members:
 
+.. currentmodule:: gaitmap.data_transform
+
+
 Base classes
 ------------
 .. currentmodule:: gaitmap.data_transform
@@ -14,8 +17,25 @@ Base classes
    :template: class_with_private.rst
 
     BaseTransformer
+    BaseFilter
     TrainableTransformerMixin
+
+Higher-level Transformers
+-------------------------
+.. autosummary::
+   :toctree: generated/data_transform
+   :template: class_with_private.rst
+
     GroupedTransformer
+    ChainedTransformer
+    ParallelTransformer
+
+Simple Transformers and Scalers
+-------------------------------
+.. autosummary::
+   :toctree: generated/data_transform
+   :template: class_with_private.rst
+
     IdentityTransformer
     FixedScaler
     StandardScaler
@@ -24,3 +44,11 @@ Base classes
     TrainableAbsMaxScaler
     MinMaxScaler
     TrainableMinMaxScaler
+
+Filter
+------
+.. autosummary::
+   :toctree: generated/data_transform
+   :template: class_with_private.rst
+
+    ButterworthFilter
