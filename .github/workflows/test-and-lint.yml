@@ -8,7 +8,6 @@ on:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -25,7 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry config virtualenvs.in-project true
-        poetry install
+        poetry install -E hmm
     - name: Testing
       run: |
         poetry run doit test
@@ -43,7 +42,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry config virtualenvs.in-project true
-        poetry install
+        poetry install -E hmm
     - name: Linting
       run: |
         poetry run doit -v 0 --continue format_check lint
