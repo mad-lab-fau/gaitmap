@@ -19,7 +19,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0,<3.11"
+python = ">=3.8.0,<4.0"
 pandas = ">=1"
 scipy = ">=1.6.1"
 typing_extensions = ">=4.1.1"
@@ -32,7 +32,7 @@ numba =  [
 numpy = ">=1"
 joblib = ">=1.2.0"
 scikit-learn = ">=1.0.1"
-tpcp = ">=0.11, !=0.9"
+tpcp = ">=0.11"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"
