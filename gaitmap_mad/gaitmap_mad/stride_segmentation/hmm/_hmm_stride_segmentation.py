@@ -205,7 +205,6 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
         """Convert a hidden state sequence to a list of potential borders."""
-        # TODO: Figure out if the strides are inclusive or exclusive the last sample
         stride_start_state = self.model.stride_states[0]
         stride_end_state = self.model.stride_states[-1]
 
@@ -219,7 +218,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         # stride but no end! We need to add this end manually
         # TODO: Do we want that? I think we should remove unfinished strides!
         if len(matches_starts) > len(matches_ends):
-            matches_ends = np.append(matches_ends, len(hidden_states_predicted))
+            matches_ends = np.append(matches_ends, len(hidden_states_predicted) - 1)
 
         return np.column_stack([matches_starts, matches_ends])
 
