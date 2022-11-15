@@ -73,7 +73,10 @@ python-versions = ">=3.7.2"
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0"
 typing-extensions = {version = ">=3.10", markers = "python_version < \"3.10\""}
-wrapt = {version = ">=1.11,<2", markers = "python_version < \"3.11\""}
+wrapt = [
+    {version = ">=1.11,<2", markers = "python_version < \"3.11\""},
+    {version = ">=1.14,<2", markers = "python_version >= \"3.11\""},
+]
 
 [[package]]
 name = "atomicwrites"
@@ -1889,7 +1892,7 @@ python-versions = ">= 3.7"
 
 [[package]]
 name = "tpcp"
-version = "0.11.0"
+version = "0.12.0"
 description = "Pipeline and Dataset helpers for complex algorithm evaluation."
 category = "main"
 optional = false
@@ -2028,8 +2031,8 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.8.0,<3.11"
-content-hash = "9cd04049f8d3de0009409796fe21b347b99b5f0af87c38d7c6a1a57ab5375f11"
+python-versions = ">=3.8.0,<4.0"
+content-hash = "24bc38d0db752d1bd9c740893adf5b49ca4eea945fcbfbeaffd4bc2d93929e1d"
 
 [metadata.files]
 alabaster = [
@@ -3355,8 +3358,8 @@ tornado = [
     {file = "tornado-6.2.tar.gz", hash = "sha256:9b630419bde84ec666bfd7ea0a4cb2a8a651c2d5cccdbdd1972a0c859dfc3c13"},
 ]
 tpcp = [
-    {file = "tpcp-0.11.0-py3-none-any.whl", hash = "sha256:c862e1559c2dea5ac6d3c403e12d608266d87cd84e60a9aca3780d1a70d06255"},
-    {file = "tpcp-0.11.0.tar.gz", hash = "sha256:696268fc45c8988be5e2d78fff1f0acfa88b59af00e4c30e4544660a1eabe4d1"},
+    {file = "tpcp-0.12.0-py3-none-any.whl", hash = "sha256:20cafea5b51ad50c5b89f1d5d33d1e45e9c48211e74a697eca93ecf9413bf875"},
+    {file = "tpcp-0.12.0.tar.gz", hash = "sha256:db8c8e3b54d6acff07a5528beb33f906e3a36dd15a9e77d35fb6f3830ee3d2cd"},
 ]
 tqdm = [
     {file = "tqdm-4.64.1-py2.py3-none-any.whl", hash = "sha256:6fee160d6ffcd1b1c68c65f14c829c22832bc401726335ce92c52d395944a6a1"},
