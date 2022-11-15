@@ -1,6 +1,6 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 from importlib.resources import open_text
-from typing import Dict, TypeVar, Union, Generic
+from typing import Dict, Generic, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -192,7 +192,6 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
     def _segment_single_dataset(self, dataset, *, sampling_rate_hz: float):
         """Perform Stride Segmentation for a single dataset."""
-        # tranform dataset to required feature space as defined by the given model parameters
         model: BaseSegmentationHmm = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
         state_sequence = model.hidden_state_sequence_

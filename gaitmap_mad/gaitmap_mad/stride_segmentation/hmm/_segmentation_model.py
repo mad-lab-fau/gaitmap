@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Dict, Literal, Optional, Sequence, Tuple, List, Any
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,10 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
-from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import HmmFeatureTransformer, RothHmmFeatureTransformer
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
+    BaseHmmFeatureTransformer,
+    RothHmmFeatureTransformer,
+)
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
@@ -76,6 +79,13 @@ def create_fully_labeled_gait_sequences(
 
 
 class BaseSegmentationHmm(_BaseSerializable):
+    """Base class for HMM segmentation models.
+
+    In case you want to propose your own HMM architecture that is not covered by the options provided in
+    :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`, you can inherit from this class and implement all
+    abstract methods.
+    """
+
     _action_methods = ("predict",)
 
     hidden_state_sequence_: np.ndarray
@@ -261,7 +271,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     transition_model: SimpleHmm
     transition_model__model: OptiPara
     transition_model__data_columns: OptiPara
-    feature_transform: HmmFeatureTransformer
+    feature_transform: BaseHmmFeatureTransformer
     algo_predict: Literal["viterbi", "baum-welch"]
     algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float

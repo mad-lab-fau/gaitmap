@@ -48,7 +48,8 @@ HMM Stride Segmentation
 
     HmmStrideSegmentation
     RothSegmentationHmm
+    BaseSegmentationHmm
     SimpleHmm
     RothHmmFeatureTransformer
     PreTrainedRothSegmentationModel
-    HmmFeatureTransformer
+    BaseHmmFeatureTransformer

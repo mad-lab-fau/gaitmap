@@ -29,14 +29,14 @@ _feature_map = {
 }
 
 
-class HmmFeatureTransformer(BaseTransformer):
+class BaseHmmFeatureTransformer(BaseTransformer):
     """Baseclass for HMM feature transformers used in combination with `SimpleSegmentationModel`.
 
-    This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransform`
-    is not sufficient for your use case, when using :class:`~gaitmap.stride_segmentation.hmm.SimpleSegmentationModel`.
+    This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransformer`
+    is not sufficient for your use case, when using :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`.
 
     In this case implement a custom subclass and pass it to the `feature_transform` parameter of
-    `SimpleSegmentationModel`.
+    `RothSegmentationHmm`.
     Note, that you need to implement the `transform` and `inverse_transform_state_sequence` methods.
     """
 
@@ -81,7 +81,7 @@ class HmmFeatureTransformer(BaseTransformer):
         raise NotImplementedError()
 
 
-class RothHmmFeatureTransformer(HmmFeatureTransformer):
+class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     """Transform all data and stride labels into the feature space required for training an HMM.
 
     Default values of all parameters are set based on the work of Nils Roth [1]_

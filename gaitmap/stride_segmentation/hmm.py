@@ -10,20 +10,22 @@ All HMM implementations are based on pomegranate [1]_.
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
-    "HmmFeatureTransformer",
+    "BaseHmmFeatureTransformer",
     "RothHmmFeatureTransformer",
     "HmmStrideSegmentation",
     "SimpleHmm",
     "RothSegmentationHmm",
     "PreTrainedRothSegmentationModel",
+    "BaseSegmentationHmm",
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
     del __getattr__
     from gaitmap_mad.stride_segmentation.hmm import (
-        HmmFeatureTransformer,
-        PreTrainedRothSegmentationModel,
+        BaseHmmFeatureTransformer,
+        BaseSegmentationHmm,
         HmmStrideSegmentation,
+        PreTrainedRothSegmentationModel,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
         SimpleHmm,
@@ -36,5 +38,6 @@ __all__ = [
     "SimpleHmm",
     "RothSegmentationHmm",
     "PreTrainedRothSegmentationModel",
-    "HmmFeatureTransformer",
+    "BaseHmmFeatureTransformer",
+    "BaseSegmentationHmm",
 ]
