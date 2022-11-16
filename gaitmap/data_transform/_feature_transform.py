@@ -53,7 +53,8 @@ class Resample(BaseTransformer):
     transformed_roi_list_: SingleSensorRegionsOfInterestList
 
     def __init__(
-        self, target_sampling_rate_hz: Optional[float] = None,
+        self,
+        target_sampling_rate_hz: Optional[float] = None,
     ):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
@@ -91,12 +92,17 @@ class Resample(BaseTransformer):
 
         self.sampling_rate_hz = sampling_rate_hz
 
+        if sampling_rate_hz == self.target_sampling_rate_hz:
+            if data is not None:
+                self.data = data
+                self.transformed_data_ = copy(data)
+            if roi_list is not None:
+                self.roi_list = roi_list
+                self.transformed_roi_list_ = copy(roi_list)
+            return self
+
         if data is not None:
             self.data = data
-            if sampling_rate_hz == self.target_sampling_rate_hz:
-                self.transformed_data_ = copy(data)
-                return self
-
             n_samples = int(np.round(len(data) * self.target_sampling_rate_hz / self.sampling_rate_hz))
 
             data_resampled = signal.resample(data, n_samples, axis=0)
