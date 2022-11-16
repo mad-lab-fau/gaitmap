@@ -45,7 +45,7 @@ class Resample(BaseTransformer):
 
     """
 
-    target_sampling_rate_hz: float
+    target_sampling_rate_hz: Optional[float]
 
     sampling_rate_hz: float
     roi_list: SingleSensorRegionsOfInterestList
@@ -53,8 +53,7 @@ class Resample(BaseTransformer):
     transformed_roi_list_: SingleSensorRegionsOfInterestList
 
     def __init__(
-        self,
-        target_sampling_rate_hz: float,
+        self, target_sampling_rate_hz: Optional[float] = None,
     ):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
@@ -83,6 +82,12 @@ class Resample(BaseTransformer):
         """
         if sampling_rate_hz is None:
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
+        if self.target_sampling_rate_hz is None:
+            raise ValueError(
+                f"{type(self).__name__} requires a `target_sampling_rate_hz` to be specified "
+                "as parameter."
+                "This can be done by passing it to the constructor or using the `set_params` method."
+            )
 
         self.sampling_rate_hz = sampling_rate_hz
 
@@ -145,7 +150,10 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
         if self.window_size_s is None:
-            raise ValueError("A `window_size_s` must be specified, before the transform can be performed.")
+            raise ValueError(
+                "A `window_size_s` must be specified, before the transform can be performed. "
+                "This can be done by passing it to the constructor or using the `set_params` method."
+            )
 
         self.sampling_rate_hz = sampling_rate_hz
         self.data = data
@@ -163,9 +171,8 @@ class _PandasRollingFeatureTransform(BaseSlidingWindowFeatureTransform):
     _prefix: str
 
     def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> SingleSensorData:
-        method = "table" if isinstance(data, pd.DataFrame) else "single"
         rolling_result = self._apply_rolling(
-            data.rolling(self.effective_window_size_samples_, min_periods=1, center=True, method=method)
+            data.rolling(self.effective_window_size_samples_, min_periods=1, center=True)
         )
         if isinstance(rolling_result, pd.DataFrame):
             return rolling_result.rename(columns=lambda x: f"{self._prefix}__{x}")
@@ -272,7 +279,7 @@ def _get_centered_window_view(array, window_size_samples, pad_value=0.0):
     else:
         raise ValueError("Only error of dim 1 or 2 can be turned into sliding windows with this method.")
 
-    return sliding_window_view(array, window_size_samples, window_size_samples - 1)
+    return sliding_window_view(array, window_size_samples, window_size_samples - 1).swapaxes(0, 1)
 
 
 class _CustomSlidingWindowTransform(BaseSlidingWindowFeatureTransform):
@@ -310,8 +317,21 @@ class SlidingWindowGradient(_CustomSlidingWindowTransform):
     """
 
     def _apply_to_window_view(self, windowed_view: np.ndarray, data: pd.DataFrame):
-        # TODO: This only works with 1D input arrays -> 2D windowed views, but not 2D input arrays -> 3D windowed views.
-        fit_coefs = polyfit(np.arange(self.effective_window_size_samples_), windowed_view.T, 1)[0]
+        # To handle 2D and 3D input, we reshape 3D window views to 2D and then apply the 2D polyfit function.
+        # This is done by flattening the last two dimensions.
+        if windowed_view.ndim == 3:
+            reshaped_windowed_view = windowed_view.reshape(windowed_view.shape[0], -1)
+        else:
+            reshaped_windowed_view = windowed_view
+
+        # We only get the [0] element of the polyfit result, because we are only interested in the slope.
+        reshaped_fit_coefs = polyfit(np.arange(self.effective_window_size_samples_), reshaped_windowed_view, 1)[0]
+
+        if windowed_view.ndim == 3:
+            fit_coefs = reshaped_fit_coefs.reshape(windowed_view.shape[1:])
+        else:
+            fit_coefs = reshaped_fit_coefs
+
         if isinstance(data, pd.Series):
             return pd.Series(fit_coefs, name=f"gradient__{data.name}")
         if isinstance(data, pd.DataFrame):
