@@ -21,7 +21,7 @@ project.
   However, when using the pretrained model, changes should be minimal.
   If you were training your own model, it might be that you get different results, as you might have been effected by
   a bug in the training code when using "labeled" training with the composite model
-  (https://github.com/mad-lab-fau/gaitmap/issues/4).
+  (for details: https://github.com/mad-lab-fau/gaitmap/issues/4).
   This is fixed now! So please retrain your models.
 - A new version of the `RamppEventDetection` is added. `FilteredRamppEventDetection` adds a lowpass filter before the 
   detection of the IC to remove potential high-freq artifacts.
