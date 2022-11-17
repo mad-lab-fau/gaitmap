@@ -205,10 +205,10 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
         """
         self.sampling_rate_hz = sampling_rate_hz
+        if sampling_rate_hz is None:
+            raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
         if data is not None:
             self.data = data
-            if sampling_rate_hz is None:
-                raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
             if self.low_pass_filter is not None and not isinstance(self.low_pass_filter, BaseFilter):
                 raise TypeError(f"{type(self).__name__}.low_pass_filter must be a subclass of BaseFilter.")
