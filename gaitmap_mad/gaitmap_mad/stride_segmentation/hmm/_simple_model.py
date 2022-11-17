@@ -409,10 +409,12 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         for labels in labels_sequence:
             if labels is None:
                 labels_sequence_train.append(None)
+                continue
             elif isinstance(labels, (pd.Series, pd.DataFrame)):
-                labels_sequence_train.append(np.ascontiguousarray(labels.to_numpy().copy().squeeze()))
+                labels = labels.to_numpy().squeeze()
             else:
-                labels_sequence_train.append(np.ascontiguousarray(labels).copy().squeeze())
+                labels = labels.squeeze()
+            labels_sequence_train.append(np.ascontiguousarray(labels.copy()))
 
         if self.model is not None:
             warnings.warn("Model already exists. Overwriting existing model.")
