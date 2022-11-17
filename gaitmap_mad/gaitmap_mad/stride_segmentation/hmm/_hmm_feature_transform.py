@@ -111,8 +111,8 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         Cutoff frequency of low-pass filter for preprocessing
     low_pass_order
         Low-pass filter order
-    axis
-        List of sensor axis which will be used as model input
+    axes
+        List of sensor axes which will be used as model input
     features
         List of features which will be used as model input
     window_size_s
@@ -152,7 +152,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     sampling_frequency_feature_space_hz: float
     low_pass_cutoff_hz: float
     low_pass_order: int
-    axis: List[str]
+    axes: List[str]
     features: List[str]
     window_size_s: float
     standardization: bool
@@ -162,7 +162,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         sampling_frequency_feature_space_hz: float = 51.2,
         low_pass_cutoff_hz: float = 10.0,
         low_pass_order: int = 4,
-        axis: List[str] = cf(["gyr_ml"]),
+        axes: List[str] = cf(["gyr_ml"]),
         features: List[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
         standardization: bool = True,
@@ -170,7 +170,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         self.sampling_frequency_feature_space_hz = sampling_frequency_feature_space_hz
         self.low_pass_cutoff_hz = low_pass_cutoff_hz
         self.low_pass_order = low_pass_order
-        self.axis = axis
+        self.axes = axes
         self.features = features
         self.window_size_s = window_size_s
         self.standardization = standardization
@@ -178,7 +178,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     @property
     def n_features(self) -> int:
         """Get the number of features in the transformed data."""
-        return len(self.axis) * len(self.features)
+        return len(self.axes) * len(self.features)
 
     def transform(
         self,
@@ -221,7 +221,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
             # All Feature transformers we use work on multiple axis at once.
             # This means, we can just extract the axis we want and throw the result the transformers all at once.
-            downsampled_dataset = dataset[self.axis]
+            downsampled_dataset = dataset[self.axes]
             try:
                 feature_map = [(k, _feature_map[k](self.window_size_s)) for k in self.features]
             except KeyError as e:
