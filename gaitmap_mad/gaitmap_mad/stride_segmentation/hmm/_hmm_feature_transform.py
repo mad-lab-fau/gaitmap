@@ -7,6 +7,7 @@ from sklearn import preprocessing
 from tpcp import cf
 
 from gaitmap.data_transform import (
+    BaseFilter,
     BaseTransformer,
     ButterworthFilter,
     ChainedTransformer,
@@ -107,10 +108,13 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     ----------
     sampling_frequency_feature_space_hz
         The sampling rate of the data the model was trained with
-    low_pass_cutoff_hz
-        Cutoff frequency of low-pass filter for preprocessing
-    low_pass_order
-        Low-pass filter order
+    low_pass_filter
+        Instance of a low pass filter to be applied to the data before resampling.
+        Note, that this filter is not strictly required, as the downsampling will apply a second filter to ensure
+        that the Nyquist frequency is not exceeded.
+        However, you might want to use this filter to smooth the signal beyond what is required for correct
+        downsampling.
+        Can be disabled by setting to `None`.
     axes
         List of sensor axes which will be used as model input
     features
@@ -150,8 +154,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     # TODO: Find a way to expose the internal objects instead of exposing just parameters.
     sampling_frequency_feature_space_hz: float
-    low_pass_cutoff_hz: float
-    low_pass_order: int
+    low_pass_filter: Optional[BaseFilter]
     axes: List[str]
     features: List[str]
     window_size_s: float
@@ -160,16 +163,14 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     def __init__(
         self,
         sampling_frequency_feature_space_hz: float = 51.2,
-        low_pass_cutoff_hz: float = 10.0,
-        low_pass_order: int = 4,
+        low_pass_filter: Optional[BaseFilter] = cf(ButterworthFilter(cutoff_freq_hz=10.0, order=4)),
         axes: List[str] = cf(["gyr_ml"]),
         features: List[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
         standardization: bool = True,
     ):
         self.sampling_frequency_feature_space_hz = sampling_frequency_feature_space_hz
-        self.low_pass_cutoff_hz = low_pass_cutoff_hz
-        self.low_pass_order = low_pass_order
+        self.low_pass_filter = low_pass_filter
         self.axes = axes
         self.features = features
         self.window_size_s = window_size_s
@@ -209,9 +210,12 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
             if sampling_rate_hz is None:
                 raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
 
+            if self.low_pass_filter is not None and not isinstance(self.low_pass_filter, BaseFilter):
+                raise TypeError(f"{type(self).__name__}.low_pass_filter must be a subclass of BaseFilter.")
+
             preprocessor = ChainedTransformer(
                 [
-                    ("filter", ButterworthFilter(self.low_pass_order, self.low_pass_cutoff_hz)),
+                    ("filter", (self.low_pass_filter or IdentityTransformer()).clone()),
                     ("resample", Resample(self.sampling_frequency_feature_space_hz)),
                 ]
             )

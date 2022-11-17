@@ -15,6 +15,7 @@ The used implementation is based on the work of Roth et al [1]_
 import numpy as np
 from matplotlib import pyplot as plt
 
+
 np.random.seed(1)
 
 # %%
@@ -62,13 +63,13 @@ stride_list = get_healthy_example_stride_borders()
 # different axis and or feature combinations as well as downsampling, filter and standardization steps. The following
 # example has proved to work well in most cases.
 from gaitmap.stride_segmentation.hmm import RothHmmFeatureTransformer
+from gaitmap.data_transform import ButterworthFilter
 
 feature_transform = RothHmmFeatureTransformer(
     sampling_frequency_feature_space_hz=51.2,
-    axis=["gyr_ml"],
+    axes=["gyr_ml"],
     features=["raw", "gradient"],
-    low_pass_cutoff_hz=10,
-    low_pass_order=4,
+    low_pass_filter=ButterworthFilter(order=4, cutoff_freq_hz=10),
     window_size_s=0.2,
     standardization=True,
 )
