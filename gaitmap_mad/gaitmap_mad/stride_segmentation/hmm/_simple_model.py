@@ -287,7 +287,24 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     def predict_hidden_state_sequence(
         self, feature_data: SingleSensorData, algorithm: Literal["viterbi", "map"] = "viterbi"
     ) -> np.ndarray:
-        """Perform prediction based on given data and given model."""
+        """Perform prediction based on given data and given model.
+
+        Parameters
+        ----------
+        feature_data
+            The data to predict the hidden state sequence for.
+            Note, that the data must have at least the same columns as the data used for training.
+            The order of the columns does not matter.
+        algorithm
+            The algorithm to use for prediction.
+            Can be either "viterbi" or "map".
+
+        Returns
+        -------
+        np.ndarray
+            The predicted hidden state sequence.
+
+        """
         # NOTE: We don't consider this method an "action method" by definition, as it requires the algorithm to be
         # specified and does not return self.
         # The reason for that is, that we regularly need to call this method with different algorithms on the same

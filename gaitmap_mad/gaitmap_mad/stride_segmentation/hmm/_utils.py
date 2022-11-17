@@ -497,4 +497,7 @@ def predict(
     data = np.ascontiguousarray(data.to_numpy())
     labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
     # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
-    return np.asarray(labels_predicted[1:-1])
+    # Note: This only seems to happen for the viterbi algorithm, not for the map algorithm.
+    if algorithm == "viterbi":
+        labels_predicted = labels_predicted[1:-1]
+    return np.asarray(labels_predicted)

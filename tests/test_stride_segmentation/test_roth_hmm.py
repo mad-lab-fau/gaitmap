@@ -232,9 +232,34 @@ class TestSimpleModel:
 
         assert "Model already exists" in str(e[0].message)
 
-    def test_predict(self):
-        # TODO: Test predict
-        pass
+    def test_predict_rasies_error_without_optimize(self):
+        with pytest.raises(ValueError) as e:
+            SimpleHmm(n_states=5, n_gmm_components=3).predict_hidden_state_sequence(
+                pd.DataFrame(np.random.rand(100, 3))
+            )
+
+        assert "You need to train the HMM before calling `predict_hidden_state_sequence`" in str(e.value)
+
+    def test_predict_raises_error_on_invalid_columns(self):
+        model = SimpleHmm(n_states=5, n_gmm_components=3)
+        col_names = ["feature1", "feature2", "feature3"]
+        invalid_col_names = ["feature1", "feature2", "feature4"]
+        model.self_optimize(
+            [pd.DataFrame(np.random.rand(100, 3), columns=col_names)], [pd.Series(np.random.choice(5, 100))]
+        )
+        with pytest.raises(ValueError) as e:
+            model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3), columns=invalid_col_names))
+
+        assert "The provided feature data is expected to have the following columns:" in str(e.value)
+        assert str(tuple(col_names)) in str(e.value)
+
+    @pytest.mark.parametrize("algorithm", ["viterbi", "map"])
+    def test_predict(self, algorithm):
+        model = SimpleHmm(n_states=5, n_gmm_components=3)
+        model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
+        pred = model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)), algorithm=algorithm)
+        assert len(pred) == 100
+        assert set(pred) == set(range(5))
 
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
     def test_different_architectures(self, architecture):
