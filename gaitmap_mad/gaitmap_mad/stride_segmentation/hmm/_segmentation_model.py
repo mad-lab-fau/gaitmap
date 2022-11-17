@@ -587,7 +587,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             # Add missing transitions which will "connect" transition-hmm and stride-hmm
             # We initialize with a very small probability, so that the model can learn the correct values in the next
             # step.
-            for trans in missing_transitions:
+            # Note: We sort the transitions to enforce consistent order and reproducibility.
+            for trans in sorted(missing_transitions):
                 add_transition(new_model, trans, 0.1)
         else:
             # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
@@ -602,6 +603,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         # We clone the model here, as this changes the order of edges to be sorted somehow...
         new_model = _clone_model(new_model, assert_correct=False)
+
         # convert labels to state-names
         labels_train_sequence_str = labels_to_strings(labels_train_sequence)
 
@@ -622,6 +624,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
+            multiple_check_input=False,
         )
 
         new_model.name = self.name

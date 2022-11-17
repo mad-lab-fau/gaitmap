@@ -443,6 +443,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
+            multiple_check_input=False,
         )
         model_trained.name = self.name + "_trained"
 
