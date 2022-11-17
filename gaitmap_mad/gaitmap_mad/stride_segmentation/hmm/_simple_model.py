@@ -35,7 +35,7 @@ def initialize_hmm(
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
     name: str = "untrained",
     verbose: bool = False,
-):
+) -> pgHMM:
     """Model Initialization.
 
     Parameters

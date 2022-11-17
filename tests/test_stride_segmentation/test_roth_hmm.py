@@ -3,7 +3,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_almost_equal, assert_array_equal
 from pomegranate import GeneralMixtureModel
 from pomegranate.hmm import History
 
@@ -16,6 +16,7 @@ from gaitmap_mad.stride_segmentation.hmm import (
     RothSegmentationHmm,
     SimpleHmm,
 )
+from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_hmm
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
@@ -235,9 +236,40 @@ class TestSimpleModel:
         # TODO: Test predict
         pass
 
-    def test_different_architectures(self):
-        # TODO: Test different architectures
-        pass
+    @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
+    def test_different_architectures(self, architecture):
+        # We test initialization directly, otherwise training will modify the transition matrizes
+        model = initialize_hmm(
+            [np.random.rand(100, 3)],
+            [np.random.choice(5, 100)],
+            n_states=5,
+            n_gmm_components=3,
+            architecture=architecture,
+        )
+        transition_matrix = model.dense_transition_matrix()
+        expected = np.zeros((7, 7))
+        if architecture == "left-right-strict":
+            # Normal transitions
+            expected[0:5, 0:5] += np.diag(np.ones(5) / 2) + np.diag(np.ones(4) / 2, k=1)
+            # Start state
+            expected[5, 0] = 1
+            # End state
+            expected[4, 6] = 0.5
+        elif architecture == "left-right-loose":
+            # Normal transitions
+            expected[0:5, 0:5] += np.diag(np.ones(5) / 3) + np.diag(np.ones(4) / 3, k=1)
+            expected[4, 0] = 1 / 3
+            # Start state
+            expected[5, :5] = 1 / 5
+            # End state
+            expected[:5, 6] = 1 / 3
+        elif architecture == "fully-connected":
+            expected[0:5, 0:5] = 1 / 10
+            # Start state
+            expected[5, :5] = 1 / 5
+            # End state
+            expected[:5, 6] = 1 / 2
+        assert_almost_equal(transition_matrix, expected)
 
     def test_self_optimize_calls_self_optimize_with_info(self):
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
@@ -255,3 +287,11 @@ class TestSimpleModel:
         trained_instance, history = instance.self_optimize_with_info(data, labels)
         assert instance is trained_instance
         assert isinstance(history, History)
+
+    def test_invalid_architecture_raises_error(self):
+        with pytest.raises(ValueError) as e:
+            SimpleHmm(n_states=5, n_gmm_components=3, architecture="invalid").self_optimize(
+                [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
+            )
+
+        assert "Invalid architecture" in str(e.value)
