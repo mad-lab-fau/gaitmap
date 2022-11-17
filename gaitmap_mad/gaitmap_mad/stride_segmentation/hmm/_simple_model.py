@@ -1,9 +1,11 @@
-"""Simple _model base classes and helper."""
+"""Simple model base classes and helper."""
 
 import copy
+import warnings
 from typing import Literal, Optional, Sequence, Tuple
 
 import numpy as np
+import pandas as pd
 import pomegranate as pg
 from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
@@ -11,7 +13,7 @@ from tpcp import OptiPara, make_optimize_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
@@ -61,7 +63,6 @@ def initialize_hmm(
     Notes
     -----
     This function supports currently the following "architectures":
-    TODO: Add this documentation also to the model level
 
     - "left-right-strict":
         This will result in a strictly left-right structure, with no self-transitions and
@@ -97,12 +98,13 @@ def initialize_hmm(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
 
-    # Note: In the past we used a fixed ransom state when generating the gmms.
+    # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
         data_train_sequence,
         labels_initialization_sequence,
         n_gmm_components,
+        n_states,
         verbose=verbose,
     )
 
@@ -140,69 +142,6 @@ def initialize_hmm(
     model.name = name
 
     return model
-
-
-def train_hmm(
-    model_untrained: pgHMM,
-    data_train_sequence: Sequence[np.ndarray],
-    *,
-    max_iterations: int,
-    stop_threshold: float,
-    algo_train: Literal["viterbi", "baum-welch"],
-    name: str = "trained",
-    verbose: bool = True,
-    n_jobs: int = 1,
-) -> Tuple[pgHMM, History]:
-    """Train Model.
-
-    Parameters
-    ----------
-    model_untrained
-        pomegranate HiddenMarkovModel object with initialized distributions and transition matrix
-    data_train_sequence
-        list of training sequences this might be e.g. a list of strides where each strides is represented by one
-        np.ndarray (which might contain multiple dimensions)
-    algo_train
-        algorithm for training, can be "viterbi", "baum-welch"
-    stop_threshold
-        termination criteria for training improvement e.g. 1e-9
-    max_iterations
-        termination criteria for training iteration number e.g. 1000
-    name
-        The name of the final model object
-    verbose
-        Whether info should be printed to stdout
-    n_jobs
-        Number of parallel jobs to use for training.
-
-    """
-    # check if all training sequences have a minimum length of n-states, smaller sequences or empty sequences can lead
-    # to unexpected behaviour!
-    length_of_training_sequences = np.array([len(data) for data in data_train_sequence])
-    # -2 here is because the number of states contains an implicit start and end state which we don't need.
-    if np.any(length_of_training_sequences < (len(model_untrained.states) - 2)):
-        raise ValueError(
-            "Length of all training sequences must be equal or larger than the number of states in the given _model!"
-        )
-
-    # make copy from untrained model, as pomegranate will just update parameters in the given model and not returning a
-    # copy
-    model_trained = _clone_model(model_untrained, assert_correct=False)
-
-    history: History
-    _, history = model_trained.fit(
-        sequences=np.array(data_train_sequence, dtype=object).copy(),
-        labels=None,
-        algorithm=algo_train,
-        stop_threshold=stop_threshold,
-        max_iterations=max_iterations,
-        return_history=True,
-        verbose=verbose,
-        n_jobs=n_jobs,
-    )
-    model_trained.name = name
-
-    return model_trained, history
 
 
 class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
@@ -311,7 +250,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
     algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float
-    max_iterations: Optional[int]
+    max_iterations: int
     verbose: bool
     n_jobs: int
     name: Optional[str]
@@ -324,9 +263,9 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         n_gmm_components: int,
         *,
         architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
-        algo_train: Literal["viterbi", "baum-welch"] = "viterbi",
+        algo_train: Literal["viterbi", "baum-welch", "labeled"] = "viterbi",
         stop_threshold: float = 1e-9,
-        max_iterations: Optional[int] = None,
+        max_iterations: int = 1e8,
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
@@ -359,9 +298,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
 
     @make_optimize_safe
-    def self_optimize(
-        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
-    ) -> Self:
+    def self_optimize(self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[pd.Series]) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
         Parameters
@@ -371,6 +308,9 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         labels_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+            Each label sequence should only contain integers in the range [0, n_states - 1].
+            The usage of the labels depends on the train algorithm.
+            In case of `viterbi` and `baum-welch`, the labels are only used to identify the intial data clusters.
 
         Returns
         -------
@@ -381,7 +321,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
 
     def self_optimize_with_info(
-        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[SingleSensorStrideList]
+        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[pd.Series]
     ) -> Tuple[Self, History]:
         """Create and train the HMM model based on the given data and labels.
 
@@ -394,6 +334,9 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         labels_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+            Each label sequence should only contain integers in the range [0, n_states - 1].
+            The usage of the labels depends on the train algorithm.
+            In case of `viterbi` and `baum-welch`, the labels are only used to identify the intial data clusters.
 
         Returns
         -------
@@ -410,42 +353,67 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
                 "initial_hidden_states_sequence_list)"
             )
 
-        for data in data_sequence:
+        for i, (data, labels) in enumerate(zip(data_sequence, labels_sequence)):
             if len(data) < self.n_states:
                 raise ValueError(
-                    "Invalid Training Sequence! At least one training sequence has less samples than the specified "
-                    f"value of states! n_states = {self.n_states} > {len(data)} = len(data)"
+                    "Invalid training sequence! At least one training sequence has less samples than the specified "
+                    "value of states! "
+                    f"For sequence {i}: n_states = {self.n_states} > {len(data)} = len(data)"
                 )
+            # We allow None labels for some sequences, as this is also supported by pomegranate.
+            if labels is not None:
+                if len(data) != len(labels):
+                    raise ValueError(
+                        "Invalid training sequence! At least one training sequence has a different number of samples "
+                        "than the corresponding label sequence! "
+                        f"For sequence {i}: len(data) = {len(data)} != {len(labels)} = len(labels)"
+                    )
+                if not np.all(np.logical_and(labels >= 0, labels < self.n_states)):
+                    raise ValueError(
+                        "Invalid label sequence! At least one training sequence contains invalid state labels! "
+                        f"For sequence {i}: labels not in [0, {self.n_states})"
+                    )
 
         self.data_columns = tuple(data_sequence[0].columns)
         # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
         # We also ensure that in all provided dataframes the same columns and column order exists
         data_sequence_train = [
-            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy()) for dataset in data_sequence
+            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy().squeeze())
+            for dataset in data_sequence
         ]
+        labels_sequence_train = [np.ascontiguousarray(labels.to_numpy().copy().squeeze()) for labels in labels_sequence]
+
+        if self.model is not None:
+            warnings.warn("Model already exists. Overwriting existing model.")
 
         # initialize model by naive equidistant labels
         model_untrained = initialize_hmm(
             data_sequence_train,
-            labels_sequence,
+            labels_sequence_train,
             n_states=self.n_states,
             n_gmm_components=self.n_gmm_components,
             architecture=self.architecture,
             name=self.name + "-untrained",
         )
 
-        # train model
-        model_trained, history = train_hmm(
-            model_untrained,
-            data_sequence_train,
-            max_iterations=self.max_iterations,
+        # make copy from untrained model, as pomegranate will just update parameters in the given model and not
+        # returning a copy
+        model_trained = _clone_model(model_untrained, assert_correct=False)
+
+        history: History
+        _, history = model_trained.fit(
+            sequences=data_sequence_train,
+            labels=labels_sequence_train,
+            algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
-            algo_train=self.algo_train,
-            name=self.name + "_trained",
+            max_iterations=self.max_iterations,
+            return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
         )
+        model_trained.name = self.name + "_trained"
+
         self.model = model_trained
 
         return self, history
