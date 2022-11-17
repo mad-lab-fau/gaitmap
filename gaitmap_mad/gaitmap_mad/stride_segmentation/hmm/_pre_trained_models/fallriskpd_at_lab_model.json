@@ -7,7 +7,7 @@
         "feature_transform": {
             "_gaitmap_obj": "RothHmmFeatureTransformer",
             "params": {
-                "axis": [
+                "axes": [
                     "gyr_ml"
                 ],
                 "features": [
