@@ -2,7 +2,7 @@
 
 import copy
 import warnings
-from typing import Literal, Optional, Sequence, Tuple
+from typing import Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -101,11 +101,7 @@ def initialize_hmm(
     # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence,
-        labels_initialization_sequence,
-        n_gmm_components,
-        n_states,
-        verbose=verbose,
+        data_train_sequence, labels_initialization_sequence, n_gmm_components, n_states, verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -315,7 +311,11 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
 
     @make_optimize_safe
-    def self_optimize(self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[pd.Series]) -> Self:
+    def self_optimize(
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
+    ) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
         Parameters
@@ -327,7 +327,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
             Each label sequence should only contain integers in the range [0, n_states - 1].
             The usage of the labels depends on the train algorithm.
-            In case of `viterbi` and `baum-welch`, the labels are only used to identify the intial data clusters.
+            In case of `viterbi` and `baum-welch`, the labels are only used to identify the initial data clusters.
 
         Returns
         -------
@@ -337,8 +337,10 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         """
         return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
 
-    def self_optimize_with_info(
-        self, data_sequence: Sequence[SingleSensorData], labels_sequence: Sequence[pd.Series]
+    def self_optimize_with_info(  # noqa: MC0001
+        self,
+        data_sequence: Sequence[SingleSensorData],
+        labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
     ) -> Tuple[Self, History]:
         """Create and train the HMM model based on the given data and labels.
 
@@ -399,7 +401,14 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy().squeeze())
             for dataset in data_sequence
         ]
-        labels_sequence_train = [np.ascontiguousarray(labels.to_numpy().copy().squeeze()) for labels in labels_sequence]
+        labels_sequence_train = []
+        for labels in labels_sequence:
+            if labels is None:
+                labels_sequence_train.append(None)
+            elif isinstance(labels, (pd.Series, pd.DataFrame)):
+                labels_sequence_train.append(np.ascontiguousarray(labels.to_numpy().copy().squeeze()))
+            else:
+                labels_sequence_train.append(np.ascontiguousarray(labels).copy().squeeze())
 
         if self.model is not None:
             warnings.warn("Model already exists. Overwriting existing model.")
