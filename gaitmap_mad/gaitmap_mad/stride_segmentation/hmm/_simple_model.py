@@ -101,7 +101,11 @@ def initialize_hmm(
     # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
-        data_train_sequence, labels_initialization_sequence, n_gmm_components, n_states, verbose=verbose,
+        data_train_sequence,
+        labels_initialization_sequence,
+        n_gmm_components,
+        n_states,
+        verbose=verbose,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
