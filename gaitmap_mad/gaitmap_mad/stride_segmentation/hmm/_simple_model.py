@@ -410,7 +410,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             if labels is None:
                 labels_sequence_train.append(None)
                 continue
-            elif isinstance(labels, (pd.Series, pd.DataFrame)):
+            if isinstance(labels, (pd.Series, pd.DataFrame)):
                 labels = labels.to_numpy().squeeze()
             else:
                 labels = labels.squeeze()
