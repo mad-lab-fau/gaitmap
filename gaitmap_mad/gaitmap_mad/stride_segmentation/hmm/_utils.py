@@ -214,6 +214,7 @@ def gmms_from_samples(
     data,
     labels,
     n_components: int,
+    n_expected_states: int,
     verbose: bool = False,
     n_init: int = 5,
     n_jobs: int = 1,
@@ -229,13 +230,20 @@ def gmms_from_samples(
 
     clustered_data = cluster_data_by_labels(data, labels)
 
-    # select correct distribution type based on dimensionality of the given data
+    if len(clustered_data) < n_expected_states:
+        raise ValueError(
+            f"The training labels did only provide samples for {len(clustered_data)} states, but "
+            f"{n_expected_states} states were expected. "
+            "Ensure that the training data contains samples for all states."
+        )
+
     if data[0].ndim == 1:
-        pg_dist_type = pg.NormalDistribution
         # we need to reshape the 1D-data for pomegranate!
         clustered_data = [np.reshape(data, (len(data), 1)) for data in clustered_data]
-    else:
-        pg_dist_type = pg.MultivariateGaussianDistribution
+
+    # We use a Multivariate Normal Distribution even if we only have 1D data.
+    # For some reason they are handled better in pomegranate.
+    pg_dist_type = pg.MultivariateGaussianDistribution
 
     if n_components > 1:
         # calculate Mixture Model for each state, clustered by labels
@@ -253,22 +261,10 @@ def gmms_from_samples(
             for dataset in clustered_data
         ]
     else:
-        # if n components is just 1 we do not need a mixture model and just build either univariate or multivariate
-        # Normal Distribution depending on the input data dimension
+        # if n components is just 1 we do not need a mixture model and just build either multivariate Normal
+        # Distribution
         distributions = [pg_dist_type.from_samples(dataset) for dataset in clustered_data]
 
-    return distributions, clustered_data
-
-
-def norm_dist_from_samples(data, labels, random_seed=None):
-    """Create Normal Distributions from samples."""
-    clustered_data = cluster_data_by_labels(data, labels)
-
-    if random_seed:
-        np.random.seed(random_seed)
-    distributions = [
-        pg.NormalDistribution.from_samples(dataset) for dataset in clustered_data
-    ]  # calculate Mixture Model for each state, clustered by labels
     return distributions, clustered_data
 
 
