@@ -67,6 +67,8 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
 
     for cloned_state, state in zip(states, orig_model.states):
         assert cloned_state.name == state.name
+        if state.distribution is not None:
+            cloned_state.distribution.frozen = state.distribution.frozen
         if isinstance(state.distribution, pg.GeneralMixtureModel):
             # Fix the distribution weights
             # Note the `[:]`! This is important, because pg keeps a pointer to the original weights vector internally.
