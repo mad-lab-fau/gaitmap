@@ -8,6 +8,7 @@ from pomegranate import GeneralMixtureModel
 from pomegranate.hmm import History
 
 from gaitmap.data_transform import SlidingWindowMean
+from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 from gaitmap_mad.stride_segmentation.hmm import (
     HmmStrideSegmentation,
@@ -81,7 +82,7 @@ class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
 class TestRothHmmFeatureTransform:
     @pytest.mark.parametrize("target_sampling_rate", [50, 25])
     def test_inverse_transform_state_sequence(self, target_sampling_rate):
-        transform = RothHmmFeatureTransformer(sampling_frequency_feature_space_hz=target_sampling_rate)
+        transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=target_sampling_rate)
         in_state_sequence = np.array([0, 1, 2, 3, 4, 5])
         state_sequence = transform.inverse_transform_state_sequence(
             state_sequence=in_state_sequence,
@@ -112,7 +113,7 @@ class TestRothHmmFeatureTransform:
     def test_actual_output(self, healthy_example_imu_data):
         # We disable downsampling, standardization, and filtering for this test
         transform = RothHmmFeatureTransformer(
-            sampling_frequency_feature_space_hz=100,
+            sampling_rate_feature_space_hz=100,
             standardization=False,
             low_pass_filter=None,
             features=["raw", "mean"],
@@ -153,7 +154,7 @@ class TestRothHmmFeatureTransform:
         assert "sampling_rate_hz" in str(e.value)
 
     def test_resample_roi(self):
-        transform = RothHmmFeatureTransformer(sampling_frequency_feature_space_hz=50)
+        transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=50)
         roi = pd.DataFrame(np.array([[0, 100], [200, 300], [400, 500]]), columns=["start", "end"])
         resampled_roi = transform.transform(roi_list=roi, sampling_rate_hz=100).transformed_roi_list_
         assert_array_equal(resampled_roi, np.array([[0, 50], [100, 150], [200, 250]]))
@@ -320,3 +321,86 @@ class TestSimpleModel:
             )
 
         assert "Invalid architecture" in str(e.value)
+
+
+class TestRothSegmentationHmm:
+    def test_predict_without_model_raises_error(self):
+        with pytest.raises(ValueError) as e:
+            RothSegmentationHmm().predict(pd.DataFrame(np.random.rand(100, 3)), sampling_rate_hz=100)
+
+        assert "No trained model for prediction available!" in str(e.value)
+
+    def test_self_optimize_calls_self_optimize_with_info(self):
+        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.DataFrame({"start": [0], "end": [100]})]
+
+        with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
+            instance = RothSegmentationHmm()
+            mock.return_value = (instance, None)
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+            mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
+
+    def test_self_optimize_with_info_returns_history(self):
+        data, labels = (
+            [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
+            [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
+        )
+        instance = RothSegmentationHmm().set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+            stride_model__n_states=3,
+            stride_model__n_gmm_components=3,
+        )
+        trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
+        assert instance is trained_instance
+        for v in history.values():
+            assert isinstance(v, History)
+        assert set(history.keys()) == {"stride_model", "transition_model", "self"}
+
+    def test_short_strides_raise_warning(self):
+        data, labels = (
+            [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
+            [pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]})],
+        )
+        instance = RothSegmentationHmm().set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+            stride_model__n_states=5,
+            stride_model__n_gmm_components=3,
+        )
+        with pytest.warns(UserWarning) as w:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "1 strides (out of 4)" in str(w[0].message)
+
+    def test_short_transitions_raise_warning(self):
+        data, labels = (
+            [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
+            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+        )
+        instance = RothSegmentationHmm().set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+            transition_model__n_gmm_components=3,
+            stride_model__n_gmm_components=3,
+            stride_model__n_states=5,
+        )
+        with pytest.warns(UserWarning) as w:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "1 transitions (out of 3)" in str(w[0].message)
+
+    def test_strange_inputs_trigger_nan_error(self):
+        # I don't understand, why the following inputs trigger the error, but they do.
+        # So we use it to test, that the error is raised.
+        data, labels = (
+            [pd.DataFrame(np.random.rand(200, 6), columns=BF_COLS)],
+            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+        )
+        instance = RothSegmentationHmm().set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+            transition_model__n_gmm_components=3,
+            stride_model__n_gmm_components=3,
+            stride_model__n_states=5,
+        )
+        with pytest.raises(ValueError) as e:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "The provided pomegranate model has non-finite/NaN parameters." in str(e.value)

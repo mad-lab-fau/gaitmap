@@ -11,7 +11,6 @@ from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
@@ -21,8 +20,10 @@ from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
+    _DataToShortError,
     _HackyClonableHMMFix,
     add_transition,
+    convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
@@ -52,25 +53,30 @@ def create_fully_labeled_gait_sequences(
         labels_train = np.zeros(len(data))
 
         # predict hidden-state sequence for each transition using "transition model"
-        transition_mask = np.invert(
-            start_end_array_to_bool_array(stride_list[["start", "end"]].to_numpy(), pad_to_length=len(data) - 1)
-        )
-        transition_start_end_list = bool_array_to_start_end_array(transition_mask)
+        transition_start_end_list = convert_stride_list_to_transition_list(stride_list, data.shape[0])
 
         # for each transition, get data and create some naive labels for initialization
-        for start, end in transition_start_end_list:
+        for start, end in transition_start_end_list[["start", "end"]].to_numpy():
             transition_data_train = data[start:end]
-            labels_train[start:end] = transition_model.predict_hidden_state_sequence(
-                transition_data_train, algorithm=algo_predict
-            )
+            try:
+                labels_train[start:end] = transition_model.predict_hidden_state_sequence(
+                    transition_data_train, algorithm=algo_predict
+                )
+            except _DataToShortError:
+                # This happens if a transition is too short to be predicted by the transition model
+                continue
 
         # predict hidden-state sequence for each stride using "stride model"
         for start, end in stride_list[["start", "end"]].to_numpy():
             stride_data_train = data[start:end]
-            labels_train[start:end] = (
-                stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                + transition_model.n_states
-            )
+            try:
+                labels_train[start:end] = (
+                    stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
+                    + transition_model.n_states
+                )
+            except _DataToShortError:
+                # This happens if a stride is too short to be predicted by the stride model
+                continue
 
         # append cleaned sequences to train_sequence
         labels_train_sequence.append(labels_train)

@@ -9,7 +9,7 @@ import pomegranate as pg
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
 
 
 def _add_transition(model, a, b, probability, pseudocount, group):
@@ -252,19 +252,28 @@ def gmms_from_samples(
                     "Ensure that the training data contains enough samples."
                 )
         # calculate Mixture Model for each state, clustered by labels
-        distributions = [
-            pg.GeneralMixtureModel.from_samples(
+        distributions = []
+        for cluster in clustered_data:
+            dist = pg.GeneralMixtureModel.from_samples(
                 pg_dist_type,
                 n_components=n_components,
-                X=dataset,
+                X=cluster,
                 verbose=verbose,
                 n_jobs=n_jobs,
                 n_init=n_init,
                 init="first-k",  # With this initialisation, we don't have any randomnes! -> No need for any random
                 # seed.
             )
-            for dataset in clustered_data
-        ]
+            for d in dist.distributions:
+                if np.any([np.isnan(p).any() for p in d.parameters]).any():
+                    raise ValueError(
+                        "NaN in parameters during distribution fitting! "
+                        "This usually happens when there is not enough data for a large number of distributions and "
+                        "states. "
+                        "To avoid this issue, reduce the number of distributions per state or the number of states. "
+                        "Or ideally, provide more data."
+                    )
+            distributions.append(dist)
     else:
         # if n components is just 1 we do not need a mixture model and just build either multivariate Normal
         # Distribution
@@ -286,6 +295,36 @@ def fix_model_names(model):
             if state_number >= 10:
                 state.name = "s" + chr(87 + state_number)
     return model
+
+
+def _iter_nested_distributions(distribution):
+    if isinstance(distribution, pg.GeneralMixtureModel):
+        yield distribution
+        for d in distribution.distributions:
+            yield from _iter_nested_distributions(d)
+    else:
+        yield distribution
+
+
+def assert_if_model_params_are_finite(model: pg.HiddenMarkovModel):
+    """Assert if model parameters are finite."""
+    try:
+        for state in model.states:
+            for dist in _iter_nested_distributions(state.distribution):
+                if hasattr(dist, "parameters"):
+                    for param in dist.parameters:
+                        assert np.all(np.isfinite(param)), dist
+                if hasattr(dist, "weights"):
+                    assert np.all(np.isfinite(dist.weights)), dist
+    except AssertionError as e:
+        raise ValueError(
+            "The provided pomegranate model has non-finite/NaN parameters. "
+            "This will lead to errors during prediction and indicates problems during training. "
+            "Check the training history and the model parameters to confirm invalid training behaviour. "
+            "Unfortunately, there is no way to automatically fix these issues. "
+            "Simply speaking, your training data could not be represented well by the selected model architecture. "
+            "Check for obvious errors in your pre-processing or try to use a different model architecture. "
+        ) from e
 
 
 def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
@@ -422,6 +461,28 @@ def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarra
     return label_sequence
 
 
+def convert_stride_list_to_transition_list(
+    stride_list: SingleSensorStrideList, last_end: int
+) -> SingleSensorRegionsOfInterestList:
+    """Extract the regions between strides as transitions from a stride list.
+
+    Parameters
+    ----------
+    stride_list
+        Stride list to extract transitions from.
+    last_end
+        End of the final transition (usually len(data)).
+
+    """
+    # Transitions are everything between two strides
+    transition_starts = [0, *(stride_list["end"] + 1)]
+    transition_ends = [*stride_list["start"], last_end]
+
+    return pd.DataFrame(
+        [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0], columns=["start", "end"]
+    )
+
+
 def get_train_data_sequences_transitions(
     data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
@@ -438,14 +499,10 @@ def get_train_data_sequences_transitions(
 
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
 
-        # Transitions are everything between two strides
-        transition_starts = [0, *(stride_list["end"] + 1)]
-        transition_ends = [*stride_list["start"], len(data)]
-
-        transition_start_end_list = [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0]
-
         # for each transition, get data and create some naive labels for initialization
-        for start, end in transition_start_end_list:
+        for start, end in convert_stride_list_to_transition_list(stride_list, data.shape[0])[
+            ["start", "end"]
+        ].to_numpy():
             # append extracted sequences and corresponding label set to results list
             try:
                 trans_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
@@ -454,12 +511,14 @@ def get_train_data_sequences_transitions(
                 continue
             trans_data_train_sequence.append(data[start:end])
 
-    warnings.warn(
-        f"{n_too_short_transitions} transitions (out of {len(trans_labels_train_sequence) + n_too_short_transitions}) "
-        f"were ignored, because they were shorter than the expected number of transition states ({n_states}). "
-        "This warning can usually be ignored, if the number of remaining transitions is still large "
-        "enough to train a model."
-    )
+    if n_too_short_transitions > 0:
+        warnings.warn(
+            f"{n_too_short_transitions} transitions (out of "
+            f"{len(trans_labels_train_sequence) + n_too_short_transitions}) were ignored, because they were shorter "
+            "than the expected number of transition states ({n_states}). "
+            "This warning can usually be ignored, if the number of remaining transitions is still large "
+            "enough to train a model."
+        )
 
     return trans_data_train_sequence, trans_labels_train_sequence
 
@@ -490,14 +549,19 @@ def get_train_data_sequences_strides(
                 continue
             stride_data_train_sequence.append(data[start:end])
 
-    warnings.warn(
-        f"{n_too_short_strides} transitions (out of {len(stride_data_train_sequence) + n_too_short_strides}) "
-        f"were ignored, because they were shorter than the expected number of transition states ({n_states}). "
-        "This warning can usually be ignored, if the number of remaining transitions is still large "
-        "enough to train a model."
-    )
+    if n_too_short_strides > 0:
+        warnings.warn(
+            f"{n_too_short_strides} strides (out of {len(stride_data_train_sequence) + n_too_short_strides}) "
+            f"were ignored, because they were shorter than the expected number of stride states ({n_states}). "
+            "This warning can usually be ignored, if the number of remaining strides is still large "
+            "enough to train a model."
+        )
 
     return stride_data_train_sequence, stride_labels_train_sequence
+
+
+class _DataToShortError(ValueError):
+    pass
 
 
 def predict(
@@ -533,6 +597,8 @@ def predict(
             "Use `self_optimize` or `self_optimize_with_info` for that."
         )
 
+    assert_if_model_params_are_finite(model)
+
     try:
         data = data[list(expected_columns)]
     except KeyError as e:
@@ -542,6 +608,13 @@ def predict(
             "But it only has the following columns:\n\n"
             f"{data.columns}"
         ) from e
+
+    if len(data) < len(model.states) - 2:
+        raise _DataToShortError(
+            "The provided feature data is expected to have at least as many samples as the number of states "
+            f"of the model ({len(model.states) - 2}). "
+            f"But it only has {len(data)} samples."
+        )
 
     data = np.ascontiguousarray(data.to_numpy())
     labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
