@@ -121,7 +121,7 @@ plt.show()
 
 fig, ax1 = plt.subplots(figsize=(10, 3))
 plt.title("HMM Feature Space")
-ax1.set_xlabel(f"Samples Features Space @ {hmm_seg.model.feature_transform.sampling_frequency_feature_space_hz} Hz")
+ax1.set_xlabel(f"Samples Features Space @ {hmm_seg.model.feature_transform.sampling_rate_feature_space_hz} Hz")
 ax1.set_ylabel("Z-Transform [a.u.]")
 feature_space_date = hmm_seg.result_models_[sensor].feature_space_data_
 ax1.plot(feature_space_date)

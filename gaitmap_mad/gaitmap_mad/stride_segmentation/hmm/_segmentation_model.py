@@ -120,7 +120,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         self,
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
-        sampling_frequency_hz: float,
+        sampling_rate_hz: float,
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
@@ -131,7 +131,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         stride_list_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
-        sampling_frequency_hz
+        sampling_rate_hz
             Sampling frequency of the data.
 
         Returns
@@ -146,7 +146,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         self,
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
-        sampling_frequency_hz: float,
+        sampling_rate_hz: float,
     ) -> Tuple[Self, Any]:
         """Create and train the HMM model based on the given data and labels.
 
@@ -159,7 +159,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         stride_list_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
-        sampling_frequency_hz
+        sampling_rate_hz
             Sampling frequency of the data.
 
         Returns
@@ -376,9 +376,10 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         if self.model is None:
             # We perform this check early to terminate before the potentially costly feature transform
             raise ValueError(
-                "No trained model for prediction available! You must either provide a pre-trained model "
-                "during class initialization or call the `self_optimize`/`self_optimize_with_info` method with "
-                "appropriate training data to generate a new trained model."
+                "No trained model for prediction available! "
+                "You must either provide a pre-trained model during class initialization or call the "
+                "`self_optimize`/`self_optimize_with_info` method with appropriate training data to generate a new "
+                "trained model."
             )
 
         self.data = data
@@ -404,9 +405,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         sampling_rate_hz: float,
     ):
         """Perform feature transformation."""
-        if not isinstance(data_sequence, list):
-            raise ValueError("Input into transform must be a list of valid gaitmap sensordata objects!")
-
         feature_transform = self.feature_transform.clone()
 
         data_sequence_feature_space = [
@@ -428,7 +426,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         self,
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
-        sampling_frequency_hz: float,
+        sampling_rate_hz: float,
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
@@ -446,7 +444,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         stride_list_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
-        sampling_frequency_hz
+        sampling_rate_hz
             Sampling frequency of the data.
 
         Returns
@@ -455,14 +453,14 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             The trained model instance.
 
         """
-        return self.self_optimize_with_info(data_sequence, stride_list_sequence, sampling_frequency_hz)[0]
+        return self.self_optimize_with_info(data_sequence, stride_list_sequence, sampling_rate_hz=sampling_rate_hz)[0]
 
     @make_optimize_safe
     def self_optimize_with_info(
         self,
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
-        sampling_frequency_hz: float,
+        sampling_rate_hz: float,
     ) -> Tuple[Self, Dict[Literal["self", "transition_model", "stride_model"], History]]:
         """Create and train the HMM model based on the given data and labels.
 
@@ -477,7 +475,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         stride_list_sequence
             Sequence of gaitmap stride lists.
             The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
-        sampling_frequency_hz
+        sampling_rate_hz
             Sampling frequency of the data.
 
         Returns
@@ -493,7 +491,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(
-            data_sequence, stride_list_sequence, sampling_frequency_hz
+            data_sequence, stride_list_sequence, sampling_rate_hz
         )
 
         # train sub stride model
