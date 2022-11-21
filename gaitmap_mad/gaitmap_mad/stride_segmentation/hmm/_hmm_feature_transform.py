@@ -106,7 +106,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     Parameters
     ----------
-    sampling_frequency_feature_space_hz
+    sampling_rate_feature_space_hz
         The sampling rate of the data the model was trained with
     low_pass_filter
         Instance of a low pass filter to be applied to the data before resampling.
@@ -153,7 +153,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     """
 
     # TODO: Find a way to expose the internal objects instead of exposing just parameters.
-    sampling_frequency_feature_space_hz: float
+    sampling_rate_feature_space_hz: float
     low_pass_filter: Optional[BaseFilter]
     axes: List[str]
     features: List[str]
@@ -162,14 +162,14 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     def __init__(
         self,
-        sampling_frequency_feature_space_hz: float = 51.2,
+        sampling_rate_feature_space_hz: float = 51.2,
         low_pass_filter: Optional[BaseFilter] = cf(ButterworthFilter(cutoff_freq_hz=10.0, order=4)),
         axes: List[str] = cf(["gyr_ml"]),
         features: List[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
         standardization: bool = True,
     ):
-        self.sampling_frequency_feature_space_hz = sampling_frequency_feature_space_hz
+        self.sampling_rate_feature_space_hz = sampling_rate_feature_space_hz
         self.low_pass_filter = low_pass_filter
         self.axes = axes
         self.features = features
@@ -216,7 +216,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
             preprocessor = ChainedTransformer(
                 [
                     ("filter", (self.low_pass_filter or IdentityTransformer()).clone()),
-                    ("resample", Resample(self.sampling_frequency_feature_space_hz)),
+                    ("resample", Resample(self.sampling_rate_feature_space_hz)),
                 ]
             )
             preprocessor.transform(data, sampling_rate_hz=sampling_rate_hz)
@@ -238,7 +238,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
             # Note we need the sampling rate of the downsampled dataset here
             feature_matrix_df = feature_calculator.transform(
-                downsampled_dataset, sampling_rate_hz=self.sampling_frequency_feature_space_hz
+                downsampled_dataset, sampling_rate_hz=self.sampling_rate_feature_space_hz
             ).transformed_data_
             if self.standardization:
                 feature_matrix_df = pd.DataFrame(
@@ -249,7 +249,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         if roi_list is not None:
             self.roi_list = roi_list
             self.transformed_roi_list_ = (
-                Resample(self.sampling_frequency_feature_space_hz)
+                Resample(self.sampling_rate_feature_space_hz)
                 .transform(roi_list=roi_list, sampling_rate_hz=sampling_rate_hz)
                 .transformed_roi_list_
             )
@@ -272,4 +272,4 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         The state sequence in the original sampling rate
 
         """
-        return np.repeat(state_sequence, sampling_rate_hz / self.sampling_frequency_feature_space_hz)
+        return np.repeat(state_sequence, sampling_rate_hz / self.sampling_rate_feature_space_hz)

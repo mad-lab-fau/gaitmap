@@ -66,7 +66,7 @@ from gaitmap.data_transform import ButterworthFilter
 from gaitmap.stride_segmentation.hmm import RothHmmFeatureTransformer
 
 feature_transform = RothHmmFeatureTransformer(
-    sampling_frequency_feature_space_hz=51.2,
+    sampling_rate_feature_space_hz=51.2,
     axes=["gyr_ml"],
     features=["raw", "gradient"],
     low_pass_filter=ButterworthFilter(order=4, cutoff_freq_hz=10),
@@ -156,7 +156,7 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 # finally combine them to a flatted segmentation model.
 
 segmentation_model = segmentation_model.self_optimize(
-    data_train_sequence, stride_list_sequence, sampling_frequency_hz=sampling_rate_hz
+    data_train_sequence, stride_list_sequence, sampling_rate_hz=sampling_rate_hz
 )
 
 # %%
@@ -208,6 +208,6 @@ for start, end in hmm.matches_start_end_original_[sensor]:
 axs[1].set_ylabel("Hidden State [N]")
 
 axs[1].set_xlabel("Samples @ %d Hz" % sampling_rate_hz)
-plt.xlim([0, 5000])
+plt.xlim([6000, 7200])
 fig.tight_layout()
 plt.show()
