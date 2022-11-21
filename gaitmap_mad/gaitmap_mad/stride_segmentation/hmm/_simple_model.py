@@ -435,8 +435,8 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
 
         history: History
         _, history = model_trained.fit(
-            sequences=data_sequence_train,
-            labels=labels_sequence_train,
+            sequences=np.array(data_sequence_train, dtype=object),
+            labels=np.array(labels_sequence_train, dtype=object),
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
