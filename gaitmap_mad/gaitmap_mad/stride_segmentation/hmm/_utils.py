@@ -1,5 +1,6 @@
 """Utils and helper functions for HMM classes."""
 import json
+import warnings
 from typing import Any, List, Literal, Optional, Set, Tuple
 
 import numpy as np
@@ -8,7 +9,6 @@ import pomegranate as pg
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
-from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 
 
@@ -213,13 +213,7 @@ def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndar
 
 
 def gmms_from_samples(
-    data,
-    labels,
-    n_components: int,
-    n_expected_states: int,
-    verbose: bool = False,
-    n_init: int = 5,
-    n_jobs: int = 1,
+    data, labels, n_components: int, n_expected_states: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -248,6 +242,15 @@ def gmms_from_samples(
     pg_dist_type = pg.MultivariateGaussianDistribution
 
     if n_components > 1:
+        for cluster in clustered_data:
+            if len(cluster) < n_components:
+                raise ValueError(
+                    f"The training labels did only provide a small number of samples ({len(cluster)}) for one of the "
+                    "states. "
+                    f"To initialize {n_components} components in a mixture model, we need at least {n_components} "
+                    f"samples! "
+                    "Ensure that the training data contains enough samples."
+                )
         # calculate Mixture Model for each state, clustered by labels
         distributions = [
             pg.GeneralMixtureModel.from_samples(
@@ -300,9 +303,7 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
+        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
     )
 
 
@@ -374,25 +375,49 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
 def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarray:
     """Create equidistant label sequence.
 
-    create label sequence of length n_states with n_labels unique labels. This can be used to e.g. initialize labels
-    for a single stride.
+    create label sequence of length n_states with n_labels unique labels.
+    This can be used to e.g. initialize labels for a single stride or sequence that is expected to be left-right strict.
+
+    In case n_labels is not cleanly dividable by n_states, some of the states will be repeated to ensure that the
+    sequence is of length n_labels.
+    Specifically, we will repeat states at the start and the end of the sequence.
+
+    If the number of labels is smaller than the number of states, an error is raised.
+
+    Parameters
+    ----------
+    n_labels : int
+        Number of labels to create.
+    n_states : int
+        Number of unique states in the output sequence.
+
+    Example
+    -------
+    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 5)
+    array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
+    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 4)
+    array([0, 0, 0, 1, 1, 2, 2, 3, 3, 3])
+    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 3)
+    array([0, 0, 0, 1, 1, 1, 2, 2, 2, 2])
+
     """
+    if n_labels < n_states:
+        raise ValueError("n_labels must be larger than n_states!")
+
     # calculate the samples per state (must be integer!)
-    n_labels_per_state = int(round(n_labels / n_states))
+    save_repeats = int(n_labels // n_states)
+    remainder = n_labels % n_states
 
-    label_sequence = np.zeros(n_labels)
-
-    state = None
-    if n_states < 1:
-        raise ValueError("Number of states must be at least 1!")
-
-    end = 0
-    for state in range(0, n_states):
-        start = state * n_labels_per_state
-        end = start + n_labels_per_state
-        label_sequence[start:end] = state
-    # fill remaining array with last state
-    label_sequence[end:] = state
+    # create label sequence
+    max_handled_state = remainder // 2
+    label_sequence = np.repeat(np.arange(remainder // 2), save_repeats + 1)
+    label_sequence = np.append(
+        label_sequence, np.repeat(np.arange(n_states - remainder) + max_handled_state, save_repeats)
+    )
+    max_handled_state = n_states - remainder + max_handled_state
+    label_sequence = np.append(
+        label_sequence, np.repeat(np.arange(n_states - max_handled_state) + max_handled_state, save_repeats + 1)
+    )
 
     return label_sequence
 
@@ -409,25 +434,32 @@ def get_train_data_sequences_transitions(
     trans_data_train_sequence = []
     trans_labels_train_sequence = []
 
-    # iterate over all given training sequences, extract all strides and generate equidistant labels for each of these
-    # strides.
+    n_too_short_transitions = 0
+
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
 
-        # here we will only extract transitions from the given bout (aka everything which is "not marked as a stride")
-        transition_mask = np.invert(
-            start_end_array_to_bool_array(stride_list[["start", "end"]].to_numpy(), pad_to_length=len(data) - 1).astype(
-                bool
-            )
-        )
-        transition_start_end_list = bool_array_to_start_end_array(transition_mask)
-        # fix last indices
-        transition_start_end_list[-1][-1] = transition_start_end_list[-1][-1] + 1
+        # Transitions are everything between two strides
+        transition_starts = [0, *(stride_list["end"] + 1)]
+        transition_ends = [*stride_list["start"], len(data)]
+
+        transition_start_end_list = [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0]
 
         # for each transition, get data and create some naive labels for initialization
         for start, end in transition_start_end_list:
-            # append extracted sequences and corresponding label set to resuls list
+            # append extracted sequences and corresponding label set to results list
+            try:
+                trans_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
+            except ValueError:
+                n_too_short_transitions += 1
+                continue
             trans_data_train_sequence.append(data[start:end])
-            trans_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
+
+    warnings.warn(
+        f"{n_too_short_transitions} transitions (out of {len(trans_labels_train_sequence) + n_too_short_transitions}) "
+        f"were ignored, because they were shorter than the expected number of transition states ({n_states}). "
+        "This warning can usually be ignored, if the number of remaining transitions is still large "
+        "enough to train a model."
+    )
 
     return trans_data_train_sequence, trans_labels_train_sequence
 
@@ -444,11 +476,26 @@ def get_train_data_sequences_strides(
     stride_data_train_sequence = []
     stride_labels_train_sequence = []
 
+    n_too_short_strides = 0
+
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
         # extract strides directly from stride_list
         for start, end in stride_list[["start", "end"]].to_numpy():
+            try:
+                stride_labels_train_sequence.append(
+                    create_equidistant_label_sequence(end - start, n_states).astype(int)
+                )
+            except ValueError:
+                n_too_short_strides += 1
+                continue
             stride_data_train_sequence.append(data[start:end])
-            stride_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
+
+    warnings.warn(
+        f"{n_too_short_strides} transitions (out of {len(stride_data_train_sequence) + n_too_short_strides}) "
+        f"were ignored, because they were shorter than the expected number of transition states ({n_states}). "
+        "This warning can usually be ignored, if the number of remaining transitions is still large "
+        "enough to train a model."
+    )
 
     return stride_data_train_sequence, stride_labels_train_sequence
 
