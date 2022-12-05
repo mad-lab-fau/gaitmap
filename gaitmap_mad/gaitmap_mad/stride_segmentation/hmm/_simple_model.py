@@ -18,6 +18,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
     _HackyClonableHMMFix,
+    check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     fix_model_names,
@@ -445,6 +446,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             n_jobs=self.n_jobs,
             multiple_check_input=False,
         )
+        check_history_for_training_failure(history)
         model_trained.name = self.name + "_trained"
 
         self.model = model_trained

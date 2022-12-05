@@ -6,6 +6,8 @@ from typing import Any, List, Literal, Optional, Set, Tuple
 import numpy as np
 import pandas as pd
 import pomegranate as pg
+from pomegranate.hmm import History
+
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
@@ -313,18 +315,30 @@ def _iter_nested_distributions(distribution):
 
 
 def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
-    """Assert if model parameters are finite."""
-    try:
-        for state in model.states:
-            for dist in _iter_nested_distributions(state.distribution):
-                if hasattr(dist, "parameters"):
-                    for param in dist.parameters:
-                        assert np.all(np.isfinite(param)), dist
-                if hasattr(dist, "weights"):
-                    assert np.all(np.isfinite(dist.weights)), dist
-    except AssertionError:
-        return False
+    """Check if model parameters are finite."""
+    for state in model.states:
+        for dist in _iter_nested_distributions(state.distribution):
+            if hasattr(dist, "parameters"):
+                for param in dist.parameters:
+                    if not np.all(np.isfinite(param)):
+                        return False
+            if hasattr(dist, "weights"):
+                if not np.all(np.isfinite(dist.weights)):
+                    return False
     return True
+
+
+def check_history_for_training_failure(history: History):
+    """Check if training history contains any NaNs."""
+    if not np.all(np.isfinite(history.improvements)):
+        warnings.warn(
+            "During training the improvement per epoch became NaN/infinite! "
+            "With a high likelihood, the final model is not usable and will result in errors during prediction. "
+            "This usually happens when there is not enough data for a large number of distributions and "
+            "states. "
+            "To avoid this issue, reduce the number of distributions per state or the number of states. "
+            "Or ideally, provide more data."
+        )
 
 
 def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
