@@ -400,7 +400,9 @@ class TestRothSegmentationHmm:
             stride_model__n_gmm_components=3,
             stride_model__n_states=5,
         )
-        with pytest.raises(ValueError) as e:
-            instance.self_optimize(data, labels, sampling_rate_hz=100)
+        with pytest.warns(UserWarning) as w:
+            with pytest.raises(ValueError) as e:
+                instance.self_optimize(data, labels, sampling_rate_hz=100)
 
+        assert "During training the improvement per epoch became NaN/infinite!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)

@@ -23,6 +23,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     _DataToShortError,
     _HackyClonableHMMFix,
     add_transition,
+    check_history_for_training_failure,
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
@@ -630,6 +631,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             n_jobs=self.n_jobs,
             multiple_check_input=False,
         )
+        check_history_for_training_failure(history)
 
         new_model.name = self.name
 
