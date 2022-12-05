@@ -213,7 +213,13 @@ def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndar
 
 
 def gmms_from_samples(
-    data, labels, n_components: int, n_expected_states: int, verbose: bool = False, n_init: int = 5, n_jobs: int = 1,
+    data,
+    labels,
+    n_components: int,
+    n_expected_states: int,
+    verbose: bool = False,
+    n_init: int = 5,
+    n_jobs: int = 1,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -336,7 +342,9 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     to add a edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
-        get_state_by_name(model, transition[0]), get_state_by_name(model, transition[1]), transition_probability,
+        get_state_by_name(model, transition[0]),
+        get_state_by_name(model, transition[1]),
+        transition_probability,
     )
 
 
@@ -611,7 +619,7 @@ def predict(
     data = np.ascontiguousarray(data.to_numpy())
     try:
         labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
-    except Exception as e:
+    except Exception as e:  # noqa: broad-except
         if not model_params_are_finite(model):
             raise ValueError(
                 "Prediction failed! (See error above.). "
@@ -622,12 +630,11 @@ def predict(
                 "Simply speaking, your training data could not be represented well by the selected model architecture. "
                 "Check for obvious errors in your pre-processing or try to use a different model architecture. "
             ) from e
-        else:
-            raise ValueError(
-                "Prediction failed! (See error above.). "
-                "Unfortunally, we are not sure what happened. "
-                "The error was caused by pomegrante internals."
-            ) from e
+        raise ValueError(
+            "Prediction failed! (See error above.). "
+            "Unfortunately, we are not sure what happened. "
+            "The error was caused by pomegrante internals."
+        ) from e
 
     # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
     # Note: This only seems to happen for the viterbi algorithm, not for the map algorithm.
