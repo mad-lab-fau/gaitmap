@@ -306,7 +306,7 @@ def _iter_nested_distributions(distribution):
         yield distribution
 
 
-def assert_if_model_params_are_finite(model: pg.HiddenMarkovModel):
+def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
     """Assert if model parameters are finite."""
     try:
         for state in model.states:
@@ -316,15 +316,9 @@ def assert_if_model_params_are_finite(model: pg.HiddenMarkovModel):
                         assert np.all(np.isfinite(param)), dist
                 if hasattr(dist, "weights"):
                     assert np.all(np.isfinite(dist.weights)), dist
-    except AssertionError as e:
-        raise ValueError(
-            "The provided pomegranate model has non-finite/NaN parameters. "
-            "This will lead to errors during prediction and indicates problems during training. "
-            "Check the training history and the model parameters to confirm invalid training behaviour. "
-            "Unfortunately, there is no way to automatically fix these issues. "
-            "Simply speaking, your training data could not be represented well by the selected model architecture. "
-            "Check for obvious errors in your pre-processing or try to use a different model architecture. "
-        ) from e
+    except AssertionError:
+        return False
+    return True
 
 
 def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
@@ -597,8 +591,6 @@ def predict(
             "Use `self_optimize` or `self_optimize_with_info` for that."
         )
 
-    assert_if_model_params_are_finite(model)
-
     try:
         data = data[list(expected_columns)]
     except KeyError as e:
@@ -617,7 +609,26 @@ def predict(
         )
 
     data = np.ascontiguousarray(data.to_numpy())
-    labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
+    try:
+        labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
+    except Exception as e:
+        if not model_params_are_finite(model):
+            raise ValueError(
+                "Prediction failed! (See error above.). "
+                "However, the provided pomegranate model has non-finite/NaN parameters. "
+                "This might be the source of the observed error and indicates problems during training. "
+                "Check the training history and the model parameters to confirm invalid training behaviour. "
+                "Unfortunately, there is no way to automatically fix these issues. "
+                "Simply speaking, your training data could not be represented well by the selected model architecture. "
+                "Check for obvious errors in your pre-processing or try to use a different model architecture. "
+            ) from e
+        else:
+            raise ValueError(
+                "Prediction failed! (See error above.). "
+                "Unfortunally, we are not sure what happened. "
+                "The error was caused by pomegrante internals."
+            ) from e
+
     # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
     # Note: This only seems to happen for the viterbi algorithm, not for the map algorithm.
     if algorithm == "viterbi":

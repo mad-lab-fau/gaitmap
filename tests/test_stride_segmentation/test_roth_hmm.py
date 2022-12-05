@@ -403,4 +403,4 @@ class TestRothSegmentationHmm:
         with pytest.raises(ValueError) as e:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert "The provided pomegranate model has non-finite/NaN parameters." in str(e.value)
+        assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
