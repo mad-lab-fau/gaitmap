@@ -45,6 +45,17 @@ This is the first version of poetry that supports subdirectories for git depende
 Note, that even then, there are a couple of bugs with poetry`s subdirectory support.
 Hence, we would recommend to use the package versions of gaitmap and gaitmap_mad and not install them from source. -->
 
+#### Enabling specific features
+
+- Hidden Markov Models: To use the HMM based algorithms make sure you install `gaitmap` with the `hmm` extra.
+  ```
+  pip install "git+https://github.com/mad-lab-fau/gaitmap.git[hmm]" --upgrade
+  ```
+  and make sure that `gaitmap_mad` is installed.
+  This installs the `pomegranate` package, which is the basis for the HMM implementation.
+  Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
+  Python 3.10.
+
 If you are planning to make any changes to the library, please refer to the developer section below.
 
 ### Working with Algorithms
@@ -66,11 +77,11 @@ and the
 have detailed information for all new developers.
 Below, we included some very basic information as a quick reference here in the README.
 
-Install Python >3.7 and [poetry](https://python-poetry.org).
+Install Python >=3.8 and [poetry](https://python-poetry.org).
 Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
-git clone https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap.git
+git clone https://github.com/mad-lab-fau/gaitmap.git
 poetry install
 ```
 
