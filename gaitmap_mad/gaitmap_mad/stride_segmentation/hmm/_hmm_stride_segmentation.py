@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
@@ -62,7 +63,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         Otherwise, it returns the start and end values before the snapping is applied.
     hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
         The cost value associated with each stride.
-    result_models_
+    result_model_
         The copy of the model used for the segmentation with all the result parameters attached.
 
 
@@ -99,7 +100,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
     matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
     hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    result_models_: Union[BaseSegmentationHmmT, Dict[str, BaseSegmentationHmmT]]
+    result_model_: Union[BaseSegmentationHmmT, Dict[str, BaseSegmentationHmmT]]
 
     def __init__(
         self,
@@ -168,26 +169,14 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
         if dataset_type == "single":
             # Single sensor: easy
-            (
-                self.matches_start_end_,
-                self.hidden_state_sequence_,
-                self.result_models_,
-            ) = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
+            results = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
         else:  # Multisensor
-            self.hidden_state_sequence_ = {}
-            self.matches_start_end_ = {}
-            self.result_models_ = {}
-
-            for sensor in get_multi_sensor_names(data):
-                (
-                    matches_start_end,
-                    hidden_state_sequence,
-                    result_model,
-                ) = self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
-                self.hidden_state_sequence_[sensor] = hidden_state_sequence
-                self.matches_start_end_[sensor] = matches_start_end
-                self.result_models_[sensor] = result_model
-
+            result_dict = {
+                sensor: self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
+                for sensor in get_multi_sensor_names(data)
+            }
+            results = invert_result_dictionary(result_dict)
+        set_params_from_dict(self, results, result_formatting=True)
         return self
 
     def _segment_single_dataset(self, dataset, *, sampling_rate_hz: float):
@@ -197,11 +186,11 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         state_sequence = model.hidden_state_sequence_
 
         matches_start_end = self._hidden_states_to_matches_start_end(state_sequence)
-        return (
-            self._postprocess_matches(dataset, matches_start_end),
-            state_sequence,
-            model,
-        )
+        return {
+            "matches_start_end": self._postprocess_matches(dataset, matches_start_end),
+            "hidden_state_sequence": state_sequence,
+            "result_model_": model,
+        }
 
     def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
         """Convert a hidden state sequence to a list of potential borders."""
