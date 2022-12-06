@@ -123,13 +123,13 @@ fig, ax1 = plt.subplots(figsize=(10, 3))
 plt.title("HMM Feature Space")
 ax1.set_xlabel(f"Samples Features Space @ {hmm_seg.model.feature_transform.sampling_rate_feature_space_hz} Hz")
 ax1.set_ylabel("Z-Transform [a.u.]")
-feature_space_date = hmm_seg.result_models_[sensor].feature_space_data_
+feature_space_date = hmm_seg.result_model_[sensor].feature_space_data_
 ax1.plot(feature_space_date)
 ax1.legend(feature_space_date.columns.to_list())
 
 ax2 = ax1.twinx()
 ax2.set_ylabel("Hidden State Sequence", color="tab:green")
-hidden_state_sequence_feature_space = hmm_seg.result_models_[sensor].hidden_state_sequence_feature_space_
+hidden_state_sequence_feature_space = hmm_seg.result_model_[sensor].hidden_state_sequence_feature_space_
 ax2.plot(hidden_state_sequence_feature_space, color="tab:green")
 ax2.tick_params(axis="y", labelcolor="tab:green")
 
