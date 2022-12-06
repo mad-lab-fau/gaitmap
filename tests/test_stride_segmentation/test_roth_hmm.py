@@ -6,6 +6,7 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
 from pomegranate import GeneralMixtureModel
 from pomegranate.hmm import History
+from tpcp._hash import custom_hash
 
 from gaitmap.data_transform import SlidingWindowMean
 from gaitmap.utils.consts import BF_COLS
@@ -406,3 +407,26 @@ class TestRothSegmentationHmm:
 
         assert "During training the improvement per epoch became NaN/infinite!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
+
+    def test_training_updates_all_models(self):
+        """Training should modify the stride, the transition model and the model itself."""
+        data, labels = (
+            [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
+            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+        )
+        instance = RothSegmentationHmm().set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+            transition_model__n_gmm_components=3,
+            stride_model__n_gmm_components=3,
+            stride_model__n_states=5,
+        )
+        # We can not properly test this, so we get the hash before and after and compare them.
+        hash_stride_model = custom_hash(instance.stride_model)
+        hash_transition_model = custom_hash(instance.transition_model)
+        hash_model = custom_hash(instance.model)
+
+        instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert hash_stride_model != custom_hash(instance.stride_model)
+        assert hash_transition_model != custom_hash(instance.transition_model)
+        assert hash_model != custom_hash(instance.model)
