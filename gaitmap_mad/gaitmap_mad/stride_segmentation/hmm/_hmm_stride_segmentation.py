@@ -1,6 +1,6 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 from importlib.resources import open_text
-from typing import Dict, Generic, TypeVar, Union
+from typing import Dict, Generic, TypeVar, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -91,7 +91,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
     """
 
-    snap_to_min_win_ms: float
+    snap_to_min_win_ms: Optional[float]
     snap_to_min_axis: str
     model: BaseSegmentationHmmT
 
@@ -106,7 +106,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         self,
         model: BaseSegmentationHmmT = cf(PreTrainedRothSegmentationModel()),
         *,
-        snap_to_min_win_ms: float = 100,
+        snap_to_min_win_ms: Optional[float] = 100,
         snap_to_min_axis: str = "gyr_ml",
     ):
         self.snap_to_min_win_ms = snap_to_min_win_ms
