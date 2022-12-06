@@ -239,6 +239,8 @@ GAITMAP_MAD_TEST = """
 
 def add_info_about_origin(app, what, name, obj, options, lines: List[str]):
     """Add a short info text to all algorithms that are only available via gaitmap_mad."""
+    if what != "class":
+        return
     try:
         file_name = getsourcefile(obj)
     except TypeError:
