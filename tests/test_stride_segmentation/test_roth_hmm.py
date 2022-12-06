@@ -400,6 +400,7 @@ class TestRothSegmentationHmm:
             [pd.DataFrame(np.random.rand(200, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
         )
+        print(data[0].mean())
         instance = RothSegmentationHmm().set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
             transition_model__n_gmm_components=3,
