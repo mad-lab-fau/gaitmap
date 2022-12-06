@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pomegranate as pg
 from pomegranate.hmm import History
-
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
