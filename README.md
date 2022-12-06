@@ -15,7 +15,7 @@ Its API is designed to mimic `sklearn` to provide you a familiar and elegant int
 
 ### Installation
 
-*gaitmap* only supports Python 3.8 and newer.
+*gaitmap* only supports Python 3.8 and newer (see details below).
 First, install a compatible version of Python.
 
 Then you need to install the provided packages.
@@ -57,6 +57,12 @@ Hence, we would recommend to use the package versions of gaitmap and gaitmap_mad
   Python 3.10.
 
 If you are planning to make any changes to the library, please refer to the developer section below.
+
+#### Supported Python versions
+
+*gaitmap* is tested against Python 3.8 and 3.9 at the moment.
+We expect most features to work with all Python versions >= 3.8, but because of some known issues 
+(see specific features above) we do not officially support them.
 
 ### Working with Algorithms
 
