@@ -329,9 +329,10 @@ def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
 
 def check_history_for_training_failure(history: History):
     """Check if training history contains any NaNs."""
-    if not np.all(np.isfinite(history.improvements)):
+    if not np.all(np.isfinite(history.improvements)) or np.any(np.array(history.improvements) < 0):
         warnings.warn(
-            "During training the improvement per epoch became NaN/infinite! "
+            "During training the improvement per epoch became NaN/infinite or negative! "
+            "Run `self_optimize_with_info` and inspect the history element for more information. "
             "With a high likelihood, the final model is not usable and will result in errors during prediction. "
             "This usually happens when there is not enough data for a large number of distributions and "
             "states. "
@@ -352,7 +353,7 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     """Add a transition to an existing model by state-names.
 
     add_transition(model, transition = ("s0","s1"), transition_probability = 0.5)
-    to add a edge from state s0 to state s1 with a transition probability of 0.5.
+    to add an edge from state s0 to state s1 with a transition probability of 0.5.
     """
     model.add_transition(
         get_state_by_name(model, transition[0]),
