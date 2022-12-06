@@ -410,7 +410,7 @@ class TestRothSegmentationHmm:
             with pytest.raises(ValueError) as e:
                 instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert "During training the improvement per epoch became NaN/infinite!" in str(w[0].message)
+        assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
 
     def test_training_updates_all_models(self):
