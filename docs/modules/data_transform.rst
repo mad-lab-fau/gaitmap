@@ -45,6 +45,19 @@ Simple Transformers and Scalers
     MinMaxScaler
     TrainableMinMaxScaler
 
+Feature Transformers
+--------------------
+.. autosummary::
+   :toctree: generated/data_transform
+   :template: class_with_private.rst
+
+    Resample
+    BaseSlidingWindowFeatureTransformer
+    SlidingWindowMean
+    SlidingWindowVar
+    SlidingWindowStd
+    SlidingWindowGradient
+
 Filter
 ------
 .. autosummary::
