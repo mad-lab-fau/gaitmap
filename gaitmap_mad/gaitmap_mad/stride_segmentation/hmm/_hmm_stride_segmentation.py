@@ -203,11 +203,17 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         # find falling edge of stride end state sequence
         matches_ends = np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype(int)) < 0)
 
-        # special case where the very last part of the data is just half a stride, so the model finds a begin of a
-        # stride but no end! We need to add this end manually
-        # TODO: Do we want that? I think we should remove unfinished strides!
-        if len(matches_starts) > len(matches_ends):
+        # Special case, when the last state is a stride end state
+        if len(matches_starts) > len(matches_ends) and hidden_states_predicted[-1] == stride_end_state:
             matches_ends = np.append(matches_ends, len(hidden_states_predicted) - 1)
+
+        # special case where the very last part of the data is just half a stride, so the model finds a begin of a
+        # stride but no end!
+        # In this case we remove the last stride start
+        if len(matches_starts) > len(matches_ends):
+            matches_starts = matches_starts[:-1]
+
+        assert len(matches_starts) == len(matches_ends), "Number of matches starts and ends must be equal."
 
         return np.column_stack([matches_starts, matches_ends])
 
