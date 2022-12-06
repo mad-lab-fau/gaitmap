@@ -13,8 +13,8 @@ from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_to_fbf
 from gaitmap.utils.datatype_helper import (
     get_multi_sensor_names,
-    is_single_sensor_stride_list,
     is_multi_sensor_stride_list,
+    is_single_sensor_stride_list,
 )
 from gaitmap_mad.stride_segmentation.hmm import (
     HmmStrideSegmentation,
@@ -91,7 +91,8 @@ class TestRothHmmFeatureTransform:
         transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=target_sampling_rate)
         in_state_sequence = np.array([0, 1, 2, 3, 4, 5])
         state_sequence = transform.inverse_transform_state_sequence(
-            state_sequence=in_state_sequence, sampling_rate_hz=100,
+            state_sequence=in_state_sequence,
+            sampling_rate_hz=100,
         )
         # output should have the same sampling rate, by repeating values
         assert len(state_sequence) == 100 / target_sampling_rate * len(in_state_sequence)
@@ -100,7 +101,10 @@ class TestRothHmmFeatureTransform:
     @pytest.mark.parametrize("features", [["raw"], ["raw", "gradient"], ["raw", "gradient", "mean"]])
     @pytest.mark.parametrize("axes", [["gyr_ml"], ["acc_pa"], ["gyr_ml", "acc_pa"]])
     def test_select_features(self, features, healthy_example_imu_data, axes):
-        transform = RothHmmFeatureTransformer(features=features, axes=axes,)
+        transform = RothHmmFeatureTransformer(
+            features=features,
+            axes=axes,
+        )
         data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]).iloc[:100]
 
         transformed_data = transform.transform(data, sampling_rate_hz=100).transformed_data_

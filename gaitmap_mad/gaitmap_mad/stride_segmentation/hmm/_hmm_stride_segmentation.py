@@ -1,6 +1,6 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 from importlib.resources import open_text
-from typing import Dict, Generic, TypeVar, Union, Optional
+from typing import Dict, Generic, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
