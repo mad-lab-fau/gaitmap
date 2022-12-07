@@ -181,17 +181,12 @@ class BaseSegmentationHmm(_BaseSerializable):
 
 
 class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
-    """A hierarchical HMM model for stride segmentation proposed by Roth et al. (2019).
+    """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
     This model differentiates between strides and transitions.
-    Both data sections are modeled by individual HMMs and are trained seperately.
-    A final model is created by combining the transition matrizes of the two models and allowing for transitions between
+    Both data sections are modeled by individual HMMs and are trained separately.
+    A final model is created by combining the transition matrices of the two models and allowing for transitions between
     these higher level states at the start or end of a stride.
-
-    Note, that we are also store the trained stride and transition model during the optimization step.
-    These are not required for prediction, as all there information is also contained in the fused model.
-    However, inspecting the trained models might provide further inside into possible training issues.
-    As the models are generally small, this should not impact RAM (or disk usage during export) in a relevant way.
 
     Parameters
     ----------
@@ -269,6 +264,19 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         The data passed to the `segment` method.
     sampling_rate_hz
         The sampling rate of the data
+
+    Notes
+    -----
+    Note, that we are also store the trained stride and transition model during the optimization step.
+    These are not required for prediction, as all there information is also contained in the fused model.
+    However, inspecting the trained models might provide further inside into possible training issues.
+    As the models are generally small, this should not impact RAM (or disk usage during export) in a relevant way.
+
+    References
+    ----------
+    .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
+           free-living gait data in Parkinson’s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+           https://doi.org/10.1186/s12984-021-00883-7
 
     """
 

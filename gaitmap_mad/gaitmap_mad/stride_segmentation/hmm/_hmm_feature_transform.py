@@ -85,7 +85,9 @@ class BaseHmmFeatureTransformer(BaseTransformer):
 class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     """Transform all data and stride labels into the feature space required for training an HMM.
 
-    Default values of all parameters are set based on the work of Nils Roth [1]_
+    This method is expected to be used in combination with the
+    :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm` class.
+    Default values of all parameters are set based on the work of Nils Roth [1]_.
 
     This applies the following transformations to the data:
 
@@ -102,7 +104,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     This is a very specific high level feature transformer based on the work of Nils Roth [1]_.
     You can create a custom transformer with a similar API interface, if you need more flexibility as exposed by the
-    parameters.
+    parameters (see :class:`~gait.gaitmap.stride_segmentation.hmm.BaseHmmFeatureTransformer`).
 
     Parameters
     ----------
