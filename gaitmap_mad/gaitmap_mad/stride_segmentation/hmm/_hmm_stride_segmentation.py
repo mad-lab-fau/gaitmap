@@ -16,7 +16,10 @@ from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmenta
 
 
 class PreTrainedRothSegmentationModel(RothSegmentationHmm):
-    """Load a pre-trained stride segmentation HMM."""
+    """Load a pre-trained stride segmentation HMM.
+
+    TODO: @Nils How was this model trained? Can we add a reference here?
+    """
 
     def __new__(cls):
         # try to load models
@@ -34,7 +37,13 @@ BaseSegmentationHmmT = TypeVar("BaseSegmentationHmmT", bound=BaseSegmentationHmm
 class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT]):
     """Segment strides using a pre-trained Hidden Markov Model.
 
-    TBD: short description of HMM
+    This method does not care about the implementation details of the HMM used.
+    As long as it is a valid subclass of BaseSegmentationHmm, it can be used here.
+    On top of the segmentation, this class implements a postprocessing step that snaps the minima in the raw signals
+    and contains convenience methods that ensure that outputs conform to the expected gaitmap formats.
+
+    Note, that this class only supports prediction.
+    To train your own HMM, use the `self_optimize` method on the model that you were planning to use here.
 
     Parameters
     ----------
@@ -81,13 +90,6 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         minimum in the raw data.
         However, this assumes that the start and the end of each match is marked by a clear minimum in one axis of the
         raw data.
-
-    .. [1] ref to JNER HMM paper
-
-
-    See Also
-    --------
-    TBD
 
     """
 
