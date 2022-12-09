@@ -10,7 +10,6 @@ from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.array_handling import find_extrema_in_radius
 from gaitmap.utils.datatype_helper import StrideList
 from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
 from gaitmap_mad.stride_segmentation._dtw_templates.templates import BarthOriginalTemplate, BaseDtwTemplate
@@ -236,25 +235,14 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
     ) -> Tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
-            # Find the closest minimum for each start and stop value
-            flattened_matches = matches_start_end.flatten()
-            # Because the actual end values are exclusive, we need to handle the case were the stride ends inclusive the
-            # last value
-            edge_case_stride = flattened_matches == len(data)
-            flattened_matches[edge_case_stride] -= 1
-            flattened_matches = find_extrema_in_radius(
+            # Late import to avoid circular import
+            from gaitmap.stride_segmentation._utils import snap_to_min  # noqa: import-outside-toplevel
+
+            matches_start_end = snap_to_min(
                 data[self.snap_to_min_axis].to_numpy(),
-                flattened_matches,
-                int(self.snap_to_min_win_ms * self.sampling_rate_hz / 1000) // 2,
+                matches_start_end,
+                snap_to_min_win_samples=int(self.snap_to_min_win_ms / 1000 * self.sampling_rate_hz),
             )
-            # All strides that were inclusive with the last sample and didn't change the sample will be changed back
-            # to be inclusive.
-            # Strides that were "snapped" to the last sample are exclusive the last sample.
-            # Their remains an edge case were a stride that was inclusive the last sample was correctly snapped to be
-            # exclusive and is then updated to be inclusive again in the following line.
-            # However, this is not worth handling.
-            flattened_matches[edge_case_stride & (flattened_matches == len(data) - 1)] += 1
-            matches_start_end = flattened_matches.reshape(matches_start_end.shape)
 
         # Apply any postprocessing steps of the parent class.
         # This is done after the snapping, as the snapping might modify the stride time.

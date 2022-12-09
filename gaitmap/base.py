@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import tpcp
 from joblib import Memory
+from pomegranate.hmm import HiddenMarkovModel
 from scipy.spatial.transform import Rotation
 
 from gaitmap.utils.consts import GF_ORI
@@ -55,6 +56,14 @@ class _CustomEncoder(json.JSONEncoder):
             return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
+        if isinstance(o, HiddenMarkovModel):
+            warnings.warn(
+                "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
+                "round-trips. I.e. sometimes values (in particular weightings of distributions) might change slightly "
+                "in the re-imported model due to rounding issue. "
+                "This is a limitation of the underlying pomegrante library."
+            )
+            return dict(_obj_type="HiddenMarkovModel", hmm=json.loads(o.to_json()))
         if o is tpcp.NOTHING:
             return dict(_obj_type="EmptyDefault")
         if isinstance(o, Memory):
@@ -80,11 +89,18 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
+        if json_obj["_obj_type"] == "HiddenMarkovModel":
+            with np.errstate(divide="ignore"):
+                # Sometimes probabilities are zeror which can lead to warnings when the log-probabilities are
+                # calculated.
+                # We ignore these warnings here to avoid clutter in the output.
+                return HiddenMarkovModel.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
         if json_obj["_obj_type"] == "Tuple":
             return tuple(json_obj["tuple"])
         raise ValueError("Unknown object type found in serialization!")
+
     return json_obj
 
 

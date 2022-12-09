@@ -12,6 +12,7 @@ from gaitmap.utils.array_handling import (
     multi_array_interpolation,
     sliding_window_view,
     split_array_at_nan,
+    start_end_array_to_bool_array,
 )
 
 
@@ -191,7 +192,7 @@ class TestSlidingWindow:
 
 
 class TestBoolArrayToStartEndArray:
-    """Test the function `sliding_window_view`."""
+    """Test the function `bool_array_to_start_end_array`."""
 
     def test_simple_input(self):
         input_array = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
@@ -238,6 +239,46 @@ class TestBoolArrayToStartEndArray:
         output_array = bool_array_to_start_end_array(input_array)
         expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
+
+
+class TestStartEndArrayToBoolArray:
+    """Test the function `start_end_array_to_bool_array`."""
+
+    def test_simple_input_no_padding(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array)
+        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1]).astype(bool)
+        assert_array_equal(expected_output, output_array)
+
+    def test_simple_input_1d_no_padding(self):
+        input_array = np.array([2, 3])
+        output_array = start_end_array_to_bool_array(input_array, pad_to_length=5)
+        expected_output = np.array([0, 0, 1, 1, 0]).astype(bool)
+        assert_array_equal(expected_output, output_array)
+
+    def test_simple_input_with_padding(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array, pad_to_length=12)
+        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0]).astype(bool)
+        assert_array_equal(expected_output, output_array)
+
+    def test_overlapping_input_with_padding(self):
+        input_array = np.array([[2, 6], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array, pad_to_length=12)
+        expected_output = np.array([0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]).astype(bool)
+        assert_array_equal(expected_output, output_array)
+
+    def test_invalid_padding(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        with pytest.raises(ValueError) as e:
+            start_end_array_to_bool_array(input_array, pad_to_length=-1)
+
+        assert "Padding length must be larger than" in str(e)
+
+    def test_correct_output_dtype(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array)
+        assert output_array.dtype == "bool"
 
 
 class TestLocalMinimaBelowThreshold:

@@ -1,0 +1,3684 @@
+{
+    "class" : "HiddenMarkovModel",
+    "name" : "segmentation_model",
+    "start" : {
+        "class" : "State",
+        "distribution" : null,
+        "name" : "None-start",
+        "weight" : 1.0
+    },
+    "end" : {
+        "class" : "State",
+        "distribution" : null,
+        "name" : "None-end",
+        "weight" : 1.0
+    },
+    "states" : [
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.8040436322356477,
+                                0.3591814709329526
+                            ],
+                            [
+                                [
+                                    0.40646214331551517,
+                                    -0.24394655420810424
+                                ],
+                                [
+                                    -0.24394655420810424,
+                                    0.7766879580450637
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.1720527560920257,
+                                0.06634172983979568
+                            ],
+                            [
+                                [
+                                    0.05000209221403754,
+                                    -0.02778554338311081
+                                ],
+                                [
+                                    -0.02778554338311081,
+                                    0.14960528980030702
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.01865725568788036,
+                                0.0016783219211641389
+                            ],
+                            [
+                                [
+                                    2.4539965958570294e-06,
+                                    -1.2416427065431656e-06
+                                ],
+                                [
+                                    -1.2416427065431656e-06,
+                                    6.714715629709089e-06
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.2970467172024148,
+                    0.6529437855146528,
+                    0.05000949728293232
+                ]
+            },
+            "name" : "s0",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.01461369568764822,
+                                0.03572297280264007
+                            ],
+                            [
+                                [
+                                    0.00021963066207018273,
+                                    -2.586417845651764e-06
+                                ],
+                                [
+                                    -2.586417845651764e-06,
+                                    0.0037706075820089302
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.34762176412929835,
+                                0.3153457598585078
+                            ],
+                            [
+                                [
+                                    0.03125539581429149,
+                                    -0.004657647959915439
+                                ],
+                                [
+                                    -0.004657647959915439,
+                                    0.006189589056233126
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.018540497221667743,
+                                0.00044558058005839764
+                            ],
+                            [
+                                [
+                                    3.1515027780463164e-05,
+                                    -1.1404453092914148e-05
+                                ],
+                                [
+                                    -1.1404453092914148e-05,
+                                    1.5032669166245287e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.3879494520721146,
+                    0.0815011698751561,
+                    0.5305493780527293
+                ]
+            },
+            "name" : "s1",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.3593634366214855,
+                                -0.03944909348585582
+                            ],
+                            [
+                                [
+                                    0.0515932534639944,
+                                    -0.013070004239700192
+                                ],
+                                [
+                                    -0.013070004239700192,
+                                    0.04909176641573044
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.011332989966055964,
+                                -0.004932083681808868
+                            ],
+                            [
+                                [
+                                    2.4433889774414404e-05,
+                                    8.96221179962006e-06
+                                ],
+                                [
+                                    8.96221179962006e-06,
+                                    1.230936795797127e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.0028261556302423742,
+                                -0.05679042932293115
+                            ],
+                            [
+                                [
+                                    0.01061016141251362,
+                                    0.003082361916922552
+                                ],
+                                [
+                                    0.003082361916922552,
+                                    0.025622176321037013
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.25253074103831163,
+                    0.176329229388306,
+                    0.5711400295733824
+                ]
+            },
+            "name" : "s2",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.5064439222558423,
+                                -0.5569633887538881
+                            ],
+                            [
+                                [
+                                    0.0007628171408683448,
+                                    -0.0003102561130424747
+                                ],
+                                [
+                                    -0.0003102561130424747,
+                                    0.0001522938213987896
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.056532212003593256,
+                                -0.665849256032684
+                            ],
+                            [
+                                [
+                                    0.046688801503358156,
+                                    -0.008406277949864796
+                                ],
+                                [
+                                    -0.008406277949864796,
+                                    0.027017704244622968
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.01829905346734807,
+                                4.791752597394427e-05
+                            ],
+                            [
+                                [
+                                    1.3366910692423952e-06,
+                                    -1.4056940816359032e-07
+                                ],
+                                [
+                                    -1.4056940816359032e-07,
+                                    1.8440893310603597e-07
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.007418935741327803,
+                    0.06172438914112581,
+                    0.9308566751175463
+                ]
+            },
+            "name" : "s3",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.2164689848314925,
+                                -0.14120403712294458
+                            ],
+                            [
+                                [
+                                    0.4481259332858317,
+                                    -0.35699465501376854
+                                ],
+                                [
+                                    -0.35699465501376854,
+                                    1.0098709910992594
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.052527680411069276,
+                                0.11386702877721697
+                            ],
+                            [
+                                [
+                                    0.0010064012674326369,
+                                    0.00014460632706092324
+                                ],
+                                [
+                                    0.00014460632706092324,
+                                    2.0788190851552062e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.018655368249768836,
+                                0.000342673854818496
+                            ],
+                            [
+                                [
+                                    3.2559195596507305e-06,
+                                    8.02633833205566e-07
+                                ],
+                                [
+                                    8.02633833205566e-07,
+                                    1.5495141440876618e-06
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.6043298129485459,
+                    9.373672007408175e-13,
+                    0.3956701870505167
+                ]
+            },
+            "name" : "s4",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.2021921922033452,
+                                1.402559999173214
+                            ],
+                            [
+                                [
+                                    0.2198377733147317,
+                                    0.1836617795578009
+                                ],
+                                [
+                                    0.1836617795578009,
+                                    0.35345838578380223
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.3790024771587162,
+                                2.6826427421373844
+                            ],
+                            [
+                                [
+                                    0.06674465249683595,
+                                    0.00758974355089074
+                                ],
+                                [
+                                    0.00758974355089074,
+                                    0.010941337467642094
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.7975207192048467,
+                                2.648804929884559
+                            ],
+                            [
+                                [
+                                    0.04179490653730112,
+                                    -0.0008804918773778667
+                                ],
+                                [
+                                    -0.0008804918773778667,
+                                    0.01894703835622372
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.7892103116263098,
+                                2.3889827969424746
+                            ],
+                            [
+                                [
+                                    0.06981215874510405,
+                                    0.024495486092706104
+                                ],
+                                [
+                                    0.024495486092706104,
+                                    0.027595894601570723
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.1287723581911502,
+                                2.4952538058261218
+                            ],
+                            [
+                                [
+                                    0.11769569342965194,
+                                    0.07645116135114065
+                                ],
+                                [
+                                    0.07645116135114065,
+                                    0.065064246723973
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.22719090006201909,
+                                2.6852639094221327
+                            ],
+                            [
+                                [
+                                    0.13242007925831814,
+                                    0.056489945231852114
+                                ],
+                                [
+                                    0.056489945231852114,
+                                    0.029720713515433376
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.05282649341510476,
+                    0.15569013461077372,
+                    0.206778262380251,
+                    0.236528454211177,
+                    0.18223041239033358,
+                    0.16594624299235985
+                ]
+            },
+            "name" : "s5",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.37837853799417037,
+                                1.9535350619771967
+                            ],
+                            [
+                                [
+                                    0.26729462581803703,
+                                    0.023834012228917192
+                                ],
+                                [
+                                    0.023834012228917192,
+                                    0.019464694084064562
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.3628415782399637,
+                                1.882172769495759
+                            ],
+                            [
+                                [
+                                    0.04119078854334496,
+                                    0.017149261387412688
+                                ],
+                                [
+                                    0.017149261387412688,
+                                    0.011349351100975813
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.3888621692858933,
+                                1.2541746323347118
+                            ],
+                            [
+                                [
+                                    0.020433744554810482,
+                                    0.0029332886583703184
+                                ],
+                                [
+                                    0.0029332886583703184,
+                                    0.025889612335607905
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.3031665380644082,
+                                2.609142943680803
+                            ],
+                            [
+                                [
+                                    0.030235908165502784,
+                                    0.00688599472900813
+                                ],
+                                [
+                                    0.00688599472900813,
+                                    0.009563047637178582
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.4556877684873955,
+                                2.2578724539085577
+                            ],
+                            [
+                                [
+                                    0.02586577881762999,
+                                    -0.0033532114740001855
+                                ],
+                                [
+                                    -0.0033532114740001855,
+                                    0.0185089705075455
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.4997726603855883,
+                                1.6418327355886864
+                            ],
+                            [
+                                [
+                                    0.018527977466202616,
+                                    -0.011652790434438093
+                                ],
+                                [
+                                    -0.011652790434438093,
+                                    0.03073007379679976
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.03751890216561287,
+                    0.10206134092761178,
+                    0.1854134309677487,
+                    0.1894060230436204,
+                    0.3040325602355418,
+                    0.1815677426598645
+                ]
+            },
+            "name" : "s6",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.4740324405476108,
+                                0.6793356020400678
+                            ],
+                            [
+                                [
+                                    0.013905656749014823,
+                                    0.006420313244265778
+                                ],
+                                [
+                                    0.006420313244265778,
+                                    0.008342592294139022
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5620295029158417,
+                                0.22561342375481364
+                            ],
+                            [
+                                [
+                                    0.005204980461551485,
+                                    -0.0020663244535487064
+                                ],
+                                [
+                                    -0.0020663244535487064,
+                                    0.008063411540066746
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.7716484475658794,
+                                0.16873818660385048
+                            ],
+                            [
+                                [
+                                    0.012352779905889531,
+                                    -0.0013755633485664613
+                                ],
+                                [
+                                    -0.0013755633485664613,
+                                    0.011300981390999335
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.4651043007270745,
+                                1.026455711264284
+                            ],
+                            [
+                                [
+                                    0.00688365227691836,
+                                    -0.003938893327530027
+                                ],
+                                [
+                                    -0.003938893327530027,
+                                    0.03984346718847703
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5748281706469278,
+                                0.48604160042681127
+                            ],
+                            [
+                                [
+                                    0.009143480605500373,
+                                    0.004306935648931213
+                                ],
+                                [
+                                    0.004306935648931213,
+                                    0.006000425915229577
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.6980558196885895,
+                                0.06807770131674543
+                            ],
+                            [
+                                [
+                                    0.004762177519084378,
+                                    -0.0021409877499768883
+                                ],
+                                [
+                                    -0.0021409877499768883,
+                                    0.0071358845829416475
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.17452297772797398,
+                    0.1564050862026991,
+                    0.06420378105501827,
+                    0.11432912555049494,
+                    0.11843511112374087,
+                    0.3721039183400729
+                ]
+            },
+            "name" : "s7",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5534316362387994,
+                                0.02655264130395254
+                            ],
+                            [
+                                [
+                                    0.0004693389742928,
+                                    -0.0012999181332825945
+                                ],
+                                [
+                                    -0.0012999181332825945,
+                                    0.0036491658666729706
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.357020419307743,
+                                -0.0824126544020036
+                            ],
+                            [
+                                [
+                                    0.009363037520695788,
+                                    0.004633242410237834
+                                ],
+                                [
+                                    0.004633242410237834,
+                                    0.011270036730538184
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.7051351097590806,
+                                -0.6215527193992321
+                            ],
+                            [
+                                [
+                                    0.017599234861051288,
+                                    0.005450663781536869
+                                ],
+                                [
+                                    0.005450663781536869,
+                                    0.0021551046026794325
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.6364852923638427,
+                                -0.044048301751014235
+                            ],
+                            [
+                                [
+                                    0.0050971342125390685,
+                                    0.0018493714322927802
+                                ],
+                                [
+                                    0.0018493714322927802,
+                                    0.002483906320083705
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.630408855867652,
+                                -0.03326221511233886
+                            ],
+                            [
+                                [
+                                    0.003660551774188115,
+                                    2.7839712620614068e-05
+                                ],
+                                [
+                                    2.7839712620614068e-05,
+                                    0.0029400596278572
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5036571396644298,
+                                -0.07131536179085843
+                            ],
+                            [
+                                [
+                                    0.015760468496151668,
+                                    -0.0038552173452561654
+                                ],
+                                [
+                                    -0.0038552173452561654,
+                                    0.010432750299370035
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.026433581297436223,
+                    0.40478320786727573,
+                    0.020778393438191635,
+                    0.0279295007818252,
+                    0.18545106515382637,
+                    0.33462425146144487
+                ]
+            },
+            "name" : "s8",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.22001807739303675,
+                                -0.5510589124880456
+                            ],
+                            [
+                                [
+                                    0.02334847655813331,
+                                    -0.004366984526417163
+                                ],
+                                [
+                                    -0.004366984526417163,
+                                    0.0009210130799342035
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.332187281714675,
+                                -0.43382961819635274
+                            ],
+                            [
+                                [
+                                    0.008201239239184694,
+                                    -0.006012106623468407
+                                ],
+                                [
+                                    -0.006012106623468407,
+                                    0.008354143108727218
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.571533125460306,
+                                -0.8552583662902093
+                            ],
+                            [
+                                [
+                                    0.011995534469637104,
+                                    -0.0013104076444251755
+                                ],
+                                [
+                                    -0.0013104076444251755,
+                                    0.00858446781645628
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.4011364058019415,
+                                -0.2891306775276589
+                            ],
+                            [
+                                [
+                                    0.011540272484551903,
+                                    -0.005263876044788044
+                                ],
+                                [
+                                    -0.005263876044788044,
+                                    0.006554348283738964
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5312838775209263,
+                                -0.6587188612640342
+                            ],
+                            [
+                                [
+                                    0.011036211699371655,
+                                    0.001725216285079576
+                                ],
+                                [
+                                    0.001725216285079576,
+                                    0.008160203511353681
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.7140896201781348,
+                                -1.0610312733004146
+                            ],
+                            [
+                                [
+                                    0.008739938643323801,
+                                    -0.002805384008638865
+                                ],
+                                [
+                                    -0.002805384008638865,
+                                    0.018365124873027987
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.02862975033062507,
+                    0.22647819911453607,
+                    0.14816865293166337,
+                    0.2667991965397493,
+                    0.22639525563746818,
+                    0.10352894544595789
+                ]
+            },
+            "name" : "s9",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.5105644941198295,
+                                -1.2305492591141955
+                            ],
+                            [
+                                [
+                                    0.004749475788737469,
+                                    0.002050500566991411
+                                ],
+                                [
+                                    0.002050500566991411,
+                                    0.04316921033379957
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.255725857814887,
+                                -1.5446182662306835
+                            ],
+                            [
+                                [
+                                    0.026241416123267865,
+                                    0.01478664464139937
+                                ],
+                                [
+                                    0.01478664464139937,
+                                    0.04664604938329416
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.14022090509142604,
+                                -0.33254752904572826
+                            ],
+                            [
+                                [
+                                    0.005273306066163566,
+                                    -0.008298136833628936
+                                ],
+                                [
+                                    -0.008298136833628936,
+                                    0.01316608572961744
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.719193655046859,
+                                -1.4379862003230002
+                            ],
+                            [
+                                [
+                                    0.002073854511166349,
+                                    -0.002742151231187398
+                                ],
+                                [
+                                    -0.002742151231187398,
+                                    0.04816844574856781
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                1.1590821800846507,
+                                -1.7466028581489552
+                            ],
+                            [
+                                [
+                                    0.014747086584620156,
+                                    -0.011844186012822677
+                                ],
+                                [
+                                    -0.011844186012822677,
+                                    0.027873689016353086
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.7109316574583632,
+                                -1.8869854422613985
+                            ],
+                            [
+                                [
+                                    0.024808150562480792,
+                                    0.008765438428741447
+                                ],
+                                [
+                                    0.008765438428741447,
+                                    0.019455758832003775
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.2856114120630684,
+                    0.28308472510601773,
+                    0.017769495152708197,
+                    0.04927756973406105,
+                    0.09771647666781708,
+                    0.2665403212763277
+                ]
+            },
+            "name" : "sa",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.6274848405878357,
+                                -1.5878127727753963
+                            ],
+                            [
+                                [
+                                    0.04461649670550253,
+                                    0.020476732666448533
+                                ],
+                                [
+                                    0.020476732666448533,
+                                    0.058773676044906215
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.47860341763292646,
+                                -1.7093325598133895
+                            ],
+                            [
+                                [
+                                    0.057807426968676724,
+                                    -0.007055143197524462
+                                ],
+                                [
+                                    -0.007055143197524462,
+                                    0.008092166100741916
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.30863937771264216,
+                                0.09269790039565494
+                            ],
+                            [
+                                [
+                                    0.012731612848978545,
+                                    0.007793900375732349
+                                ],
+                                [
+                                    0.007793900375732349,
+                                    0.00883232068529274
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.0972377485439256,
+                                -1.9031433578885442
+                            ],
+                            [
+                                [
+                                    0.06064974976990788,
+                                    0.0017259124741102452
+                                ],
+                                [
+                                    0.0017259124741102452,
+                                    0.010983164541769893
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.8033144155651418,
+                                -1.4035069149041042
+                            ],
+                            [
+                                [
+                                    0.03408267248054692,
+                                    -0.030768420553735003
+                                ],
+                                [
+                                    -0.030768420553735003,
+                                    0.040718807954605966
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.202747597679054,
+                                -1.271448775230189
+                            ],
+                            [
+                                [
+                                    0.028477324512242153,
+                                    -0.021547363076713313
+                                ],
+                                [
+                                    -0.021547363076713313,
+                                    0.029281734934733013
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.02845363700506843,
+                    0.24001139345706027,
+                    0.023146740536511844,
+                    0.3425606860717868,
+                    0.20223506406910532,
+                    0.16359247886046732
+                ]
+            },
+            "name" : "sb",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.6812410250550898,
+                                -0.9945457610707594
+                            ],
+                            [
+                                [
+                                    0.25479027265829696,
+                                    -0.03021309651999369
+                                ],
+                                [
+                                    -0.03021309651999369,
+                                    0.03397285049274198
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.3129927964705252,
+                                -0.16168205055707718
+                            ],
+                            [
+                                [
+                                    0.015057270942274808,
+                                    -0.007038088751222924
+                                ],
+                                [
+                                    -0.007038088751222924,
+                                    0.015381935935929037
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.0016200435132603,
+                                0.3606466242202415
+                            ],
+                            [
+                                [
+                                    0.015548259605274027,
+                                    0.007247893638893246
+                                ],
+                                [
+                                    0.007247893638893246,
+                                    0.017288633364408706
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.33799326807055,
+                                -0.6598444215797216
+                            ],
+                            [
+                                [
+                                    0.028319071510993228,
+                                    -0.0156378747936057
+                                ],
+                                [
+                                    -0.0156378747936057,
+                                    0.05953841883916908
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.1847189834600382,
+                                0.10045234444702131
+                            ],
+                            [
+                                [
+                                    0.004772794086241709,
+                                    -0.0015325263062055004
+                                ],
+                                [
+                                    -0.0015325263062055004,
+                                    0.012584705914371512
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.17553169365773555,
+                                0.3924972869757415
+                            ],
+                            [
+                                [
+                                    0.037304127305721,
+                                    -0.02936384742629144
+                                ],
+                                [
+                                    -0.02936384742629144,
+                                    0.023113677052574295
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.05128493088858949,
+                    0.1681225485333926,
+                    0.19636121806243992,
+                    0.41091646234515955,
+                    0.1611832566737433,
+                    0.012131583496675116
+                ]
+            },
+            "name" : "sc",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.7934725617660205,
+                                0.6057363908307537
+                            ],
+                            [
+                                [
+                                    0.022317149452309556,
+                                    0.017270744296022513
+                                ],
+                                [
+                                    0.017270744296022513,
+                                    0.019440313652649362
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.34422628066895583,
+                                0.7741574696053061
+                            ],
+                            [
+                                [
+                                    0.029296682638318364,
+                                    -0.0012923157435852566
+                                ],
+                                [
+                                    -0.0012923157435852566,
+                                    0.001303708455642681
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.24011736694469782,
+                                0.8352333796266742
+                            ],
+                            [
+                                [
+                                    0.012602321854845036,
+                                    -0.007070638507265635
+                                ],
+                                [
+                                    -0.007070638507265635,
+                                    0.0042305232423694005
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.5112241644884947,
+                                0.7733676695608179
+                            ],
+                            [
+                                [
+                                    0.012977039996842802,
+                                    0.014421684717871062
+                                ],
+                                [
+                                    0.014421684717871062,
+                                    0.016846084267525076
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.1300621937205689,
+                                0.9117360378240474
+                            ],
+                            [
+                                [
+                                    0.0061139293597976384,
+                                    -0.0011443314309826115
+                                ],
+                                [
+                                    -0.0011443314309826115,
+                                    0.0025633483132631177
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.26356860955487416,
+                                -0.11822672222508471
+                            ],
+                            [
+                                [
+                                    0.03692893214011667,
+                                    0.04897592388304517
+                                ],
+                                [
+                                    0.04897592388304517,
+                                    0.08061039808471612
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.25226825036022715,
+                    0.20777225879885397,
+                    0.12165630988431426,
+                    0.16386373910817,
+                    0.23103872278256257,
+                    0.023400719065872048
+                ]
+            },
+            "name" : "sd",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.012395575352788629,
+                                0.7336957741001034
+                            ],
+                            [
+                                [
+                                    0.0011177986113019142,
+                                    0.0005003791701335271
+                                ],
+                                [
+                                    0.0005003791701335271,
+                                    0.0051864782602025665
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.025976282878549212,
+                                0.3822149530730406
+                            ],
+                            [
+                                [
+                                    4.1810756305687986e-05,
+                                    0.0002194029348793227
+                                ],
+                                [
+                                    0.0002194029348793227,
+                                    0.00891933965456976
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.011866064213497939,
+                                0.22083011482320739
+                            ],
+                            [
+                                [
+                                    6.100617171635189e-05,
+                                    0.0002678672774896578
+                                ],
+                                [
+                                    0.0002678672774896578,
+                                    0.001807150764050995
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.02869871776862829,
+                                0.5852158826109061
+                            ],
+                            [
+                                [
+                                    0.00021443141519116601,
+                                    0.0003216005073519097
+                                ],
+                                [
+                                    0.0003216005073519097,
+                                    0.0017408561305467566
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.17461690762901225,
+                                0.2514823980968933
+                            ],
+                            [
+                                [
+                                    0.0034610096436457956,
+                                    0.00032290752784165937
+                                ],
+                                [
+                                    0.00032290752784165937,
+                                    0.0010489564679564834
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.006001353547590089,
+                                0.07393375903339867
+                            ],
+                            [
+                                [
+                                    2.615909187470745e-06,
+                                    -1.55650565231611e-05
+                                ],
+                                [
+                                    -1.55650565231611e-05,
+                                    9.261444767639299e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.266676633488028,
+                    0.39952289581990325,
+                    0.13431031737396196,
+                    0.16847400398737397,
+                    0.022793919240991996,
+                    0.008222230089740885
+                ]
+            },
+            "name" : "se",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.011706586553209407,
+                                0.1989837093457438
+                            ],
+                            [
+                                [
+                                    0.0002600320975194991,
+                                    -0.00029313164420553166
+                                ],
+                                [
+                                    -0.00029313164420553166,
+                                    0.0024962987875945795
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.008059035002137047,
+                                0.0992659766574861
+                            ],
+                            [
+                                [
+                                    3.744246935806723e-05,
+                                    9.928793854680249e-05
+                                ],
+                                [
+                                    9.928793854680249e-05,
+                                    0.001962695396083612
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.003268675851413411,
+                                -0.002295302662178956
+                            ],
+                            [
+                                [
+                                    3.7018881612523695e-06,
+                                    -6.735304708917524e-06
+                                ],
+                                [
+                                    -6.735304708917524e-06,
+                                    1.3633012802624129e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.009705606541981859,
+                                0.027462412576589528
+                            ],
+                            [
+                                [
+                                    6.052174517849812e-05,
+                                    -5.759867819033617e-05
+                                ],
+                                [
+                                    -5.759867819033617e-05,
+                                    0.00016922833112391984
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.01608905718932907,
+                                -0.009103617652634023
+                            ],
+                            [
+                                [
+                                    4.119722164536434e-05,
+                                    -4.393164079829657e-05
+                                ],
+                                [
+                                    -4.393164079829657e-05,
+                                    4.754374832223868e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.008464601421229494,
+                                0.0054369377577025355
+                            ],
+                            [
+                                [
+                                    9.09394879661089e-07,
+                                    1.5980155780514924e-06
+                                ],
+                                [
+                                    1.5980155780514924e-06,
+                                    1.659535960468529e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.07690178053789785,
+                    0.5140104720236519,
+                    0.03871726531407183,
+                    0.3497768962596432,
+                    0.012599366947750955,
+                    0.007994218916984158
+                ]
+            },
+            "name" : "sf",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.002947583836233708,
+                                -0.014085898772608942
+                            ],
+                            [
+                                [
+                                    4.997074058857972e-05,
+                                    -8.58222254446471e-06
+                                ],
+                                [
+                                    -8.58222254446471e-06,
+                                    1.473968229440846e-06
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.0041513491224198,
+                                -0.007647914449541538
+                            ],
+                            [
+                                [
+                                    6.606795414204124e-07,
+                                    1.0092758949966294e-06
+                                ],
+                                [
+                                    1.0092758949966294e-06,
+                                    1.8211327225964687e-06
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.002020321438389336,
+                                0.0008782123665955889
+                            ],
+                            [
+                                [
+                                    6.691004922583928e-06,
+                                    4.827908728558241e-06
+                                ],
+                                [
+                                    4.827908728558241e-06,
+                                    4.3013178018881445e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.012137137898650814,
+                                -0.008375104312481335
+                            ],
+                            [
+                                [
+                                    3.071356221976164e-05,
+                                    3.823122114811344e-06
+                                ],
+                                [
+                                    3.823122114811344e-06,
+                                    2.2483755341498392e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.005654610382815709,
+                                -0.004301478239111403
+                            ],
+                            [
+                                [
+                                    1.1346987302296028e-05,
+                                    8.50428539002298e-07
+                                ],
+                                [
+                                    8.50428539002298e-07,
+                                    1.982007198574262e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.03605909079596208,
+                                0.07148204905896231
+                            ],
+                            [
+                                [
+                                    6.7373778081189e-05,
+                                    0.00032885659460106276
+                                ],
+                                [
+                                    0.00032885659460106276,
+                                    0.0016087706772518074
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.015951886264093124,
+                    0.015105197825686702,
+                    0.12478863497276392,
+                    0.5425359219930025,
+                    0.28871900383477556,
+                    0.012899355109678242
+                ]
+            },
+            "name" : "sg",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.0030421922096838315,
+                                -0.004983047756316794
+                            ],
+                            [
+                                [
+                                    2.5388189529300666e-06,
+                                    1.6662182400089128e-06
+                                ],
+                                [
+                                    1.6662182400089128e-06,
+                                    1.3974181670069181e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.0006891750873637185,
+                                -0.023903324906292465
+                            ],
+                            [
+                                [
+                                    8.592436317923748e-06,
+                                    5.969231204280878e-06
+                                ],
+                                [
+                                    5.969231204280878e-06,
+                                    6.0356529818711753e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.00990770516409004,
+                                -0.06548456494158666
+                            ],
+                            [
+                                [
+                                    1.3425855338144182e-05,
+                                    2.3857093652616646e-05
+                                ],
+                                [
+                                    2.3857093652616646e-05,
+                                    4.866444332689878e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.010644732660706657,
+                                -0.0011766082735908438
+                            ],
+                            [
+                                [
+                                    9.512269139964253e-06,
+                                    9.467325294638514e-07
+                                ],
+                                [
+                                    9.467325294638514e-07,
+                                    1.600528810496113e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.023928791341342744,
+                                -0.01561464325459599
+                            ],
+                            [
+                                [
+                                    0.0001084371879755833,
+                                    -4.092967588426552e-05
+                                ],
+                                [
+                                    -4.092967588426552e-05,
+                                    1.7222730136650855e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.003948364136135996,
+                                -0.048653509366815985
+                            ],
+                            [
+                                [
+                                    5.440840489830764e-06,
+                                    1.1776988260303396e-05
+                                ],
+                                [
+                                    1.1776988260303396e-05,
+                                    4.503133973133043e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.07749333198376236,
+                    0.14792779821990945,
+                    0.006667880710577348,
+                    0.7173907035746235,
+                    0.016389009797243507,
+                    0.03413127571388383
+                ]
+            },
+            "name" : "sh",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.00855309776292331,
+                                -0.018720305179355533
+                            ],
+                            [
+                                [
+                                    2.36943338149435e-05,
+                                    2.0252127722154588e-08
+                                ],
+                                [
+                                    2.0252127722154588e-08,
+                                    3.135219784048359e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.0063462159670564094,
+                                -0.15701879393762805
+                            ],
+                            [
+                                [
+                                    4.0307162355742754e-05,
+                                    0.00011171772883148373
+                                ],
+                                [
+                                    0.00011171772883148373,
+                                    0.0003198554188811831
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.0031340257796457,
+                                -0.2625252780799887
+                            ],
+                            [
+                                [
+                                    2.056012571551924e-05,
+                                    1.985574070914933e-05
+                                ],
+                                [
+                                    1.985574070914933e-05,
+                                    0.0005521767143884687
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.001096303969822012,
+                                -0.0818957166084949
+                            ],
+                            [
+                                [
+                                    1.8099808781001736e-05,
+                                    2.9311724254782684e-05
+                                ],
+                                [
+                                    2.9311724254782684e-05,
+                                    0.0012231672058566035
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.0058586239365255215,
+                                -0.16846403672668755
+                            ],
+                            [
+                                [
+                                    9.73628308927989e-06,
+                                    -6.648409009806088e-05
+                                ],
+                                [
+                                    -6.648409009806088e-05,
+                                    0.0015275003624832357
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.02291759533796144,
+                                -0.2207060942972471
+                            ],
+                            [
+                                [
+                                    5.111665452316568e-05,
+                                    0.00034093405971383456
+                                ],
+                                [
+                                    0.00034093405971383456,
+                                    0.003987596145140463
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.08994178819778052,
+                    0.07351179508208565,
+                    0.06244957074980986,
+                    0.5936558561413317,
+                    0.14645658286589883,
+                    0.03398440696309336
+                ]
+            },
+            "name" : "si",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                0.013444488577260268,
+                                -0.23255242838514759
+                            ],
+                            [
+                                [
+                                    5.5600568718479655e-05,
+                                    1.7381435894772431e-06
+                                ],
+                                [
+                                    1.7381435894772431e-06,
+                                    0.004193485419936131
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.0920026324033031,
+                                -0.5207111728114413
+                            ],
+                            [
+                                [
+                                    0.0015532869522256445,
+                                    0.0007467235092565076
+                                ],
+                                [
+                                    0.0007467235092565076,
+                                    0.0027105368280336815
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.20672667144580556,
+                                -0.6910829719625321
+                            ],
+                            [
+                                [
+                                    0.0015163237032995685,
+                                    0.0019359488028411385
+                                ],
+                                [
+                                    0.0019359488028411385,
+                                    0.00426248811370334
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.016100408725562388,
+                                -0.3913423549141934
+                            ],
+                            [
+                                [
+                                    0.0007881653302823009,
+                                    1.1857681461475886e-05
+                                ],
+                                [
+                                    1.1857681461475886e-05,
+                                    0.002072827331631612
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.05669523200720021,
+                                -0.5962986090135582
+                            ],
+                            [
+                                [
+                                    0.0018470421184541093,
+                                    -0.0008152529337090934
+                                ],
+                                [
+                                    -0.0008152529337090934,
+                                    0.0009201531486591058
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.15343483753856943,
+                                -0.8386801128318258
+                            ],
+                            [
+                                [
+                                    0.0015850434925874155,
+                                    -0.001057439206268052
+                                ],
+                                [
+                                    -0.001057439206268052,
+                                    0.0016099470497745287
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.3768873989448247,
+                    0.1285610861980284,
+                    0.015653237979986773,
+                    0.3160056411613814,
+                    0.11188006103504143,
+                    0.051012574680737326
+                ]
+            },
+            "name" : "sj",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.016597492215702336,
+                                -0.20090549807072197
+                            ],
+                            [
+                                [
+                                    1e-08,
+                                    0.0
+                                ],
+                                [
+                                    0.0,
+                                    1.0000000006993149e-08
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.4052272220702588,
+                                -0.9923595015869292
+                            ],
+                            [
+                                [
+                                    0.008882623712320308,
+                                    0.01298397436235799
+                                ],
+                                [
+                                    0.01298397436235799,
+                                    0.021123202021512945
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.5021480123069786,
+                                -1.1393587170654256
+                            ],
+                            [
+                                [
+                                    0.009967129184108798,
+                                    0.004424440892051373
+                                ],
+                                [
+                                    0.004424440892051373,
+                                    0.0032069321486745185
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.22975551796855637,
+                                -0.7872531954140234
+                            ],
+                            [
+                                [
+                                    0.009177736030227812,
+                                    0.015656789355453973
+                                ],
+                                [
+                                    0.015656789355453973,
+                                    0.04019626125632157
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.5798863801165027,
+                                -1.3354247966315143
+                            ],
+                            [
+                                [
+                                    0.0010854152196530268,
+                                    0.0010985750278557508
+                                ],
+                                [
+                                    0.0010985750278557508,
+                                    0.004010608326210521
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.8648721613913096,
+                                -1.5417399206271434
+                            ],
+                            [
+                                [
+                                    0.002256965805541192,
+                                    0.002354901005786698
+                                ],
+                                [
+                                    0.002354901005786698,
+                                    0.004183943703880117
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.0058305303966059065,
+                    0.24177814201453038,
+                    0.1279143739918462,
+                    0.49506237957654053,
+                    0.08459765593693747,
+                    0.044816918083539506
+                ]
+            },
+            "name" : "sk",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.3334905961859544,
+                                -0.6163663967713614
+                            ],
+                            [
+                                [
+                                    0.01363302082086174,
+                                    0.023225413694902622
+                                ],
+                                [
+                                    0.023225413694902622,
+                                    0.04134479638828502
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.0426283110875887,
+                                -1.3987196428273911
+                            ],
+                            [
+                                [
+                                    0.029812025764636884,
+                                    0.015565742950590478
+                                ],
+                                [
+                                    0.015565742950590478,
+                                    0.013043293495956433
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.6944509974998825,
+                                -1.1210264419712077
+                            ],
+                            [
+                                [
+                                    0.008710225292427078,
+                                    -0.008755899259920808
+                                ],
+                                [
+                                    -0.008755899259920808,
+                                    0.011710017271952821
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.7064555551915874,
+                                -1.2965635672187297
+                            ],
+                            [
+                                [
+                                    0.015852080969489743,
+                                    0.014804995364899032
+                                ],
+                                [
+                                    0.014804995364899032,
+                                    0.016589743014523498
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.411364378766222,
+                                -1.319524482039155
+                            ],
+                            [
+                                [
+                                    0.028752531636784897,
+                                    0.00030218047346973633
+                                ],
+                                [
+                                    0.00030218047346973633,
+                                    0.003403571703287115
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.023827205061829,
+                                -0.7656001556246845
+                            ],
+                            [
+                                [
+                                    0.002623653177397475,
+                                    -0.002308240351209803
+                                ],
+                                [
+                                    -0.002308240351209803,
+                                    0.006288418830639329
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.02363642597864892,
+                    0.3467744505521859,
+                    0.10054266136968587,
+                    0.2405642858915019,
+                    0.25873057951055145,
+                    0.029751596697426032
+                ]
+            },
+            "name" : "sl",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.7124565891176353,
+                                -0.7910923896774367
+                            ],
+                            [
+                                [
+                                    0.09535441903488277,
+                                    0.07301444944897137
+                                ],
+                                [
+                                    0.07301444944897137,
+                                    0.07899836448129899
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.2251850106763613,
+                                0.07394890668712056
+                            ],
+                            [
+                                [
+                                    0.016037852204344043,
+                                    -0.00987638330345994
+                                ],
+                                [
+                                    -0.00987638330345994,
+                                    0.007419033573225893
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.402482940826013,
+                                0.7454669475539399
+                            ],
+                            [
+                                [
+                                    0.005038477683478805,
+                                    -0.003571682407117534
+                                ],
+                                [
+                                    -0.003571682407117534,
+                                    0.0025318987239228556
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.885738706778285,
+                                -0.6714757586859583
+                            ],
+                            [
+                                [
+                                    0.039479366237407075,
+                                    -0.06255542221869939
+                                ],
+                                [
+                                    -0.06255542221869939,
+                                    0.12175678537358108
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.3972105609592043,
+                                0.43925304213430816
+                            ],
+                            [
+                                [
+                                    0.010107331333982998,
+                                    0.002740478784648492
+                                ],
+                                [
+                                    0.002740478784648492,
+                                    0.003270742554789797
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.4729926443765233,
+                                0.5609942121971084
+                            ],
+                            [
+                                [
+                                    0.00025919039113621073,
+                                    -0.0012813147164814377
+                                ],
+                                [
+                                    -0.0012813147164814377,
+                                    0.006422842895965328
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.07997240231766853,
+                    0.1319279826542064,
+                    0.019877259755614718,
+                    0.72221357187315,
+                    0.03875836917173945,
+                    0.007250414227620797
+                ]
+            },
+            "name" : "sm",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.544833965107347,
+                                1.618805225916382
+                            ],
+                            [
+                                [
+                                    1.000000135867e-08,
+                                    5.627795411297711e-16
+                                ],
+                                [
+                                    5.627795411297711e-16,
+                                    1.0000000233110919e-08
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.371823473812686,
+                                1.2591795814536557
+                            ],
+                            [
+                                [
+                                    0.008598847406341339,
+                                    -0.004105503060165918
+                                ],
+                                [
+                                    -0.004105503060165918,
+                                    0.025009833491207452
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.544833965107347,
+                                1.618805225916382
+                            ],
+                            [
+                                [
+                                    9.999999998947156e-06,
+                                    5.264226173475608e-16
+                                ],
+                                [
+                                    5.264226173475608e-16,
+                                    1e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.2892986732550864,
+                                0.6194531479611614
+                            ],
+                            [
+                                [
+                                    0.054575480462267706,
+                                    -0.09821945706306685
+                                ],
+                                [
+                                    -0.09821945706306685,
+                                    0.21922975406084483
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.399446872962747,
+                                1.5197776978767612
+                            ],
+                            [
+                                [
+                                    9.999999999111817e-06,
+                                    4.440921249909714e-16
+                                ],
+                                [
+                                    4.440921249909714e-16,
+                                    1e-05
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -0.5945997733426932,
+                                -0.3499900991769726
+                            ],
+                            [
+                                [
+                                    0.08344322330990675,
+                                    0.08221263351095641
+                                ],
+                                [
+                                    0.08221263351095641,
+                                    0.10038070975481765
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.00861133727386538,
+                    0.20652173067274274,
+                    0.002301517962848081,
+                    0.6259121295820457,
+                    0.01091279076294852,
+                    0.14574049374554962
+                ]
+            },
+            "name" : "sn",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : {
+                "class" : "GeneralMixtureModel",
+                "distributions" : [
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.4372081037711713,
+                                1.659943481234789
+                            ],
+                            [
+                                [
+                                    0.016402613255750733,
+                                    -0.023434311305960184
+                                ],
+                                [
+                                    -0.023434311305960184,
+                                    0.06292426623689859
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.2682583159737804,
+                                1.9629275725787798
+                            ],
+                            [
+                                [
+                                    0.023587822928866336,
+                                    0.007041571905583579
+                                ],
+                                [
+                                    0.007041571905583579,
+                                    0.022098984029621738
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -2.3309820403090016,
+                                1.8527430623460173
+                            ],
+                            [
+                                [
+                                    7.990393104332352e-05,
+                                    0.00025862791934941516
+                                ],
+                                [
+                                    0.00025862791934941516,
+                                    0.0008371102622276192
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.0396306445103913,
+                                -0.6605041056380266
+                            ],
+                            [
+                                [
+                                    1.000000011102278e-08,
+                                    -1.1102278105951476e-16
+                                ],
+                                [
+                                    -1.1102278105951476e-16,
+                                    1.000000011102278e-08
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.1971467376206921,
+                                -0.34995204603968894
+                            ],
+                            [
+                                [
+                                    0.00597502346254105,
+                                    0.022512325325468433
+                                ],
+                                [
+                                    0.022512325325468433,
+                                    0.08962496010498687
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    },
+                    {
+                        "class" : "Distribution",
+                        "name" : "MultivariateGaussianDistribution",
+                        "parameters" : [
+                            [
+                                -1.3154820083538519,
+                                0.521184550015688
+                            ],
+                            [
+                                [
+                                    0.19894593672011907,
+                                    -0.11154677973908222
+                                ],
+                                [
+                                    -0.11154677973908222,
+                                    0.3955516917271641
+                                ]
+                            ]
+                        ],
+                        "frozen" : false
+                    }
+                ],
+                "weights" : [
+                    0.33092646420557786,
+                    0.4760260282760996,
+                    0.03076047241271292,
+                    0.015425351922206646,
+                    0.060077344843005163,
+                    0.08678433834039775
+                ]
+            },
+            "name" : "so",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : null,
+            "name" : "None-start",
+            "weight" : 1.0
+        },
+        {
+            "class" : "State",
+            "distribution" : null,
+            "name" : "None-end",
+            "weight" : 1.0
+        }
+    ],
+    "end_index" : 26,
+    "start_index" : 25,
+    "silent_index" : 25,
+    "edges" : [
+        [
+            0,
+            0,
+            0.8985916191900636,
+            0.8894199738424869,
+            null
+        ],
+        [
+            0,
+            1,
+            0.10135262683378896,
+            0.11058002615330285,
+            null
+        ],
+        [
+            0,
+            4,
+            5.5753976147506955e-05,
+            0.1,
+            null
+        ],
+        [
+            1,
+            1,
+            0.9301709474176229,
+            0.9310938027557745,
+            null
+        ],
+        [
+            1,
+            2,
+            0.06982905258237711,
+            0.06890619724418152,
+            null
+        ],
+        [
+            2,
+            2,
+            0.9067539925144981,
+            0.9055991868180906,
+            null
+        ],
+        [
+            2,
+            3,
+            0.09324600748550194,
+            0.09440081318190942,
+            null
+        ],
+        [
+            3,
+            3,
+            0.9458926896007699,
+            0.9464678350976422,
+            null
+        ],
+        [
+            3,
+            4,
+            0.054107310399230106,
+            0.053532164902357765,
+            null
+        ],
+        [
+            4,
+            0,
+            0.1088243618146912,
+            0.12267949920575863,
+            null
+        ],
+        [
+            4,
+            4,
+            0.8505382019167489,
+            0.8163434546984181,
+            null
+        ],
+        [
+            4,
+            5,
+            0.04063743626855986,
+            0.1,
+            null
+        ],
+        [
+            5,
+            5,
+            0.6592310932490484,
+            0.6671045969840651,
+            null
+        ],
+        [
+            5,
+            6,
+            0.3407689067509516,
+            0.3328954030159349,
+            null
+        ],
+        [
+            6,
+            6,
+            0.665535060624416,
+            0.6656677869101361,
+            null
+        ],
+        [
+            6,
+            7,
+            0.3344649393755839,
+            0.33433221308986383,
+            null
+        ],
+        [
+            7,
+            7,
+            0.6596686580668369,
+            0.655692457853935,
+            null
+        ],
+        [
+            7,
+            8,
+            0.340331341933163,
+            0.34430754214606507,
+            null
+        ],
+        [
+            8,
+            8,
+            0.6968792967694533,
+            0.6985282246720477,
+            null
+        ],
+        [
+            8,
+            9,
+            0.3031207032305468,
+            0.3014717753279522,
+            null
+        ],
+        [
+            9,
+            9,
+            0.6622212622441626,
+            0.6619376200270657,
+            null
+        ],
+        [
+            9,
+            10,
+            0.3377787377558374,
+            0.33806237997293437,
+            null
+        ],
+        [
+            10,
+            10,
+            0.6656375469874473,
+            0.6665875411683188,
+            null
+        ],
+        [
+            10,
+            11,
+            0.33436245301255285,
+            0.3334124588316812,
+            null
+        ],
+        [
+            11,
+            11,
+            0.6642423783644619,
+            0.664329261905452,
+            null
+        ],
+        [
+            11,
+            12,
+            0.3357576216355382,
+            0.33567073809454795,
+            null
+        ],
+        [
+            12,
+            12,
+            0.6479670187643027,
+            0.6497460922647158,
+            null
+        ],
+        [
+            12,
+            13,
+            0.3520329812356973,
+            0.3502539077352843,
+            null
+        ],
+        [
+            13,
+            13,
+            0.6601259934820228,
+            0.6606413985265989,
+            null
+        ],
+        [
+            13,
+            14,
+            0.3398740065179771,
+            0.3393586014734011,
+            null
+        ],
+        [
+            14,
+            14,
+            0.6754495148726938,
+            0.6733325596634472,
+            null
+        ],
+        [
+            14,
+            15,
+            0.32455048512730617,
+            0.32666744033655276,
+            null
+        ],
+        [
+            15,
+            15,
+            0.5197516025590413,
+            0.5156775233428476,
+            null
+        ],
+        [
+            15,
+            16,
+            0.4802483974409588,
+            0.4843224766571524,
+            null
+        ],
+        [
+            16,
+            16,
+            0.7687659995284701,
+            0.7652559656099109,
+            null
+        ],
+        [
+            16,
+            17,
+            0.23123400047152992,
+            0.234744034390089,
+            null
+        ],
+        [
+            17,
+            17,
+            0.7647396848536714,
+            0.7683858962949026,
+            null
+        ],
+        [
+            17,
+            18,
+            0.23526031514632867,
+            0.23161410370509738,
+            null
+        ],
+        [
+            18,
+            18,
+            0.5707411570111889,
+            0.5743826177168254,
+            null
+        ],
+        [
+            18,
+            19,
+            0.42925884298881106,
+            0.42561738228317453,
+            null
+        ],
+        [
+            19,
+            19,
+            0.6511777781216394,
+            0.6510468003333086,
+            null
+        ],
+        [
+            19,
+            20,
+            0.3488222218783606,
+            0.34895319966669147,
+            null
+        ],
+        [
+            20,
+            20,
+            0.6633646129417968,
+            0.6618270613273677,
+            null
+        ],
+        [
+            20,
+            21,
+            0.3366353870582031,
+            0.3381729386726323,
+            null
+        ],
+        [
+            21,
+            21,
+            0.6671963211308947,
+            0.6625049281952917,
+            null
+        ],
+        [
+            21,
+            22,
+            0.3328036788691052,
+            0.33749507180470817,
+            null
+        ],
+        [
+            22,
+            22,
+            0.41605630375112324,
+            0.41719415757252454,
+            null
+        ],
+        [
+            22,
+            23,
+            0.5839436962488768,
+            0.5828058424274754,
+            null
+        ],
+        [
+            23,
+            23,
+            0.3038225677497977,
+            0.3670539809200027,
+            null
+        ],
+        [
+            23,
+            24,
+            0.6961774322502025,
+            0.6329460190799971,
+            null
+        ],
+        [
+            24,
+            24,
+            0.2523425663833279,
+            0.10532573175022351,
+            null
+        ],
+        [
+            24,
+            0,
+            0.038671944751991476,
+            0.1,
+            null
+        ],
+        [
+            24,
+            5,
+            0.7089854888646807,
+            0.1,
+            null
+        ],
+        [
+            25,
+            3,
+            1.0,
+            1.0,
+            null
+        ]
+    ],
+    "distribution ties" : []
+}

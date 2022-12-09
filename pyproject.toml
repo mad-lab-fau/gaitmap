@@ -29,10 +29,16 @@ numba =  [
     {version = ">=0.53", python = ">=3.9,<3.10"},
     {version = ">=0.55.2", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'"}
 ]
-numpy = ">=1"
+numpy = ">=1.20"
 joblib = ">=1.2.0"
 scikit-learn = ">=1.0.1"
-tpcp = ">=0.11"
+# We restrict it to 0.14.6 for now, as later versions don't seem to work on Linux
+# This version of pomegranate does not support Python 3.10, unfortunately
+pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
+tpcp = ">=0.12"
+
+[tool.poetry.extras]
+hmm = ["pomegranate"]
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.1"

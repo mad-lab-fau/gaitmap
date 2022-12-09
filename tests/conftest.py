@@ -4,8 +4,9 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal, assert_series_equal
+from pomegranate import GeneralMixtureModel, State
 from scipy.spatial.transform import Rotation
 from tpcp import BaseTpcpObject
 
@@ -50,7 +51,7 @@ healthy_example_position = pytest.fixture()(get_healthy_example_position)
 
 
 def _get_params_without_nested_class(instance: BaseTpcpObject) -> Dict[str, Any]:
-    return {k: v for k, v in instance.get_params().items() if not isinstance(v, BaseTpcpObject)}
+    return {k: v for k, v in instance.get_params().items() if not hasattr(v, "get_params")}
 
 
 def compare_algo_objects(a, b):
@@ -79,5 +80,18 @@ def compare_val(value, json_val, name):
         assert_frame_equal(value, json_val, check_dtype=False)
     elif isinstance(value, pd.Series):
         assert_series_equal(value, json_val)
+    elif isinstance(value, State):
+        assert value.name == json_val.name
+        assert_almost_equal(value.weight, json_val.weight)
+        if value.distribution is None:
+            assert value.distribution == json_val.distribution
+        else:
+            if not isinstance(value.distribution, GeneralMixtureModel):
+                raise ValueError("We only support comparing state with GMM distributions")
+            for d1, d2 in zip(value.distribution.distributions, json_val.distribution.distributions):
+                assert d1.name == d2.name
+                for p1, p2 in zip(d1.parameters, d2.parameters):
+                    assert_almost_equal(p1, p2)
+            assert_almost_equal(value.distribution.weights, json_val.distribution.weights)
     else:
         assert value == json_val, name

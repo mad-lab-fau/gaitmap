@@ -7,6 +7,14 @@ from gaitmap.data_transform._base import (
     ParallelTransformer,
     TrainableTransformerMixin,
 )
+from gaitmap.data_transform._feature_transform import (
+    BaseSlidingWindowFeatureTransform,
+    Resample,
+    SlidingWindowGradient,
+    SlidingWindowMean,
+    SlidingWindowStd,
+    SlidingWindowVar,
+)
 from gaitmap.data_transform._filter import BaseFilter, ButterworthFilter
 from gaitmap.data_transform._scaler import (
     AbsMaxScaler,
@@ -34,4 +42,10 @@ __all__ = [
     "BaseFilter",
     "ButterworthFilter",
     "GroupedTransformer",
+    "Resample",
+    "BaseSlidingWindowFeatureTransform",
+    "SlidingWindowMean",
+    "SlidingWindowVar",
+    "SlidingWindowStd",
+    "SlidingWindowGradient",
 ]

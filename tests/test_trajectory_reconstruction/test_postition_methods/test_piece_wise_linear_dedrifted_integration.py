@@ -104,7 +104,7 @@ class TestPieceWiseLinearDedriftedIntegration:
     """Test the position estimation class `PieceWiseLinearDedriftedIntegration`."""
 
     def test_drift_model_simple(self):
-        """Run a simple example and estimate its drift model"""
+        """Run a simple example and estimate its drift _model"""
         data = np.array(
             [
                 1,
@@ -301,7 +301,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         assert_almost_equal(estimated_drift_model, data)
 
     def test_drift_model(self):
-        """Test drift model on simple slope with different zupt edge conditions"""
+        """Test drift _model on simple slope with different zupt edge conditions"""
         data = np.arange(20)
         zupt = np.repeat(False, 20)
         zupt[11:15] = True
@@ -318,7 +318,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         assert_almost_equal(data, estimated_drift_model)
 
     def test_all_zupt_data(self):
-        """Test drift model all zupt."""
+        """Test drift _model all zupt."""
         data = np.arange(20)
         zupt = np.repeat(True, 20)
 
@@ -328,7 +328,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         assert_almost_equal(data, estimated_drift_model)
 
     def test_no_zupt_data(self):
-        """Test drift model no zupts available."""
+        """Test drift _model no zupts available."""
         data = np.arange(20)
         zupt = np.repeat(False, 20)
         with pytest.raises(ValueError, match=r".*No valid zupt regions available*"):
