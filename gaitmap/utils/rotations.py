@@ -63,13 +63,11 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
 
 
-def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: bool = False) -> SingleSensorData:
+def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> SingleSensorData:
     """Flip (same as rotate, but only 90 deg rots allowed) the data of a single sensor.
 
     Compared to normal rotations, this function can result in massive speedups!
     """
-    if rotation is None:
-        return data
     if rotation.single is False:
         raise ValueError("Only single rotations are allowed!")
 
@@ -85,8 +83,9 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: 
     # Now that we know the rotation is valid, we round the values to make all further checks simpler
     rot_matrix = np.round(rot_matrix)
 
-    if inplace is False:
-        data = data.copy()
+    data = data.copy()
+    if rotation is None:
+        return data
 
     orig_col_order = data.columns
     for sensor in ["acc", "gyr"]:
@@ -100,16 +99,16 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: 
             rename[old_index] = col
             if np.sum(row) == -1:
                 mirror.append(col)
-        data = data.rename(columns=rename)
+        # We use inplace here to make sure we honor the inplace passed to this function
+        data.rename(columns=rename, inplace=True)
         data[mirror] *= -1
     data = data[orig_col_order]
     return data
 
 
-def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: bool = False) -> SingleSensorData:
+def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> SingleSensorData:
     """Rotate the data of a single sensor with acc and gyro."""
-    if inplace is False:
-        data = data.copy()
+    data = data.copy()
     if rotation is None:
         return data
     data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
@@ -127,7 +126,7 @@ def _rotate_or_flip_dataset(
                 "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
                 " passed."
             )
-        return single_rot_method(dataset, rotation, inplace=False)
+        return single_rot_method(dataset, rotation)
 
     rotation_dict = rotation
     if not isinstance(rotation_dict, dict):
@@ -140,7 +139,7 @@ def _rotate_or_flip_dataset(
         rotated_dataset = dataset.copy()
         original_cols = dataset.columns
     for key in rotation_dict.keys():
-        rotated_dataset[key] = single_rot_method(dataset[key], rotation_dict[key], inplace=False)
+        rotated_dataset[key] = single_rot_method(dataset[key], rotation_dict[key])
 
     if isinstance(dataset, pd.DataFrame):
         # Restore original order
@@ -255,7 +254,7 @@ def rotate_dataset_series(dataset: SingleSensorData, rotations: Rotation) -> pd.
     if len(dataset) != len(rotations):
         raise ValueError("The number of rotations must fit the number of samples in the dataset!")
 
-    return _rotate_sensor(dataset, rotations, inplace=False)
+    return _rotate_sensor(dataset, rotations)
 
 
 def find_shortest_rotation(v1: np.ndarray, v2: np.ndarray) -> Rotation:
