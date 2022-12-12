@@ -9,6 +9,7 @@ from gaitmap.utils.consts import SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
+    _flip_sensor,
     _rotate_sensor,
     angle_diff,
     find_angle_between_orientations,
@@ -16,6 +17,7 @@ from gaitmap.utils.rotations import (
     find_shortest_rotation,
     find_signed_3d_angle,
     find_unsigned_3d_angle,
+    flip_dataset,
     get_gravity_rotation,
     rotate_dataset,
     rotate_dataset_series,
@@ -77,6 +79,9 @@ class TestRotateDfDataset:
     sample_sensor_data: pd.DataFrame
     sample_sensor_dataset: MultiSensorData
 
+    single_func = staticmethod(_rotate_sensor)
+    multi_func = staticmethod(rotate_dataset)
+
     @pytest.fixture(autouse=True)
     def _sample_sensor_data(self):
         """Create some sample data.
@@ -95,9 +100,9 @@ class TestRotateDfDataset:
         """Test if `rotate_sensor` correctly copies the data, if indicated by its arguments."""
         if inplace is None:
             # Test default
-            rotated_data = _rotate_sensor(self.sample_sensor_data, cyclic_rotation)
+            rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation)
         else:
-            rotated_data = _rotate_sensor(self.sample_sensor_data, cyclic_rotation, inplace=inplace)
+            rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation, inplace=inplace)
 
         if equal is True:
             assert rotated_data is self.sample_sensor_data
@@ -112,7 +117,7 @@ class TestRotateDfDataset:
             inputs["dataset"] = self.sample_sensor_data
 
         with pytest.raises(ValueError):
-            rotate_dataset(**inputs)
+            self.multi_func(**inputs)
 
     @pytest.mark.parametrize("ascending", (True, False))
     def test_order_is_preserved_multiple_datasets(self, cyclic_rotation, ascending):
@@ -124,7 +129,7 @@ class TestRotateDfDataset:
         This tests the MultiIndex input.
         """
         changed_sorted_data = self.sample_sensor_dataset.sort_index(ascending=ascending, axis=1)
-        rotated_data = rotate_dataset(changed_sorted_data, cyclic_rotation)
+        rotated_data = self.multi_func(changed_sorted_data, cyclic_rotation)
 
         assert_frame_equal(changed_sorted_data.columns.to_frame(), rotated_data.columns.to_frame())
 
@@ -133,11 +138,27 @@ class TestRotateDfDataset:
         _compare_cyclic(changed_sorted_data["s2"], rotated_data["s2"])
 
 
+class TestFlipDfDataset(TestRotateDfDataset):
+    """We reuse the test, as all the tests we make cover 90 deg rotations."""
+
+    single_func = staticmethod(_flip_sensor)
+    multi_func = staticmethod(flip_dataset)
+
+    def test_non_orthogonal_matrix_raises(self):
+        # Create rot matrix that is not just 90 deg
+        rot = rotation_from_angle(np.ndarray([0, 1, 0]), np.pi / 4)
+        with pytest.raises(ValueError):
+            flip_dataset(self.sample_sensor_dataset, rot)
+
+
 class TestRotateDataset:
     """Test the functions `rotate_dataset` and `_rotate_sensor`."""
 
     sample_sensor_data: pd.DataFrame
     sample_sensor_dataset: MultiSensorData
+
+    single_func = staticmethod(_rotate_sensor)
+    multi_func = staticmethod(rotate_dataset)
 
     @pytest.fixture(autouse=True, params=("dict", "frame"))
     def _sample_sensor_data(self, request):
@@ -157,7 +178,7 @@ class TestRotateDataset:
 
     def test_rotate_sensor(self, cyclic_rotation):
         """Test if rotation is correctly applied to gyr and acc of single sensor data."""
-        rotated_data = _rotate_sensor(self.sample_sensor_data, cyclic_rotation)
+        rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation)
 
         _compare_cyclic(self.sample_sensor_data, rotated_data)
 
@@ -166,7 +187,7 @@ class TestRotateDataset:
 
         This tests the input  option where no MultiIndex df is used.
         """
-        rotated_data = rotate_dataset(self.sample_sensor_data, cyclic_rotation)
+        rotated_data = self.multi_func(self.sample_sensor_data, cyclic_rotation)
 
         _compare_cyclic(self.sample_sensor_data, rotated_data)
 
@@ -179,7 +200,7 @@ class TestRotateDataset:
             test_data = {"s1": self.sample_sensor_dataset["s1"]}
         else:
             test_data = self.sample_sensor_dataset[["s1"]]
-        rotated_data = rotate_dataset(test_data, cyclic_rotation)
+        rotated_data = self.multi_func(test_data, cyclic_rotation)
 
         _compare_cyclic(test_data["s1"], rotated_data["s1"])
 
@@ -189,7 +210,7 @@ class TestRotateDataset:
         This tests MultiIndex input with multiple sensors.
         """
         test_data = self.sample_sensor_dataset
-        rotated_data = rotate_dataset(test_data, cyclic_rotation)
+        rotated_data = self.multi_func(test_data, cyclic_rotation)
 
         _compare_cyclic(test_data["s1"], rotated_data["s1"])
         _compare_cyclic(test_data["s2"], rotated_data["s2"])
@@ -198,7 +219,7 @@ class TestRotateDataset:
         """Apply different rotations to each dataset."""
         test_data = self.sample_sensor_dataset
         # Apply single cycle to "s1" and cycle twice to "s2"
-        rotated_data = rotate_dataset(test_data, {"s1": cyclic_rotation, "s2": cyclic_rotation * cyclic_rotation})
+        rotated_data = self.multi_func(test_data, {"s1": cyclic_rotation, "s2": cyclic_rotation * cyclic_rotation})
 
         _compare_cyclic(test_data["s1"], rotated_data["s1"])
         _compare_cyclic(test_data["s2"], rotated_data["s2"], cycles=2)
@@ -209,7 +230,7 @@ class TestRotateDataset:
         This uses the dict input to only provide a rotation for s1 and not s2.
         """
         test_data = self.sample_sensor_dataset
-        rotated_data = rotate_dataset(test_data, {"s1": cyclic_rotation})
+        rotated_data = self.multi_func(test_data, {"s1": cyclic_rotation})
 
         _compare_cyclic(test_data["s1"], rotated_data["s1"])
         assert_frame_equal(test_data["s2"], rotated_data["s2"])
@@ -217,7 +238,7 @@ class TestRotateDataset:
     def test_rotate_dataset_is_copy(self, cyclic_rotation):
         """Test if the output is indeed a copy and the original dataset was not modified."""
         org_data = self.sample_sensor_dataset.copy()
-        rotated_data = rotate_dataset(self.sample_sensor_dataset, cyclic_rotation)
+        rotated_data = self.multi_func(self.sample_sensor_dataset, cyclic_rotation)
 
         assert rotated_data is not self.sample_sensor_dataset
         # sample_sensor_dataset is unchanged
@@ -234,12 +255,19 @@ class TestRotateDataset:
         This version tests the non-MultiIndex input.
         """
         changed_sorted_data = self.sample_sensor_data.sort_index(ascending=ascending, axis=1)
-        rotated_data = rotate_dataset(changed_sorted_data, cyclic_rotation)
+        rotated_data = self.multi_func(changed_sorted_data, cyclic_rotation)
 
         assert_frame_equal(changed_sorted_data.columns.to_frame(), rotated_data.columns.to_frame())
 
         # Test rotation worked
         _compare_cyclic(changed_sorted_data, rotated_data)
+
+
+class TestFlipDataset(TestRotateDataset):
+    """We reuse the test, as all the tests we make cover 90 deg rotations."""
+
+    single_func = staticmethod(_flip_sensor)
+    multi_func = staticmethod(flip_dataset)
 
 
 class TestRotateDatasetSeries:
