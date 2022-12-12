@@ -95,26 +95,12 @@ class TestRotateDfDataset:
         dataset = {"s1": self.sample_sensor_data, "s2": self.sample_sensor_data + 0.5}
         self.sample_sensor_dataset = pd.concat(dataset, axis=1)
 
-    @pytest.mark.parametrize("inplace,equal", ((None, False), (False, False), (True, True)))
-    def test_rotate_sensor_inplace(self, inplace, equal, cyclic_rotation):
-        """Test if `rotate_sensor` correctly copies the data, if indicated by its arguments."""
-        if inplace is None:
-            # Test default
-            rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation)
-        else:
-            rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation, inplace=inplace)
-
-        if equal is True:
-            assert rotated_data is self.sample_sensor_data
-        else:
-            assert rotated_data is not self.sample_sensor_data
-
     @pytest.mark.parametrize("inputs", ({"dataset": "single", "rotation": {}},))
     def test_invalid_inputs(self, inputs):
         """Test input combinations that should lead to ValueErrors."""
         # Select the dataset for test using strings, as you can not use self-parameters in the decorator.
         if inputs["dataset"] == "single":
-            inputs["dataset"] = self.sample_sensor_data
+            inputs = {**inputs, "dataset": self.sample_sensor_data}
 
         with pytest.raises(ValueError):
             self.multi_func(**inputs)
@@ -146,9 +132,19 @@ class TestFlipDfDataset(TestRotateDfDataset):
 
     def test_non_orthogonal_matrix_raises(self):
         # Create rot matrix that is not just 90 deg
-        rot = rotation_from_angle(np.ndarray([0, 1, 0]), np.pi / 4)
-        with pytest.raises(ValueError):
+        rot = rotation_from_angle(np.array([0, 1, 0]), np.pi / 4)
+        with pytest.raises(ValueError) as e:
             flip_dataset(self.sample_sensor_dataset, rot)
+
+        assert "Only 90 deg rotations are allowed" in str(e.value)
+
+    def test_raises_when_multi_d_rotation_provided(self):
+        # create rotation object with multiple rotations
+        rot = rotation_from_angle(np.array([0, 1, 0]), np.array([np.pi / 2, np.pi / 2]))
+        with pytest.raises(ValueError) as e:
+            flip_dataset(self.sample_sensor_dataset, rot)
+
+        assert "Only single rotations are allowed!" in str(e.value)
 
 
 class TestRotateDataset:
