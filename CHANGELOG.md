@@ -32,6 +32,11 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/2)
 - New implementation of a Filter class and a `ButterworthFilter` implementation on top of the transformer API.
   (https://github.com/mad-lab-fau/gaitmap/pull/2)
+- Added a new `flip_dataset` function that can be used instead of `rotate_dataset`, when you only need to perform 90/180
+  degree rotations.
+  It is much faster than `rotate_dataset`, as it just flips the axis labels and multiplies values by -1.
+  (https://github.com/mad-lab-fau/gaitmap/pull/10)
+  
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
