@@ -72,8 +72,10 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: 
         return data
     if rotation.single is False:
         raise ValueError("Only single rotations are allowed!")
+
+    tol = 10e-9
     rot_matrix = rotation.as_matrix().squeeze()
-    all_1 = np.allclose(np.abs(rot_matrix[~np.isclose(rot_matrix, 0)]).flatten(), 1)
+    all_1 = np.allclose(np.abs(rot_matrix[~np.isclose(rot_matrix, 0, atol=tol)]).flatten(), 1, atol=tol)
     if not all_1:
         raise ValueError(
             "Only 90 deg rotations are allowed (i.e. 1 and -1 in the rotation matrix)! "
