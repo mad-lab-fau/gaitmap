@@ -2,12 +2,13 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Callable
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
+from typing_extensions import Literal
 
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import (
@@ -63,6 +64,41 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
 
 
+def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: bool = False) -> SingleSensorData:
+    """Flip (same as rotate, but only 90 deg rots allowed) the data of a single sensor.
+
+    Compared to normal rotations, this function can result in massive speedups!
+    """
+    if rotation is None:
+        return data
+    if rotation.single is False:
+        raise ValueError("Only single rotations are allowed!")
+    rot_matrix = rotation.as_matrix().squeeze()
+    all_1 = np.allclose(np.abs(np.where(rot_matrix != 0).flatten(), 1))
+    if not all_1:
+        raise ValueError(
+            "Only 90 deg rotations are allowed (i.e. 1 and -1 in the rotation matrix)! "
+            f"The current matrix is:\n\n {rot_matrix}"
+        )
+    if inplace is False:
+        data = data.copy()
+
+    for sensor in ["acc", "gyr"]:
+        cols = np.array({"acc": SF_ACC, "gyr": SF_GYR}[sensor])
+        rename = {}
+        mirror = []
+        # We basically iterate over the rotation matrix and find which axis is transformed to which other axis.
+        # If the entry is -1, we also mirror the axis.
+        for col, row in zip(cols, rot_matrix):
+            old_index = cols[np.abs(row).astype(bool)][0]
+            rename[old_index] = col
+            if np.sum(row) == -1:
+                mirror.append(col)
+        data = data.rename(columns=rename)[cols]
+        data[mirror] *= -1
+    return data
+
+
 def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: bool = False) -> SingleSensorData:
     """Rotate the data of a single sensor with acc and gyro."""
     if inplace is False:
@@ -72,6 +108,73 @@ def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace
     data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
     data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy())
     return data
+
+
+def _rotate_or_flip_dataset(
+    dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]], single_rot_method: Callable
+):
+    dataset_type = is_sensor_data(dataset, frame="sensor")
+    if dataset_type == "single":
+        if isinstance(rotation, dict):
+            raise ValueError(
+                "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
+                " passed."
+            )
+        return single_rot_method(dataset, rotation, inplace=False)
+
+    rotation_dict = rotation
+    if not isinstance(rotation_dict, dict):
+        rotation_dict = {k: rotation for k in get_multi_sensor_names(dataset)}
+
+    if isinstance(dataset, dict):
+        rotated_dataset = {**dataset}
+        original_cols = None
+    else:
+        rotated_dataset = dataset.copy()
+        original_cols = dataset.columns
+    for key in rotation_dict.keys():
+        test = single_rot_method(dataset[key], rotation_dict[key], inplace=False)
+        rotated_dataset[key] = test
+
+    if isinstance(dataset, pd.DataFrame):
+        # Restore original order
+        rotated_dataset = rotated_dataset[original_cols]
+    return rotated_dataset
+
+
+def flip_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]]) -> SensorData:
+    """Flip datasets around axis data of a dataset.
+
+    This is equivalent to rotating the data, but only 90/180 deg rotations are allowed.
+    With this restriction, we don't need to actually rotate the data, but can just swap and flip the columns.
+
+    This method should be used, when roughly aligning the data to a reference frame, where you usually would only
+    apply 90 deg rotations based on the known rough orientation of the sensor.
+    If you need to apply arbitrary rotations, use `rotate_dataset` instead.
+
+    Parameters
+    ----------
+    dataset
+        dataframe representing a single or multiple sensors.
+        In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
+        and the second level the axis names (all sensor frame axis must be present)
+    rotation
+        A single rotation or a dict with sensor names as keys and rotations as values.
+        All rotations must only contain 90 deg rotations (i.e. 1 and -1 in the rotation matrix).
+        If this is not the case, use :func:`rotate_dataset` instead.
+
+    Returns
+    -------
+    flipped dataset
+        This will always be a copy. The original dataframe will not be modified.
+
+
+    See Also
+    --------
+    gaitmap.utils.rotations.rotate_dataset: Freely rotate a dataset
+
+    """
+    return _rotate_or_flip_dataset(dataset, rotation, _flip_sensor)
 
 
 def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]]) -> SensorData:
@@ -88,6 +191,8 @@ def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rota
         If a dictionary of rotations is applied, the respective rotations will be matched to the sensors based on the
         dict keys.
         If no rotation is provided for a sensor, it will not be modified.
+        Note, that if your rotations are only 90 deg rotations, you can use :func:`flip_dataset` instead for massive
+        speedups.
 
     Returns
     -------
@@ -112,35 +217,10 @@ def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rota
     See Also
     --------
     gaitmap.utils.rotations.rotate_dataset_series: Apply a series of rotations to a dataset
+    gaitmap.utils.rotations.flip_dataset: Flip a dataset (only 90 deg rotations allowed)
 
     """
-    dataset_type = is_sensor_data(dataset, frame="sensor")
-    if dataset_type == "single":
-        if isinstance(rotation, dict):
-            raise ValueError(
-                "A Dictionary for the `rotation` parameter is only supported if a MultiIndex dataset (named sensors) is"
-                " passed."
-            )
-        return _rotate_sensor(dataset, rotation, inplace=False)
-
-    rotation_dict = rotation
-    if not isinstance(rotation_dict, dict):
-        rotation_dict = {k: rotation for k in get_multi_sensor_names(dataset)}
-
-    if isinstance(dataset, dict):
-        rotated_dataset = {**dataset}
-        original_cols = None
-    else:
-        rotated_dataset = dataset.copy()
-        original_cols = dataset.columns
-    for key in rotation_dict.keys():
-        test = _rotate_sensor(dataset[key], rotation_dict[key], inplace=False)
-        rotated_dataset[key] = test
-
-    if isinstance(dataset, pd.DataFrame):
-        # Restore original order
-        rotated_dataset = rotated_dataset[original_cols]
-    return rotated_dataset
+    return _rotate_or_flip_dataset(dataset, rotation, _rotate_sensor)
 
 
 def rotate_dataset_series(dataset: SingleSensorData, rotations: Rotation) -> pd.DataFrame:
