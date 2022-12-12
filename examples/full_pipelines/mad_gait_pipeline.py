@@ -34,7 +34,7 @@ from gaitmap.preprocessing import sensor_alignment
 # -------------
 # Fix the alignment between the sensor coordinate system and the gaitmap coordinate system.
 # This will be different for each sensor position and recording.
-from gaitmap.utils.rotations import rotate_dataset, rotation_from_angle
+from gaitmap.utils.rotations import flip_dataset, rotation_from_angle
 
 # rotate left_sensor first by -90 deg around the x-axis, followed by a -90 deg rotation around the z-axis
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
@@ -47,7 +47,7 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
 )
 
 rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
-dataset_sf = rotate_dataset(example_dataset, rotations)
+dataset_sf = flip_dataset(example_dataset, rotations)
 
 # Align to Gravity
 dataset_sf_aligned_to_gravity = sensor_alignment.align_dataset_to_gravity(dataset_sf, sampling_rate_hz)
