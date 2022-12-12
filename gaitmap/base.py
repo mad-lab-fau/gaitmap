@@ -56,7 +56,7 @@ class _CustomEncoder(json.JSONEncoder):
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
         try:
-            from pomegranate.hmm import HiddenMarkovModel
+            from pomegranate.hmm import HiddenMarkovModel  # noqa: import-outside-toplevel
 
             if isinstance(o, HiddenMarkovModel):
                 warnings.warn(
@@ -95,10 +95,11 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "HiddenMarkovModel":
             with np.errstate(divide="ignore"):
-                # Sometimes probabilities are zeror which can lead to warnings when the log-probabilities are
+                # Sometimes probabilities are zero which can lead to warnings when the log-probabilities are
                 # calculated.
                 # We ignore these warnings here to avoid clutter in the output.
-                from pomegranate.hmm import HiddenMarkovModel
+                from pomegranate.hmm import HiddenMarkovModel  # noqa: import-outside-toplevel
+
                 return HiddenMarkovModel.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
