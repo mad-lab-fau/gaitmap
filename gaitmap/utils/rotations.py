@@ -140,8 +140,7 @@ def _rotate_or_flip_dataset(
         rotated_dataset = dataset.copy()
         original_cols = dataset.columns
     for key in rotation_dict.keys():
-        test = single_rot_method(dataset[key], rotation_dict[key], inplace=False)
-        rotated_dataset[key] = test
+        rotated_dataset[key] = single_rot_method(dataset[key], rotation_dict[key], inplace=False)
 
     if isinstance(dataset, pd.DataFrame):
         # Restore original order
