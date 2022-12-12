@@ -2,13 +2,12 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
-from typing import Dict, List, Optional, Union, Callable
+from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
-from typing_extensions import Literal
 
 from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import (
@@ -74,15 +73,20 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: 
     if rotation.single is False:
         raise ValueError("Only single rotations are allowed!")
     rot_matrix = rotation.as_matrix().squeeze()
-    all_1 = np.allclose(np.abs(np.where(rot_matrix != 0).flatten(), 1))
+    all_1 = np.allclose(np.abs(rot_matrix[~np.isclose(rot_matrix, 0)]).flatten(), 1)
     if not all_1:
         raise ValueError(
             "Only 90 deg rotations are allowed (i.e. 1 and -1 in the rotation matrix)! "
             f"The current matrix is:\n\n {rot_matrix}"
         )
+
+    # Now that we know the rotation is valid, we round the values to make all further checks simpler
+    rot_matrix = np.round(rot_matrix)
+
     if inplace is False:
         data = data.copy()
 
+    orig_col_order = data.columns
     for sensor in ["acc", "gyr"]:
         cols = np.array({"acc": SF_ACC, "gyr": SF_GYR}[sensor])
         rename = {}
@@ -94,8 +98,9 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation], inplace: 
             rename[old_index] = col
             if np.sum(row) == -1:
                 mirror.append(col)
-        data = data.rename(columns=rename)[cols]
+        data = data.rename(columns=rename)
         data[mirror] *= -1
+    data = data[orig_col_order]
     return data
 
 

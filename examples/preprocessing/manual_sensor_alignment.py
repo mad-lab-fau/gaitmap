@@ -59,7 +59,7 @@ example_dataset.sort_index(axis=1).head(1)
 # Rename columns and align with the expected orientation
 import numpy as np
 
-from gaitmap.utils.rotations import rotate_dataset, rotation_from_angle
+from gaitmap.utils.rotations import flip_dataset, rotation_from_angle
 
 # rotate left_sensor first by -90 deg around the z-axis, followed by a -90 deg rotation around the x-axis. As the rotation matrix is multiplied from the left, the rotation matrix  results in:
 left_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(-90)) * rotation_from_angle(
@@ -73,7 +73,9 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
 
 rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
 
-dataset_sf = rotate_dataset(example_dataset, rotations)
+# As all rotations are just "axis-flips" we can use flip_dataset to apply the rotations, which is much faster than using
+# `rotate_dataset`.
+dataset_sf = flip_dataset(example_dataset, rotations)
 
 # %%
 # Visualize one "left" and one "right" stride, and compare the individual sensor axis to the gaitmap
