@@ -58,7 +58,7 @@ from gaitmap.data_transform import ButterworthFilter
 
 # %%
 # Initialize Model Parameters - Feature Transformation
-# ------------------------------------------------------
+# ----------------------------------------------------
 #
 # Here we define the feature space in which model training and later prediction will take place. You can choose
 # different axis and or feature combinations as well as downsampling, filter and standardization steps. The following

@@ -521,10 +521,11 @@ def get_train_data_sequences_transitions(
         ].to_numpy():
             # append extracted sequences and corresponding label set to results list
             try:
-                trans_labels_train_sequence.append(create_equidistant_label_sequence(end - start, n_states).astype(int))
+                labels = create_equidistant_label_sequence(end - start, n_states).astype(int)
             except ValueError:
                 n_too_short_transitions += 1
                 continue
+            trans_labels_train_sequence.append(labels)
             trans_data_train_sequence.append(data[start:end])
 
     if n_too_short_transitions > 0:
@@ -557,12 +558,11 @@ def get_train_data_sequences_strides(
         # extract strides directly from stride_list
         for start, end in stride_list[["start", "end"]].to_numpy():
             try:
-                stride_labels_train_sequence.append(
-                    create_equidistant_label_sequence(end - start, n_states).astype(int)
-                )
+                labels = create_equidistant_label_sequence(end - start, n_states).astype(int)
             except ValueError:
                 n_too_short_strides += 1
                 continue
+            stride_labels_train_sequence.append(labels)
             stride_data_train_sequence.append(data[start:end])
 
     if n_too_short_strides > 0:
