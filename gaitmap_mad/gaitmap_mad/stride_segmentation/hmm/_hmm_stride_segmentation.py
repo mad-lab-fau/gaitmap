@@ -129,12 +129,17 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
         This will not be effected by potential changes of the postprocessing.
         """
+        stride_start_state = self.model.stride_states[0]
+        stride_end_state = self.model.stride_states[-1]
         if isinstance(self.hidden_state_sequence_, dict):
             return {
-                s: self._hidden_states_to_matches_start_end(hidden_states)
+                s: self._hidden_states_to_matches_start_end(hidden_states, stride_start_state, stride_end_state)
                 for s, hidden_states in self.hidden_state_sequence_.items()
             }
-        return self._hidden_states_to_matches_start_end(self.hidden_state_sequence_)
+
+        return self._hidden_states_to_matches_start_end(
+            self.hidden_state_sequence_, stride_start_state, stride_end_state
+        )
 
     @staticmethod
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
@@ -186,38 +191,53 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         model: BaseSegmentationHmm = self.model.clone()
         model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
         state_sequence = model.hidden_state_sequence_
-
-        matches_start_end = self._hidden_states_to_matches_start_end(state_sequence)
+        stride_start_state = self.model.stride_states[0]
+        stride_end_state = self.model.stride_states[-1]
+        matches_start_end = self._hidden_states_to_matches_start_end(
+            state_sequence, stride_start_state, stride_end_state
+        )
         return {
             "matches_start_end": self._postprocess_matches(dataset, matches_start_end),
             "hidden_state_sequence": state_sequence,
             "result_model_": model,
         }
 
-    def _hidden_states_to_matches_start_end(self, hidden_states_predicted: np.ndarray):
+    def _hidden_states_to_matches_start_end(  # noqa: no-self-use
+        self, hidden_states_predicted: np.ndarray, stride_start_state, stride_end_state
+    ):
         """Convert a hidden state sequence to a list of potential borders."""
-        stride_start_state = self.model.stride_states[0]
-        stride_end_state = self.model.stride_states[-1]
-
         # find rising edge of stride start state sequence
-        matches_starts = np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype(int)) > 0)
+        # +1 required as diff returns one element less than the input
+        matches_starts = (
+            np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype(int)) > 0).flatten() + 1
+        )
 
         # find falling edge of stride end state sequence
-        matches_ends = np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype(int)) < 0)
+        matches_ends = np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype(int)) < 0).flatten() + 1
 
         # Special case, when the last state is a stride end state
-        if len(matches_starts) > len(matches_ends) and hidden_states_predicted[-1] == stride_end_state:
-            matches_ends = np.append(matches_ends, len(hidden_states_predicted) - 1)
+        if hidden_states_predicted[-1] == stride_end_state:
+            matches_ends = np.append(matches_ends, len(hidden_states_predicted))
+        if hidden_states_predicted[0] == stride_start_state:
+            matches_starts = np.concatenate([[0], matches_starts])
 
-        # special case where the very last part of the data is just half a stride, so the model finds a begin of a
-        # stride but no end!
-        # In this case we remove the last stride start
-        if len(matches_starts) > len(matches_ends):
-            matches_starts = matches_starts[:-1]
+        # For each start, find the next end
+        # if no end is found (as it is the end of the signal), we remove the start
+        matches_start_end = []
+        for start in matches_starts:
+            try:
+                matches_start_end.append([start, matches_ends[matches_ends > start][0]])
+            except IndexError:
+                # No end found
+                pass
 
-        assert len(matches_starts) == len(matches_ends), "Number of matches starts and ends must be equal."
+        # If multiple starts with the same end are found, we remove all but the first
+        matches_start_end = np.array(matches_start_end)
+        if len(matches_start_end) > 0:
+            _, idx = np.unique(matches_start_end[:, 1], return_index=True)
+            matches_start_end = matches_start_end[np.sort(idx)]
 
-        return np.column_stack([matches_starts, matches_ends])
+        return matches_start_end
 
     def _postprocess_matches(self, data, matches_start_end) -> np.ndarray:
         """Perform postprocessing step by snapping the stride border candidates to minima within the given data."""

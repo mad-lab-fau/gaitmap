@@ -501,6 +501,63 @@ class TestHmmStrideSegmentation:
 
         assert np.array_equal(result.matches_start_end_original_, result.matches_start_end_)
 
+    @pytest.mark.parametrize(
+        "starts,ends,correct",
+        [
+            # Start at 0, end at end
+            (
+                np.array([0, 10, 20, 30, 40]),
+                np.array([9, 19, 29, 39, 49]),
+                np.array([[0, 10], [10, 20], [20, 30], [30, 40], [40, 50]]),
+            ),
+            # Double states
+            (
+                np.array([0, 1, 10, 11, 20, 30, 31, 32, 40]),
+                np.array([8, 9, 18, 19, 27, 28, 29, 39, 49]),
+                np.array([[0, 10], [10, 20], [20, 30], [30, 40], [40, 50]]),
+            ),
+            # Start at second, end at second to last
+            (
+                np.array([1, 10, 20, 30, 40]),
+                np.array([9, 19, 29, 39, 48]),
+                np.array([[1, 10], [10, 20], [20, 30], [30, 40], [40, 49]]),
+            ),
+            # Last start has no matching end
+            (
+                np.array([0, 10, 20, 30, 40]),
+                np.array([9, 19, 29, 39]),
+                np.array([[0, 10], [10, 20], [20, 30], [30, 40]]),
+            ),
+            # Last start has no matching end 2
+            (
+                np.array([0, 10, 20, 30, 40]),
+                np.array([9, 19, 29]),
+                np.array([[0, 10], [10, 20], [20, 30]]),
+            ),
+            # Multiple starts have same end
+            (
+                np.array([0, 10, 20, 30, 40]),
+                np.array([9, 19, 39, 49, 49]),
+                np.array([[0, 10], [10, 20], [20, 40], [40, 50]]),
+            ),
+            # Ends before start
+            (
+                np.array([10, 20, 30, 40]),
+                np.array([9, 19, 39, 49, 49]),
+                np.array([[10, 20], [20, 40], [40, 50]]),
+            ),
+        ],
+    )
+    def test_hidden_state_sequence_start_end(self, starts, ends, correct):
+        """Test that the start end values are correctly extracted."""
+        hidden_state_sequence = np.zeros(50)
+        hidden_state_sequence[starts] = 1
+        hidden_state_sequence[ends] = 2
+
+        starts_ends = HmmStrideSegmentation()._hidden_states_to_matches_start_end(hidden_state_sequence, 1, 2)
+
+        assert_array_equal(starts_ends, correct)
+
 
 def test_pre_trained_model_returns_correctly():
     assert isinstance(PreTrainedRothSegmentationModel(), RothSegmentationHmm)
