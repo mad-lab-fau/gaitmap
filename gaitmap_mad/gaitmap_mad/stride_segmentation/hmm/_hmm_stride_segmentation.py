@@ -18,7 +18,23 @@ from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmenta
 class PreTrainedRothSegmentationModel(RothSegmentationHmm):
     """Load a pre-trained stride segmentation HMM.
 
-    TODO: @Nils How was this model trained? Can we add a reference here?
+    Notes
+    -----
+    This model was trained on the pre-visit @lab recordings of the first 28 participants of the fallrisk-pd study.
+    According to [1]_ the expected performance on unseen data under lab conditions is around 96% F1 score and under
+    real-world conditions ca. 92% F1 score.
+
+    The model is only for level walking and was only trained on PD data (so it might not generalize well to other
+    conditions).
+
+    Recommended use for general segmentation of straight strides.
+    But, the model will probably also segment turning strides as it only considers the `gyr_ml` data.
+    If only straight strides are desired, strides should be filtered based on turning angle after parameter estimation.
+
+    [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
+        free-living gait data in Parkinson’s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+        https://doi.org/10.1186/s12984-021-00883-7
+
     """
 
     def __new__(cls):
