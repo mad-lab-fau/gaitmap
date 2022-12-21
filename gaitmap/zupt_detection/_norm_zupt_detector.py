@@ -1,5 +1,5 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
-from typing import Optional, TypeVar, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
-from gaitmap.utils.consts import SF_GYR, SF_ACC
+from gaitmap.utils.consts import SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
@@ -36,7 +36,7 @@ def _validate_window(window_length_s: float, window_overlap: float, sampling_rat
     return window_length, window_overlap_samples
 
 
-class PerSampleDetectorMixin:
+class _PerSampleDetectorMixin:
     per_sample_zupts_: np.ndarray
 
     @property
@@ -48,7 +48,7 @@ class PerSampleDetectorMixin:
         return pd.DataFrame(columns=["start", "end"])
 
 
-class NormZuptDetector(BaseZuptDetector, PerSampleDetectorMixin):
+class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     """Detect ZUPTs based on either the Acc or the Gyro norm.
 
     The ZUPT method uses a sliding window approach with overlap.
@@ -145,6 +145,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleDetectorMixin):
 
     def __init__(
         self,
+        *,
         sensor: SENSOR_NAMES = "gyr",
         window_length_s: float = 0.15,
         window_overlap: float = 0.5,
@@ -195,7 +196,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleDetectorMixin):
         return self
 
 
-class ShoeDetector(BaseZuptDetector, PerSampleDetectorMixin):
+class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     """Detect ZUPTSs using the SHOE algorithm.
 
     This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to
@@ -207,6 +208,46 @@ class ShoeDetector(BaseZuptDetector, PerSampleDetectorMixin):
               Note, that primarily the relation between the acc and the gyro noise is relevant, as it defines the
               weighting of the two signals in the ZUPT detection.
               Default values likely need to be adapted to your specific use case.
+
+    Parameters
+    ----------
+    acc_noise_variance
+        The variance of the noise of the accelerometer.
+    gyr_noise_variance
+        The variance of the noise of the gyroscope.
+    inactive_signal_threshold
+        Threshold to decide whether a window should be considered as active or inactive.
+        This value heavily depends on the noise levels selected for the other parameters.
+    window_length_s : int
+        Length of desired window in seconds.
+        The real window length is calculated as `window_length_samples = round(sampling_rate_hz * window_length_s)`
+    window_overlap : float
+        The overlap between two neighboring windows as a fraction of the window length.
+        Must be `0 <= window_overlap < 1`.
+        Note that the window length is first converted into samples, before the effective overlap is calculated.
+        The overlap in samples is calculated as `overlap_samples = round(window_length_samples * window_overlap)`
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the detect method
+    sampling_rate_hz
+        The sampling rate of this data
+
+    Attributes
+    ----------
+    zupts_
+        A dataframe with the columns `start` and `end` specifying the start and end of all static regions in samples
+    per_sample_zupts_
+        A bool array with length `len(data)`.
+        If the value is `True` for a sample, it is part of a static region.
+    window_length_samples_
+        The internally calculated window length in samples.
+        This might be helpful for debugging
+    window_overlap_samples_
+        The internally calculated window overlap in samples.
+        This might be helpful for debugging.
+
 
     """
 
@@ -224,6 +265,7 @@ class ShoeDetector(BaseZuptDetector, PerSampleDetectorMixin):
 
     def __init__(
         self,
+        *,
         acc_noise_variance: float = 10e-8,
         gyr_noise_variance: float = 10e-9,
         window_length_s: float = 0.15,
@@ -255,18 +297,15 @@ class ShoeDetector(BaseZuptDetector, PerSampleDetectorMixin):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        # TODO: At the moment we only allow sensor frame, but we could make this configurable (or even auto detect)
-        is_single_sensor_data(
-            self.data, frame="sensor", raise_exception=True
-        )
+        is_single_sensor_data(self.data, frame="any", raise_exception=True)
 
         self.window_length_samples_, self.window_overlap_samples_ = _validate_window(
             self.window_length_s, self.window_overlap, self.sampling_rate_hz
         )
 
         self.per_sample_zupts_ = find_static_samples_shoe(
-            gyr=data[SF_GYR].to_numpy(),
-            acc=data[SF_ACC].to_numpy(),
+            gyr=data.filter(like="gyr").to_numpy(),
+            acc=data.filter(like="acc").to_numpy(),
             acc_noise_var=self.acc_noise_variance,
             gyr_noise_var=self.gyr_noise_variance,
             window_length=self.window_length_samples_,
