@@ -1,5 +1,6 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
-from typing import Optional, Sequence, Tuple
+from functools import partial
+from typing import Optional, Sequence, Tuple, Callable
 
 import numpy as np
 from numpy.linalg import norm
@@ -7,10 +8,29 @@ from typing_extensions import Literal
 
 from gaitmap.utils import array_handling
 from gaitmap.utils.array_handling import _bool_fill
+from gaitmap.utils.consts import GRAV
 
 # supported metric functions
 _METRIC_FUNCTIONS = {"maximum": np.nanmax, "variance": np.nanvar, "mean": np.nanmean, "median": np.nanmedian}
-METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median"]  # noqa: invalid-name
+METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "squared_mean"]  # noqa: invalid-name
+
+
+def _window_apply_threshold(
+    data, window_length: int, overlap: int, func: Callable[[np.ndarray], np.ndarray], threshold: float
+):
+    # allocate output array
+    inactive_signal_bool_array = np.zeros(len(data))
+
+    windowed_norm = np.atleast_2d(array_handling.sliding_window_view(data, window_length, overlap, nan_padding=False))
+    is_static = np.broadcast_to(func(windowed_norm) <= threshold, windowed_norm.shape[::-1]).T
+
+    # create the list of indices for sliding windows with overlap
+    windowed_indices = np.atleast_2d(
+        array_handling.sliding_window_view(np.arange(0, len(data)), window_length, overlap, nan_padding=False)
+    )
+
+    # iterate over sliding windows
+    return _bool_fill(windowed_indices, is_static, inactive_signal_bool_array).astype(bool)
 
 
 def find_static_samples(
@@ -38,11 +58,14 @@ def find_static_samples(
        Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
        <= threshold
 
-    metric : str
-        Metric which will be calculated per window, one of the following strings
+    metric : str or Callable
+        Metric which will be calculated per window, one of the following strings:
 
         'mean' (default)
             Calculates mean value per window
+        'squared_mean'
+            The same as mean, but the norm of the signal is squared before calculating the mean.
+            This option exists to provide an implementation of the ARED Zupt detector [1]_.
         'maximum'
             Calculates maximum value per window
         'median'
@@ -61,6 +84,11 @@ def find_static_samples(
     --------
     >>> test_data = load_gyro_data(path)
     >>> get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
+
+    References
+    ----------
+    .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
 
     See Also
     --------
@@ -85,29 +113,82 @@ def find_static_samples(
     if overlap is None:
         overlap = window_length - 1
 
-    # allocate output array
-    inactive_signal_bool_array = np.zeros(len(signal))
-
     # calculate norm of input signal (do this outside of loop to boost performance at cost of memory!)
-    signal_norm = norm(signal, axis=1)
+    if metric == "squared_mean":
+        signal_norm = np.square(norm(signal, axis=1))
+        metric = "mean"
+    else:
+        signal_norm = norm(signal, axis=1)
 
-    mfunc = _METRIC_FUNCTIONS[metric]
+    mfunc = partial(_METRIC_FUNCTIONS[metric], axis=1)
 
-    # Create windowed view of norm
-    windowed_norm = np.atleast_2d(
-        array_handling.sliding_window_view(signal_norm, window_length, overlap, nan_padding=False)
-    )
-    is_static = np.broadcast_to(mfunc(windowed_norm, axis=1) <= inactive_signal_th, windowed_norm.shape[::-1]).T
+    return _window_apply_threshold(signal_norm, window_length, overlap, mfunc, inactive_signal_th)
 
-    # create the list of indices for sliding windows with overlap
-    windowed_indices = np.atleast_2d(
-        array_handling.sliding_window_view(np.arange(0, len(signal)), window_length, overlap, nan_padding=False)
-    )
 
-    # iterate over sliding windows
-    inactive_signal_bool_array = _bool_fill(windowed_indices, is_static, inactive_signal_bool_array)
+def find_static_samples_shoe(
+    acc: np.ndarray,
+    gyr: np.ndarray,
+    acc_noise_var: float,
+    gyr_noise_var: float,
+    window_length: int,
+    inactive_signal_th: float,
+    overlap: Optional[int] = None,
+) -> np.ndarray:
+    """The SHOE algorithm for static moment detection.
 
-    return inactive_signal_bool_array.astype(bool)
+    This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to
+    detect the static moments.
+
+    Parameters
+    ----------
+    acc : array with shape (n, 3)
+        3D acc signal on which static moment detection should be performed
+    gyr : array with shape (n, 3)
+        3D gyr signal on which static moment detection should be performed
+    acc_noise_var : float
+        Variance of the noise in the acc sensor.
+        This might be derived from the datasheet of the sensor, but usually it is a good idea to gridsearch this value.
+    gyr_noise_var : float
+        Variance of the noise in the gyr sensor.
+        This might be derived from the datasheet of the sensor, but usually it is a good idea to gridsearch this value.
+    window_length : int
+        Length of desired window in units of samples
+    inactive_signal_th : float
+         Threshold to decide whether a window should be considered as active or inactive. Window will be tested on
+            <= threshold
+    overlap : int, optional
+        Length of desired overlap in units of samples. If None (default) overlap will be window_length - 1
+
+    References
+    ----------
+    .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+    .. [2] Wagstaff, Peretroukhin, and Kelly, “Robust Data-Driven Zero-Velocity Detection for Foot-Mounted Inertial
+       Navigation.”
+
+    """
+    # check if minimum signal length matches window length
+    assert acc.shape == gyr.shape, "Acc and Gyr data must have the same shape!"
+
+    if window_length > len(acc):
+        raise ValueError(
+            "Invalid window length, window must be smaller or equal than given signal length. Given signal length: "
+            f"{len(acc)} with given window_length: {window_length}."
+        )
+
+    # add default overlap value
+    if overlap is None:
+        overlap = window_length - 1
+
+    # For acc we try to remove the influence of gravity first, by substracting the value of gravity in the direction
+    # the average acceleration
+    acc_mean = np.mean(acc, axis=0)
+    grav_direction = acc_mean / norm(acc_mean, axis=1)
+    acc_norm = np.square(norm(acc - GRAV * grav_direction, axis=1))
+    gyr_norm = np.square(norm(gyr, axis=1))
+    combined = acc_norm / acc_noise_var + gyr_norm / gyr_noise_var
+
+    return _window_apply_threshold(combined, window_length, overlap, np.mean, inactive_signal_th)
 
 
 def find_static_sequences(

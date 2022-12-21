@@ -47,8 +47,10 @@ GF_ORI = ["q_x", "q_y", "q_z", "q_w"]
 #: The default index names for all global frame spatial paras
 GF_INDEX = ["s_id", "sample"]
 
+#: Gravity in m/s^2
+GRAV = 9.81
 #: The gravity vector in m/s^2 in the FSF
-GRAV_VEC = np.array([0.0, 0.0, 9.81])
+GRAV_VEC = np.array([0.0, 0.0, GRAV])
 GRAV_VEC.flags.writeable = False
 
 #: Sensor to body frame conversion for the left foot
