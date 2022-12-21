@@ -6,11 +6,12 @@ from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap.zupt_detection import NormZuptDetector
+from gaitmap.zupt_detection import NormZuptDetector, ShoeZuptDetector
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-class MetaTestConfig:
+class TestMetaFunctionalityNormZuptDetector(TestAlgorithmMixin):
+    __test__ = True
     algorithm_class = NormZuptDetector
 
     @pytest.fixture()
@@ -19,8 +20,14 @@ class MetaTestConfig:
         return NormZuptDetector().detect(data_left, sampling_rate_hz=204.8)
 
 
-class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+class TestMetaFunctionalityShoeZuptDetector(TestAlgorithmMixin):
     __test__ = True
+    algorithm_class = ShoeZuptDetector
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data):
+        data_left = healthy_example_imu_data["left_sensor"].iloc[:500]
+        return ShoeZuptDetector().detect(data_left, sampling_rate_hz=204.8)
 
 
 class TestNormZuptDetector:
@@ -37,7 +44,7 @@ class TestNormZuptDetector:
             with pytest.raises(ValidationError, match=r"`window_overlap` must be `0 <= window_overlap < 1`"):
                 NormZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
         else:
-            d = NormZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
+            _ = NormZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
 
     @pytest.mark.parametrize("win_len,overlap,valid", ((1, 0, True), (10 / 200, 0.99, False)))
     def test_effective_overlap_error(self, win_len, overlap, valid, healthy_example_imu_data):
@@ -179,3 +186,30 @@ class TestNormZuptDetector:
             inactive_signal_threshold=0.1,
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
+
+
+class TestShoeZuptDetector:
+    @pytest.mark.parametrize("ws,sr", ((1, 1), (1, 2), (2, 1), (2.49, 1)))
+    def test_error_window_to_small(self, healthy_example_imu_data, ws, sr):
+        with pytest.raises(ValidationError, match=r".*The effective window size is smaller*"):
+            ShoeZuptDetector(window_length_s=ws).detect(healthy_example_imu_data["left_sensor"], sr)
+
+    @pytest.mark.parametrize("overlap,valid", ((0, True), (1, False), (0.5, True), (-0.5, False)))
+    def test_wrong_window_overlap(self, overlap, valid, healthy_example_imu_data):
+        if not valid:
+            with pytest.raises(ValidationError, match=r"`window_overlap` must be `0 <= window_overlap < 1`"):
+                ShoeZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
+        else:
+            _ = ShoeZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
+
+    @pytest.mark.parametrize("win_len,overlap,valid", ((1, 0, True), (10 / 200, 0.99, False)))
+    def test_effective_overlap_error(self, win_len, overlap, valid, healthy_example_imu_data):
+        if not valid:
+            with pytest.raises(ValidationError, match=r".*The effective window overlap after rounding is 1"):
+                ShoeZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
+                    healthy_example_imu_data["left_sensor"], 200
+                )
+        else:
+            ShoeZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
+                healthy_example_imu_data["left_sensor"], 200
+            )

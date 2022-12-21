@@ -1,6 +1,6 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
 from functools import partial
-from typing import Optional, Sequence, Tuple, Callable
+from typing import Callable, Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.linalg import norm
@@ -134,7 +134,7 @@ def find_static_samples_shoe(
     inactive_signal_th: float,
     overlap: Optional[int] = None,
 ) -> np.ndarray:
-    """The SHOE algorithm for static moment detection.
+    """Use the SHOE algorithm for static moment detection.
 
     This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to
     detect the static moments.
@@ -183,12 +183,12 @@ def find_static_samples_shoe(
     # For acc we try to remove the influence of gravity first, by substracting the value of gravity in the direction
     # the average acceleration
     acc_mean = np.mean(acc, axis=0)
-    grav_direction = acc_mean / norm(acc_mean, axis=1)
+    grav_direction = acc_mean / norm(acc_mean)
     acc_norm = np.square(norm(acc - GRAV * grav_direction, axis=1))
     gyr_norm = np.square(norm(gyr, axis=1))
     combined = acc_norm / acc_noise_var + gyr_norm / gyr_noise_var
 
-    return _window_apply_threshold(combined, window_length, overlap, np.mean, inactive_signal_th)
+    return _window_apply_threshold(combined, window_length, overlap, partial(np.nanmean, axis=1), inactive_signal_th)
 
 
 def find_static_sequences(
