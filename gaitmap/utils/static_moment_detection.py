@@ -1,6 +1,6 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
 from functools import partial
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple, get_args
 
 import numpy as np
 from numpy.linalg import norm
@@ -99,7 +99,7 @@ def find_static_samples(
     if np.shape(signal)[-1] != 3:
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
 
-    if metric not in _METRIC_FUNCTIONS:
+    if metric not in get_args(METRIC_FUNCTION_NAMES):
         raise ValueError("Invalid metric passed! {} as metric is not supported.".format(metric))
 
     # check if minimum signal length matches window length

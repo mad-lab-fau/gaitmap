@@ -1,5 +1,5 @@
 gaitmap.event_detection: Algorithms to find temporal gait events
-========================================================================
+================================================================
 
 .. automodule:: gaitmap.event_detection
     :no-members:

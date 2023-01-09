@@ -9,6 +9,7 @@ import pandas as pd
 import tpcp
 from joblib import Memory
 from scipy.spatial.transform import Rotation
+from typing_extensions import Self
 
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
@@ -112,20 +113,20 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
 
 class _BaseSerializable(tpcp.BaseTpcpObject):
     @classmethod
-    def _get_subclasses(cls: Type[BaseType]):
+    def _get_subclasses(cls: Type[Self]):
         for subclass in cls.__subclasses__():
             yield from subclass._get_subclasses()
             yield subclass
 
     @classmethod
-    def _find_subclass(cls: Type[BaseType], name: str) -> Type[BaseType]:
+    def _find_subclass(cls: Type[Self], name: str) -> Type[Self]:
         for subclass in _BaseSerializable._get_subclasses():
             if subclass.__name__ == name:
                 return subclass
         raise ValueError("No algorithm class with name {} exists".format(name))
 
     @classmethod
-    def _from_json_dict(cls: Type[BaseType], json_dict: Dict) -> BaseType:
+    def _from_json_dict(cls: Type[Self], json_dict: Dict) -> Self:
         params = json_dict["params"]
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         instance = cls(**input_data)
@@ -152,7 +153,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         return json.dumps(final_dict, indent=4, cls=_CustomEncoder)
 
     @classmethod
-    def from_json(cls: Type[BaseType], json_str: str) -> BaseType:
+    def from_json(cls: Type[Self], json_str: str) -> Self:
         """Import an gaitmap object from its json representation.
 
         For details have a look at the this :ref:`example <algo_serialize>`.
@@ -192,7 +193,7 @@ class BaseSensorAlignment(BaseAlgorithm):
 
     aligned_data_: SensorData
 
-    def align(self: BaseType, data: SensorData, **kwargs) -> BaseType:
+    def align(self, data: SensorData, **kwargs) -> Self:
         """Align sensor data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -204,7 +205,7 @@ class BaseStrideSegmentation(BaseAlgorithm):
 
     stride_list_: StrideList
 
-    def segment(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
+    def segment(self, data: SensorData, sampling_rate_hz: float, **kwargs) -> Self:
         """Find stride candidates in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -214,7 +215,7 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_methods = ("detect",)
 
-    def detect(self: BaseType, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def detect(self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -232,7 +233,7 @@ class BaseOrientationMethod(BaseAlgorithm):
         df.index.name = "sample"
         return df
 
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the orientation of the sensor based on the input data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -244,7 +245,7 @@ class BasePositionMethod(BaseAlgorithm):
     velocity_: VelocityList
     position_: PositionList
 
-    def estimate(self: BaseType, data: SingleSensorData, sampling_rate_hz: float) -> BaseType:
+    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Estimate the position of the sensor based on the input data.
 
         Note that the data is assumed to be in the global-frame (i.e. already rotated)
@@ -271,23 +272,23 @@ class BaseTemporalParameterCalculation(BaseAlgorithm):
 
     _action_methods = ("calculate",)
 
-    def calculate(self: BaseType, stride_event_list: StrideList, sampling_rate_hz: float) -> BaseType:
+    def calculate(self, stride_event_list: StrideList, sampling_rate_hz: float) -> Self:
         """Find temporal parameters in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
 
 class BaseSpatialParameterCalculation(BaseAlgorithm):
-    """Base class for spatial parameters calculation."""
+    """Base class for spatial parameter calculation."""
 
     _action_methods = ("calculate",)
 
     def calculate(
-        self: BaseType,
+        self,
         stride_event_list: StrideList,
         positions: PositionList,
         orientations: OrientationList,
         sampling_rate_hz: float,
-    ) -> BaseType:
+    ) -> Self:
         """Find spatial parameters in strides after segmentation and detecting events of each stride."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -297,7 +298,7 @@ class BaseGaitDetection(BaseAlgorithm):
 
     _action_methods = ("detect",)
 
-    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float) -> BaseType:
+    def detect(self, data: SensorData, sampling_rate_hz: float) -> Self:
         """Find gait sequences or other regions of interest in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -310,6 +311,9 @@ class BaseZuptDetector(BaseAlgorithm):
     zupts_: pd.DataFrame
     per_sample_zupts_: np.ndarray
 
-    def detect(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
+    data: SingleSensorData
+    sampling_rate_hz: float
+
+    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> Self:
         """Find ZUPTs in data."""
         raise NotImplementedError("Needs to be implemented by child class.")
