@@ -14,3 +14,5 @@ Classes
    :template: class.rst
 
     NormZuptDetector
+    AredZuptDetector
+    ShoeZuptDetector
