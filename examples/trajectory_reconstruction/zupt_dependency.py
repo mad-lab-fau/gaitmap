@@ -149,7 +149,7 @@ print(gs.best_score_)
 # And plot them
 import matplotlib.pyplot as plt
 
-plt.plot(results["param_zupt_method__inactive_signal_threshold"], np.abs(results["score"]))
+plt.plot(results["param_zupt_method__inactive_signal_threshold"], -results["score"])
 plt.xlabel("inactive_signal_threshold")
 plt.ylabel("abs(score)")
 plt.yscale("log")
