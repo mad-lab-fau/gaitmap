@@ -270,7 +270,7 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
     return positions, velocities, orientations
 
 
-@njit(cache=True)
+@njit()
 def _rts_kalman_update_series(
     acc,
     gyro,

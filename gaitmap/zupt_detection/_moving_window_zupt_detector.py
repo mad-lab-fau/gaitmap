@@ -326,7 +326,7 @@ class AredZuptDetector(NormZuptDetector):
         window_overlap: Optional[float] = None,
         window_overlap_samples: Optional[int] = -1,
         metric: METRIC_FUNCTION_NAMES = "squared_mean",
-        inactive_signal_threshold: float = 225,
+        inactive_signal_threshold: float = 180,
     ):
         super().__init__(
             sensor=sensor,
@@ -338,6 +338,7 @@ class AredZuptDetector(NormZuptDetector):
         )
 
 
+# TODO: I think the default parameters here are still not optimal
 class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     """Detect ZUPTSs using the SHOE algorithm.
 
@@ -407,6 +408,12 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         The internally calculated window overlap in samples.
         This might be helpful for debugging.
 
+    Notes
+    -----
+    The default parameters for the noise levels and thresholds are derived based on [2]_ and a non-exhaustive
+    gridsearch based on level walking data of healthy participants.
+    It is likely that these parameters can be further optimized for a given usecase.
+
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
@@ -432,12 +439,12 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     def __init__(
         self,
         *,
-        acc_noise_variance: float = 10e-8,
-        gyr_noise_variance: float = 10e-9,
+        acc_noise_variance: float = 3.5e-9,
+        gyr_noise_variance: float = 1.3e-7,
         window_length_s: float = 0.15,
         window_overlap: Optional[float] = 0.5,
         window_overlap_samples: Optional[int] = None,
-        inactive_signal_threshold: float = 15,
+        inactive_signal_threshold: float = 2310129700,
     ):
         self.acc_noise_variance = acc_noise_variance
         self.gyr_noise_variance = gyr_noise_variance
@@ -465,7 +472,7 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        is_single_sensor_data(self.data, frame="any", raise_exception=True)
+        is_single_sensor_data(self.data, check_acc=True, check_gyr=True, frame="any", raise_exception=True)
 
         self.window_length_samples_, self.window_overlap_samples_ = _validate_window(
             self.window_length_s, self.window_overlap, self.window_overlap_samples, self.sampling_rate_hz
