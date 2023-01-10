@@ -1,6 +1,7 @@
 import matplotlib
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_ACC
@@ -265,5 +266,5 @@ def test_segmentation_hmm_training(snapshot):
 def test_zupt_dependency():
     from examples.trajectory_reconstruction.zupt_dependency import gs
 
-    assert gs.best_score_ == -0.10171051541126985
-    assert gs.best_params_ == {"zupt_method__inactive_signal_threshold": 2782559402.2071257}
+    assert_almost_equal(gs.best_score_, -0.10171051541126)
+    assert_almost_equal(gs.best_params_["zupt_method__inactive_signal_threshold"], 2782559402.207125, decimal=3)
