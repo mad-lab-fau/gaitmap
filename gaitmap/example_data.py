@@ -101,8 +101,6 @@ def get_healthy_example_mocap_data():
     """Get 3D Mocap information of the foot synchronised with :func:`get_healthy_example_imu_data`.
 
     The sampling rate is 100 Hz.
-
-    The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
     test_data_path = _get_data("mocap_sample.csv")
     data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)

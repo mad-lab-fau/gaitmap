@@ -8,11 +8,6 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-Changlelog ZUpt
-
-### Added
-- Added option
-
 ## [2.1.0]
 
 ### Added

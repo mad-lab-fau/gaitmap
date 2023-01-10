@@ -36,7 +36,7 @@ dummy_regions_list["left_sensor"]
 # Selecting and Configuring Algorithms
 # ------------------------------------
 #
-# Like for the stride level method we need to choose a orientation and a position algorithm.
+# Like for the stride level method we need to choose an orientation and a position algorithm.
 # However, as we want to perform integration over a long time period, methods that can take advatage over the multiple
 # regions of zero velocity (ZUPTs) to perform corrections are preferable.
 # Therefore, the best choice for such region is a Kalman Filter.

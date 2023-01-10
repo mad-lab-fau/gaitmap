@@ -136,6 +136,24 @@ class TestNormZuptDetector:
         with pytest.raises(ValueError, match=r".*Invalid window length*"):
             self.algorithm_class(window_length_s=1000).detect(healthy_example_imu_data["left_sensor"].iloc[:500], 1.0)
 
+    @pytest.mark.parametrize(
+        "win_overlap_samples, expected",
+        (
+            (50, 50),
+            (-1, 99),
+            (-10, 90),
+            (0, 0),
+            (-100, 0),
+            (1, 1),
+        ),
+    )
+    def test_sample_win_overlap(self, win_overlap_samples, expected, healthy_example_imu_data):
+        """Test that window overlap is correctly calculated when provided in samples."""
+        out = self.algorithm_class(
+            window_length_s=100, window_overlap_samples=win_overlap_samples, window_overlap=None
+        ).detect(healthy_example_imu_data["left_sensor"].iloc[:500], 1.0)
+        assert out.window_overlap_samples_ == expected
+
     def test_single_window_fit(self):
         """Test input where only a single window length fits within input signal."""
         test_input = np.array([0, 0, 0, 0, 0, 1, 1, 1])
@@ -235,29 +253,16 @@ class TestNormZuptDetector:
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
 
+    def test_real_data_regression(self, healthy_example_imu_data, snapshot):
+        """Test real data with default parameters."""
+        test_output = self.algorithm_class().detect(healthy_example_imu_data["left_sensor"], sampling_rate_hz=204.8)
+        snapshot.assert_match(test_output.zupts_)
+
 
 class TestShoeZuptDetector:
-    @pytest.mark.parametrize("ws,sr", ((1, 1), (1, 2), (2, 1), (2.49, 1)))
-    def test_error_window_to_small(self, healthy_example_imu_data, ws, sr):
-        with pytest.raises(ValidationError, match=r".*The effective window size is smaller*"):
-            ShoeZuptDetector(window_length_s=ws).detect(healthy_example_imu_data["left_sensor"], sr)
+    # Note: We don't retest all the validation here, as this is basically identical to the other ZUPT detectors.
 
-    @pytest.mark.parametrize("overlap,valid", ((0, True), (1, False), (0.5, True), (-0.5, False)))
-    def test_wrong_window_overlap(self, overlap, valid, healthy_example_imu_data):
-        if not valid:
-            with pytest.raises(ValidationError, match=r"`window_overlap` must be `0 <= window_overlap < 1`"):
-                ShoeZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
-        else:
-            _ = ShoeZuptDetector(window_overlap=overlap).detect(healthy_example_imu_data["left_sensor"], 200)
-
-    @pytest.mark.parametrize("win_len,overlap,valid", ((1, 0, True), (10 / 200, 0.99, False)))
-    def test_effective_overlap_error(self, win_len, overlap, valid, healthy_example_imu_data):
-        if not valid:
-            with pytest.raises(ValidationError, match=r".*The effective window overlap after rounding is 1"):
-                ShoeZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
-                    healthy_example_imu_data["left_sensor"], 200
-                )
-        else:
-            ShoeZuptDetector(window_overlap=overlap, window_length_s=win_len).detect(
-                healthy_example_imu_data["left_sensor"], 200
-            )
+    def test_real_data_regression(self, healthy_example_imu_data, snapshot):
+        """Test real data with default parameters."""
+        test_output = ShoeZuptDetector().detect(healthy_example_imu_data["left_sensor"], sampling_rate_hz=204.8)
+        snapshot.assert_match(test_output.zupts_)

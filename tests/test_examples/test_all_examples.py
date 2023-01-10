@@ -260,3 +260,10 @@ def test_segmentation_hmm_training(snapshot):
     # snapshot.assert_match(segmentation_model.model.to_json())
     snapshot.assert_match(hmm.stride_list_["left_sensor"], "left_sensor")
     snapshot.assert_match(hmm.stride_list_["right_sensor"], "right_sensor")
+
+
+def test_zupt_dependency():
+    from examples.trajectory_reconstruction.zupt_dependency import gs
+
+    assert gs.best_score_ == -0.10171051541126985
+    assert gs.best_params_ == {"zupt_method__inactive_signal_threshold": 2782559402.2071257}
