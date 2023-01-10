@@ -167,9 +167,9 @@ def find_static_samples_shoe(
        Navigation.”
 
     """
-    # check if minimum signal length matches window length
     assert acc.shape == gyr.shape, "Acc and Gyr data must have the same shape!"
 
+    # check if minimum signal length matches window length
     if window_length > len(acc):
         raise ValueError(
             "Invalid window length, window must be smaller or equal than given signal length. Given signal length: "
