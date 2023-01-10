@@ -36,6 +36,16 @@ project.
   degree rotations.
   It is much faster than `rotate_dataset`, as it just flips the axis labels and multiplies values by -1.
   (https://github.com/mad-lab-fau/gaitmap/pull/10)
+- New Zupt detecor methods: `AredZuptDetectors` and `ShoeZuptDetectors`.
+  The ARED detector is a special case of the existing `NormZuptDetector` (using specifically the mean of the gyr norm)
+  and the SHOE detector uses a combination of acc and gyr data.
+  (https://github.com/mad-lab-fau/gaitmap/pull/11)
+- All Zupt detectors have a new parameter `window_overlap_samples` that can be used as alternative to `window_overlap`
+  to specify the window overlap in samples independent of the sampling rate.
+  (https://github.com/mad-lab-fau/gaitmap/pull/11)
+- Added new example to show how the Zupt Detector can be tuned to improve the performance of the trajectory estimation 
+  kalman filter.
+  (https://github.com/mad-lab-fau/gaitmap/pull/11)
   
 
 ### Changed
