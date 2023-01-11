@@ -52,7 +52,7 @@ Feature Transformers
    :template: class_with_private.rst
 
     Resample
-    BaseSlidingWindowFeatureTransformer
+    BaseSlidingWindowFeatureTransform
     SlidingWindowMean
     SlidingWindowVar
     SlidingWindowStd
