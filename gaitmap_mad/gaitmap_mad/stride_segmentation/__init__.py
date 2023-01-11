@@ -7,27 +7,28 @@ Other algorithm are only able to detect stride candidates and need to be paired 
 algorithm, as implemented in :py:mod:`gaitmap.event_detection`, to be able to provide information about biomechanical
 events.
 """
-
-from gaitmap_mad.stride_segmentation._barth_dtw import BarthDtw
-from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw, find_matches_find_peaks, find_matches_min_under_threshold
-from gaitmap_mad.stride_segmentation._constrained_barth_dtw import ConstrainedBarthDtw
-from gaitmap_mad.stride_segmentation._dtw_templates import (
+from gaitmap_mad.stride_segmentation.dtw import (
+    BarthDtw,
     BarthOriginalTemplate,
+    BaseDtw,
     BaseDtwTemplate,
+    ConstrainedBarthDtw,
     DtwTemplate,
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
+    find_matches_find_peaks,
+    find_matches_min_under_threshold,
 )
 
 __all__ = [
+    "BaseDtw",
     "BarthDtw",
     "ConstrainedBarthDtw",
-    "BaseDtw",
-    "BaseDtwTemplate",
-    "InterpolatedDtwTemplate",
-    "DtwTemplate",
-    "BarthOriginalTemplate",
-    "TrainableTemplateMixin",
     "find_matches_find_peaks",
     "find_matches_min_under_threshold",
+    "BarthOriginalTemplate",
+    "BaseDtwTemplate",
+    "DtwTemplate",
+    "InterpolatedDtwTemplate",
+    "TrainableTemplateMixin",
 ]

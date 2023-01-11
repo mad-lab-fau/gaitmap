@@ -11,8 +11,8 @@ from typing_extensions import Literal
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import StrideList
-from gaitmap_mad.stride_segmentation._base_dtw import BaseDtw
-from gaitmap_mad.stride_segmentation._dtw_templates.templates import BarthOriginalTemplate, BaseDtwTemplate
+from gaitmap_mad.stride_segmentation.dtw._base_dtw import BaseDtw
+from gaitmap_mad.stride_segmentation.dtw._dtw_templates import BarthOriginalTemplate, BaseDtwTemplate
 
 
 class BarthDtw(BaseDtw, BaseStrideSegmentation):
