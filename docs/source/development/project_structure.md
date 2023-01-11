@@ -33,50 +33,84 @@ This means specifically:
    separate methods, or even separate functions or classes.
 3. Following 2., each function/class should have one function and one function only.
    In the case where "one function" consist of multiple steps (e.g. event detection consists of HS-detection, 
-   TO-detection, MS-detection) and it makes sense to group them together to provide a easier interface, the individual 
-   functions should still be available to users to allow him to skip or modify steps as they desires.
+   TO-detection, MS-detection) and it makes sense to group them together to provide an easier interface, the individual 
+   functions should still be available to users to allow him to skip or modify steps as they desire.
 4. The library should not prevent users from "intentional stupidity".
-   For example, if users decide to apply a event detection method designed to only run on data from sensors attached to 
+   For example, if users decide to apply an event detection method designed to only run on data from sensors attached to 
    the shoe on data from a hip sensor, **let them**.
 5. Whenever possible the library should allow to provide native datatypes as outputs.
    Native datatypes in this case includes all the container objects Python supports (lists, dicts, etc.) and the base 
    datatypes of `numpy` and `pandas` (np.array, pd.DataFrame, pd.Series). Only if it improves usability and adds 
    significant value (either for understanding or manipulating the output), custom datatypes should be used.
-   One example of this would be a "Stride" dataype, as this would help to keep all relevant information together in one
-   place
-6. Following 5, if custom datatypes are used, functionality needs to exist to convert them into native types that 
-   contain all the information.
-   Ideally, it should be possible to perform a conversion in both ways.
-7. The library should be agnostic to sensor systems and should not contain any code that is highly specific to a certain
+   One example of that would be the `tpcp.Dataset` datatype used for high level pipelines.
+6. The library should be agnostic to sensor systems and should not contain any code that is highly specific to a certain
    IMU system. This means that loading and preprocessing should be handled by the user or other libraries.
+   However, gaitmap can provide utils to make preprocessing easier for users.
+   (Loading is out of scope, as to many data formats exist and it is not feasible to support all of them.)
 
 
 ## Code Structure
 
 ### Library Structure
 
-As the library aims to support multiple algorithms, each algorithms with similar function should be grouped into 
+For the `gaitmap` vs. `gaitmap_mad` discussion, see [here](gaitmap_mad.md).
+
+As the library aims to support multiple algorithms, each algorithm with similar function should be grouped into 
 individual modules/folders (e.g. Stride-Segmentation, Event Detection, Orientation Estimation, ...).
-Each algorithm should than be implemented in a separate file.
+Each algorithm should than be implemented in a separate file unless multiple algorithms are really tightly coupled 
+e.g. the scaler methods: `gaitmap/data_transform/_scaler.py`.
 If an algorithm requires large amount of code and multiple classes/functions, it can be refactored into its own
-submodule.
+submodule (for example see `gaitmap_mad/gaitmap_mad/stride_segmentation/hmm`)
+
+### Import Paths
+To ensure that users can use short import path, we discourage the import from the python files directly.
+Instead, new algorithms/functions should be added to the init of the parent folder to be accessible from there.
+The implementation file itself, should have a leading underscore, to mark it as private and discourage users from 
+importing from it.
+
+For example, the algorithm `HerzerEventDetection` is defined in `gaitmap/event_detection/_herzer_event_detection.py`.
+This means the recommended import should be `from gaitmap.event_detection import HerzerEventDetection`.
+To make that possible, `HerzerEventDetection` is imported in `gaitmap/event_detection/__init__.py`.
+
+In the respective `__init__` files, the `__all__` list should be used to allow for `*` imports without cluttering the 
+namespace.
+
+In general, we use absolute imports internally (instead of relative imports), even though it requires more typing.
+
+.. warning:: With absolute imports and the use of `__init__` imports, you can sometimes create circular dependencies.
+   E.g. when you want to import a function `a()` defined in `mod/_a.py` in `mod/_b.py` and `mod/_b.py` and `mod/_a.py`
+   are both imported in `mod/__init__.py` (as by convention explained above), you must import `c()` with its full 
+   internal path `from mod._c import c` instead of `from mod import c` to avoid circular imports.
+
+In case a single function from a external package is used, just import this function.
+In case multiple functions from an external package are used, import this package/module under a commonly used alias
+(e.g. `np` for numpy, `pd` for pandas, ...)
+
+### Algorithms with specific dependencies
+
+Some algorithms require specific dependencies, that are ot required by anything else.
+In this case, they should be made optional dependencies of gaitmap to reduce the number of dependencies for users.
+To make this possible, the algorithm should be implemented in a separate submodule 
+(e.g. `gaitmap_mad/gaitmap_mad/stride_segmentation/hmm`), that is not imported anywhere else in the library.
+
+In case, where only a few methods from a different library are required, it might also be feasible to just copy the
+required methods into the submodule and add a comment to the source of the code.
+Make sure to check the license of the original code and provide sufficient attribution.
+One example of this can be found in `gaitmap_mad/stride_segmentation/dtw/_vendored_tslearn.py`.
 
 ### Helper Functions and Utils
 
-Functions that can be reused across multiple algorithms of similar type should be placed in a module level `utils.py` 
-file (e.g. `stride_segmentation/utils.py`). Functions that are reusable across multiple modules should be placed in an
-appropriate file in the package level `utils` module (e.g. `modules/math_helper.py`).
+Functions that can be reused across multiple algorithms of similar type should be placed in a module level `_utils.py` 
+file (e.g. `stride_segmentation/_utils.py`). Functions that are reusable across multiple modules should be placed in an
+appropriate file in the package level `utils` module (e.g. `utils/_math_helper.py`).
+Utils are generally "private", but when you can imagine usecases where users might reasonably need to use them when 
+working with the library, you can expose them in the respective `__init__` files.
 
 ### Class Structure
 
 All larger algorithms should be represented by classes and not by functions for a couple of reasons that are explained 
 below.
-Further all main classes should adhere to the following structure.
-
-This structure is heavily inspired by the interface of `sklearn` and will follow the developer guide outlined 
-[here](https://scikit-learn.org/stable/developers/develop.html#apis-of-scikit-learn-objects) for the most part.
-Below the important points and differences are summarized.
-It is still recommended to read through the guide!
+See the [general guides in tpcp](https://tpcp.readthedocs.io/en/latest/guides/algorithms_pipelines_datasets.html).
 
 From the guide:
 
@@ -107,13 +141,12 @@ From the guide:
 
 Additions to the guide:
 
-- All algorithms classes must directly or indirectly inherit from `BaseAlgorithm`
+- All algorithms classes must directly or indirectly inherit from `tpcp.Algorithm`, and `gaitmap.base._BaseSerializable`
 - All classes should store the data (and other arguments) passed in the "action" step in the class object unless the 
   amount of data would result in an unreasonable performance issue.
   Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to 
   helper functions, that e.g. can visualize in and outputs.
   These parameters should be documented under "Other Parameters" to not clutter the docstring.
-- You must call `super().__init__()` in the init
 - Mutable defaults in the init are as always a bad idea, but in gaitmap we make specific exceptions.
   See the section on *Mutable defaults* below.
 - All methods should take care that they do not modify the original data passed to the function.
@@ -126,7 +159,7 @@ Additions to the guide:
   the interface. Remember to call respective `super` methods when required.
   The resulting class structure should look like this:
 ```
-BaseAlgorithm -> Basic setting of parameters
+tpcp.Algorithm/gaitmap.base._BaseSerializable -> Basic setting of parameters
 |
 Base<AlgorithmType> -> Basic interface to ensure all algos of the same type use the same input and outputs for their 
 |                      action methods
@@ -268,7 +301,7 @@ class RamppEventDetection(BaseEventDetection):
 
 ### Random and Initial State
 
-If any algorithms rely on random processes/operations, the random state should be configurable, by a optional kwarg in
+If any algorithms rely on random processes/operations, the random state should be configurable, by an optional kwarg in
 the `__init__` called `random_state`.
 We follow the [`sklearn` recommendations](https://scikit-learn.org/stable/glossary.html#term-random-state) on this.
 
@@ -278,37 +311,7 @@ argument.
 
 ### Mutable Defaults
 
-Mutable Defaults for functions or classes are a really bad idea in Python and can lead to
-[unexpected behaviour](https://stackoverflow.com/questions/1132941/least-astonishment-and-the-mutable-default-argument).
-Therefore, you should avoid them whenever possible, e.g. by using tuples instead of lists or tuples of tuples instead of
-dictionaries.
-If that is not possible it might be an option to provide a `None` or a similar object indicating *empty* and then create
-the actual "default" value inside the function or class.
-This is in general fine.
-
-However, in gaitmap we sometimes run into the situation that we pass one algorithm to another algorithm as default
-values.
-In these cases, seeing the algorithm with its default values right in the code and documentation is really nice.
-Therefore, we have a workaround implemented in gaitmap to handle these cases.
-Basically, you need to wrap the mutable parameter into a `default` call and make sure to call `super().__init()`, after
-you added all parameters to the object.
-
-```python
-from gaitmap.base import BaseEventDetection, BaseAlgorithm
-from gaitmap.event_detection import RamppEventDetection
-from gaitmap.utils._algo_helper import default
-
-class MyAlgorithm(BaseAlgorithm):
-    def __init__(self, normal_para: int = 3, mutable_default: BaseEventDetection = default(RamppEventDetection())):
-        self.normal_para = normal_para
-        self.mutable_default = mutable_default
-        super().__init__()
-```
-
-Under the hood, the `super().__init__()` call will scan all parameters that were added, and if it sees one marked as 
-default, it will replace it with a clone of itself.
-This basically creates a new version of the passed algorithm for every new instance instead of using the mutable default 
-over and over again.
+See [this guide in tpcp](https://tpcp.readthedocs.io/en/latest/guides/general_concepts.html#mutable-defaults).
 
 
 ## Code guidelines
@@ -330,11 +333,11 @@ These are documented in the linter config (`.prospector.yml`)
 
 We follow the naming conventions outlined in [PEP8](https://www.python.org/dev/peps/pep-0008/#naming-conventions).
 
-For algorithms (if not better name is available) we use `AuthorNameType` (e.g. `BarthEventDetection`).
+For algorithms (if no better name is available) we use `AuthorNameType` (e.g. `BarthEventDetection`).
 
 ### Documentation
 
-For documentation we follow [numpys guidelines](https://numpydoc.readthedocs.io/en/latest/format.html).
+For documentation, we follow [numpys guidelines](https://numpydoc.readthedocs.io/en/latest/format.html).
 If the datatype is already provided as TypeHint (see below) it does not need to be specified in the docstring again.
 However, it might be helpful to document additional type information (e.g. the shape of an array that can not be
 captured by the TypeHint)
@@ -342,7 +345,7 @@ captured by the TypeHint)
 All user-facing functions (all functions and methods that do not have a leading underscore) are expected to be properly
 and fully documented for potential users.
 All private functions are expected to be documented in a way that other developer can understand them.
-Additionally each module should have a docstring explaining its content.
+Additionally, each module should have a docstring explaining its content.
 If a module contains only one class this can a single sentence/word (e.g. `"""Event detection based on ... ."""`).
 
 ### Typehints
@@ -351,11 +354,3 @@ To provide a better developer experience the library should use
 [TypeHints](https://numpydoc.readthedocs.io/en/latest/format.html) where ever possible.
 
 Remember to use `np.ndarray` instead of `np.array` as type specification of numpy arrays.
-
-### Imports
-
-In case a single function from a external package is used, just import this function.
-In case multiple functions from an external package are used, import this package/module under a commonly used alias
-(e.g. `np` for numpy, `pd` for pandas, ...)
-
-For all package internal imports, use absolute imports.
