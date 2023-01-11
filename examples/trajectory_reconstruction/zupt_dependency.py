@@ -149,7 +149,8 @@ print(gs.best_score_)
 # And plot them
 import matplotlib.pyplot as plt
 
-plt.plot(results["param_zupt_method__inactive_signal_threshold"], -results["score"])
+result_df = pd.DataFrame(results)
+plt.plot(result_df["param_zupt_method__inactive_signal_threshold"], result_df["score"].abs())
 plt.xlabel("inactive_signal_threshold")
 plt.ylabel("abs(score)")
 plt.yscale("log")
