@@ -113,7 +113,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
         """
         with open_text(
-            "gaitmap_mad.stride_segmentation._dtw_templates",
+            "gaitmap_mad.stride_segmentation.dtw._dtw_templates",
             cast(str, self.template_file_name),
         ) as test_data:
             data = pd.read_csv(test_data, header=0)

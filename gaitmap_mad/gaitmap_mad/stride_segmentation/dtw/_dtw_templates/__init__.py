@@ -1,6 +1,6 @@
 """Helper and preconfigured templates to be used with the provided DTW based methods."""
 
-from gaitmap_mad.stride_segmentation._dtw_templates.templates import (
+from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
     BarthOriginalTemplate,
     BaseDtwTemplate,
     DtwTemplate,

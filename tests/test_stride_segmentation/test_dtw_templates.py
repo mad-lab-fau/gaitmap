@@ -86,7 +86,9 @@ class TestTemplateBaseClass:
 
 class TestBartTemplate:
     def test_load(self):
-        with open_text("gaitmap_mad.stride_segmentation._dtw_templates", "barth_original_template.csv") as test_data:
+        with open_text(
+            "gaitmap_mad.stride_segmentation.dtw._dtw_templates", "barth_original_template.csv"
+        ) as test_data:
             data = pd.read_csv(test_data, header=0)
 
         barth_instance = BarthOriginalTemplate()
