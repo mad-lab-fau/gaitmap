@@ -45,7 +45,7 @@ jobs:
         poetry install -E hmm
     - name: Linting
       run: |
-        poetry run doit -v 0 --continue format_check lint
+        poetry run poe check
     - name: Build Docs
       run: |
         poetry run poe check
