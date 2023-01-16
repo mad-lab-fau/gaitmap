@@ -22,7 +22,7 @@ from gaitmap.utils.datatype_helper import (
     VelocityList,
 )
 
-BaseType = TypeVar("BaseType", bound="_BaseSerializable")  # noqa: invalid-name
+BaseType = TypeVar("BaseType", bound="_BaseSerializable")  # pylint: disable=invalid-name
 
 
 def _hint_tuples(item):
@@ -43,7 +43,7 @@ class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # noqa: method-hidden
+    def default(self, o):  # pylint: disable=too-many-return-statements
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
@@ -57,7 +57,7 @@ class _CustomEncoder(json.JSONEncoder):
         if isinstance(o, pd.Series):
             return dict(_obj_type="Series", df=o.to_json(orient="split"))
         try:
-            from pomegranate.hmm import HiddenMarkovModel  # noqa: import-outside-toplevel
+            from pomegranate.hmm import HiddenMarkovModel  # pylint: disable=import-outside-toplevel
 
             if isinstance(o, HiddenMarkovModel):
                 warnings.warn(
@@ -83,7 +83,7 @@ class _CustomEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
+def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
     if "_gaitmap_obj" in json_obj:
         return _BaseSerializable._find_subclass(json_obj["_gaitmap_obj"])._from_json_dict(json_obj)
     if "_obj_type" in json_obj:
@@ -99,7 +99,7 @@ def _custom_deserialize(json_obj):  # noqa: too-many-return-statements
                 # Sometimes probabilities are zero which can lead to warnings when the log-probabilities are
                 # calculated.
                 # We ignore these warnings here to avoid clutter in the output.
-                from pomegranate.hmm import HiddenMarkovModel  # noqa: import-outside-toplevel
+                from pomegranate.hmm import HiddenMarkovModel  # pylint: disable=import-outside-toplevel
 
                 return HiddenMarkovModel.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":

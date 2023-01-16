@@ -1,10 +1,11 @@
 """A implementation of a PCA based sensor alignment to perform coordinate system rotations."""
 
-from typing import Dict, Optional, Sequence, TypeVar, Union
+from typing import Dict, Optional, Sequence, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 from sklearn.decomposition import PCA
+from typing_extensions import Self
 
 from gaitmap.base import BaseSensorAlignment
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -12,9 +13,6 @@ from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
 from gaitmap.utils.rotations import rotate_dataset
-
-Self = TypeVar("Self", bound="PcaAlignment")
-
 
 # TODO: Move `right_handed_cord` to general utils package
 
@@ -137,7 +135,7 @@ class PcaAlignment(BaseSensorAlignment):
         self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
 
-    def align(self: Self, data: SensorData, **kwargs) -> Self:
+    def align(self, data: SensorData, **kwargs) -> Self:
         """Align sensor data."""
         self.data = data
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")

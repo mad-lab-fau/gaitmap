@@ -11,7 +11,7 @@ from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_dat
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
 
-SENSOR_NAMES = Literal["acc", "gyr"]  # noqa: invalid-name
+SENSOR_NAMES = Literal["acc", "gyr"]  # pylint: disable=invalid-name
 
 
 def _validate_window(

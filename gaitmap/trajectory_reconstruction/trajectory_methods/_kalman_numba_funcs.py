@@ -70,7 +70,7 @@ def simple_navigation_equations(acc, gyro, orientation, position, velocity, samp
 
 
 @njit()
-def default_rts_kalman_forward_pass(  # noqa: too-many-statements, too-many-branches
+def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements
     accel,
     gyro,
     initial_orientation,

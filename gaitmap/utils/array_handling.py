@@ -275,8 +275,8 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
 
     This method iterates over the indices and adds the values to the array at the given indices using a logical or.
     """
-    for i in range(len(indices)):  # noqa: consider-using-enumerate
-        index = indices[i]
+    for i, idx in enumerate(indices):
+        index = idx
         val = bool_values[i]
         index = index[~np.isnan(index)]
         # perform logical or operation to combine all overlapping window results
@@ -375,12 +375,12 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
 
     for i in range(1, len(input_array)):
         if (
-            stack[-1][0]  # noqa: unsubscriptable-object
+            stack[-1][0]
             <= input_array[i][0]
-            <= (stack[-1][1] + gap_size)  # noqa: unsubscriptable-object
+            <= (stack[-1][1] + gap_size)
             <= (input_array[i][1] + gap_size)
         ):
-            stack[-1][1] = input_array[i][1]  # noqa: unsupported-assignment-operation
+            stack[-1][1] = input_array[i][1]
         else:
             stack.append(input_array[i])
 
