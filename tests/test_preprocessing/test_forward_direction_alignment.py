@@ -73,13 +73,13 @@ class TestForwardDirectionSignAlignment:
         """Test if value error is raised correctly if invalid ori_method class is passed."""
 
         with pytest.raises(ValueError, match=r".*The provided `ori_method` *"):
-            ForwardDirectionSignAlignment(ori_method="abc").align(1, 2)
+            ForwardDirectionSignAlignment(ori_method="abc").align(1, sampling_rate_hz=2)
 
     def test_invalid_pos_method(self):
         """Test if value error is raised correctly if invalid pos_method class is passed."""
 
         with pytest.raises(ValueError, match=r".*The provided `pos_method` *"):
-            ForwardDirectionSignAlignment(pos_method="abc").align(1, 2)
+            ForwardDirectionSignAlignment(pos_method="abc").align(1, sampling_rate_hz=2)
 
     def test_no_rotation(self, healthy_example_imu_data):
         """Test that no rotation is applied if the data is not rotated."""
