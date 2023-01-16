@@ -8,10 +8,10 @@ from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.exceptions import ValidationError
 
-_ALLOWED_FRAMES = ["any", "body", "sensor"]  # noqa: invalid-name
-_ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]  # noqa: invalid-name
-_ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]  # noqa: invalid-name
-_ALLOWED_TRAJ_LIST_TYPES = Literal["stride", "roi", "gs", "any_roi"]  # noqa: invalid-name
+_ALLOWED_FRAMES = ["any", "body", "sensor"]
+_ALLOWED_FRAMES_TYPE = Literal["any", "body", "sensor"]  # pylint: disable=invalid-name
+_ALLOWED_STRIDE_TYPE = Literal["any", "segmented", "min_vel", "ic"]  # pylint: disable=invalid-name
+_ALLOWED_TRAJ_LIST_TYPES = Literal["stride", "roi", "gs", "any_roi"]  # pylint: disable=invalid-name
 
 
 def _get_expected_dataset_cols(

@@ -131,8 +131,8 @@ def _simple_gyro_integration_series(gyro, initial_orientation, sampling_rate_hz)
     out = np.empty((len(gyro) + 1, 4))
     q = initial_orientation
     out[0] = q
-    for i in range(len(gyro)):  # noqa: consider-using-enumerate
-        qdot = rate_of_change_from_gyro(gyro[i], q)
+    for i, gyro_val in enumerate(gyro):
+        qdot = rate_of_change_from_gyro(gyro_val, q)
         # Integrate rate of change of quaternion to yield quaternion
         q += qdot / sampling_rate_hz
         q /= np.sqrt(np.sum(q**2))

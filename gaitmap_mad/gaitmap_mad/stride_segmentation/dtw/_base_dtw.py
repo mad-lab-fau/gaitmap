@@ -504,13 +504,13 @@ class BaseDtw(BaseAlgorithm):
 
     def _postprocess_matches(
         self,
-        data,  # noqa: unused-argument
-        paths: List,  # noqa: unused-argument
-        cost: np.ndarray,  # noqa: unused-argument
+        data,  # pylint: disable=unused-argument
+        paths: List,  # pylint: disable=unused-argument
+        cost: np.ndarray,  # pylint: disable=unused-argument
         matches_start_end: np.ndarray,
-        acc_cost_mat: np.ndarray,  # noqa: unused-argument
+        acc_cost_mat: np.ndarray,  # pylint: disable=unused-argument
         to_keep: np.ndarray,
-        memory: Memory,  # noqa: unused-argument
+        memory: Memory,  # pylint: disable=unused-argument
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 

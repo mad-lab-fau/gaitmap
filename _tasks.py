@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import toml
+
 HERE = Path(__file__).parent
 
 
@@ -62,3 +64,15 @@ def task_register_ipykernel():
             ["python", "-m", "ipykernel", "install", "--user", "--name", "gaitmap", "--display-name", "gaitmap"]
         ]
     }
+
+
+def task_bump_all_dev():
+    """Bump all dev dependencies."""
+    pyproject = toml.load(HERE.joinpath("pyproject.toml"))
+    try:
+        dev_dependencies = pyproject["tool"]["poetry"]["dev-dependencies"]
+    except KeyError:
+        dev_dependencies = pyproject["tool"]["poetry"]["group"]["dev"]["dependencies"]
+    dev_deps = dev_dependencies.keys()
+    new_dev_deps = [f"{dep}@latest" for dep in dev_deps]
+    subprocess.run(["poetry", "add", "--group", "dev", *new_dev_deps], shell=False, check=True)

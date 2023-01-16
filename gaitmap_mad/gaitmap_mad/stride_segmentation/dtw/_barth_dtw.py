@@ -236,7 +236,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
             # Late import to avoid circular import
-            from gaitmap.stride_segmentation._utils import snap_to_min  # noqa: import-outside-toplevel
+            from gaitmap.stride_segmentation._utils import snap_to_min  # pylint: disable=import-outside-toplevel
 
             matches_start_end = snap_to_min(
                 data[self.snap_to_min_axis].to_numpy(),

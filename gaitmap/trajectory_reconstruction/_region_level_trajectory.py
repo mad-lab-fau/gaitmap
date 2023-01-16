@@ -291,7 +291,8 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self.stride_event_list = stride_event_list
 
         self.estimate(data=data, regions_of_interest=regions_of_interest, sampling_rate_hz=sampling_rate_hz)
-        self.orientation_, self.position_, self.velocity_ = self.intersect(  # noqa: unbalanced-tuple-unpacking
+        # pylint: disable=unbalanced-tuple-unpacking
+        self.orientation_, self.position_, self.velocity_ = self.intersect(
             stride_event_list=stride_event_list, return_data=("orientation", "position", "velocity")
         )
         return self

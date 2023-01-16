@@ -12,7 +12,7 @@ from gaitmap.utils.consts import GRAV
 
 # supported metric functions
 _METRIC_FUNCTIONS = {"maximum": np.nanmax, "variance": np.nanvar, "mean": np.nanmean, "median": np.nanmedian}
-METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "squared_mean"]  # noqa: invalid-name
+METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "squared_mean"]  # pylint: disable=invalid-name
 
 
 def _window_apply_threshold(
