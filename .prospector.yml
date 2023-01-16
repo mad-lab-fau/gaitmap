@@ -4,7 +4,7 @@ doc-warnings: true
 ignore-paths:
   - docs
   - tests
-  - dodo.py
+  - _tasks.py
   - examples
   - example_data
 
@@ -15,6 +15,12 @@ pycodestyle:
     - E127
     - W391
     - E203 # ignoring white space before colon :
+
+mccabe:
+  disable:
+    # Disable complexity checks for now, as they seems to be no way to just disable the complexity check for a single
+    # function in the new prospector versions
+    - MC0001 # too complex
 
 pydocstyle:
   options:
@@ -35,9 +41,9 @@ pylint:
   options:
     max-line-length: 120
     variable-rgx: "[a-z_][a-z0-9_]{0,30}$"  # Allow for single letter variable names
-    argument-rgx: "[a-z_][a-z0-9_]{0,35}$"  # Allow for single letter argument names
+    argument-rgx: "[a-z_][a-z0-9_]{0,30}$"  # Allow for single letter argument names
     attr-rgx: "[a-z_][a-z0-9_]*$"  # Allow for single letter attribute names
-    class-rgx: "[A-Z_][a-zA-Z0-9]*$" # Allow for single letter class names
+    class-rgx: "[A-Z_][a-zA-Z0-9]*_?$" # Allow for single letter class names
   disable:
     - too-many-ancestors
     - too-few-public-methods
@@ -51,6 +57,5 @@ pylint:
     - too-many-lines
     - bad-whitespace
     - cyclic-import # ignored because of false positive due to Type hints
-    - consider-using-f-string # We are not against f-strings, but we do not want to enforce them either.
-    - too-many-return-statements
-
+    - import-error # We check if our dependencies are installed in the tests, no need for the linter
+    - django-not-available # Don't use it... don't know why it is checked in the first place

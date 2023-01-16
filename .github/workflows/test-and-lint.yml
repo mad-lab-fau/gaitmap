@@ -27,7 +27,7 @@ jobs:
         poetry install -E hmm
     - name: Testing
       run: |
-        poetry run doit test
+        poetry run poe test
 
   lint:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
         poetry run doit -v 0 --continue format_check lint
     - name: Build Docs
       run: |
-        poetry run doit docs
+        poetry run poe check
     - name: Save docs
       uses: actions/upload-artifact@v3
       with:
