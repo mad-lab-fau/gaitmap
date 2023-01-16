@@ -15,6 +15,7 @@ authors = [
 ]
 packages = [
   { include = "gaitmap" },
+    # TODO: Remove once gaitmap_mad is a seperate package
   { include = "gaitmap_mad", from = "gaitmap_mad"}
 ]
 
@@ -40,22 +41,22 @@ tpcp = ">=0.12"
 [tool.poetry.extras]
 hmm = ["pomegranate"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.18.0"
 pytest = "^6.2.1"
 pytest-cov = "^2.8.1"
 prospector = "^1.7.7"
 black = "^22.3.0"
 recommonmark = "^0.6.0"
 coverage = "^6.3.2"
-doit = "^0.32.0"
 ipykernel = "^5.2.0"
 IPython = "^7.13.0"
 ipympl = "^0.8.0"
 memory_profiler = "^0.57.0"
 toml = "^0.10.1"
-mypy = "^0.790"
 pytest-xdist = "^2.2.0"
 isort = "^5.9.3"
+# TODO: Reactivate once gaitmap_mad is a seperate package
 # gaitmap-mad = {path = "gaitmap_mad", develop = true}
 sphinx-gallery = "^0.11.0"
 pydata-sphinx-theme = "^0.9.0"
@@ -89,6 +90,19 @@ profile = "black"
 multi_line_output = 3
 line_length = 120
 skip_gitignore = true
+
+[tool.poe.tasks]
+_format_black = "black ."
+_format_isort = "isort ."
+format = ["_format_black", "_format_isort"]
+lint = { cmd = "prospector", help = "Lint all files with Prospector." }
+_check_black = "black . --check"
+_check_isort = "isort . --check"
+check = { sequence = ["_check_black", "_check_isort", "lint"], help = "Check all potential format and linting issues.", ignore_fail = false }
+test = { cmd = "pytest --cov=gaitmap --cov=gaitmap_mad --cov-report=term-missing --cov-report=xml", help = "Run Pytest with coverage." }
+docs = { "script" = "_tasks:task_docs()",  help = "Build the html docs using Sphinx." }
+register_jupyter = { "script" = "_tasks:task_register_ipykernel()",  help = "Register the gaitmap environment as a Jupyter kernel for testing." }
+bump_version = { "script" = "_tasks:task_update_version()" }
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
