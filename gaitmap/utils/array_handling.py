@@ -374,12 +374,7 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
     stack.append(input_array[0])
 
     for i in range(1, len(input_array)):
-        if (
-            stack[-1][0]
-            <= input_array[i][0]
-            <= (stack[-1][1] + gap_size)
-            <= (input_array[i][1] + gap_size)
-        ):
+        if stack[-1][0] <= input_array[i][0] <= (stack[-1][1] + gap_size) <= (input_array[i][1] + gap_size):
             stack[-1][1] = input_array[i][1]
         else:
             stack.append(input_array[i])
