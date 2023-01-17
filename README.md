@@ -98,13 +98,16 @@ when running `poetry install`.
 To run any of the tools required for the development workflow, use the doit commands:
 
 ```bash
-$ poetry run doit list
-docs                 Build the html docs using Sphinx.
-format               Reformat all files using black.
-format_check         Check, but not change, formatting using black.
-lint                 Lint all files with Prospector.
-register_ipykernel   Add a jupyter kernel with the gaitmap env to your local install.
-test                 Run Pytest with coverage.
-type_check           Type check with mypy.
-update_version       Bump the version in pyproject.toml and gaitmap.__init__ .
+$ poetry run poe
+...
+CONFIGURED TASKS
+  format            
+  lint              Lint all files with Prospector.
+  check             Check all potential format and linting issues.
+  test              Run Pytest with coverage.
+  docs              Build the html docs using Sphinx.
+  register_jupyter  Register the gaitmap environment as a Jupyter kernel for testing.
+  version           Bump version in all relevant places.
+  bump_dev          Update all dev dependencies to their @latest version.
+
 ```

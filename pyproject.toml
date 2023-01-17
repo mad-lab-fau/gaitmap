@@ -99,8 +99,8 @@ check = { sequence = ["_check_black", "_check_isort", "lint"], help = "Check all
 test = { cmd = "pytest --cov=gaitmap --cov=gaitmap_mad --cov-report=term-missing --cov-report=xml", help = "Run Pytest with coverage." }
 docs = { "script" = "_tasks:task_docs()",  help = "Build the html docs using Sphinx." }
 register_jupyter = { "script" = "_tasks:task_register_ipykernel()",  help = "Register the gaitmap environment as a Jupyter kernel for testing." }
-version = { "script" = "_tasks:task_update_version()" }
-bump_dev = { script = "_tasks:task_bump_all_dev()" }
+version = { "script" = "_tasks:task_update_version()", help = "Bump version in all relevant places." }
+bump_dev = { script = "_tasks:task_bump_all_dev()", help= "Update all dev dependencies to their @latest version."}
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

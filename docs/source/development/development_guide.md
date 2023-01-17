@@ -8,7 +8,7 @@ If you are looking for a higher level overview over the guiding ideas and struct
 
 ## Project Setup and Poetry
 
-*gaitmap* only supports Python 3.7 and newer.
+*gaitmap* only supports Python 3.8 and newer.
 First, install a compatible version of Python.
 If you do not want to modify your system installation of Python you can use [conda](https://docs.conda.io/en/latest/)
 or [pyenv](https://github.com/pyenv/pyenv).
@@ -16,10 +16,12 @@ However, there are some issues with using conda.
 Please, check the [trouble shooting guide](#trouble-shooting) below.
 
 *gaitmap* uses [poetry](https://python-poetry.org) to manage its dependencies.
+First install poetry `>=1.2`.
 Once you installed poetry, run the following commands to initialize a virtual env and install all development
 dependencies:
 
 ```bash
+poetry env use "path/to/python/you/want/to/use"
 poetry install
 ```
 This will create a new folder called `.venv` inside your project dir.
@@ -55,40 +57,35 @@ newer versions of already installed packages exist.
 
 ## Tools we are using
 
-To make it easier to run commandline tasks we use [doit](https://pydoit.org/contents.html) to provide a cross-platform 
-cli for common tasks.
+To make it easier to run commandline tasks we use [poethepoet](https://github.com/nat-n/poethepoet) to provide a 
+cross-platform cli for common tasks.
 All commands need to be executed in the `venv` created by poetry.
 
 To list the available tasks, run:
 
 ```bash
-$ poetry run doit list
-docs                 Build the html docs using Sphinx.
-format               Reformat all files using black.
-format_check         Check, but not change, formatting using black.
-lint                 Lint all files with Prospector.
-register_ipykernel   Add a jupyter kernel with the gaitmap env to your local install.
-test                 Run Pytest with coverage.
+$ poetry run poe
+...
+CONFIGURED TASKS
+  format            
+  lint              Lint all files with Prospector.
+  check             Check all potential format and linting issues.
+  test              Run Pytest with coverage.
+  docs              Build the html docs using Sphinx.
+  register_jupyter  Register the gaitmap environment as a Jupyter kernel for testing.
+  version           Bump version in all relevant places.
+  bump_dev          Update all dev dependencies to their @latest version.
+
 ```
 
 To run one of the commands execute (e.g. the `test` command):
 ```bash
-poetry run doit test
+poetry run poe test
 ```
 
-To execute `format`, `lint`, and `test` all together, run:
-```bash
-poetry run doit
-# or if you want less output
-petry run doit -v 0
-```
+**Protip**: If you installed poethepoet globally, you can skip the poetry run part at the beginning.
 
-Tou should run this as often as possible!
-At least once before any `git push`.
-
-**Protip**: If you do not want to type `poetry run` all the time, you can also activate the `venv` for your current
-terminal session using `poetry shell`.
-After this you can just type, for example, `doit test`.
+### Formatting and Linting
 
 To ensure that the whole library uses a consistent **format**, we use [black](https://github.com/psf/black) to
 autoformat our code.
@@ -102,36 +99,90 @@ For everything *black* can not handle, we us *prospector* to handle all other **
 For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
 To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
 
+To run formatting you can use
 
-## Testing and Test data
+```bash
+poetry run poe format
+```
 
-This library uses `pytest` for **testing**. Besides using the doit-command, you can also use an IDE integration
+and for linting you can run
+
+```bash
+poetry run poe lint
+```
+
+Tou should run this as often as possible!
+At least once before any `git push`.
+
+
+### Testing and Test data
+
+This library uses `pytest` for **testing**. Besides using the poe-command, you can also use an IDE integration
 available for most IDEs.
+From the general structure, each file has a corresponding `test_...` file within a similar sub structure.
 
-While all automated tests should go in the test folder, it might be helpful to create some external test script form 
-time to time.
-For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
-dependencies installed (see [IDE Config](#Configure-your-IDE)).
-Test data is available under `example_data` and you can import it directly using the `get_...` helper functions in 
-conftest:
+#### Common Tests
+
+For basically all new algorithms we want to test a set of basic functionalities.
+For this we have `tests.mixins.test_algorithm_mixin.TestAlgorithmMixin` (There is also a caching mixin 
+`TestCachingMixin` for algorithms that allow a `memory` parameter).
+To use the general mixin, create a new test class, specify the `algorithm_class`, the `after_action_instance` fixture
+and set `__test__ = True`.
+
+Below an example from `PcaAlignment`:
 
 ```python
-from tests.conftest import get_healthy_example_imu_data
+import pytest
+
+from gaitmap.preprocessing.sensor_alignment import PcaAlignment
+from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+
+class TestMetaFunctionality(TestAlgorithmMixin):
+    __test__ = True
+    
+    algorithm_class = PcaAlignment
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data) -> PcaAlignment:
+        pcaa = PcaAlignment()
+        pcaa.align(healthy_example_imu_data["left_sensor"].iloc[:10])
+        return pcaa
+```
+
+This will test basic things like cloning, and the `get_params` and `set_params` methods.
+
+#### Test Data
+
+Test data is available in the `example_data` folder.
+Within scripts or examples, the recommended way to access it is using the functions in `gaitmap.example_data`.
+
+```python
+from gaitmap.example_data import get_healthy_example_imu_data
 
 data = get_healthy_example_imu_data()
 ```
 
-If you can not import the tests folder, add the path to the gaitmap project folder (`gaitmap/`, **not** the package 
-folder `gaitmap/gaitmap`) to your path at the top of your file:
+Within tests you can also use the pytest fixtures defined `tests/conftest.py`.
 
+```python
+# Without import in any valid test file
+
+def test_myfunc(healthy_example_imu_data):
+    ...
 ```
-import sys
-sys.path.insert(0, "<path to the gaitmap project folder>")
-```
 
-The path can be relative to your current working directory.
+#### Testing Examples
 
-### Regression Tests
+For each mature feature their should also be a corresponding example in the `examples` folder.
+To make sure they work as expected, we also test them using `pytest`.
+For this create a new test function in `tests/test_examples/test_all_examples.py` and simply import the example
+within the respective function.
+This will execute the example and gives you access to the variables defined in the example.
+They can then be tested.
+Most of the time a regression/snapshot test is sufficient (see below).
+
+#### Snapshot Testing
+
 
 To prevent unintentional changes to the data, this project makes use of regression tests.
 These tests store the output of a function and compare the output of the same function at a later time to the stored
@@ -164,9 +215,15 @@ Make reasonable decisions when it comes to the datasize of this data.
 For more information see `tests/_regression_utils.py` or
 `tests.test_stride_segmentation.test_barth_dtw.TestRegressionOnRealData.test_real_data_both_feed_regression` for an
  example.
+
+#### Manual Testing
+While all automated tests should go in the test folder, it might be helpful to create some external test script from 
+time to time.
+For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
+dependencies installed (see [IDE Config](#Configure-your-IDE)).
+
  
 ## Configure your IDE
-
 
 #### Pycharm
 
@@ -184,7 +241,6 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 %autoreload 2
 ```
 
-
 #### Jupyter Lab/Notebooks
 
 While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
@@ -194,7 +250,7 @@ To set up a Jupyter environment that has gaitmap and all dependencies installed,
 ```
 # poetry install including root!
 poetry install
-poetry run doit register_ipykernel
+poetry run poe register_ipykernel
 ``` 
 
 After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
@@ -300,6 +356,13 @@ branch, from which new branches for the sub-features can be created.
 It will act as a develop branch for just this feature.
 Remember, to rebase this temporary dev branch onto master from time to time.
 
+.. note:: Due to the way gaitmap is build, it is often possible to develop new features (e.g. algorithms) without
+          touching the gaitmap source code.
+          Hence, it is recommended to devlop large features in a separate repository and only merge them into gaitmap
+          once you worked out all the kinks.
+          This avoids long living feature branches in gaitmap and allows you to develop your feature in a more flexible 
+          way.
+
 ### General Git Tips
 
 - Communicate with your Co-developers
@@ -318,6 +381,8 @@ Remember, to rebase this temporary dev branch onto master from time to time.
 If you have trouble installing `poetry` while using `zsh` as your shell, check this [issue](https://github.com/python-poetry/poetry/issues/507)
 
 ##### Installation issues while using `conda`
+
+.. note:: This might be outdated! If you run into any issues, please check google :)
 
 Setting up `poetry` with `conda` as the main Python version can be a little tricky.
 First, make sure that you installed poetry in the [recommended way](https://python-poetry.org/docs/#installation) using 
