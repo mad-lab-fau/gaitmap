@@ -36,6 +36,11 @@ class FilteredRamppEventDetection(RamppEventDetection):
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
+    detect_only
+        An optional tuple of strings that can be used to only detect a subset of events.
+        By default, all events ("ic", "tc", "min_vel") are detected.
+        If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
+        If "ic" is not detected, the `pre_ic` will also not be available in the output.
 
     Attributes
     ----------
@@ -90,6 +95,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
+        detect_only: Optional[Tuple[str, ...]] = None,
     ):
         self.ic_lowpass_filter = ic_lowpass_filter
         super().__init__(
@@ -97,6 +103,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
             enforce_consistency=enforce_consistency,
             ic_search_region_ms=ic_search_region_ms,
             min_vel_search_win_size_ms=min_vel_search_win_size_ms,
+            detect_only=detect_only,
         )
 
     def _get_detect_kwargs(self) -> Dict:  # noqa: no-self-use

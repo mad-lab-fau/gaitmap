@@ -33,6 +33,11 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
+    detect_only
+        An optional tuple of strings that can be used to only detect a subset of events.
+        By default, all events ("ic", "tc", "min_vel") are detected.
+        If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
+        If "ic" is not detected, the `pre_ic` will also not be available in the output.
 
     Attributes
     ----------
@@ -155,10 +160,11 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         min_vel_search_win_size_ms: float = 100,
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
+        detect_only: Optional[Tuple[str, ...]] = None,
     ):
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency)
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
 
     def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
         """Select the function to calculate the all events.
@@ -188,6 +194,7 @@ def _find_all_events(
     gyr: pd.DataFrame,
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
+    events: Tuple[str, ...],
     ic_search_region: Tuple[float, float],
     min_vel_search_win_size: int,
     sampling_rate_hz: float,
@@ -195,13 +202,18 @@ def _find_all_events(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"]
-    if gyr_ic_lowpass_filter is not None:
-        gyr_ml_filtered = gyr_ic_lowpass_filter.filter(
-            gyr_ml, sampling_rate_hz=sampling_rate_hz
-        ).filtered_data_.to_numpy()
+
+    if "ic" in events:
+        if gyr_ic_lowpass_filter is not None:
+            gyr_ml_filtered = gyr_ic_lowpass_filter.filter(
+                gyr_ml, sampling_rate_hz=sampling_rate_hz
+            ).filtered_data_.to_numpy()
+        else:
+            gyr_ml_filtered = gyr_ml.to_numpy()
     else:
-        gyr_ml_filtered = gyr_ml.to_numpy()
+        gyr_ml_filtered = None
     gyr = gyr.to_numpy()
+    gyr_ml = gyr_ml.to_numpy()
     acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
     ic_events = []
     tc_events = []
@@ -209,19 +221,20 @@ def _find_all_events(
     for _, stride in stride_list.iterrows():
         start = stride["start"]
         end = stride["end"]
-        gyr_sec = gyr[start:end]
-        gyr_ml_sec = gyr_ml.to_numpy()[start:end]
-        gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
-        acc_sec = acc_pa[start:end]
-        gyr_grad = np.gradient(gyr_ml_sec)
-        ic_events.append(start + _detect_ic(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
-        tc_events.append(start + _detect_tc(gyr_ml_sec))
-        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
+        if "ic" in events:
+            gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
+            acc_sec = acc_pa[start:end]
+            gyr_grad = np.gradient(gyr_ml[start:end])
+            ic_events.append(start + _detect_ic(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
+        if "tc" in events:
+            tc_events.append(start + _detect_tc(gyr_ml[start:end]))
+        if "min_vel" in events:
+            min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr[start:end], min_vel_search_win_size))
 
     return (
-        np.array(ic_events, dtype=float),
-        np.array(tc_events, dtype=float),
-        np.array(min_vel_events, dtype=float),
+        np.array(ic_events, dtype=float) if ic_events else None,
+        np.array(tc_events, dtype=float) if tc_events else None,
+        np.array(min_vel_events, dtype=float) if min_vel_events else None,
     )
 
 
