@@ -1,5 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Union, cast
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -27,6 +27,7 @@ from gaitmap.utils.consts import (
     SL_ADDITIONAL_COLS,
     SL_COLS,
     SL_INDEX,
+    SL_MINIMAL_COLS,
     TRAJ_TYPE_COLS,
 )
 from gaitmap.utils.exceptions import ValidationError
@@ -274,7 +275,10 @@ def is_sensor_data(
 
 
 def is_single_sensor_stride_list(
-    stride_list: SingleSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False
+    stride_list: SingleSensorStrideList,
+    stride_type: _ALLOWED_STRIDE_TYPE = "any",
+    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+    raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor stride list.
 
@@ -316,6 +320,10 @@ def is_single_sensor_stride_list(
     stride_type
         The expected stride type of this object.
         If this is "any" only the generally required columns are checked.
+    check_additional_cols
+        If True, the additional columns for the given `stride_type` are checked.
+        If False, only the minimal required columns for a certain stride_type are checked.
+        If a tuple of strings is passed, these columns are additionally checked to the minimal columns.
     raise_exception
         If True an exception is raised if the object does not pass the validation.
         If False, the function will return simply True or False.
@@ -338,8 +346,15 @@ def is_single_sensor_stride_list(
 
         stride_list = set_correct_index(stride_list, SL_INDEX)
 
+        if check_additional_cols is True:
+            additional_cols = SL_ADDITIONAL_COLS.get(stride_type, [])
+        elif check_additional_cols is False:
+            additional_cols = ()
+        else:
+            additional_cols = check_additional_cols
+
         # Check if it has the correct columns
-        all_columns = [*SL_COLS, *SL_ADDITIONAL_COLS.get(stride_type, [])]
+        all_columns = [*SL_COLS, *SL_MINIMAL_COLS.get(stride_type, []), *additional_cols]
         _assert_has_columns(stride_list, [all_columns])
 
         start_event = {"min_vel": "min_vel", "ic": "ic"}
@@ -368,7 +383,10 @@ def is_single_sensor_stride_list(
 
 
 def is_multi_sensor_stride_list(
-    stride_list: MultiSensorStrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any", raise_exception: bool = False
+    stride_list: MultiSensorStrideList,
+    stride_type: _ALLOWED_STRIDE_TYPE = "any",
+    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+    raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
 
@@ -384,6 +402,10 @@ def is_multi_sensor_stride_list(
     stride_type
         The expected stride type of this object.
         If this is "any" only the generally required columns are checked.
+    check_additional_cols
+        If True, the additional columns for the given `stride_type` are checked.
+        If False, only the minimal required columns are checked.
+        If a tuple of strings is passed, these columns are additionally checked to the minimal columns.
     raise_exception
         If True an exception is raised if the object does not pass the validation.
         If False, the function will return simply True or False.
@@ -408,7 +430,12 @@ def is_multi_sensor_stride_list(
 
     try:
         for k in stride_list.keys():
-            is_single_sensor_stride_list(stride_list[k], stride_type=stride_type, raise_exception=True)
+            is_single_sensor_stride_list(
+                stride_list[k],
+                stride_type=stride_type,
+                check_additional_cols=check_additional_cols,
+                raise_exception=True,
+            )
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
@@ -421,7 +448,11 @@ def is_multi_sensor_stride_list(
     return True
 
 
-def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = "any") -> Literal["single", "multi"]:
+def is_stride_list(
+    stride_list: StrideList,
+    stride_type: _ALLOWED_STRIDE_TYPE = "any",
+    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
     This function will try to check the input using
@@ -437,6 +468,10 @@ def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = 
     stride_type
         The expected stride type of this object.
         If this is "any" only the generally required columns are checked.
+    check_additional_cols
+        If True, the additional columns for the given `stride_type` are checked.
+        If False, only the minimal required columns are checked.
+        If a tuple of strings is passed, these columns are additionally checked to the minimal columns.
 
     Returns
     -------
@@ -451,13 +486,17 @@ def is_stride_list(stride_list: StrideList, stride_type: _ALLOWED_STRIDE_TYPE = 
 
     """
     try:
-        is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
+        is_single_sensor_stride_list(
+            stride_list, stride_type=stride_type, check_additional_cols=check_additional_cols, raise_exception=True
+        )
         return "single"
     except ValidationError as e:
         single_error = e
 
     try:
-        is_multi_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
+        is_multi_sensor_stride_list(
+            stride_list, stride_type=stride_type, check_additional_cols=check_additional_cols, raise_exception=True
+        )
         return "multi"
     except ValidationError as e:
         multi_error = e

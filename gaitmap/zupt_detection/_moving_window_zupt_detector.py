@@ -234,6 +234,18 @@ class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
 
         return self
 
+    def convert_to_windows(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+        """Convert the per sample ZUPTs to windows.
+
+        Returns
+        -------
+        self
+            The class instance with all result attributes populated
+
+        """
+        self.zupts_ = convert_to_windows(self.per_sample_zupts_)
+        return self
+
 
 class AredZuptDetector(NormZuptDetector):
     """The angular rate energy detector (ARED) for ZUPT detection.
