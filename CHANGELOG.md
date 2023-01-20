@@ -46,7 +46,8 @@ project.
 - Added new example to show how the Zupt Detector can be tuned to improve the performance of the trajectory estimation 
   kalman filter.
   (https://github.com/mad-lab-fau/gaitmap/pull/11)
-  
+- It is now possible to only detect a subset of the supported events of an event detection method using the 
+  `detect_only` parameter.
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
@@ -55,6 +56,8 @@ project.
 - The `zupts_` result of `RtsKalmanFilter` is not a pandas dataframe with `start` and `end` columns instead of a 
   np.ndarray.
   The content remains the same.
+- The `sampling_rate_hz` parameter of the `detect` method of the `EventDetection` algorithms is now keyword only. 
+  ()
 
 ### Removed
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
