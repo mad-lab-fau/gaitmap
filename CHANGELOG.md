@@ -48,6 +48,7 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/11)
 - It is now possible to only detect a subset of the supported events of an event detection method using the 
   `detect_only` parameter.
+  (https://github.com/mad-lab-fau/gaitmap/pull/12)
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
@@ -57,7 +58,7 @@ project.
   np.ndarray.
   The content remains the same.
 - The `sampling_rate_hz` parameter of the `detect` method of the `EventDetection` algorithms is now keyword only. 
-  ()
+  (https://github.com/mad-lab-fau/gaitmap/pull/12)
 
 ### Removed
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
