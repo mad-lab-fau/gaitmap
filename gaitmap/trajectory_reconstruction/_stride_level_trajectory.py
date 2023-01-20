@@ -161,7 +161,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self._validate_methods()
 
         dataset_type = is_sensor_data(data, frame="sensor")
-        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
+        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel", check_additional_cols=False)
 
         if dataset_type != stride_list_type:
             raise ValidationError(

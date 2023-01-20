@@ -48,6 +48,11 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
+    detect_only
+        An optional tuple of strings that can be used to only detect a subset of events.
+        By default, all events ("ic", "tc", "min_vel") are detected.
+        If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
+        If "ic" is not detected, the `pre_ic` will also not be available in the output.
 
 
     Attributes
@@ -191,12 +196,13 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=1, cutoff_freq_hz=4)),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
+        detect_only: Optional[Tuple[str, ...]] = None,
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         self.ic_lowpass_filter = ic_lowpass_filter
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency)
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
 
     def _get_detect_kwargs(self) -> Dict[str, int]:  # noqa: no-self-use
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
@@ -220,19 +226,21 @@ def _find_all_events(
     gyr: pd.DataFrame,
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
+    *,
+    events: Tuple[str, ...] = ("ic", "tc", "min_vel"),
     min_vel_search_win_size: int,
     mid_swing_peak_prominence: Union[Tuple[float, float], float],
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
     # inverting acc, as this algorithm was developed assuming a flipped axis like the original Rampp algorithm
     acc_pa = -acc["acc_pa"].to_numpy()
     ic_events = []
-    fc_events = []
+    tc_events = []
     min_vel_events = []
     for _, stride in stride_list.iterrows():
         start = stride["start"]
@@ -247,24 +255,27 @@ def _find_all_events(
         acc_sec = acc_pa[start:end]
         gyr_grad = np.gradient(gyr_ml_sec)
 
-        ics = _detect_ic(
-            gyr_ml_sec,
-            acc_sec,
-            gyr_grad,
-            peak_prominence_thresholds=mid_swing_peak_prominence,
-            n_considered_peaks=mid_swing_n_considered_peaks,
-            lowpass_filter=ic_lowpass_filter,
-            sampling_rate_hz=sampling_rate_hz,
-        )
+        if "ic" in events:
+            ics = _detect_ic(
+                gyr_ml_sec,
+                acc_sec,
+                gyr_grad,
+                peak_prominence_thresholds=mid_swing_peak_prominence,
+                n_considered_peaks=mid_swing_n_considered_peaks,
+                lowpass_filter=ic_lowpass_filter,
+                sampling_rate_hz=sampling_rate_hz,
+            )
 
-        ic_events.append(start + ics)
-        fc_events.append(tc_start + _detect_tc(gyr_ml_tc_sec))
-        min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
+            ic_events.append(start + ics)
+        if "tc" in events:
+            tc_events.append(tc_start + _detect_tc(gyr_ml_tc_sec))
+        if "min_vel" in events:
+            min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr_sec, min_vel_search_win_size))
 
     return (
-        np.array(ic_events, dtype=float),
-        np.array(fc_events, dtype=float),
-        np.array(min_vel_events, dtype=float),
+        np.array(ic_events, dtype=float) if ic_events else None,
+        np.array(tc_events, dtype=float) if tc_events else None,
+        np.array(min_vel_events, dtype=float) if min_vel_events else None,
     )
 
 

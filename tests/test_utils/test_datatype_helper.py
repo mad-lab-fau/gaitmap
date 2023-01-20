@@ -240,6 +240,21 @@ class TestIsSingleSensorStrideList:
 
         assert expected_outcome == out
 
+    @pytest.mark.parametrize("check_additional_cols", (True, False, ("ic",)))
+    def test_check_additional_columns(self, check_additional_cols):
+        # We construct a df that only has the minimal columns for min_vel
+        df = pd.DataFrame(columns=["s_id", "start", "end", "min_vel"])
+
+        if check_additional_cols is not False:
+            with pytest.raises(ValidationError):
+                is_single_sensor_stride_list(
+                    df, stride_type="min_vel", check_additional_cols=check_additional_cols, raise_exception=True
+                )
+        else:
+            is_single_sensor_stride_list(
+                df, stride_type="min_vel", check_additional_cols=check_additional_cols, raise_exception=True
+            )
+
     @pytest.mark.parametrize(
         "start, min_vel, expected",
         ((np.arange(10), np.arange(10), True), (np.arange(10), np.arange(10) + 1, False), ([], [], True)),

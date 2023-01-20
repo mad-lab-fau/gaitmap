@@ -25,6 +25,10 @@ SL_ADDITIONAL_COLS = {
     "segmented": ["ic", "min_vel", "tc"],
     "ic": ["ic", "min_vel", "tc"],
 }
+SL_MINIMAL_COLS = {
+    "min_vel": ["min_vel"],
+    "ic": ["ic"],
+}
 #: Expected Order of events based on the stride type
 SL_EVENT_ORDER = {
     "segmented": ["tc", "ic", "min_vel"],

@@ -2,6 +2,7 @@
 from typing import Tuple
 
 import numpy as np
+import pandas as pd
 from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
@@ -79,16 +80,19 @@ def _segmented_stride_list_to_min_vel_single_sensor(
     # Breaks in the stride list will be filtered later
     converted_stride_list["end"] = converted_stride_list[target_stride_type].shift(-1)
     if target_stride_type == "min_vel":
-        # pre-ic of each stride is the ic in the current segmented stride
-        converted_stride_list["pre_ic"] = converted_stride_list["ic"]
-        # ic of each stride is the ic in the subsequent segmented stride
-        converted_stride_list["ic"] = converted_stride_list["ic"].shift(-1)
-        # tc of each stride is the tc in the subsequent segmented stride
-        converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
+        if "ic" in converted_stride_list.columns:
+            # pre-ic of each stride is the ic in the current segmented stride
+            converted_stride_list["pre_ic"] = converted_stride_list["ic"]
+            # ic of each stride is the ic in the subsequent segmented stride
+            converted_stride_list["ic"] = converted_stride_list["ic"].shift(-1)
+        if "tc" in converted_stride_list.columns:
+            # tc of each stride is the tc in the subsequent segmented stride
+            converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
     elif target_stride_type == "ic":
-        # As the ic occurs after the tc in the segmented stride, new tc is the tc of the next stride
-        converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
+        if "tc" in converted_stride_list.columns:
+            # As the ic occurs after the tc in the segmented stride, new tc is the tc of the next stride
+            converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
     breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0
@@ -118,6 +122,8 @@ def enforce_stride_list_consistency(
     - min_vel: ["pre_ic", "min_vel", "tc", "ic"]
     - ic: ["ic", "min_vel", "tc"]
 
+    If only a subset of the required events exists, only the order of the existing events is checked.
+
     Parameters
     ----------
     stride_list
@@ -142,6 +148,15 @@ def enforce_stride_list_consistency(
     if check_stride_list is True:
         is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
     order = SL_EVENT_ORDER[stride_type]
+
+    order = [c for c in order if c in stride_list.columns]
+
+    if len(order) == 0:
+        raise ValueError("No valid events found in the stride list.")
+
+    if len(order) == 1:
+        # only one event, no need to check order
+        return stride_list, pd.DataFrame(columns=stride_list.columns)
 
     # Note: the following also drops strides that contain NaN for any event
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])

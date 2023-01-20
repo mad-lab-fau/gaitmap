@@ -26,7 +26,7 @@ class MetaTestConfig:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = HerzerEventDetection()
-        ed.detect(data_left, stride_list_left, 204.8)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
         return ed
 
 
@@ -48,7 +48,7 @@ class TestEventDetectionHerzer:
         )
 
         ed = HerzerEventDetection()
-        ed.detect(data, healthy_example_stride_borders, 204.8)
+        ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
@@ -69,7 +69,7 @@ class TestEventDetectionHerzer:
         with patch(
             "gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func
         ) as mock:
-            ed.detect(data_left, stride_list_left, 204.8)
+            ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
         assert mock.call_count == output
 
@@ -83,7 +83,7 @@ class TestEventDetectionHerzer:
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
 
         ed = HerzerEventDetection(enforce_consistency=enforce_consistency)
-        ed.detect(data_left, stride_list_left, 204.8)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
         assert hasattr(ed, "min_vel_event_list_") == output
 
@@ -101,7 +101,7 @@ class TestEventDetectionHerzer:
         }
 
         ed = HerzerEventDetection()
-        ed.detect(data_dict, stride_list_dict, 204.8)
+        ed.detect(data_dict, stride_list_dict, sampling_rate_hz=204.8)
 
         assert list(datatype_helper.get_multi_sensor_names(ed.min_vel_event_list_)) == dict_keys
         assert list(datatype_helper.get_multi_sensor_names(ed.segmented_event_list_)) == dict_keys
@@ -113,7 +113,7 @@ class TestEventDetectionHerzer:
         )
 
         ed_df = HerzerEventDetection()
-        ed_df.detect(data, healthy_example_stride_borders, 204.8)
+        ed_df.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         dict_keys = ["l", "r"]
         data_dict = {dict_keys[0]: data["left_sensor"], dict_keys[1]: data["right_sensor"]}
@@ -123,7 +123,7 @@ class TestEventDetectionHerzer:
         }
 
         ed_dict = HerzerEventDetection()
-        ed_dict.detect(data_dict, stride_list_dict, 204.8)
+        ed_dict.detect(data_dict, stride_list_dict, sampling_rate_hz=204.8)
 
         assert_frame_equal(ed_df.min_vel_event_list_["left_sensor"], ed_dict.min_vel_event_list_["l"])
         assert_frame_equal(ed_df.min_vel_event_list_["right_sensor"], ed_dict.min_vel_event_list_["r"])
@@ -133,7 +133,7 @@ class TestEventDetectionHerzer:
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = HerzerEventDetection()
         with pytest.raises(ValidationError) as e:
-            ed.detect(data, healthy_example_stride_borders, 204.8)
+            ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         assert "The passed object appears to be neither single- or multi-sensor data" in str(e)
 
@@ -144,7 +144,7 @@ class TestEventDetectionHerzer:
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = HerzerEventDetection(min_vel_search_win_size_ms=5000)
         with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is*"):
-            ed.detect(data_left, stride_list_left, 204.8)
+            ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
     def test_input_stride_list_size_one(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test if gait event detection also works with stride list of length 1"""
@@ -153,7 +153,7 @@ class TestEventDetectionHerzer:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = HerzerEventDetection()
-        ed.detect(data_left, stride_list_left, 204.8)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
         # per default min_vel_event_list_ has 6 columns
         assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 6)
         # per default segmented_event_list_ has 5 columns
@@ -167,7 +167,7 @@ class TestEventDetectionHerzer:
         # switch s_ids in stride list to random numbers
         stride_list_left["s_id"] = random.sample(range(1000), stride_list_left["s_id"].size)
         ed = HerzerEventDetection()
-        ed.detect(data_left, stride_list_left, 204.8)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
         # Check that all of the old stride ids are still in the new one
         assert np.all(ed.min_vel_event_list_.index.isin(stride_list_left["s_id"]))
@@ -188,7 +188,7 @@ class TestEventDetectionHerzer:
         stride_list_left = healthy_example_stride_borders
         ed = HerzerEventDetection()
         with pytest.raises(ValidationError):
-            ed.detect(data_left, 204.8, stride_list_left)
+            ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
     def test_multi_data_single_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
         """Test correct error for combination of multi sensor data set and single sensor stride list"""
@@ -197,4 +197,34 @@ class TestEventDetectionHerzer:
         stride_list_left = healthy_example_stride_borders
         ed = HerzerEventDetection()
         with pytest.raises(ValidationError):
-            ed.detect(data_left, 204.8, stride_list_left)
+            ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
+
+    @pytest.mark.parametrize(
+        "detect_only",
+        [
+            ("min_vel",),
+            ("ic",),
+            ("tc",),
+            ("min_vel", "ic"),
+            ("ic", "tc"),
+        ],
+    )
+    def test_detect_only(self, detect_only, healthy_example_imu_data, healthy_example_stride_borders):
+        """Test if only the specified events are detected"""
+        data_left = healthy_example_imu_data["left_sensor"]
+        data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
+        stride_list_left = healthy_example_stride_borders["left_sensor"]
+        ed = HerzerEventDetection(detect_only=detect_only)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
+
+        if "ic" in detect_only:
+            expected_min_vel = ("pre_ic", *detect_only)
+        else:
+            expected_min_vel = detect_only
+
+        if "min_vel" in detect_only:
+            assert set(ed.min_vel_event_list_.columns) == {"start", "end", *expected_min_vel}
+        else:
+            assert hasattr(ed, "min_vel_event_list_") == False
+
+        assert set(ed.segmented_event_list_.columns) == {"start", "end", *detect_only}
