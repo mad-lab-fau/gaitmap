@@ -82,10 +82,10 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Has
     >>> # This raises no error, as df contains all columns of the second set
 
     """
-    columns_sets = [set(col_set) for col_set in columns_sets]
+    columns_sets_as_set = [set(col_set) for col_set in columns_sets]
     columns = df.columns
     result = False
-    for col_set in columns_sets:
+    for col_set in columns_sets_as_set:
         result = result or all(v in columns for v in col_set)
 
     if result is False:
