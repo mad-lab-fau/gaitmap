@@ -1,6 +1,6 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ from gaitmap.utils.stride_list_conversion import (
 class _EventDetectionMixin:
     memory: Optional[Memory]
     enforce_consistency: bool
+    detect_only: Optional[Tuple[str, ...]]
 
     min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
     segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
@@ -39,10 +40,14 @@ class _EventDetectionMixin:
     stride_list: pd.DataFrame
 
     def __init__(
-        self, memory: Optional[Memory] = None, enforce_consistency: bool = True,
+        self,
+        memory: Optional[Memory] = None,
+        enforce_consistency: bool = True,
+        detect_only: Optional[Tuple[str, ...]] = None,
     ):
         self.memory = memory
         self.enforce_consistency = enforce_consistency
+        self.detect_only = detect_only
 
     def detect(self, data: SensorData, stride_list: StrideList, *, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
@@ -83,19 +88,26 @@ class _EventDetectionMixin:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor], stride_list[sensor], detect_kwargs=detect_kwargs, memory=self.memory,
+                    data[sensor],
+                    stride_list[sensor],
+                    detect_kwargs=detect_kwargs,
+                    memory=self.memory,
                 )
             results = invert_result_dictionary(results_dict)
 
         # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
         # and can not be used for anything anyway
         if not self.enforce_consistency:
-            del results["min_vel_event_list"]
+            results.pop("min_vel_event_list", None)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
     def _detect_single_dataset(
-        self, data: pd.DataFrame, stride_list: pd.DataFrame, detect_kwargs: Dict[str, Any], memory: Memory,
+        self,
+        data: pd.DataFrame,
+        stride_list: pd.DataFrame,
+        detect_kwargs: Dict[str, Any],
+        memory: Memory,
     ) -> Dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         if memory is None:
@@ -104,22 +116,25 @@ class _EventDetectionMixin:
         acc = data[BF_ACC]
         gyr = data[BF_GYR]
 
+        events = self.detect_only or ("ic", "tc", "min_vel")
+
         stride_list = set_correct_index(stride_list, SL_INDEX)
 
         # find events in all segments
         event_detection_func = self._select_all_event_detection_method()
         event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, **detect_kwargs)
+        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, events=events, **detect_kwargs)
 
         # build first dict / df based on segment start and end
         segmented_event_list = {
             "s_id": stride_list.index,
             "start": stride_list["start"],
             "end": stride_list["end"],
-            "ic": ic,
-            "tc": tc,
-            "min_vel": min_vel,
         }
+        for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel)):
+            if event in events:
+                segmented_event_list[event] = event_list
+
         segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
 
         if self.enforce_consistency:
@@ -128,11 +143,17 @@ class _EventDetectionMixin:
                 segmented_event_list, stride_type="segmented", check_stride_list=False
             )
 
+        if "min_vel" not in events:
+            return {"segmented_event_list": segmented_event_list}
+
+        # convert to min_vel event list
         min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
             segmented_event_list, target_stride_type="min_vel"
         )
 
-        min_vel_event_list = min_vel_event_list[["start", "end", "ic", "tc", "min_vel", "pre_ic"]]
+        output_order = [c for c in ["start", "end", "ic", "tc", "min_vel", "pre_ic"] if c in min_vel_event_list.columns]
+
+        min_vel_event_list = min_vel_event_list[output_order]
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 
