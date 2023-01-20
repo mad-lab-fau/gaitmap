@@ -21,7 +21,7 @@ class MetaTestConfig:
         # only use the first entry of the stride list
         stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
         ed = FilteredRamppEventDetection()
-        ed.detect(data_left, stride_list_left, 204.8)
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
         return ed
 
 
@@ -43,9 +43,9 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
         )
 
         ed = self.algorithm_class()
-        ed.detect(data, healthy_example_stride_borders, 204.8)
+        ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
         rampp_ed = RamppEventDetection()
-        rampp_ed.detect(data, healthy_example_stride_borders, 204.8)
+        rampp_ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         for sensor in ("left_sensor", "right_sensor"):
             assert_frame_equal(ed.segmented_event_list_[sensor], rampp_ed.segmented_event_list_[sensor])
@@ -58,7 +58,7 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
         filter = ButterworthFilter(*filter_paras)
 
         ed = self.algorithm_class(ic_lowpass_filter=filter)
-        ed.detect(data, healthy_example_stride_borders, 204.8)
+        ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         assert ed._get_detect_kwargs()["gyr_ic_lowpass_filter"] == filter
         assert ed._get_detect_kwargs()["sampling_rate_hz"] == 204.8
