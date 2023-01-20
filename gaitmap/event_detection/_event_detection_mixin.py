@@ -39,14 +39,12 @@ class _EventDetectionMixin:
     stride_list: pd.DataFrame
 
     def __init__(
-        self,
-        memory: Optional[Memory] = None,
-        enforce_consistency: bool = True,
+        self, memory: Optional[Memory] = None, enforce_consistency: bool = True,
     ):
         self.memory = memory
         self.enforce_consistency = enforce_consistency
 
-    def detect(self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
+    def detect(self, data: SensorData, stride_list: StrideList, *, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
 
         Parameters
@@ -85,10 +83,7 @@ class _EventDetectionMixin:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
-                    data[sensor],
-                    stride_list[sensor],
-                    detect_kwargs=detect_kwargs,
-                    memory=self.memory,
+                    data[sensor], stride_list[sensor], detect_kwargs=detect_kwargs, memory=self.memory,
                 )
             results = invert_result_dictionary(results_dict)
 
@@ -100,11 +95,7 @@ class _EventDetectionMixin:
         return self
 
     def _detect_single_dataset(
-        self,
-        data: pd.DataFrame,
-        stride_list: pd.DataFrame,
-        detect_kwargs: Dict[str, Any],
-        memory: Memory,
+        self, data: pd.DataFrame, stride_list: pd.DataFrame, detect_kwargs: Dict[str, Any], memory: Memory,
     ) -> Dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         if memory is None:
@@ -164,10 +155,9 @@ def _detect_min_vel_gyr_energy(gyr: np.ndarray, min_vel_search_win_size: int) ->
     energy = norm(gyr, axis=-1) ** 2
     if min_vel_search_win_size >= len(energy):
         raise ValueError(
-            f"min_vel_search_win_size_ms is {min_vel_search_win_size}, but gyr data"
-            f"has only {len(gyr)} samples. The search window should roughly be 100ms"
-            " and the stride time must be larger. If the stride is shorter, something"
-            " went wrong with stride segmentation."
+            f"min_vel_search_win_size_ms is {min_vel_search_win_size}, but gyr data has only {len(gyr)} samples. "
+            "The search window should roughly be 100ms and the stride time must be larger. "
+            "If the stride is shorter, something went wrong with stride segmentation."
         )
     energy = sliding_window_view(energy, window_length=min_vel_search_win_size, overlap=min_vel_search_win_size - 1)
     # find window with lowest summed energy
