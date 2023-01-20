@@ -220,6 +220,39 @@ class TestSpatialParameterCalculation:
         for sensor in t.sole_angle_course_.values():
             assert len(sensor) == len(single_sensor_orientation_list)
 
+    @pytest.mark.parametrize(
+        "exclude, expected_missing",
+        [
+            (("ic", "pre_ic"), ["ic_angle", "gait_velocity"]),
+            (("tc",), ["tc_angle"]),
+            (("ic", "pre_ic", "tc"), ["ic_angle", "tc_angle", "gait_velocity"]),
+        ],
+    )
+    def test_partial_info(
+        self,
+        exclude,
+        expected_missing,
+        single_sensor_stride_list,
+        single_sensor_position_list,
+        single_sensor_orientation_list,
+    ):
+        """Test that it is possible to calculate spatial parameters with partial information."""
+        stride_list = single_sensor_stride_list.drop(list(exclude), axis=1)
+        stride_events_list = {"sensor1": stride_list, "sensor2": stride_list}
+        position_list = {"sensor1": single_sensor_position_list, "sensor2": single_sensor_position_list}
+        orientation_list = {"sensor1": single_sensor_orientation_list, "sensor2": single_sensor_orientation_list}
+        t = SpatialParameterCalculation()
+        t.calculate(stride_events_list, position_list, orientation_list, 100)
+        assert isinstance(t.parameters_, dict)
+        assert set(t.parameters_.keys()) == {"sensor1", "sensor2"}
+        for sensor in t.parameters_.values():
+            assert set(sensor.columns) == set(self.parameters) - set(expected_missing)
+            assert len(sensor) == len(single_sensor_stride_list)
+        assert isinstance(t.sole_angle_course_, dict)
+        assert set(t.sole_angle_course_.keys()) == {"sensor1", "sensor2"}
+        for sensor in t.sole_angle_course_.values():
+            assert len(sensor) == len(single_sensor_orientation_list)
+
 
 class TestSpatialParameterRegression:
     def test_regression_on_example_data(
