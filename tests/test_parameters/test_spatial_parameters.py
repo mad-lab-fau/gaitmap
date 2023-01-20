@@ -247,6 +247,7 @@ class TestSpatialParameterCalculation:
             assert set(sensor.columns) == set(self.parameters) - set(expected_missing)
             assert len(sensor) == len(single_sensor_stride_list)
 
+
 class TestSpatialParameterRegression:
     def test_regression_on_example_data(
         self, healthy_example_orientation, healthy_example_position, healthy_example_stride_events, snapshot
