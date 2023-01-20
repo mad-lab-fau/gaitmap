@@ -124,6 +124,7 @@ To avoid confusion and signal this change, this is a new major version.
   Further, all templates now use the new data transforms instead of a fixed scaling factor.
   In combination, it should be much easier to create new templates and use more complex data normalisations.
   (https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/merge_requests/149)
+- Spatial gait parameters can be calculated, even if some gait parameters are missing.
 
 ### Removed
 

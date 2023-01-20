@@ -1,4 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
+import warnings
 from typing import Dict, Tuple, TypeVar, Union
 
 import numpy as np
@@ -194,7 +195,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.positions = positions
         self.orientations = orientations
         self.sampling_rate_hz = sampling_rate_hz
-        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
+        # We don't check what type of stride list we have, as we check for each parameter, if it can be calculated
+        # with the provided information.
+        stride_list_type = is_stride_list(stride_event_list, stride_type="any")
         position_list_type = is_position_list(positions, position_list_type="stride")
         orientation_list_type = is_orientation_list(orientations, orientation_list_type="stride")
         if not stride_list_type == position_list_type == orientation_list_type:
@@ -246,33 +249,38 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         orientations = set_correct_index(orientations, GF_INDEX)[GF_ORI]
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
-        stride_length_ = _calc_stride_length(positions)
-        gait_velocity_ = _calc_gait_velocity(
-            stride_length_, _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
-        )
-        arc_length_ = _calc_arc_length(positions)
-        turning_angle_ = _calc_turning_angle(orientations)
-        max_sensor_lift_ = _calc_max_sensor_lift(positions)
-        max_lateral_excursion_ = _calc_max_lateral_excursion(positions)
+        stride_parameter_dict = {}
 
-        angle_course_ = _compute_sole_angle_course(orientations)
-        ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
-        tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype(int)
-        ic_angle_ = _get_angle_at_index(angle_course_, ic_relative)
-        tc_angle_ = _get_angle_at_index(angle_course_, tc_relative)
+        stride_parameter_dict["stride_length"] = _calc_stride_length(positions)
+        if "ic" in stride_event_list.columns and "pre_ic" in stride_event_list.columns:
+            stride_parameter_dict["gait_velocity"] = _calc_gait_velocity(
+                stride_parameter_dict["stride_length"],
+                _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
+            )
+        else:
+            warnings.warn("Gait velocity could not be calculated as IC and pre-IC events are not available.")
 
-        stride_parameter_dict = {
-            "stride_length": stride_length_,
-            "gait_velocity": gait_velocity_,
-            "ic_angle": ic_angle_,
-            "tc_angle": tc_angle_,
-            "turning_angle": turning_angle_,
-            "arc_length": arc_length_,
-            "max_sensor_lift": max_sensor_lift_,
-            "max_lateral_excursion": max_lateral_excursion_,
-        }
+        angle_course = _compute_sole_angle_course(orientations)
+
+        if "ic" in stride_event_list.columns:
+            ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
+            stride_parameter_dict["ic_angle"] = _get_angle_at_index(angle_course, ic_relative)
+        else:
+            warnings.warn("IC angle could not be calculated as IC event is not available.")
+
+        if "tc" in stride_event_list.columns:
+            tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype(int)
+            stride_parameter_dict["tc_angle"] = _get_angle_at_index(angle_course, tc_relative)
+        else:
+            warnings.warn("TC angle could not be calculated as TC event is not available.")
+
+        stride_parameter_dict["turning_angle"] = _calc_turning_angle(orientations)
+        stride_parameter_dict["arc_length"] = _calc_arc_length(positions)
+        stride_parameter_dict["max_sensor_lift"] = _calc_max_sensor_lift(positions)
+        stride_parameter_dict["max_lateral_excursion"] = _calc_max_lateral_excursion(positions)
+
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
-        return parameters_, angle_course_
+        return parameters_, angle_course
 
     def _calculate_multiple_sensor(
         self,
@@ -323,7 +331,7 @@ def _calc_gait_velocity(stride_length: pd.Series, stride_time: pd.Series) -> pd.
     return stride_length / stride_time
 
 
-def _get_angle_at_index(angle_course: np.ndarray, index_per_stride: pd.Series) -> pd.Series:
+def _get_angle_at_index(angle_course: pd.Series, index_per_stride: pd.Series) -> pd.Series:
     indexer = pd.MultiIndex.from_frame(index_per_stride.reset_index())
     return angle_course[indexer].reset_index(level=1, drop=True)
 
