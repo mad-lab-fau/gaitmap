@@ -3,12 +3,14 @@
 NOTE: I decided not the check every single error value and trust that the internal functions (as we are just calling
 pandas functions) handle calculation of the error correctly.
 """
+import doctest
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.evaluation_utils import calculate_parameter_errors
+from gaitmap.evaluation_utils import calculate_parameter_errors, parameter_errors
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -165,10 +167,6 @@ class TestCalculateParameterErrors:
                 assert_array_equal(
                     np.round(output_normal[sensor_name]["param"].loc[error_type], 5), expectation[error_type]
                 )
-                # assert_array_equal(
-                #     np.round(output_pretty[sensor_name]["param"].loc[_get_pretty_counterpart(error_type)], 5),
-                #     expectation[error_type],
-                # )
 
     @pytest.mark.parametrize(
         "input_param,ground_truth,expectation",
@@ -283,3 +281,7 @@ class TestCalculateParameterErrors:
             assert param2.loc["n_common"] == 4
             assert param2.loc["n_additional_reference"] == 1
             assert param2.loc["n_additional_predicted"] == 0
+
+    def test_doctest(self):
+        doctest_results = doctest.testmod(m=parameter_errors)
+        assert doctest_results.failed == 0

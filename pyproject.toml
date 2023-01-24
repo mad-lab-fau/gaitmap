@@ -35,9 +35,12 @@ scikit-learn = ">=1.0.1"
 # This version of pomegranate does not support Python 3.10, unfortunately
 pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
 tpcp = ">=0.12"
+pingouin = {version = "^0.5.3", optional = true}
 
 [tool.poetry.extras]
 hmm = ["pomegranate"]
+stats = ["pingouin"]
+all = ["pomegranate", "pingouin"]
 
 [tool.poetry.group.dev.dependencies]
 poethepoet = "^0.18.1"
