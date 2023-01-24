@@ -49,6 +49,8 @@ project.
 - It is now possible to only detect a subset of the supported events of an event detection method using the 
   `detect_only` parameter.
   (https://github.com/mad-lab-fau/gaitmap/pull/12)
+- The function `calculate_parameter_errors` now also outputs the number of strides used for matching per parameter.
+  (https://github.com/mad-lab-fau/gaitmap/pull/13)
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
@@ -59,6 +61,10 @@ project.
   The content remains the same.
 - The `sampling_rate_hz` parameter of the `detect` method of the `EventDetection` algorithms is now keyword only. 
   (https://github.com/mad-lab-fau/gaitmap/pull/12)
+- For the function `calculate_parameter_errors` the naming of ground truth was changed to reference and input to 
+  predicted.
+  This change requires updating the function call in your code.
+  (https://github.com/mad-lab-fau/gaitmap/pull/13)
 
 ### Removed
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
