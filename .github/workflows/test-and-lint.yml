@@ -24,7 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry config virtualenvs.in-project true
-        poetry install -E hmm
+        poetry install -E all
     - name: Testing
       run: |
         poetry run poe test
@@ -42,7 +42,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry
         poetry config virtualenvs.in-project true
-        poetry install -E hmm
+        poetry install -E all
     - name: Linting
       run: |
         poetry run poe check
