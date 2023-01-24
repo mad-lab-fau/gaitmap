@@ -30,8 +30,8 @@ def _get_pretty_counterpart(normal_error):
         "abs_error_std": "absolute error standard deviation",
         "max_abs_error": "maximal absolute error",
         "n_common": "number common entries",
-        "n_additional_ground_truth": "number additional entries ground truth",
-        "n_additional_input": "number of additional entries input",
+        "n_additional_reference": "number additional entries ground truth",
+        "n_additional_predicted": "number of additional entries input",
     }
 
     return temp[normal_error]
@@ -44,43 +44,43 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], []),
                 _create_valid_input(["param"], []),
-                "No common strides are found between input and reference!",
+                "No common strides are found between predicted and reference!",
             ),
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
-                'Inputs and reference need to have either an index or a column named "s_id" or "stride id"',
+                'Predicted and reference need to have either an index or a column named "s_id" or "stride id"',
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["1"]),
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["2"]),
-                "The input and reference do not have any common sensors",
+                "The predicted values and the reference do not have any common sensors",
             ),
             (
                 _create_valid_input(["param"], []),
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["2"]),
-                "Input and reference must be of the same type.",
+                "Predicted and reference must be of the same type.",
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["1"]),
                 _create_valid_input(["not_param"], [[1]], is_dict=True, sensors=["1"]),
-                "For sensor 1 no common parameter columns are found between input and reference.",
+                "For sensor 1 no common parameter columns are found between predicted and reference.",
             ),
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], [4, 6, 5]], is_dict=True, sensors=["1", "2"]),
-                "For sensor 2 no common strides are found between input and reference!",
+                "For sensor 2 no common strides are found between predicted and reference!",
             ),
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
-                "For sensor 2 no common strides are found between input and reference!",
+                "For sensor 2 no common strides are found between predicted and reference!",
             ),
         ],
     )
     def test_invalid_input(self, input_param, ground_truth, expected_error):
         with pytest.raises(ValidationError) as e:
-            calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
+            calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
 
         assert expected_error in str(e)
 
@@ -118,9 +118,9 @@ class TestCalculateParameterErrors:
     )
     def test_valid_single_sensor_input(self, input_param, ground_truth, expectation):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output_normal = calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
+        output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
         output_pretty = calculate_parameter_errors(
-            input_parameter=input_param, ground_truth_parameter=ground_truth, pretty_output=True
+            predicted_parameter=input_param, reference_parameter=ground_truth, pretty_output=True
         )
 
         for error_type in error_types:
@@ -176,9 +176,9 @@ class TestCalculateParameterErrors:
     )
     def test_valid_multi_sensor_input(self, input_param, ground_truth, sensor_names, expectations):
         error_types = ["mean_error", "error_std", "mean_abs_error", "abs_error_std", "max_abs_error"]
-        output_normal = calculate_parameter_errors(input_parameter=input_param, ground_truth_parameter=ground_truth)
+        output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
         output_pretty = calculate_parameter_errors(
-            input_parameter=input_param, ground_truth_parameter=ground_truth, pretty_output=True
+            predicted_parameter=input_param, reference_parameter=ground_truth, pretty_output=True
         )
 
         for sensor_name, expectation in zip(sensor_names, expectations):
@@ -203,9 +203,9 @@ class TestCalculateParameterErrors:
                     "mean_abs_error": 0,
                     "abs_error_std": 0,
                     "max_abs_error": 0,
-                    "n_common_strides": 6,
-                    "n_additional_ground_truth": 0,
-                    "n_additional_input": 0,
+                    "n_common": 6,
+                    "n_additional_reference": 0,
+                    "n_additional_predicted": 0,
                 },
             ),
             (
@@ -217,20 +217,20 @@ class TestCalculateParameterErrors:
                     "mean_abs_error": 26.0,
                     "abs_error_std": 13.72589,
                     "max_abs_error": 38,
-                    "n_common_strides": 6,
-                    "n_additional_ground_truth": 0,
-                    "n_additional_input": 0,
+                    "n_common": 6,
+                    "n_additional_reference": 0,
+                    "n_additional_predicted": 0,
                 },
             ),
         ],
     )
     def test_calculate_not_per_sensor_input(self, input_param, ground_truth, expectation):
         output_normal = calculate_parameter_errors(
-            input_parameter=input_param, ground_truth_parameter=ground_truth, calculate_per_sensor=False
+            predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
         output_pretty = calculate_parameter_errors(
-            input_parameter=input_param,
-            ground_truth_parameter=ground_truth,
+            predicted_parameter=input_param,
+            reference_parameter=ground_truth,
             pretty_output=True,
             calculate_per_sensor=False,
         )
@@ -249,20 +249,20 @@ class TestCalculateParameterErrors:
         )
 
         output = calculate_parameter_errors(
-            input_parameter=input_param, ground_truth_parameter=ground_truth, calculate_per_sensor=per_sensor
+            predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=per_sensor
         )
 
         if per_sensor:
             assert output["1"]["param"].loc["n_common"] == 1
-            assert output["1"]["param"].loc["n_additional_ground_truth"] == 0
-            assert output["1"]["param"].loc["n_additional_input"] == 2
+            assert output["1"]["param"].loc["n_additional_reference"] == 0
+            assert output["1"]["param"].loc["n_additional_predicted"] == 2
             assert output["2"]["param"].loc["n_common"] == 2
-            assert output["2"]["param"].loc["n_additional_ground_truth"] == 1
-            assert output["2"]["param"].loc["n_additional_input"] == 0
+            assert output["2"]["param"].loc["n_additional_reference"] == 1
+            assert output["2"]["param"].loc["n_additional_predicted"] == 0
         else:
             assert output["param"].loc["n_common"] == 3
-            assert output["param"].loc["n_additional_ground_truth"] == 1
-            assert output["param"].loc["n_additional_input"] == 2
+            assert output["param"].loc["n_additional_reference"] == 1
+            assert output["param"].loc["n_additional_predicted"] == 2
 
     @pytest.mark.parametrize("single_sensor", [True, False])
     def test_n_strides_missing_multi_param(self, single_sensor):
@@ -288,7 +288,7 @@ class TestCalculateParameterErrors:
             )
 
         output = calculate_parameter_errors(
-            input_parameter=input_param, ground_truth_parameter=ground_truth, calculate_per_sensor=False
+            predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
 
         if single_sensor:
@@ -296,20 +296,20 @@ class TestCalculateParameterErrors:
             param2 = output["param2"]
 
             assert param1.loc["n_common"] == 1
-            assert param1.loc["n_additional_ground_truth"] == 0
-            assert param1.loc["n_additional_input"] == 2
+            assert param1.loc["n_additional_reference"] == 0
+            assert param1.loc["n_additional_predicted"] == 2
 
             assert param2.loc["n_common"] == 2
-            assert param2.loc["n_additional_ground_truth"] == 1
-            assert param2.loc["n_additional_input"] == 0
+            assert param2.loc["n_additional_reference"] == 1
+            assert param2.loc["n_additional_predicted"] == 0
         else:
             param1 = output["param1"]
             param2 = output["param2"]
 
             assert param1.loc["n_common"] == 2
-            assert param1.loc["n_additional_ground_truth"] == 1
-            assert param1.loc["n_additional_input"] == 3
+            assert param1.loc["n_additional_reference"] == 1
+            assert param1.loc["n_additional_predicted"] == 3
 
             assert param2.loc["n_common"] == 4
-            assert param2.loc["n_additional_ground_truth"] == 1
-            assert param2.loc["n_additional_input"] == 0
+            assert param2.loc["n_additional_reference"] == 1
+            assert param2.loc["n_additional_predicted"] == 0
