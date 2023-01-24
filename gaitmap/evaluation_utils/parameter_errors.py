@@ -26,11 +26,16 @@ def calculate_parameter_errors(
     - standard deviation of the absolute error
     - maximal absolute error
 
+    In addition, the number of common strides, additional strides in the ground truth and additional strides in the
+    input are calculated.
+    These metrics are helpful, as parameter errors are only calculated for strides that are present in both the inputs.
+
     All metrics are calculated for all columns that are available in both, the input parameters and the reference.
     It is up to you, to decide if a specific error metric makes sense for a given parameter.
 
     Strides between the input and the reference are matched based on the `s_id`/`stride id` column/index.
     Error metrics are only calculated for strides that are available in input and reference.
+    Parameters with `np.nan` are considered to be missing for the respective stride.
 
     The metrics can either be calculated per sensor or for all sensors combined (see the `calculate_per_sensor`
     parameter).
@@ -77,12 +82,15 @@ def calculate_parameter_errors(
     ...     ground_truth_parameter=ground_truth,
     ...     pretty_output=True
     ... ) #doctest: +NORMALIZE_WHITESPACE
-                                          para1      para2
-    mean error                        -0.333333   4.666667
-    error standard deviation           3.785939   8.144528
-    mean absolute error                3.000000   5.333333
-    absolute error standard deviation  1.000000   7.505553
-    maximal absolute error             4.000000  14.000000
+                                               para1      para2
+    mean error                             -0.333333   4.666667
+    error standard deviation                3.785939   8.144528
+    mean absolute error                     3.000000   5.333333
+    absolute error standard deviation       1.000000   7.505553
+    maximal absolute error                  4.000000  14.000000
+    number common entries                   3.000000   3.000000
+    number additional entries ground truth  0.000000   0.000000
+    number of additional entries input      0.000000   0.000000
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
@@ -95,25 +103,32 @@ def calculate_parameter_errors(
     ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
     ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right}
     ... ) #doctest: +NORMALIZE_WHITESPACE
-                   left_sensor right_sensor
-                          para         para
-    mean_error       -8.333333   -46.333333
-    error_std        13.051181    58.226569
-    mean_abs_error    9.666667    59.666667
-    abs_error_std    11.590226    35.641736
-    max_abs_error    23.000000    89.000000
+                              left_sensor right_sensor
+                                     para         para
+    mean_error                  -8.333333   -46.333333
+    error_std                   13.051181    58.226569
+    mean_abs_error               9.666667    59.666667
+    abs_error_std               11.590226    35.641736
+    max_abs_error               23.000000    89.000000
+    n_common                     3.000000     3.000000
+    n_additional_ground_truth    0.000000     0.000000
+    n_additional_input           0.000000     0.000000
 
     >>> calculate_parameter_errors(
     ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
     ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right},
     ...     calculate_per_sensor=False
     ... ) #doctest: +NORMALIZE_WHITESPACE
-                         para
-    mean_error     -27.333333
-    error_std       43.098337
-    mean_abs_error  34.666667
-    abs_error_std   36.219700
-    max_abs_error   89.000000
+                                    para
+    mean_error                -27.333333
+    error_std                  43.098337
+    mean_abs_error             34.666667
+    abs_error_std              36.219700
+    max_abs_error              89.000000
+    n_common                    6.000000
+    n_additional_ground_truth   0.000000
+    n_additional_input          0.000000
+
 
     See Also
     --------
@@ -169,10 +184,14 @@ def _calculate_error(  # noqa: MC0001
             "_mean_abs_error": "mean absolute error",
             "_abs_error_std": "absolute error standard deviation",
             "_max_abs_error": "maximal absolute error",
+            "n_common": "number common entries",
+            "n_additional_ground_truth": "number additional entries ground truth",
+            "n_additional_input": "number of additional entries input",
         }
     )
 
     error_dict = {}
+    meta_error_dict = {}
 
     for sensor in sensor_names_list:
         try:
@@ -201,12 +220,18 @@ def _calculate_error(  # noqa: MC0001
                 msg_start = "For sensor {} no ".format(sensor)
             raise ValidationError(msg_start + "common parameter columns are found between input and reference.")
 
-        error_dict[sensor] = (
-            input_parameter_correct[common_features]
-            .subtract(ground_truth_parameter_correct[common_features])
-            .dropna()
-            .reset_index(drop=True)
-        )
+        # This will produce nan-rows for strides that do not match
+        errors = input_parameter_correct[common_features].subtract(ground_truth_parameter_correct[common_features])
+
+        for para in common_features:
+            common = len(errors[para].dropna(how="all"))
+            meta_error_dict[(sensor, para)] = {
+                "n_common": common,
+                "n_additional_ground_truth": len(ground_truth_parameter_correct[para].dropna(how="all")) - common,
+                "n_additional_input": len(input_parameter_correct[para].dropna(how="all")) - common,
+            }
+
+        error_dict[sensor] = errors.dropna().reset_index(drop=True)
 
         if error_dict[sensor].empty:
             if sensor == "__dummy__":
@@ -216,13 +241,16 @@ def _calculate_error(  # noqa: MC0001
             raise ValidationError(msg_start + "common strides are found between input and reference!")
 
     error_df = pd.concat(error_dict, axis=1) if calculate_per_sensor is True else pd.concat(error_dict).droplevel(0)
+    meta_error_df = pd.DataFrame(meta_error_dict)
 
-    # the usage of np.NamedAgg for multiple columns is still in development
-    # (https://github.com/pandas-dev/pandas/pull/37627)
-    # The implementation should be change to that when it is done
-    return error_df.agg([np.nanmean, np.nanstd, _mean_abs_error, _abs_error_std, _max_abs_error]).rename(
-        index=error_names
+    if calculate_per_sensor is False:
+        meta_error_df = meta_error_df.groupby(level=1, axis=1).sum()
+
+    results = pd.concat(
+        [error_df.agg([np.nanmean, np.nanstd, _mean_abs_error, _abs_error_std, _max_abs_error]), meta_error_df]
     )
+
+    return results.rename(index=error_names)
 
 
 def _mean_abs_error(x):
