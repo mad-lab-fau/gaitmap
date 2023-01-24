@@ -1,6 +1,8 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
+import warnings
 from typing import Dict, Union
 
+import numpy as np
 import pandas as pd
 
 from gaitmap.utils._types import _Hashable
@@ -24,8 +26,9 @@ def calculate_parameter_errors(
     - The absolute relative error between the predicted and the reference value (`abs(predicted - reference) /
       abs(reference)`)
 
-    For each of these groups of errors, we calculate the maximum, minimum, mean, median, standard deviation and the
-    0.05 and 0.95 quantiles.
+    For each of these groups of errors, we calculate the maximum, minimum, mean, median, standard deviation, the
+    0.05/0.95 quantiles, and the upper/lower limit of aggreement (loa).
+    In addition the ICC (intraclass correlation coefficient) with the respective 0.05/0.95 quantiles is calculated.
     All metrics are calculated for all columns that are available in both, the predicted parameters and the reference.
     It is up to you, to decide if a specific error metric makes sense for a given parameter.
 
@@ -72,39 +75,50 @@ def calculate_parameter_errors(
     >>> calculate_parameter_errors(
     ...     predicted_parameter=predicted_param,
     ...     reference_parameter=reference,
-    ... ) #doctest: +NORMALIZE_WHITESPACE
-                               para1      para2
-    error_mean              0.000000   3.500000
-    error_std               3.162278   7.047458
-    error_median           -0.500000   0.500000
-    error_q5               -2.850000  -0.850000
-    error_q95               3.550000  12.050000
-    error_max               4.000000  14.000000
-    error_min              -3.000000  -1.000000
-    rel_error_mean          0.168155   0.491667
-    rel_error_std           0.818928   1.016667
-    rel_error_median       -0.080357   0.083333
-    rel_error_q5           -0.467857  -0.170000
-    rel_error_q95           1.152083   1.725000
-    rel_error_max           1.333333   2.000000
-    rel_error_min          -0.500000  -0.200000
-    abs_error_mean          2.500000   4.000000
-    abs_error_std           1.290994   6.683313
-    abs_error_median        2.500000   1.000000
-    abs_error_q5            1.150000   0.150000
-    abs_error_q95           3.850000  12.050000
-    abs_error_max           4.000000  14.000000
-    abs_error_min           1.000000   0.000000
-    abs_rel_error_mean      0.561012   0.591667
-    abs_rel_error_std       0.537307   0.942956
-    abs_rel_error_median    0.392857   0.183333
-    abs_rel_error_q5        0.149107   0.025000
-    abs_rel_error_q95       1.208333   1.730000
-    abs_rel_error_max       1.333333   2.000000
-    abs_rel_error_min       0.125000   0.000000
-    n_common                4.000000   4.000000
-    n_additional_reference  0.000000   0.000000
-    n_additional_predicted  0.000000   0.000000
+    ... )  # doctest: +NORMALIZE_WHITESPACE
+                                    para1      para2
+    error_mean               0.000000   3.500000
+    error_std                3.162278   7.047458
+    error_median            -0.500000   0.500000
+    error_q05               -2.850000  -0.850000
+    error_q95                3.550000  12.050000
+    error_max                4.000000  14.000000
+    error_min               -3.000000  -1.000000
+    error_loa_lower         -6.198064 -10.313018
+    error_loa_upper          6.198064  17.313018
+    rel_error_mean           0.168155   0.491667
+    rel_error_std            0.818928   1.016667
+    rel_error_median        -0.080357   0.083333
+    rel_error_q05           -0.467857  -0.170000
+    rel_error_q95            1.152083   1.725000
+    rel_error_max            1.333333   2.000000
+    rel_error_min           -0.500000  -0.200000
+    rel_error_loa_lower     -1.436945  -1.501000
+    rel_error_loa_upper      1.773254   2.484333
+    abs_error_mean           2.500000   4.000000
+    abs_error_std            1.290994   6.683313
+    abs_error_median         2.500000   1.000000
+    abs_error_q05            1.150000   0.150000
+    abs_error_q95            3.850000  12.050000
+    abs_error_max            4.000000  14.000000
+    abs_error_min            1.000000   0.000000
+    abs_error_loa_lower     -0.030349  -9.099293
+    abs_error_loa_upper      5.030349  17.099293
+    abs_rel_error_mean       0.561012   0.591667
+    abs_rel_error_std        0.537307   0.942956
+    abs_rel_error_median     0.392857   0.183333
+    abs_rel_error_q05        0.149107   0.025000
+    abs_rel_error_q95        1.208333   1.730000
+    abs_rel_error_max        1.333333   2.000000
+    abs_rel_error_min        0.125000   0.000000
+    abs_rel_error_loa_lower -0.492111  -1.256528
+    abs_rel_error_loa_upper  1.614135   2.439861
+    n_common                 4.000000   4.000000
+    n_additional_reference   0.000000   0.000000
+    n_additional_predicted   0.000000   0.000000
+    icc                      0.256198   0.328814
+    icc_q05                 -0.710000  -0.670000
+    icc_q95                  0.920000   0.940000
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
@@ -116,78 +130,100 @@ def calculate_parameter_errors(
     >>> calculate_parameter_errors(
     ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
     ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right}
-    ... ) #doctest: +NORMALIZE_WHITESPACE
-                           left_sensor right_sensor
-                                  para         para
-    error_mean               -8.333333   -46.333333
-    error_std                13.051181    58.226569
-    error_median             -4.000000   -70.000000
-    error_q5                -21.100000   -87.100000
-    error_q95                 1.400000    11.000000
-    error_max                 2.000000    20.000000
-    error_min               -23.000000   -89.000000
-    rel_error_mean           -0.101707    -0.502547
-    rel_error_std             0.229574     0.674817
-    rel_error_median         -0.046512    -0.729167
-    rel_error_q5             -0.323113    -1.004312
-    rel_error_q95             0.081063     0.157853
-    rel_error_max             0.095238     0.256410
-    rel_error_min            -0.353846    -1.034884
-    abs_error_mean            9.666667    59.666667
-    abs_error_std            11.590226    35.641736
-    abs_error_median          4.000000    70.000000
-    abs_error_q5              2.200000    25.000000
-    abs_error_q95            21.100000    87.100000
-    abs_error_max            23.000000    89.000000
-    abs_error_min             2.000000    20.000000
-    abs_rel_error_mean        0.165199     0.673487
-    abs_rel_error_std         0.165180     0.392212
-    abs_rel_error_median      0.095238     0.729167
-    abs_rel_error_q5          0.051384     0.303686
-    abs_rel_error_q95         0.327985     1.004312
-    abs_rel_error_max         0.353846     1.034884
-    abs_rel_error_min         0.046512     0.256410
-    n_common                  3.000000     3.000000
-    n_additional_reference    0.000000     0.000000
-    n_additional_predicted    0.000000     0.000000
+    ... )  # doctest: +NORMALIZE_WHITESPACE
+                            left_sensor right_sensor
+                                   para         para
+    error_mean                -8.333333   -46.333333
+    error_std                 13.051181    58.226569
+    error_median              -4.000000   -70.000000
+    error_q05                -21.100000   -87.100000
+    error_q95                  1.400000    11.000000
+    error_max                  2.000000    20.000000
+    error_min                -23.000000   -89.000000
+    error_loa_lower          -33.913649  -160.457409
+    error_loa_upper           17.246982    67.790742
+    rel_error_mean            -0.101707    -0.502547
+    rel_error_std              0.229574     0.674817
+    rel_error_median          -0.046512    -0.729167
+    rel_error_q05             -0.323113    -1.004312
+    rel_error_q95              0.081063     0.157853
+    rel_error_max              0.095238     0.256410
+    rel_error_min             -0.353846    -1.034884
+    rel_error_loa_lower       -0.551671    -1.825187
+    rel_error_loa_upper        0.348258     0.820094
+    abs_error_mean             9.666667    59.666667
+    abs_error_std             11.590226    35.641736
+    abs_error_median           4.000000    70.000000
+    abs_error_q05              2.200000    25.000000
+    abs_error_q95             21.100000    87.100000
+    abs_error_max             23.000000    89.000000
+    abs_error_min              2.000000    20.000000
+    abs_error_loa_lower      -13.050176   -10.191136
+    abs_error_loa_upper       32.383509   129.524469
+    abs_rel_error_mean         0.165199     0.673487
+    abs_rel_error_std          0.165180     0.392212
+    abs_rel_error_median       0.095238     0.729167
+    abs_rel_error_q05          0.051384     0.303686
+    abs_rel_error_q95          0.327985     1.004312
+    abs_rel_error_max          0.353846     1.034884
+    abs_rel_error_min          0.046512     0.256410
+    abs_rel_error_loa_lower   -0.158554    -0.095249
+    abs_rel_error_loa_upper    0.488952     1.442223
+    n_common                   3.000000     3.000000
+    n_additional_reference     0.000000     0.000000
+    n_additional_predicted     0.000000     0.000000
+    icc                        0.909121     0.628853
+    icc_q05                    0.130000    -0.570000
+    icc_q95                    1.000000     0.990000
 
     >>> calculate_parameter_errors(
     ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
     ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right},
     ...     calculate_per_sensor=False
-    ... ) #doctest: +NORMALIZE_WHITESPACE
-                                 para
-    error_mean             -27.333333
-    error_std               43.098337
-    error_median           -13.500000
-    error_q5               -84.250000
-    error_q95               15.500000
-    error_max               20.000000
-    error_min              -89.000000
-    rel_error_mean          -0.302127
-    rel_error_std            0.501432
-    rel_error_median        -0.200179
-    rel_error_q5            -0.958454
-    rel_error_q95            0.216117
-    rel_error_max            0.256410
-    rel_error_min           -1.034884
-    abs_error_mean          34.666667
-    abs_error_std           36.219700
-    abs_error_median        21.500000
-    abs_error_q5             2.500000
-    abs_error_q95           84.250000
-    abs_error_max           89.000000
-    abs_error_min            2.000000
-    abs_rel_error_mean       0.419343
-    abs_rel_error_std        0.387238
-    abs_rel_error_median     0.305128
-    abs_rel_error_q5         0.058693
-    abs_rel_error_q95        0.958454
-    abs_rel_error_max        1.034884
-    abs_rel_error_min        0.046512
-    n_common                 6.000000
-    n_additional_reference   0.000000
-    n_additional_predicted   0.000000
+    ... )  # doctest: +NORMALIZE_WHITESPACE
+                                   para
+    error_mean               -27.333333
+    error_std                 43.098337
+    error_median             -13.500000
+    error_q05                -84.250000
+    error_q95                 15.500000
+    error_max                 20.000000
+    error_min                -89.000000
+    error_loa_lower         -111.806074
+    error_loa_upper           57.139408
+    rel_error_mean            -0.302127
+    rel_error_std              0.501432
+    rel_error_median          -0.200179
+    rel_error_q05             -0.958454
+    rel_error_q95              0.216117
+    rel_error_max              0.256410
+    rel_error_min             -1.034884
+    rel_error_loa_lower       -1.284934
+    rel_error_loa_upper        0.680681
+    abs_error_mean            34.666667
+    abs_error_std             36.219700
+    abs_error_median          21.500000
+    abs_error_q05              2.500000
+    abs_error_q95             84.250000
+    abs_error_max             89.000000
+    abs_error_min              2.000000
+    abs_error_loa_lower      -36.323945
+    abs_error_loa_upper      105.657279
+    abs_rel_error_mean         0.419343
+    abs_rel_error_std          0.387238
+    abs_rel_error_median       0.305128
+    abs_rel_error_q05          0.058693
+    abs_rel_error_q95          0.958454
+    abs_rel_error_max          1.034884
+    abs_rel_error_min          0.046512
+    abs_rel_error_loa_lower   -0.339643
+    abs_rel_error_loa_upper    1.178329
+    n_common                   6.000000
+    n_additional_reference     0.000000
+    n_additional_predicted     0.000000
+    icc                        0.110385
+    icc_q05                   -0.860000
+    icc_q95                    0.960000
 
     See Also
     --------
@@ -245,8 +281,12 @@ def _calculate_error(  # noqa: MC0001
             reference_parameter_correct = set_correct_index(reference_parameter[sensor], index_cols=["s_id"])
         except ValidationError:
             try:
-                predicted_parameter_correct = set_correct_index(predicted_parameter[sensor], index_cols=["stride id"])
-                reference_parameter_correct = set_correct_index(reference_parameter[sensor], index_cols=["stride id"])
+                predicted_parameter_correct = set_correct_index(
+                    predicted_parameter[sensor], index_cols=["stride id"]
+                ).rename_axis(index={"stride id": "s_id"})
+                reference_parameter_correct = set_correct_index(
+                    reference_parameter[sensor], index_cols=["stride id"]
+                ).rename_axis(index={"stride id": "s_id"})
             except ValidationError as e:
                 raise ValidationError(
                     'Predicted and reference need to have either an index or a column named "s_id" or "stride id". '
@@ -301,6 +341,9 @@ def _error_single_df(df: pd.DataFrame, meta_error: pd.DataFrame) -> pd.DataFrame
         _max_mean_median_std_quantille(error.abs() / df["reference"].abs()).add_prefix("abs_rel_error_"),
         meta_error,
     ]
+    icc = _icc(df)
+    if icc is not None:
+        output.append(icc)
 
     return pd.concat(output, axis=1).T
 
@@ -312,9 +355,34 @@ def _max_mean_median_std_quantille(value: pd.DataFrame) -> pd.DataFrame:
             mean=value.mean(),
             std=value.std(),
             median=value.median(),
-            q5=value.quantile(0.05),
+            q05=value.quantile(0.05),
             q95=value.quantile(0.95),
             max=value.max(),
             min=value.min(),
         )
-    )
+    ).assign(loa_lower=lambda x: x["mean"] - 1.96 * x["std"], loa_upper=lambda x: x["mean"] + 1.96 * x["std"])
+
+
+def _icc(data: pd.DataFrame):
+    """Calculate the intraclass correlation coefficient using pingouin."""
+    try:
+        import pingouin as pg  # pylint: disable=import-outside-toplevel
+    except ImportError:
+        warnings.warn(
+            "The package pingouin is not installed. Calculating the intraclass correlation coefficient is skipped."
+        )
+        return None
+    data = data.stack("source").reset_index()
+    coefs: Dict[str, pd.Series] = {}
+    paras = set(data.columns) - {"source", "s_id"}
+    for para in paras:
+        try:
+            icc, ci95 = pg.intraclass_corr(data, ratings=para, raters="source", targets="s_id", nan_policy="omit").loc[
+                0, ["ICC", "CI95%"]
+            ]
+            coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
+        except AssertionError as e:
+            warnings.warn(f"Calculating the intraclass correlation coefficient for {para} failed\n: {e}")
+            coefs[para] = pd.Series({"icc": np.nan, "icc_q05": np.nan, "icc_q95": np.nan})
+
+    return pd.concat(coefs, axis=1).T
