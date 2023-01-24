@@ -51,6 +51,10 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/12)
 - The function `calculate_parameter_errors` now also outputs the number of strides used for matching per parameter.
   (https://github.com/mad-lab-fau/gaitmap/pull/13)
+- The function `calculate_parameter_errors` returns way more parameters.
+  All basic statistics are now calculated for the error, relative error, absolute error and the relative absolute error.
+  If `pingouin` is installed, we also calculte the ICC.
+  (https://github.com/mad-lab-fau/gaitmap/pull/13)
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
