@@ -12,12 +12,12 @@ from gaitmap.utils.exceptions import ValidationError
 
 def calculate_parameter_errors(
     *,
-    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool = False,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
-    """Calculate various error metrics between a parameter input and a given ground truth.
+    """Calculate various error metrics between a parameter predicted and a given ground truth.
 
     The metrics currently implemented are:
     - mean error
@@ -26,15 +26,16 @@ def calculate_parameter_errors(
     - standard deviation of the absolute error
     - maximal absolute error
 
-    In addition, the number of common strides, additional strides in the ground truth and additional strides in the
-    input are calculated.
-    These metrics are helpful, as parameter errors are only calculated for strides that are present in both the inputs.
+    In addition, the number of common strides, additional strides in the reference and additional strides in the
+    predicted values are calculated.
+    These metrics are helpful, as parameter errors are only calculated for strides that are present in both the
+    inputs.
 
-    All metrics are calculated for all columns that are available in both, the input parameters and the reference.
+    All metrics are calculated for all columns that are available in both, the predicted parameters and the reference.
     It is up to you, to decide if a specific error metric makes sense for a given parameter.
 
-    Strides between the input and the reference are matched based on the `s_id`/`stride id` column/index.
-    Error metrics are only calculated for strides that are available in input and reference.
+    Strides between the predicted and the reference are matched based on the `s_id`/`stride id` column/index.
+    Error metrics are only calculated for strides that are available in predicted and reference.
     Parameters with `np.nan` are considered to be missing for the respective stride.
 
     The metrics can either be calculated per sensor or for all sensors combined (see the `calculate_per_sensor`
@@ -46,11 +47,11 @@ def calculate_parameter_errors(
 
     Parameters
     ----------
-    ground_truth_parameter
-        The ground truth the input should be compared against.
-        This must be the same type as the input is.
-        Further, sensor names, column names, and stride ids must match with the `input_parameters`.
-    input_parameter
+    reference_parameter
+        The reference the predicted values should be compared against.
+        This must be the same type (i.e. single/multi sensor) as the predicted input.
+        Further, sensor names, column names, and stride ids must match with the `predicted_parameters`.
+    predicted_parameter
         The output of the temporal or spatial parameter calculation (both `.parameters_` and `.parameters_pretty_`
         are accepted).
         This can be a Dataframe or a dict of such Dataframes.
@@ -70,16 +71,16 @@ def calculate_parameter_errors(
     -------
     output
         A Dataframe with one row per error metric and one column per parameter.
-        In case of a multi-sensor input (and `calculate_per_sensor=True`), the dataframe has 2 column levels.
+        In case of a multi-sensor predicted (and `calculate_per_sensor=True`), the dataframe has 2 column levels.
         The first level is the sensor name and the second one the parameter name.
 
     Examples
     --------
-    >>> input_param = pd.DataFrame({"para1": [7, 3, 5], "para2": [7, -1, 7]}).rename_axis("stride id")
-    >>> ground_truth = pd.DataFrame({"para1": [3, 6, 7], "para2": [-7, -0, 6]}).rename_axis("stride id")
+    >>> predicted_param = pd.DataFrame({"para1": [7, 3, 5], "para2": [7, -1, 7]}).rename_axis("stride id")
+    >>> reference = pd.DataFrame({"para1": [3, 6, 7], "para2": [-7, -0, 6]}).rename_axis("stride id")
     >>> calculate_parameter_errors(
-    ...     input_parameter=input_param,
-    ...     ground_truth_parameter=ground_truth,
+    ...     predicted_parameter=predicted_param,
+    ...     reference_parameter=reference,
     ...     pretty_output=True
     ... ) #doctest: +NORMALIZE_WHITESPACE
                                                para1      para2
@@ -90,18 +91,18 @@ def calculate_parameter_errors(
     maximal absolute error                  4.000000  14.000000
     number common entries                   3.000000   3.000000
     number additional entries ground truth  0.000000   0.000000
-    number of additional entries input      0.000000   0.000000
+    number of additional entries predicted      0.000000   0.000000
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
     ...
-    >>> input_sensor_left = pd.DataFrame(columns=["para"], data=[23, 82, 42]).rename_axis("s_id")
-    >>> ground_truth_sensor_left = pd.DataFrame(columns=["para"], data=[21, 86, 65]).rename_axis("s_id")
-    >>> input_sensor_right = pd.DataFrame(columns=["para"], data=[26, -58, -3]).rename_axis("s_id")
-    >>> ground_truth_sensor_right = pd.DataFrame(columns=["para"], data=[96, -78, 86]).rename_axis("s_id")
+    >>> predicted_sensor_left = pd.DataFrame(columns=["para"], data=[23, 82, 42]).rename_axis("s_id")
+    >>> reference_sensor_left = pd.DataFrame(columns=["para"], data=[21, 86, 65]).rename_axis("s_id")
+    >>> predicted_sensor_right = pd.DataFrame(columns=["para"], data=[26, -58, -3]).rename_axis("s_id")
+    >>> reference_sensor_right = pd.DataFrame(columns=["para"], data=[96, -78, 86]).rename_axis("s_id")
     >>> calculate_parameter_errors(
-    ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
-    ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right}
+    ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
+    ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right}
     ... ) #doctest: +NORMALIZE_WHITESPACE
                               left_sensor right_sensor
                                      para         para
@@ -111,12 +112,12 @@ def calculate_parameter_errors(
     abs_error_std               11.590226    35.641736
     max_abs_error               23.000000    89.000000
     n_common                     3.000000     3.000000
-    n_additional_ground_truth    0.000000     0.000000
-    n_additional_input           0.000000     0.000000
+    n_additional_reference    0.000000     0.000000
+    n_additional_predicted           0.000000     0.000000
 
     >>> calculate_parameter_errors(
-    ...     input_parameter={"left_sensor": input_sensor_left, "right_sensor": input_sensor_right},
-    ...     ground_truth_parameter={"left_sensor": ground_truth_sensor_left, "right_sensor": ground_truth_sensor_right},
+    ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
+    ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right},
     ...     calculate_per_sensor=False
     ... ) #doctest: +NORMALIZE_WHITESPACE
                                     para
@@ -126,8 +127,8 @@ def calculate_parameter_errors(
     abs_error_std              36.219700
     max_abs_error              89.000000
     n_common                    6.000000
-    n_additional_ground_truth   0.000000
-    n_additional_input          0.000000
+    n_additional_reference   0.000000
+    n_additional_predicted          0.000000
 
 
     See Also
@@ -137,37 +138,37 @@ def calculate_parameter_errors(
 
     """
     # TODO: Add proper parameter validation (see issue #150)
-    input_is_not_dict = not isinstance(input_parameter, dict)
-    ground_truth_is_not_dict = not isinstance(ground_truth_parameter, dict)
+    predicted_is_not_dict = not isinstance(predicted_parameter, dict)
+    reference_is_not_dict = not isinstance(reference_parameter, dict)
 
-    if input_is_not_dict != ground_truth_is_not_dict:
+    if predicted_is_not_dict != reference_is_not_dict:
         raise ValidationError(
-            "Input and reference must be of the same type. "
+            "Predicted and reference must be of the same type. "
             "Both need to be either single or multi-sensor parameter lists."
         )
 
-    if input_is_not_dict:
-        input_parameter = {"__dummy__": input_parameter}
-        ground_truth_parameter = {"__dummy__": ground_truth_parameter}
+    if predicted_is_not_dict:
+        predicted_parameter = {"__dummy__": predicted_parameter}
+        reference_parameter = {"__dummy__": reference_parameter}
 
-    output = _calculate_error(ground_truth_parameter, input_parameter, pretty_output, calculate_per_sensor)
+    output = _calculate_error(reference_parameter, predicted_parameter, pretty_output, calculate_per_sensor)
 
-    if input_is_not_dict:
+    if predicted_is_not_dict:
         output = output["__dummy__"]
 
     return output
 
 
 def _calculate_error(  # noqa: MC0001
-    ground_truth_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-    input_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     pretty_output: bool,
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
-    sensor_names_list = sorted(list(set(input_parameter.keys()).intersection(ground_truth_parameter.keys())))
+    sensor_names_list = sorted(list(set(predicted_parameter.keys()).intersection(reference_parameter.keys())))
 
     if len(sensor_names_list) == 0:
-        raise ValidationError("The input and reference do not have any common sensors!")
+        raise ValidationError("The predicted values and the reference do not have any common sensors!")
 
     error_names = (
         {
@@ -185,8 +186,8 @@ def _calculate_error(  # noqa: MC0001
             "_abs_error_std": "absolute error standard deviation",
             "_max_abs_error": "maximal absolute error",
             "n_common": "number common entries",
-            "n_additional_ground_truth": "number additional entries ground truth",
-            "n_additional_input": "number of additional entries input",
+            "n_additional_reference": "number additional entries ground truth",
+            "n_additional_predicted": "number of additional entries predicted",
         }
     )
 
@@ -195,22 +196,20 @@ def _calculate_error(  # noqa: MC0001
 
     for sensor in sensor_names_list:
         try:
-            input_parameter_correct = set_correct_index(input_parameter[sensor], index_cols=["s_id"])
-            ground_truth_parameter_correct = set_correct_index(ground_truth_parameter[sensor], index_cols=["s_id"])
+            predicted_parameter_correct = set_correct_index(predicted_parameter[sensor], index_cols=["s_id"])
+            reference_parameter_correct = set_correct_index(reference_parameter[sensor], index_cols=["s_id"])
         except ValidationError:
             try:
-                input_parameter_correct = set_correct_index(input_parameter[sensor], index_cols=["stride id"])
-                ground_truth_parameter_correct = set_correct_index(
-                    ground_truth_parameter[sensor], index_cols=["stride id"]
-                )
+                predicted_parameter_correct = set_correct_index(predicted_parameter[sensor], index_cols=["stride id"])
+                reference_parameter_correct = set_correct_index(reference_parameter[sensor], index_cols=["stride id"])
             except ValidationError as e:
                 raise ValidationError(
-                    'Inputs and reference need to have either an index or a column named "s_id" or "stride id". '
-                    "Note, that inputs and reference must both use the same name for the id-column."
+                    'Predicted and reference need to have either an index or a column named "s_id" or "stride id". '
+                    "Note, that predicted and reference must both use the same name for the id-column."
                 ) from e
 
         common_features = sorted(
-            list(set(input_parameter_correct.keys()).intersection(ground_truth_parameter_correct.keys()))
+            list(set(predicted_parameter_correct.keys()).intersection(reference_parameter_correct.keys()))
         )
 
         if len(common_features) == 0:
@@ -218,17 +217,17 @@ def _calculate_error(  # noqa: MC0001
                 msg_start = "No "
             else:
                 msg_start = "For sensor {} no ".format(sensor)
-            raise ValidationError(msg_start + "common parameter columns are found between input and reference.")
+            raise ValidationError(msg_start + "common parameter columns are found between predicted and reference.")
 
         # This will produce nan-rows for strides that do not match
-        errors = input_parameter_correct[common_features].subtract(ground_truth_parameter_correct[common_features])
+        errors = predicted_parameter_correct[common_features].subtract(reference_parameter_correct[common_features])
 
         for para in common_features:
             common = len(errors[para].dropna(how="all"))
             meta_error_dict[(sensor, para)] = {
                 "n_common": common,
-                "n_additional_ground_truth": len(ground_truth_parameter_correct[para].dropna(how="all")) - common,
-                "n_additional_input": len(input_parameter_correct[para].dropna(how="all")) - common,
+                "n_additional_reference": len(reference_parameter_correct[para].dropna(how="all")) - common,
+                "n_additional_predicted": len(predicted_parameter_correct[para].dropna(how="all")) - common,
             }
 
         error_dict[sensor] = errors.dropna().reset_index(drop=True)
@@ -238,7 +237,7 @@ def _calculate_error(  # noqa: MC0001
                 msg_start = "No "
             else:
                 msg_start = "For sensor {} no ".format(sensor)
-            raise ValidationError(msg_start + "common strides are found between input and reference!")
+            raise ValidationError(msg_start + "common strides are found between predicted and reference!")
 
     error_df = pd.concat(error_dict, axis=1) if calculate_per_sensor is True else pd.concat(error_dict).droplevel(0)
     meta_error_df = pd.DataFrame(meta_error_dict)
