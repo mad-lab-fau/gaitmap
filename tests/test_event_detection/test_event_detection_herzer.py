@@ -67,7 +67,8 @@ class TestEventDetectionHerzer:
 
         ed = HerzerEventDetection(enforce_consistency=var1)
         with patch(
-            "gaitmap.event_detection._event_detection_mixin.enforce_stride_list_consistency", side_effect=mock_func
+            "gaitmap._event_detection_common._event_detection_mixin.enforce_stride_list_consistency",
+            side_effect=mock_func,
         ) as mock:
             ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
