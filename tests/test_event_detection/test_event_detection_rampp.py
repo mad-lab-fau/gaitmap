@@ -7,9 +7,9 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
+from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy
 from gaitmap.base import BaseType
 from gaitmap.event_detection import RamppEventDetection
-from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError

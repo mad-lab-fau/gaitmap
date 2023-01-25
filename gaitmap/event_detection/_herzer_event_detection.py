@@ -7,9 +7,9 @@ from joblib import Memory
 from scipy import signal
 from tpcp import cf
 
+from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
-from gaitmap.event_detection._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 
 
 class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
