@@ -48,7 +48,7 @@ jobs:
         poetry run poe ci_check
     - name: Build Docs
       run: |
-        poetry run poe check
+        poetry run poe docs
     - name: Save docs
       uses: actions/upload-artifact@v3
       with:
