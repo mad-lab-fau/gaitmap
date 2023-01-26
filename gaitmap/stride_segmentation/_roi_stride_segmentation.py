@@ -147,7 +147,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         self.s_id_naming = s_id_naming
         self.action_method = action_method
 
-    def segment(  # noqa: arguments-differ
+    def segment(
         self: Self,
         data: SensorData,
         sampling_rate_hz: float,
@@ -294,7 +294,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             )
         if self._multi_roi and self._multi_dataset:
             sensor_names = get_multi_sensor_names(self.data)
-            missing_sensors = [key for key in self.regions_of_interest.keys() if key not in sensor_names]
+            missing_sensors = [key for key in self.regions_of_interest if key not in sensor_names]
             if len(missing_sensors) > 0:
                 raise KeyError(
                     "The regions of interest list contains information for a sensor ({}) that is not in the "

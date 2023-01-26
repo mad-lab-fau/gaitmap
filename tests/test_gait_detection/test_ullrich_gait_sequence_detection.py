@@ -33,7 +33,7 @@ class TestUllrichGaitSequenceDetection:
     """Test the gait sequence detection by Ullrich."""
 
     def test_single_sensor_input(self, healthy_example_imu_data, snapshot):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -52,7 +52,7 @@ class TestUllrichGaitSequenceDetection:
         assert isinstance(gsd.end_, np.ndarray)
 
     def test_multi_sensor_input(self, healthy_example_imu_data, snapshot):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -71,7 +71,7 @@ class TestUllrichGaitSequenceDetection:
         assert isinstance(gsd.end_["left_sensor"], np.ndarray)
 
     @pytest.mark.parametrize(
-        "sensor_channel_config,peak_prominence,merge_gait_sequences_from_sensors",
+        ("sensor_channel_config", "peak_prominence", "merge_gait_sequences_from_sensors"),
         (
             ("gyr_ml", 17, False),
             ("gyr_ml", 17, True),
@@ -92,7 +92,8 @@ class TestUllrichGaitSequenceDetection:
         snapshot,
     ):
         """Test if the algorithm is generally working with different sensor channel configs and their respective
-        optimal peak prominence thresholds."""
+        optimal peak prominence thresholds.
+        """
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -126,7 +127,7 @@ class TestUllrichGaitSequenceDetection:
         snapshot.assert_match(gsd.gait_sequences_["left_sensor"], check_dtype=False)
 
     def test_signal_length_one_window_size(self, healthy_example_imu_data, snapshot):
-        """Test to see if the algorithm is working if the signal length equals to one window size"""
+        """Test to see if the algorithm is working if the signal length equals to one window size."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -145,8 +146,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.end_) == 1
 
     def test_on_signal_without_activity(self, snapshot):
-        """Test to see if the algorithm is working if the signal contains no activity at all"""
-
+        """Test to see if the algorithm is working if the signal contains no activity at all."""
         data_columns = BF_COLS
 
         # induce rest
@@ -161,8 +161,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.end_) == 0
 
     def test_on_signal_with_only_nongait(self, snapshot):
-        """Test to see if the algorithm is working if the signal contains only non-gait activity"""
-
+        """Test to see if the algorithm is working if the signal contains only non-gait activity."""
         data_columns = BF_COLS
 
         # induce non-gait cyclic activity
@@ -190,7 +189,7 @@ class TestUllrichGaitSequenceDetection:
         )
         # use an int instead of str or list
         sensor_channel_config = 1
-        with pytest.raises(ValueError, match=r".* must be a str."):
+        with pytest.raises(TypeError, match=r".* must be a str."):
             gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config)
             gsd.detect(data, 204.8)
 
@@ -264,7 +263,8 @@ class TestUllrichGaitSequenceDetection:
 
     def test_invalid_merging_gait_sequences(self, healthy_example_imu_data):
         """Check if data and value for merge_gait_sequences_from_sensors fit to each other. Only gait sequences detected
-        from synced data can be merge."""
+        from synced data can be merge.
+        """
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -278,7 +278,6 @@ class TestUllrichGaitSequenceDetection:
 
     def test_merging_gait_sequences(self, healthy_example_imu_data):
         """Check if merging of gait sequences works for synchronized data."""
-
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -300,8 +299,7 @@ class TestUllrichGaitSequenceDetection:
         assert_frame_equal(gsd_merged.gait_sequences_["left_sensor"], gsd_merged.gait_sequences_["right_sensor"])
 
     def test_merging_for_no_activity(self):
-        """Test to see if the merging is working if the signal contains no activity at all"""
-
+        """Test to see if the merging is working if the signal contains no activity at all."""
         data_columns = BF_COLS
 
         # induce rest
@@ -321,8 +319,7 @@ class TestUllrichGaitSequenceDetection:
             assert gsd.gait_sequences_[sensor].empty
 
     def test_merging_on_signal_with_only_nongait(self):
-        """Test to see if the merging is working if the signal contains only non-gait activity"""
-
+        """Test to see if the merging is working if the signal contains only non-gait activity."""
         data_columns = BF_COLS
 
         # induce non-gait cyclic activity
@@ -372,8 +369,7 @@ class TestUllrichGaitSequenceDetection:
             assert_frame_equal(out[sensor], expected_merged, check_dtype=False)
 
     def test_gait_sequence_concat(self):
-        """Test the concatenation of subsequent gait sequences"""
-
+        """Test the concatenation of subsequent gait sequences."""
         sig_length = 95
         window_size = 10
         gait_sequences_start = np.array([0, 10, 20, 40, 50, 70, 80, 90])
@@ -386,7 +382,7 @@ class TestUllrichGaitSequenceDetection:
         np.testing.assert_array_equal(out, out_expected)
 
     @pytest.mark.parametrize(
-        "margin_s, output",
+        ("margin_s", "output"),
         (
             (10, np.array([[90, 510], [590, 810], [990, 1410], [1890, 2000]])),  # simple case, no overlaps
             (200, np.array([[0, 1600], [1700, 2000]])),  # simple overlaps, exceeding signal range

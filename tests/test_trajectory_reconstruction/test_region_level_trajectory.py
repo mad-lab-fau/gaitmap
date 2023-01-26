@@ -38,7 +38,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestEstimateIntersect:
-    @pytest.mark.parametrize("sl_type, roi_type", (("single", "multi"), ("multi", "single")))
+    @pytest.mark.parametrize(("sl_type", "roi_type"), (("single", "multi"), ("multi", "single")))
     def test_datatypes_mismatch(self, sl_type, roi_type):
         roi_list = pd.DataFrame({"start": [0], "end": [8]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
@@ -52,7 +52,7 @@ class TestEstimateIntersect:
         with pytest.raises(ValidationError) as e:
             rlt.estimate_intersect({}, roi_list, stride_list, sampling_rate_hz=1)
 
-        assert "The stride list is {} sensor and the stride list is {} sensor.".format(sl_type, roi_type) in str(e)
+        assert f"The stride list is {sl_type} sensor and the stride list is {roi_type} sensor." in str(e)
 
     def test_simple(self):
         acc_xy = pd.Series([0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0])
@@ -81,7 +81,7 @@ class TestEstimateIntersect:
 
 class TestIntersect:
     @pytest.mark.parametrize(
-        "position, starts, ends",
+        ("position", "starts", "ends"),
         (
             ([-1, 0, 0, 0, 1, 1, 1, 2, 2, 2], [0, 3, 6], [3, 6, 9]),
             ([-1, 0, 0, 0, -1, 1, 1, 1, 2, 2, 2], [0, 4, 7], [3, 7, 10]),
@@ -199,7 +199,7 @@ class TestIntersect:
 
         assert "`estimate_intersect`" in str(e)
 
-    @pytest.mark.parametrize("sl_type, pos_type", (("single", "multi"), ("multi", "single")))
+    @pytest.mark.parametrize(("sl_type", "pos_type"), (("single", "multi"), ("multi", "single")))
     def test_datatypes_mismatch(self, sl_type, pos_type):
         position = [1, 1, 1]
         position_list = pd.DataFrame(
@@ -221,9 +221,9 @@ class TestIntersect:
         with pytest.raises(ValidationError) as e:
             rlt.intersect(stride_list, return_data=("position",))
 
-        assert "{} sensor dataset with a {} sensor stride list".format(pos_type, sl_type) in str(e)
+        assert f"{pos_type} sensor dataset with a {sl_type} sensor stride list" in str(e)
 
-    @pytest.mark.parametrize("value", (tuple(), "invalid", ("invalid1", "orientation")))
+    @pytest.mark.parametrize("value", ((), "invalid", ("invalid1", "orientation")))
     def test_invalid_return_data(self, value):
         rlt = RegionLevelTrajectory()
         rlt.position_ = [1]  # Something other than None

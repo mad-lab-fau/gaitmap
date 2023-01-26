@@ -139,7 +139,7 @@ class _TestSlidingWindowTransformer:
     algorithm_class: Type[BaseSlidingWindowFeatureTransform]
 
     @pytest.mark.parametrize(
-        "window_size_s,effective_win_size", [(1, 101), (0.5, 51), (0.1, 11), (0.23, 23), (0.111, 11)]
+        ("window_size_s", "effective_win_size"), [(1, 101), (0.5, 51), (0.1, 11), (0.23, 23), (0.111, 11)]
     )
     def test_effective_window_size_samples(self, healthy_example_imu_data, window_size_s, effective_win_size):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:100]

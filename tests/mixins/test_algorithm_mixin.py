@@ -39,7 +39,7 @@ class TestAlgorithmMixin:
     def test_all_parameters_documented(self):
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
-        documented_names = set(p.name for p in docs["Parameters"])
+        documented_names = {p.name for p in docs["Parameters"]}
         actual_names = set(get_param_names(self.algorithm_class))
 
         assert documented_names == actual_names
@@ -49,7 +49,7 @@ class TestAlgorithmMixin:
             pytest.skip("The testclass did not implement the correct `after_action_instance` fixture.")
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
-        documented_names = set(p.name for p in docs["Attributes"])
+        documented_names = {p.name for p in docs["Attributes"]}
         actual_names = set(get_results(after_action_instance).keys())
 
         assert documented_names == actual_names
@@ -59,7 +59,7 @@ class TestAlgorithmMixin:
             pytest.skip("The testclass did not implement the correct `after_action_instance` fixture.")
         docs = NumpyDocString(inspect.getdoc(self.algorithm_class))
 
-        documented_names = set(p.name for p in docs["Other Parameters"])
+        documented_names = {p.name for p in docs["Other Parameters"]}
         actual_names = set(get_action_params(after_action_instance).keys())
 
         assert documented_names == actual_names

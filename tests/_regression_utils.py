@@ -26,7 +26,7 @@ class PyTestSnapshotTest:
     def __init__(self, request=None):
         self.request = request
         self.curr_snapshot_number = 0
-        super(PyTestSnapshotTest, self).__init__()
+        super().__init__()
 
     @property
     def update(self):
@@ -42,21 +42,21 @@ class PyTestSnapshotTest:
 
     @property
     def file_name_json(self):
-        return self.snapshot_folder / "{}.json".format(self.test_name)
+        return self.snapshot_folder / f"{self.test_name}.json"
 
     @property
     def file_name_csv(self):
-        return self.snapshot_folder / "{}.csv".format(self.test_name)
+        return self.snapshot_folder / f"{self.test_name}.csv"
 
     @property
     def file_name_txt(self):
-        return self.snapshot_folder / "{}.txt".format(self.test_name)
+        return self.snapshot_folder / f"{self.test_name}.txt"
 
     @property
     def test_name(self):
         cls_name = getattr(self.request.node.cls, "__name__", "")
         flattened_node_name = re.sub(r"\s+", " ", self.request.node.name.replace(r"\n", " "))
-        return "{}{}_{}".format("{}.".format(cls_name) if cls_name else "", flattened_node_name, self.curr_snapshot)
+        return "{}{}_{}".format(f"{cls_name}." if cls_name else "", flattened_node_name, self.curr_snapshot)
 
     def __enter__(self):
         return self
@@ -74,7 +74,7 @@ class PyTestSnapshotTest:
             with open(self.file_name_txt, "w") as f:
                 f.write(value)
         else:
-            raise ValueError("The dtype {} is not supported for snapshot testing".format(type(value)))
+            raise TypeError(f"The dtype {type(value)} is not supported for snapshot testing")
 
     def retrieve(self, dtype):
         if dtype == pd.DataFrame:
@@ -91,11 +91,11 @@ class PyTestSnapshotTest:
             filename = self.file_name_txt
             if not filename.is_file():
                 raise SnapshotNotFound()
-            with open(self.file_name_txt, "r") as f:
+            with open(self.file_name_txt) as f:
                 value = f.read()
             return value
         else:
-            raise ValueError("The dtype {} is not supported for snapshot testing".format(dtype))
+            raise ValueError(f"The dtype {dtype} is not supported for snapshot testing")
 
     def assert_match(self, value, name="", **kwargs):
         self.curr_snapshot = name or self.curr_snapshot_number
@@ -122,6 +122,6 @@ class PyTestSnapshotTest:
                     diff = "".join(diff)
                     assert value == prev_snapshot, diff
                 else:
-                    raise ValueError("The dtype {} is not supported for snapshot testing".format(value_dtype))
+                    raise ValueError(f"The dtype {value_dtype} is not supported for snapshot testing")
 
         self.curr_snapshot_number += 1

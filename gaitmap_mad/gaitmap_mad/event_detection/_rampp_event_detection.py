@@ -166,14 +166,14 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
 
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+    def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.
 
         This is separate method to make it easy to overwrite by a subclass.
         """
         return _find_all_events
 
-    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:  # noqa: no-self-use
+    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:
         ic_search_region = cast(
             Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )

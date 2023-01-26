@@ -36,7 +36,7 @@ def _get_expected_dataset_cols(
 def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]):
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
-        raise ValidationError("The dataobject is expected to be one of ({},). But it is a {}".format(dtype, type(obj)))
+        raise ValidationError(f"The dataobject is expected to be one of ({dtype},). But it is a {type(obj)}")
 
 
 def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
@@ -63,12 +63,11 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
             "The dataframe is expected to have a MultiIndex with {} levels as columns. "
             "It has just a single normal column level.".format(nlevels)
         )
-    if has_multiindex is True:
-        if not df.columns.nlevels == nlevels:
-            raise ValidationError(
-                "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-                "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
-            )
+    if has_multiindex is True and not df.columns.nlevels == nlevels:
+        raise ValidationError(
+            "The dataframe is expected to have a MultiIndex with {} levels as columns. "
+            "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
+        )
 
 
 def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Hashable], List[str]]]):
@@ -90,9 +89,9 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Has
 
     if result is False:
         if len(columns_sets) == 1:
-            helper_str = "columns: {}".format(columns_sets[0])
+            helper_str = f"columns: {columns_sets[0]}"
         else:
-            helper_str = "one of the following sets of columns: {}".format(columns_sets)
+            helper_str = f"one of the following sets of columns: {columns_sets}"
         raise ValidationError(
             "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
                 helper_str, list(df.columns)

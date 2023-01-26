@@ -14,7 +14,6 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate, BaseDtw, DtwTemplate
@@ -47,7 +46,7 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 
 class DtwTestBase:
     def init_dtw(self, template, **kwargs):
-        defaults = dict(max_cost=0.5, min_match_length_s=None, find_matches_method="min_under_thres")
+        defaults = {"max_cost": 0.5, "min_match_length_s": None, "find_matches_method": "min_under_thres"}
         kwargs = {**defaults, **kwargs}
         return BaseDtw(template=template, **kwargs)
 
@@ -73,7 +72,7 @@ class TestIOErrors(DtwTestBase):
         assert "neither single- or multi-sensor data" in str(e)
 
     def test_invalid_template_combination(self):
-        """Invalid combinations of template and dataset format"""
+        """Invalid combinations of template and dataset format."""
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
             dtw = self.init_dtw(template=template)
@@ -240,7 +239,7 @@ class TestSimpleSegment(DtwTestBase):
 
 class TestMultiDimensionalArrayInputs(DtwTestBase):
     @pytest.mark.parametrize(
-        "template, data",
+        ("template", "data"),
         (
             (np.array([[0, 1.0, 0]]), np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])),
             (np.array([0, 1.0, 0]), np.array([2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]])),
@@ -368,7 +367,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         assert "sampling_rate_hz" in str(e)
 
     def test_sampling_rate_mismatch_warning(self):
-        """Test if warning is raised, when template and data do not have the same sampling rate and resample is False"""
+        """Test if warning is raised, when template and data do not have the same sampling rate and resample is False."""
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
         template = DtwTemplate(data=template, sampling_rate_hz=140.0)  # sampling rate different than data.
@@ -562,7 +561,6 @@ class TestTemplateResampling(DtwTestBase):
 
     def test_bug_missing_if(self):
         """Test that no error is thrown if sampling rates are different, but the template has no sampling rate."""
-
         template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
         test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
 
@@ -572,7 +570,7 @@ class TestTemplateResampling(DtwTestBase):
         try:
             dtw.segment(test_data, 20)
         except Exception as e:
-            pytest.fail("Raised unexpected error: {}".format(e), pytrace=True)
+            pytest.fail(f"Raised unexpected error: {e}", pytrace=True)
 
     def test_error_if_not_template_sampling_rate(self):
         """If the template should be resampled, but the template has no sampling rate, raise an error."""
@@ -589,8 +587,8 @@ class TestTemplateResampling(DtwTestBase):
 
     def test_warning_when_no_resample_but_different_sampling_rate(self):
         """In case the template and the data have different sampling rates, but resample is false, the user will be
-        warned."""
-
+        warned.
+        """
         template_arr = [0, 1, 2, 3, 4, 3, 2, 1, 0]
         test_data = np.array([0, 0, *template_arr, 0, 0, *template_arr, 0, 0])
 

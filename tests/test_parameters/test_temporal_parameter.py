@@ -7,7 +7,7 @@ from gaitmap.parameters import TemporalParameterCalculation
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-@pytest.fixture
+@pytest.fixture()
 def single_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0]
@@ -19,7 +19,7 @@ def single_stride_list():
     return stride_events_list
 
 
-@pytest.fixture
+@pytest.fixture()
 def multiple_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0, 1, 2]
@@ -31,7 +31,7 @@ def multiple_stride_list():
     return stride_events_list
 
 
-@pytest.fixture
+@pytest.fixture()
 def temporal_parameters_multiple_strides():
     temporal_parameters = pd.DataFrame(columns=["s_id", "stride_time", "swing_time", "stance_time"])
     temporal_parameters["s_id"] = [0, 1, 2]
@@ -41,7 +41,7 @@ def temporal_parameters_multiple_strides():
     return temporal_parameters.set_index("s_id")
 
 
-@pytest.fixture
+@pytest.fixture()
 def temporal_parameters_single_stride():
     temporal_parameters = pd.DataFrame(columns=["s_id", "stride_time", "swing_time", "stance_time"])
     temporal_parameters["s_id"] = [0]
@@ -67,7 +67,7 @@ class TestTemporalParameterCalculation:
     """Test temporal parameters calculation."""
 
     def test_single_sensor_multiple_strides(self, multiple_stride_list, temporal_parameters_multiple_strides):
-        """Test calculate temporal parameters for single sensor"""
+        """Test calculate temporal parameters for single sensor."""
         stride_events_list = multiple_stride_list
         expected_temporal_parameters = temporal_parameters_multiple_strides
         t = TemporalParameterCalculation()
@@ -75,7 +75,7 @@ class TestTemporalParameterCalculation:
         assert_frame_equal(t.parameters_, expected_temporal_parameters)
 
     def test_single_sensor_single_stride(self, single_stride_list, temporal_parameters_single_stride):
-        """Test calculate temporal parameters for single sensor and single stride"""
+        """Test calculate temporal parameters for single sensor and single stride."""
         stride_events_list = single_stride_list
         expected_temporal_parameters = temporal_parameters_single_stride
         t = TemporalParameterCalculation()
@@ -83,7 +83,7 @@ class TestTemporalParameterCalculation:
         assert_frame_equal(t.parameters_, expected_temporal_parameters)
 
     def test_multiple_sensor(self, multiple_stride_list, temporal_parameters_multiple_strides):
-        """Test calculate temporal parameters for multiple sensors , multiple strides for all sensors"""
+        """Test calculate temporal parameters for multiple sensors , multiple strides for all sensors."""
         stride_events_list1 = multiple_stride_list
         stride_events_list = {"sensor1": stride_events_list1, "sensor2": stride_events_list1}
         expected_temporal_parameters = temporal_parameters_multiple_strides
@@ -97,7 +97,7 @@ class TestTemporalParameterCalculation:
             assert_frame_equal(t.parameters_[sensor], expected_temporal_parameters[sensor])
 
     def test_multiple_sensor_single_stride(self, single_stride_list, temporal_parameters_single_stride):
-        """Test calculate temporal parameters for multiple sensors , single stride for all sensors"""
+        """Test calculate temporal parameters for multiple sensors , single stride for all sensors."""
         stride_events_list1 = single_stride_list
         stride_events_list = {"sensor1": stride_events_list1, "sensor2": stride_events_list1}
         expected_temporal_parameters = temporal_parameters_single_stride
@@ -117,7 +117,7 @@ class TestTemporalParameterCalculation:
         temporal_parameters_single_stride,
         temporal_parameters_multiple_strides,
     ):
-        """Test calculate temporal parameters for multiple sensors , single stride for one sensor"""
+        """Test calculate temporal parameters for multiple sensors , single stride for one sensor."""
         stride_events_list1 = multiple_stride_list
         stride_events_list2 = single_stride_list
         stride_events_list = {"sensor1": stride_events_list1, "sensor2": stride_events_list2}

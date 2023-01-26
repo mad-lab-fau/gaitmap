@@ -31,7 +31,7 @@ def update_version_strings(file_path, new_version):
         f.write(
             re.sub(
                 version_regex,
-                lambda match: '{}{}"'.format(match.group(1), new_version),
+                lambda match: f'{match.group(1)}{new_version}"',
                 content,
             )
         )
@@ -54,16 +54,6 @@ def update_version(version):
 
 def task_update_version():
     update_version(sys.argv[1])
-
-
-def task_register_ipykernel():
-    """Add a jupyter kernel with the gaitmap env to your local install."""
-
-    return {
-        "actions": [
-            ["python", "-m", "ipykernel", "install", "--user", "--name", "gaitmap", "--display-name", "gaitmap"]
-        ]
-    }
 
 
 def task_bump_all_dev():

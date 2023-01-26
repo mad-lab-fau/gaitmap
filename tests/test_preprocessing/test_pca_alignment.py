@@ -26,7 +26,7 @@ class TestPcaAlignment:
     """Test the pca alignment class `PcaAlignment`."""
 
     def test_single_sensor_input(self, healthy_example_imu_data):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data["left_sensor"]
 
         pca_align = PcaAlignment(pca_plane_axis=("gyr_x", "gyr_y"))
@@ -39,7 +39,7 @@ class TestPcaAlignment:
         assert isinstance(pca_align.pca_, PCA)
 
     def test_multi_sensor_input(self, healthy_example_imu_data):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data
 
         pca_align = PcaAlignment(target_axis="y", pca_plane_axis=("gyr_x", "gyr_y"))
@@ -76,7 +76,7 @@ class TestPcaAlignment:
             PcaAlignment(target_axis="a", pca_plane_axis=("gyr_x", "gyr_y")).align(data)
 
     @pytest.mark.parametrize(
-        "axis,rot",
+        ("axis", "rot"),
         (
             ("x", np.array([[0.28177506, 0.95948049, 0.0], [-0.95948049, 0.28177506, -0.0], [-0.0, 0.0, 1.0]])),
             ("y", np.array([[0.95948049, -0.28177506, 0.0], [0.28177506, 0.95948049, 0.0], [0.0, 0.0, 1.0]])),

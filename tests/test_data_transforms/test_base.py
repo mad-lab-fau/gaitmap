@@ -171,7 +171,7 @@ class TestParallelTransformer:
 
         assert id(t.data) == id(data)
         assert t.transformed_data_.shape == (len(data), data.shape[1] * len(t.transformers))
-        assert set(t.transformed_data_.columns) == set(f"{p}__{a}" for p, a in product(list("xy"), data.columns))
+        assert set(t.transformed_data_.columns) == {f"{p}__{a}" for p, a in product(list("xy"), data.columns)}
 
         assert_equal(t.transformed_data_.filter(like="x__").to_numpy(), data.to_numpy() / 2)
         assert_equal(t.transformed_data_.filter(like="y__").to_numpy(), data.to_numpy() / 3)
@@ -201,7 +201,7 @@ class TestParallelTransformer:
     @pytest.mark.parametrize("transformer", (["bla"], [("x", FixedScaler()), ("x", 3)]))
     def test_invalid_transformer_mappings(self, transformer):
         t = ParallelTransformer(transformer)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             t.self_optimize([pd.DataFrame(np.ones((10, 3)))])
 
     def test_composite_get_set(self):

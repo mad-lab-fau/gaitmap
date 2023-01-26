@@ -335,7 +335,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
             or len(return_data) == 0
             or not all(a in ("orientation", "position", "velocity") for a in return_data)
         ):
-            raise ValueError("`return_data` must be {} or a subset of it.".format(allowed_return_data))
+            raise ValueError(f"`return_data` must be {allowed_return_data} or a subset of it.")
         validation_methods = {
             "orientation": is_orientation_list,
             "position": is_position_list,
@@ -380,7 +380,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
             return_vals.append(data)
         return tuple(return_vals)
 
-    def _intersect(  # noqa: no-self-use
+    def _intersect(
         self,
         data: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
         regions_of_interest: SingleSensorRegionsOfInterestList,

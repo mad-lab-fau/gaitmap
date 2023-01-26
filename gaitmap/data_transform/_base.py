@@ -195,7 +195,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
                 unique_k.append(i)
         return set(unique_k)
 
-    def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]):  # noqa: no-self-use
+    def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]):
         if not set(data.columns).issuperset(selected_cols):
             raise ValueError("You specified transformations for columns that do not exist. This is not supported!")
 
@@ -369,15 +369,15 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
         message = "All items of the transformer list must be tuples of the shape (name, transformer_instance). "
         for k in self.transformers:
             if (not isinstance(k, tuple)) or (not len(k) == 2):
-                raise ValueError(f"{message}\n Got `{k}`")
+                raise TypeError(f"{message}\n Got `{k}`")
             if not isinstance(k[1], BaseTransformer):
-                raise ValueError(
+                raise TypeError(
                     f"{message}\n However, in `{k}` the second value is not a transformer instance. "
                     f"Got {type(k[1])}"
                 )
             try:
                 str(k[0])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 raise ValueError(
                     f"{message}\n However, in `{k}` the name is not convertible to a string (see error above)"
                 ) from e

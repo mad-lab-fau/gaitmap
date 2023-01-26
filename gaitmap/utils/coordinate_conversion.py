@@ -153,9 +153,9 @@ def convert_to_fbf(
     if isinstance(data, dict):
         return result
     # For synchronized sensors, return as MultiIndex dataframe
-    df = pd.concat(result, axis=1)
+    result_df = pd.concat(result, axis=1)
     # restore original order
-    return df[sensor_names]
+    return result_df[sensor_names]
 
 
 def _handle_foot(foot, foot_like, data, rot_func):

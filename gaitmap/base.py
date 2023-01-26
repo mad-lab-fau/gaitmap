@@ -31,7 +31,7 @@ def _hint_tuples(item):
     Modified based on: https://stackoverflow.com/questions/15721363/preserve-python-tuples-with-json
     """
     if isinstance(item, tuple):
-        return dict(_obj_type="Tuple", tuple=item)
+        return {"_obj_type": "Tuple", "tuple": item}
     if isinstance(item, list):
         return [_hint_tuples(e) for e in item]
     if isinstance(item, dict):
@@ -43,19 +43,19 @@ class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # pylint: disable=too-many-return-statements
+    def default(self, o):  # noqa: C901
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
-            return dict(_obj_type="Rotation", quat=o.as_quat().tolist())
+            return {"_obj_type": "Rotation", "quat": o.as_quat().tolist()}
         if isinstance(o, np.generic):
             return o.item()
         if isinstance(o, np.ndarray):
-            return dict(_obj_type="Array", array=o.tolist())
+            return {"_obj_type": "Array", "array": o.tolist()}
         if isinstance(o, pd.DataFrame):
-            return dict(_obj_type="DataFrame", df=o.to_json(orient="split"))
+            return {"_obj_type": "DataFrame", "df": o.to_json(orient="split")}
         if isinstance(o, pd.Series):
-            return dict(_obj_type="Series", df=o.to_json(orient="split"))
+            return {"_obj_type": "Series", "df": o.to_json(orient="split")}
         try:
             from pomegranate.hmm import HiddenMarkovModel  # pylint: disable=import-outside-toplevel
 
@@ -66,11 +66,11 @@ class _CustomEncoder(json.JSONEncoder):
                     "slightly in the re-imported model due to rounding issue. "
                     "This is a limitation of the underlying pomegrante library."
                 )
-                return dict(_obj_type="HiddenMarkovModel", hmm=json.loads(o.to_json()))
+                return {"_obj_type": "HiddenMarkovModel", "hmm": json.loads(o.to_json())}
         except ImportError:
             pass
         if o is tpcp.NOTHING:
-            return dict(_obj_type="EmptyDefault")
+            return {"_obj_type": "EmptyDefault"}
         if isinstance(o, Memory):
             warnings.warn(
                 "Exporting `joblib.Memory` objects to json is not supported. "
@@ -123,7 +123,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         for subclass in _BaseSerializable._get_subclasses():
             if subclass.__name__ == name:
                 return subclass
-        raise ValueError("No algorithm class with name {} exists".format(name))
+        raise ValueError(f"No algorithm class with name {name} exists")
 
     @classmethod
     def _from_json_dict(cls: Type[Self], json_dict: Dict) -> Self:

@@ -321,9 +321,8 @@ def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
                 for param in dist.parameters:
                     if not np.all(np.isfinite(param)):
                         return False
-            if hasattr(dist, "weights"):
-                if not np.all(np.isfinite(dist.weights)):
-                    return False
+            if hasattr(dist, "weights") and not np.all(np.isfinite(dist.weights)):
+                return False
     return True
 
 

@@ -39,7 +39,7 @@ class TestSimpleRotations(TestOrientationMethodMixin):
         """Madgwick should be able to resist small roations if acc does not change."""
         ori = np.array([0, 0, 0, 1.0])
         initial_ori = ori
-        for i in range(50):
+        for _i in range(50):
             ori = _madgwick_update(
                 np.array([1, 1, 0.0]), np.array([0, 0.0, 1.0]), initial_orientation=ori, sampling_rate_hz=50, beta=1.0
             )

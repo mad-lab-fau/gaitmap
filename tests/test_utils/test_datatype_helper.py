@@ -83,7 +83,7 @@ class TestIsSingleSensorDataset:
         assert is_single_sensor_data(pd.DataFrame(), check_acc=False, check_gyr=False)
 
     @pytest.mark.parametrize(
-        "cols, frame_valid, col_check_valid",
+        ("cols", "frame_valid", "col_check_valid"),
         (
             (SF_COLS, "sensor", "both"),
             (BF_COLS, "body", "both"),
@@ -132,7 +132,7 @@ class TestIsMultiSensorDataset:
         )
 
     @pytest.mark.parametrize(
-        "cols, frame_valid, col_check_valid",
+        ("cols", "frame_valid", "col_check_valid"),
         (
             (SF_COLS, "sensor", "both"),
             (BF_COLS, "body", "both"),
@@ -217,7 +217,7 @@ class TestIsSingleSensorStrideList:
         assert not is_single_sensor_stride_list(value)
 
     @pytest.mark.parametrize(
-        "cols, stride_types_valid",
+        ("cols", "stride_types_valid"),
         (
             (["s_id", "start", "end", "gsd_id"], ["any"]),
             (["s_id", "start", "end", "gsd_id", "something_extra"], ["any"]),
@@ -256,7 +256,7 @@ class TestIsSingleSensorStrideList:
             )
 
     @pytest.mark.parametrize(
-        "start, min_vel, expected",
+        ("start", "min_vel", "expected"),
         ((np.arange(10), np.arange(10), True), (np.arange(10), np.arange(10) + 1, False), ([], [], True)),
     )
     def test_columns_same_min_vel(self, start, min_vel, expected):
@@ -272,7 +272,7 @@ class TestIsSingleSensorStrideList:
         assert out == expected
 
     @pytest.mark.parametrize(
-        "start, ic, expected",
+        ("start", "ic", "expected"),
         ((np.arange(10), np.arange(10), True), (np.arange(10), np.arange(10) + 1, False), ([], [], True)),
     )
     def test_columns_same_ic(self, start, ic, expected):
@@ -322,7 +322,7 @@ class TestIsMultiSensorStrideList:
         assert not is_multi_sensor_stride_list(value)
 
     @pytest.mark.parametrize(
-        "cols, stride_types_valid",
+        ("cols", "stride_types_valid"),
         (
             (["s_id", "start", "end", "gsd_id"], ["any"]),
             (["s_id", "start", "end", "gsd_id", "something_extra"], ["any"]),
@@ -419,7 +419,7 @@ class TestIsSingleSensorTrajLikeList:
         assert not self.func(value)
 
     @pytest.mark.parametrize(
-        "cols, index",
+        ("cols", "index"),
         (
             (["s_id", "sample"], []),
             (["s_id", "sample", "something_else"], []),
@@ -436,7 +436,7 @@ class TestIsSingleSensorTrajLikeList:
         assert self.func(df, "stride")
 
     @pytest.mark.parametrize(
-        "cols, index, both",
+        ("cols", "index", "both"),
         (
             (["s_id", "sample"], [], True),
             (["sample"], [], False),
@@ -453,14 +453,14 @@ class TestIsSingleSensorTrajLikeList:
         assert self.func(df, "stride") == both
         assert self.func(df) is True
 
-    @pytest.mark.parametrize("list_type, index", TRAJ_TYPE_COLS.items())
+    @pytest.mark.parametrize(("list_type", "index"), TRAJ_TYPE_COLS.items())
     def test_different_list_types(self, list_type, index):
         valid_cols = [index, "sample", *self.valid_cols]
         df = pd.DataFrame(columns=valid_cols)
         for k in TRAJ_TYPE_COLS:
             assert self.func(df, k) == (k == list_type)
 
-    @pytest.mark.parametrize("list_type, index", TRAJ_TYPE_COLS.items())
+    @pytest.mark.parametrize(("list_type", "index"), TRAJ_TYPE_COLS.items())
     def test_any_roi_list_type(self, list_type, index):
         valid_cols = [index, "sample", *self.valid_cols]
         df = pd.DataFrame(columns=valid_cols)
@@ -470,7 +470,7 @@ class TestIsSingleSensorTrajLikeList:
         with pytest.raises(ValidationError) as e:
             self.func(pd.DataFrame(), raise_exception=True)
 
-        assert "The passed object does not seem to be a {}.".format(self.dtype) in str(e)
+        assert f"The passed object does not seem to be a {self.dtype}." in str(e)
         assert str(["sample"]) in str(e.value)
 
 
@@ -495,7 +495,7 @@ class TestIsMultiSensorTrajLikeList:
         assert not self.func(value)
 
     @pytest.mark.parametrize(
-        "cols, index",
+        ("cols", "index"),
         (
             (["s_id", "sample"], []),
             (["s_id", "sample", "something_else"], []),
@@ -524,7 +524,7 @@ class TestIsMultiSensorTrajLikeList:
         with pytest.raises(ValidationError) as e:
             self.func({"s1": pd.DataFrame()}, raise_exception=True)
 
-        assert "The passed object appears to be a {}".format(self.dtype) in str(e.value)
+        assert f"The passed object appears to be a {self.dtype}" in str(e.value)
         assert 'for the sensor with the name "s1"' in str(e.value)
         assert str(["sample"]) in str(e.value)
 
@@ -546,9 +546,7 @@ class TestIsTrajLikeList:
         with pytest.raises(ValidationError) as e:
             self.func(pd.DataFrame())
 
-        assert "The passed object appears to be neither a single- or a multi-sensor {} list.".format(self.dtype) in str(
-            e
-        )
+        assert f"The passed object appears to be neither a single- or a multi-sensor {self.dtype} list." in str(e)
         assert "sample" in str(e.value)
         assert "'dict'" in str(e.value)
 
@@ -624,7 +622,7 @@ class TestIsSingleRegionsOfInterestList:
         assert not is_single_sensor_regions_of_interest_list(value)
 
     @pytest.mark.parametrize(
-        "cols, roi_type_valid",
+        ("cols", "roi_type_valid"),
         (
             (["start", "end", "gs_id"], "gs"),
             (["start", "end", "gs_id", "something_extra"], "gs"),
@@ -686,7 +684,7 @@ class TestIsMultiSensorRegionsOfInterestList:
         assert not is_multi_sensor_regions_of_interest_list(value)
 
     @pytest.mark.parametrize(
-        "cols, roi_type_valid",
+        ("cols", "roi_type_valid"),
         (
             (["start", "end", "gs_id"], "gs"),
             (["start", "end", "gs_id", "something_extra"], "gs"),

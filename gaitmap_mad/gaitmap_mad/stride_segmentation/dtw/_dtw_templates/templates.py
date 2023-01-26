@@ -36,7 +36,7 @@ class BaseDtwTemplate(BaseAlgorithm):
         if not self.scaling:
             return data
         if isinstance(data, np.ndarray):
-            raise ValueError(
+            raise TypeError(
                 "Data Transformations are only supported for dataframe templates at the moment."
                 "Explicitly set `self.scaling` to None."
             )
@@ -119,10 +119,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
             data = pd.read_csv(test_data, header=0)
         template = data
 
-        if self.use_cols is None:
-            use_cols = template.columns
-        else:
-            use_cols = self.use_cols
+        use_cols = template.columns if self.use_cols is None else self.use_cols
         return self._apply_scaling(template[list(use_cols)], self.sampling_rate_hz)
 
 

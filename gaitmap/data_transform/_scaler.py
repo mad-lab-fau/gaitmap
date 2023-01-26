@@ -115,7 +115,7 @@ class StandardScaler(BaseTransformer):
         self.transformed_data_ = (data - data.to_numpy().mean()) / data.to_numpy().std(ddof=self.ddof)
         return self
 
-    def _transform_data(self, data: SingleSensorData, mean, std) -> SingleSensorData:  # noqa: no-self-use
+    def _transform_data(self, data: SingleSensorData, mean, std) -> SingleSensorData:
         return (data - mean) / std
 
 
@@ -255,7 +255,7 @@ class AbsMaxScaler(BaseTransformer):
         self.transformed_data_ = self._transform(data, self._get_abs_max(data))
         return self
 
-    def _get_abs_max(self, data: SingleSensorData) -> float:  # noqa: no-self-use
+    def _get_abs_max(self, data: SingleSensorData) -> float:
         is_single_sensor_data(data, check_gyr=False, check_acc=False, raise_exception=True)
         return float(np.nanmax(np.abs(data.to_numpy())))
 
@@ -419,7 +419,7 @@ class MinMaxScaler(BaseTransformer):
         self.transformed_data_ = self._transform(data, data_range)
         return self
 
-    def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:  # noqa: no-self-use
+    def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:
         is_single_sensor_data(data, check_gyr=False, check_acc=False, raise_exception=True)
         # We calculate the global min and max over all rows and columns!
         data = data.to_numpy()

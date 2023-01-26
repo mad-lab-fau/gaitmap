@@ -35,7 +35,7 @@ from gaitmap.example_data import get_healthy_example_imu_data
 from gaitmap.stride_segmentation import BarthOriginalTemplate
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
-data = get_healthy_example_imu_data()
+data = get_healthy_example_imu_data().iloc[:2000]
 sampling_rate_hz = 204.8
 
 data = convert_to_fbf(data, left_like="left_", right_like="right_")
@@ -93,11 +93,10 @@ first_call_stride_list["left_sensor"].equals(second_call_stride_list["left_senso
 # %%
 # Partially cached calls
 # ----------------------
-# As you have seen before, `BarthDtw` caches multiple steps individually.
+# As you have seen before, `BarthDtw` caches its internal call to `subsequence_cost_matrix`.
+# This is only part of the processing.
 # This ensures that we can change some parameters while still making use of the some cached results.
-# For `BarthDtw` we cache the creation of the cost matrix and the identification of strides within the cost matrix
-# separatly.
-# As the cost-matrix only depends on the template and the constrains, we can reuse the cash, if we change any other
+# As the cost-matrix only depends only on the template and the constrains, we can reuse the cash, if we change any other
 # parameter.
 #
 # If we change the `max_cost` for example, only the stride detection part needs to be recalculated.

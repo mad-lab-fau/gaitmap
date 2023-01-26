@@ -254,7 +254,7 @@ def test_roth_hmm_stride_segmentation(snapshot):
 
 
 def test_segmentation_hmm_training(snapshot):
-    from examples.stride_segmentation.segmentation_hmm_training import hmm, segmentation_model
+    from examples.stride_segmentation.segmentation_hmm_training import hmm
 
     # XXX: For some sad reason the training does not seem to be deterministic accross different machines.
     #      Therefore, we will just check that the model will still find the same strides for now.

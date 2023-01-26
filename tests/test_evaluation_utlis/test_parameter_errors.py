@@ -31,7 +31,7 @@ def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=-1):
 
 class TestCalculateParameterErrors:
     @pytest.mark.parametrize(
-        "input_param,ground_truth,expected_error",
+        ("input_param", "ground_truth", "expected_error"),
         [
             (
                 _create_valid_input(["param"], []),
@@ -77,7 +77,7 @@ class TestCalculateParameterErrors:
         assert expected_error in str(e)
 
     @pytest.mark.parametrize(
-        "input_param,ground_truth,expectation",
+        ("input_param", "ground_truth", "expectation"),
         [
             (
                 _create_valid_input(["param"], [1, 2, 3]),
@@ -111,11 +111,11 @@ class TestCalculateParameterErrors:
     def test_valid_single_sensor_input(self, input_param, ground_truth, expectation):
         output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
 
-        for error_type in expectation.keys():
+        for error_type in expectation:
             assert_array_equal(np.round(output_normal["param"].loc[error_type], 5), expectation[error_type])
 
     @pytest.mark.parametrize(
-        "input_param,ground_truth,sensor_names,expectations",
+        ("input_param", "ground_truth", "sensor_names", "expectations"),
         [
             (
                 _create_valid_input(["param"], [np.arange(0, 10), [4, 5, 6]], is_dict=True, sensors=["1", "2"]),
@@ -163,13 +163,13 @@ class TestCalculateParameterErrors:
         output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
 
         for sensor_name, expectation in zip(sensor_names, expectations):
-            for error_type in expectation.keys():
+            for error_type in expectation:
                 assert_array_equal(
                     np.round(output_normal[sensor_name]["param"].loc[error_type], 5), expectation[error_type]
                 )
 
     @pytest.mark.parametrize(
-        "input_param,ground_truth,expectation",
+        ("input_param", "ground_truth", "expectation"),
         [
             (
                 _create_valid_input(["param"], [[1, 2, 3], [4, 5, 6]], is_dict=True, sensors=["1", "2"]),
@@ -206,7 +206,7 @@ class TestCalculateParameterErrors:
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
 
-        for error_type in expectation.keys():
+        for error_type in expectation:
             assert_array_equal(np.round(output_normal.loc[error_type], 5), expectation[error_type])
 
     @pytest.mark.parametrize("per_sensor", [True, False])

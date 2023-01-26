@@ -219,7 +219,7 @@ class BaseDtw(BaseAlgorithm):
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
-       Society, EMBS, 6744–6747. https://doi.org/10.1109/EMBC.2013.6611104
+       Society, EMBS, 6744-6747. https://doi.org/10.1109/EMBC.2013.6611104
 
     Examples
     --------
@@ -471,7 +471,7 @@ class BaseDtw(BaseAlgorithm):
             "matches_start_end": matches_start_end_,
         }
 
-    def _select_cost_matrix_method(  # noqa: no-self-use
+    def _select_cost_matrix_method(
         self, max_template_stretch: float, max_signal_stretch: float
     ) -> Tuple[Callable, Dict[str, Any]]:
         """Select the correct function to calculate the cost matrix.
@@ -491,7 +491,7 @@ class BaseDtw(BaseAlgorithm):
             },
         )
 
-    def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: no-self-use
+    def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):
         """Find the matches in the cost matrix.
 
         This is separate method to make it easy to overwrite by a subclass.
@@ -504,13 +504,13 @@ class BaseDtw(BaseAlgorithm):
 
     def _postprocess_matches(
         self,
-        data,  # pylint: disable=unused-argument
-        paths: List,  # pylint: disable=unused-argument
-        cost: np.ndarray,  # pylint: disable=unused-argument
+        data,  # noqa: ARG002
+        paths: List,  # noqa: ARG002
+        cost: np.ndarray,  # noqa: ARG002
         matches_start_end: np.ndarray,
-        acc_cost_mat: np.ndarray,  # pylint: disable=unused-argument
+        acc_cost_mat: np.ndarray,  # noqa: ARG002
         to_keep: np.ndarray,
-        memory: Memory,  # pylint: disable=unused-argument
+        memory: Memory,  # noqa: ARG002
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 

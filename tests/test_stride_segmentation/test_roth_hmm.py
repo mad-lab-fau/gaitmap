@@ -112,9 +112,9 @@ class TestRothHmmFeatureTransform:
         feature_prefixes = {"raw": "", "gradient": "__gradient", "mean": "__mean"}
 
         assert transformed_data.shape[1] == len(features) * len(axes) == transform.n_features
-        assert set(transformed_data.columns) == set(
+        assert set(transformed_data.columns) == {
             f"{feature}{feature_prefixes[feature]}__{axis}" for feature in features for axis in axes
-        )
+        }
 
     def test_actual_output(self, healthy_example_imu_data):
         # We disable downsampling, standardization, and filtering for this test
@@ -152,7 +152,7 @@ class TestRothHmmFeatureTransform:
 
         assert "low_pass_filter" in str(e.value)
 
-    @pytest.mark.parametrize("roi, data", [(None, []), ([], None)])
+    @pytest.mark.parametrize(("roi", "data"), [(None, []), ([], None)])
     def test_value_error_missing_sampling_rate(self, roi, data):
         with pytest.raises(ValueError) as e:
             RothHmmFeatureTransformer().transform(data, roi_list=roi, sampling_rate_hz=None)
@@ -229,7 +229,7 @@ class TestSimpleModel:
                     assert isinstance(state.distribution, GeneralMixtureModel)
                     assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
                     dists = state.distribution.distributions
-                assert set(d.name for d in dists) == {"MultivariateGaussianDistribution"}
+                assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
 
     def test_model_exists_warning(self):
         model = SimpleHmm(n_states=5, n_gmm_components=3)
@@ -412,9 +412,8 @@ class TestRothSegmentationHmm:
             stride_model__n_states=5,
         )
 
-        with pytest.warns(UserWarning) as w:
-            with pytest.raises(ValueError) as e:
-                instance.self_optimize(data, labels, sampling_rate_hz=100)
+        with pytest.warns(UserWarning) as w, pytest.raises(ValueError) as e:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
 
         assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
@@ -502,7 +501,7 @@ class TestHmmStrideSegmentation:
         assert np.array_equal(result.matches_start_end_original_, result.matches_start_end_)
 
     @pytest.mark.parametrize(
-        "starts,ends,correct",
+        ("starts", "ends", "correct"),
         [
             # Start at 0, end at end
             (

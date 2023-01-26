@@ -42,7 +42,7 @@ class TestEventDetectionHerzer:
     """Test the event detection by Herzer."""
 
     def test_multi_sensor_input(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -55,7 +55,7 @@ class TestEventDetectionHerzer:
         snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
 
-    @pytest.mark.parametrize("var1, output", ((True, 1), (False, 0)))
+    @pytest.mark.parametrize(("var1", "output"), ((True, 1), (False, 0)))
     def test_postprocessing(self, healthy_example_imu_data, healthy_example_stride_borders, var1, output):
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS
@@ -74,7 +74,7 @@ class TestEventDetectionHerzer:
 
         assert mock.call_count == output
 
-    @pytest.mark.parametrize("enforce_consistency, output", ((False, False), (True, True)))
+    @pytest.mark.parametrize(("enforce_consistency", "output"), ((False, False), (True, True)))
     def test_disable_min_vel_event_list(
         self, healthy_example_imu_data, healthy_example_stride_borders, enforce_consistency, output
     ):
@@ -89,7 +89,7 @@ class TestEventDetectionHerzer:
         assert hasattr(ed, "min_vel_event_list_") == output
 
     def test_multi_sensor_input_dict(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test to see if the algorithm is generally working on the example data when provided as dict"""
+        """Test to see if the algorithm is generally working on the example data when provided as dict."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -108,7 +108,7 @@ class TestEventDetectionHerzer:
         assert list(datatype_helper.get_multi_sensor_names(ed.segmented_event_list_)) == dict_keys
 
     def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test if output is similar for input dicts or regular multisensor data sets"""
+        """Test if output is similar for input dicts or regular multisensor data sets."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
@@ -130,7 +130,7 @@ class TestEventDetectionHerzer:
         assert_frame_equal(ed_df.min_vel_event_list_["right_sensor"], ed_dict.min_vel_event_list_["r"])
 
     def test_valid_input_data(self, healthy_example_stride_borders):
-        """Test if error is raised correctly on invalid input data type"""
+        """Test if error is raised correctly on invalid input data type."""
         data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
         ed = HerzerEventDetection()
         with pytest.raises(ValidationError) as e:
@@ -139,7 +139,7 @@ class TestEventDetectionHerzer:
         assert "The passed object appears to be neither single- or multi-sensor data" in str(e)
 
     def test_valid_min_vel_search_win_size_ms(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test if error is raised correctly on too large min_vel_search_win_size_ms"""
+        """Test if error is raised correctly on too large min_vel_search_win_size_ms."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
@@ -148,7 +148,7 @@ class TestEventDetectionHerzer:
             ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
     def test_input_stride_list_size_one(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test if gait event detection also works with stride list of length 1"""
+        """Test if gait event detection also works with stride list of length 1."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         # only use the first entry of the stride list
@@ -161,7 +161,7 @@ class TestEventDetectionHerzer:
         assert_array_equal(np.array(ed.segmented_event_list_.shape[1]), 5)
 
     def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test if the s_id from the stride list is correctly transferred to the output of event detection"""
+        """Test if the s_id from the stride list is correctly transferred to the output of event detection."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
@@ -183,7 +183,7 @@ class TestEventDetectionHerzer:
         assert np.all(combined["end_x"] == combined["end_y"])
 
     def test_single_data_multi_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test correct error for combination of single sensor data set and multi sensor stride list"""
+        """Test correct error for combination of single sensor data set and multi sensor stride list."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
@@ -192,7 +192,7 @@ class TestEventDetectionHerzer:
             ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
     def test_multi_data_single_stride_list(self, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test correct error for combination of multi sensor data set and single sensor stride list"""
+        """Test correct error for combination of multi sensor data set and single sensor stride list."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders
@@ -211,21 +211,18 @@ class TestEventDetectionHerzer:
         ],
     )
     def test_detect_only(self, detect_only, healthy_example_imu_data, healthy_example_stride_borders):
-        """Test if only the specified events are detected"""
+        """Test if only the specified events are detected."""
         data_left = healthy_example_imu_data["left_sensor"]
         data_left = coordinate_conversion.convert_left_foot_to_fbf(data_left)
         stride_list_left = healthy_example_stride_borders["left_sensor"]
         ed = HerzerEventDetection(detect_only=detect_only)
         ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
 
-        if "ic" in detect_only:
-            expected_min_vel = ("pre_ic", *detect_only)
-        else:
-            expected_min_vel = detect_only
+        expected_min_vel = ("pre_ic", *detect_only) if "ic" in detect_only else detect_only
 
         if "min_vel" in detect_only:
             assert set(ed.min_vel_event_list_.columns) == {"start", "end", *expected_min_vel}
         else:
-            assert hasattr(ed, "min_vel_event_list_") == False
+            assert hasattr(ed, "min_vel_event_list_") is False
 
         assert set(ed.segmented_event_list_.columns) == {"start", "end", *detect_only}

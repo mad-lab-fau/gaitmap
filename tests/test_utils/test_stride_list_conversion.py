@@ -15,7 +15,7 @@ from gaitmap.utils.stride_list_conversion import (
 class TestEnforceStrideListConsistency:
     def _create_example_stride_list(self, stride_type: str):
         events = SL_EVENT_ORDER[stride_type]
-        event_dict = dict()
+        event_dict = {}
         event_dict["start"] = np.array(list(range(20)))
         event_dict["s_id"] = event_dict["start"]
         event_dict["end"] = np.array(list(range(1, 21)))
@@ -96,7 +96,7 @@ class TestEnforceStrideListConsistency:
 class TestConvertSegmentedStrideList:
     def _create_example_stride_list_with_pause(self):
         events = SL_EVENT_ORDER["segmented"]
-        event_dict = dict()
+        event_dict = {}
         event_dict["start"] = np.array(list(range(10)))
         event_dict["s_id"] = event_dict["start"]
         event_dict["end"] = np.array(list(range(1, 11)))

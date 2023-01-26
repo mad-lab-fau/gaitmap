@@ -157,14 +157,14 @@ class _EventDetectionMixin:
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+    def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.
 
         This is separate method to make it easy to overwrite by a subclass.
         """
         raise NotImplementedError()
 
-    def _get_detect_kwargs(self) -> Dict[str, Any]:  # noqa: no-self-use
+    def _get_detect_kwargs(self) -> Dict[str, Any]:
         """Return a dictionary of keyword arguments that should be passed to the detect method.
 
         This is a separate method to make it easy to overwrite by a subclass.

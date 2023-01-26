@@ -342,7 +342,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         """
         return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
 
-    def self_optimize_with_info(  # noqa: MC0001
+    def self_optimize_with_info(
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
@@ -411,10 +411,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             if labels is None:
                 labels_sequence_train.append(None)
                 continue
-            if isinstance(labels, (pd.Series, pd.DataFrame)):
-                labels = labels.to_numpy().squeeze()
-            else:
-                labels = labels.squeeze()
+            labels = labels.to_numpy().squeeze() if isinstance(labels, (pd.Series, pd.DataFrame)) else labels.squeeze()
             labels_sequence_train.append(np.ascontiguousarray(labels.copy()))
 
         if self.model is not None:

@@ -248,7 +248,7 @@ def find_extrema_in_radius(
     """
     extrema_funcs = {"min": np.nanargmin, "max": np.nanargmax}
     if extrema_type not in extrema_funcs:
-        raise ValueError("`extrema_type` must be one of {}, not {}".format(list(extrema_funcs.keys()), extrema_type))
+        raise ValueError(f"`extrema_type` must be one of {list(extrema_funcs.keys())}, not {extrema_type}")
     extrema_func = extrema_funcs[extrema_type]
     if radius == 0:
         # In case the search radius is 0 samples, we can just return the input.

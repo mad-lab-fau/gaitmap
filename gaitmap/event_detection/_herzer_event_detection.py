@@ -204,7 +204,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         self.ic_lowpass_filter = ic_lowpass_filter
         super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
 
-    def _get_detect_kwargs(self) -> Dict[str, int]:  # noqa: no-self-use
+    def _get_detect_kwargs(self) -> Dict[str, int]:
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
         return {
             "min_vel_search_win_size": min_vel_search_win_size,
@@ -214,7 +214,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
             "ic_lowpass_filter": self.ic_lowpass_filter,
         }
 
-    def _select_all_event_detection_method(self) -> Callable:  # noqa: no-self-use
+    def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.
 
         This is separate method to make it easy to overwrite by a subclass.

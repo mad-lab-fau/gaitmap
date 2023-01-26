@@ -55,7 +55,7 @@ class TestFixedScaler:
         # By default the transformer should not change the data
         assert t.transformed_data_.equals(data)
 
-    @pytest.mark.parametrize("scale,offset", [(1, 1), (2, 1), (3, 2)])
+    @pytest.mark.parametrize(("scale", "offset"), [(1, 1), (2, 1), (3, 2)])
     def test_transform(self, scale, offset):
         t = FixedScaler(scale=scale, offset=offset)
         data = pd.DataFrame(np.random.rand(10, 10))

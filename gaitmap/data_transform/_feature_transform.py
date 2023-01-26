@@ -64,7 +64,7 @@ class Resample(BaseTransformer):
         *,
         roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
         sampling_rate_hz: Optional[float] = None,
-        **kwargs,
+        **_,
     ) -> Self:
         """Resample the data.
 
@@ -176,7 +176,7 @@ class _PandasRollingFeatureTransform(BaseSlidingWindowFeatureTransform):
     _rolling_method_name: str
     _prefix: str
 
-    def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> SingleSensorData:
+    def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> SingleSensorData:  # noqa: ARG002
         rolling_result = self._apply_rolling(
             data.rolling(self.effective_window_size_samples_, min_periods=1, center=True)
         )
@@ -292,7 +292,7 @@ class _CustomSlidingWindowTransform(BaseSlidingWindowFeatureTransform):
     def _apply_to_window_view(self, windowed_view: np.ndarray, data: pd.DataFrame):
         raise NotImplementedError
 
-    def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> SingleSensorData:
+    def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> SingleSensorData:  # noqa: ARG002
         windowed_view = _get_centered_window_view(data.to_numpy(), self.effective_window_size_samples_, pad_value=0.0)
         # We pass the original data, so that the method can correctly create an output in form of a Dataframe
         return self._apply_to_window_view(windowed_view, data)

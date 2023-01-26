@@ -100,7 +100,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
             if np.sum(row) == -1:
                 mirror.append(col)
         # We use inplace here to make sure we honor the inplace passed to this function
-        data.rename(columns=rename, inplace=True)
+        data = data.rename(columns=rename)
         data[mirror] *= -1
     data = data[orig_col_order]
     return data
@@ -138,7 +138,7 @@ def _rotate_or_flip_dataset(
     else:
         rotated_dataset = dataset.copy()
         original_cols = dataset.columns
-    for key in rotation_dict.keys():
+    for key in rotation_dict:
         rotated_dataset[key] = single_rot_method(dataset[key], rotation_dict[key])
 
     if isinstance(dataset, pd.DataFrame):

@@ -162,7 +162,7 @@ class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
-       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657-2666, Nov. 2010.
 
     See Also
     --------
@@ -197,7 +197,7 @@ class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self.metric = metric
         self.inactive_signal_threshold = inactive_signal_threshold
 
-    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> Self:
+    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> Self:
         """Detect all ZUPT regions in the data.
 
         Parameters
@@ -311,7 +311,7 @@ class AredZuptDetector(NormZuptDetector):
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
-       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657-2666, Nov. 2010.
     .. [2] Wagstaff, Peretroukhin, and Kelly, “Robust Data-Driven Zero-Velocity Detection for Foot-Mounted Inertial
        Navigation.”
 
@@ -417,7 +417,7 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
-       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657-2666, Nov. 2010.
     .. [2] Wagstaff, Peretroukhin, and Kelly, “Robust Data-Driven Zero-Velocity Detection for Foot-Mounted Inertial
        Navigation.”
 
@@ -453,7 +453,7 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self.window_overlap_samples = window_overlap_samples
         self.inactive_signal_threshold = inactive_signal_threshold
 
-    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> Self:
+    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> Self:
         """Detect all ZUPT regions in the data.
 
         Parameters

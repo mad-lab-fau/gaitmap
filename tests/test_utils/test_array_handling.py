@@ -38,13 +38,13 @@ class TestSlidingWindow:
         """Test if output is actually just a different view onto the input data."""
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         window_view = sliding_window_view(input_array, window_length=4, overlap=2)
-        assert np.may_share_memory(input_array, window_view) == True
+        assert np.may_share_memory(input_array, window_view) is True
 
     def test_copy_of_array_with_padding(self):
         """Test if output a copy of input data."""
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         window_view = sliding_window_view(input_array, window_length=4, overlap=2, nan_padding=True)
-        assert np.may_share_memory(input_array, window_view) == False
+        assert np.may_share_memory(input_array, window_view) is False
 
     def test_nan_padding_of_type_nan(self):
         """Test if output a copy of input data."""
@@ -89,7 +89,8 @@ class TestSlidingWindow:
 
     def test_sliding_window_1D_asym_without_padding(self):
         """Test windowed view is correct for 1D array with need for nan padding but padding disabled and asymetrical
-        overlap."""
+        overlap.
+        """
         input_array = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         expected_output = np.array([0, 1, 2, 3, 4, 5, 6])
         window_view = sliding_window_view(input_array, window_length=7, overlap=2, nan_padding=False)
@@ -283,7 +284,7 @@ class TestStartEndArrayToBoolArray:
 
 class TestLocalMinimaBelowThreshold:
     @pytest.mark.parametrize(
-        "data, result",
+        ("data", "result"),
         [
             (np.array([np.nan]), []),
             (np.array([1, np.nan, 1]), [[1], [1]]),
@@ -303,7 +304,7 @@ class TestLocalMinimaBelowThreshold:
             np.testing.assert_array_equal(a[1], np.array(b))
 
     @pytest.mark.parametrize(
-        "data, threshold, results",
+        ("data", "threshold", "results"),
         [
             ([*np.ones(10), -1, -2, -1, *np.ones(10)], 0, [11]),
             (2 * [*np.ones(10), -1, -2, -1, *np.ones(10)], 0, [11, 34]),
@@ -325,7 +326,7 @@ class TestFindMinRadius:
         with pytest.raises(ValueError):
             find_extrema_in_radius(data, indices, radius, extrema_type="invalid_type")
 
-    @pytest.mark.parametrize("method, ex_value", (("min", -1), ("max", 1)))
+    @pytest.mark.parametrize(("method", "ex_value"), (("min", -1), ("max", 1)))
     def test_simple(self, method, ex_value):
         data = np.array([0, 0, 0, ex_value, 0, 0, 0])  # min at 3
         radius = 1
@@ -333,7 +334,7 @@ class TestFindMinRadius:
         out = find_extrema_in_radius(data, indices, radius, extrema_type=method)
         assert_array_equal(out, [3, 3, 3])
 
-    @pytest.mark.parametrize("method, ex_value", (("min", -1), ("max", 1)))
+    @pytest.mark.parametrize(("method", "ex_value"), (("min", -1), ("max", 1)))
     def test_multiple_matches(self, method, ex_value):
         data = np.array([0, 0, 0, ex_value, 0, 0, 0, 0, 0, 0, ex_value, 0, 0, 0])  # min at 3, 10
         radius = 2
@@ -377,7 +378,7 @@ class TestFindMinRadius:
 class TestMultiArrayInterpolate:
     """Test multi_array_interpolation
     Note that more tests for this method can indirectly be found in
-    `test_stride_segmentation.test_dtw_templates.TestCreateInterpolatedTemplate`
+    `test_stride_segmentation.test_dtw_templates.TestCreateInterpolatedTemplate`.
     """
 
     @pytest.fixture(autouse=True, params=["linear", "nearest"])
@@ -401,7 +402,7 @@ class TestMultiArrayInterpolate:
 
 class TestMergeIntervals:
     @pytest.mark.parametrize(
-        "input_array, output_array, gap_size",
+        ("input_array", "output_array", "gap_size"),
         [
             (
                 np.array([[1, 3], [2, 4], [6, 8], [5, 7], [10, 12], [11, 15], [18, 20]]),

@@ -22,7 +22,9 @@ class BaseFilter(BaseTransformer):
         """
         return self.transformed_data_
 
-    def filter(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+    def filter(  # noqa: A003
+        self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs
+    ) -> Self:
         """Filter the data.
 
         This will apply the filter along the **first** axis (axis=0) (aka each column will be filtered).
@@ -87,7 +89,7 @@ class ButterworthFilter(BaseFilter):
         self.cutoff_freq_hz = cutoff_freq_hz
         self.filter_type = filter_type
 
-    def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+    def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **_) -> Self:
         """Filter the data.
 
         This will apply the filter along the **first** axis (axis=0) (aka each column will be filtered).

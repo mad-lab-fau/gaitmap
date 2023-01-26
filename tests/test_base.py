@@ -31,7 +31,7 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
 
     # Set the signature to conform to the expected conventions
     sig = signature(test_class.__init__)
-    sig = sig.replace(parameters=(Parameter(k, Parameter.KEYWORD_ONLY) for k in params.keys()))
+    sig = sig.replace(parameters=(Parameter(k, Parameter.KEYWORD_ONLY) for k in params))
     test_class.__init__.__signature__ = sig
 
     test_instance = test_class(**user_set_params)
@@ -41,22 +41,22 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
 
 @pytest.fixture(
     params=[
-        dict(
-            action_method_name="test",
-            attributes={"attr1_": "test1"},
-            params={},
-            other_params={},
-            private_params={},
-            action_method=None,
-        ),
-        dict(
-            action_method_name="test",
-            attributes={"attr1_": "test1", "attr2_": "test2"},
-            params={"para1": "test1", "para2": "test2"},
-            other_params={"other_para1": "other_test1", "other_para2": "other_test2"},
-            private_params={"_private": "private_test"},
-            action_method=lambda self=None: "test",
-        ),
+        {
+            "action_method_name": "test",
+            "attributes": {"attr1_": "test1"},
+            "params": {},
+            "other_params": {},
+            "private_params": {},
+            "action_method": None,
+        },
+        {
+            "action_method_name": "test",
+            "attributes": {"attr1_": "test1", "attr2_": "test2"},
+            "params": {"para1": "test1", "para2": "test2"},
+            "other_params": {"other_para1": "other_test1", "other_para2": "other_test2"},
+            "private_params": {"_private": "private_test"},
+            "action_method": lambda self=None: "test",
+        },
     ]
 )
 def example_test_class_initialised(request) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
