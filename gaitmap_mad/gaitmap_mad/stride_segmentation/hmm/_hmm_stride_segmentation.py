@@ -33,9 +33,9 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
     But, the model will probably also segment turning strides as it only considers the `gyr_ml` data.
     If only straight strides are desired, strides should be filtered based on turning angle after parameter estimation.
 
-    [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-        free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
-        https://doi.org/10.1186/s12984-021-00883-7
+    .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
+           free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+           https://doi.org/10.1186/s12984-021-00883-7
 
     """
 
