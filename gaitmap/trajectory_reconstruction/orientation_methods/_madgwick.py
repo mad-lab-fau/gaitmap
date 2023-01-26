@@ -63,7 +63,7 @@ class MadgwickAHRS(BaseOrientationMethod):
 
     .. [1] Madgwick, S. O. H., Harrison, A. J. L., & Vaidyanathan, R. (2011).
            Estimation of IMU and MARG orientation using a gradient descent algorithm. IEEE International Conference on
-           Rehabilitation Robotics, 1–7. https://doi.org/10.1109/ICORR.2011.5975346
+           Rehabilitation Robotics, 1-7. https://doi.org/10.1109/ICORR.2011.5975346
     .. [2] http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 
     Examples

@@ -88,7 +88,7 @@ def find_static_samples(
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
-       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657-2666, Nov. 2010.
 
     See Also
     --------
@@ -100,7 +100,7 @@ def find_static_samples(
         raise ValueError("Invalid signal dimensions, signal must be of shape (n,3).")
 
     if metric not in get_args(METRIC_FUNCTION_NAMES):
-        raise ValueError("Invalid metric passed! {} as metric is not supported.".format(metric))
+        raise ValueError(f"Invalid metric passed! {metric} as metric is not supported.")
 
     # check if minimum signal length matches window length
     if window_length > len(signal):
@@ -162,7 +162,7 @@ def find_static_samples_shoe(
     References
     ----------
     .. [1] I. Skog, J.-O. Nilsson, P. Händel, and J. Rantakokko, “Zero-velocity detection—An algorithm evaluation,”
-       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657–2666, Nov. 2010.
+       IEEE Trans. Biomed. Eng., vol. 57, no. 11, pp. 2657-2666, Nov. 2010.
     .. [2] Wagstaff, Peretroukhin, and Kelly, “Robust Data-Driven Zero-Velocity Detection for Foot-Mounted Inertial
        Navigation.”
 
@@ -285,7 +285,7 @@ def find_first_static_window_multi_sensor(
 
     """
     if metric not in _METRIC_FUNCTIONS:
-        raise ValueError("`metric` must be one of {}".format(list(_METRIC_FUNCTIONS.keys())))
+        raise ValueError(f"`metric` must be one of {list(_METRIC_FUNCTIONS.keys())}")
 
     if not isinstance(signals, np.ndarray):
         # all signals should have the same shape

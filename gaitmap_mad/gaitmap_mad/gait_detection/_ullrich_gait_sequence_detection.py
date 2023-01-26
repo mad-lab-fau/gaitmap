@@ -122,11 +122,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
     .. [1] M. Ullrich, A. Küderle, J. Hannink, S. Del Din, H. Gassner, F. Marxreiter, J. Klucken, B.M.
         Eskofier, F. Kluge, Detection of Gait From Continuous Inertial Sensor Data Using Harmonic
-        Frequencies, IEEE Journal of Biomedical and Health Informatics. (2020) 1–1.
+        Frequencies, IEEE Journal of Biomedical and Health Informatics. (2020) 1-1.
         https://doi.org/10.1109/JBHI.2020.2975361.
 
     .. [2] Iluz, T., Gazit, E., Herman, T. et al. Automated detection of missteps during community ambulation in
-        patients with Parkinson’s disease: a new approach for quantifying fall risk in the community setting.
+        patients with Parkinson`s disease: a new approach for quantifying fall risk in the community setting.
         J NeuroEngineering Rehabil 11, 48 (2014). https://doi.org/10.1186/1743-0003-11-48
 
 
@@ -369,7 +369,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         )
 
         if self.harmonic_tolerance_hz < freq_axis_delta:
-            raise ValueError("Value for harmonic_tolerance_hz too small. Must be > {} ".format(freq_axis_delta))
+            raise ValueError(f"Value for harmonic_tolerance_hz too small. Must be > {freq_axis_delta} ")
         # define size of window around candidates to look for peak. Allow per default 0.3 Hz of tolerance
         harmonic_window_half = int(np.floor(self.harmonic_tolerance_hz / freq_axis_delta))
 
@@ -415,7 +415,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
         if not isinstance(self.sensor_channel_config, str):
-            raise ValueError("Sensor_channel_config must be a str.")
+            raise TypeError("Sensor_channel_config must be a str.")
 
         # check locomotion band
         if len(self.locomotion_band) != 2:

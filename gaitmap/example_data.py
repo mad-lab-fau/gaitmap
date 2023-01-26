@@ -57,7 +57,7 @@ def get_ms_example_imu_data():
     """
     data = {}
     for s in ["left", "right"]:
-        test_data_path = _get_data("imu_sample_ms_{}.csv".format(s))
+        test_data_path = _get_data(f"imu_sample_ms_{s}.csv")
         sensor_data = pd.read_csv(test_data_path, header=0, index_col=0)
 
         # Get index in seconds

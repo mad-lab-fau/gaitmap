@@ -348,7 +348,7 @@ def _match_stride_lists(
     else:
         # get sensor names that are in stride_list_a AND in stride_list_b
         sensor_names_list = sorted(
-            list(set(get_multi_sensor_names(stride_list_a)).intersection(get_multi_sensor_names(stride_list_b)))
+            set(get_multi_sensor_names(stride_list_a)).intersection(get_multi_sensor_names(stride_list_b))
         )
         if not sensor_names_list:
             raise ValidationError("The passed MultiSensorStrideLists do not have any common sensors.")

@@ -45,7 +45,7 @@ jobs:
         poetry install -E all
     - name: Linting
       run: |
-        poetry run poe check
+        poetry run poe lint_ci
     - name: Build Docs
       run: |
         poetry run poe check

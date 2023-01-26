@@ -29,7 +29,7 @@ class TestForwardDirectionSignAlignment:
     """Test the forward direction sign alignment class `ForwardDirectionSignAlignment`."""
 
     def test_single_sensor_input(self, healthy_example_imu_data):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data["left_sensor"]
 
         fdsa = ForwardDirectionSignAlignment()
@@ -44,7 +44,7 @@ class TestForwardDirectionSignAlignment:
         assert isinstance(fdsa.pos_method_, BasePositionMethod)
 
     def test_multi_sensor_input(self, healthy_example_imu_data):
-        """Dummy test to see if the algorithm is generally working on the example data"""
+        """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data
 
         fdsa = ForwardDirectionSignAlignment()
@@ -61,7 +61,6 @@ class TestForwardDirectionSignAlignment:
 
     def test_invalid_axis_combination(self):
         """Test if value error is raised correctly if invalid axis are defined."""
-
         with pytest.raises(ValueError, match=r".*Invalid rotation axis! *"):
             ForwardDirectionSignAlignment(forward_direction="x", rotation_axis="a").align(1, sampling_rate_hz=1)
         with pytest.raises(ValueError, match=r".*Invalid forward direction axis! *"):
@@ -71,13 +70,11 @@ class TestForwardDirectionSignAlignment:
 
     def test_invalid_ori_method(self):
         """Test if value error is raised correctly if invalid ori_method class is passed."""
-
         with pytest.raises(ValueError, match=r".*The provided `ori_method` *"):
             ForwardDirectionSignAlignment(ori_method="abc").align(1, sampling_rate_hz=2)
 
     def test_invalid_pos_method(self):
         """Test if value error is raised correctly if invalid pos_method class is passed."""
-
         with pytest.raises(ValueError, match=r".*The provided `pos_method` *"):
             ForwardDirectionSignAlignment(pos_method="abc").align(1, sampling_rate_hz=2)
 
@@ -93,7 +90,6 @@ class TestForwardDirectionSignAlignment:
 
     def test_flip_rotation(self, healthy_example_imu_data):
         """Test that a correct 180flip is applied if the data is upside-down."""
-
         data = healthy_example_imu_data
         dataset_flipped = rotate_dataset(data, Rotation.from_euler("z", 180, degrees=True))
 

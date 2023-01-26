@@ -1,5 +1,7 @@
 """HMM based stride segmentation by Roth et al. 2021."""
+from contextlib import suppress
 from importlib.resources import open_text
+from pathlib import Path
 from typing import Dict, Generic, Optional, TypeVar, Union
 
 import numpy as np
@@ -32,7 +34,7 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
     If only straight strides are desired, strides should be filtered based on turning angle after parameter estimation.
 
     [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-        free-living gait data in Parkinson’s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+        free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
         https://doi.org/10.1186/s12984-021-00883-7
 
     """
@@ -41,9 +43,8 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
         # try to load models
         with open_text(
             "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
-        ) as test_data:
-            with open(test_data.name, encoding="utf8") as f:
-                model_json = f.read()
+        ) as test_data, Path(test_data.name).open(encoding="utf8") as f:
+            model_json = f.read()
         return RothSegmentationHmm.from_json(model_json)
 
 
@@ -218,7 +219,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
             "result_model_": model,
         }
 
-    def _hidden_states_to_matches_start_end(  # noqa: no-self-use
+    def _hidden_states_to_matches_start_end(
         self, hidden_states_predicted: np.ndarray, stride_start_state, stride_end_state
     ):
         """Convert a hidden state sequence to a list of potential borders."""
@@ -241,11 +242,8 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         # if no end is found (as it is the end of the signal), we remove the start
         matches_start_end = []
         for start in matches_starts:
-            try:
+            with suppress(IndexError):
                 matches_start_end.append([start, matches_ends[matches_ends > start][0]])
-            except IndexError:
-                # No end found
-                pass
 
         # If multiple starts with the same end are found, we remove all but the first
         matches_start_end = np.array(matches_start_end)

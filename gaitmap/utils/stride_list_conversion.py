@@ -89,10 +89,9 @@ def _segmented_stride_list_to_min_vel_single_sensor(
             # tc of each stride is the tc in the subsequent segmented stride
             converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
-    elif target_stride_type == "ic":
-        if "tc" in converted_stride_list.columns:
-            # As the ic occurs after the tc in the segmented stride, new tc is the tc of the next stride
-            converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
+    elif target_stride_type == "ic" and "tc" in converted_stride_list.columns:
+        # As the ic occurs after the tc in the segmented stride, new tc is the tc of the next stride
+        converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
     breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0

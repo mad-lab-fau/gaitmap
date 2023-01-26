@@ -98,7 +98,7 @@ class _TrajectoryReconstructionWrapperMixin:
         self, data: SingleSensorData, integration_regions: SingleSensorRegionsOfInterestList
     ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
-        full_index = tuple((*self._expected_integration_region_index, "sample"))
+        full_index = (*self._expected_integration_region_index, "sample")
         orientation = {}
         velocity = {}
         position = {}

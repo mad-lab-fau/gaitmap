@@ -91,10 +91,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
     """
     v = np.array(v)
-    if len(v.shape) == 1:
-        ax = 0
-    else:
-        ax = 1
+    ax = 0 if len(v.shape) == 1 else 1
     # We do not want a warning when we divide by 0 as we expect it
     with np.errstate(divide="ignore", invalid="ignore"):
         return (v.T / norm(v, axis=ax)).T
@@ -151,7 +148,7 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
 
     """
     if v1.ndim > 1 or v2.ndim > 1:
-        raise ValueError("v1 and v2 need to be at max 1D (currently {}D and {}D".format(v1.ndim, v2.ndim))
+        raise ValueError(f"v1 and v2 need to be at max 1D (currently {v1.ndim}D and {v2.ndim}D")
     if is_almost_parallel_or_antiparallel(v1, v2):
         return find_random_orthogonal(v1)
     return normalize(np.cross(v1, v2))

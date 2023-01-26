@@ -104,7 +104,7 @@ class TestPieceWiseLinearDedriftedIntegration:
     """Test the position estimation class `PieceWiseLinearDedriftedIntegration`."""
 
     def test_drift_model_simple(self):
-        """Run a simple example and estimate its drift _model"""
+        """Run a simple example and estimate its drift _model."""
         data = np.array(
             [
                 1,
@@ -301,7 +301,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         assert_almost_equal(estimated_drift_model, data)
 
     def test_drift_model(self):
-        """Test drift _model on simple slope with different zupt edge conditions"""
+        """Test drift _model on simple slope with different zupt edge conditions."""
         data = np.arange(20)
         zupt = np.repeat(False, 20)
         zupt[11:15] = True

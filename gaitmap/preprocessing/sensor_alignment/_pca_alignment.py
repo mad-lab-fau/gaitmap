@@ -48,8 +48,8 @@ def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_
 
     target_axis_helper = {"x": None, "y": None}
 
-    if not target_axis.lower() in target_axis_helper:
-        raise ValueError("Invalid target aixs! Axis must be one of {}".format(target_axis_helper.keys()))
+    if target_axis.lower() not in target_axis_helper:
+        raise ValueError(f"Invalid target aixs! Axis must be one of {target_axis_helper.keys()}")
 
     target_axis_helper[target_axis.lower()] = pca_main_component_axis
 
@@ -135,7 +135,7 @@ class PcaAlignment(BaseSensorAlignment):
         self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
 
-    def align(self, data: SensorData, **kwargs) -> Self:
+    def align(self, data: SensorData, **_) -> Self:
         """Align sensor data."""
         self.data = data
         dataset_type = is_sensor_data(data, check_gyr=True, check_acc=True, frame="sensor")

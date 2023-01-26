@@ -32,8 +32,7 @@ def butter_lowpass_filter_1d(data: np.ndarray, sampling_rate_hz: float, cutoff_f
 
     """
     b, a = butter(order, cutoff_freq_hz, btype="low", analog=False, fs=sampling_rate_hz)
-    data_filtered = lfilter(b, a, data)
-    return data_filtered
+    return lfilter(b, a, data)
 
 
 @njit(nogil=True, parallel=True, cache=True)

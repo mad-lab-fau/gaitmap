@@ -186,9 +186,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
         return self
 
-    def _estimate_piece_wise_linear_drift_model(  # noqa: no-self-use
-        self, data: np.ndarray, zupt_sequences: np.ndarray
-    ) -> np.ndarray:
+    def _estimate_piece_wise_linear_drift_model(self, data: np.ndarray, zupt_sequences: np.ndarray) -> np.ndarray:
         """Estimate a piece wise linear drift error model.
 
         Parameters

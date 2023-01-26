@@ -25,7 +25,7 @@ def _get_git_revision():
 
 
 def _linkcode_resolve(domain, info, package, url_fmt, revision):
-    """Determine a link to online source for a class/method/function
+    """Determine a link to online source for a class/method/function.
 
     This is called by sphinx.ext.linkcode
 
@@ -38,13 +38,12 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
     ...                   revision='xxxx')
     'http://hg.python.org/cpython/file/xxxx/Lib/tty/tty.py#L18'
     """
-
     if revision is None:
-        return
+        return None
     if domain not in ("py", "pyx"):
-        return
+        return None
     if not info.get("module") or not info.get("fullname"):
-        return
+        return None
 
     class_name = info["fullname"].split(".")[0]
     module = __import__(info["module"], fromlist=[class_name])
@@ -64,7 +63,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
         except Exception:
             fn = None
     if not fn:
-        return
+        return None
 
     fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
     try:
@@ -75,7 +74,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 
 
 def make_linkcode_resolve(package, url_fmt):
-    """Returns a linkcode_resolve function for the given URL format
+    """Returns a linkcode_resolve function for the given URL format.
 
     revision is a git commit reference (hash or name)
 

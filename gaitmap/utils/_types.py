@@ -9,7 +9,4 @@ import pandas as pd
 _Hashable = Union[Hashable, str]
 _HashableVar = TypeVar("_HashableVar", Hashable, str)
 
-if TYPE_CHECKING:
-    _DataFrame = Any
-else:
-    _DataFrame = pd.DataFrame
+_DataFrame = Any if TYPE_CHECKING else pd.DataFrame

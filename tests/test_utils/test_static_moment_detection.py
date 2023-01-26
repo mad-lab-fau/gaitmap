@@ -83,7 +83,7 @@ class TestFindStaticSamples:
 
     def test_max_overlap_mean_w3_with_noise_default_overlap(self):
         """Test binary input data on mean metric with window size 4 after adding a bit of noise."""
-        test_input = data = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
+        test_input = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
 
@@ -95,7 +95,7 @@ class TestFindStaticSamples:
 
     def test_max_overlap_max_w3_with_noise(self):
         """Test binary input data on max metric with window size 4 after adding a bit of noise."""
-        test_input = data = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
+        test_input = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
         expected_output = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 

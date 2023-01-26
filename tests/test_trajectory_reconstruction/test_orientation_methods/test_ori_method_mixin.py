@@ -15,7 +15,7 @@ class TestOrientationMethodMixin:
         raise NotImplementedError("Should be implemented by ChildClass")
 
     @pytest.mark.parametrize(
-        "axis_to_rotate, vector_to_rotate, expected_result",
+        ("axis_to_rotate", "vector_to_rotate", "expected_result"),
         (([1, 0, 0], [0, 0, 1], [0, 0, -1]), ([0, 1, 0], [0, 0, 1], [0, 0, -1]), ([0, 0, 1], [1, 0, 0], [-1, 0, 0])),
     )
     def test_180(self, axis_to_rotate: int, vector_to_rotate: list, expected_result: list):
@@ -34,7 +34,6 @@ class TestOrientationMethodMixin:
             the result that is to be expected
 
         """
-
         fs = 100
 
         sensor_data = np.repeat(np.array([0, 0, 0, *axis_to_rotate])[None, :], fs, axis=0) * np.rad2deg(np.pi)

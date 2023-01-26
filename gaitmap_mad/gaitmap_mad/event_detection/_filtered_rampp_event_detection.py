@@ -9,7 +9,7 @@ from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetecti
 
 
 class FilteredRamppEventDetection(RamppEventDetection):
-    """This addition uses a low-pass filter on the ml signal for ic calculation.
+    """Detect gait events using RamppEventDetection with an additional low-pass filter for ic calculation.
 
     Rampp event detection with an additional low-pass Butterworth filter.
     This method is suggested to be used on data containing high frequency noise or artifacts which occur around the ic
@@ -106,6 +106,6 @@ class FilteredRamppEventDetection(RamppEventDetection):
             detect_only=detect_only,
         )
 
-    def _get_detect_kwargs(self) -> Dict:  # noqa: no-self-use
+    def _get_detect_kwargs(self) -> Dict:
         parent_kwargs = super()._get_detect_kwargs()
         return {**parent_kwargs, "gyr_ic_lowpass_filter": self.ic_lowpass_filter}

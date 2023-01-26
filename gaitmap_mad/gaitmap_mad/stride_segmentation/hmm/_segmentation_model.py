@@ -275,7 +275,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     References
     ----------
     .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-           free-living gait data in Parkinson’s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+           free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
            https://doi.org/10.1186/s12984-021-00883-7
 
     """

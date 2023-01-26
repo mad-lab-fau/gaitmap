@@ -54,13 +54,13 @@ class TestNormZuptDetector:
     def get_algorithm_class(self, request):
         self.algorithm_class = request.param
 
-    @pytest.mark.parametrize("ws,sr", ((1, 1), (1, 2), (2, 1), (2.49, 1)))
+    @pytest.mark.parametrize(("ws", "sr"), ((1, 1), (1, 2), (2, 1), (2.49, 1)))
     def test_error_window_to_small(self, healthy_example_imu_data, ws, sr):
         with pytest.raises(ValidationError, match=r".*The effective window size is smaller*"):
             self.algorithm_class(window_length_s=ws).detect(healthy_example_imu_data["left_sensor"], sr)
 
     @pytest.mark.parametrize(
-        "overlap1, overlap2, valid",
+        ("overlap1", "overlap2", "valid"),
         (
             (0.5, 0.5, False),
             (1, None, False),
@@ -78,16 +78,13 @@ class TestNormZuptDetector:
         ),
     )
     def test_wrong_window_overlap(self, overlap1, overlap2, valid, healthy_example_imu_data):
-        if not valid:
-            context = pytest.raises(ValidationError)
-        else:
-            context = nullcontext()
+        context = pytest.raises(ValidationError) if not valid else nullcontext()
         with context:
             self.algorithm_class(window_length_s=1, window_overlap=overlap1, window_overlap_samples=overlap2).detect(
                 healthy_example_imu_data["left_sensor"], 200
             )
 
-    @pytest.mark.parametrize("win_len,overlap,valid", ((1, 0, True), (10 / 200, 0.99, False)))
+    @pytest.mark.parametrize(("win_len", "overlap", "valid"), ((1, 0, True), (10 / 200, 0.99, False)))
     def test_effective_overlap_error(self, win_len, overlap, valid, healthy_example_imu_data):
         if not valid:
             with pytest.raises(ValidationError, match=r".*The effective window overlap after rounding is 1"):
@@ -100,7 +97,7 @@ class TestNormZuptDetector:
             )
 
     @pytest.mark.parametrize(
-        "sensor,axis,valid",
+        ("sensor", "axis", "valid"),
         (
             ("acc", SF_ACC, True),
             ("acc", BF_ACC, True),
@@ -137,7 +134,7 @@ class TestNormZuptDetector:
             self.algorithm_class(window_length_s=1000).detect(healthy_example_imu_data["left_sensor"].iloc[:500], 1.0)
 
     @pytest.mark.parametrize(
-        "win_overlap_samples, expected",
+        ("win_overlap_samples", "expected"),
         (
             (50, 50),
             (-1, 99),

@@ -17,7 +17,7 @@ class TestRateOfChangeFromGyro:
     """Test the function `rate_of_change_from_gyro`."""
 
     @pytest.mark.parametrize(
-        "q, g",
+        ("q", "g"),
         [
             ([1.0, 0.0, 0.0, 0.0], [1.0, 2.0, 3.0]),
             ([0.0, 0.707107, 0.707107, 0.0], [1.0, 2.0, 1.0]),
@@ -34,7 +34,7 @@ class TestMulitply:
     """Test the function `multiply`."""
 
     @pytest.mark.parametrize(
-        "q1, q2",
+        ("q1", "q2"),
         [
             ([1.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]),
             ([1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]),
@@ -52,7 +52,7 @@ class TestRotateVector:
     """Test the function `rotate_vector`."""
 
     @pytest.mark.parametrize(
-        "q, v",
+        ("q", "v"),
         [
             ([1.0, 0.0, 0.0, 0.0], [1.0, 2.0, 3.0]),
             ([0.0, 0.707107, 0.707107, 0.0], [1.0, 2.0, 1.0]),

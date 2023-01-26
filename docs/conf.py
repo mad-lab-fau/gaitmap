@@ -14,8 +14,7 @@ import os
 import re
 import sys
 from datetime import datetime
-from importlib import import_module
-from inspect import getsourcefile, getsourcelines
+from inspect import getsourcefile
 from pathlib import Path
 from typing import List
 
@@ -36,9 +35,9 @@ def replace_gitlab_links(base_url, text):
     def substitute(matchobj):
         tokens = {"merge_requests": "!", "issues": "#"}
         if matchobj.group(1) == "commit":
-            return "[{}]({})".format(matchobj.group(2)[:5], matchobj.group(0))
+            return f"[{matchobj.group(2)[:5]}]({matchobj.group(0)})"
         token = tokens[matchobj.group(1)]
-        return "[{}{}]({})".format(token, matchobj.group(2), matchobj.group(0))
+        return f"[{token}{matchobj.group(2)}]({matchobj.group(0)})"
 
     return re.sub(regex, substitute, text)
 
@@ -48,8 +47,8 @@ def convert_github_links(base_url, text):
 
     def substitute(matchobj):
         if matchobj.group(1) == "commit":
-            return "[{}]({})".format(matchobj.group(2)[:5], matchobj.group(0))
-        return "[#{}]({})".format(matchobj.group(2), matchobj.group(0))
+            return f"[{matchobj.group(2)[:5]}]({matchobj.group(0)})"
+        return f"[#{matchobj.group(2)}]({matchobj.group(0)})"
 
     return re.sub(regex, substitute, text)
 
@@ -66,7 +65,7 @@ project = info["name"]
 author = ", ".join(info["authors"])
 release = info["version"]
 
-copyright = "2020 - {}, MaD-Lab FAU, Digital Health and Gait-Analysis Group".format(datetime.now().year)
+copyright = f"2020 - {datetime.now().year}, MaD-Lab FAU, Digital Health and Gait-Analysis Group"
 
 # -- Copy the README and Changelog and fix image path --------------------------------------
 HERE = Path(__file__).parent
@@ -173,7 +172,7 @@ intersphinx_module_mapping = {
 user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0"
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "python": (f"https://docs.python.org/{sys.version_info.major}", None),
     **intersphinx_module_mapping,
 }
 

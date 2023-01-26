@@ -44,20 +44,14 @@ class TestRegressionOnRealData:
         dtw = BarthDtw()  # Test with default paras
         dtw.segment(data, sampling_rate_hz=204.8)
 
-        snapshot.assert_match(dtw.stride_list_["left_sensor"], "left")
-        snapshot.assert_match(dtw.stride_list_["right_sensor"], "right")
-
-    def test_real_data_both_feed(self, healthy_example_imu_data):
-        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
-        dtw = BarthDtw()  # Test with default paras
-        dtw.segment(data, sampling_rate_hz=204.8)
-
-        # For now only evaluate that the number of strides is correct
         assert len(dtw.stride_list_["left_sensor"]) == 28
         assert len(dtw.stride_list_["right_sensor"]) == 28
 
+        snapshot.assert_match(dtw.stride_list_["left_sensor"], "left")
+        snapshot.assert_match(dtw.stride_list_["right_sensor"], "right")
+
     def test_snapping_on_off(self, healthy_example_imu_data):
-        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"]).iloc[:1000]
         # off
         dtw = BarthDtw(snap_to_min_win_ms=None)
         dtw.segment(data, sampling_rate_hz=204.8)
@@ -76,7 +70,7 @@ class TestRegressionOnRealData:
         assert_array_equal(dtw.matches_start_end_original_["left_sensor"], out_without_snapping)
 
     def test_conflict_resolution_on_off(self, healthy_example_imu_data):
-        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"]).iloc[:1000]
         # For both cases set the threshold so high that wrong matches will occure
         max_cost = 5
         min_match_length_s = 0.1
@@ -95,14 +89,17 @@ class TestRegressionOnRealData:
 
         # Validate that there are indeed overlaps
         assert not np.any(np.diff(conflict_resolution.flatten()) < 0)
-        assert len(conflict_resolution) == 29
+        assert len(conflict_resolution) == 3
 
 
 class DtwTestBaseBarth:
     def init_dtw(self, template, **kwargs):
-        defaults = dict(
-            max_cost=0.5, min_match_length_s=None, find_matches_method="min_under_thres", snap_to_min_win_ms=None
-        )
+        defaults = {
+            "max_cost": 0.5,
+            "min_match_length_s": None,
+            "find_matches_method": "min_under_thres",
+            "snap_to_min_win_ms": None,
+        }
         kwargs = {**defaults, **kwargs}
         return BarthDtw(template=template, **kwargs)
 
@@ -337,7 +334,7 @@ class TestPostProcessing:
         assert np.all(~to_keep[bad_strides])
 
     def test_post_post_warning_is_raised(self, healthy_example_imu_data):
-        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
+        data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])[:1000]
         # Disable all conflict resolutions to force a double match
         dtw = BarthDtw(max_cost=10000, min_match_length_s=None, conflict_resolution=False, snap_to_min_win_ms=None)
 

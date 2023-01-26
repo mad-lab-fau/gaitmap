@@ -18,7 +18,7 @@ Self = TypeVar("Self", bound="TemporalParameterCalculation")
 
 
 class TemporalParameterCalculation(BaseTemporalParameterCalculation):
-    """This class is responsible for calculating temporal parameters of strides.
+    """Calculat temporal parameters of strides based on detected gait events.
 
     For details on the individual parameters see the Notes section.
 

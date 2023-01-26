@@ -19,12 +19,12 @@ class TestMatchStrideList:
         sl = self._create_valid_list([[0, 1], [1, 2]])
 
         with pytest.raises(ValidationError) as e:
-            match_stride_lists(stride_list_a=dict(), stride_list_b=sl)
+            match_stride_lists(stride_list_a={}, stride_list_b=sl)
 
         assert "SingleSensorStrideList" in str(e.value)
 
         with pytest.raises(ValidationError) as e:
-            match_stride_lists(stride_list_a=sl, stride_list_b=dict())
+            match_stride_lists(stride_list_a=sl, stride_list_b={})
 
         assert "SingleSensorStrideList" in str(e.value)
 
@@ -286,7 +286,7 @@ class TestSpecialMatchStrideList:
         assert_array_equal(out["s_id_b"].to_numpy().astype(float), [np.nan, 1, 2, 0])
 
     @pytest.mark.parametrize(
-        "input_param, ground_truth, tolerance, one_to_one, expectation",
+        ("input_param", "ground_truth", "tolerance", "one_to_one", "expectation"),
         [
             (
                 np.array([[0, 1, 2], [10, 20, 30], [30, 40, 50]]),

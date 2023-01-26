@@ -22,7 +22,7 @@ from gaitmap.data_transform import (
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList
 
 _feature_map = {
-    "raw": lambda win_size: IdentityTransformer(),
+    "raw": lambda _: IdentityTransformer(),
     "gradient": SlidingWindowGradient,
     "mean": SlidingWindowMean,
     "std": SlidingWindowStd,
@@ -149,7 +149,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     Notes
     -----
     .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-           free-living gait data in Parkinson’s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
+           free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
            https://doi.org/10.1186/s12984-021-00883-7
 
     """
@@ -189,7 +189,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         *,
         roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
         sampling_rate_hz: Optional[float] = None,
-        **kwargs,
+        **_,
     ):
         """Perform feature transformation for a single dataset and/or stride list.
 

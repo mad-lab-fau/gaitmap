@@ -141,7 +141,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         self.pos_method = pos_method
 
     # pylint: disable=arguments-differ
-    def align(self, data: SensorData, *, sampling_rate_hz: float, **kwargs) -> Self:
+    def align(self, data: SensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Align sensor data."""
         if self.ori_method and not isinstance(self.ori_method, BaseOrientationMethod):
             raise ValueError("The provided `ori_method` must be a child class of `BaseOrientationMethod`.")

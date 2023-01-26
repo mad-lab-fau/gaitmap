@@ -115,7 +115,7 @@ def is_single_sensor_data(
 
     """
     if frame not in _ALLOWED_FRAMES:
-        raise ValueError("The argument `frame` must be one of {}".format(_ALLOWED_FRAMES))
+        raise ValueError(f"The argument `frame` must be one of {_ALLOWED_FRAMES}")
     try:
         _assert_is_dtype(data, pd.DataFrame)
         _assert_has_multindex_cols(data, expected=False)
@@ -252,15 +252,17 @@ def is_sensor_data(
     """
     try:
         is_single_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
-        return "single"
     except ValidationError as e:
         single_error = e
+    else:
+        return "single"
 
     try:
         is_multi_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
-        return "multi"
     except ValidationError as e:
         multi_error = e
+    else:
+        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither single- or multi-sensor data. "
@@ -336,9 +338,7 @@ def is_single_sensor_stride_list(
 
     """
     if stride_type != "any" and stride_type not in SL_ADDITIONAL_COLS:
-        raise ValueError(
-            'The argument `stride_type` must be "any" or one of {}'.format(list(SL_ADDITIONAL_COLS.keys()))
-        )
+        raise ValueError(f'The argument `stride_type` must be "any" or one of {list(SL_ADDITIONAL_COLS.keys())}')
 
     try:
         _assert_is_dtype(stride_list, pd.DataFrame)
@@ -429,7 +429,7 @@ def is_multi_sensor_stride_list(
         return False
 
     try:
-        for k in stride_list.keys():
+        for k in stride_list:
             is_single_sensor_stride_list(
                 stride_list[k],
                 stride_type=stride_type,
@@ -489,17 +489,19 @@ def is_stride_list(
         is_single_sensor_stride_list(
             stride_list, stride_type=stride_type, check_additional_cols=check_additional_cols, raise_exception=True
         )
-        return "single"
     except ValidationError as e:
         single_error = e
+    else:
+        return "single"
 
     try:
         is_multi_sensor_stride_list(
             stride_list, stride_type=stride_type, check_additional_cols=check_additional_cols, raise_exception=True
         )
-        return "multi"
     except ValidationError as e:
         multi_error = e
+    else:
+        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither a single- or a multi-sensor stride list. "
@@ -563,7 +565,7 @@ def is_single_sensor_regions_of_interest_list(
 
     """
     if region_type != "any" and region_type not in ROI_ID_COLS:
-        raise ValueError('The argument `region_type` must be "any" or one of {}'.format(list(ROI_ID_COLS.keys())))
+        raise ValueError(f'The argument `region_type` must be "any" or one of {list(ROI_ID_COLS.keys())}')
 
     try:
         _assert_is_dtype(roi_list, pd.DataFrame)
@@ -635,7 +637,7 @@ def is_multi_sensor_regions_of_interest_list(
         return False
 
     try:
-        for k in roi_list.keys():
+        for k in roi_list:
             is_single_sensor_regions_of_interest_list(roi_list[k], region_type=region_type, raise_exception=True)
     except ValidationError as e:
         if raise_exception is True:
@@ -684,15 +686,17 @@ def is_regions_of_interest_list(
     """
     try:
         is_single_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
-        return "single"
     except ValidationError as e:
         single_error = e
+    else:
+        return "single"
 
     try:
         is_multi_sensor_regions_of_interest_list(roi_list, region_type=region_type, raise_exception=True)
-        return "multi"
     except ValidationError as e:
         multi_error = e
+    else:
+        return "multi"
 
     raise ValidationError(
         "The passed object appears to be neither a single- or a multi-sensor regions of interest list. "
@@ -793,7 +797,7 @@ def _is_multi_sensor_trajectory_list(
         return False
 
     try:
-        for k in traj_list.keys():
+        for k in traj_list:
             single_func(traj_list[k], **kwargs, raise_exception=True)
     except ValidationError as e:
         if raise_exception is True:
@@ -816,15 +820,17 @@ def _is_trajectory_list(
 ) -> Literal["single", "multi"]:
     try:
         single_func(traj_list, **kwargs, raise_exception=True)
-        return "single"
     except ValidationError as e:
         single_error = e
+    else:
+        return "single"
 
     try:
         multi_func(traj_list, **kwargs, raise_exception=True)
-        return "multi"
     except ValidationError as e:
         multi_error = e
+    else:
+        return "multi"
 
     raise ValidationError(
         f"The passed object appears to be neither a single- or a multi-sensor {input_datatype}. "
@@ -1231,9 +1237,10 @@ def set_correct_index(
     index_cols = list(index_cols)
     try:
         _assert_has_index_columns(df, index_cols)
-        return df
     except ValidationError:
         pass
+    else:
+        return df
 
     # In case not all columns are in the the index, reset_the index and check the column names
     wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]

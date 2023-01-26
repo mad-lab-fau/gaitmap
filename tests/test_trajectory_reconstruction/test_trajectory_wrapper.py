@@ -42,7 +42,7 @@ class TestIODataStructures:
             self.key = "s_id"
 
     def test_invalid_input_data(self, healthy_example_imu_data):
-        """Test if error is raised correctly on invalid input data type"""
+        """Test if error is raised correctly on invalid input data type."""
         data = healthy_example_imu_data
         stride_list = self.example_region
         fake_data = pd.DataFrame({"a": [0, 1, 2], "b": [3, 4, 5]})
@@ -138,7 +138,7 @@ class TestIODataStructures:
 
         assert is_multi_sensor_orientation_list(instance.orientation_, self.output_list_type)
         assert is_multi_sensor_position_list(instance.position_, self.output_list_type)
-        for sensor in test_stride_events.keys():
+        for sensor in test_stride_events:
             assert_array_equal(
                 instance.orientation_[sensor].reset_index()[self.key].unique(),
                 test_stride_events[sensor][self.key].unique(),
@@ -158,8 +158,8 @@ class TestIODataStructures:
                 assert len(instance.velocity_[sensor].loc[s[self.key]]) == s["end"] - s["start"] + 1
 
             first_last_stride = test_stride_events[sensor].iloc[[0, -1]][self.key]
-            snapshot.assert_match(instance.orientation_[sensor].loc[first_last_stride], "ori_{}".format(sensor))
-            snapshot.assert_match(instance.position_[sensor].loc[first_last_stride], "pos_{}".format(sensor))
+            snapshot.assert_match(instance.orientation_[sensor].loc[first_last_stride], f"ori_{sensor}")
+            snapshot.assert_match(instance.position_[sensor].loc[first_last_stride], f"pos_{sensor}")
 
 
 class TestInitCalculation:

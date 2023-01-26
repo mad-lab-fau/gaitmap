@@ -28,7 +28,7 @@ def reset_random_seed():
     random.seed(10)
 
 
-@pytest.fixture
+@pytest.fixture()
 def snapshot(request):
     with PyTestSnapshotTest(request) as snapshot_test:
         yield snapshot_test

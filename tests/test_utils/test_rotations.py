@@ -334,7 +334,7 @@ class TestFindRotationAroundAxis:
     """Test the function find_rotation_around_axis."""
 
     @pytest.mark.parametrize(
-        "rotation, axis, out",
+        ("rotation", "axis", "out"),
         (
             (Rotation.from_rotvec([0, 0, np.pi / 2]), [0, 0, 1], [0, 0, np.pi / 2]),
             (Rotation.from_rotvec([0, 0, np.pi / 2]), [0, 1, 0], [0, 0, 0]),
@@ -371,7 +371,7 @@ class TestFindAngleBetweenOrientations:
     """Test the function find_angle_between_orientations."""
 
     @pytest.mark.parametrize(
-        "ori1, ori2, axis, out",
+        ("ori1", "ori2", "axis", "out"),
         (
             (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 1], np.pi),
             (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), None, np.pi),
@@ -411,7 +411,7 @@ class TestFindAngleBetweenOrientations:
         assert isinstance(result, float)
 
     @pytest.mark.parametrize(
-        "ori1, ori2, axis, out",
+        ("ori1", "ori2", "axis", "out"),
         (
             (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, -np.pi / 2]), [0, 0, 0], "error"),
             (Rotation.from_rotvec([0, 0, np.pi / 2]), Rotation.from_rotvec([0, 0, np.pi / 2]), None, 0),
@@ -460,7 +460,7 @@ class TestFindUnsigned3dAngle:
     """Test the function `find_unsigned_3d_angle`."""
 
     @pytest.mark.parametrize(
-        "v1, v2, result",
+        ("v1", "v2", "result"),
         [
             ([1, 0, 0], [0, 1, 0], np.pi / 2),
             ([2, 0, 0], [0, 2, 0], np.pi / 2),
@@ -486,7 +486,7 @@ class TestFindUnsigned3dAngle:
 
 class TestAngleDiff:
     @pytest.mark.parametrize(
-        "a, b, out",
+        ("a", "b", "out"),
         (
             (-np.pi / 2, 0, -np.pi / 2),
             (0, -np.pi / 2, np.pi / 2),
@@ -501,7 +501,7 @@ class TestAngleDiff:
 
 class TestSigned3DAngle:
     @pytest.mark.parametrize(
-        "v1, v2, n, r",
+        ("v1", "v2", "n", "r"),
         (
             ([0, 0, 1], [1, 0, 0], [0, 1, 0], 90),
             ([0, 0, 1], [1, 0, 0], [0, -1, 0], -90),
@@ -518,7 +518,7 @@ class TestSigned3DAngle:
         assert result == np.deg2rad(r)
 
     @pytest.mark.parametrize(
-        "v1, v2, n, r",
+        ("v1", "v2", "n", "r"),
         (
             ([[0, 0, 1]], [1, 0, 0], [0, 1, 0], [90]),
             ([[0, 0, 1], [1, 0, 0]], [1, 0, 0], [0, 1, 0], [90, 0]),

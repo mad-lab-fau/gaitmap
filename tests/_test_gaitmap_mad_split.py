@@ -20,7 +20,7 @@ def _gaitmap_mad_sys_modifier():
     # entry to None.
 
     # This import will force gaitmap_mad to be in sys.modules.
-    import gaitmap_mad  # noqa: unused-import
+    import gaitmap_mad
 
     sys.modules["gaitmap_mad"] = None
     yield

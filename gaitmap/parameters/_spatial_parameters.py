@@ -1,11 +1,12 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
 import warnings
-from typing import Dict, Tuple, TypeVar, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
+from typing_extensions import Self
 
 from gaitmap.base import BaseSpatialParameterCalculation
 from gaitmap.parameters._temporal_parameters import _calc_stride_time
@@ -29,11 +30,11 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
-Self = TypeVar("Self", bound="SpatialParameterCalculation")
-
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
-    """This class is responsible for calculating spatial parameters of strides based on [1]_ and [2]_.
+    """Calculating spatial parameters of strides based on extracted gait events and foot trajectories.
+
+    Calculations are based on [1]_ and [2]_.
 
     Attributes
     ----------
@@ -46,7 +47,6 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     sole_angle_course_
         The sole angle of all strides over time.
         It has the same structure as the provided position list.
-
 
     Other Parameters
     ----------------
@@ -166,7 +166,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         return renamed_paras
 
     def calculate(
-        self: Self,
+        self,
         stride_event_list: StrideList,
         positions: PositionList,
         orientations: OrientationList,

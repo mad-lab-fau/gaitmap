@@ -54,7 +54,7 @@ class TestParameterValidation:
 
     def test_empty_algorithm_raises_error(self):
         instance = RoiStrideSegmentation()
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValueError):
             instance.segment(
                 pd.DataFrame([0, 0, 0]),
                 1,

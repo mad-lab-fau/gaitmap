@@ -15,7 +15,7 @@ from gaitmap.parameters._spatial_parameters import (
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-@pytest.fixture
+@pytest.fixture()
 def single_sensor_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0, 1, 2]
@@ -34,7 +34,7 @@ def single_sensor_stride_time():
     return out
 
 
-@pytest.fixture
+@pytest.fixture()
 def single_sensor_position_list():
     position_list = pd.DataFrame(columns=["s_id", "sample", "pos_x", "pos_y", "pos_z"])
     position_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
@@ -69,7 +69,7 @@ def single_sensor_gait_speed(single_sensor_stride_length, single_sensor_stride_t
     return single_sensor_stride_length / single_sensor_stride_time
 
 
-@pytest.fixture
+@pytest.fixture()
 def single_sensor_orientation_list():
     orientation_list = pd.DataFrame(columns=["s_id", "sample", "q_x", "q_y", "q_z", "q_w"])
     orientation_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
@@ -193,7 +193,7 @@ class TestSpatialParameterCalculation:
     def test_single_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
-        """Test calculate spatial parameters for single sensor"""
+        """Test calculate spatial parameters for single sensor."""
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
         # Test that all parameters are at least theoretically calculated
@@ -204,7 +204,7 @@ class TestSpatialParameterCalculation:
     def test_multiple_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
-        """Test calculate spatial parameters for single sensor and single stride"""
+        """Test calculate spatial parameters for single sensor and single stride."""
         stride_events_list = {"sensor1": single_sensor_stride_list, "sensor2": single_sensor_stride_list}
         position_list = {"sensor1": single_sensor_position_list, "sensor2": single_sensor_position_list}
         orientation_list = {"sensor1": single_sensor_orientation_list, "sensor2": single_sensor_orientation_list}
@@ -221,7 +221,7 @@ class TestSpatialParameterCalculation:
             assert len(sensor) == len(single_sensor_orientation_list)
 
     @pytest.mark.parametrize(
-        "exclude, expected_missing",
+        ("exclude", "expected_missing"),
         [
             (("ic", "pre_ic"), ["ic_angle", "gait_velocity"]),
             (("tc",), ["tc_angle"]),

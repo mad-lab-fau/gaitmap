@@ -262,12 +262,12 @@ def calculate_parameter_errors(
     return output
 
 
-def _calculate_error(  # noqa: MC0001
+def _calculate_error(  # noqa: C901
     reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool = True,
 ) -> pd.DataFrame:
-    sensor_names_list = sorted(list(set(predicted_parameter.keys()).intersection(reference_parameter.keys())))
+    sensor_names_list = sorted(set(predicted_parameter.keys()).intersection(reference_parameter.keys()))
 
     if len(sensor_names_list) == 0:
         raise ValidationError("The predicted values and the reference do not have any common sensors!")
@@ -294,7 +294,7 @@ def _calculate_error(  # noqa: MC0001
                 ) from e
 
         common_features = sorted(
-            list(set(predicted_parameter_correct.keys()).intersection(reference_parameter_correct.keys()))
+            set(predicted_parameter_correct.keys()).intersection(reference_parameter_correct.keys())
         )
 
         err_msg_start = "No " if sensor == "__dummy__" else f"For sensor {sensor} no "
@@ -351,15 +351,15 @@ def _error_single_df(df: pd.DataFrame, meta_error: pd.DataFrame) -> pd.DataFrame
 def _max_mean_median_std_quantille(value: pd.DataFrame) -> pd.DataFrame:
     """Calculate the mean, median, standard deviation and the 5%/95% quantille of the input dataframe per column."""
     return pd.DataFrame(
-        dict(
-            mean=value.mean(),
-            std=value.std(),
-            median=value.median(),
-            q05=value.quantile(0.05),
-            q95=value.quantile(0.95),
-            max=value.max(),
-            min=value.min(),
-        )
+        {
+            "mean": value.mean(),
+            "std": value.std(),
+            "median": value.median(),
+            "q05": value.quantile(0.05),
+            "q95": value.quantile(0.95),
+            "max": value.max(),
+            "min": value.min(),
+        }
     ).assign(loa_lower=lambda x: x["mean"] - 1.96 * x["std"], loa_upper=lambda x: x["mean"] + 1.96 * x["std"])
 
 

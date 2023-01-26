@@ -264,7 +264,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
         return self
 
-    def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:  # noqa: no-self-use
+    def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:
         """Create the dependencies for the numba functions.
 
         This should be overwritten by subclasses, that need custom internal functions/parameters.

@@ -34,7 +34,8 @@ class TestAlignToGravity:
 
     def test_no_static_moments_in_dataset(self):
         """Test if value error is raised correctly if no static window can be found on dataset with given user
-        settings."""
+        settings.
+        """
         with pytest.raises(ValueError, match=r".*No static windows .*"):
             align_dataset_to_gravity(
                 self.sample_sensor_dataset,
