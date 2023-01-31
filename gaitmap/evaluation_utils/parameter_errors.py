@@ -1,6 +1,6 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 import warnings
-from typing import Dict, Union
+from typing import Dict, Literal, Union
 
 import numpy as np
 import pandas as pd
@@ -261,7 +261,7 @@ def calculate_parameter_errors(
         predicted_parameter = {"__dummy__": predicted_parameter}
         reference_parameter = {"__dummy__": reference_parameter}
 
-    output = _calculate_error(reference_parameter, predicted_parameter, calculate_per_sensor)
+    output = _calculate_error(reference_parameter, predicted_parameter, calculate_per_sensor, scoring_errors)
 
     if predicted_is_not_dict:
         output = output["__dummy__"]
@@ -272,8 +272,8 @@ def calculate_parameter_errors(
 def _calculate_error(  # noqa: C901
     reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-    calculate_per_sensor: bool = True,
-    scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
+    calculate_per_sensor: bool,
+    scoring_errors: Literal["ignore", "warn", "raise"],
 ) -> pd.DataFrame:
     sensor_names_list = sorted(set(predicted_parameter.keys()).intersection(reference_parameter.keys()))
 
@@ -397,7 +397,7 @@ def _icc(data: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]):
             coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
         except AssertionError as e:
             if handle_error == "raise":
-                raise e
+                raise
             if handle_error == "warn":
                 warnings.warn(f"Calculating the intraclass correlation coefficient for {para} failed\n: {e}")
             coefs[para] = pd.Series({"icc": np.nan, "icc_q05": np.nan, "icc_q95": np.nan})
