@@ -15,6 +15,7 @@ def calculate_parameter_errors(
     reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool = True,
+    scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
 ) -> pd.DataFrame:
     """Calculate various error metrics between a parameter predicted and a given ground truth.
 
@@ -60,6 +61,12 @@ def calculate_parameter_errors(
         A bool that can be set to `False` if you wish to calculate error metrics as if the
         strides were all taken by one sensor.
         Default is `True`.
+    scoring_errors
+        How to handle errors during the scoring.
+        Can be one of `ignore`, `warn`, or `raise`.
+        Default is `warn`.
+        At the moment, this only effects the calculation of the ICC.
+        In all cases the value for a given metric is set to `np.nan`.
 
     Returns
     -------
@@ -266,6 +273,7 @@ def _calculate_error(  # noqa: C901
     reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool = True,
+    scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
 ) -> pd.DataFrame:
     sensor_names_list = sorted(set(predicted_parameter.keys()).intersection(reference_parameter.keys()))
 
@@ -327,12 +335,18 @@ def _calculate_error(  # noqa: C901
     meta_error_df = pd.DataFrame(meta_error_dict).T
 
     if calculate_per_sensor is True:
-        error_df = {k: _error_single_df(v, meta_error_df.loc[k]) for k, v in aligned_dict.items()}
+        error_df = {
+            k: _error_single_df(v, meta_error_df.loc[k], handle_error=scoring_errors) for k, v in aligned_dict.items()
+        }
         return pd.concat(error_df, axis=1)
-    return _error_single_df(pd.concat(aligned_dict.values()), meta_error_df.groupby(level=1, axis=0).sum())
+    return _error_single_df(
+        pd.concat(aligned_dict.values()), meta_error_df.groupby(level=1, axis=0).sum(), handle_error=scoring_errors
+    )
 
 
-def _error_single_df(df: pd.DataFrame, meta_error: pd.DataFrame) -> pd.DataFrame:
+def _error_single_df(
+    df: pd.DataFrame, meta_error: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]
+) -> pd.DataFrame:
     error = df["predicted"] - df["reference"]
     output = [
         _max_mean_median_std_quantille(error).add_prefix("error_"),
@@ -341,7 +355,7 @@ def _error_single_df(df: pd.DataFrame, meta_error: pd.DataFrame) -> pd.DataFrame
         _max_mean_median_std_quantille(error.abs() / df["reference"].abs()).add_prefix("abs_rel_error_"),
         meta_error,
     ]
-    icc = _icc(df)
+    icc = _icc(df, handle_error=handle_error)
     if icc is not None:
         output.append(icc)
 
@@ -363,7 +377,7 @@ def _max_mean_median_std_quantille(value: pd.DataFrame) -> pd.DataFrame:
     ).assign(loa_lower=lambda x: x["mean"] - 1.96 * x["std"], loa_upper=lambda x: x["mean"] + 1.96 * x["std"])
 
 
-def _icc(data: pd.DataFrame):
+def _icc(data: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]):
     """Calculate the intraclass correlation coefficient using pingouin."""
     try:
         import pingouin as pg  # pylint: disable=import-outside-toplevel
@@ -382,7 +396,10 @@ def _icc(data: pd.DataFrame):
             ]
             coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
         except AssertionError as e:
-            warnings.warn(f"Calculating the intraclass correlation coefficient for {para} failed\n: {e}")
+            if handle_error == "raise":
+                raise e
+            if handle_error == "warn":
+                warnings.warn(f"Calculating the intraclass correlation coefficient for {para} failed\n: {e}")
             coefs[para] = pd.Series({"icc": np.nan, "icc_q05": np.nan, "icc_q95": np.nan})
 
     return pd.concat(coefs, axis=1).T
