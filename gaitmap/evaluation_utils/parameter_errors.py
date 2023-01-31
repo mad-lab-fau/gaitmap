@@ -66,6 +66,7 @@ def calculate_parameter_errors(
         Can be one of `ignore`, `warn`, or `raise`.
         Default is `warn`.
         At the moment, this only effects the calculation of the ICC.
+        In case of ignore, we will also ignore warnings that might be raised during the calculation.
         In all cases the value for a given metric is set to `np.nan`.
 
     Returns
@@ -391,9 +392,13 @@ def _icc(data: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]):
     paras = set(data.columns) - {"source", "s_id"}
     for para in paras:
         try:
-            icc, ci95 = pg.intraclass_corr(data, ratings=para, raters="source", targets="s_id", nan_policy="omit").loc[
-                0, ["ICC", "CI95%"]
-            ]
+            # If handle error is ignore, we also ignore all warnings here.
+            with warnings.catch_warnings():
+                if handle_error == "ignore":
+                    warnings.simplefilter("ignore")
+                icc, ci95 = pg.intraclass_corr(
+                    data, ratings=para, raters="source", targets="s_id", nan_policy="omit"
+                ).loc[0, ["ICC", "CI95%"]]
             coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
         except AssertionError as e:
             if handle_error == "raise":
