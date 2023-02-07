@@ -9,6 +9,7 @@ from gaitmap.utils.stride_list_conversion import (
     _segmented_stride_list_to_min_vel_single_sensor,
     convert_segmented_stride_list,
     enforce_stride_list_consistency,
+    intersect_stride_list,
 )
 
 
@@ -151,3 +152,23 @@ class TestConvertSegmentedStrideList:
         assert len(tmp) == 0
 
         assert_frame_equal(converted, converted_multiple)
+
+
+class TestIntersectStrideList:
+    def test_simple_with_overlap(self):
+
+        stride_list = pd.DataFrame(
+            {"start": [10, 25, 30, 50], "end": [20, 30, 40, 55]}, index=pd.Series([0, 1, 2, 3], name="s_id")
+        )
+        roi = pd.DataFrame({"start": [5, 28], "end": [32, 45]}, index=pd.Series([0, 1], name="roi_id"))
+
+        expected = [
+            pd.DataFrame({"start": [10, 25], "end": [20, 30]}, index=pd.Series([0, 1], name="s_id")) - 5,
+            pd.DataFrame({"start": [30], "end": [40]}, index=pd.Series([2], name="s_id")) - 28,
+        ]
+
+        out = intersect_stride_list(stride_list, roi)
+        assert len(out) == 2
+
+        for i, o in enumerate(out):
+            assert_frame_equal(o, expected[i])
