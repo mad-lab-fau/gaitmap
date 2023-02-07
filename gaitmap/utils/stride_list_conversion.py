@@ -1,5 +1,5 @@
 """A couple of utils to convert stride lists into different formats."""
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
+    SingleSensorRegionsOfInterestList,
     SingleSensorStrideList,
     StrideList,
     is_single_sensor_stride_list,
@@ -161,3 +162,37 @@ def enforce_stride_list_consistency(
     bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
 
     return stride_list[bool_map], stride_list[~bool_map]
+
+
+# TODO: TEST
+def intersect_stride_list(
+    stride_event_list: SingleSensorStrideList,
+    regions_of_interest: SingleSensorRegionsOfInterestList,
+) -> List[SingleSensorStrideList]:
+    """Split the stride list into multiple stride lists based on the regions of interest.
+
+    All events in the returned stride lists are made relative to the start of the region of interest.
+
+    This supports overlapping regions of interest.
+    In this case strides might appear in multiple of the output stride lists.
+
+    In all cases, only strides that are fully contained within a region of interest are included in the output stride
+    lists.
+
+    .. warning:: This method does not check the format of the stride list or the regions of interest.
+
+    """
+    stride_list = set_correct_index(stride_event_list.copy(), SL_INDEX)
+    roi_list = regions_of_interest.copy()
+
+    stride_lists = []
+
+    for _, roi in roi_list.iterrows():
+        # find all strides that are fully contained in the roi
+        partial_stride_list = stride_list.loc[
+            (stride_list["start"] >= roi["start"]) & (stride_list["end"] <= roi["end"])
+        ]
+        partial_stride_list -= roi["start"]
+        stride_lists.append(partial_stride_list)
+
+    return stride_lists

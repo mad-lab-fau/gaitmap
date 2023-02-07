@@ -50,7 +50,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         test_data.loc[0:2, SF_GYR + SF_ACC] = 0
         test_data.loc[test_data.index[-3:], SF_GYR + SF_ACC] = 0
         expected = np.zeros(3)
-        test = test.estimate(test_data, 10)
+        test = test.estimate(test_data, sampling_rate_hz=10)
 
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
@@ -86,7 +86,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         test_data.loc[test_data.index[-n_zupt_samples:], SF_GYR] = 0
 
         fs = 10
-        test.estimate(test_data, fs)
+        test.estimate(test_data, sampling_rate_hz=fs)
 
         expected = np.zeros(3)
         assert_array_almost_equal(test.position_.to_numpy()[-1], expected)

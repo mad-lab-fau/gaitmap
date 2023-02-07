@@ -136,7 +136,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         self.level_assumption = level_assumption
         self.gravity = gravity
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Estimate the position of the sensor based on the provided global frame data.
 
         Parameters
@@ -162,7 +162,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
             acc_data -= self.gravity
 
         # find zupts for drift correction
-        zupts = self.zupt_detector.clone().detect(data, sampling_rate_hz).per_sample_zupts_
+        zupts = self.zupt_detector.clone().detect(data, sampling_rate_hz=sampling_rate_hz).per_sample_zupts_
         self.zupts_ = bool_array_to_start_end_array(zupts)
 
         # Add an implicit 0 to the beginning of the data

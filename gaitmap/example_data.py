@@ -127,7 +127,7 @@ def get_healthy_example_stride_events():
     # Convert to dict with sensor name as key.
     # Sensor name here is derived from the foot. In the real pipeline that would be provided to the algo.
     data["sensor"] = data["foot"] + "_sensor"
-    data = data.set_index("sensor")
+    data = data.set_index("sensor").drop("foot", axis=1)
     data = data.groupby(level=0)
     data = {k: v.reset_index(drop=True) for k, v in data}
     return data
