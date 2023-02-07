@@ -57,7 +57,9 @@ class TestNormZuptDetector:
     @pytest.mark.parametrize(("ws", "sr"), ((1, 1), (1, 2), (2, 1), (2.49, 1)))
     def test_error_window_to_small(self, healthy_example_imu_data, ws, sr):
         with pytest.raises(ValidationError, match=r".*The effective window size is smaller*"):
-            self.algorithm_class(window_length_s=ws).detect(healthy_example_imu_data["left_sensor"], sr)
+            self.algorithm_class(window_length_s=ws).detect(
+                healthy_example_imu_data["left_sensor"], sampling_rate_hz=sr
+            )
 
     @pytest.mark.parametrize(
         ("overlap1", "overlap2", "valid"),
@@ -81,7 +83,7 @@ class TestNormZuptDetector:
         context = pytest.raises(ValidationError) if not valid else nullcontext()
         with context:
             self.algorithm_class(window_length_s=1, window_overlap=overlap1, window_overlap_samples=overlap2).detect(
-                healthy_example_imu_data["left_sensor"], 200
+                healthy_example_imu_data["left_sensor"], sampling_rate_hz=200
             )
 
     @pytest.mark.parametrize(("win_len", "overlap", "valid"), ((1, 0, True), (10 / 200, 0.99, False)))
@@ -90,10 +92,10 @@ class TestNormZuptDetector:
             with pytest.raises(ValidationError, match=r".*The effective window overlap after rounding is 1"):
                 self.algorithm_class(
                     window_overlap=overlap, window_overlap_samples=None, window_length_s=win_len
-                ).detect(healthy_example_imu_data["left_sensor"], 200)
+                ).detect(healthy_example_imu_data["left_sensor"], sampling_rate_hz=200)
         else:
             self.algorithm_class(window_overlap=overlap, window_overlap_samples=None, window_length_s=win_len).detect(
-                healthy_example_imu_data["left_sensor"], 200
+                healthy_example_imu_data["left_sensor"], sampling_rate_hz=200
             )
 
     @pytest.mark.parametrize(
@@ -111,27 +113,31 @@ class TestNormZuptDetector:
         data = pd.DataFrame(np.empty((10, len(axis))), columns=axis)
         if valid is False:
             with pytest.raises(ValidationError):
-                self.algorithm_class(sensor=sensor, window_length_s=0.5).detect(data, 10)
+                self.algorithm_class(sensor=sensor, window_length_s=0.5).detect(data, sampling_rate_hz=10)
         else:
-            self.algorithm_class(sensor=sensor, window_length_s=0.5).detect(data, 10)
+            self.algorithm_class(sensor=sensor, window_length_s=0.5).detect(data, sampling_rate_hz=10)
 
     def test_debug_outputs(self):
         data = pd.DataFrame(np.empty((10, 3)), columns=BF_GYR)
         zupt = self.algorithm_class(
             sensor="gyr", window_length_s=0.5, window_overlap=0.2, window_overlap_samples=None
-        ).detect(data, 10)
+        ).detect(data, sampling_rate_hz=10)
         assert zupt.window_length_samples_ == 5
         assert zupt.window_overlap_samples_ == 1
 
     def test_invalid_input_metric_default_overlap(self, healthy_example_imu_data):
         """Test if value error is raised correctly on invalid input dimensions."""
         with pytest.raises(ValueError, match=r".*Invalid metric passed!.*"):
-            self.algorithm_class(metric="invalid").detect(healthy_example_imu_data["left_sensor"], 204.8)
+            self.algorithm_class(metric="invalid").detect(
+                healthy_example_imu_data["left_sensor"], sampling_rate_hz=204.8
+            )
 
     def test_invalid_window_length(self, healthy_example_imu_data):
         """Test if value error is raised when window longer than signal."""
         with pytest.raises(ValueError, match=r".*Invalid window length*"):
-            self.algorithm_class(window_length_s=1000).detect(healthy_example_imu_data["left_sensor"].iloc[:500], 1.0)
+            self.algorithm_class(window_length_s=1000).detect(
+                healthy_example_imu_data["left_sensor"].iloc[:500], sampling_rate_hz=1.0
+            )
 
     @pytest.mark.parametrize(
         ("win_overlap_samples", "expected"),
@@ -148,7 +154,7 @@ class TestNormZuptDetector:
         """Test that window overlap is correctly calculated when provided in samples."""
         out = self.algorithm_class(
             window_length_s=100, window_overlap_samples=win_overlap_samples, window_overlap=None
-        ).detect(healthy_example_imu_data["left_sensor"].iloc[:500], 1.0)
+        ).detect(healthy_example_imu_data["left_sensor"].iloc[:500], sampling_rate_hz=1.0)
         assert out.window_overlap_samples_ == expected
 
     def test_single_window_fit(self):
