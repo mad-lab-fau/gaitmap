@@ -422,22 +422,17 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         id_col = TRAJ_TYPE_COLS[traj_list_type]
         regions_of_interest = set_correct_index(regions_of_interest, [id_col])
         data = set_correct_index(data, [id_col, "sample"])
-        # TODO: This might be slow, but lets see before we optimize
-        #       One way to optimize might be to use search sorted. But this would only work with non overlapping
-        #       regions.
-        intersect_stride_list(stride_event_list, regions_of_interest)
+
+        stride_lists = intersect_stride_list(stride_event_list, regions_of_interest)
         output = {}
-        for region_id, region in regions_of_interest.iterrows():
-            for s_id, stride in stride_event_list.iterrows():
-                if stride["start"] >= region["start"] and stride["end"] <= region["end"]:
-                    # This cuts out the n+1 samples for each stride.
-                    # The first sample is the value before the stride started.
-                    # This is the equivalent to the "initial" position/orientation
-                    output[s_id] = (
-                        data.loc[region_id]
-                        .iloc[int(stride["start"] - region["start"]) : int(stride["end"] - region["start"] + 1)]
-                        .reset_index(drop=True)
-                    )
+        for (region_id, _), stride_list in zip(regions_of_interest.iterrows(), stride_lists):
+            for s_id, stride in stride_list.iterrows():
+                # This cuts out the n+1 samples for each stride.
+                # The first sample is the value before the stride started.
+                # This is the equivalent to the "initial" position/orientation
+                output[s_id] = (
+                    data.loc[region_id].iloc[int(stride["start"]) : int(stride["end"] + 1)].reset_index(drop=True)
+                )
         output = pd.concat(output, names=["s_id", "sample"])
         return output
 
