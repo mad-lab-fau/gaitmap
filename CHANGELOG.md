@@ -56,7 +56,7 @@ project.
   If `pingouin` is installed, we also calculte the ICC.
   (https://github.com/mad-lab-fau/gaitmap/pull/13)
 - A new utility method to intersect stride lists by a region of interest list.
-  ()
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.
@@ -73,13 +73,13 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/13)
 - For all trajectory/pos/ori methods, the `sampling_rate_hz` parameter is now keyword only.
   This might require some user facing code changes.
-  ()
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
 - Trajectory/pos/ori and ZUPT methods can now get an optional parameter called `stride_event_list` as parameter for the detect 
   method.
   So far, only the RTS Kalman Filter is using this parameter to forward it to the ZUPT method.
   Both wrapper (Stride-level and Region) are both aware of this parameter and pass them correctly down to the respective
   methods.
-  ()
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
 
 ### Removed
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
