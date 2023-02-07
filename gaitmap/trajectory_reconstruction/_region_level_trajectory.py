@@ -102,7 +102,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         that calculates the orientation and the position in one go.
         This method is called with the data of each region.
         If a `trajectory_method` is provided the values for `ori_method` and `pos_method` are ignored.
-        Note, the the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
+        Note, the `initial_orientation` parameter of this method will be overwritten, as this class estimates new
         per-roi initial orientations.
     align_window_width
         This is the width of the window that will be used to align the beginning of the signal of each region with
