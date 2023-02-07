@@ -10,6 +10,7 @@ from gaitmap.utils.datatype_helper import (
     SingleSensorRegionsOfInterestList,
     SingleSensorStrideList,
     StrideList,
+    is_single_sensor_regions_of_interest_list,
     is_single_sensor_stride_list,
     is_stride_list,
     set_correct_index,
@@ -164,7 +165,6 @@ def enforce_stride_list_consistency(
     return stride_list[bool_map], stride_list[~bool_map]
 
 
-# TODO: TEST
 def intersect_stride_list(
     stride_event_list: SingleSensorStrideList,
     regions_of_interest: SingleSensorRegionsOfInterestList,
@@ -173,15 +173,30 @@ def intersect_stride_list(
 
     All events in the returned stride lists are made relative to the start of the region of interest.
 
-    This supports overlapping regions of interest.
-    In this case strides might appear in multiple of the output stride lists.
-
     In all cases, only strides that are fully contained within a region of interest are included in the output stride
     lists.
 
-    .. warning:: This method does not check the format of the stride list or the regions of interest.
+    .. warning:: This method substracts the start of the ROI list from all events in the stride list.
+                 This means, columns that don't represent events in samples are not supported.
+
+    Parameters
+    ----------
+    stride_event_list
+        The event list to split
+    regions_of_interest
+        The regions of interest to split the stride list into.
+        The ROIs can overlap.
+        In this case, strides appear in multiple stride lists.
+
+    Returns
+    -------
+    stride_lists
+        A list of stride lists, one for each region of interest.
+
 
     """
+    is_single_sensor_stride_list(stride_event_list, raise_exception=True)
+    is_single_sensor_regions_of_interest_list(regions_of_interest, raise_exception=True)
     stride_list = set_correct_index(stride_event_list.copy(), SL_INDEX)
     roi_list = regions_of_interest.copy()
 

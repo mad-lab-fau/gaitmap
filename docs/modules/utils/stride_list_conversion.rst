@@ -15,3 +15,4 @@ Functions
 
     convert_segmented_stride_list
     enforce_stride_list_consistency
+    intersect_stride_list
