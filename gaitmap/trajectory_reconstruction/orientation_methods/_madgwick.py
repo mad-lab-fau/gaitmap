@@ -108,7 +108,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.beta = beta
         self.memory = memory
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Estimate the orientation of the sensor.
 
         Parameters

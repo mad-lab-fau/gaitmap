@@ -40,7 +40,7 @@ class TestOrientationMethodMixin:
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test = self.init_algo_class()
 
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
         rot_final = test.orientation_.iloc[-1]
 
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
@@ -51,7 +51,7 @@ class TestOrientationMethodMixin:
         fs = 10
         sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
         np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation)
 
     def test_output_formats(self):
@@ -59,7 +59,7 @@ class TestOrientationMethodMixin:
         fs = 10
         sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
 
         assert isinstance(test.orientation_object_, Rotation)
         assert len(test.orientation_object_) == len(sensor_data) + 1
@@ -75,6 +75,6 @@ class TestOrientationMethodMixin:
         start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
         data = healthy_example_imu_data["left_sensor"].iloc[start:end]
 
-        test.estimate(data, fs)
+        test.estimate(data, sampling_rate_hz=fs)
 
         snapshot.assert_match(test.orientation_, test.__class__.__name__)

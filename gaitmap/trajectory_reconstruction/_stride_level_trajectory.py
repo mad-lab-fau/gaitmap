@@ -139,7 +139,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self.align_window_width = align_window_width
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
 
-    def estimate(self, data: SensorData, stride_event_list: StrideList, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SensorData, stride_event_list: StrideList, *, sampling_rate_hz: float) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
 
         Parameters
@@ -149,6 +149,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         stride_event_list
             List of events for one or multiple sensors.
             For each stride, the orientation and position will be calculated separately.
+            The events per strides will be forwarded as the optional stride list to the underlying ori/pos/traj method.
         sampling_rate_hz
             Sampling rate with which IMU data was recorded.
 
@@ -156,7 +157,6 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
-        self._integration_regions = self.stride_event_list
 
         self._validate_methods()
 
@@ -165,11 +165,28 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
 
         if dataset_type != stride_list_type:
             raise ValidationError(
-                "An invalid combination of stride list and dataset was provided."
+                "An invalid combination of stride list and dataset was provided. "
                 "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
             )
 
-        self._estimate(dataset_type=dataset_type)
+        # For the per stride integration, we create a dummy stride list-list, containing only the single stride that is
+        # in each integration region.
+        if stride_list_type == "single":
+            stride_list_list = [
+                stride_event_list.iloc[[i]] - stride_event_list.iloc[i]["start"] for i in range(len(stride_event_list))
+            ]
+        else:
+            stride_list_list = {
+                sensor: [stride_list.iloc[[i]] - stride_list.iloc[i]["start"] for i in range(len(stride_list))]
+                for sensor, stride_list in stride_event_list.items()
+            }
+
+        self._estimate(
+            data=data,
+            integration_regions=stride_event_list,
+            dataset_type=dataset_type,
+            stride_list_list=stride_list_list,
+        )
         return self
 
     def _calculate_initial_orientation(self, data: SingleSensorData, start: int) -> Rotation:

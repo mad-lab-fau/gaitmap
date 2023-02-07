@@ -53,23 +53,23 @@ class TestIODataStructures:
 
         gyr_int = self.wrapper_class(align_window_width=8)
         with pytest.raises(ValidationError, match=r".*neither single- or multi-sensor data"):
-            gyr_int.estimate(fake_data, stride_list, 204.8)
+            gyr_int.estimate(fake_data, stride_list, sampling_rate_hz=204.8)
         with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor "):
-            gyr_int.estimate(data, fake_stride_list, 204.8)
+            gyr_int.estimate(data, fake_stride_list, sampling_rate_hz=204.8)
 
     @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
     def test_invalid_input_method(self, healthy_example_imu_data, method):
         """Test if correct errors are raised for invalid pos and ori methods."""
         instance = self.wrapper_class(**{method: "wrong"})
         with pytest.raises(ValueError) as e:
-            instance.estimate(healthy_example_imu_data, self.example_region, 204.8)
+            instance.estimate(healthy_example_imu_data, self.example_region, sampling_rate_hz=204.8)
         assert method in str(e)
 
     @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
     def test_only_pos_or_ori_provided(self, healthy_example_imu_data, method):
         instance = self.wrapper_class(**{method: None})
         with pytest.raises(ValueError) as e:
-            instance.estimate(healthy_example_imu_data, self.example_region, 204.8)
+            instance.estimate(healthy_example_imu_data, self.example_region, sampling_rate_hz=204.8)
         assert "either a `ori` and a `pos` method" in str(e)
 
     @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
@@ -77,7 +77,9 @@ class TestIODataStructures:
         instance = self.wrapper_class(**{method: RtsKalman()})
         with pytest.warns(UserWarning) as w:
             instance.estimate(
-                healthy_example_imu_data["left_sensor"], self.example_region["left_sensor"].loc[[0]], 204.8
+                healthy_example_imu_data["left_sensor"],
+                self.example_region["left_sensor"].loc[[0]],
+                sampling_rate_hz=204.8,
             )
         assert "trajectory method as ori or pos method" in str(w[0])
 
@@ -89,7 +91,9 @@ class TestIODataStructures:
         instance = self.wrapper_class(trajectory_method=RtsKalman())
         with pytest.warns(UserWarning) as w:
             instance.estimate(
-                healthy_example_imu_data["left_sensor"], self.example_region["left_sensor"].loc[[0]], 204.8
+                healthy_example_imu_data["left_sensor"],
+                self.example_region["left_sensor"].loc[[0]],
+                sampling_rate_hz=204.8,
             )
         assert "You provided a trajectory method AND an ori or pos method." in str(w[0])
 
@@ -98,7 +102,7 @@ class TestIODataStructures:
         test_data = healthy_example_imu_data["left_sensor"].iloc[: int(test_stride_events.iloc[-1]["end"])]
 
         instance = self.wrapper_class()
-        instance.estimate(test_data, test_stride_events, 204.8)
+        instance.estimate(test_data, test_stride_events, sampling_rate_hz=204.8)
 
         assert is_single_sensor_orientation_list(instance.orientation_, self.output_list_type)
         assert is_single_sensor_position_list(instance.position_, self.output_list_type)
@@ -122,7 +126,7 @@ class TestIODataStructures:
         test_data = healthy_example_imu_data["left_sensor"]
 
         instance = self.wrapper_class()
-        instance.estimate(test_data, empty_stride_events, 204.8)
+        instance.estimate(test_data, empty_stride_events, sampling_rate_hz=204.8)
 
         assert is_single_sensor_orientation_list(instance.orientation_, self.output_list_type)
         assert is_single_sensor_position_list(instance.position_, self.output_list_type)
@@ -134,7 +138,7 @@ class TestIODataStructures:
         test_data = healthy_example_imu_data
 
         instance = self.wrapper_class()
-        instance.estimate(test_data, test_stride_events, 204.8)
+        instance.estimate(test_data, test_stride_events, sampling_rate_hz=204.8)
 
         assert is_multi_sensor_orientation_list(instance.orientation_, self.output_list_type)
         assert is_multi_sensor_position_list(instance.position_, self.output_list_type)

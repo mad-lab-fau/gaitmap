@@ -26,12 +26,14 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         trajectory = RegionLevelTrajectory()
         trajectory.estimate(
             healthy_example_imu_data["left_sensor"],
-            healthy_example_stride_events["left_sensor"].rename(columns={"s_id": "roi_id"}).iloc[:2],
+            regions_of_interest=healthy_example_stride_events["left_sensor"]
+            .rename(columns={"s_id": "roi_id"})
+            .iloc[:2],
             sampling_rate_hz=1,
         )
         return trajectory
 
-    def test_all_other_parameters_documented(self):
+    def test_all_other_parameters_documented(self, after_action_instance):
         # As the class has multiple action methods with different parameters, this test can not pass in its current
         # state
         pytest.skip()
@@ -39,7 +41,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 class TestEstimateIntersect:
     @pytest.mark.parametrize(("sl_type", "roi_type"), (("single", "multi"), ("multi", "single")))
-    def test_datatypes_mismatch(self, sl_type, roi_type):
+    def test_datatypes_mismatch(self, sl_type, roi_type, healthy_example_imu_data):
         roi_list = pd.DataFrame({"start": [0], "end": [8]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
         if roi_type == "multi":
@@ -50,9 +52,14 @@ class TestEstimateIntersect:
         rlt = RegionLevelTrajectory()
 
         with pytest.raises(ValidationError) as e:
-            rlt.estimate_intersect({}, roi_list, stride_list, sampling_rate_hz=1)
+            rlt.estimate_intersect(
+                healthy_example_imu_data,
+                regions_of_interest=roi_list,
+                stride_event_list=stride_list,
+                sampling_rate_hz=1,
+            )
 
-        assert f"The stride list is {sl_type} sensor and the stride list is {roi_type} sensor." in str(e)
+        assert f"The stride list is {sl_type} sensor and the ROI list is {roi_type} sensor." in str(e)
 
     def test_simple(self):
         acc_xy = pd.Series([0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0])
@@ -65,7 +72,7 @@ class TestEstimateIntersect:
         roi_list = pd.DataFrame({"start": [0], "end": [len(data)]}).rename_axis("roi_id")
 
         rlt = RegionLevelTrajectory(align_window_width=0)
-        rlt.estimate_intersect(data, roi_list, stride_list, sampling_rate_hz=1)
+        rlt.estimate_intersect(data, regions_of_interest=roi_list, stride_event_list=stride_list, sampling_rate_hz=1)
 
         # Output should pass stride pos list test
         assert is_single_sensor_position_list(rlt.position_, "stride")

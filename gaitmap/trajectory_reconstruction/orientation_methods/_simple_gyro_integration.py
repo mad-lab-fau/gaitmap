@@ -86,7 +86,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         self.initial_orientation = initial_orientation
         self.memory = memory
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(self, data: SingleSensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Estimate the orientation of the sensor by simple integration of the Gyro data.
 
         Parameters

@@ -2,7 +2,7 @@
 
 import json
 import warnings
-from typing import Any, Dict, Type, TypeVar, Union
+from typing import Any, Dict, Optional, Type, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from gaitmap.utils.datatype_helper import (
     SensorData,
     SingleSensorData,
     SingleSensorOrientationList,
+    SingleSensorStrideList,
     StrideList,
     VelocityList,
 )
@@ -215,7 +216,9 @@ class BaseEventDetection(BaseAlgorithm):
 
     _action_methods = ("detect",)
 
-    def detect(self, data: SensorData, stride_list: StrideList, sampling_rate_hz: float) -> Self:
+    def detect(
+        self, data: SensorData, *, stride_event_list: Optional[SingleSensorStrideList] = None, sampling_rate_hz: float
+    ) -> Self:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -233,7 +236,13 @@ class BaseOrientationMethod(BaseAlgorithm):
         df.index.name = "sample"
         return df
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(
+        self,
+        data: SingleSensorData,
+        *,
+        stride_event_list: Optional[SingleSensorStrideList] = None,
+        sampling_rate_hz: float,
+    ) -> Self:
         """Estimate the orientation of the sensor based on the input data."""
         raise NotImplementedError("Needs to be implemented by child class.")
 
@@ -245,7 +254,13 @@ class BasePositionMethod(BaseAlgorithm):
     velocity_: VelocityList
     position_: PositionList
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(
+        self,
+        data: SingleSensorData,
+        *,
+        stride_event_list: Optional[SingleSensorStrideList] = None,
+        sampling_rate_hz: float,
+    ) -> Self:
         """Estimate the position of the sensor based on the input data.
 
         Note that the data is assumed to be in the global-frame (i.e. already rotated)
@@ -312,8 +327,15 @@ class BaseZuptDetector(BaseAlgorithm):
     per_sample_zupts_: np.ndarray
 
     data: SingleSensorData
+    stride_event_list: Optional[SingleSensorStrideList]
     sampling_rate_hz: float
 
-    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **kwargs) -> Self:
+    def detect(
+        self,
+        data: SingleSensorData,
+        *,
+        stride_event_list: Optional[SingleSensorStrideList] = None,
+        sampling_rate_hz: float,
+    ) -> Self:
         """Find ZUPTs in data."""
         raise NotImplementedError("Needs to be implemented by child class.")

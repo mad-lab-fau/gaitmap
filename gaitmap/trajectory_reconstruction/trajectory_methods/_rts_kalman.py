@@ -16,7 +16,7 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
     simple_navigation_equations,
 )
 from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
-from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
+from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
 
 
@@ -184,7 +184,13 @@ class RtsKalman(BaseTrajectoryMethod):
         self.level_walking_variance = level_walking_variance
         self.zupt_detector = zupt_detector
 
-    def estimate(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
+    def estimate(
+        self,
+        data: SingleSensorData,
+        *,
+        sampling_rate_hz: float,
+        stride_event_list: Optional[SingleSensorStrideList] = None,
+    ) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
 
         Parameters
@@ -194,6 +200,9 @@ class RtsKalman(BaseTrajectoryMethod):
             The gyro data is expected to be in deg/s!
         sampling_rate_hz
             The sampling rate of the data in Hz
+        stride_event_list
+            Optional stride event list that will be passed to the ZUPT detector.
+            If this information is actually used depends on the ZUPT detector.
 
         Returns
         -------
@@ -220,9 +229,11 @@ class RtsKalman(BaseTrajectoryMethod):
         if self.level_walking is True:
             meas_noise[3, 3] = self.level_walking_variance
 
-        zupts_detector = self.zupt_detector.clone().detect(data, sampling_rate_hz)
-        zupts = zupts_detector.per_sample_zupts_
-        self.zupts_ = zupts_detector.zupts_
+        zupt_detector = self.zupt_detector.clone().detect(
+            data, sampling_rate_hz=sampling_rate_hz, stride_event_list=stride_event_list
+        )
+        zupts = zupt_detector.per_sample_zupts_
+        self.zupts_ = zupt_detector.zupts_
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()

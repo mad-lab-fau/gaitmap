@@ -194,7 +194,9 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     def _forward_direction_is_flipped(self, data: SingleSensorData, sampling_rate_hz: float):
         """Estimate if data is 180deg flipped by the sign of the reconstructed forward velocity."""
         # estimate initial orientation for ori method from first static acc region
-        zupts_initial_ori = self.zupt_detector_orientation_init.clone().detect(data, sampling_rate_hz).zupts_
+        zupts_initial_ori = (
+            self.zupt_detector_orientation_init.clone().detect(data, sampling_rate_hz=sampling_rate_hz).zupts_
+        )
         # only consider the very first static moment
         start, end = zupts_initial_ori.to_numpy()[0]
         first_static_acc_vec = data[SF_ACC].iloc[start:end].median().to_numpy()
@@ -206,14 +208,14 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         data_after_first_static = data.iloc[start:]
         initial_orientation = get_gravity_rotation(first_static_acc_vec, GRAV_VEC)
         ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-        ori_method = ori_method.estimate(data_after_first_static, sampling_rate_hz)
+        ori_method = ori_method.estimate(data_after_first_static, sampling_rate_hz=sampling_rate_hz)
         acc_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_ACC])
         gyr_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_GYR])
 
         data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_COLS)
 
         # apply pos-method to estimate the forward movement direction
-        pos_method = self.pos_method.clone().estimate(data_wf, sampling_rate_hz)
+        pos_method = self.pos_method.clone().estimate(data_wf, sampling_rate_hz=sampling_rate_hz)
 
         # to ignore any rotation component around the rotation-/ heading-axis we again apply the inverse of the original
         # rotation around the specified rotation-axis on the estimated world frame velocity
