@@ -24,7 +24,7 @@ class TestPositionMethodNoGravityMixin:
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
-        test = test.estimate(idiot_data, 100)
+        test = test.estimate(idiot_data, sampling_rate_hz=100)
         expected = np.zeros((11, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_vel.index.name = "sample"
@@ -39,7 +39,7 @@ class TestPositionMethodNoGravityMixin:
         test = self.init_algo_class()
         sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
-        test = test.estimate(sensor_data, 100)
+        test = test.estimate(sensor_data, sampling_rate_hz=100)
 
         assert is_single_sensor_position_list(test.position_, position_list_type=None)
         assert len(test.position_) == len(sensor_data) + 1
@@ -54,7 +54,7 @@ class TestPositionMethodNoGravityMixin:
         test_data = np.vstack((test_data, -test_data))
         test_data = pd.DataFrame(test_data, columns=SF_ACC)
 
-        test = test.estimate(test_data, 1)
+        test = test.estimate(test_data, sampling_rate_hz=1)
         expected = np.zeros(3)
 
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
@@ -74,7 +74,7 @@ class TestPositionMethodNoGravityMixin:
         test_data = np.vstack((test_data, -test_data))
         test_data = pd.DataFrame(test_data, columns=SF_ACC)
 
-        test.estimate(test_data, 1)
+        test.estimate(test_data, sampling_rate_hz=1)
 
         expected = np.zeros(3)
         assert_array_almost_equal(test.position_.to_numpy()[-1], expected)
@@ -95,9 +95,9 @@ class TestPositionMethodNoGravityMixin:
         strides = healthy_example_stride_events["left_sensor"]
         start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
         data = healthy_example_imu_data["left_sensor"].iloc[start:end]
-        orientation = SimpleGyroIntegration().estimate(data, fs).orientation_object_
+        orientation = SimpleGyroIntegration().estimate(data, sampling_rate_hz=fs).orientation_object_
         data = rotate_dataset_series(data, orientation[:-1])
 
-        test.estimate(data, fs)
+        test.estimate(data, sampling_rate_hz=fs)
 
         snapshot.assert_match(test.position_, test.__class__.__name__)

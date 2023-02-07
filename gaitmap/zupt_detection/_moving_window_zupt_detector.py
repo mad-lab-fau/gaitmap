@@ -11,7 +11,7 @@ from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_dat
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
 
-SENSOR_NAMES = Literal["acc", "gyr"]  # pylint: disable=invalid-name
+SENSOR_NAMES = Literal["acc", "gyr"]
 
 
 def _validate_window(
@@ -25,7 +25,7 @@ def _validate_window(
     if window_length < 3:
         raise ValidationError(
             f"The effective window size is smaller than 3 samples (`sampling_rate_hz`={sampling_rate_hz}, "
-            f"`window_length_s`={window_length_s}). "
+            f"`window_length_s={window_length_s}`). "
             "Specify a larger window length."
         )
     # Exactly one of window_overlap and window_overlap_samples must be specified
@@ -197,7 +197,7 @@ class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self.metric = metric
         self.inactive_signal_threshold = inactive_signal_threshold
 
-    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> Self:
+    def detect(self, data: SingleSensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Detect all ZUPT regions in the data.
 
         Parameters
@@ -453,7 +453,7 @@ class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self.window_overlap_samples = window_overlap_samples
         self.inactive_signal_threshold = inactive_signal_threshold
 
-    def detect(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> Self:
+    def detect(self, data: SingleSensorData, *, sampling_rate_hz: float, **_) -> Self:
         """Detect all ZUPT regions in the data.
 
         Parameters

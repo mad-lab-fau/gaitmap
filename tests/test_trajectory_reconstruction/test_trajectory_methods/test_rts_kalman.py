@@ -41,7 +41,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         fs = 15
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
 
         assert test.covariance_.shape == (len(sensor_data) + 1, 9 * 9)
 
@@ -57,7 +57,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         for z in expected_zupts:
             sensor_data[slice(*z), -1] = 0
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
 
         assert_array_almost_equal(expected_zupts, test.zupts_)
 
@@ -69,7 +69,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         zupt_data = np.repeat(np.concatenate((acc, [0.0, 0.0, 0.0]))[None, :], 10, axis=0)
         sensor_data = np.vstack((accel_data, zupt_data))
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, 10)
+        test.estimate(sensor_data, sampling_rate_hz=10)
         assert norm(test.velocity_) > 1.0
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
@@ -80,6 +80,6 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         zupt_data = np.repeat(np.concatenate(([0.0, 0.0, 9.81], [0.0, 0.0, 0.0]))[None, :], 10, axis=0)
         sensor_data = np.vstack((accel_data, zupt_data))
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, 10)
+        test.estimate(sensor_data, sampling_rate_hz=10)
         assert test.position_.to_numpy()[4][2] < -0.8
         assert_array_almost_equal(test.position_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)

@@ -26,7 +26,7 @@ class TestTrajectoryMethodMixin:
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((15, 6)), columns=SF_COLS)
         idiot_data["acc_z"] = 9.81
-        test = test.estimate(idiot_data, 100)
+        test = test.estimate(idiot_data, sampling_rate_hz=100)
         expected = np.zeros((16, 3))
         expected_vel = pd.DataFrame(expected, columns=GF_VEL)
         expected_vel.index.name = "sample"
@@ -46,7 +46,7 @@ class TestTrajectoryMethodMixin:
         fs = 100
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
 
         assert isinstance(test.orientation_object_, Rotation)
         assert len(test.orientation_object_) == len(sensor_data) + 1
@@ -83,7 +83,7 @@ class TestTrajectoryMethodMixin:
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test = self.init_algo_class()
 
-        test.estimate(sensor_data, fs)
+        test.estimate(sensor_data, sampling_rate_hz=fs)
         rot_final = test.orientation_.iloc[-1]
 
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
@@ -100,7 +100,7 @@ class TestTrajectoryMethodMixin:
         test_data = np.vstack((accel_data, break_data))
         test_data = pd.DataFrame(test_data, columns=SF_COLS)
 
-        test = test.estimate(test_data, 100)
+        test = test.estimate(test_data, sampling_rate_hz=100)
         expected = np.zeros(3)
 
         assert_array_almost_equal(test.velocity_.to_numpy()[0], expected, decimal=10)
@@ -116,6 +116,6 @@ class TestTrajectoryMethodMixin:
         initial_rotation = find_shortest_rotation(initial_g / np.linalg.norm(initial_g), np.array([0, 0, 1]))
         data = rotate_dataset(data, initial_rotation)
 
-        test.estimate(data, fs)
+        test.estimate(data, sampling_rate_hz=fs)
 
         snapshot.assert_match(test.position_, test.__class__.__name__)

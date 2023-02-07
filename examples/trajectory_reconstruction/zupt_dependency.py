@@ -75,7 +75,7 @@ class TrajectoryPipeline(Pipeline[HealthyImu]):
 
     def run(self, datapoint: HealthyImu) -> Self:
         rts_kalman = RtsKalman(zupt_detector=self.zupt_method)
-        self.trajectory_ = rts_kalman.estimate(datapoint.data, datapoint.sampling_rate_hz).position_
+        self.trajectory_ = rts_kalman.estimate(datapoint.data, sampling_rate_hz=datapoint.sampling_rate_hz).position_
         return self
 
 

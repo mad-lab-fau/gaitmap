@@ -1,11 +1,11 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 import warnings
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
-from tpcp import CloneFactory
+from tpcp import cf
 from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
@@ -19,6 +19,7 @@ from gaitmap.utils.datatype_helper import (
     SensorData,
     SingleSensorData,
     SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
     get_multi_sensor_names,
     set_correct_index,
 )
@@ -40,8 +41,8 @@ class _TrajectoryReconstructionWrapperMixin:
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
+        ori_method: Optional[BaseOrientationMethod] = cf(SimpleGyroIntegration()),
+        pos_method: Optional[BasePositionMethod] = cf(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
     ):
         self.ori_method = ori_method
@@ -81,27 +82,50 @@ class _TrajectoryReconstructionWrapperMixin:
                 )
             self._combined_algo_mode = False
 
-    def _estimate(self, dataset_type: Literal["single", "multi"]) -> Self:
+    def _estimate(
+        self,
+        data,
+        integration_regions,
+        stride_list_list: Optional[Union[Dict[str, List[SingleSensorStrideList]], List[SingleSensorStrideList]]],
+        dataset_type: Literal["single", "multi"],
+    ) -> Self:
+        """Actual estimation method.
+
+        This will call the correct estimation method depending on the dataset type and perform the integration per
+        integration region.
+        """
         if dataset_type == "single":
-            results = self._estimate_single_sensor(self.data, self._integration_regions)
+            results = self._estimate_single_sensor(data, integration_regions, stride_list_list)
         else:
             results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
-            for sensor in get_multi_sensor_names(self.data):
+            for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._estimate_single_sensor(
-                    self.data[sensor], self._integration_regions[sensor]
+                    data[sensor], integration_regions[sensor], stride_list_list[sensor] if stride_list_list else None
                 )
             results = invert_result_dictionary(results_dict)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
     def _estimate_single_sensor(
-        self, data: SingleSensorData, integration_regions: SingleSensorRegionsOfInterestList
+        self,
+        data: SingleSensorData,
+        integration_regions: SingleSensorRegionsOfInterestList,
+        stride_list_list: Optional[List[SingleSensorStrideList]],
     ) -> Dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = (*self._expected_integration_region_index, "sample")
         orientation = {}
         velocity = {}
         position = {}
+        if stride_list_list is not None:
+            if len(stride_list_list) != len(integration_regions):
+                raise ValueError(
+                    f"The number of stride lists ({len(stride_list_list)}) does not match the number of integration "
+                    f"regions ({len(integration_regions)})."
+                )
+        else:
+            stride_list_list = [None] * len(integration_regions)
+
         if len(integration_regions) == 0:
             index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=full_index)
             return {
@@ -109,9 +133,9 @@ class _TrajectoryReconstructionWrapperMixin:
                 "velocity": pd.DataFrame(columns=GF_VEL, index=index.copy()),
                 "position": pd.DataFrame(columns=GF_POS, index=index.copy()),
             }
-        for r_id, i_region in integration_regions.iterrows():
+        for (r_id, i_region), stride_list in zip(integration_regions.iterrows(), stride_list_list):
             i_start, i_end = (int(i_region["start"]), int(i_region["end"]))
-            i_orientation, i_velocity, i_position = self._estimate_region(data, i_start, i_end)
+            i_orientation, i_velocity, i_position = self._estimate_region(data, i_start, i_end, stride_list)
             orientation[r_id] = pd.DataFrame(i_orientation.as_quat(), columns=GF_ORI)
             velocity[r_id] = pd.DataFrame(i_velocity, columns=GF_VEL)
             position[r_id] = pd.DataFrame(i_position, columns=GF_POS)
@@ -124,7 +148,7 @@ class _TrajectoryReconstructionWrapperMixin:
         return {"orientation": orientation_df, "velocity": velocity_df, "position": position_df}
 
     def _estimate_region(
-        self, data: SingleSensorData, start: int, end: int
+        self, data: SingleSensorData, start: int, end: int, stride_event_list: SingleSensorStrideList
     ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
         stride_data = data.iloc[start:end].copy()
         initial_orientation = self._calculate_initial_orientation(data, start)
@@ -135,18 +159,24 @@ class _TrajectoryReconstructionWrapperMixin:
             assert self.pos_method is not None
             # Apply the orientation method
             ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-            orientation = ori_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz).orientation_object_
+            orientation = ori_method.estimate(
+                stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
+            ).orientation_object_
 
             rotated_stride_data = rotate_dataset_series(stride_data, orientation[:-1])
             # Apply the Position method
-            pos_method = self.pos_method.clone().estimate(rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz)
+            pos_method = self.pos_method.clone().estimate(
+                rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
+            )
             velocity = pos_method.velocity_
             position = pos_method.position_
         else:
             # For the type-checker
             assert self.trajectory_method is not None
             trajectory_method = self.trajectory_method.clone().set_params(initial_orientation=initial_orientation)
-            trajectory_method = trajectory_method.estimate(stride_data, sampling_rate_hz=self.sampling_rate_hz)
+            trajectory_method = trajectory_method.estimate(
+                stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
+            )
             orientation = trajectory_method.orientation_object_
             velocity = trajectory_method.velocity_
             position = trajectory_method.position_
