@@ -1242,12 +1242,12 @@ def set_correct_index(
     else:
         return df
 
-    # In case not all columns are in the the index, reset_the index and check the column names
+    # In case not all columns are in the index, reset_the index and check the column names
     wrong_index = [i for i, n in enumerate(df.index.names) if n not in index_cols]
     all_wrong = len(wrong_index) == len(df.index.names)
     df_just_right_index = df.reset_index(level=wrong_index, drop=drop_false_index_cols)
     if not all_wrong:
-        # In case correct indix cols are remaining make them to regular columns
+        # In case correct index cols are remaining make them to regular columns
         df_just_right_index = df_just_right_index.reset_index()
 
     try:
