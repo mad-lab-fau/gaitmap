@@ -80,6 +80,11 @@ project.
   Both wrapper (Stride-level and Region) are both aware of this parameter and pass them correctly down to the respective
   methods.
   (https://github.com/mad-lab-fau/gaitmap/pull/14)
+- The util method `start_end_array_to_bool_array` now assumes that the end index of all regions is inclusive.
+  This enables roundtrip conversion with the `bool_array_to_start_end_array` method and is in line with the definitions
+  used for strides, ROIs, and ZUPTs in gaitmap.
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
+
 
 ### Removed
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
