@@ -5,6 +5,7 @@ import pandas as pd
 from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
+from gaitmap.utils.array_handling import merge_intervals
 from gaitmap.utils.datatype_helper import (
     SingleSensorData,
     SingleSensorStrideList,
@@ -44,18 +45,15 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
     per_sample_zupts_
         A bool array with length `len(data)`.
         If the value is `True` for a sample, it is part of a static region.
-    window_length_samples_
-        The internally calculated window length in samples.
-        This might be helpful for debugging.
-    window_overlap_samples_
-        The internally calculated window overlap in samples.
-        This might be helpful for debugging.
+    half_region_size_samples_
+        The actual half region size in samples calculated using the data sampling rate.
 
     """
 
     half_region_size_s: float
+    half_region_size_samples_: int
 
-    def __init__(self, half_region_size_s: float):
+    def __init__(self, half_region_size_s: float = 0.05):
         self.half_region_size_s = half_region_size_s
 
     def detect(
@@ -87,25 +85,34 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         self.data = data
         self.stride_event_list = stride_event_list
         self.sampling_rate_hz = sampling_rate_hz
-        is_single_sensor_data(self.data, check_acc=True, check_gyr=True, frame="any", raise_exception=True)
+
+        if self.half_region_size_s < 0:
+            raise ValueError("The half region size must be >= 0")
+
+        # We don't need the data. We still check it, as we need its length for the per_sample_zupts_ attribute.
+        # This means, we need to make at least sure that the data is somewhat valid.
+        is_single_sensor_data(self.data, check_acc=False, check_gyr=False, frame="any", raise_exception=True)
 
         try:
-            is_single_sensor_stride_list(self.stride_event_list, "min_vel", raise_exception=True)
+            is_single_sensor_stride_list(
+                self.stride_event_list, "min_vel", check_additional_cols=("min_vel",), raise_exception=True
+            )
         except ValidationError as e:
             raise ValidationError(
-                "For the `StrideEventZuptDetector` a proper stride_event_list of the `min_vel` type"
+                "For the `StrideEventZuptDetector` a proper stride_event_list of the `min_vel` type is required."
             ) from e
 
-        region_size_samples = int(np.round(self.half_region_size_s * sampling_rate_hz))
+        self.half_region_size_samples_ = int(np.round(self.half_region_size_s * sampling_rate_hz))
 
         # In a min_vel stride list, all starts and all ends are min_vel events.
         all_min_vel_events = np.unique(np.concatenate([self.stride_event_list["start"], self.stride_event_list["end"]]))
 
-        self.zupts_ = pd.DataFrame(
-            {
-                "start": np.clip(all_min_vel_events - region_size_samples, 0, None),
-                "end": np.clip(all_min_vel_events + region_size_samples, None, self.data.shape[0]),
-            }
-        ).astype(int)
+        start_ends = np.empty((len(all_min_vel_events), 2), dtype=int)
+        start_ends[:, 0] = np.clip(all_min_vel_events - self.half_region_size_samples_, 0, None)
+        start_ends[:, 1] = np.clip(all_min_vel_events + self.half_region_size_samples_ + 1, None, self.data.shape[0])
+        self.zupts_ = pd.DataFrame(merge_intervals(start_ends), columns=["start", "end"])
+        # This is required, because otherwise, edge cases at the start or end of the data could lead to zero-length
+        # ZUPTs.
+        self.zupts_ = self.zupts_.loc[self.zupts_["start"] < self.zupts_["end"]]
 
         return self

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from gaitmap.utils.array_handling import bool_array_to_start_end_array
+from gaitmap.utils.array_handling import bool_array_to_start_end_array, start_end_array_to_bool_array
 from gaitmap.utils.datatype_helper import SingleSensorData
 
 
@@ -39,7 +39,4 @@ class RegionZuptDetectorMixin:
     @property
     def per_sample_zupts_(self) -> np.ndarray:
         """Get a bool array of length data with all Zupts as True."""
-        zupts = np.zeros(self.data.shape[0], dtype=bool)
-        for _, row in self.zupts_.iterrows():
-            zupts[row["start"] : row["end"]] = True
-        return zupts
+        return start_end_array_to_bool_array(self.zupts_.to_numpy(), self.data.shape[0])
