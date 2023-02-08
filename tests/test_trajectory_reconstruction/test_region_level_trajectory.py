@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 import pytest
+from statsmodels.compat.pandas import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
@@ -13,6 +16,7 @@ from gaitmap.utils.datatype_helper import (
 )
 from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.test_trajectory_reconstruction.test_trajectory_wrapper import MockTrajectory
 
 # For further test see ./test_trajectory_wrapper.py
 
@@ -269,3 +273,82 @@ class TestIntersect:
 
         # Output should pass stride pos list test
         assert is_multi_sensor_position_list(intersected_pos, "stride")
+
+
+class TestRegionLevelTrajectory:
+    @pytest.mark.parametrize("method", ("estimate", "estimate_intersect"))
+    def test_event_list_forwarded(self, method):
+        with patch.object(MockTrajectory, "estimate") as mock_estimate:
+            mock_estimate.return_value = MockTrajectory()
+            test = RegionLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())
+            getattr(test, method)(
+                pd.DataFrame(np.array([[0, 0, 9.81, 0, 0, 0]] * 10), columns=SF_COLS),
+                regions_of_interest=pd.DataFrame({"start": [1, 5], "end": [5, 10]}).rename_axis("roi_id"),
+                stride_event_list=pd.DataFrame(
+                    {"start": [0, 3, 5, 8], "end": [3, 5, 8, 10], "min_vel": [0, 3, 5, 8]},
+                    index=pd.Series([2, 3, 4, 5], name="s_id"),
+                ),
+                sampling_rate_hz=1,
+            )
+
+            # Mock should be called twice, once for each region
+            assert mock_estimate.call_count == 2
+            # All strides are normalized to start of region
+            assert_frame_equal(
+                mock_estimate.call_args_list[0].kwargs["stride_event_list"],
+                pd.DataFrame({"start": [2], "end": [4], "min_vel": [2]}, index=pd.Series([3], name="s_id")),
+            )
+            assert_frame_equal(
+                mock_estimate.call_args_list[1].kwargs["stride_event_list"],
+                pd.DataFrame({"start": [0, 3], "end": [3, 5], "min_vel": [0, 3]}, index=pd.Series([4, 5], name="s_id")),
+            )
+
+    @pytest.mark.parametrize("method", ("estimate", "estimate_intersect"))
+    def test_event_list_forwarded_multi(self, method):
+        with patch.object(MockTrajectory, "estimate") as mock_estimate:
+            mock_estimate.return_value = MockTrajectory()
+            test = RegionLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())
+
+            getattr(test, method)(
+                {
+                    "left_sensor": pd.DataFrame(np.array([[0, 0, 9.81, 0, 0, 0]] * 10), columns=SF_COLS),
+                    "right_sensor": pd.DataFrame(np.array([[0, 0, 9.81, 0, 0, 0]] * 10), columns=SF_COLS),
+                },
+                regions_of_interest={
+                    "left_sensor": pd.DataFrame({"start": [1, 5], "end": [5, 10]}).rename_axis("roi_id"),
+                    # Right region is slightly different!
+                    "right_sensor": pd.DataFrame({"start": [2, 5], "end": [5, 10]}).rename_axis("roi_id"),
+                },
+                stride_event_list={
+                    "left_sensor": pd.DataFrame(
+                        {"start": [0, 3, 5, 8], "end": [3, 5, 8, 10], "min_vel": [0, 3, 5, 8]},
+                        index=pd.Series(["l_2", "l_3", "l_4", "l_5"], name="s_id"),
+                    ),
+                    "right_sensor": pd.DataFrame(
+                        {"start": [0, 3, 5, 8], "end": [3, 5, 8, 10], "min_vel": [0, 3, 5, 8]},
+                        index=pd.Series(["r_2", "r_3", "r_4", "r_5"], name="s_id"),
+                    ),
+                },
+                sampling_rate_hz=1,
+            )
+
+            # Mock should be called twice, once for each region
+            assert mock_estimate.call_count == 4
+            # First call should be for the first stride
+            calls = iter(mock_estimate.call_args_list)
+            for sensor in ["left_sensor", "right_sensor"]:
+                offset = int(sensor == "right_sensor")
+                assert_frame_equal(
+                    next(calls).kwargs["stride_event_list"],
+                    pd.DataFrame(
+                        {"start": [2 - offset], "end": [4 - offset], "min_vel": [2 - offset]},
+                        index=pd.Series([f"{sensor[0]}_3"], name="s_id"),
+                    ),
+                )
+                assert_frame_equal(
+                    next(calls).kwargs["stride_event_list"],
+                    pd.DataFrame(
+                        {"start": [0, 3], "end": [3, 5], "min_vel": [0, 3]},
+                        index=pd.Series([f"{sensor[0]}_4", f"{sensor[0]}_5"], name="s_id"),
+                    ),
+                )
