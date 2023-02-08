@@ -1,15 +1,13 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
 from typing import Optional, Tuple
 
-import numpy as np
-import pandas as pd
 from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseZuptDetector
-from gaitmap.utils.array_handling import bool_array_to_start_end_array
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
+from gaitmap.zupt_detection._base import PerSampleZuptDetectorMixin
 
 SENSOR_NAMES = Literal["acc", "gyr"]
 
@@ -61,19 +59,7 @@ def _validate_window(
     return window_length, window_overlap_samples_out
 
 
-class _PerSampleDetectorMixin:
-    per_sample_zupts_: np.ndarray
-
-    @property
-    def zupts_(self) -> pd.DataFrame:
-        """Get the start and end values of all zupts."""
-        start_ends = bool_array_to_start_end_array(self.per_sample_zupts_)
-        if len(start_ends) > 0:
-            return pd.DataFrame(start_ends, columns=["start", "end"])
-        return pd.DataFrame(columns=["start", "end"])
-
-
-class NormZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
+class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     """Detect ZUPTs based on either the Acc or the Gyro norm.
 
     The ZUPT method uses a sliding window approach with overlap.
@@ -339,7 +325,7 @@ class AredZuptDetector(NormZuptDetector):
 
 
 # TODO: I think the default parameters here are still not optimal
-class ShoeZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
+class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     """Detect ZUPTSs using the SHOE algorithm.
 
     This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to

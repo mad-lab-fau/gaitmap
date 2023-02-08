@@ -12,9 +12,10 @@ from gaitmap.utils.datatype_helper import (
     is_single_sensor_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
+from gaitmap.zupt_detection._base import RegionZuptDetectorMixin
 
 
-class StrideEventZuptDetector(BaseZuptDetector):
+class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
     """A ZUPT detector that simply reuses the min_vel events as ZUPT events.
 
     This can be very helpful, when wanting to enforce one ZUPT event per stride.
@@ -108,11 +109,3 @@ class StrideEventZuptDetector(BaseZuptDetector):
         ).astype(int)
 
         return self
-
-    @property
-    def per_sample_zupts_(self) -> np.ndarray:
-        """Get a bool array of length data with all Zupts as True."""
-        zupts = np.zeros(self.data.shape[0], dtype=bool)
-        for _, row in self.zupts_.iterrows():
-            zupts[row["start"] : row["end"]] = True
-        return zupts
