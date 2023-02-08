@@ -18,7 +18,14 @@ from gaitmap.trajectory_reconstruction._trajectory_wrapper import (
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods import ForwardBackwardIntegration
 from gaitmap.utils.consts import SL_INDEX
-from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, StrideList, is_sensor_data, is_stride_list
+from gaitmap.utils.datatype_helper import (
+    SensorData,
+    SingleSensorData,
+    StrideList,
+    is_sensor_data,
+    is_stride_list,
+    set_correct_index,
+)
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -172,14 +179,17 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         # For the per stride integration, we create a dummy stride list-list, containing only the single stride that is
         # in each integration region.
         if stride_list_type == "single":
+            stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
             stride_list_list = [
                 stride_event_list.iloc[[i]] - stride_event_list.iloc[i]["start"] for i in range(len(stride_event_list))
             ]
         else:
-            stride_list_list = {
-                sensor: [stride_list.iloc[[i]] - stride_list.iloc[i]["start"] for i in range(len(stride_list))]
-                for sensor, stride_list in stride_event_list.items()
-            }
+            stride_list_list = {}
+            for sensor, stride_list in stride_event_list.items():
+                stride_list = set_correct_index(stride_list, SL_INDEX)
+                stride_list_list[sensor] = [
+                    stride_list.iloc[[i]] - stride_list.iloc[i]["start"] for i in range(len(stride_list))
+                ]
 
         self._estimate(
             data=data,
