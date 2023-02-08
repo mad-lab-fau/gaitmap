@@ -8,7 +8,7 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
-## [2.1.0]
+## [2.1.0] - 2023-02-08
 
 ### Added
 - **HIGHLIGHT**: Finally reworked the HMM branch, added tests and documentation and adapted the API to fit the rest of 
@@ -106,6 +106,14 @@ project.
 - The `find_zupts` method of the `RtsKalmanFilter` and all deprecated arguments are now fully removed in favor of the 
   dedicated ZUPT algorithms.
   The parameters where deprecated since version 1.5
+
+### Migration Guide
+
+- There are a bunch of small changes that are not backwards compatible.
+  The most important is likely the change to make the `sampling_rate_hz` parameter (and other) keyword only in many 
+  methods.
+  This means, you need to use the parameter name when calling these methods.
+  For example, if you used `detect(data, 100)` before, you now need to use `detect(data, sampling_rate_hz=100)`.
 
 
 ## [2.0.2] - 2022-08-29

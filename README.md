@@ -24,14 +24,14 @@ To get access to all available algorithms, you need to install both packages.
 
 **For now, simply installing gaitmap will install both packages, but this will change in the future!**
 
-For a stable experience install one of our releases (e.g. 2.0).
+For a stable experience install one of our releases (e.g. 2.1).
 
 All new releases (>=2.0) can be found on [Github](https://github.com/mad-lab-fau/gaitmap/releases).
 All old releases are available via MaD-Lab internal [Gitlab](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases).
 
 ```
 # gaitmap
-pip install git+https://github.com/mad-lab-fau/gaitmap.git@v2.0.0 --upgrade
+pip install git+https://github.com/mad-lab-fau/gaitmap.git@v2.1.0 --upgrade
 ```
 
 The latest git (bleeding edge) version:
