@@ -95,6 +95,10 @@ project.
 - The util method `start_end_array_to_bool_array` now assumes that the end index of all regions is inclusive.
   This enables roundtrip conversion with the `bool_array_to_start_end_array` method and is in line with the definitions
   used for strides, ROIs, and ZUPTs in gaitmap.
+  Further, the method now supports to output arrays that are shorter than the largest input index.
+  Before, this resulted in an error.
+  Both changes might require some user facing code changes, if this function is used.
+  However, as it was not used internally, it is likely that no one was using it anyway.
   (https://github.com/mad-lab-fau/gaitmap/pull/14)
 
 

@@ -145,8 +145,9 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
                      This is in line with the definitions of stride and roi lists in gaitmap.
 
     pad_to_length: int
-        define length of resulting array if None is given the array will have the length of the last element of the
-        initial start_end_array
+        Define the length of the resulting array.
+        If None, the array will have the length of the largest index.
+        Otherwise, the final array will either be padded with False or truncated to the specified length.
 
     Returns
     -------
@@ -167,11 +168,11 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     """
     start_end_array = np.atleast_2d(start_end_array)
 
-    n_elements = start_end_array.max()
-
-    if pad_to_length:
-        if pad_to_length <= n_elements:
-            raise ValueError("Padding length must be larger than last element of start end array!")
+    if pad_to_length is None:
+        n_elements = start_end_array.max()
+    else:
+        if pad_to_length < 0:
+            raise ValueError("pad_to_length must be positive!")
         n_elements = pad_to_length
 
     bool_array = np.zeros(n_elements)
