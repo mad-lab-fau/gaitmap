@@ -57,6 +57,18 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/13)
 - A new utility method to intersect stride lists by a region of interest list.
   (https://github.com/mad-lab-fau/gaitmap/pull/14)
+- A new ZuptDetector method `StrideEventZuptDetector` that simply returns the min_vel events of an already provided 
+  event list as ZUPTs.
+  This is enabled by the new `stride_event_list` parameter of the `detect` method of all ZuptDetector methods (see 
+  Changes)
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
+- A new ZuptDetector method `ComboZuptDetector` that allows to combine the output of multiple ZuptDetector methods using
+  either logical "or" or "and".
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
+- The `PerSampleZuptDetectorMixin` and `RegionZuptDetectorMixin` are now public API to simplify the implementation of 
+  custom ZUPT detectors.
+  (https://github.com/mad-lab-fau/gaitmap/pull/14)
+
 
 ### Changed
 - When using `memory` with any of Dtw methods, we will not cache the peak detection step anymore.

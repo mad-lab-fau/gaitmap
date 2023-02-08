@@ -16,3 +16,7 @@ Classes
     NormZuptDetector
     AredZuptDetector
     ShoeZuptDetector
+    StrideEventZuptDetector
+    ComboZuptDetector
+    PerSampleZuptDetectorMixin
+    RegionZuptDetectorMixin
