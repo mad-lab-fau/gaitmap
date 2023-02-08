@@ -1,10 +1,12 @@
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.linalg import norm
 from numpy.testing import assert_array_almost_equal
 
-from gaitmap.base import BaseType
+from gaitmap.base import BaseType, BaseZuptDetector
 from gaitmap.trajectory_reconstruction import RtsKalman
 from gaitmap.utils.consts import SF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -83,3 +85,19 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         test.estimate(sensor_data, sampling_rate_hz=10)
         assert test.position_.to_numpy()[4][2] < -0.8
         assert_array_almost_equal(test.position_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
+
+    def test_stride_list_forwarded_to_zupt(self):
+        """Test that the stride list passed to reconstruct is forwarded to the detect method of the ZUPT detector."""
+
+        class MockZUPTDetector(BaseZuptDetector):
+            zupts_ = pd.DataFrame(columns=["start", "end"])
+            per_sample_zupts_ = np.zeros(10)
+
+        with patch.object(MockZUPTDetector, "detect") as mock_detect:
+            mock_detect.return_value = MockZUPTDetector()
+            test = self.init_algo_class(zupt_detector=MockZUPTDetector())
+            sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
+            stride_event_list = pd.DataFrame({"start": [0, 5], "end": [2, 7]}, index=pd.Series([0, 1], name="s_id"))
+            test.estimate(sensor_data, sampling_rate_hz=10, stride_event_list=stride_event_list)
+
+            mock_detect.assert_called_once_with(sensor_data, sampling_rate_hz=10, stride_event_list=stride_event_list)
