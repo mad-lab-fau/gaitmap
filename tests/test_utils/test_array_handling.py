@@ -254,25 +254,34 @@ class TestStartEndArrayToBoolArray:
     def test_simple_input_no_padding(self):
         input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array)
-        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1]).astype(bool)
+        expected_output = np.array([0, 0, 1, 0, 0, 1, 1, 1, 1]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_simple_input_1d_no_padding(self):
         input_array = np.array([2, 3])
         output_array = start_end_array_to_bool_array(input_array, pad_to_length=5)
-        expected_output = np.array([0, 0, 1, 1, 0]).astype(bool)
+        expected_output = np.array([0, 0, 1, 0, 0]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_simple_input_with_padding(self):
         input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array, pad_to_length=12)
-        expected_output = np.array([0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0]).astype(bool)
+        expected_output = np.array([0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0]).astype(bool)
+        assert_array_equal(expected_output, output_array)
+
+    @pytest.mark.parametrize("reverse", [True, False])
+    def test_length_unsorted(self, reverse):
+        input_array = np.array([[5, 9], [2, 3]])
+        if reverse:
+            input_array = input_array[::-1]
+        output_array = start_end_array_to_bool_array(input_array)
+        expected_output = np.array([0, 0, 1, 0, 0, 1, 1, 1, 1]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_overlapping_input_with_padding(self):
         input_array = np.array([[2, 6], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array, pad_to_length=12)
-        expected_output = np.array([0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]).astype(bool)
+        expected_output = np.array([0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]).astype(bool)
         assert_array_equal(expected_output, output_array)
 
     def test_invalid_padding(self):
@@ -286,6 +295,12 @@ class TestStartEndArrayToBoolArray:
         input_array = np.array([[2, 3], [5, 9]])
         output_array = start_end_array_to_bool_array(input_array)
         assert output_array.dtype == "bool"
+
+    def test_bool_array_round_trip(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array)
+        output_array = bool_array_to_start_end_array(output_array)
+        assert_array_equal(input_array, output_array)
 
 
 class TestLocalMinimaBelowThreshold:

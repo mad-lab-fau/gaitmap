@@ -141,6 +141,9 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     start_end_array : array with shape (n,2)
         2d-array indicating start and end values e.g. [[10,20],[20,40],[70,80]]
 
+        .. warning:: We assume that the end index is exclusiv!
+                     This is in line with the definitions of stride and roi lists in gaitmap.
+
     pad_to_length: int
         define length of resulting array if None is given the array will have the length of the last element of the
         initial start_end_array
@@ -152,24 +155,28 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
 
     Examples
     --------
-    >>> example_array = np.array([[3,5],[7,8], pad_to_length=12)
-    >>> bool_array = start_end_array_to_bool_array(example_array)
-    >>> bool_array
-    array([False,False,False,True,True,True,False,True,True, False, False, False])
-    >>>  example_array = np.array([[3,5],[7,8], pad_to_length=None)
-    array([False,False,False,True,True,True,False,True,True])
+    >>> import numpy as np
+    >>> example_array = np.array([[3,5],[7,8]])
+    >>> start_end_array_to_bool_array(example_array, pad_to_length=12)
+    array([False, False, False,  True,  True,  True, False,  True,  True,
+           False, False, False])
+    >>> example_array = np.array([[3,5],[7,8]])
+    >>> start_end_array_to_bool_array(example_array, pad_to_length=None)
+    array([False, False, False,  True,  True,  True, False,  True,  True])
 
     """
     start_end_array = np.atleast_2d(start_end_array)
-    if pad_to_length and pad_to_length <= start_end_array[-1][-1]:
-        raise ValueError("Padding length must be larger than last element of start end array!")
 
-    n_elements = start_end_array[-1][-1] + 1
+    n_elements = start_end_array.max()
+
     if pad_to_length:
+        if pad_to_length <= n_elements:
+            raise ValueError("Padding length must be larger than last element of start end array!")
         n_elements = pad_to_length
+
     bool_array = np.zeros(n_elements)
     for start, end in start_end_array:
-        bool_array[start : end + 1] = 1
+        bool_array[start:end] = 1
     return bool_array.astype(bool)
 
 
