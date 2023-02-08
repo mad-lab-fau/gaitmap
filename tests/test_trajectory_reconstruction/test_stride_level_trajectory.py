@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas._testing import assert_frame_equal
-from scipy.spatial.transform import Rotation
 
-from gaitmap.base import BaseTrajectoryMethod, BaseType
+from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
-from gaitmap.utils.consts import GF_POS, GF_VEL, SF_COLS
+from gaitmap.utils.consts import SF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
+from tests.test_trajectory_reconstruction.test_trajectory_wrapper import MockTrajectory
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -25,16 +25,6 @@ class TestMetaFunctionality(TestAlgorithmMixin):
             sampling_rate_hz=1,
         )
         return trajectory
-
-
-class MockTrajectory(BaseTrajectoryMethod):
-    def __init__(self, initial_orientation=None):
-        self.initial_orientation = initial_orientation
-        super().__init__()
-
-    orientation_object_ = Rotation.from_quat(np.array([[0, 0, 0, 1]] * 10))
-    velocity_ = pd.DataFrame(np.zeros((10, 3)), columns=GF_VEL)
-    position_ = pd.DataFrame(np.zeros((10, 3)), columns=GF_POS)
 
 
 class TestStrideLevelTrajectory:

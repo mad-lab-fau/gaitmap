@@ -7,11 +7,11 @@ from numpy.testing import assert_array_equal
 from scipy.spatial.transform import Rotation
 from typing_extensions import Literal
 
-from gaitmap.base import BaseTrajectoryReconstructionWrapper
+from gaitmap.base import BaseTrajectoryMethod, BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
 from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
 from gaitmap.trajectory_reconstruction._trajectory_wrapper import _initial_orientation_from_start
-from gaitmap.utils.consts import SF_COLS
+from gaitmap.utils.consts import GF_POS, GF_VEL, SF_COLS
 from gaitmap.utils.datatype_helper import (
     is_multi_sensor_orientation_list,
     is_multi_sensor_position_list,
@@ -191,3 +191,13 @@ class TestInitCalculation:
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 20, axis=0), columns=SF_COLS)
         start_ori = _initial_orientation_from_start(dummy_data, 10, 0)
         assert_array_equal(start_ori.as_quat(), Rotation.identity().as_quat())
+
+
+class MockTrajectory(BaseTrajectoryMethod):
+    def __init__(self, initial_orientation=None):
+        self.initial_orientation = initial_orientation
+        super().__init__()
+
+    orientation_object_ = Rotation.from_quat(np.array([[0, 0, 0, 1]] * 10))
+    velocity_ = pd.DataFrame(np.zeros((10, 3)), columns=GF_VEL)
+    position_ = pd.DataFrame(np.zeros((10, 3)), columns=GF_POS)
