@@ -66,7 +66,8 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         Returns
         -------
         self
-            The fitted instance
+            The class instance with all result attributes populated
+
         """
         if not self.detectors:
             raise ValueError("No detectors have been set.")
