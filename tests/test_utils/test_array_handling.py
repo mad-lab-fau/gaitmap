@@ -289,7 +289,13 @@ class TestStartEndArrayToBoolArray:
         with pytest.raises(ValueError) as e:
             start_end_array_to_bool_array(input_array, pad_to_length=-1)
 
-        assert "Padding length must be larger than" in str(e)
+        assert "pad_to_length must be positive" in str(e)
+
+    def test_short_padding(self):
+        input_array = np.array([[2, 3], [5, 9]])
+        output_array = start_end_array_to_bool_array(input_array, pad_to_length=7)
+        expected_output = np.array([0, 0, 1, 0, 0, 1, 1]).astype(bool)
+        assert_array_equal(expected_output, output_array)
 
     def test_correct_output_dtype(self):
         input_array = np.array([[2, 3], [5, 9]])
