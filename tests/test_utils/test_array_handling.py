@@ -241,6 +241,12 @@ class TestBoolArrayToStartEndArray:
         expected_output = np.array([[0, 3], [6, 9]])
         assert_array_equal(expected_output, output_array)
 
+    def test_empty_array(self):
+        """Test zeros only input."""
+        input_array = np.array([])
+        output_array = bool_array_to_start_end_array(input_array)
+        assert output_array.size == 0
+
 
 class TestStartEndArrayToBoolArray:
     """Test the function `start_end_array_to_bool_array`."""

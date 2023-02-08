@@ -1,14 +1,14 @@
-from typing import List, Literal, Tuple
+from typing import List, Literal, Optional, Tuple
 
 import numpy as np
 from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
-from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
-from gaitmap.zupt_detection._moving_window_zupt_detector import _PerSampleDetectorMixin
+from gaitmap.utils.datatype_helper import SingleSensorData
+from gaitmap.zupt_detection._base import PerSampleZuptDetectorMixin
 
 
-class ComboZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
+class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     """A ZUPT detector that combines multiple ZUPT detectors.
 
     Parameters
@@ -19,11 +19,31 @@ class ComboZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         The operation to combine the detectors.
         Must be one of `and`, `or`.
 
+    Other Parameters
+    ----------------
+    data
+        The data passed to the detect method
+    sampling_rate_hz
+        The sampling rate of this data
+
+    Attributes
+    ----------
+    zupts_
+        A dataframe with the columns `start` and `end` specifying the start and end of all static regions in samples
+    per_sample_zupts_
+        A bool array with length `len(data)`.
+        If the value is `True` for a sample, it is part of a static region.
+
     """
 
     _composite_params = ("detectors",)
 
-    def __init__(self, detectors: List[Tuple[str, BaseZuptDetector]], operation: Literal["and", "or"] = "or"):
+    detectors: Optional[List[Tuple[str, BaseZuptDetector]]]
+    operation: Literal["and", "or"]
+
+    def __init__(
+        self, detectors: Optional[List[Tuple[str, BaseZuptDetector]]] = None, operation: Literal["and", "or"] = "or"
+    ):
         self.detectors = detectors
         self.operation = operation
 
@@ -48,11 +68,13 @@ class ComboZuptDetector(BaseZuptDetector, _PerSampleDetectorMixin):
         self
             The fitted instance
         """
+        if not self.detectors:
+            raise ValueError("No detectors have been set.")
+
         self.sampling_rate_hz = sampling_rate_hz
         self.data = data
 
-        is_single_sensor_data(self.data, frame="any", check_acc=True, check_gyr=True, raise_exception=True)
-
+        # Note, we don't validate the data. If any of the ZUPT detectors need it, they will do it themselves.
         single_zupts = []
         for _name, detector in self.detectors:
             detector = detector.clone().detect(data, sampling_rate_hz=sampling_rate_hz, **kwargs)
