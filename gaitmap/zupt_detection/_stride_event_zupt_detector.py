@@ -47,6 +47,10 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         If the value is `True` for a sample, it is part of a static region.
     half_region_size_samples_
         The actual half region size in samples calculated using the data sampling rate.
+    min_vel_value_
+        Always None. Only implemented for API compatibility.
+    min_vel_index_
+        Always None. Only implemented for API compatibility.
 
     """
 
@@ -114,5 +118,9 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         # This is required, because otherwise, edge cases at the start or end of the data could lead to zero-length
         # ZUPTs.
         self.zupts_ = self.zupts_.loc[self.zupts_["start"] < self.zupts_["end"]]
+
+        # Set for API compatibility
+        self.min_vel_value_ = None
+        self.min_vel_index_ = None
 
         return self

@@ -33,6 +33,10 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     per_sample_zupts_
         A bool array with length `len(data)`.
         If the value is `True` for a sample, it is part of a static region.
+    min_vel_value_
+        Always None. Only implemented for API compatibility.
+    min_vel_index_
+        Always None. Only implemented for API compatibility.
 
     """
 
@@ -87,5 +91,9 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
             self.per_sample_zupts_ = np.logical_and.reduce(single_zupts)
         else:
             raise ValueError(f"Unknown operation `{self.operation}` to combine detectors. Must be one of `and`, `or`.")
+
+        # Set for API compatibility
+        self.min_vel_value_ = None
+        self.min_vel_index_ = None
 
         return self

@@ -7,7 +7,7 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
-from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_COLS, SF_GYR
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.zupt_detection import AredZuptDetector, NormZuptDetector, ShoeZuptDetector
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
@@ -169,6 +169,8 @@ class TestNormZuptDetector:
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert_frame_equal(test_output.zupts_, expected_output_sequence)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 2
 
     def test_max_overlap_metric_max_w4_default_overlap(self):
         """Test binary input data on max metric with window size 4."""
@@ -187,6 +189,8 @@ class TestNormZuptDetector:
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert_frame_equal(test_output.zupts_, expected_output_sequence)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 2
 
     def test_max_overlap_metric_max_w3(self):
         """Test binary input data on max metric with window size 3."""
@@ -205,6 +209,8 @@ class TestNormZuptDetector:
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert_frame_equal(test_output.zupts_, expected_output_sequence)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 1
 
     def test_max_overlap_metric_max_w6_default_overlap(self):
         """Test binary input data on max metric with window size 6."""
@@ -223,6 +229,8 @@ class TestNormZuptDetector:
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert_frame_equal(test_output.zupts_, expected_output_sequence)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 3
 
     def test_max_overlap_max_w3_with_noise_default_overlap(self):
         """Test binary input data on mean metric with window size 4 after adding a bit of noise."""
@@ -239,6 +247,8 @@ class TestNormZuptDetector:
             inactive_signal_threshold=0.1,
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 11
 
     def test_max_overlap_max_w3_with_noise(self):
         """Test binary input data on max metric with window size 4 after adding a bit of noise."""
@@ -255,6 +265,27 @@ class TestNormZuptDetector:
             inactive_signal_threshold=0.1,
         ).detect(test_input, sampling_rate_hz=1)
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
+        assert test_output.min_vel_value_ == 0.0
+        assert test_output.min_vel_index_ == 11
+
+    def test_no_zupt_detected(self):
+        test_input = np.array(
+            [0.2, 0.4, 0.2, 0.2, 0.4, 0.2, 1, 1, 1, 1, 0.2, 0.2, 0.2, 1, 1, 1, 0.2, 0.2, 0.4, 0.2, 0.2, 1, 1]
+        )
+        test_input = pd.DataFrame(np.column_stack([test_input, test_input, test_input]), columns=SF_GYR)
+        expected_output = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        window_length = 3
+        test_output = self.algorithm_class(
+            window_length_s=window_length,
+            window_overlap=(window_length - 1) / window_length,
+            window_overlap_samples=None,
+            metric="maximum",
+            inactive_signal_threshold=0.1,
+        ).detect(test_input, sampling_rate_hz=1)
+        assert_array_equal(test_output.per_sample_zupts_, expected_output)
+        assert np.isnan(test_output.min_vel_value_)
+        assert test_output.min_vel_index_ == 11
 
     def test_real_data_regression(self, healthy_example_imu_data, snapshot):
         """Test real data with default parameters."""
@@ -269,3 +300,26 @@ class TestShoeZuptDetector:
         """Test real data with default parameters."""
         test_output = ShoeZuptDetector().detect(healthy_example_imu_data["left_sensor"], sampling_rate_hz=204.8)
         snapshot.assert_match(test_output.zupts_)
+
+    def test_no_zupt_detected(self):
+        test_input = np.array(
+            [0.2, 0.4, 0.2, 0.2, 0.4, 0.2, 1, 1, 1, 1, 0.2, 0.2, 0.2, 1, 1, 1, 0.2, 0.2, 0.4, 0.2, 0.2, 1, 1]
+        )
+        test_input_with_gravity = np.add.outer(test_input, [0, 0, 9.81])
+        test_input = pd.DataFrame(
+            np.column_stack([test_input_with_gravity, test_input, test_input, test_input]), columns=SF_COLS
+        )
+        expected_output = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        window_length = 3
+        test_output = ShoeZuptDetector(
+            window_length_s=window_length,
+            window_overlap=(window_length - 1) / window_length,
+            window_overlap_samples=None,
+            inactive_signal_threshold=0.1,
+            acc_noise_variance=1,
+            gyr_noise_variance=1,
+        ).detect(test_input, sampling_rate_hz=1)
+        assert_array_equal(test_output.per_sample_zupts_, expected_output)
+        assert np.isnan(test_output.min_vel_value_)
+        assert test_output.min_vel_index_ == 11
