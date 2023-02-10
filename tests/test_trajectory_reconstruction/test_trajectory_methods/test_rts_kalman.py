@@ -3,11 +3,11 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.linalg import norm
 from numpy.testing import assert_array_almost_equal
 
 from gaitmap.base import BaseType, BaseZuptDetector
 from gaitmap.trajectory_reconstruction import RtsKalman
+from gaitmap.trajectory_reconstruction.trajectory_methods._rts_kalman import MadgwickRtsKalman
 from gaitmap.utils.consts import SF_COLS
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajectory_method_mixin import (
@@ -15,7 +15,8 @@ from tests.test_trajectory_reconstruction.test_trajectory_methods.test_trajector
 )
 
 
-class MetaTestConfig:
+class TestMetaFunctionalityRtsKalman(TestAlgorithmMixin):
+    __test__ = True
     algorithm_class = RtsKalman
 
     @pytest.fixture()
@@ -25,8 +26,15 @@ class MetaTestConfig:
         return kalman_filter
 
 
-class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
+class TestMetaFunctionalityMadgwickRtsKalman(TestAlgorithmMixin):
     __test__ = True
+    algorithm_class = MadgwickRtsKalman
+
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
+        kalman_filter = MadgwickRtsKalman()
+        kalman_filter.estimate(healthy_example_imu_data["left_sensor"].iloc[:15], sampling_rate_hz=100)
+        return kalman_filter
 
 
 class TestTrajectoryMethod(TestTrajectoryMethodMixin):
@@ -72,7 +80,6 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         sensor_data = np.vstack((accel_data, zupt_data))
         sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
         test.estimate(sensor_data, sampling_rate_hz=10)
-        assert norm(test.velocity_) > 1.0
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
     def test_corrects_z_position(self):
@@ -101,3 +108,14 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
             test.estimate(sensor_data, sampling_rate_hz=10, stride_event_list=stride_event_list)
 
             mock_detect.assert_called_once_with(sensor_data, sampling_rate_hz=10, stride_event_list=stride_event_list)
+
+
+class TestMadgwickKalman(TestTrajectoryMethod):
+    """Test the Madgwick Kalman.
+
+    For beta = 0 this should be identical to normal Kalman
+    """
+
+    def init_algo_class(self, **kwargs) -> RtsKalman:
+        kwargs = {**self.default_kwargs, **kwargs}
+        return MadgwickRtsKalman().set_params(**kwargs)

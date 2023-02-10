@@ -5,6 +5,7 @@ from typing import Any, Callable, NamedTuple, Tuple
 import numpy as np
 from numba import njit
 
+from gaitmap.trajectory_reconstruction.orientation_methods._madgwick import _madgwick_update
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.fast_quaternion_math import multiply, quat_from_rotvec, rotate_vector
 
@@ -63,6 +64,17 @@ def simple_navigation_equations(acc, gyro, orientation, position, velocity, samp
     r = quat_from_rotvec(sigma)
     new_orientation = multiply(orientation, r)
 
+    rotated_acc = rotate_vector(new_orientation, acc)
+    new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz**2
+    new_velocity = velocity + (rotated_acc - GRAV_VEC) / sampling_rate_hz
+    return new_position, new_velocity, new_orientation
+
+
+@njit()
+def madgwick_motion_update(acc, gyro, orientation, position, velocity, sampling_rate_hz, paras):
+    """Calculate the next state using the Madgwick filter for orientation estimation."""
+    beta = paras[0]
+    new_orientation = _madgwick_update(gyro, acc, orientation, sampling_rate_hz, beta)
     rotated_acc = rotate_vector(new_orientation, acc)
     new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz**2
     new_velocity = velocity + (rotated_acc - GRAV_VEC) / sampling_rate_hz

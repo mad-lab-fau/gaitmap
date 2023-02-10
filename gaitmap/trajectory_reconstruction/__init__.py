@@ -11,13 +11,14 @@ from gaitmap.trajectory_reconstruction.position_methods import (
     ForwardBackwardIntegration,
     PieceWiseLinearDedriftedIntegration,
 )
-from gaitmap.trajectory_reconstruction.trajectory_methods import RtsKalman
+from gaitmap.trajectory_reconstruction.trajectory_methods import MadgwickRtsKalman, RtsKalman
 
 __all__ = [
     "MadgwickAHRS",
     "SimpleGyroIntegration",
     "ForwardBackwardIntegration",
     "RtsKalman",
+    "MadgwickRtsKalman",
     "StrideLevelTrajectory",
     "RegionLevelTrajectory",
     "PieceWiseLinearDedriftedIntegration",
