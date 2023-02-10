@@ -17,20 +17,25 @@ METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "square
 
 def _window_apply_threshold(
     data, window_length: int, overlap: int, func: Callable[[np.ndarray], np.ndarray], threshold: float
-):
+) -> Tuple[np.ndarray, int, float]:
     # allocate output array
     inactive_signal_bool_array = np.zeros(len(data))
 
     windowed_norm = np.atleast_2d(array_handling.sliding_window_view(data, window_length, overlap, nan_padding=False))
-    is_static = np.broadcast_to(func(windowed_norm) <= threshold, windowed_norm.shape[::-1]).T
+    values = func(windowed_norm)
+    is_static = np.broadcast_to(values <= threshold, windowed_norm.shape[::-1]).T
 
     # create the list of indices for sliding windows with overlap
     windowed_indices = np.atleast_2d(
         array_handling.sliding_window_view(np.arange(0, len(data)), window_length, overlap, nan_padding=False)
     )
 
+    # We also return the center of the window with the lowest value, as well as the value itself.
+    min_index = windowed_indices[np.argmin(values)][window_length // 2]
+    min_value = np.min(values)
+
     # iterate over sliding windows
-    return _bool_fill(windowed_indices, is_static, inactive_signal_bool_array).astype(bool)
+    return _bool_fill(windowed_indices, is_static, inactive_signal_bool_array).astype(bool), min_index, min_value
 
 
 def find_static_samples(
@@ -39,7 +44,7 @@ def find_static_samples(
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
     overlap: Optional[int] = None,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, int, float]:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
@@ -78,7 +83,15 @@ def find_static_samples(
 
     Returns
     -------
-    Boolean array with length n to indicate static (=True) or non-static (=False) for each sample
+    static_moments : array with shape (n,)
+        Boolean array with length n to indicate static (=True) or non-static (=False) for each sample
+    min_index : int
+        Index of the sample with the lowest value of the given metric.
+        This is calculated aas the center index of the window with the lowest value.
+    min_value : float
+        Value of the given metric at the sample with the lowest value of the given metric or rather the window with the
+        lowest value.
+        Note, that this value can be larger than the threshold, if no ZUPTs were detected.
 
     Examples
     --------
@@ -133,7 +146,7 @@ def find_static_samples_shoe(
     window_length: int,
     inactive_signal_th: float,
     overlap: Optional[int] = None,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, int, float]:
     """Use the SHOE algorithm for static moment detection.
 
     This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to
@@ -158,6 +171,18 @@ def find_static_samples_shoe(
             <= threshold
     overlap : int, optional
         Length of desired overlap in units of samples. If None (default) overlap will be window_length - 1
+
+    Returns
+    -------
+    static_moments : array with shape (n,)
+        Boolean array with length n to indicate static (=True) or non-static (=False) for each sample
+    min_index : int
+        Index of the sample with the lowest value of the given metric.
+        This is calculated aas the center index of the window with the lowest value.
+    min_value : float
+        Value of the given metric at the sample with the lowest value of the given metric or rather the window with the
+        lowest value.
+        Note, that this value can be larger than the threshold, if no ZUPTs were detected.
 
     References
     ----------
@@ -245,7 +270,7 @@ def find_static_sequences(
     gaitmap.utils.array_handling.sliding_window_view: Details on the used windowing function for this method.
 
     """
-    static_moment_bool_array = find_static_samples(
+    static_moment_bool_array, *_ = find_static_samples(
         signal=signal,
         window_length=window_length,
         inactive_signal_th=inactive_signal_th,

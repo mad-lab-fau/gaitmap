@@ -107,7 +107,7 @@ def _get_static_acc_vector(
 ) -> np.ndarray:
     """Extract the mean accelerometer vector describing the static position of the sensor."""
     # find static windows within the gyro data
-    static_bool_array = find_static_samples(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
+    static_bool_array, *_ = find_static_samples(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
 
     # raise exception if no static windows could be found with given user settings
     if not any(static_bool_array):
