@@ -75,6 +75,7 @@ def madgwick_motion_update(acc, gyro, orientation, position, velocity, sampling_
     """Calculate the next state using the Madgwick filter for orientation estimation."""
     beta = paras[0]
     new_orientation = _madgwick_update(gyro, acc, orientation, sampling_rate_hz, beta)
+
     rotated_acc = rotate_vector(new_orientation, acc)
     new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz**2
     new_velocity = velocity + (rotated_acc - GRAV_VEC) / sampling_rate_hz
@@ -100,7 +101,7 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements
     Notes
     -----
     These equations are based on the following papers:
-    _[1] describes the overall structure of the open loop filter.
+    [1]_ describes the overall structure of the open loop filter.
     However, they do not consider the level walking case.
     We expand the proposed algorithm (Algorithm 1 Pseudo Code) by using also a corrective measurement of the position
     p and not just the velocity v.
@@ -108,8 +109,8 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements
     Hence, we first calculate the full forward pass (until the end of the recording) and then apply smoothing,
     instead of breaking the loop at every ZUPT.
     The main reason for that is just simplicity of implementation as we do not have any live requirement.
-    _[2] gives more details about the individual equations (in the closed looped form).
-    From _[2] we implement the state equations in the global coordinate system (chapter 7).
+    [2]_ gives more details about the individual equations (in the closed looped form).
+    From [2]_ we implement the state equations in the global coordinate system (chapter 7).
 
     .. [1] D. Simón Colomar, J. Nilsson and P. Händel, "Smoothing for ZUPT-aided INSs,"
     .. [2] Solà, Joan. (2015). Quaternion kinematics for the error-state KF
