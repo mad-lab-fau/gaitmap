@@ -26,6 +26,7 @@ Trajectory Estimation Methods
    :template: class.rst
 
     RtsKalman
+    MadgwickRtsKalman
 
 
 Orientation Estimation Methods
