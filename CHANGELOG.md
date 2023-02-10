@@ -8,6 +8,15 @@ For more information see the
 [Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
 project.
 
+## [2.2.0]
+
+### Added
+- New Algorithm: `MadgwickRtsKalman`.
+  This is a slightly modified implementation of the `RtsKalman` algorithm.
+  Instead of naive gyro integration it uses the `Madgwick` algorithm to estimate the orientation.
+  (https://github.com/mad-lab-fau/gaitmap/pull/15)
+
+
 ## [2.1.0] - 2023-02-08
 
 ### Added
