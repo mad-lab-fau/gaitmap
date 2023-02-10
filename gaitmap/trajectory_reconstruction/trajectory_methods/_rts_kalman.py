@@ -12,6 +12,7 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
     ForwardPassDependencies,
     SimpleZuptParameter,
     default_rts_kalman_forward_pass,
+    madgwick_motion_update,
     rts_kalman_update_series,
     simple_navigation_equations,
 )
@@ -164,6 +165,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
     def __init__(
         self,
+        *,
         initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
         zupt_variance: float = 10e-8,
         velocity_error_variance: float = 10e5,
@@ -281,3 +283,110 @@ class RtsKalman(BaseTrajectoryMethod):
         This should be overwritten by subclasses, that need custom internal functions/parameters.
         """
         return ForwardPassDependencies(motion_update_func=simple_navigation_equations, motion_update_func_parameters=())
+
+
+class MadgwickRtsKalman(RtsKalman):
+    """An extention of the RTS Kalman filter that uses the Madgwick filter for orientation estimation.
+
+    This method is basically identical to the normal :class:`~gaitmap.trajectory_reconstruction.RtsKalman` filter,
+    but uses the Madgwick filter for orientation estimation.
+    This should provide more robust orientation updates during long regions without ZUPTs.
+    The influence of the Madgwick filter can be controlled by the `madgwick_beta` parameter.
+
+    Parameters
+    ----------
+    initial_orientation
+        The initial orientation of the sensor that is assumed.
+        It is critical that this value is close to the actual orientation.
+        If you pass an array, remember that the order of elements must be x, y, z, w.
+    zupt_variance
+        The variance of the noise of the measured velocity during a ZUPT.
+        As we are typically pretty sure, that the velocity should be zero then, this should be very small.
+    velocity_error_variance
+        The variance of the noise present in the velocity error.
+        Should be based on the sensor accelerometer noise.
+    orientation_error_variance
+        The variance of the noise present in the orientation error.
+        Should be based on the sensor gyroscope noise.
+        The orientation error is internally not represented as quaternion, but as axis-angle representation,
+        which also explains the unit of rad^2 for this variance.
+    level_walking
+        Flag to control if the level walking assumptions should be used during ZUPTs.
+        If this is True, additionally to the velocity, the z position is reset to zero during a ZUPT.
+    level_walking_variance
+        The variance of the noise of the measured position during a level walking update.
+        Should typically be very small.
+    zupt_detector
+        An instance of a valid Zupt detector that will be used to find ZUPTs.
+    madgwick_beta
+        The beta parameter of the Madgwick filter.
+        This parameter controls how harsh the acceleration based correction is.
+        A high value performs large corrections and a small value small and gradual correction.
+        A high value should only be used if the sensor is moved slowly.
+        A value of 0 is identical to just the Gyro Integration (i.e. identical to the
+        :class:`~gaitmap.trajectory_reconstruction.RtsKalman`).
+
+    Attributes
+    ----------
+    orientation_
+        The rotations as a *SingleSensorOrientationList*, including the initial orientation.
+        This means the there are len(data) + 1 orientations.
+    orientation_object_
+        The orientations as a single scipy Rotation object
+    position_
+        The calculated positions
+    velocity_
+        The calculated velocities
+    covariance_
+        The covariance matrices of the kalman filter after smoothing.
+        They can be used as a measure of how good the filter worked and how accurate the results are.
+    zupts_
+        2D array indicating the start and the end samples of the detected ZUPTs for debug purposes.
+
+    Other Parameters
+    ----------------
+    data
+        The data passed to the estimate method
+    sampling_rate_hz
+        The sampling rate of this data
+
+    Notes
+    -----
+    For more information on the Kalman Filter, see :class:`~gaitmap.trajectory_reconstruction.RtsKalman`.
+    For more information about the Madgwick orientation filter, see
+    :class:`~gaitmap.trajectory_reconstruction.MadgwickAHRS`.
+    """
+
+    madgwick_beta: float
+
+    def __init__(
+        self,
+        *,
+        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
+        zupt_variance: float = 10e-8,
+        velocity_error_variance: float = 10e5,
+        orientation_error_variance: float = 10e-2,
+        level_walking: bool = True,
+        level_walking_variance: float = 10e-8,
+        zupt_detector=cf(
+            NormZuptDetector(
+                sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
+            )
+        ),
+        madgwick_beta: float = 0.2,
+    ):
+        self.madgwick_beta = madgwick_beta
+        super().__init__(
+            initial_orientation=initial_orientation,
+            zupt_variance=zupt_variance,
+            velocity_error_variance=velocity_error_variance,
+            orientation_error_variance=orientation_error_variance,
+            level_walking=level_walking,
+            level_walking_variance=level_walking_variance,
+            zupt_detector=zupt_detector,
+        )
+
+    def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:
+        return ForwardPassDependencies(
+            motion_update_func=madgwick_motion_update, motion_update_func_parameters=(self.madgwick_beta,)
+        )
