@@ -326,6 +326,10 @@ class BaseZuptDetector(BaseAlgorithm):
     zupts_: pd.DataFrame
     per_sample_zupts_: np.ndarray
 
+    # These two can be implemented optionally
+    min_vel_index_: Optional[int]
+    min_vel_value_: Optional[float]
+
     data: SingleSensorData
     stride_event_list: Optional[SingleSensorStrideList]
     sampling_rate_hz: float

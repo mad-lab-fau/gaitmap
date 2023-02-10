@@ -1,6 +1,7 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
 from typing import Optional, Tuple
 
+import numpy as np
 from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseZuptDetector
@@ -144,6 +145,14 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     window_overlap_samples_
         The internally calculated window overlap in samples.
         This might be helpful for debugging.
+    min_vel_index_
+        The index of the sample with the minimum velocity.
+        This is calculated as the center of the window with the minimum velocity.
+    min_vel_value_
+        The minimum velocity value.
+        This is calculated as the value of the window with the minimum velocity.
+        If no window is below the threshold, this value is `np.nan`.
+        Note, that in this case, min_vel_index_ is still set to a proper value.
 
     References
     ----------
@@ -210,13 +219,16 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
             self.window_length_s, self.window_overlap, self.window_overlap_samples, self.sampling_rate_hz
         )
 
-        self.per_sample_zupts_, self.min_vel_index_, self._min_vel_value = find_static_samples(
+        self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples(
             data.filter(like=self.sensor).to_numpy(),
             window_length=self.window_length_samples_,
             inactive_signal_th=self.inactive_signal_threshold,
             metric=self.metric,
             overlap=self.window_overlap_samples_,
         )
+
+        if self.min_vel_value_ > self.inactive_signal_threshold:
+            self.min_vel_value_ = np.nan
 
         return self
 
@@ -293,6 +305,14 @@ class AredZuptDetector(NormZuptDetector):
     window_overlap_samples_
         The internally calculated window overlap in samples.
         This might be helpful for debugging.
+    min_vel_index_
+        The index of the sample with the minimum velocity.
+        This is calculated as the center of the window with the minimum velocity.
+    min_vel_value_
+        The minimum velocity value.
+        This is calculated as the value of the window with the minimum velocity.
+        If no window is below the threshold, this value is `np.nan`.
+        Note, that in this case, min_vel_index_ is still set to a proper value.
 
     References
     ----------
@@ -393,6 +413,14 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     window_overlap_samples_
         The internally calculated window overlap in samples.
         This might be helpful for debugging.
+    min_vel_index_
+        The index of the sample with the minimum velocity.
+        This is calculated as the center of the window with the minimum velocity.
+    min_vel_value_
+        The minimum velocity value.
+        This is calculated as the value of the window with the minimum velocity.
+        If no window is below the threshold, this value is `np.nan`.
+        Note, that in this case, min_vel_index_ is still set to a proper value.
 
     Notes
     -----
@@ -464,7 +492,7 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
             self.window_length_s, self.window_overlap, self.window_overlap_samples, self.sampling_rate_hz
         )
 
-        self.per_sample_zupts_ = find_static_samples_shoe(
+        self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples_shoe(
             gyr=data.filter(like="gyr").to_numpy(),
             acc=data.filter(like="acc").to_numpy(),
             acc_noise_var=self.acc_noise_variance,
@@ -473,5 +501,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
             overlap=self.window_overlap_samples_,
             inactive_signal_th=self.inactive_signal_threshold,
         )
+
+        if self.min_vel_value_ > self.inactive_signal_threshold:
+            self.min_vel_value_ = np.nan
 
         return self

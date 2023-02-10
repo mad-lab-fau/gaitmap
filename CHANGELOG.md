@@ -15,6 +15,10 @@ project.
   This is a slightly modified implementation of the `RtsKalman` algorithm.
   Instead of naive gyro integration it uses the `Madgwick` algorithm to estimate the orientation.
   (https://github.com/mad-lab-fau/gaitmap/pull/15)
+- Certain ZUPT detectors now return the `min_vel_index_` and `min_vel_value_` as additional attributes.
+  These values represent the index in the input data with the lowest velocity and the corresponding velocity value 
+  (according to the internal metric of the repective ZUPT detector).
+  (https://github.com/mad-lab-fau/gaitmap/pull/16)
 
 
 ## [2.1.0] - 2023-02-08
