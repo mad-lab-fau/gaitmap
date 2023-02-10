@@ -40,10 +40,12 @@ class TestFindStaticSamples:
         test_input = np.column_stack([test_input, test_input, test_input])
         expected_output = np.array([1, 1, 1, 1, 1, 0, 0, 0])
         window_length = 5
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0, metric="maximum", overlap=1
         )
         assert_array_equal(test_output, expected_output)
+        assert min_vel_index == 2
+        assert miv_vel_value == 0
 
     def test_max_overlap_metric_max_w4_default_overlap(self):
         """Test binary input data on max metric with window size 4."""
@@ -52,10 +54,12 @@ class TestFindStaticSamples:
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
 
         window_length = 4
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0, metric="maximum"
         )
         assert_array_equal(test_output, expected_output)
+        assert min_vel_index == 2
+        assert miv_vel_value == 0
 
     def test_max_overlap_metric_max_w3(self):
         """Test binary input data on max metric with window size 3."""
@@ -64,10 +68,12 @@ class TestFindStaticSamples:
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
 
         window_length = 3
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0, metric="maximum", overlap=window_length - 1
         )
         assert_array_equal(test_output, expected_output)
+        assert min_vel_index == 1
+        assert miv_vel_value == 0
 
     def test_max_overlap_metric_max_w6_default_overlap(self):
         """Test binary input data on max metric with window size 6."""
@@ -76,10 +82,12 @@ class TestFindStaticSamples:
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
         window_length = 6
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0, metric="maximum"
         )
         assert_array_equal(test_output, expected_output)
+        assert min_vel_index == 3
+        assert miv_vel_value == 0
 
     def test_max_overlap_mean_w3_with_noise_default_overlap(self):
         """Test binary input data on mean metric with window size 4 after adding a bit of noise."""
@@ -88,10 +96,13 @@ class TestFindStaticSamples:
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
 
         window_length = 3
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0.1, metric="mean"
         )
         assert_array_equal(test_output, expected_output)
+        # This is actually not the first ZUPT, as the first one contains a 0.1 value
+        assert min_vel_index == 11
+        assert miv_vel_value == 0
 
     def test_max_overlap_max_w3_with_noise(self):
         """Test binary input data on max metric with window size 4 after adding a bit of noise."""
@@ -100,10 +111,12 @@ class TestFindStaticSamples:
         expected_output = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
         window_length = 3
-        test_output = find_static_samples(
+        test_output, min_vel_index, miv_vel_value = find_static_samples(
             test_input, window_length=window_length, inactive_signal_th=0.1, metric="maximum", overlap=window_length - 1
         )
         assert_array_equal(test_output, expected_output)
+        assert min_vel_index == 11
+        assert miv_vel_value == 0
 
 
 class TestFindStaticSequences:

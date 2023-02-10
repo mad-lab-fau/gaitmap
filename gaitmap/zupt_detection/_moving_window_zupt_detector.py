@@ -210,7 +210,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
             self.window_length_s, self.window_overlap, self.window_overlap_samples, self.sampling_rate_hz
         )
 
-        self.per_sample_zupts_ = find_static_samples(
+        self.per_sample_zupts_, self.min_vel_index_, self._min_vel_value = find_static_samples(
             data.filter(like=self.sensor).to_numpy(),
             window_length=self.window_length_samples_,
             inactive_signal_th=self.inactive_signal_threshold,
