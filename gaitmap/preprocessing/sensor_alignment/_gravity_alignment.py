@@ -27,10 +27,10 @@ def align_dataset_to_gravity(
 
     Parameters
     ----------
-    dataset : gaitmap.utils.dataset_helper.Sensordata
-        dataframe representing a single or multiple sensors.
-        In case of multiple sensors a df with MultiIndex columns is expected where the first level is the sensor name
-        and the second level the axis names (all sensor frame axis must be present)
+    dataset : single-sensor dataframe, or multi-sensor dataset
+        A single sensor dataset should be represented as a dataframe.
+        Multi-sensor datasets should be represented as a dictionary of dataframes, where the keys are the sensor names
+        or a pandas dataframe with a multi-index where the first level is the sensor name.
 
     sampling_rate_hz: float
         Samplingrate of input signal in units of hertz.
