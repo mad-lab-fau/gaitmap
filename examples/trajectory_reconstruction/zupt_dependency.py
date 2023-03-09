@@ -1,4 +1,6 @@
 r"""
+.. _zupt_dependency:
+
 ZUPT Dependency of the Trajectory Estimation
 ============================================
 
@@ -30,6 +32,16 @@ import pandas as pd
 from tpcp import Dataset
 
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_mocap_data
+
+# %%
+# The Dataset
+# ----------
+# To use any `tpcp` features, we need to wrap our data into a dataset object.
+# For this we need an index.
+# Usually you create this by iterating a directory of datafiles you have and list out all participants/tests.
+# To keep things simple we just use data from one participant and one test, but treat the left and right foot
+# as two independent datasets.
+# This is something you would not normally do.
 
 
 class HealthyImu(Dataset):
@@ -96,8 +108,7 @@ def score(pipeline: TrajectoryPipeline, datapoint: HealthyImu) -> float:
     walk_distance = np.max(np.linalg.norm(trajectory, axis=1))
     ground_truth_traj = datapoint.mocap_trajectory_["TOE"][["x", "y"]]
     ground_truth_walk_distance = np.max(np.linalg.norm(ground_truth_traj - ground_truth_traj.iloc[0], axis=1))
-    # Note we return a negative value here, as we want to maximize the score
-    return -np.abs(walk_distance - ground_truth_walk_distance / 1000)
+    return np.abs(walk_distance - ground_truth_walk_distance / 1000)
 
 
 from sklearn.model_selection import ParameterGrid
@@ -128,7 +139,8 @@ paras = ParameterGrid(
 
 # %%
 # Then we can simply run the GridSearch.
-gs = GridSearch(TrajectoryPipeline(), paras, scoring=score)
+# Note, that we specify `-score` for `return_optimized`, as we want to select the smallest error as best.
+gs = GridSearch(TrajectoryPipeline(), paras, scoring=score, return_optimized="-score")
 gs.optimize(HealthyImu())
 
 # %%
@@ -139,8 +151,6 @@ results
 
 # %%
 # We can also specifically get the best results
-# Note that the best score is negative, as we wanted to maximize the scores.
-# This means this is the smallest negative error.
 print(pd.DataFrame(results))
 print(gs.best_params_)
 print(gs.best_score_)
