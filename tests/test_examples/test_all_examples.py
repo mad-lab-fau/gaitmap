@@ -268,3 +268,12 @@ def test_zupt_dependency():
 
     assert_almost_equal(gs.best_score_, 0.10171051541126)
     assert_almost_equal(gs.best_params_["zupt_method__inactive_signal_threshold"], 2782559402.207125, decimal=3)
+
+
+def test_advanced_kalman(snapshot):
+    from examples.trajectory_reconstruction.advanced_kalman_filter_usage import combo_zupt, madgwick_rts_no_zupt
+
+    # We test some of the results of methods that don't really have regression tests anywhery else.
+
+    snapshot.assert_match(madgwick_rts_no_zupt.position_.head(50), "madgwick_rts_no_zupt")
+    snapshot.assert_match(combo_zupt.position_.head(50), "combo_zupt")
