@@ -4,8 +4,9 @@ r"""
 Grid Search optimal Algorithm Parameter
 =======================================
 
-.. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
-
+.. note:: These examples are basically copies from the same examples in tpcp, but using gait algorithms!
+          These examples are less often updated than the official tpcp examples.
+          Hence, it makes sense to cross-check the official examples.
 
 """
 import joblib

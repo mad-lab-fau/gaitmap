@@ -4,7 +4,9 @@ r"""
 Custom Dataset
 ==============
 
-.. warning:: Datasets are still an experimental feature and the API might change at any time.
+.. note:: These examples are basically copies from the same examples in tpcp, but using gait algorithms!
+          These examples are less often updated than the official tpcp examples.
+          Hence, it makes sense to cross-check the official examples.
 
 Gaitmap has the concept of Dataset.
 Datasets represent a set of recordings that should all be processed in the same way.

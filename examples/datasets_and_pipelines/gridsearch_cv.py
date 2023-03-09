@@ -4,7 +4,9 @@ r"""
 GridSearchCV
 ============
 
-.. warning:: GridSearch and Pipelines are still an experimental feature and the API might change at any time.
+.. note:: These examples are basically copies from the same examples in tpcp, but using gait algorithms!
+          These examples are less often updated than the official tpcp examples.
+          Hence, it makes sense to cross-check the official examples.
 
 When trying to optimize parameters for algorithms that have trainable components, it is required to perform
 the parameter search on a validation set (that is separate from the test set used for the final validation).

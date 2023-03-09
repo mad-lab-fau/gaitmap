@@ -4,7 +4,9 @@ r"""
 Cross Validation
 ================
 
-.. warning:: GridSearch and Pipelines in gaitmap are deprecated! Use tpcp instead!
+.. note:: These examples are basically copies from the same examples in tpcp, but using gait algorithms!
+          These examples are less often updated than the official tpcp examples.
+          Hence, it makes sense to cross-check the official examples.
 
 Whenever using some sort of trainable algorithm it is important to clearly separate the training and the testing data to
 get an unbiased result.

@@ -4,6 +4,10 @@ r"""
 Optimizable Pipelines
 =====================
 
+.. note:: These examples are basically copies from the same examples in tpcp, but using gait algorithms!
+          These examples are less often updated than the official tpcp examples.
+          Hence, it makes sense to cross-check the official examples.
+
 Some gait analysis algorithms can actively be "trained" to improve their performance or adapt it to a certain dataset.
 In gaitmap we use the term "optimize" instead of "train", as not all algorithms are based on "machine learning" in the
 traditional sense.
