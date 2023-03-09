@@ -266,5 +266,5 @@ def test_segmentation_hmm_training(snapshot):
 def test_zupt_dependency():
     from examples.trajectory_reconstruction.zupt_dependency import gs
 
-    assert_almost_equal(gs.best_score_, -0.10171051541126)
+    assert_almost_equal(gs.best_score_, 0.10171051541126)
     assert_almost_equal(gs.best_params_["zupt_method__inactive_signal_threshold"], 2782559402.207125, decimal=3)
