@@ -14,10 +14,6 @@
                 "type":"integer"
             },
             {
-                "name":"single_precision",
-                "type":"string"
-            },
-            {
                 "name":"recall",
                 "type":"number"
             },
@@ -26,16 +22,20 @@
                 "type":"integer"
             },
             {
-                "name":"single_recall",
-                "type":"string"
-            },
-            {
                 "name":"f1_score",
                 "type":"number"
             },
             {
                 "name":"rank_f1_score",
                 "type":"integer"
+            },
+            {
+                "name":"single_precision",
+                "type":"string"
+            },
+            {
+                "name":"single_recall",
+                "type":"string"
             },
             {
                 "name":"single_f1_score",
@@ -57,25 +57,25 @@
         "primaryKey":[
             "index"
         ],
-        "pandas_version":"0.20.0"
+        "pandas_version":"1.4.0"
     },
     "data":[
         {
             "index":0,
             "precision":1.0,
             "rank_precision":1,
+            "recall":0.2547619048,
+            "rank_recall":2,
+            "f1_score":0.3932926829,
+            "rank_f1_score":2,
             "single_precision":[
                 1.0,
                 1.0
             ],
-            "recall":0.2547619048,
-            "rank_recall":2,
             "single_recall":[
                 0.1428571429,
                 0.3666666667
             ],
-            "f1_score":0.3932926829,
-            "rank_f1_score":2,
             "single_f1_score":[
                 0.25,
                 0.5365853659
@@ -99,18 +99,18 @@
             "index":1,
             "precision":0.9827586207,
             "rank_precision":2,
+            "recall":0.9666666667,
+            "rank_recall":1,
+            "f1_score":0.9745762712,
+            "rank_f1_score":1,
             "single_precision":[
                 1.0,
                 0.9655172414
             ],
-            "recall":0.9666666667,
-            "rank_recall":1,
             "single_recall":[
                 1.0,
                 0.9333333333
             ],
-            "f1_score":0.9745762712,
-            "rank_f1_score":1,
             "single_f1_score":[
                 1.0,
                 0.9491525424
