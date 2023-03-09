@@ -218,7 +218,7 @@ plt.legend()
 plt.show()
 
 # %%
-# Madgwich RTS Kalman
+# Madgwick RTS Kalman
 # -------------------
 # Tuning the ZUPT detector to really detect all ZUPTs that exist in the signal is an important step.
 # However, sometimes, there are simply long periods of time when the person is not moving without proper foot-flat
