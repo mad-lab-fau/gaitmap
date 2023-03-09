@@ -19,6 +19,12 @@ project.
   These values represent the index in the input data with the lowest velocity and the corresponding velocity value 
   (according to the internal metric of the repective ZUPT detector).
   (https://github.com/mad-lab-fau/gaitmap/pull/16)
+- New example explaining more advanced usage of the `RtsKalman` algorithm.
+  (https://github.com/mad-lab-fau/gaitmap/pull/17)
+
+### Changed
+- The Zupt Detecor example is updated to use newer tpcp features
+  (https://github.com/mad-lab-fau/gaitmap/pull/17)
 
 
 ## [2.1.0] - 2023-02-08
