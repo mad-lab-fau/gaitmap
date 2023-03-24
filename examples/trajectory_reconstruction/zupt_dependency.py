@@ -35,7 +35,7 @@ from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_examp
 
 # %%
 # The Dataset
-# ----------
+# -----------
 # To use any `tpcp` features, we need to wrap our data into a dataset object.
 # For this we need an index.
 # Usually you create this by iterating a directory of datafiles you have and list out all participants/tests.
