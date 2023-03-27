@@ -6,7 +6,7 @@ authors = [
     "Arne Küderle <arne.kuederle@fau.de>",
     "Martin Ullrich <martin.ullrich@fau.de>",
     "Nils Roth <nils.roth@fau.de>",
-    "Felix Kluge <felix.kluge@fau.de>"
+    "Moradi, Hamid <hamid.moradi@fau.de>"
 ]
 
 [tool.poetry.dependencies]
