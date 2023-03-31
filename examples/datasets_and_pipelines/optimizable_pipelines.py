@@ -24,7 +24,7 @@ implemented on a pipeline level.
 Helper functions and methods for specific algorithms are of course available to minimize the implementation effort.
 
 This example shows how such a pipeline should be implemented and how it can be optimized using
-:class:`~tpcp.Optmize`.
+:class:`~tpcp.Optimize`.
 """
 
 import numpy as np
