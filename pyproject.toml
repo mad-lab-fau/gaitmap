@@ -58,7 +58,7 @@ toml = "^0.10.2"
 # TODO: Reactivate once gaitmap_mad is a seperate package
 # gaitmap-mad = {path = "gaitmap_mad", develop = true}
 sphinx-gallery = "^0.11.1"
-pydata-sphinx-theme = "^0.12.0"
+pydata-sphinx-theme = "^0.13.0"
 numpydoc = "^1.5.0"
 Sphinx = "^6.1.3"
 ruff = "^0.0.235"
