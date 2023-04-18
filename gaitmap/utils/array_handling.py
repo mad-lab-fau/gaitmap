@@ -234,7 +234,10 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
 
 
 def find_extrema_in_radius(
-    data: np.ndarray, indices: np.ndarray, radius: int, extrema_type: Literal["min", "max"] = "min"
+    data: np.ndarray,
+    indices: np.ndarray,
+    radius: Union[int, Tuple[int, int]],
+    extrema_type: Literal["min", "max"] = "min",
 ):
     """Return the index of the global extrema of data in the given radius around each index in indices.
 
@@ -246,8 +249,12 @@ def find_extrema_in_radius(
         Around each index the extremum is searched in the region defined by radius
     radius
         The number of samples to the left and the right that are considered for the search.
+        If a single integer is given, the same radius is used for both sides.
         The final search window has the length 2 * radius + 1.
-        In case the radius is 0, the indices are returned without further processing.
+        If a tuple of two integers is given, the first integer is used for the left side and the second for the right
+        side.
+        The final search window has the length left_radius + right_radius + 1.
+        In case the radius is 0 (or a tuple of 0, 0), the indices are returned without further processing.
     extrema_type
         If the minima or maxima of the data are searched.
 
@@ -261,23 +268,33 @@ def find_extrema_in_radius(
     if extrema_type not in extrema_funcs:
         raise ValueError(f"`extrema_type` must be one of {list(extrema_funcs.keys())}, not {extrema_type}")
     extrema_func = extrema_funcs[extrema_type]
-    if radius == 0:
+    if radius == 0 or radius == (0, 0):
         # In case the search radius is 0 samples, we can just return the input.
         return indices
-    # Search region is twice the radius centered around each index
-    d = 2 * radius + 1
+    if isinstance(radius, int):
+        before, after = radius, radius
+    elif isinstance(radius, tuple):
+        before, after = radius
+    else:
+        raise TypeError(f"radius must be int or a tuple of two ints, not {radius}")
+
+    # Search region is twice the sum of indices before and after + 1
+    d = before + after + 1
     start_padding = 0
 
     data = data.astype(float)
-    if len(data) - np.max(indices) <= radius:
-        data = np.pad(data, (0, radius), constant_values=np.nan)
-    if np.min(indices) < radius:
-        start_padding = radius
+    # If one of the indices is to close to the end of the data, we need to pad the data
+    if len(data) - np.max(indices) <= after:
+        data = np.pad(data, (0, after), constant_values=np.nan)
+    # If one of the indices is to close to the beginning of the data, we need to pad the data
+    if np.min(indices) < before:
+        start_padding = before
         data = np.pad(data, (start_padding, 0), constant_values=np.nan)
     strides = sliding_window_view(data, window_length=d, overlap=d - 1)
     # select all windows around indices
-    windows = strides[indices.astype(int) - radius + start_padding, :]
-    return extrema_func(windows, axis=1) + indices - radius
+    actual_window_start = indices.astype(int) - before + start_padding
+    windows = strides[actual_window_start, :]
+    return extrema_func(windows, axis=1) + actual_window_start - start_padding
 
 
 @njit(cache=True)
