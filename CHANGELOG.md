@@ -23,6 +23,7 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
 - The `find_extrema_in_radius` and the `snap_to_min` utility functions gained the ability to define asymetric search 
   windows around the search indices.
+  (https://github.com/mad-lab-fau/gaitmap/pull/21)
 
 ### Changed
 - The Zupt Detecor example is updated to use newer tpcp features
