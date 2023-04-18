@@ -8,8 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
-from pomegranate import GeneralMixtureModel
-from pomegranate.hmm import History
+from pomegranate.gmm import GeneralMixtureModel
 from tpcp._hash import custom_hash
 
 from gaitmap.data_transform import SlidingWindowMean
@@ -27,7 +26,7 @@ from gaitmap_mad.stride_segmentation.hmm import (
     RothSegmentationHmm,
     SimpleHmm,
 )
-from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_hmm
+from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_distributions_and_transmat
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
@@ -223,17 +222,16 @@ class TestSimpleModel:
 
         assert list(model.data_columns) == data.columns.tolist()
         # -2 because of the start and end state
-        assert len(model.model.states) - 2 == n_states == model.n_states
+        assert len(model.model.distributions) == n_states == model.n_states
         # Test that each state has 3 gmm components
-        for state in model.model.states:
-            if state.name not in ["None-start", "None-end"]:
-                if n_gmm_components == 1:
-                    dists = [state.distribution]
-                else:
-                    assert isinstance(state.distribution, GeneralMixtureModel)
-                    assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
-                    dists = state.distribution.distributions
-                assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
+        for state in model.model.distributions:
+            if n_gmm_components == 1:
+                dists = [state]
+            else:
+                assert isinstance(state, GeneralMixtureModel)
+                assert len(state.distributions) == model.n_gmm_components == n_gmm_components
+                dists = state.distributions
+            assert {d.name for d in dists} == {"Normal"}
 
     def test_model_exists_warning(self):
         model = SimpleHmm(n_states=5, n_gmm_components=3)
@@ -264,18 +262,17 @@ class TestSimpleModel:
         assert "The provided feature data is expected to have the following columns:" in str(e.value)
         assert str(tuple(col_names)) in str(e.value)
 
-    @pytest.mark.parametrize("algorithm", ["viterbi", "map"])
-    def test_predict(self, algorithm):
+    def test_predict(self):
         model = SimpleHmm(n_states=5, n_gmm_components=3)
         model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
-        pred = model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)), algorithm=algorithm)
+        pred = model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)))
         assert len(pred) == 100
         assert set(pred) == set(range(5))
 
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
     def test_different_architectures(self, architecture):
         # We test initialization directly, otherwise training will modify the transition matrizes
-        model = initialize_hmm(
+        model = initialize_distributions_and_transmat(
             [np.random.rand(100, 3)],
             [np.random.choice(5, 100)],
             n_states=5,
@@ -317,12 +314,13 @@ class TestSimpleModel:
 
             mock.assert_called_once_with(data, labels)
 
-    def test_self_optimize_with_info_returns_history(self):
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-        instance = SimpleHmm(n_states=5, n_gmm_components=3)
-        trained_instance, history = instance.self_optimize_with_info(data, labels)
-        assert instance is trained_instance
-        assert isinstance(history, History)
+    # TODO: New version does not return history for now
+    # def test_self_optimize_with_info_returns_history(self):
+    #     data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
+    #     instance = SimpleHmm(n_states=5, n_gmm_components=3)
+    #     trained_instance, history = instance.self_optimize_with_info(data, labels)
+    #     assert instance is trained_instance
+    #     assert isinstance(history, History)
 
     def test_invalid_architecture_raises_error(self):
         with pytest.raises(ValueError) as e:
@@ -350,21 +348,22 @@ class TestRothSegmentationHmm:
 
             mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
 
-    def test_self_optimize_with_info_returns_history(self):
-        data, labels = (
-            [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
-        )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=3,
-            stride_model__n_gmm_components=3,
-        )
-        trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
-        assert instance is trained_instance
-        for v in history.values():
-            assert isinstance(v, History)
-        assert set(history.keys()) == {"stride_model", "transition_model", "self"}
+    # TODO: New version does not return history for now
+    # def test_self_optimize_with_info_returns_history(self):
+    #     data, labels = (
+    #         [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
+    #         [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
+    #     )
+    #     instance = RothSegmentationHmm().set_params(
+    #         feature_transform__sampling_rate_feature_space_hz=100,
+    #         stride_model__n_states=3,
+    #         stride_model__n_gmm_components=3,
+    #     )
+    #     trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
+    #     assert instance is trained_instance
+    #     for v in history.values():
+    #         assert isinstance(v, History)
+    #     assert set(history.keys()) == {"stride_model", "transition_model", "self"}
 
     def test_short_strides_raise_warning(self):
         data, labels = (

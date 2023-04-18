@@ -1,14 +1,12 @@
 """Simple model base classes and helper."""
 
-import copy
 import warnings
-from typing import Literal, Optional, Sequence, Tuple, Union
+from typing import Literal, Optional, Sequence, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
-import pomegranate as pg
-from pomegranate import HiddenMarkovModel as pgHMM
-from pomegranate.hmm import History
+from pomegranate.distributions._distribution import Distribution
+from pomegranate.hmm import DenseHMM as pgHMM
 from tpcp import OptiPara, make_optimize_safe
 from typing_extensions import Self
 
@@ -16,27 +14,23 @@ from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
-    _clone_model,
-    _HackyClonableHMMFix,
-    check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
-    fix_model_names,
     gmms_from_samples,
+    labels_to_prior,
     predict,
 )
 
 
-def initialize_hmm(
+def initialize_distributions_and_transmat(
     data_train_sequence: Sequence[np.ndarray],
     labels_initialization_sequence: Sequence[np.ndarray],
     *,
     n_states: int,
     n_gmm_components: int,
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
-    name: str = "untrained",
     verbose: bool = False,
-) -> pgHMM:
+) -> Tuple[List[Distribution], np.ndarray, np.ndarray, np.ndarray]:
     """Model Initialization.
 
     Parameters
@@ -55,8 +49,6 @@ def initialize_hmm(
         number of components for multivariate distributions
     architecture
         type of model architecture, for more details see below
-    name
-        The name of the final model object
     verbose
         Whether info should be printed to stdout
 
@@ -108,7 +100,7 @@ def initialize_hmm(
         n_states,
         verbose=verbose,
     )
-
+    n_states = len(distributions)
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
     # where the model "loops" (aka state-0 and state-n) so we also will enforce the model to start with "state-0" and
     # always end with "state-n"
@@ -120,32 +112,17 @@ def initialize_hmm(
     elif architecture == "left-right-loose":
         transition_matrix, _, _ = create_transition_matrix_left_right(n_states, self_transition=True)
 
-        start_probs = np.ones(n_states).astype(float)
-        end_probs = np.ones(n_states).astype(float)
+        start_probs = np.ones(n_states).astype(np.float32) / n_states
+        end_probs = np.ones(n_states).astype(np.float32) / n_states
 
     # fully connected model with all transitions initialized equally. Allowing all possible transitions.
     else:  # architecture == "fully-connected"
         transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
 
-    model = pg.HiddenMarkovModel.from_matrix(
-        transition_probabilities=transition_matrix,
-        distributions=copy.deepcopy(distributions),
-        starts=start_probs,
-        ends=end_probs,
-        verbose=verbose,
-    )
-
-    # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like
-    # s0, s1, s10, s2 usw..)
-    model = fix_model_names(model)
-    # make sure that transition-matrix is normalized
-    model.bake()
-    model.name = name
-
-    return model
+    return distributions, transition_matrix.astype(np.float32), start_probs, end_probs
 
 
-class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
+class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
     This is a thin wrapper around the pomegranate HiddenMarkovModel class and basically calls out the pomegranate for
@@ -249,12 +226,10 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     n_states: int
     n_gmm_components: int
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
-    algo_train: Literal["viterbi", "baum-welch"]
     stop_threshold: float
     max_iterations: int
     verbose: bool
     n_jobs: int
-    name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
     data_columns: OptiPara[Optional[Tuple[str, ...]]]
 
@@ -264,30 +239,24 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         n_gmm_components: int,
         *,
         architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
-        algo_train: Literal["viterbi", "baum-welch", "labeled"] = "viterbi",
         stop_threshold: float = 1e-9,
         max_iterations: int = 1e8,
         verbose: bool = True,
         n_jobs: int = 1,
-        name: str = "my_model",
         model: Optional[pgHMM] = None,
         data_columns: Optional[Tuple[str, ...]] = None,
     ):
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
-        self.algo_train = algo_train
         self.stop_threshold = stop_threshold
         self.max_iterations = max_iterations
         self.architecture = architecture
         self.verbose = verbose
         self.n_jobs = n_jobs
-        self.name = name
         self.model = model
         self.data_columns = data_columns
 
-    def predict_hidden_state_sequence(
-        self, feature_data: SingleSensorData, algorithm: Literal["viterbi", "map"] = "viterbi"
-    ) -> np.ndarray:
+    def predict_hidden_state_sequence(self, feature_data: SingleSensorData) -> np.ndarray:
         """Perform prediction based on given data and given model.
 
         Parameters
@@ -313,7 +282,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         # Hence, it felt more natural to do it that way.
         # However, as this means this model should always be wrapped in a `RothSegmentationHmm` to be used with a
         # standardized API.
-        return predict(self.model, feature_data, expected_columns=self.data_columns, algorithm=algorithm)
+        return predict(self.model, feature_data, expected_columns=self.data_columns)
 
     @make_optimize_safe
     def self_optimize(
@@ -346,7 +315,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
-    ) -> Tuple[Self, History]:
+    ) -> Tuple[Self, None]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -403,14 +372,11 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
         # We also ensure that in all provided dataframes the same columns and column order exists
         data_sequence_train = [
-            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy().squeeze())
+            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy())
             for dataset in data_sequence
         ]
         labels_sequence_train = []
         for labels in labels_sequence:
-            if labels is None:
-                labels_sequence_train.append(None)
-                continue
             labels = labels.to_numpy().squeeze() if isinstance(labels, (pd.Series, pd.DataFrame)) else labels.squeeze()
             labels_sequence_train.append(np.ascontiguousarray(labels.copy()))
 
@@ -418,34 +384,31 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             warnings.warn("Model already exists. Overwriting existing model.")
 
         # initialize model by naive equidistant labels
-        model_untrained = initialize_hmm(
+        distributions, trans_mat, start_probs, end_probs = initialize_distributions_and_transmat(
             data_sequence_train,
             labels_sequence_train,
             n_states=self.n_states,
             n_gmm_components=self.n_gmm_components,
             architecture=self.architecture,
-            name=self.name + "-untrained",
         )
 
-        # make copy from untrained model, as pomegranate will just update parameters in the given model and not
-        # returning a copy
-        model_trained = _clone_model(model_untrained, assert_correct=False)
-
-        history: History
-        _, history = model_trained.fit(
-            sequences=np.array(data_sequence_train, dtype=object),
-            labels=np.array(labels_sequence_train, dtype=object),
-            algorithm=self.algo_train,
-            stop_threshold=self.stop_threshold,
-            max_iterations=self.max_iterations,
-            return_history=True,
+        model = pgHMM(
+            distributions,
+            edges=trans_mat,
+            starts=start_probs,
+            ends=end_probs,
             verbose=self.verbose,
-            n_jobs=self.n_jobs,
-            multiple_check_input=False,
+            max_iter=self.max_iterations,
+            tol=self.stop_threshold,
         )
-        check_history_for_training_failure(history)
-        model_trained.name = self.name + "_trained"
 
-        self.model = model_trained
+        labels_sequence_as_prior = labels_to_prior(labels_sequence_train, n_states=self.n_states)
 
-        return self, history
+        model.fit(
+            data_sequence_train,
+            priors=labels_sequence_as_prior,
+        )
+
+        self.model = model
+
+        return self, None

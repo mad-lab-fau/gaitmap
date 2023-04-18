@@ -20,12 +20,6 @@ from gaitmap.example_data import (
 )
 from tests._regression_utils import PyTestSnapshotTest
 
-try:
-    from pomegranate import GeneralMixtureModel, State
-except ImportError:
-    GeneralMixtureModel = None
-    State = None
-
 
 @pytest.fixture(autouse=True)
 def reset_random_seed():
@@ -85,18 +79,18 @@ def compare_val(value, json_val, name):
         assert_frame_equal(value, json_val, check_dtype=False)
     elif isinstance(value, pd.Series):
         assert_series_equal(value, json_val)
-    elif State is not None and isinstance(value, State):
-        assert value.name == json_val.name
-        assert_almost_equal(value.weight, json_val.weight)
-        if value.distribution is None:
-            assert value.distribution == json_val.distribution
-        else:
-            if not isinstance(value.distribution, GeneralMixtureModel):
-                raise ValueError("We only support comparing state with GMM distributions")
-            for d1, d2 in zip(value.distribution.distributions, json_val.distribution.distributions):
-                assert d1.name == d2.name
-                for p1, p2 in zip(d1.parameters, d2.parameters):
-                    assert_almost_equal(p1, p2)
-            assert_almost_equal(value.distribution.weights, json_val.distribution.weights)
+    # elif isinstance(value, State):
+    #     assert value.name == json_val.name
+    #     assert_almost_equal(value.weight, json_val.weight)
+    #     if value.distribution is None:
+    #         assert value.distribution == json_val.distribution
+    #     else:
+    #         if not isinstance(value.distribution, GeneralMixtureModel):
+    #             raise ValueError("We only support comparing state with GMM distributions")
+    #         for d1, d2 in zip(value.distribution.distributions, json_val.distribution.distributions):
+    #             assert d1.name == d2.name
+    #             for p1, p2 in zip(d1.parameters, d2.parameters):
+    #                 assert_almost_equal(p1, p2)
+    #         assert_almost_equal(value.distribution.weights, json_val.distribution.weights)
     else:
         assert value == json_val, name
