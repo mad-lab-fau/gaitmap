@@ -401,6 +401,32 @@ class TestFindMinRadius:
         out = find_extrema_in_radius(data, indices, radius, extrema_type="max")
         assert_array_equal(out, indices)
 
+    @pytest.mark.parametrize("radius", (1, 2, 3))
+    def test_tuple_input_identical_to_single_input(self, radius):
+        data = np.array([0, 0, 0, 1, 0, 0, 0])
+        indices = np.array([2, 3, 4])
+
+        out_single = find_extrema_in_radius(data, indices, radius, extrema_type="max")
+        out_tuple = find_extrema_in_radius(data, indices, (radius, radius), extrema_type="max")
+
+        assert_array_equal(out_single, out_tuple)
+
+    def test_non_equal_left_right_radius(self):
+        data = np.array([0, 2, 0, 0, 0, 1, 0, 0])
+        indices = np.array([2, 3, 4])
+        radius = (1, 2)
+
+        out = find_extrema_in_radius(data, indices, radius, extrema_type="max")
+        assert_array_equal(out, [1, 5, 5])
+
+    def test_non_equal_radius_edgecase(self):
+        data = np.array([0, 2, 0, 0, 0, 1, 0, 0])
+        indices = np.array([2, 3, 4])
+        radius = (3, 5)
+
+        out = find_extrema_in_radius(data, indices, radius, extrema_type="max")
+        assert_array_equal(out, [1, 1, 1])
+
 
 class TestMultiArrayInterpolate:
     """Test multi_array_interpolation
