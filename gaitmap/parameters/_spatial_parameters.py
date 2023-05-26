@@ -1,6 +1,6 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
 import warnings
-from typing import Dict, Tuple, Union
+from typing import Dict, Literal, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -9,18 +9,18 @@ from scipy.spatial.transform import Rotation
 from typing_extensions import Self
 
 from gaitmap.base import BaseSpatialParameterCalculation
+from gaitmap.parameters._temporal_parameters import _get_stride_time_cols
+from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    MultiSensorOrientationList,
-    MultiSensorPositionList,
-    MultiSensorStrideList,
     OrientationList,
     PositionList,
     SingleSensorOrientationList,
     SingleSensorPositionList,
     SingleSensorStrideList,
     StrideList,
+    get_multi_sensor_names,
     is_orientation_list,
     is_position_list,
     is_stride_list,
@@ -29,11 +29,33 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import find_angle_between_orientations, find_unsigned_3d_angle
 
+ParamterNames = Literal[
+    "stride_length",
+    "gait_velocity",
+    "ic_angle",
+    "tc_angle",
+    "turning_angle",
+    "arc_length",
+    "max_sensor_lift",
+    "max_lateral_excursion",
+]
+
 
 class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     """Calculating spatial parameters of strides based on extracted gait events and foot trajectories.
 
     Calculations are based on [1]_ and [2]_.
+
+    Parameters
+    ----------
+    calculate_only
+        List of parameters to be calculated. If None, all parameters are calculated.
+        Even, if all parameters are calculated, we will check for the existence of the required data.
+    expected_stride_type
+        The expected stride type of the stride list.
+        This can either be "min_vel" or "ic".
+        This effects how the events are used to calculate the stride time required for the gait velocity calculation.
+        For more details see :class:`~gaitmap.parameters.TemporalParameterCalculation`.
 
     Attributes
     ----------
@@ -130,6 +152,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
+    calculate_only: Optional[Sequence[ParamterNames]]
+    expected_stride_type: Literal["min_vel", "ic"]
+
     parameters_: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
     sole_angle_course_: PositionList
 
@@ -137,6 +162,14 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     positions: PositionList
     orientations: OrientationList
     sampling_rate_hz: float
+
+    def __init__(
+        self,
+        calculate_only: Optional[Sequence[ParamterNames]] = None,
+        expected_stride_type: Literal["min_vel", "ic"] = "min_vel",
+    ):
+        self.calculate_only = calculate_only
+        self.expected_stride_type = expected_stride_type
 
     @property
     def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
@@ -160,7 +193,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             "max_sensor_lift": "max. sensor lift [m]",
             "max_lateral_excursion": "max. lateral excursion [m]",
         }
-        renamed_paras = parameters.rename(columns=pretty_columns)
+        renamed_paras = parameters.rename(columns=pretty_columns, errors="ignore")
         renamed_paras.index.name = "stride id"
         return renamed_paras
 
@@ -194,35 +227,46 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.positions = positions
         self.orientations = orientations
         self.sampling_rate_hz = sampling_rate_hz
-        # We don't check what type of stride list we have, as we check for each parameter, if it can be calculated
-        # with the provided information.
-        stride_list_type = is_stride_list(stride_event_list, stride_type="any")
+        stride_list_type = is_stride_list(
+            stride_event_list, stride_type=self.expected_stride_type, check_additional_cols=False
+        )
         position_list_type = is_position_list(positions, position_list_type="stride")
         orientation_list_type = is_orientation_list(orientations, orientation_list_type="stride")
         if not stride_list_type == position_list_type == orientation_list_type:
             raise ValidationError(
-                "The provided stride list, the positions, and the orientations should all either "
-                "be all single or all multi sensor objects."
-                "However, the provided stride list is {} sensor, the positions {} sensor and the "
-                "orientations {} sensor.".format(stride_list_type, position_list_type, orientation_list_type)
+                "The provided stride list, the positions, and the orientations should all either be all single or "
+                "all multi sensor objects."
+                f"However, the provided stride list is {stride_list_type} sensor, the positions {position_list_type} "
+                f"sensor and the orientations {orientation_list_type} sensor."
             )
         if stride_list_type == "single":
-            self.parameters_, self.sole_angle_course_ = self._calculate_single_sensor(
-                stride_event_list, positions, orientations, sampling_rate_hz
+            set_params_from_dict(
+                self,
+                self._calculate_single_sensor(stride_event_list, positions, orientations, sampling_rate_hz),
+                result_formatting=True,
             )
         else:
-            self.parameters_, self.sole_angle_course_ = self._calculate_multiple_sensor(
-                stride_event_list, positions, orientations, sampling_rate_hz
+            set_params_from_dict(
+                self,
+                invert_result_dictionary(
+                    {
+                        sensor: self._calculate_single_sensor(
+                            stride_event_list[sensor], positions[sensor], orientations[sensor], sampling_rate_hz
+                        )
+                        for sensor in get_multi_sensor_names(stride_event_list)
+                    }
+                ),
+                result_formatting=True,
             )
         return self
 
-    @staticmethod
     def _calculate_single_sensor(
+        self,
         stride_event_list: SingleSensorStrideList,
         positions: SingleSensorPositionList,
         orientations: SingleSensorOrientationList,
         sampling_rate_hz: float,
-    ) -> Tuple[pd.DataFrame, pd.Series]:
+    ):
         """Find spatial parameters of each stride in case of single sensor.
 
         Parameters
@@ -244,78 +288,85 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             The sole angle in the sagttial plane for each stride
 
         """
-        positions = set_correct_index(positions, GF_INDEX)[GF_POS]
         orientations = set_correct_index(orientations, GF_INDEX)[GF_ORI]
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
         stride_parameter_dict = {}
 
-        stride_parameter_dict["stride_length"] = _calc_stride_length(positions)
-        if "ic" in stride_event_list.columns and "pre_ic" in stride_event_list.columns:
-            stride_parameter_dict["gait_velocity"] = _calc_gait_velocity(
-                stride_parameter_dict["stride_length"],
-                (stride_event_list["ic"] - stride_event_list["pre_ic"]) / sampling_rate_hz,
-            )
+        if positions is not None:
+            stride_parameter_dict = {
+                **stride_parameter_dict,
+                **self._traj_based_parameters(positions, stride_event_list, sampling_rate_hz),
+            }
+
+        if orientations is not None:
+            angle_course = _compute_sole_angle_course(orientations)
+            stride_parameter_dict = {
+                **stride_parameter_dict,
+                **self._ori_based_parameters(orientations, stride_event_list, angle_course),
+            }
         else:
-            warnings.warn("Gait velocity could not be calculated as IC and pre-IC events are not available.")
+            angle_course = None
 
-        angle_course = _compute_sole_angle_course(orientations)
+        parameters = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index).sort_index(axis=1)
+        return {"parameters": parameters, "sole_angle_course": angle_course}
 
-        if "ic" in stride_event_list.columns:
+    def _traj_based_parameters(self, positions, stride_event_list, sampling_rate_hz):
+        positions = set_correct_index(positions, GF_INDEX)[GF_POS]
+
+        param_dict = {}
+
+        if self._should_calculate("stride_length") or self._should_calculate("gait_velocity"):
+            stride_length = _calc_stride_length(positions)
+        if self._should_calculate("stride_length"):
+            param_dict["stride_length"] = stride_length
+        if self._should_calculate("gait_velocity"):
+            stride_time_start_col, stride_time_end_col = _get_stride_time_cols(self.expected_stride_type)
+            if (
+                stride_time_start_col not in stride_event_list.columns
+                or stride_time_end_col not in stride_event_list.columns
+            ):
+                warnings.warn(
+                    f"Gait velocity could not be calculated as relevant stride time columns ({stride_time_start_col}, "
+                    f"{stride_time_end_col})are not available."
+                )
+            else:
+                param_dict["gait_velocity"] = stride_length / (
+                    (stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col])
+                    / sampling_rate_hz
+                )
+        if self._should_calculate("arc_length"):
+            param_dict["arc_length"] = _calc_arc_length(positions)
+        if self._should_calculate("max_sensor_lift"):
+            param_dict["max_sensor_lift"] = _calc_max_sensor_lift(positions)
+        if self._should_calculate("max_lateral_excursion"):
+            param_dict["max_lateral_excursion"] = _calc_max_lateral_excursion(positions)
+        return param_dict
+
+    def _ori_based_parameters(self, orientations, stride_event_list, angle_course):
+        param_dict = {}
+
+        if self._should_calculate("ic_angle") and "ic" in stride_event_list.columns:
             ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
-            stride_parameter_dict["ic_angle"] = _get_angle_at_index(angle_course, ic_relative)
+            param_dict["ic_angle"] = _get_angle_at_index(angle_course, ic_relative)
         else:
             warnings.warn("IC angle could not be calculated as IC event is not available.")
 
-        if "tc" in stride_event_list.columns:
+        if self._should_calculate("tc_angle") and "tc" in stride_event_list.columns:
             tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype(int)
-            stride_parameter_dict["tc_angle"] = _get_angle_at_index(angle_course, tc_relative)
+            param_dict["tc_angle"] = _get_angle_at_index(angle_course, tc_relative)
         else:
             warnings.warn("TC angle could not be calculated as TC event is not available.")
 
-        stride_parameter_dict["turning_angle"] = _calc_turning_angle(orientations)
-        stride_parameter_dict["arc_length"] = _calc_arc_length(positions)
-        stride_parameter_dict["max_sensor_lift"] = _calc_max_sensor_lift(positions)
-        stride_parameter_dict["max_lateral_excursion"] = _calc_max_lateral_excursion(positions)
+        if self._should_calculate("turning_angle"):
+            param_dict["turning_angle"] = _calc_turning_angle(orientations)
 
-        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
-        return parameters_, angle_course
+        return param_dict
 
-    def _calculate_multiple_sensor(
-        self,
-        stride_event_list: MultiSensorStrideList,
-        positions: MultiSensorPositionList,
-        orientations: MultiSensorOrientationList,
-        sampling_rate_hz: float,
-    ) -> Tuple[Dict[_Hashable, pd.DataFrame], Dict[_Hashable, pd.Series]]:
-        """Find spatial parameters of each stride in case of multiple sensors.
-
-        Parameters
-        ----------
-        stride_event_list
-            Gait events for each stride obtained from event detection.
-        positions
-            position of each sensor at each time point as estimated by trajectory reconstruction.
-        orientations
-            orientation of each sensor at each time point as estimated by trajectory reconstruction
-        sampling_rate_hz
-            The sampling rate of the data signal.
-
-        Returns
-        -------
-        parameters_
-            Data frame containing spatial parameters of single sensor
-        sole_angle_course_
-            The sole angle in the sagittal plane (around the "ml" axis) for each stride
-
-        """
-        parameters_ = {}
-        sole_angle_course_ = {}
-        for sensor in stride_event_list:
-            parameters_[sensor], sole_angle_course_[sensor] = self._calculate_single_sensor(
-                stride_event_list[sensor], positions[sensor], orientations[sensor], sampling_rate_hz
-            )
-        return parameters_, sole_angle_course_
+    def _should_calculate(self, parameter_name: ParamterNames) -> bool:
+        if self.calculate_only is None:
+            return True
+        return parameter_name in self.calculate_only
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
@@ -324,10 +375,6 @@ def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
     stride_length = end - start
     stride_length = pd.Series(norm(stride_length[["pos_x", "pos_y"]], axis=1), index=stride_length.index)
     return stride_length
-
-
-def _calc_gait_velocity(stride_length: pd.Series, stride_time: pd.Series) -> pd.Series:
-    return stride_length / stride_time
 
 
 def _get_angle_at_index(angle_course: pd.Series, index_per_stride: pd.Series) -> pd.Series:

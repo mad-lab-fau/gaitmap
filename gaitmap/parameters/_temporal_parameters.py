@@ -1,5 +1,5 @@
 """Calculate temporal parameters algorithm."""
-from typing import Dict, Literal, TypeVar, Union
+from typing import Dict, Literal, Tuple, TypeVar, Union
 
 import pandas as pd
 
@@ -157,21 +157,15 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
-        if self.expected_stride_type == "min_vel":
-            start_event = "pre_ic"
-            end_event = "ic"
-            swing_start_event = "tc"
-            swing_end_event = "ic"
-        elif self.expected_stride_type == "ic":
-            start_event = "start"
-            end_event = "end"
-            swing_start_event = "tc"
-            swing_end_event = "end"
-        else:
-            raise ValueError("expected_stride_type should be either 'min_vel' or 'ic'")
+        stride_time_start_col, stride_time_end_col = _get_stride_time_cols(self.expected_stride_type)
+        stride_time = (
+            stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col]
+        ) / sampling_rate_hz
 
-        stride_time = (stride_event_list[end_event] - stride_event_list[start_event]) / sampling_rate_hz
-        swing_time = (stride_event_list[swing_end_event] - stride_event_list[swing_start_event]) / sampling_rate_hz
+        swing_time_start_col, swing_time_end_col = _get_swing_time_cols(self.expected_stride_type)
+        swing_time = (
+            stride_event_list[swing_time_end_col] - stride_event_list[swing_time_start_col]
+        ) / sampling_rate_hz
         stance_time = stride_time - swing_time
         stride_parameter_dict = {
             "stride_time": stride_time,
@@ -180,3 +174,19 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_
+
+
+def _get_stride_time_cols(stride_type: Literal["min_vel", "ic"]) -> Tuple[str, str]:
+    if stride_type == "min_vel":
+        return "pre_ic", "ic"
+    if stride_type == "ic":
+        return "start", "end"
+    raise ValueError("stride_type should be either 'min_vel' or 'ic'")
+
+
+def _get_swing_time_cols(stride_type: Literal["min_vel", "ic"]) -> Tuple[str, str]:
+    if stride_type == "min_vel":
+        return "tc", "ic"
+    if stride_type == "ic":
+        return "tc", "end"
+    raise ValueError("stride_type should be either 'min_vel' or 'ic'")

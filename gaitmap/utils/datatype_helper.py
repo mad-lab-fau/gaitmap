@@ -313,7 +313,7 @@ def is_single_sensor_stride_list(
     ic
         A IC stride list is a stride list in which every stride starts and ends with a IC.
         Regarding columns, it has the same requirements as the "segmented" stride list.
-        Additionally it is checked, if the "start" columns is actually identical to the "ic" column.
+        Additionally, it is checked, if the "start" columns is actually identical to the "ic" column.
 
     Parameters
     ----------

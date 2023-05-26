@@ -26,7 +26,8 @@ def _min_vel_stride_list():
     temporal_parameters = temporal_parameters.set_index("s_id")
     return stride_events_list, temporal_parameters
 
-@pytest.fixture
+
+@pytest.fixture()
 def min_vel_stride_list():
     return _min_vel_stride_list()
 

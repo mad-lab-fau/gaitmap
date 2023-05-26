@@ -7,7 +7,6 @@ from gaitmap.base import BaseType
 from gaitmap.parameters import SpatialParameterCalculation
 from gaitmap.parameters._spatial_parameters import (
     _calc_arc_length,
-    _calc_gait_velocity,
     _calc_stride_length,
     _calc_turning_angle,
     _compute_sole_angle_course,
@@ -118,11 +117,6 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestIndividualParameter:
     def test_stride_length(self, single_sensor_position_list_with_index, single_sensor_stride_length):
         assert_series_equal(_calc_stride_length(single_sensor_position_list_with_index), single_sensor_stride_length)
-
-    def test_gait_speed(self, single_sensor_stride_length, single_sensor_stride_time, single_sensor_gait_speed):
-        assert_series_equal(
-            _calc_gait_velocity(single_sensor_stride_length, single_sensor_stride_time), single_sensor_gait_speed
-        )
 
     def test_arc_length(self, single_sensor_position_list_with_index, single_sensor_arc_length):
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
