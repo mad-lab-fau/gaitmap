@@ -7,7 +7,7 @@ from gaitmap.parameters import TemporalParameterCalculation
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-def min_vel_stride_list():
+def _min_vel_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0, 1, 2]
     stride_events_list["ic"] = [500.0, 700.0, 1000.0]
@@ -25,6 +25,10 @@ def min_vel_stride_list():
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
     temporal_parameters = temporal_parameters.set_index("s_id")
     return stride_events_list, temporal_parameters
+
+@pytest.fixture
+def min_vel_stride_list():
+    return _min_vel_stride_list()
 
 
 def ic_stride_list():
@@ -65,7 +69,7 @@ class TestTemporalParameterCalculation:
     @pytest.fixture()
     def stride_list(self, stride_list_type):
         if stride_list_type == "min_vel":
-            return min_vel_stride_list()
+            return _min_vel_stride_list()
         elif stride_list_type == "ic":
             return ic_stride_list()
 
