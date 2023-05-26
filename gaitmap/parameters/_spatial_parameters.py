@@ -9,7 +9,6 @@ from scipy.spatial.transform import Rotation
 from typing_extensions import Self
 
 from gaitmap.base import BaseSpatialParameterCalculation
-from gaitmap.parameters._temporal_parameters import _calc_stride_time
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -255,7 +254,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         if "ic" in stride_event_list.columns and "pre_ic" in stride_event_list.columns:
             stride_parameter_dict["gait_velocity"] = _calc_gait_velocity(
                 stride_parameter_dict["stride_length"],
-                _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz),
+                (stride_event_list["ic"] - stride_event_list["pre_ic"]) / sampling_rate_hz,
             )
         else:
             warnings.warn("Gait velocity could not be calculated as IC and pre-IC events are not available.")

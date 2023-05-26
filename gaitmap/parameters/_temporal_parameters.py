@@ -1,13 +1,11 @@
 """Calculate temporal parameters algorithm."""
-from typing import Dict, TypeVar, Union
+from typing import Dict, Literal, TypeVar, Union
 
 import pandas as pd
 
 from gaitmap.base import BaseTemporalParameterCalculation
-from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SL_INDEX
 from gaitmap.utils.datatype_helper import (
-    MultiSensorStrideList,
     SingleSensorStrideList,
     StrideList,
     is_stride_list,
@@ -21,6 +19,16 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     """Calculat temporal parameters of strides based on detected gait events.
 
     For details on the individual parameters see the Notes section.
+
+    Parameters
+    ----------
+    expected_stride_type
+        The expected stride type of the stride list.
+        This changes how the temporal parameters are calculated.
+        This can either be "min_vel" or "ic".
+        "min_vel" stride lists are the typical output from Gaitmap event detection methods.
+        However, for other systems (e.g. mocap systems) strides might be defined from one ic to the next ic.
+        In this case the expected_stride_type should be "ic".
 
     Attributes
     ----------
@@ -42,13 +50,15 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     stride_time [s]
         The stride time is the duration of the stride calculated based on the ic events of the stride.
         For a `min_vel`-stride the stride time is calculated by subtracting "pre_ic" from "ic".
+        For a `ic`-stride the stride time is calculated by subtracting "start"/"ic" from "end".
     swing_time [s]
         The swing time is the time from the tc to the next ic.
         For a `min_vel`-stride this is the time between "tc" and "ic"
+        For a `ic`-stride this is the time between "tc" and "end".
     stance_time [s]
         The stance time is the time the foot is on the ground.
         Hence, it is the time from a ic to the next tc.
-        For a `min_vel`-stride this is calculated as the time between "pre_ic" and "tc".
+        For both stride types this is calculated as stride_time - swing_time.
 
     Examples
     --------
@@ -68,10 +78,15 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     """
 
+    expected_stride_type: Literal["min_vel", "ic"]
+
     parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     sampling_rate_hz: float
     stride_event_list: StrideList
+
+    def __init__(self, expected_stride_type: Literal["min_vel", "ic"] = "min_vel"):
+        self.expected_stride_type = expected_stride_type
 
     @property
     def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
@@ -112,15 +127,19 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         """
         self.sampling_rate_hz = sampling_rate_hz
         self.stride_event_list = stride_event_list
-        stride_list_type = is_stride_list(stride_event_list, stride_type="min_vel")
+        stride_list_type = is_stride_list(stride_event_list, stride_type=self.expected_stride_type)
         if stride_list_type == "single":  # this means single sensor
             self.parameters_ = self._calculate_single_sensor(stride_event_list, sampling_rate_hz)
         else:
-            self.parameters_ = self._calculate_multiple_sensor(stride_event_list, sampling_rate_hz)
+            self.parameters_ = {
+                sensor: self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
+                for sensor in stride_event_list
+            }
         return self
 
-    @staticmethod
-    def _calculate_single_sensor(stride_event_list: SingleSensorStrideList, sampling_rate_hz: float) -> pd.DataFrame:
+    def _calculate_single_sensor(
+        self, stride_event_list: SingleSensorStrideList, sampling_rate_hz: float
+    ) -> pd.DataFrame:
         """Find temporal parameters  of each stride in case of single sensor.
 
         Parameters
@@ -137,64 +156,27 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
         """
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
-        stride_time_ = _calc_stride_time(stride_event_list["ic"], stride_event_list["pre_ic"], sampling_rate_hz)
-        swing_time_ = _calc_swing_time(stride_event_list["ic"], stride_event_list["tc"], sampling_rate_hz)
-        stance_time_ = [stride_time - swing_time for stride_time, swing_time in zip(stride_time_, swing_time_)]
+
+        if self.expected_stride_type == "min_vel":
+            start_event = "pre_ic"
+            end_event = "ic"
+            swing_start_event = "tc"
+            swing_end_event = "ic"
+        elif self.expected_stride_type == "ic":
+            start_event = "start"
+            end_event = "end"
+            swing_start_event = "tc"
+            swing_end_event = "end"
+        else:
+            raise ValueError("expected_stride_type should be either 'min_vel' or 'ic'")
+
+        stride_time = (stride_event_list[end_event] - stride_event_list[start_event]) / sampling_rate_hz
+        swing_time = (stride_event_list[swing_end_event] - stride_event_list[swing_start_event]) / sampling_rate_hz
+        stance_time = stride_time - swing_time
         stride_parameter_dict = {
-            "stride_time": stride_time_,
-            "swing_time": swing_time_,
-            "stance_time": stance_time_,
+            "stride_time": stride_time,
+            "swing_time": swing_time,
+            "stance_time": stance_time,
         }
         parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
         return parameters_
-
-    def _calculate_multiple_sensor(
-        self, stride_event_list: MultiSensorStrideList, sampling_rate_hz: float
-    ) -> Dict[_Hashable, pd.DataFrame]:
-        """Find temporal parameters of each stride in case of multiple sensors.
-
-        Parameters
-        ----------
-        stride_event_list
-            Gait events for each stride obtained from event detection
-        sampling_rate_hz
-            The sampling rate of the data signal.
-
-        Returns
-        -------
-        parameters_
-            Dictionary of temporal parameters for each sensor
-
-        """
-        parameters_ = {}
-        for sensor in stride_event_list:
-            parameters_[sensor] = self._calculate_single_sensor(stride_event_list[sensor], sampling_rate_hz)
-        return parameters_
-
-
-def _calc_stride_time(ic_event: pd.Series, pre_ic_event: pd.Series, sampling_rate_hz: float) -> pd.Series:
-    """Find stride time.
-
-    Parameters
-    ----------
-    ic_event
-        Initial contact event from event detection
-    pre_ic_event
-        Previous Initial contact event from event detection
-    sampling_rate_hz
-        The sampling rate of the data signal.
-
-    Returns
-    -------
-    Stride time
-
-    """
-    return (ic_event - pre_ic_event) / sampling_rate_hz
-
-
-def _calc_swing_time(ic_event: pd.Series, tc_event: pd.Series, sampling_rate_hz: float) -> pd.Series:
-    return (ic_event - tc_event) / sampling_rate_hz
-
-
-def _calc_stance_time(stride_time: pd.Series, swing_time: pd.Series) -> pd.Series:
-    return stride_time - swing_time
