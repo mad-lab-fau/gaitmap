@@ -156,11 +156,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     expected_stride_type: Literal["min_vel", "ic"]
 
     parameters_: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
-    sole_angle_course_: PositionList
+    sole_angle_course_: Optional[Union[pd.Series, Dict[_Hashable, pd.Series]]]
 
     stride_event_list: StrideList
-    positions: PositionList
-    orientations: OrientationList
+    positions: Optional[PositionList]
+    orientations: Optional[OrientationList]
     sampling_rate_hz: float
 
     def __init__(
@@ -200,8 +200,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     def calculate(
         self,
         stride_event_list: StrideList,
-        positions: PositionList,
-        orientations: OrientationList,
+        positions: Optional[PositionList],
+        orientations: Optional[OrientationList],
         sampling_rate_hz: float,
     ) -> Self:
         """Find spatial parameters of all strides after segmentation and detecting events for all sensors.
@@ -211,9 +211,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         stride_event_list
             Gait events for each stride obtained from event detection
         positions
-            position of each sensor at each time point as estimated by trajectory reconstruction.
+            Position of each sensor at each time point as estimated by trajectory reconstruction.
+            Can be set to `None` if you are only interested in orientation based features.
         orientations
-            orientation of each sensor at each time point as estimated by trajectory reconstruction
+            Orientation of each sensor at each time point as estimated by trajectory reconstruction
+            Can be set to `None` if you are only interested in position based features.
         sampling_rate_hz
             The sampling rate of the data signal.
 
@@ -230,15 +232,28 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         stride_list_type = is_stride_list(
             stride_event_list, stride_type=self.expected_stride_type, check_additional_cols=False
         )
-        position_list_type = is_position_list(positions, position_list_type="stride")
-        orientation_list_type = is_orientation_list(orientations, orientation_list_type="stride")
-        if not stride_list_type == position_list_type == orientation_list_type:
+        if positions is None and orientations is None:
             raise ValidationError(
-                "The provided stride list, the positions, and the orientations should all either be all single or "
-                "all multi sensor objects."
-                f"However, the provided stride list is {stride_list_type} sensor, the positions {position_list_type} "
-                f"sensor and the orientations {orientation_list_type} sensor."
+                "Either positions or orientations should be provided for spatial parameter calculation. "
+                "Otherwise, no spatial parameters cannot be calculated."
             )
+        if positions is not None:
+            position_list_type = is_position_list(positions, position_list_type="stride")
+            if position_list_type != stride_list_type:
+                raise ValidationError(
+                    f"The provided stride list is of type {stride_list_type} sensor but the provided positions are of "
+                    f"type {position_list_type} sensor. "
+                    "The stride list and the positions should be of the same type."
+                )
+        if orientations is not None:
+            orientation_list_type = is_orientation_list(orientations, orientation_list_type="stride")
+            if orientation_list_type != stride_list_type:
+                raise ValidationError(
+                    f"The provided stride list is of type {stride_list_type} sensor but the provided orientations are "
+                    "of type {orientation_list_type} sensor. "
+                    "The stride list and the positions should be of the same type."
+                )
+
         if stride_list_type == "single":
             set_params_from_dict(
                 self,
