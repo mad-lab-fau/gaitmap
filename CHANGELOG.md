@@ -31,6 +31,11 @@ project.
 - The Zupt Detector example is updated to use newer tpcp features
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
 - The column order of the Spatial Parameter Calculation output has been changed
+- The `calculate_parameter_errors` function is now more general and can be used with parameter lists that don't 
+  represent strides.
+  For this the unique-id column (i.e. original stride index) is can be explicitly set and all wording is changed to
+  be more general.
+  (https://github.com/mad-lab-fau/gaitmap/pull/24)
 
 
 ## [2.1.0] - 2023-02-08
