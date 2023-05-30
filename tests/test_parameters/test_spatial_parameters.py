@@ -11,6 +11,7 @@ from gaitmap.parameters._spatial_parameters import (
     _calc_turning_angle,
     _compute_sole_angle_course,
 )
+from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
@@ -240,6 +241,90 @@ class TestSpatialParameterCalculation:
         for sensor in t.parameters_.values():
             assert set(sensor.columns) == set(self.parameters) - set(expected_missing)
             assert len(sensor) == len(single_sensor_stride_list)
+
+    def test_only_ori_provided(self, single_sensor_stride_list, single_sensor_orientation_list):
+        """Test calculate spatial parameters for single sensor."""
+        t = SpatialParameterCalculation()
+        t.calculate(
+            stride_event_list=single_sensor_stride_list,
+            orientations=single_sensor_orientation_list,
+            positions=None,
+            sampling_rate_hz=100,
+        )
+
+        ori_only_parameters = ["ic_angle", "tc_angle", "turning_angle"]
+
+        assert set(t.parameters_.columns) == set(ori_only_parameters)
+
+    def test_only_pos_provided(
+        self,
+        single_sensor_stride_list,
+        single_sensor_position_list,
+    ):
+        t = SpatialParameterCalculation()
+        t.calculate(
+            stride_event_list=single_sensor_stride_list,
+            orientations=None,
+            positions=single_sensor_position_list,
+            sampling_rate_hz=100,
+        )
+
+        only_pos_parameters = [
+            "stride_length",
+            "gait_velocity",
+            "arc_length",
+            "max_sensor_lift",
+            "max_lateral_excursion",
+        ]
+
+        assert set(t.parameters_.columns) == set(only_pos_parameters)
+
+    @pytest.mark.parametrize("calculate_only", [["stride_length"], ["gait_velocity"], ["arc_length", "stride_length"]])
+    def test_calculate_only(
+        self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, calculate_only
+    ):
+        t = SpatialParameterCalculation(calculate_only=calculate_only)
+        t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
+
+        assert set(t.parameters_.columns) == set(calculate_only)
+
+    def test_stride_list_types(
+        self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
+    ):
+
+        # The default single_sensor_stride_list is a min_vel stride list.
+        # If we set expected_stride_type to "ic", we should get an error.
+        t = SpatialParameterCalculation(expected_stride_type="ic")
+
+        with pytest.raises(ValidationError):
+            t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
+
+        # We "fake" convert the min_vel stride list to an ic stride list by adding/swapping the columns.
+        single_sensor_stride_list_ic = single_sensor_stride_list.copy()
+        single_sensor_stride_list_ic["start"] = single_sensor_stride_list_ic["ic"]
+        del single_sensor_stride_list["pre_ic"]
+
+        # Now we should get an error when we set expected_stride_type to "min_vel".
+        t = SpatialParameterCalculation(expected_stride_type="min_vel")
+
+        with pytest.raises(ValidationError):
+            t.calculate(single_sensor_stride_list_ic, single_sensor_position_list, single_sensor_orientation_list, 100)
+
+        # But if we set expected_stride_type to "ic", it should work.
+        t = SpatialParameterCalculation(expected_stride_type="ic", calculate_only=["stride_length", "gait_velocity"])
+
+        t.calculate(single_sensor_stride_list_ic, single_sensor_position_list, single_sensor_orientation_list, 100)
+
+        # We verify that the gait_velocity was calculated as expected. For an ic stride list, the stride time should be
+        # calculated as `end - start` not `ic- pre_ic`.
+
+        assert_series_equal(
+            t.parameters_["gait_velocity"],
+            t.parameters_["stride_length"]
+            / (single_sensor_stride_list_ic["end"] - single_sensor_stride_list_ic["start"])
+            * 100,
+            check_names=False,
+        )
 
 
 class TestSpatialParameterRegression:

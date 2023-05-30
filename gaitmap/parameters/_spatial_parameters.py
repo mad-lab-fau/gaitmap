@@ -303,7 +303,6 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             The sole angle in the sagttial plane for each stride
 
         """
-        orientations = set_correct_index(orientations, GF_INDEX)[GF_ORI]
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
         stride_parameter_dict = {}
@@ -315,6 +314,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             }
 
         if orientations is not None:
+            orientations = set_correct_index(orientations, GF_INDEX)[GF_ORI]
             angle_course = _compute_sole_angle_course(orientations)
             stride_parameter_dict = {
                 **stride_parameter_dict,
