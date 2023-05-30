@@ -36,7 +36,7 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], []),
                 _create_valid_input(["param"], []),
-                "No common strides are found between predicted and reference!",
+                "No common entries are found between predicted and reference!",
             ),
             (
                 pd.DataFrame(columns=["param"], data=[]),
@@ -61,12 +61,12 @@ class TestCalculateParameterErrors:
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], [4, 6, 5]], is_dict=True, sensors=["1", "2"]),
-                "For sensor 2 no common strides are found between predicted and reference!",
+                "For sensor 2 no common entries are found between predicted and reference!",
             ),
             (
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
                 _create_valid_input(["param"], [[1, 2, 3, 4], []], is_dict=True, sensors=["1", "2"]),
-                "For sensor 2 no common strides are found between predicted and reference!",
+                "For sensor 2 no common entries are found between predicted and reference!",
             ),
         ],
     )

@@ -22,6 +22,10 @@ def calculate_parameter_errors(
 ) -> pd.DataFrame:
     """Calculate various error metrics between a parameter predicted and a given ground truth.
 
+    This method can be applied to stride level parameters or aggregated parameters over a gait test/participant/... .
+    In both cases the reference and the predicted values are simply aligned based on the specified `id_column`.
+    All non-common entries are ignored for the calculation of the error metrics.
+
     In general, we calculate four different groups of errors:
 
     - The error between the predicted and the reference value (`predicted - reference`)
@@ -36,18 +40,23 @@ def calculate_parameter_errors(
     All metrics are calculated for all columns that are available in both, the predicted parameters and the reference.
     It is up to you, to decide if a specific error metric makes sense for a given parameter.
 
-    In addition, the number of common strides, additional strides in the reference and additional strides in the
-    predicted values are calculated.
-    These metrics are helpful, as parameter errors are only calculated for strides that are present in both the
+    In addition, the number of common entries (based on the `id_column`), additional entries in the reference and
+    additional entries in the predicted values are calculated.
+    These metrics are helpful, as parameter errors are only calculated for entries that are present in both the
     inputs.
-    Strides between the predicted and the reference are matched based on the `s_id`/`stride id` column/index.
-    Parameters with `np.nan` are considered to be missing for the respective stride.
+    Entries between the predicted and the reference are matched based on the column/index name specified by the
+    `id_column` paramter.
+    For a normal output of the temporal or spatial parameter calculation, use `id_column="s_id"` column.
+    If you are using the "pretty" output of these calculations, use `id_column="stride id"`.
+    In case you used custom calculations/aggregations, make sure you have a column/index that contains unique ids that
+    match correctly between the predicted and the reference parameters.
+    Parameters with `np.nan` are considered to be missing for the respective entry.
 
     The metrics can either be calculated per sensor or for all sensors combined (see the `calculate_per_sensor`
     parameter).
-    In the latter case, the error per stride is calculated and then all strides of all sensors combined before
+    In the latter case, the error per entry is calculated and then all entry of all sensors combined before
     calculating the summary metrics (mean, std, ...).
-    This might be desired, if you have one sensor per foot, but want to have statistics over all strides independent of
+    This might be desired, if you have one sensor per foot, but want to have statistics over all entries independent of
     the foot.
 
     Parameters
@@ -55,14 +64,16 @@ def calculate_parameter_errors(
     reference_parameter
         The reference the predicted values should be compared against.
         This must be the same type (i.e. single/multi sensor) as the predicted input.
-        Further, sensor names, column names, and stride ids must match with the `predicted_parameters`.
+        Further, sensor names, column names, and unique ids must match with the `predicted_parameters`.
     predicted_parameter
-        The output of the temporal or spatial parameter calculation (both `.parameters_` and `.parameters_pretty_`
-        are accepted).
+        The predicted parameter values.
+        Usually, this is the output of the temporal or spatial parameter calculation.
+        But, you can also pass a custom calculation/aggregation.
+        Make sure you adjust the `id_column` parameter accordingly.
         This can be a Dataframe or a dict of such Dataframes.
     calculate_per_sensor
-        A bool that can be set to `False` if you wish to calculate error metrics as if the
-        strides were all taken by one sensor.
+        A bool that can be set to `False` if you wish to calculate error metrics as if the entries were all taken by
+        one sensor.
         Default is `True`.
     scoring_errors
         How to handle errors during the scoring.
@@ -72,8 +83,11 @@ def calculate_parameter_errors(
         In case of ignore, we will also ignore warnings that might be raised during the calculation.
         In all cases the value for a given metric is set to `np.nan`.
     id_column
-        The name of the column/index that contains the stride/parameter ids.
+        The name of the column/index that contains unique entry ids.
         This will be used to align the predicted and reference parameters.
+        For a normal output of the temporal or spatial parameter calculation, use `id_column="s_id"` (default) column.
+        If you are using the "pretty" output of these calculations, use `id_column="stride id"`.
+        For custom calculations/aggregations, make sure you have a column/index that contains unique ids.
 
     Returns
     -------
@@ -84,12 +98,12 @@ def calculate_parameter_errors(
 
     Examples
     --------
-    >>> predicted_param = pd.DataFrame({"para1": [7, 3, 5, 9], "para2": [7, -1, 7, -6]}).rename_axis("stride id")
-    >>> reference = pd.DataFrame({"para1": [3, 6, 7, 8], "para2": [-7, -1, 6, -5]}).rename_axis("stride id")
+    >>> predicted_param = pd.DataFrame({"para1": [7, 3, 5, 9], "para2": [7, -1, 7, -6]}).rename_axis("trial id")
+    >>> reference = pd.DataFrame({"para1": [3, 6, 7, 8], "para2": [-7, -1, 6, -5]}).rename_axis("trial id")
     >>> calculate_parameter_errors(
     ...     predicted_parameter=predicted_param,
     ...     reference_parameter=reference,
-    ...     id_column="stride id",
+    ...     id_column="trial id",
     ... )  # doctest: +NORMALIZE_WHITESPACE
                                     para1      para2
     error_mean               0.000000   3.500000
@@ -280,7 +294,7 @@ def calculate_parameter_errors(
     return output
 
 
-def _calculate_error(  # noqa: C901
+def _calculate_error(
     reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool,
@@ -338,7 +352,7 @@ def _calculate_error(  # noqa: C901
             }
 
         if max_common == 0:
-            raise ValidationError(err_msg_start + "common strides are found between predicted and reference!")
+            raise ValidationError(err_msg_start + "common entries are found between predicted and reference!")
 
         aligned_dict[sensor] = aligned
 
