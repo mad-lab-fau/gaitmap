@@ -24,10 +24,13 @@ project.
 - The `find_extrema_in_radius` and the `snap_to_min` utility functions gained the ability to define asymetric search 
   windows around the search indices.
   (https://github.com/mad-lab-fau/gaitmap/pull/21)
+- Temporal and Spatial Parameter calculation have new options to work with ic-stride lists and with partial input 
+  information
 
 ### Changed
-- The Zupt Detecor example is updated to use newer tpcp features
+- The Zupt Detector example is updated to use newer tpcp features
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
+- The column order of the Spatial Parameter Calculation output has been changed
 
 
 ## [2.1.0] - 2023-02-08
