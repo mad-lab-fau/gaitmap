@@ -266,7 +266,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                 invert_result_dictionary(
                     {
                         sensor: self._calculate_single_sensor(
-                            stride_event_list[sensor], positions[sensor], orientations[sensor], sampling_rate_hz
+                            stride_event_list[sensor],
+                            positions[sensor] if positions is not None else None,
+                            orientations[sensor] if orientations is not None else None,
+                            sampling_rate_hz,
                         )
                         for sensor in get_multi_sensor_names(stride_event_list)
                     }
