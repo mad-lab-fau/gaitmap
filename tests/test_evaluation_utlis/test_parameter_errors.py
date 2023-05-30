@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
+from pandas._testing import assert_frame_equal
 
 from gaitmap.evaluation_utils import calculate_parameter_errors, parameter_errors
 from gaitmap.utils.exceptions import ValidationError
@@ -285,3 +286,16 @@ class TestCalculateParameterErrors:
     def test_doctest(self):
         doctest_results = doctest.testmod(m=parameter_errors)
         assert doctest_results.failed == 0
+
+    def test_calculate_per_sensor(self):
+        input_param = _create_valid_input(["param"], [1, 2, 3], is_dict=False)
+        ground_truth = _create_valid_input(["param"], [1, 2, 3], is_dict=False)
+        with_per_sensor = calculate_parameter_errors(
+            predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=True
+        )
+
+        without_per_sensor = calculate_parameter_errors(
+            predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
+        )
+
+        assert_frame_equal(with_per_sensor, without_per_sensor)

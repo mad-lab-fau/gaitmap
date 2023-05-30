@@ -283,6 +283,8 @@ def calculate_parameter_errors(
     if predicted_is_not_dict:
         predicted_parameter = {"__dummy__": predicted_parameter}
         reference_parameter = {"__dummy__": reference_parameter}
+        # If we only have a single sensor, we are always calculating per sensor
+        calculate_per_sensor = True
 
     output = _calculate_error(
         reference_parameter, predicted_parameter, calculate_per_sensor, scoring_errors, id_column=id_column
