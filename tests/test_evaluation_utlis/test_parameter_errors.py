@@ -41,7 +41,7 @@ class TestCalculateParameterErrors:
             (
                 pd.DataFrame(columns=["param"], data=[]),
                 pd.DataFrame(columns=["param"], data=[]),
-                'Predicted and reference need to have either an index or a column named "s_id" or "stride id"',
+                "Predicted and reference need to have either an index or a column named `s_id`",
             ),
             (
                 _create_valid_input(["param"], [[1]], is_dict=True, sensors=["1"]),

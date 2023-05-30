@@ -9,6 +9,8 @@ from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import set_correct_index
 from gaitmap.utils.exceptions import ValidationError
 
+_ID_COL_NAME = "__id_col__"
+
 
 def calculate_parameter_errors(
     *,
@@ -16,6 +18,7 @@ def calculate_parameter_errors(
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool = True,
     scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
+    id_column: str = "s_id",
 ) -> pd.DataFrame:
     """Calculate various error metrics between a parameter predicted and a given ground truth.
 
@@ -68,6 +71,9 @@ def calculate_parameter_errors(
         At the moment, this only effects the calculation of the ICC.
         In case of ignore, we will also ignore warnings that might be raised during the calculation.
         In all cases the value for a given metric is set to `np.nan`.
+    id_column
+        The name of the column/index that contains the stride/parameter ids.
+        This will be used to align the predicted and reference parameters.
 
     Returns
     -------
@@ -83,6 +89,7 @@ def calculate_parameter_errors(
     >>> calculate_parameter_errors(
     ...     predicted_parameter=predicted_param,
     ...     reference_parameter=reference,
+    ...     id_column="stride id",
     ... )  # doctest: +NORMALIZE_WHITESPACE
                                     para1      para2
     error_mean               0.000000   3.500000
@@ -137,7 +144,8 @@ def calculate_parameter_errors(
     >>> reference_sensor_right = pd.DataFrame(columns=["para"], data=[96, -78, 86]).rename_axis("s_id")
     >>> calculate_parameter_errors(
     ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
-    ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right}
+    ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right},
+    ...     id_column="s_id",
     ... )  # doctest: +NORMALIZE_WHITESPACE
                             left_sensor right_sensor
                                    para         para
@@ -262,7 +270,9 @@ def calculate_parameter_errors(
         predicted_parameter = {"__dummy__": predicted_parameter}
         reference_parameter = {"__dummy__": reference_parameter}
 
-    output = _calculate_error(reference_parameter, predicted_parameter, calculate_per_sensor, scoring_errors)
+    output = _calculate_error(
+        reference_parameter, predicted_parameter, calculate_per_sensor, scoring_errors, id_column=id_column
+    )
 
     if predicted_is_not_dict:
         output = output["__dummy__"]
@@ -275,6 +285,7 @@ def _calculate_error(  # noqa: C901
     predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool,
     scoring_errors: Literal["ignore", "warn", "raise"],
+    id_column: str,
 ) -> pd.DataFrame:
     sensor_names_list = sorted(set(predicted_parameter.keys()).intersection(reference_parameter.keys()))
 
@@ -286,21 +297,19 @@ def _calculate_error(  # noqa: C901
 
     for sensor in sensor_names_list:
         try:
-            predicted_parameter_correct = set_correct_index(predicted_parameter[sensor], index_cols=["s_id"])
-            reference_parameter_correct = set_correct_index(reference_parameter[sensor], index_cols=["s_id"])
-        except ValidationError:
-            try:
-                predicted_parameter_correct = set_correct_index(
-                    predicted_parameter[sensor], index_cols=["stride id"]
-                ).rename_axis(index={"stride id": "s_id"})
-                reference_parameter_correct = set_correct_index(
-                    reference_parameter[sensor], index_cols=["stride id"]
-                ).rename_axis(index={"stride id": "s_id"})
-            except ValidationError as e:
-                raise ValidationError(
-                    'Predicted and reference need to have either an index or a column named "s_id" or "stride id". '
-                    "Note, that predicted and reference must both use the same name for the id-column."
-                ) from e
+            predicted_parameter_correct = set_correct_index(
+                predicted_parameter[sensor], index_cols=[id_column]
+            ).rename_axis(index={id_column: _ID_COL_NAME})
+            reference_parameter_correct = set_correct_index(
+                reference_parameter[sensor], index_cols=[id_column]
+            ).rename_axis(index={id_column: _ID_COL_NAME})
+        except ValidationError as e:
+            raise ValidationError(
+                f"Predicted and reference need to have either an index or a column named `{id_column}`. "
+                "This column name is controlled by the `id_column` parameter.\n"
+                "In case you are using the `parameter_pretty_` output of the parameter calculation, set this to "
+                "`id_column='stride id'`."
+            ) from e
 
         common_features = sorted(
             set(predicted_parameter_correct.keys()).intersection(reference_parameter_correct.keys())
@@ -389,7 +398,7 @@ def _icc(data: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]):
         return None
     data = data.stack("source").reset_index()
     coefs: Dict[str, pd.Series] = {}
-    paras = set(data.columns) - {"source", "s_id"}
+    paras = set(data.columns) - {"source", _ID_COL_NAME}
     for para in paras:
         try:
             # If handle error is ignore, we also ignore all warnings here.
@@ -397,7 +406,7 @@ def _icc(data: pd.DataFrame, handle_error: Literal["ignore", "warn", "raise"]):
                 if handle_error == "ignore":
                     warnings.simplefilter("ignore")
                 icc, ci95 = pg.intraclass_corr(
-                    data, ratings=para, raters="source", targets="s_id", nan_policy="omit"
+                    data, ratings=para, raters="source", targets=_ID_COL_NAME, nan_policy="omit"
                 ).loc[0, ["ICC", "CI95%"]]
             coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
         except AssertionError as e:
