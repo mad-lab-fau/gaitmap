@@ -11,7 +11,8 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
-from gaitmap.evaluation_utils import calculate_parameter_errors, parameter_errors
+from gaitmap.evaluation_utils import calculate_aggregated_parameter_errors, parameter_errors
+from gaitmap.evaluation_utils.parameter_errors import calculate_parameter_errors
 from gaitmap.utils.exceptions import ValidationError
 
 
@@ -30,7 +31,7 @@ def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=-1):
     return output
 
 
-class TestCalculateParameterErrors:
+class TestCalculateAggregatedParameterErrors:
     @pytest.mark.parametrize(
         ("input_param", "ground_truth", "expected_error"),
         [
@@ -73,7 +74,7 @@ class TestCalculateParameterErrors:
     )
     def test_invalid_input(self, input_param, ground_truth, expected_error):
         with pytest.raises(ValidationError) as e:
-            calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
+            calculate_aggregated_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
 
         assert expected_error in str(e)
 
@@ -110,7 +111,9 @@ class TestCalculateParameterErrors:
         ],
     )
     def test_valid_single_sensor_input(self, input_param, ground_truth, expectation):
-        output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
+        output_normal = calculate_aggregated_parameter_errors(
+            predicted_parameter=input_param, reference_parameter=ground_truth
+        )
 
         for error_type in expectation:
             assert_array_equal(np.round(output_normal["param"].loc[error_type], 5), expectation[error_type])
@@ -161,7 +164,9 @@ class TestCalculateParameterErrors:
         ],
     )
     def test_valid_multi_sensor_input(self, input_param, ground_truth, sensor_names, expectations):
-        output_normal = calculate_parameter_errors(predicted_parameter=input_param, reference_parameter=ground_truth)
+        output_normal = calculate_aggregated_parameter_errors(
+            predicted_parameter=input_param, reference_parameter=ground_truth
+        )
 
         for sensor_name, expectation in zip(sensor_names, expectations):
             for error_type in expectation:
@@ -203,7 +208,7 @@ class TestCalculateParameterErrors:
         ],
     )
     def test_calculate_not_per_sensor_input(self, input_param, ground_truth, expectation):
-        output_normal = calculate_parameter_errors(
+        output_normal = calculate_aggregated_parameter_errors(
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
 
@@ -217,7 +222,7 @@ class TestCalculateParameterErrors:
             ["param"], [[1, np.nan, np.nan], [4, 5, 6]], is_dict=True, sensors=["1", "2"]
         )
 
-        output = calculate_parameter_errors(
+        output = calculate_aggregated_parameter_errors(
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=per_sensor
         )
 
@@ -256,7 +261,7 @@ class TestCalculateParameterErrors:
                 sensors=["1", "2"],
             )
 
-        output = calculate_parameter_errors(
+        output = calculate_aggregated_parameter_errors(
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
 
@@ -290,12 +295,37 @@ class TestCalculateParameterErrors:
     def test_calculate_per_sensor(self):
         input_param = _create_valid_input(["param"], [1, 2, 3], is_dict=False)
         ground_truth = _create_valid_input(["param"], [1, 2, 3], is_dict=False)
-        with_per_sensor = calculate_parameter_errors(
+        with_per_sensor = calculate_aggregated_parameter_errors(
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=True
         )
 
-        without_per_sensor = calculate_parameter_errors(
+        without_per_sensor = calculate_aggregated_parameter_errors(
             predicted_parameter=input_param, reference_parameter=ground_truth, calculate_per_sensor=False
         )
 
         assert_frame_equal(with_per_sensor, without_per_sensor)
+
+
+class TestCalculateParameterErrors:
+    def test_simple(self):
+        predicted_parameter = _create_valid_input(
+            ["param1", "param2"], [[[1, 2, 3], [4, 5, 6]]], is_dict=True, sensors=["1"]
+        )
+        reference_parameter = _create_valid_input(
+            ["param1", "param2"], [[[1, 2, 3], [4, 5, 6]]], is_dict=True, sensors=["1"]
+        )
+
+        output = calculate_parameter_errors(
+            predicted_parameter=predicted_parameter, reference_parameter=reference_parameter
+        )
+
+        assert set(output.keys()) == {"1"}
+        assert set(output["1"].columns.get_level_values(1)) == {"param1", "param2"}
+        assert set(output["1"].columns.get_level_values(0)) == {
+            "predicted",
+            "reference",
+            "error",
+            "abs_error",
+            "rel_error",
+            "abs_rel_error",
+        }
