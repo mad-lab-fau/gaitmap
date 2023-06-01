@@ -342,9 +342,9 @@ def calculate_aggregated_parameter_errors(
     abs_error_loa_upper      105.657279
     rel_error_loa_upper        0.445561
     abs_rel_error_loa_upper    1.178329
-    icc                        0.110385
-    icc_q05                   -0.860000
-    icc_q95                    0.960000
+    icc                        0.663797
+    icc_q05                   -0.090000
+    icc_q95                    0.940000
     n_additional_predicted     0.000000
     n_additional_reference     0.000000
     n_common                   6.000000
@@ -372,22 +372,26 @@ def calculate_aggregated_parameter_errors(
     if isinstance(errors, pd.DataFrame):
         # This means we only had a single sensor in a DataFrame as input
         # Independent of the `calculate_per_sensor` parameter, we want to return a DataFrame
-        return pd.concat([calculate_error_stats(errors, scoring_errors=scoring_errors), common_rows_stats])
+        return pd.concat([_calculate_error_stats(errors, scoring_errors=scoring_errors), common_rows_stats])
     if calculate_per_sensor is True:
         return pd.concat(
             {
                 sensor_name: pd.concat(
-                    [calculate_error_stats(error_df, scoring_errors=scoring_errors), common_rows_stats[sensor_name]]
+                    [_calculate_error_stats(error_df, scoring_errors=scoring_errors), common_rows_stats[sensor_name]]
                 )
                 for sensor_name, error_df in errors.items()
             },
             axis=1,
         )
     # If we don't calculate per sensor, we combine the error dfs for all sensors
-    combined_errors = pd.concat(errors).reset_index(level=0, drop=True)
+    combined_errors = pd.concat(errors)
+    combined_errors.index = pd.Index(
+        (f"{sensor_name}_{index}" for sensor_name, index in combined_errors.index), name=_ID_COL_NAME
+    )
+
     # And we need to sum up the common rows stats
     common_rows_stats = pd.concat(common_rows_stats, axis=1).groupby(level=1, axis=1).sum()
-    return pd.concat([calculate_error_stats(combined_errors, scoring_errors=scoring_errors), common_rows_stats])
+    return pd.concat([_calculate_error_stats(combined_errors, scoring_errors=scoring_errors), common_rows_stats])
 
 
 def _align_parameters(reference_parameter, predicted_parameter, id_column):
@@ -467,7 +471,7 @@ def _calculate_error(aligned_parameters: Dict[_Hashable, pd.DataFrame]) -> Dict[
     return final_error_dict
 
 
-def calculate_error_stats(
+def _calculate_error_stats(
     error_df: pd.DataFrame,
     scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
 ) -> pd.DataFrame:
@@ -518,6 +522,8 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
         return None
 
     assert set(data.columns.get_level_values("error_type")) == {"predicted", "reference"}
+    # If it is not unique, the ICC calculation will fail.
+    assert data.index.is_unique
 
     paras = data.columns.get_level_values("parameter").unique()
     data = data.stack("error_type").reset_index()
