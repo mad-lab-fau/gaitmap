@@ -27,6 +27,47 @@ def calculate_parameter_errors(
         - The absolute error between the predicted and the reference value (`abs(predicted - reference)`)
         - The absolute relative error between the predicted and the reference value (`abs(predicted - reference) /
           abs(reference)`)
+
+    The output dataframe also contains the reference and predicted values, so that all information is available in one
+    place.
+
+    All errors are calculated by first aligning the reference and predicted values based on the `id_column` (i.e. we
+    drop all values that are not present in both dataframes).
+    The same happens for the columns (i.e. parameters) of the dataframes.
+    Errors are only calculated for parameters that are present in both dataframes.
+
+    If the input is a multi-sensor parameter list (i.e. a dict of dataframes) the alignment and error calculation is
+    done for each sensor and the output has the same structure as the input.
+
+    Parameters
+    ----------
+    reference_parameter
+        The reference the predicted values should be compared against.
+        This must be the same type (i.e. single/multi sensor) as the predicted input.
+        Further, sensor names, column names, and unique ids must match with the `predicted_parameters`.
+    predicted_parameter
+        The predicted parameter values.
+        Usually, this is the output of the temporal or spatial parameter calculation.
+        But, you can also pass a custom calculation/aggregation.
+        Make sure you adjust the `id_column` parameter accordingly.
+        This can be a Dataframe or a dict of such Dataframes.
+    id_column
+        The name of the column/index that contains unique entry ids.
+        This will be used to align the predicted and reference parameters.
+        For a normal output of the temporal or spatial parameter calculation, use `id_column="s_id"` (default) column.
+        If you are using the "pretty" output of these calculations, use `id_column="stride id"`.
+        For custom calculations/aggregations, make sure you have a column/index that contains unique ids.
+
+    Returns
+    -------
+    error_df
+        A Dataframe/Dict of Dataframes with a mult-columns.
+        The first level represents the parameter name, the second level the error type (see above).
+    common_rows_stats
+        A Dataframe/Dict of Dataframes representing the statistics of the alignment.
+        I.e. how many datapoints were present in both the reference and the predicted parameters.
+        This can be different per parameter.Parameters
+
     """
     # TODO: Add proper parameter validation (see issue #150)
     predicted_is_not_dict = not isinstance(predicted_parameter, dict)

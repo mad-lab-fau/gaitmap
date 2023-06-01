@@ -21,3 +21,4 @@ Functions
     precision_recall_f1_score
     evaluate_stride_event_list
     calculate_parameter_errors
+    calculate_aggregated_parameter_errors

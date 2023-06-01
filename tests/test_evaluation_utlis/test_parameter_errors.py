@@ -307,6 +307,8 @@ class TestCalculateAggregatedParameterErrors:
 
 
 class TestCalculateParameterErrors:
+    # We don't test a lot here, as this method is used internally by calculate_aggregated_parameter_errors
+    # So all the tests are done there
     def test_simple(self):
         predicted_parameter = _create_valid_input(
             ["param1", "param2"], [[[1, 2, 3], [4, 5, 6]]], is_dict=True, sensors=["1"]
@@ -315,7 +317,7 @@ class TestCalculateParameterErrors:
             ["param1", "param2"], [[[1, 2, 3], [4, 5, 6]]], is_dict=True, sensors=["1"]
         )
 
-        output = calculate_parameter_errors(
+        output, additional = calculate_parameter_errors(
             predicted_parameter=predicted_parameter, reference_parameter=reference_parameter
         )
 
@@ -328,4 +330,42 @@ class TestCalculateParameterErrors:
             "abs_error",
             "rel_error",
             "abs_rel_error",
+        }
+
+        assert set(additional.keys()) == {"1"}
+
+        assert set(additional["1"].columns) == {"param1", "param2"}
+        assert set(additional["1"].index) == {
+            "n_common",
+            "n_additional_reference",
+            "n_additional_predicted",
+        }
+
+    def test_simple_non_dict(self):
+        predicted_parameter = _create_valid_input(
+            ["param1", "param2"], np.array([[1, 2, 3], [4, 5, 6]]).T, is_dict=False
+        )
+        reference_parameter = _create_valid_input(
+            ["param1", "param2"], np.array([[1, 2, 3], [4, 5, 6]]).T, is_dict=False
+        )
+
+        output, additional = calculate_parameter_errors(
+            predicted_parameter=predicted_parameter, reference_parameter=reference_parameter
+        )
+
+        assert set(output.columns.get_level_values(1)) == {"param1", "param2"}
+        assert set(output.columns.get_level_values(0)) == {
+            "predicted",
+            "reference",
+            "error",
+            "abs_error",
+            "rel_error",
+            "abs_rel_error",
+        }
+
+        assert set(additional.columns) == {"param1", "param2"}
+        assert set(additional.index) == {
+            "n_common",
+            "n_additional_reference",
+            "n_additional_predicted",
         }
