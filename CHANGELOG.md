@@ -26,16 +26,22 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/21)
 - Temporal and Spatial Parameter calculation have new options to work with ic-stride lists and with partial input 
   information
+- A new method `calculate_parameter_errors` (old version is renamed to `calculate_aggregated_parameter_errors`) is 
+  added that allows to calculate just the errors (i.e. relative error, absolute error, etc.) for a given list of 
+  parameters. If you want to have the aggregated parameter errors (i.e. mean absolute error, mean relative error, etc.)
+  use the `calculate_aggregated_parameter_errors` method.
 
 ### Changed
 - The Zupt Detector example is updated to use newer tpcp features
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
 - The column order of the Spatial Parameter Calculation output has been changed
-- The `calculate_parameter_errors` function is now more general and can be used with parameter lists that don't 
-  represent strides.
+- The function `calculate_parameter_errors` is renamed to `calculate_aggregated_parameter_errors` function is now more 
+  general and can be used with parameter lists that don't represent strides.
   For this the unique-id column (i.e. original stride index) is can be explicitly set and all wording is changed to
   be more general.
   (https://github.com/mad-lab-fau/gaitmap/pull/24)
+- Fixed a bug that the calculation of the ICC in `calculate_parameter_errors`/`calculate_aggregated_parameter_errors` 
+  was not working correctly, when the stride ids where duplicated across sensors.
 
 
 ## [2.1.0] - 2023-02-08
