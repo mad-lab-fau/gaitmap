@@ -2,6 +2,7 @@
 name = "gaitmap"
 version = "2.1.0"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
+license = "MIT"
 authors = [
     "Arne Küderle <arne.kuederle@fau.de>",
     "Martin Ullrich <martin.ullrich@fau.de>",
@@ -16,8 +17,6 @@ authors = [
 ]
 packages = [
   { include = "gaitmap" },
-    # TODO: Remove once gaitmap_mad is a seperate package
-  { include = "gaitmap_mad", from = "gaitmap_mad"}
 ]
 
 [tool.poetry.dependencies]
@@ -55,8 +54,7 @@ IPython = "^8.8.0"
 ipympl = "^0.9.2"
 memory_profiler = "^0.61.0"
 toml = "^0.10.2"
-# TODO: Reactivate once gaitmap_mad is a seperate package
-# gaitmap-mad = {path = "gaitmap_mad", develop = true}
+gaitmap-mad = {path = "gaitmap_mad", develop = true}
 sphinx-gallery = "^0.11.1"
 pydata-sphinx-theme = "^0.13.0"
 numpydoc = "^1.5.0"

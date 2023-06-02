@@ -27,6 +27,10 @@ To get access to all available algorithms, you need to install both packages.
 ```
 pip install gaitmap gaitmap_mad --upgrade
 ```
+
+Both packages are always released together and have the same version number.
+We don't recommend mixing different versions of `gaitmap` and `gaitmap_mad`.
+
 **Note:** gaitmap-mad is published under a AGPL-3.0 license, while gaitmap is published under a MIT license.
 Please, check the License section below for more details.
 
@@ -37,7 +41,7 @@ Please, check the License section below for more details.
 To use the HMM based algorithms make sure you install `gaitmap` with the `hmm` extra.
 
 ```
-pip install gaitmap_mad gaitmap[hmm]" --upgrade
+pip install "gaitmap_mad gaitmap[hmm]" --upgrade
 ```
 This installs the `pomegranate` package, which is the basis for the HMM implementation.
 Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
@@ -92,6 +96,23 @@ dtw_warping_path = stride_segmenter.paths_
 To build a full gait analysis pipeline you can combine multiple algorithms ([Example]()).
 You can even substitute your own algorithms ([Guide]()) or use the provided tooling to validate
 and optimize your algorithms ([Guide]()).
+
+## Citation
+
+If you use *gaitmap* in your research we would appreciate a citation.
+This helps us to justify the time we invest in the development and maintenance of the library.
+
+We currently prepare a paper to describe the *gaitmap* library in detail.
+Until then, please simply cite the repository.
+
+
+
+If you use a specific algorithm please also to make sure you cite the original paper of the algorithm!
+We recommend the following citation style:
+
+```
+We used the algorithm proposed by Author et al. [paper-citation], implemented by the Gaitmap package [biopsykit-citation].
+```
 
 ## Licence
 
