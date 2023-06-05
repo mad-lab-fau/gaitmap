@@ -32,7 +32,7 @@ Both packages are always released together and have the same version number.
 We don't recommend mixing different versions of `gaitmap` and `gaitmap_mad`.
 
 **Note:** gaitmap-mad is published under a AGPL-3.0 license, while gaitmap is published under a MIT license.
-Please, check the License section below for more details.
+Please, check the [License](#license) section below for more details.
 
 ### Enabling specific features
 
@@ -114,11 +114,11 @@ We recommend the following citation style:
 We used the algorithm proposed by Author et al. [paper-citation], implemented by the Gaitmap package [biopsykit-citation].
 ```
 
-## Licence
+## License
 
 The *gaitmap* (which includes most algorithms) is published under a [MIT license](https://opensource.org/license/mit/).
 This is a permissive license, which allows you to use the code in nearly any way you want, as long as you include the
-original licence in you modified version.
+original license in you modified version.
 
 *gaitmap_mad* is published under a AGPL-3.0 license.
 This only affects algorithms that were developed by the MAD Lab in collaboration with industry partners.
@@ -127,7 +127,7 @@ others (either as a service or as a product), you have to publish your software 
 Please, check the [AGPL-3.0 license](https://www.gnu.org/licenses/agpl-3.0.en.html) for more details and make sure
 you understand the implications.
 
-If you need to use *gaitmap_mad* in a closed source project, please contact us for a potential commercial licence.
+If you need to use *gaitmap_mad* in a closed source project, please contact us for a potential commercial license.
 
 ## For Developers
 
