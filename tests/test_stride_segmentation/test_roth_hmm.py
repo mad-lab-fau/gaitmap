@@ -1,5 +1,9 @@
 from unittest.mock import patch
 
+import pytest
+
+pytest.importorskip("pomegranate")
+
 import numpy as np
 import pandas as pd
 import pytest

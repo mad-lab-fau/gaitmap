@@ -7,7 +7,6 @@ from tpcp import clone, get_action_method, get_action_methods_names, get_action_
 from tpcp._hash import custom_hash
 
 from gaitmap.base import BaseAlgorithm
-from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 from tests.conftest import _get_params_without_nested_class
 
 
@@ -201,5 +200,8 @@ def test_nested_clone():
 
 
 def test_clone_pomegranate():
+    pytest.importorskip("pomegranate")
+    from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
+
     hmm_model = PreTrainedRothSegmentationModel()
     assert custom_hash(clone(hmm_model)) == custom_hash(hmm_model)

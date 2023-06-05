@@ -289,6 +289,7 @@ class TestCalculateAggregatedParameterErrors:
             assert param2.loc["n_additional_predicted"] == 0
 
     def test_doctest(self):
+        pytest.importorskip("statsmodels")
         doctest_results = doctest.testmod(m=parameter_errors)
         assert doctest_results.failed == 0
 

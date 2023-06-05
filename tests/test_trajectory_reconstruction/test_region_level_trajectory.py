@@ -3,7 +3,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from statsmodels.compat.pandas import assert_frame_equal
+from pandas._testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory

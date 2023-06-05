@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
 from pandas._testing import assert_frame_equal, assert_series_equal
-from pomegranate import GeneralMixtureModel, State
 from scipy.spatial.transform import Rotation
 from tpcp import BaseTpcpObject
 
@@ -20,6 +19,12 @@ from gaitmap.example_data import (
     get_ms_example_imu_data,
 )
 from tests._regression_utils import PyTestSnapshotTest
+
+try:
+    from pomegranate import GeneralMixtureModel, State
+except ImportError:
+    GeneralMixtureModel = None
+    State = None
 
 
 @pytest.fixture(autouse=True)
@@ -80,7 +85,7 @@ def compare_val(value, json_val, name):
         assert_frame_equal(value, json_val, check_dtype=False)
     elif isinstance(value, pd.Series):
         assert_series_equal(value, json_val)
-    elif isinstance(value, State):
+    elif State is not None and isinstance(value, State):
         assert value.name == json_val.name
         assert_almost_equal(value.weight, json_val.weight)
         if value.distribution is None:
