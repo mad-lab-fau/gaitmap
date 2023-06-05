@@ -121,7 +121,7 @@ This is a permissive license, which allows you to use the code in nearly any way
 original license in you modified version.
 
 *gaitmap_mad* is published under a AGPL-3.0 license.
-This only affects algorithms that were developed by the MAD Lab in collaboration with industry partners.
+This only affects algorithms that were developed by the [MaD Lab](https://www.mad.tf.fau.de/) in collaboration with industry partners.
 The AGPL-3.0 license is a copyleft license, which if you integrate **gaitmap_mad** into your software and provide it to 
 others (either as a service or as a product), you have to publish your software under a compatible open source license.
 Please, check the [AGPL-3.0 license](https://www.gnu.org/licenses/agpl-3.0.en.html) for more details and make sure
