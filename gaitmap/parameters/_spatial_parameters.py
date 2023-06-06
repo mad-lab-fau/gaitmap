@@ -346,7 +346,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
             ):
                 warnings.warn(
                     f"Gait velocity could not be calculated as relevant stride time columns ({stride_time_start_col}, "
-                    f"{stride_time_end_col})are not available."
+                    f"{stride_time_end_col}) are not available."
                 )
             else:
                 param_dict["gait_velocity"] = stride_length / (
@@ -365,13 +365,13 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         param_dict = {}
 
         if self._should_calculate("ic_angle") and "ic" in stride_event_list.columns:
-            ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype("int32")
+            ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype("Int64")
             param_dict["ic_angle"] = _get_angle_at_index(angle_course, ic_relative)
         else:
             warnings.warn("IC angle could not be calculated as IC event is not available.")
 
         if self._should_calculate("tc_angle") and "tc" in stride_event_list.columns:
-            tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype("int32")
+            tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype("Int64")
             param_dict["tc_angle"] = _get_angle_at_index(angle_course, tc_relative)
         else:
             warnings.warn("TC angle could not be calculated as TC event is not available.")

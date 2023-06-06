@@ -12,8 +12,6 @@ from gaitmap.utils.exceptions import ValidationError
 from gaitmap.zupt_detection import AredZuptDetector, NormZuptDetector, ShoeZuptDetector
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
-xfail = pytest.mark.xfail
-
 
 class TestMetaFunctionalityNormZuptDetector(TestAlgorithmMixin):
     __test__ = True
@@ -162,7 +160,7 @@ class TestNormZuptDetector:
         test_input = np.array([0, 0, 0, 0, 0, 1, 1, 1])
         test_input = pd.DataFrame(np.column_stack([test_input, test_input, test_input]), columns=SF_GYR)
         expected_output = np.array([1, 1, 1, 1, 1, 0, 0, 0])
-        expected_output_sequence = pd.DataFrame([[0, 5]], columns=["start", "end"])
+        expected_output_sequence = pd.DataFrame([[0, 5]], columns=["start", "end"], dtype="Int64")
         window_length = 5
         test_output = self.algorithm_class(
             window_length_s=window_length, window_overlap=0, window_overlap_samples=None
@@ -177,7 +175,7 @@ class TestNormZuptDetector:
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = pd.DataFrame(np.column_stack([test_input, test_input, test_input]), columns=SF_GYR)
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0], dtype=bool)
-        expected_output_sequence = pd.DataFrame([[0, 6], [16, 21]], columns=["start", "end"])
+        expected_output_sequence = pd.DataFrame([[0, 6], [16, 21]], columns=["start", "end"], dtype="Int64")
 
         window_length = 4
         test_output = self.algorithm_class(
@@ -197,7 +195,7 @@ class TestNormZuptDetector:
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = pd.DataFrame(np.column_stack([test_input, test_input, test_input]), columns=SF_GYR)
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
-        expected_output_sequence = pd.DataFrame([[0, 6], [10, 13], [16, 21]], columns=["start", "end"])
+        expected_output_sequence = pd.DataFrame([[0, 6], [10, 13], [16, 21]], columns=["start", "end"], dtype="Int64")
 
         window_length = 3
         test_output = self.algorithm_class(
@@ -217,7 +215,7 @@ class TestNormZuptDetector:
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = pd.DataFrame(np.column_stack([test_input, test_input, test_input]), columns=SF_GYR)
         expected_output = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expected_output_sequence = pd.DataFrame([[0, 6]], columns=["start", "end"])
+        expected_output_sequence = pd.DataFrame([[0, 6]], columns=["start", "end"], dtype="Int64")
 
         window_length = 6
         test_output = self.algorithm_class(

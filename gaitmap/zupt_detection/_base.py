@@ -19,8 +19,8 @@ class PerSampleZuptDetectorMixin:
         """Get the start and end values of all zupts."""
         start_ends = bool_array_to_start_end_array(self.per_sample_zupts_)
         if len(start_ends) > 0:
-            return pd.DataFrame(start_ends, columns=["start", "end"])
-        return pd.DataFrame(columns=["start", "end"])
+            return pd.DataFrame(start_ends, columns=["start", "end"], dtype="Int64")
+        return pd.DataFrame(columns=["start", "end"], dtype="Int64")
 
 
 class RegionZuptDetectorMixin:

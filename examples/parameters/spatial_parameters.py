@@ -41,8 +41,11 @@ orientations = get_healthy_example_orientation()
 # The stride list is aligned with the IMU samples (204.8 Hz).
 # Therefore, we need to convert the sampling rate for the stride list to be compatible with position and orientation.
 
-stride_list["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
-stride_list["right_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
+converted_stride_list = {}
+for sensor, strides in stride_list.items():
+    converted_stride_list[sensor] = strides.set_index("s_id").mul(100/204.8).round().astype("Int64")
+
+stride_list = converted_stride_list
 
 # %%
 # Creating SpatialParameterCalculation object

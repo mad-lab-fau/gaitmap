@@ -151,11 +151,11 @@ class MockStrideSegmentation(BaseStrideSegmentation):
         if is_multi_sensor_data(data, check_gyr=False, check_acc=False):
             stride_list = {}
             for sensor in get_multi_sensor_names(data):
-                tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype("int32")
+                tmp = np.linspace(0, len(data[sensor]), self.n + 1).astype("int64")
                 stride_list[sensor] = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
             self._stride_list_ = stride_list
         else:
-            tmp = np.linspace(0, len(data), self.n + 1).astype("int32")
+            tmp = np.linspace(0, len(data), self.n + 1).astype("int64")
             self._stride_list_ = pd.DataFrame({"s_id": np.arange(len(tmp) - 1), "start": tmp[:-1], "end": tmp[1:]})
 
         self.secondary_segment_ = False

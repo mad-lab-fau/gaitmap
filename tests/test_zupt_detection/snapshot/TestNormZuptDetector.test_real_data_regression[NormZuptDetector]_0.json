@@ -7,11 +7,13 @@
             },
             {
                 "name":"start",
-                "type":"integer"
+                "type":"integer",
+                "extDtype":"Int64"
             },
             {
                 "name":"end",
-                "type":"integer"
+                "type":"integer",
+                "extDtype":"Int64"
             }
         ],
         "primaryKey":[

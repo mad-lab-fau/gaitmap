@@ -92,13 +92,13 @@ class TestResample:
         assert after_instance.transformed_roi_list_ is not healthy_example_stride_borders["left_sensor"]
 
     def test_resample_roi_list(self, healthy_example_stride_borders):
-        in_stride_borders = healthy_example_stride_borders["left_sensor"].astype({"start": "int32", "end": "int32"})
+        in_stride_borders = healthy_example_stride_borders["left_sensor"].astype({"start": "Int64", "end": "Int64"})
         instance = Resample(target_sampling_rate_hz=10)
         after_instance = instance.transform(roi_list=in_stride_borders, sampling_rate_hz=100)
         assert after_instance.transformed_roi_list_.shape == in_stride_borders.shape
         assert_frame_equal(
             after_instance.transformed_roi_list_[["start", "end"]],
-            (in_stride_borders[["start", "end"]] / 10.0).round().astype("int32"),
+            (in_stride_borders[["start", "end"]] / 10.0).round().astype("Int64"),
         )
         # Test that all other columns are the same
         assert_frame_equal(

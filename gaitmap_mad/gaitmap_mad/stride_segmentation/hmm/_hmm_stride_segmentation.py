@@ -226,12 +226,12 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         # find rising edge of stride start state sequence
         # +1 required as diff returns one element less than the input
         matches_starts = (
-            np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype("int32")) > 0).flatten() + 1
+            np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype("int64")) > 0).flatten() + 1
         )
 
         # find falling edge of stride end state sequence
         matches_ends = (
-            np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype("int32")) < 0).flatten() + 1
+            np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype("int64")) < 0).flatten() + 1
         )
 
         # Special case, when the last state is a stride end state
