@@ -224,8 +224,9 @@ dependencies installed (see [IDE Config](#Configure-your-IDE)).
 
  
 ## Configure your IDE
+(Configure-your-IDE)=
 
-#### Pycharm
+### Pycharm
 
 **Test runner**: Set the default testrunner to `pytest`. 
 
@@ -241,7 +242,7 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 %autoreload 2
 ```
 
-#### Jupyter Lab/Notebooks
+### Jupyter Lab/Notebooks
 
 While we do not (and will not) use Jupyter Notebooks in gaitmap, it might still be helpful to use Jupyter to debug and
 prototype your scientific code.
@@ -374,13 +375,16 @@ Remember, to rebase this temporary dev branch onto master from time to time.
    - Use the body to explain what and why vs. how
    - ...more see link above
 
-## Trouble Shooting
 
-##### `poetry not found` when using `zsh` as shell
+## Trouble Shooting
+(trouble-shooting)=
+
+
+### `poetry not found` when using `zsh` as shell
 
 If you have trouble installing `poetry` while using `zsh` as your shell, check this [issue](https://github.com/python-poetry/poetry/issues/507)
 
-##### Installation issues while using `conda`
+### Installation issues while using `conda`
 
 .. note:: This might be outdated! If you run into any issues, please check google :)
 
@@ -406,7 +410,7 @@ Then you have 2 options to start using poetry for this package:
         [different than other envs](https://github.com/maksbotan/poetry/blob/b1058fc2304ea3e2377af357264abd0e1a791a6a/poetry/utils/env.py#L295).
     - Everything else should work like you are not using conda
     
-##### Warning/Error about outdated/missing dependencies in the lock file when running `install` or `update`
+### Warning/Error about outdated/missing dependencies in the lock file when running `install` or `update`
 
 This happens when the `pyproject.toml` file was changed either by a git update or by manual editing.
 To resolve this issue, run the following and then rerun the command you wanted to run:

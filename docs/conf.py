@@ -35,15 +35,15 @@ def replace_gitlab_links(base_url, text):
     def substitute(matchobj):
         tokens = {"merge_requests": "!", "issues": "#"}
         if matchobj.group(1) == "commit":
-            return f"[{matchobj.group(2)[:5]}]({matchobj.group(0)})"
+            return f"[mad-gitlab: {matchobj.group(2)[:5]}]({matchobj.group(0)})"
         token = tokens[matchobj.group(1)]
-        return f"[{token}{matchobj.group(2)}]({matchobj.group(0)})"
+        return f"[mad-gitlab: {token}{matchobj.group(2)}]({matchobj.group(0)})"
 
     return re.sub(regex, substitute, text)
 
 
 def convert_github_links(base_url, text):
-    regex = base_url + r"/(pull|issues|commit)/(\w+)"
+    regex = base_url + r"(pull|issues|commit)/(\w+)"
 
     def substitute(matchobj):
         if matchobj.group(1) == "commit":
@@ -96,7 +96,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     # "sphinx.ext.imgconverter",
     "sphinx_gallery.gen_gallery",
-    "recommonmark",
+    "myst_parser",
 ]
 
 # this is needed for some reason...

@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 Scientific Changes section), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 For more information see the 
-[Gitlab Releases Page](https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/releases) of this 
+[Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
 ## [2.2.0]

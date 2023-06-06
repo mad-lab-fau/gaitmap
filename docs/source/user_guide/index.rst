@@ -10,3 +10,5 @@ User Guide
 
     coordinate_systems
     datatypes
+    create_own_algorithm
+    contributing

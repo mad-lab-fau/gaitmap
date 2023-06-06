@@ -53,7 +53,7 @@ This means specifically:
 
 ### Library Structure
 
-For the `gaitmap` vs. `gaitmap_mad` discussion, see [here](gaitmap_mad.md).
+For the `gaitmap` vs. `gaitmap_mad` discussion, see [here](gaitmap_mad).
 
 As the library aims to support multiple algorithms, each algorithm with similar function should be grouped into 
 individual modules/folders (e.g. Stride-Segmentation, Event Detection, Orientation Estimation, ...).

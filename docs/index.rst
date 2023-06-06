@@ -11,10 +11,10 @@ gaitmap Docu Overview
    :caption: Content:
 
    Getting Started <README.md>
-   source/development/index
    source/user_guide/index
    modules/index.rst
    auto_examples/index.rst
+   source/development/index
    Changelog <CHANGELOG.md>
 
 Indices and tables

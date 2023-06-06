@@ -16,7 +16,7 @@ better (or worse) results than another.
 In this cases it is a good idea to use cross-validation.
 In this procedure, you perform multiple train-test splits and average the results over all "folds".
 For more information see our :ref:`evaluation guide <algorithm_evaluation>` and the `sklearn guide on cross
-validation <https://scikit-learn.org/stable/modules/cross_validation.html>`_.
+validation <https://scikit-learn.org/stable/modules/cross_validation.html>`.
 
 In this example, we will learn how to use the :func:`~tpcp.optimize.cross_validate` function implemented in
 gaitmap.
@@ -138,7 +138,7 @@ def score(pipeline: MyPipeline, datapoint: MyDataset):
 # Data Splitting
 # --------------
 # Before performing a cross validation, we need to decide on the number of folds and type of splits.
-# In gaitmap we support all cross validation iterators provided in :ref:`sklearn
+# In gaitmap we support all cross validation iterators provided in `sklearn
 # <https://scikit-learn.org/stable/modules/cross_validation.html#cross-validation-iterators>`.
 #
 # In this example we only have two datapoints.
@@ -153,7 +153,7 @@ cv = KFold(n_splits=2)
 # Now we have all the pieces for the final cross validation.
 # First we need to create instances of our data and pipeline.
 # Then we need to wrap our pipeline instance into an :class:`~tpcp.Optimize` wrapper.
-# Finally we can call `cross_validate`.
+# Finally, we can call `cross_validate`.
 from tpcp.optimize import Optimize
 from tpcp.validate import cross_validate
 
