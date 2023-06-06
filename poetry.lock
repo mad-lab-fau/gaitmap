@@ -2736,4 +2736,4 @@ stats = ["pingouin"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0,<4.0"
-content-hash = "8f70f9686a899681da0e20108677c9261082339d497d3ee0a683b7ab258cc216"
+content-hash = "f3e8731eede4b5459d257990613600563d64fc45c48402a9e9643c5f72a25b48"
