@@ -365,13 +365,13 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         param_dict = {}
 
         if self._should_calculate("ic_angle") and "ic" in stride_event_list.columns:
-            ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype(int)
+            ic_relative = (stride_event_list["ic"] - stride_event_list["start"]).astype("int32")
             param_dict["ic_angle"] = _get_angle_at_index(angle_course, ic_relative)
         else:
             warnings.warn("IC angle could not be calculated as IC event is not available.")
 
         if self._should_calculate("tc_angle") and "tc" in stride_event_list.columns:
-            tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype(int)
+            tc_relative = (stride_event_list["tc"] - stride_event_list["start"]).astype("int32")
             param_dict["tc_angle"] = _get_angle_at_index(angle_course, tc_relative)
         else:
             warnings.warn("TC angle could not be calculated as TC event is not available.")

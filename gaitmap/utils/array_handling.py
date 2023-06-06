@@ -68,7 +68,7 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
         raise ValueError("Invalid Input, window_length must be larger than 1!")
 
     # calculate length of necessary np.nan-padding to make sure windows and overlaps exactly fits data length
-    n_windows = np.ceil((len(arr) - window_length) / (window_length - overlap)).astype(int)
+    n_windows = np.ceil((len(arr) - window_length) / (window_length - overlap)).astype("int32")
     pad_length = window_length + n_windows * (window_length - overlap) - len(arr)
 
     # had to handle 1D arrays separately
@@ -292,7 +292,7 @@ def find_extrema_in_radius(
         data = np.pad(data, (start_padding, 0), constant_values=np.nan)
     strides = sliding_window_view(data, window_length=d, overlap=d - 1)
     # select all windows around indices
-    actual_window_start = indices.astype(int) - before + start_padding
+    actual_window_start = indices.astype("int32") - before + start_padding
     windows = strides[actual_window_start, :]
     return extrema_func(windows, axis=1) + actual_window_start - start_padding
 

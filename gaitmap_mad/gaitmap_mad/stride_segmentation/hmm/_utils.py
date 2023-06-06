@@ -420,8 +420,8 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
 
     if len(transitions) > 0:
         transitions = set(transitions)
-    starts = np.unique(starts).astype(int)
-    ends = np.unique(ends).astype(int)
+    starts = np.unique(starts).astype("int32")
+    ends = np.unique(ends).astype("int32")
 
     return transitions, starts, ends
 
@@ -520,7 +520,7 @@ def get_train_data_sequences_transitions(
         ].to_numpy():
             # append extracted sequences and corresponding label set to results list
             try:
-                labels = create_equidistant_label_sequence(end - start, n_states).astype(int)
+                labels = create_equidistant_label_sequence(end - start, n_states).astype("int32")
             except ValueError:
                 n_too_short_transitions += 1
                 continue
@@ -557,7 +557,7 @@ def get_train_data_sequences_strides(
         # extract strides directly from stride_list
         for start, end in stride_list[["start", "end"]].to_numpy():
             try:
-                labels = create_equidistant_label_sequence(end - start, n_states).astype(int)
+                labels = create_equidistant_label_sequence(end - start, n_states).astype("int32")
             except ValueError:
                 n_too_short_strides += 1
                 continue
