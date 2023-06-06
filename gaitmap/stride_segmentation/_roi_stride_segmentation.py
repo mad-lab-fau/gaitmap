@@ -58,7 +58,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         Note that sensors that do not have ROIs specified will not be processed.
 
     For more information about the valid formats for the regions of interest list, review the
-    :ref:`datatype guide <_datatypes>`.
+    :ref:`datatype guide <datatypes>`.
 
     Parameters
     ----------

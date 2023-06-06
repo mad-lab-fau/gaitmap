@@ -87,7 +87,7 @@ plt.show()
 # %%
 # Zupt Dependency
 # ---------------
-# (To learn more about tuning ZUPT-thresholds, also see :ref:`_zupt_dependency`)
+# (To learn more about tuning ZUPT-thresholds, also see :ref:`zupt_dependency`)
 #
 # The Kalmann Filter uses zero-velocity updates (ZUPT) to correct for the drift in velocity and position.
 # Without them, no corrections can be performed and the estimated trajectory will be similar to just performing gyro
