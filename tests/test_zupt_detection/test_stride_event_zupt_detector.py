@@ -46,7 +46,9 @@ class TestStrideEventZuptDetector:
             .zupts_
         )
 
-        assert_frame_equal(zupts, pd.DataFrame([[0, 1], [5, 6], [7, 8], [10, 11]], columns=["start", "end"]))
+        assert_frame_equal(
+            zupts, pd.DataFrame([[0, 1], [5, 6], [7, 8], [10, 11]], columns=["start", "end"], dtype="Int64")
+        )
 
     def test_edge_case(self):
         """We test what happens if the zupt is exactly the first or last sample of the data or outside the range."""
@@ -60,7 +62,7 @@ class TestStrideEventZuptDetector:
         )
         zupts = detector.zupts_
 
-        assert_frame_equal(zupts, pd.DataFrame([[0, 1]], columns=["start", "end"]))
+        assert_frame_equal(zupts, pd.DataFrame([[0, 1]], columns=["start", "end"], dtype="Int64"))
         assert detector.half_region_size_samples_ == 0
 
     def test_with_overlap(self):
@@ -73,7 +75,7 @@ class TestStrideEventZuptDetector:
             data=data, stride_event_list=stride_event_list, sampling_rate_hz=1
         )
         zupts = detector.zupts_
-        assert_frame_equal(zupts, pd.DataFrame([[0, 11]], columns=["start", "end"]))
+        assert_frame_equal(zupts, pd.DataFrame([[0, 11]], columns=["start", "end"], dtype="Int64"))
         assert detector.half_region_size_samples_ == 2
 
     def test_simple(self):
@@ -86,5 +88,7 @@ class TestStrideEventZuptDetector:
             data=data, stride_event_list=stride_event_list, sampling_rate_hz=2
         )
         zupts = detector.zupts_
-        assert_frame_equal(zupts, pd.DataFrame([[0, 2], [4, 7], [9, 12], [14, 17]], columns=["start", "end"]))
+        assert_frame_equal(
+            zupts, pd.DataFrame([[0, 2], [4, 7], [9, 12], [14, 17]], columns=["start", "end"], dtype="Int64")
+        )
         assert detector.half_region_size_samples_ == 1

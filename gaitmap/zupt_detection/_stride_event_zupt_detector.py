@@ -114,7 +114,7 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         start_ends = np.empty((len(all_min_vel_events), 2), dtype=int)
         start_ends[:, 0] = np.clip(all_min_vel_events - self.half_region_size_samples_, 0, None)
         start_ends[:, 1] = np.clip(all_min_vel_events + self.half_region_size_samples_ + 1, None, self.data.shape[0])
-        self.zupts_ = pd.DataFrame(merge_intervals(start_ends), columns=["start", "end"])
+        self.zupts_ = pd.DataFrame(merge_intervals(start_ends), columns=["start", "end"], dtype="Int64")
         # This is required, because otherwise, edge cases at the start or end of the data could lead to zero-length
         # ZUPTs.
         self.zupts_ = self.zupts_.loc[self.zupts_["start"] < self.zupts_["end"]]
