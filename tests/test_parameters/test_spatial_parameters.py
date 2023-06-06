@@ -335,8 +335,12 @@ class TestSpatialParameterRegression:
         healthy_example_stride_events["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
         healthy_example_stride_events["right_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
 
-        healthy_example_stride_events["left_sensor"] = healthy_example_stride_events["left_sensor"].round().astype("Int64")
-        healthy_example_stride_events["right_sensor"] = healthy_example_stride_events["right_sensor"].round().astype("Int64")
+        healthy_example_stride_events["left_sensor"] = (
+            healthy_example_stride_events["left_sensor"].round().astype("Int64")
+        )
+        healthy_example_stride_events["right_sensor"] = (
+            healthy_example_stride_events["right_sensor"].round().astype("Int64")
+        )
 
         t = SpatialParameterCalculation()
         t.calculate(healthy_example_stride_events, healthy_example_position, healthy_example_orientation, 100)

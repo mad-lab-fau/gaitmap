@@ -43,7 +43,7 @@ orientations = get_healthy_example_orientation()
 
 converted_stride_list = {}
 for sensor, strides in stride_list.items():
-    converted_stride_list[sensor] = strides.set_index("s_id").mul(100/204.8).round().astype("Int64")
+    converted_stride_list[sensor] = strides.set_index("s_id").mul(100 / 204.8).round().astype("Int64")
 
 stride_list = converted_stride_list
 
