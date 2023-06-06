@@ -21,7 +21,7 @@ getting into your way.
 
 ## Installation
 
-Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad`.
+Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad` ([Learn more](TODO: Link to gaitmap_mad docu page).
 To get access to all available algorithms, you need to install both packages.
 
 ```
@@ -34,11 +34,15 @@ We don't recommend mixing different versions of `gaitmap` and `gaitmap_mad`.
 **Note:** gaitmap-mad is published under a AGPL-3.0 license, while gaitmap is published under a MIT license.
 Please, check the [License](#license) section below for more details.
 
+In case you are sure that AGPL-3.0 is compatible with your project, you can install `gaitmap_mad` without any downsides.
+Otherwise, just install `gaitmap` and check the API-docu page of the individual algorithms if they are available in
+`gaitmap` only.
+
 ### Enabling specific features
 
 #### Hidden Markov Models
 
-To use the HMM based algorithms make sure you install `gaitmap` with the `hmm` extra.
+To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based algorithms make sure you install `gaitmap` with the `hmm` extra.
 
 ```
 pip install "gaitmap_mad gaitmap[hmm]" --upgrade
@@ -47,6 +51,8 @@ This installs the `pomegranate` package, which is the basis for the HMM implemen
 Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
 Python 3.10.
 
+We are working on upgrading to a newer version of `pomegranate`, but this is not a priority at the moment.
+You can track the progress in the [pull request](https://github.com/mad-lab-fau/gaitmap/pull/20).
 
 ### Supported Python versions
 
@@ -74,7 +80,7 @@ from gaitmap.stride_segmentation import BarthDtw
 stride_segmenter = BarthDtw(max_cost=2.5)
 ```
 
-After initialization you can apply the algorithm to your data (each group of algorithm has a different action method):
+After initialization, you can apply the algorithm to your data (each group of algorithm has a different action method):
 
 ```python
 my_imu_data = ...
@@ -110,9 +116,7 @@ Until then, please simply cite the repository.
 If you use a specific algorithm please also make sure you cite the original paper of the algorithm!
 We recommend the following citation style:
 
-```
-We used the algorithm proposed by Author et al. [paper-citation], implemented by the Gaitmap package [biopsykit-citation].
-```
+*We used the algorithm proposed by Author et al. [paper-citation], implemented by the Gaitmap package [gaitmap-citation].*
 
 ## License
 
@@ -142,8 +146,13 @@ Then run the commands below to get the latest source and install the dependencie
 
 ```bash
 git clone https://github.com/mad-lab-fau/gaitmap.git
-poetry install
+# For Python 3.8 and 3.9 (and if you need to work on hmm)
+poetry install --all-extras
+# For Python >=3.10 (you can not work on hmm stuff with this)
+poetry install -E stats
 ```
+
+Warning: Building the docs currently only works in 3.8 and 3.9 with all extras installed.
 
 Note, that you don't need to care about the `gaitmap_mad` subpackage.
 All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode

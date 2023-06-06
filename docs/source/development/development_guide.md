@@ -83,7 +83,7 @@ To run one of the commands execute (e.g. the `test` command):
 poetry run poe test
 ```
 
-**Protip**: If you installed poethepoet globally, you can skip the poetry run part at the beginning.
+**Protip**: If you installed poethepoet globally, you can skip the `poetry run` part at the beginning.
 
 ### Formatting and Linting
 
@@ -93,8 +93,7 @@ Black can also be integrated [into you editor](https://black.readthedocs.io/en/s
 do not want to run it from the commandline.
 Because, it is so easy, we also use *black* to format the test-suite.
 
-For everything *black* can not handle, we us *prospector* to handle all other **linting** tasks.
-*Prospector* runs `pylint`, `pep257`, and `pyflakes` with custom rules to ensure consistent code and docstring style.
+For everything *black* can not handle, we us *ruff* to handle all other **linting** tasks.
 
 For **documentation** we follow the numpy doc-string guide lines and autobuild our API documentation using *Sphinx*.
 To make your live easier, you should also set your IDE tools to support the numpy docstring conventions.
@@ -217,6 +216,7 @@ For more information see `tests/_regression_utils.py` or
  example.
 
 #### Manual Testing
+
 While all automated tests should go in the test folder, it might be helpful to create some external test script from 
 time to time.
 For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all

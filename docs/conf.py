@@ -127,7 +127,7 @@ autosummary_generate_overwrite = True
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "templates", "logos/README.md"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -244,7 +244,7 @@ GAITMAP_MAD_TEST = """
 
 .. note:: This algorithm is only available via the `gaitmap_mad` package and distributed under a AGPL3 licence.
           To use it, you need to explicitly install the `gaitmap_mad` package.
-          Learn more about that here: TODO.
+          Learn more about that :ref:`here <gaitmap_mad>`.
 
 """
 
