@@ -152,7 +152,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         The minimum velocity value.
         This is calculated as the value of the window with the minimum velocity.
         If no window is below the threshold, this value is `np.nan`.
-        Note, that in this case, min_vel_index_ is still set to a proper value.
+        Note, that in this case, min_vel_index is still set to a proper value.
 
     References
     ----------
@@ -312,7 +312,7 @@ class AredZuptDetector(NormZuptDetector):
         The minimum velocity value.
         This is calculated as the value of the window with the minimum velocity.
         If no window is below the threshold, this value is `np.nan`.
-        Note, that in this case, min_vel_index_ is still set to a proper value.
+        Note, that in this case, min_vel_index is still set to a proper value.
 
     References
     ----------
@@ -420,7 +420,7 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         The minimum velocity value.
         This is calculated as the value of the window with the minimum velocity.
         If no window is below the threshold, this value is `np.nan`.
-        Note, that in this case, min_vel_index_ is still set to a proper value.
+        Note, that in this case, min_vel_index is still set to a proper value.
 
     Notes
     -----
