@@ -32,6 +32,9 @@ project.
   use the `calculate_aggregated_parameter_errors` method.
 
 ### Changed
+
+- We now require Pandas >2.0 as we are using the new pandas dtypes.
+  It could be that this will require you to perform some sxplicit type conversion in your code.
 - The Zupt Detector example is updated to use newer tpcp features
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
 - The column order of the Spatial Parameter Calculation output has been changed
