@@ -8,7 +8,9 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
-## [2.2.0]
+## [2.2.0] - 2023-06-07
+
+Gaitmap is now available as official PyPi package!!!
 
 ### Added
 - New Algorithm: `MadgwickRtsKalman`.
