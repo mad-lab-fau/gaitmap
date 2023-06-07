@@ -18,7 +18,7 @@ getting into your way.
 - ⚙️ Familiar API inspired by scikit-learn
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
-**Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)
+**Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)<br>
 **Learn More about the gaitmap ecosystem:** TODO: Website Link
 
 ## Installation
