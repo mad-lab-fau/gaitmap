@@ -10,5 +10,4 @@ Development
 
     project_structure
     development_guide
-    gaitmap_mad
     caching_guide
