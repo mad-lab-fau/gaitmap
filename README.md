@@ -44,7 +44,7 @@ Otherwise, just install `gaitmap` and check the API-docu page of the individual 
 To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based algorithms make sure you install `gaitmap` with the `hmm` extra.
 
 ```
-pip install "gaitmap_mad gaitmap[hmm]" --upgrade
+pip install gaitmap_mad "gaitmap[hmm]" --upgrade
 ```
 This installs the `pomegranate` package, which is the basis for the HMM implementation.
 Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
