@@ -3,6 +3,9 @@ name = "gaitmap_mad"
 version = "2.1.0"
 description = "Specific algorithm implementaions by the mad_lab"
 license = "AGPL-3.0"
+readme = "README.md"
+homepage = "https://github.com/mad-lab-fau/gaitmap"
+repository = "https://github.com/mad-lab-fau/gaitmap"
 authors = [
     "Arne Küderle <arne.kuederle@fau.de>",
     "Martin Ullrich <martin.ullrich@fau.de>",

@@ -3,6 +3,9 @@ name = "gaitmap"
 version = "2.1.0"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/mad-lab-fau/gaitmap"
+repository = "https://github.com/mad-lab-fau/gaitmap"
 authors = [
     "Arne Küderle <arne.kuederle@fau.de>",
     "Martin Ullrich <martin.ullrich@fau.de>",
