@@ -29,6 +29,11 @@ jobs:
     - name: Testing
       run: |
         poetry run poe test
+    - name: Upload coverage reports to Codecov
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'}}
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest
@@ -47,12 +52,3 @@ jobs:
     - name: Linting
       run: |
         poetry run poe ci_check
-    - name: Build Docs
-      run: |
-        poetry run poe docs
-    - name: Save docs
-      uses: actions/upload-artifact@v3
-      with:
-        name: docs
-        path: docs/_build/html/
-        retention-days: 5
