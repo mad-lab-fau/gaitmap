@@ -1,8 +1,11 @@
 <img src="./docs/_static/logo/gaitmap_logo_with_text.png" height="200">
 
+[![PyPI](https://img.shields.io/pypi/v/gaitmap)](https://pypi.org/project/gaitmap/)
 [![pipeline status](https://github.com/mad-lab-fau/gaitmap/workflows/Test%20and%20Lint/badge.svg)](https://github.com/mad-lab-fau/gaitmap/actions/workflows/test-and-lint.yml)
-[![codecov](https://codecov.io/gh/mad-lab-fau/gaitmap/branch/master/graph/badge.svg?token=5NP5ZZ3KGX)](https://codecov.io/gh/mad-lab-fau/gaitmap)[![docs](https://img.shields.io/badge/docs-online-green.svg)](http://MadLab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/README.html)
+[![codecov](https://codecov.io/gh/mad-lab-fau/gaitmap/branch/master/graph/badge.svg?token=5NP5ZZ3KGX)](https://codecov.io/gh/mad-lab-fau/gaitmap)
+[![Documentation Status](https://readthedocs.org/projects/gaitmap/badge/?version=latest)](https://gaitmap.readthedocs.io/en/latest/?badge=latest)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/gaitmap)
 
 # gaitmap - The Gait and Movement Analysis Package
 
@@ -15,7 +18,7 @@ getting into your way.
 - ⚙️ Familiar API inspired by scikit-learn
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
-**Documentation:** TODO: Website Link<br>
+**Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)
 **Learn More about the gaitmap ecosystem:** TODO: Website Link
 
 ## Installation
@@ -66,9 +69,9 @@ This means, that you are expected to pick and use individual algorithms.
 
 To get started with *gaitmap* we recommend to follow these steps:
 
-1. Understand the common datatypes we use: [Common Datatypes](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/user_guide/datatypes.html)
-2. Understand how to prepare your data: [Coordinate Systems](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/user_guide/coordinate_systems.html)
-3. Check the API docs and examples for available algorithms: [API Docs](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/autoapi/gaitmap/index.html)
+1. Understand the common datatypes we use: [Common Datatypes](https://gaitmap.readthedocs.io/en/latest/source/user_guide/datatypes.html), [Coordinate Systems](https://gaitmap.readthedocs.io/en/latest/source/user_guide/coordinate_systems.html)
+2. Learn how to prepare your own data (or play around with example data): TODO 
+3. Check the API docs and examples for available algorithms: [API Docs](https://gaitmap.readthedocs.io/en/latest/modules/index.html), [Examples](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
 
 Each algorithm is implemented as a class, which is initialized with the required parameters.
 In many cases the default parameters are sufficient, but to get the best results on your data, you should adapt them.
@@ -98,9 +101,9 @@ Most algorithms have additional results available to provide further information
 dtw_warping_path = stride_segmenter.paths_
 ```
 
-To build a full gait analysis pipeline you can combine multiple algorithms ([Example]()).
-You can even substitute your own algorithms ([Guide]()) or use the provided tooling to validate
-and optimize your algorithms ([Guide]()).
+To build a full gait analysis pipeline you can combine multiple algorithms ([Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/full_pipelines/mad_gait_pipeline.html#sphx-glr-auto-examples-full-pipelines-mad-gait-pipeline-py)).
+You can even substitute your own algorithms ([Guide](https://gaitmap.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)) or use the provided tooling to validate
+and optimize your algorithms using tpcp ([Guide](https://tpcp.readthedocs.io/en/latest/guides/index.html#optimization-and-validation)).
 
 ## Citation
 
@@ -134,10 +137,7 @@ If you need to use *gaitmap_mad* in a closed source project, please contact us f
 
 ## For Developers
 
-The [Development Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/development/development_guide.html)
-and the
-[Project Structure Guide](http://madlab.mad-pages.informatik.uni-erlangen.de/GaitAnalysis/gaitmap/source/development/project_structure.html)
-have detailed information for all new developers.
+The [Development Guides](https://gaitmap.readthedocs.io/en/latest/source/development/index.html#development) have detailed information for all new developers.
 
 Here some quick references
 Install Python >=3.8 and [poetry](https://python-poetry.org).
