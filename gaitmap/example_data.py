@@ -13,8 +13,8 @@ import pandas as pd
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
 PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
-GITLAB_FOLDER_PATH = (
-    "https://mad-srv.informatik.uni-erlangen.de/MadLab/GaitAnalysis/gaitmap/-/raw/master/example_data/{}?inline=false"
+GITHUB_FOLDER_PATH = (
+    "https://github.com/mad-lab-fau/gaitmap/tree/master/example_data/{}"
 )
 
 
@@ -27,12 +27,12 @@ def _get_data(filename: str) -> str:
         return str(LOCAL_EXAMPLE_PATH / filename)
     if (PC_EXAMPLE_PATH / filename).is_file():
         return str(PC_EXAMPLE_PATH / filename)
-    gitlab_path = GITLAB_FOLDER_PATH.format(filename)
+    github_path = GITHUB_FOLDER_PATH.format(filename)
     raise ValueError(
-        "The gaitlab Python package does not contain the example data to save space. "
+        "The gaitmap Python package does not contain the example data to save space. "
         'Please dowload the example folder manually from "{}" and place its content in the folder "{}". '
         'If the folder does not exist create it. Note the "." in front of the folder name.'.format(
-            gitlab_path, PC_EXAMPLE_PATH
+            github_path, PC_EXAMPLE_PATH
         )
     )
 
