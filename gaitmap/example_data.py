@@ -13,9 +13,7 @@ import pandas as pd
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
 PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
-GITHUB_FOLDER_PATH = (
-    "https://github.com/mad-lab-fau/gaitmap/tree/master/example_data/{}"
-)
+GITHUB_FOLDER_PATH = "https://github.com/mad-lab-fau/gaitmap/tree/master/example_data/{}"
 
 
 def _is_manual_installed() -> bool:
