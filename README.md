@@ -23,8 +23,8 @@ getting into your way.
 
 ## Installation
 
-Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad` ([Learn more](https://gaitmap.readthedocs.io/en/latest/source/user_guide/gaitmap_mad.html).
-To get access to all available algorithms, you need to install both packages.
+Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad` ([Learn more](https://gaitmap.readthedocs.io/en/latest/source/user_guide/gaitmap_mad.html)).
+To get access to all available algorithms, you need to install both packages:
 
 ```
 pip install gaitmap gaitmap_mad --upgrade
@@ -39,6 +39,19 @@ Please, check the [License](#license) section below for more details.
 In case you are sure that AGPL-3.0 is compatible with your project, you can install `gaitmap_mad` without any downsides.
 Otherwise, just install `gaitmap` and check the API-docu page of the individual algorithms if they are available in
 `gaitmap` only.
+
+### Installing from Github
+
+If you want to install the latest version from Github, you can use the following command:
+
+```
+# For gaitmap
+pip install "git+https://github.com/mad-lab-fau/gaitmap.git" --upgrade
+# For gaitmap_mad
+pip install "git+https://github.com/mad-lab-fau/gaitmap.git#subdirectory=gaitmap_mad"
+```
+
+Note, that we don't guarantee that the latest version on Github is stable.
 
 ### Enabling specific features
 
@@ -69,9 +82,10 @@ This means, that you are expected to pick and use individual algorithms.
 
 To get started with *gaitmap* we recommend to follow these steps:
 
-1. Understand the common datatypes we use: [Common Datatypes](https://gaitmap.readthedocs.io/en/latest/source/user_guide/datatypes.html), [Coordinate Systems](https://gaitmap.readthedocs.io/en/latest/source/user_guide/coordinate_systems.html)
-2. Learn how to prepare your own data (or play around with example data): TODO 
-3. Check the API docs and examples for available algorithms: [API Docs](https://gaitmap.readthedocs.io/en/latest/modules/index.html), [Examples](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
+1. Have a look at our example to get an understanding of what *gaitmap* can do: [Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
+2. Understand the common datatypes we use: [Common Datatypes](https://gaitmap.readthedocs.io/en/latest/source/user_guide/datatypes.html), [Coordinate Systems](https://gaitmap.readthedocs.io/en/latest/source/user_guide/coordinate_systems.html)
+3. Learn how to prepare your own data (or play around with example data): TODO 
+4. Check the API docs and examples for available algorithms: [API Docs](https://gaitmap.readthedocs.io/en/latest/modules/index.html), [Examples](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
 
 Each algorithm is implemented as a class, which is initialized with the required parameters.
 In many cases the default parameters are sufficient, but to get the best results on your data, you should adapt them.
