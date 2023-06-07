@@ -26,7 +26,7 @@ getting into your way.
 Gaitmap is split into two packages: `gaitmap` and `gaitmap_mad` ([Learn more](https://gaitmap.readthedocs.io/en/latest/source/user_guide/gaitmap_mad.html)).
 To get access to all available algorithms, you need to install both packages:
 
-```
+```bash
 pip install gaitmap gaitmap_mad --upgrade
 ```
 
@@ -44,7 +44,7 @@ Otherwise, just install `gaitmap` and check the API-docu page of the individual 
 
 If you want to install the latest version from Github, you can use the following command:
 
-```
+```bash
 # For gaitmap
 pip install "git+https://github.com/mad-lab-fau/gaitmap.git" --upgrade
 # For gaitmap_mad
@@ -59,7 +59,7 @@ Note, that we don't guarantee that the latest version on Github is stable.
 
 To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based algorithms make sure you install `gaitmap` with the `hmm` extra.
 
-```
+```bash
 pip install gaitmap_mad "gaitmap[hmm]" --upgrade
 ```
 This installs the `pomegranate` package, which is the basis for the HMM implementation.
@@ -126,8 +126,6 @@ This helps us to justify the time we invest in the development and maintenance o
 
 We currently prepare a paper to describe the *gaitmap* library in detail.
 Until then, please simply cite the repository.
-
-
 
 If you use a specific algorithm please also make sure you cite the original paper of the algorithm!
 We recommend the following citation style:
