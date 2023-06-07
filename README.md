@@ -103,7 +103,7 @@ dtw_warping_path = stride_segmenter.paths_
 
 To build a full gait analysis pipeline you can combine multiple algorithms ([Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/full_pipelines/mad_gait_pipeline.html#sphx-glr-auto-examples-full-pipelines-mad-gait-pipeline-py)).
 You can even substitute your own algorithms ([Guide](https://gaitmap.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)) or use the provided tooling to validate
-and optimize your algorithms using tpcp ([Guide](https://tpcp.readthedocs.io/en/latest/guides/index.html#optimization-and-validation)).
+and optimize your algorithms using tpcp ([General Guide](https://tpcp.readthedocs.io/en/latest/guides/index.html#optimization-and-validation), [Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/datasets_and_pipelines/gridsearch.html#sphx-glr-auto-examples-datasets-and-pipelines-gridsearch-py)).
 
 ## Citation
 
