@@ -8,10 +8,10 @@ Gaitmap is developed to be easily extensible.
 You can not only select which combinations of algorithms to use, but also create your own or extend existing once.
 
 In this guide we will give a rough overview of how this process works.
-You will find additional information in the :ref:`developer documentation for gaitmap<development>`  (so some information there might not
+You will find additional information in the :ref:`developer documentation for gaitmap<development>`  (though some information there might not
 apply to your project) and the general documentation of the `tpcp` package gaitmap is based on
-(`in particular this example <https://tpcp.readthedocs.io/en/latest/auto_examples/algorithms/_01_algorithms_qrs_detection.html#sphx-glr-auto-examples-algorithms-01-algorithms-qrs-detection-py>`
-and `this guide <https://tpcp.readthedocs.io/en/latest/guides/general_concepts.html>`).
+(`in particular this example <https://tpcp.readthedocs.io/en/latest/auto_examples/algorithms/_01_algorithms_qrs_detection.html>`_
+and `this guide <https://tpcp.readthedocs.io/en/latest/guides/general_concepts.html>`_).
 
 Getting started
 ---------------
