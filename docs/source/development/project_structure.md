@@ -1,4 +1,5 @@
 # Scope and Code Structure
+(proj_struct)=
 
 To ensure that the project is easy to use, easy to maintain, and easy to expand in the future, all developers should
 adhere to the guidelines outlined below.

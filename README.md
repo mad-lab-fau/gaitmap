@@ -19,7 +19,7 @@ getting into your way.
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
 **Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)<br>
-**Learn More about the gaitmap ecosystem:** TODO: Website Link
+**Learn More about the gaitmap ecosystem:** Coming soon!
 
 ## Installation
 
@@ -118,6 +118,24 @@ dtw_warping_path = stride_segmenter.paths_
 To build a full gait analysis pipeline you can combine multiple algorithms ([Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/full_pipelines/mad_gait_pipeline.html#sphx-glr-auto-examples-full-pipelines-mad-gait-pipeline-py)).
 You can even substitute your own algorithms ([Guide](https://gaitmap.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)) or use the provided tooling to validate
 and optimize your algorithms using tpcp ([General Guide](https://tpcp.readthedocs.io/en/latest/guides/index.html#optimization-and-validation), [Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/datasets_and_pipelines/gridsearch.html#sphx-glr-auto-examples-datasets-and-pipelines-gridsearch-py)).
+
+## Contributing
+
+**We want to hear from you (and we want your algorithms)!**
+
+👍 We are always happy to receive feedback and contributions.
+If you run into any issues or have any questions, please open an [issue on Github](https://github.com/mad-lab-fau/gaitmap/issues)
+or start a [discussions](https://github.com/mad-lab-fau/gaitmap/discussions/).
+
+📚 If you are using *gaitmap* in your research or project, we would love to hear about it and link your work here! The [show and tell section](https://github.com/mad-lab-fau/gaitmap/discussions/categories/show-and-tell)
+in the discussions is a great place for this.
+
+💻 And most importantly, we want your algorithms!
+If you have an algorithm that you think would be a good fit for *gaitmap*, open an issue, and we can discuss how to integrate it.
+We are happy to help you with the integration process.
+Even if you are not confident in your Python skills, we can discuss ways to get your algorithm into *gaitmap*.
+
+For all these topics check out our [contributing guide](https://gaitmap.readthedocs.io/en/latest/source/contributing.html) for more details.
 
 ## Citation
 
