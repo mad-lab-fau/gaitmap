@@ -135,7 +135,7 @@ If you have an algorithm that you think would be a good fit for *gaitmap*, open 
 We are happy to help you with the integration process.
 Even if you are not confident in your Python skills, we can discuss ways to get your algorithm into *gaitmap*.
 
-For all these topics check out our [contributing guide](https://gaitmap.readthedocs.io/en/latest/source/contributing.html) for more details.
+For all these topics check out our [contributing guide](https://gaitmap.readthedocs.io/en/latest/source/user_guide/contributing.html) for more details.
 
 ## Citation
 
