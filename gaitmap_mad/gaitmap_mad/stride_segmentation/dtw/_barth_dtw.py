@@ -24,6 +24,8 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
     input signal simultaneously.
     For more details refer to the `Notes` section.
 
+    This method was first published in [1]_.
+
     Parameters
     ----------
     template

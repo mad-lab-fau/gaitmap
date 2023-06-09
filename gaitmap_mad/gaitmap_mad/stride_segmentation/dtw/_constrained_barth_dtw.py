@@ -21,6 +21,8 @@ class ConstrainedBarthDtw(BarthDtw):
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
 
+    This method is based on [1]_ and the modification of the constrained warping path is inspired by [2]_.
+
     Parameters
     ----------
     template
@@ -120,6 +122,9 @@ class ConstrainedBarthDtw(BarthDtw):
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
        Society, EMBS, 6744-6747. https://doi.org/10.1109/EMBC.2013.6611104
+    .. [2] M. Müller, Fundamentals of Music Processing - Using Python and Jupyter Notebooks, 2nd ed. Springer Verlag,
+       2021.
+
 
     See Also
     --------

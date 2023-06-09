@@ -29,7 +29,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
     movement at the same z-position/height).
     If this assumption is not true for your usecase, you can disable it using the `level_assumption` parameter.
 
-    Implementation based on the paper by Hannink et al. [1]_.
+    Implementation based on the paper by Hannink et al. [1]_ and Zok et al. [2]_.
 
     Parameters
     ----------
@@ -66,6 +66,10 @@ class ForwardBackwardIntegration(BasePositionMethod):
     .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
        Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
        https://doi.org/10.3390/s17091940
+    .. [2] M. Zok, C. Mazz`a, and U. Della Croce, “Total body centre of mass displacement estimated using ground
+       reactions during transitory motor tasks: Application to step ascent,” Medical Engineering & Physics, vol. 26,
+       no. 9, pp. 791-798, Nov. 2004. [Online]. Available:
+       https://linkinghub.elsevier.com/retrieve/pii/S1350453304001195
 
     Examples
     --------

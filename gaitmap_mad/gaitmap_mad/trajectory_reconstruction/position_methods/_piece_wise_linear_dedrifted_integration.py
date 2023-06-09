@@ -38,6 +38,8 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     movement at the same z-position/height between zupt regions).
     If this assumption is not true for your usecase, you can disable it using the `level_assumption` parameter.
 
+    This approach is inspired by [1]_,[2]_, and [3]_.
+
     Parameters
     ----------
     zupt_detector
@@ -105,6 +107,17 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     This multi linear baseline is than substracted from the velocity to correct it.
 
     The same process is repeated for the z-position in case `level_walking=True`.
+
+    .. [1] Hannink, J., Ollenschläger, M., Kluge, F., Roth, N., Klucken, J., and Eskofier, B. M. 2017. Benchmarking Foot
+       Trajectory Estimation Methods for Mobile Gait Analysis. Sensors (Basel, Switzerland) 17, 9.
+       https://doi.org/10.3390/s17091940
+    .. [2] M. Zok, C. Mazz`a, and U. Della Croce, “Total body centre of mass displacement estimated using ground
+       reactions during transitory motor tasks: Application to step ascent,” Medical Engineering & Physics, vol. 26,
+       no. 9, pp. 791-798, Nov. 2004. [Online]. Available:
+       https://linkinghub.elsevier.com/retrieve/pii/S1350453304001195
+    .. [3] N. Kitagawa and N. Ogihara, “Estimation of foot trajectory during human walking by a wearable inertial
+       measurement unit mounted to the foot,” Gait & Posture, vol. 45, pp. 110-114, Mar. 2016. [Online].
+       Available: https://linkinghub.elsevier.com/retrieve/pii/S0966636216000151
 
     See Also
     --------

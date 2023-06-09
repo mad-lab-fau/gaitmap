@@ -128,7 +128,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     Examples
     --------
-    This method requires the output of a event detection method and a full trajectory reconstruction
+    This method requires the output of an event detection method and a full trajectory reconstruction
     (orientation and position) as input.
 
     >>> stride_list = ...  # from event detection

@@ -19,6 +19,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     """Calculat temporal parameters of strides based on detected gait events.
 
     For details on the individual parameters see the Notes section.
+    Calculations are based on [1]_.
 
     Parameters
     ----------
@@ -59,6 +60,11 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         The stance time is the time the foot is on the ground.
         Hence, it is the time from a ic to the next tc.
         For both stride types this is calculated as stride_time - swing_time.
+
+    .. [1] A. Rampp, J. Barth, S. Schuelein, K.-G. Gassmann, J. Klucken, and B. M. Eskofier, “Inertial Sensor-Based
+       Stride Parameter Calculation From Gait Sequences in Geriatric Patients,” IEEE Transactions on Biomedical
+       Engineering, vol. 62, no. 4, pp. 1089-1097, Apr. 2015. [Online].
+       Available: http://ieeexplore.ieee.org/document/6949634/
 
     Examples
     --------

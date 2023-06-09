@@ -75,6 +75,8 @@ class PcaAlignment(BaseSensorAlignment):
     ("birds eye view") of the X-Y sensor frame. To ensure a 2D problem the dataset should be aligned roughly to gravity
     beforhand so we can assume a fixed z-axis of [0,0,1] and solve the alignment as a pure heading issue.
 
+    This approach is inspired by [1]_
+
     Parameters
     ----------
     target_axis
@@ -113,6 +115,10 @@ class PcaAlignment(BaseSensorAlignment):
     -----
     The PCA is sign invariant this means only an alignment to the medio-lateral plane will be performend! An additional
     180deg flip of the coordinate system might be still necessary after the PCA alignment!
+
+    .. [1] W. Kong, S. Sessa, M. Zecca, and A. Takanishi, “Anatomical Calibration through Post-Processing of Standard
+           Motion Tests Data,” Sensors, vol. 16, no. 12, p. 2011, Dec. 2016. [Online]. Available:
+           https://www.mdpi.com/1424-8220/16/12/2011
 
 
     See Also
