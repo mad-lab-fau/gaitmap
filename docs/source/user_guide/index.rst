@@ -10,6 +10,7 @@ User Guide
 
     coordinate_systems
     datatypes
+    prepare_data
     create_own_algorithm
     gaitmap_mad
     contributing

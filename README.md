@@ -84,7 +84,7 @@ To get started with *gaitmap* we recommend to follow these steps:
 
 1. Have a look at our example to get an understanding of what *gaitmap* can do: [Example](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
 2. Understand the common datatypes we use: [Common Datatypes](https://gaitmap.readthedocs.io/en/latest/source/user_guide/datatypes.html), [Coordinate Systems](https://gaitmap.readthedocs.io/en/latest/source/user_guide/coordinate_systems.html)
-3. Learn how to prepare your own data (or play around with example data): TODO 
+3. Learn how to prepare your own data (or play around with example data): [Prepare Data](https://gaitmap.readthedocs.io/en/latest/source/user_guide/prepare_data.html) 
 4. Check the API docs and examples for available algorithms: [API Docs](https://gaitmap.readthedocs.io/en/latest/modules/index.html), [Examples](https://gaitmap.readthedocs.io/en/latest/auto_examples/index.html)
 
 Each algorithm is implemented as a class, which is initialized with the required parameters.

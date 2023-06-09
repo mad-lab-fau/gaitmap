@@ -1,3 +1,5 @@
+.. _example_data:
+
 gaitmap.example_data: Helper to load some example data
 =======================================================
 
