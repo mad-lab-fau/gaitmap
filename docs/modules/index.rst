@@ -10,10 +10,10 @@ This is the API Reference for gaitmap sorted by algorithm types.
     :maxdepth: 1
 
     Preprocessing <preprocessing>
-    ZUPT Detection <zupt_detection>
     Gait Detection <gait_detection>
     Stride Segmentation <stride_segmentation>
     Event Detection <event_detection>
+    ZUPT Detection <zupt_detection>
     Trajectory Reconstruction <trajectory_reconstruction>
     Parameter Calculation <parameters>
     Evaluation Utils <evaluation_utils>
