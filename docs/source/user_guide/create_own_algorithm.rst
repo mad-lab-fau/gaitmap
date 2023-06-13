@@ -4,7 +4,7 @@
 Creating your own algorithm
 ===========================
 
-Gaitmap is developed to be easily extensible.
+Gaitmap is developed to be easily extendable.
 You can not only select which combinations of algorithms to use, but also create your own or extend existing once.
 
 In this guide we will give a rough overview of how this process works.
@@ -68,7 +68,7 @@ individual parts.
 
 In case you come across a situation where you need to change the functionality of an algorithm, but you cannot find a
 method that you can easily overwrite, please open an issue on github.
-We are very open to split up larger methods even further, if it helps to make the algorithms more extensible.
+We are very open to split up larger methods even further, if it helps to make the algorithms more extendable.
 
 Creating a new algorithm for an existing algorithm type
 -------------------------------------------------------

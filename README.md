@@ -14,7 +14,7 @@ getting into your way.
 
 - 💻 [20+ Algorithms](https://gaitmap.readthedocs.io/en/latest/modules/index.html) from 17+ publications
 - 📚 Extensive [documentation](https://gaitmap.readthedocs.io/en/latest/)
-- 📝 Build to be [easily extensible](https://gaitmap.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)
+- 📝 Build to be [easily extendable](https://gaitmap.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)
 - ⚙️ Familiar API inspired by scikit-learn
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
