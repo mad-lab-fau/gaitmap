@@ -15,9 +15,9 @@ from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 
 if multiprocessing.parent_process() is None:
     warnings.warn(
-        "The hmm support in gaitmap is still quite experimental and you might run into some rough edges."
+        "The hmm support in gaitmap is still quite experimental and you might run into some rough edges. "
         "If you encounter any issues, please report them on github. "
-        "Also expect the API to change in the future."
+        "Also expect the API to change in the future. "
         "Monitor the changelog before upgrading to newer versions when using HMMs.",
         UserWarning,
     )
