@@ -8,6 +8,15 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.2.1] - 2023-06-20
+
+### Fixed
+
+- Fixed edecase where the output of the stride event method had the events in the wrong order for some strides.
+  The reason for that is that a valid segmented stridelist does not always result in a valid min_vel_event list for
+  algorithms that are allowed to search outside the segmented stride region (e.g. `HerzerEventDetection`).
+  We now check for consistency again after the stride list conversion.
+
 ## [2.2.0] - 2023-06-07
 
 Gaitmap is now available as official PyPi package!!!
