@@ -95,8 +95,6 @@ class _EventDetectionMixin:
                 )
             results = invert_result_dictionary(results_dict)
 
-        # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambeled
-        # and can not be used for anything anyway
         if not self.enforce_consistency:
             results.pop("min_vel_event_list", None)
         set_params_from_dict(self, results, result_formatting=True)
@@ -143,7 +141,9 @@ class _EventDetectionMixin:
                 segmented_event_list, stride_type="segmented", check_stride_list=False
             )
 
-        if "min_vel" not in events:
+        if "min_vel" not in events or self.enforce_consistency is False:
+            # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambled
+            # and can not be used for anything anyway
             return {"segmented_event_list": segmented_event_list}
 
         # convert to min_vel event list
@@ -153,7 +153,11 @@ class _EventDetectionMixin:
 
         output_order = [c for c in ["start", "end", "ic", "tc", "min_vel", "pre_ic"] if c in min_vel_event_list.columns]
 
-        min_vel_event_list = min_vel_event_list[output_order]
+        # We enforce consistency again here, as a valid segmented stride list does not necessarily result in a valid
+        # min_vel stride list
+        min_vel_event_list, _ = enforce_stride_list_consistency(
+            min_vel_event_list[output_order], stride_type="min_vel", check_stride_list=False
+        )
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
 

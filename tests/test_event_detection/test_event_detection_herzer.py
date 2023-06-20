@@ -55,7 +55,7 @@ class TestEventDetectionHerzer:
         snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
         snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
 
-    @pytest.mark.parametrize(("var1", "output"), ((True, 1), (False, 0)))
+    @pytest.mark.parametrize(("var1", "output"), ((True, 2), (False, 0)))
     def test_postprocessing(self, healthy_example_imu_data, healthy_example_stride_borders, var1, output):
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS
