@@ -629,8 +629,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         ]
 
         _, history = new_model.fit(
-            sequences=data_train_sequence,
-            labels=labels_train_sequence_str.copy(),
+            sequences=np.array(data_train_sequence, dtype=object),
+            labels=np.array(labels_train_sequence_str, dtype=object).copy(),
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,

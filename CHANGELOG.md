@@ -8,6 +8,13 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.2.2] - 2023-06-22
+
+### Fixed
+
+- Fixed bug in HMM when uneven sequnece length were provided. In newer numpy versions this requires an explicit cast to 
+  an object array.
+
 ## [2.2.1] - 2023-06-22
 
 ### Fixed
