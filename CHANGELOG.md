@@ -8,7 +8,7 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
-## [2.2.1] - 2023-06-20
+## [2.2.1] - 2023-06-22
 
 ### Fixed
 

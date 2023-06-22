@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gaitmap_mad"
-version = "2.2.0"
+version = "2.2.1"
 description = "Specific algorithm implementaions by the mad_lab"
 license = "AGPL-3.0"
 readme = "README.md"
