@@ -12,7 +12,8 @@ project.
 
 ### Fixed
 
-- Spatial parameter calculation now works when no strides are detected for a sensor. ()
+- Spatial parameter calculation now works when no strides are detected for a sensor. 
+  (https://github.com/mad-lab-fau/gaitmap/pull/48)
 
 ## [2.2.2] - 2023-06-22
 
