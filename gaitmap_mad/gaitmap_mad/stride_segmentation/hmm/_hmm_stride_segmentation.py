@@ -1,7 +1,5 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 from contextlib import suppress
-from importlib.resources import open_text
-from pathlib import Path
 from typing import Dict, Generic, Optional, TypeVar, Union
 
 import numpy as np
@@ -39,13 +37,13 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
 
     """
 
-    def __new__(cls):
-        # try to load models
-        with open_text(
-            "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
-        ) as test_data, Path(test_data.name).open(encoding="utf8") as f:
-            model_json = f.read()
-        return RothSegmentationHmm.from_json(model_json)
+    # def __new__(cls):
+    #     # try to load models
+    #     with open_text(
+    #         "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
+    #     ) as test_data, Path(test_data.name).open(encoding="utf8") as f:
+    #         model_json = f.read()
+    #     return RothSegmentationHmm.from_json(model_json)
 
 
 BaseSegmentationHmmT = TypeVar("BaseSegmentationHmmT", bound=BaseSegmentationHmm)

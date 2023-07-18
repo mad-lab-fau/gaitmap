@@ -87,24 +87,20 @@ from gaitmap.stride_segmentation.hmm import SimpleHmm
 
 stride_model = SimpleHmm(
     n_states=20,
-    n_gmm_components=6,
-    algo_train="baum-welch",
+    n_gmm_components=5,
     stop_threshold=1e-9,
     max_iterations=5,
     architecture="left-right-strict",
     verbose=True,
-    name="stride_model",
 )
 
 transition_model = SimpleHmm(
-    n_states=5,
-    n_gmm_components=3,
-    algo_train="baum-welch",
+    n_states=2,
+    n_gmm_components=2,
     stop_threshold=1e-9,
     max_iterations=5,
     architecture="left-right-loose",
     verbose=True,
-    name="transition_model",
 )
 
 # %%
@@ -121,13 +117,10 @@ segmentation_model = RothSegmentationHmm(
     stride_model=stride_model,
     transition_model=transition_model,
     feature_transform=feature_transform,
-    algo_predict="viterbi",
-    algo_train="baum-welch",
     stop_threshold=1e-9,
     max_iterations=1,
     initialization="labels",
     verbose=True,
-    name="segmentation_model",
 )
 
 # %%
@@ -170,9 +163,9 @@ segmentation_model = segmentation_model.self_optimize(
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(segmentation_model.model.dense_transition_matrix()[0:-2, 0:-2])
+print(np.e ** segmentation_model.model.edges)
 
-print(segmentation_model.model.states[10])
+print(segmentation_model.model.distributions[segmentation_model.n_states - 1])
 
 # %%
 # Applying the Model to a Sequence

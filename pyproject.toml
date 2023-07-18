@@ -34,14 +34,13 @@ numba =  [
 numpy = ">=1.20"
 joblib = ">=1.2.0"
 scikit-learn = ">=1.0.1"
-# We restrict it to 0.14.6 for now, as later versions don't seem to work on Linux
-# This version of pomegranate does not support Python 3.10, unfortunately
-pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
 tpcp = ">=0.15.0"
 pingouin = {version = "^0.5.3", optional = true}
+pomegranate = {git = "https://github.com/jmschrei/pomegranate"}
+torch = { version = ">=1.6.0", source="torch_cpu"}
 
 [tool.poetry.extras]
-hmm = ["pomegranate"]
+hmm = ["pomegranate", "torch"]
 stats = ["pingouin"]
 all = ["pomegranate", "pingouin"]
 
@@ -63,6 +62,17 @@ numpydoc = "^1.5.0"
 Sphinx = "^6.1.3"
 ruff = "^0.0.235"
 myst-parser = "^1.0.0"
+
+[[tool.poetry.source]]
+name = "torch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "supplemental"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
 
 [tool.black]
 line-length = 120
