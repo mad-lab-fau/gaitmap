@@ -467,6 +467,8 @@ def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Serie
       =  abs((x2-x1)(y1-y0) - (x1-x0)(y2-y1))/stride_length
 
     """
+    if positions.empty:
+        return pd.Series()
     start = positions.groupby(level="s_id").first()
     end = positions.groupby(level="s_id").last()
     stride_length = _calc_stride_length(positions)
