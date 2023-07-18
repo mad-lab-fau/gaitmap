@@ -8,6 +8,12 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.2.3] - 2023-07-18
+
+### Fixed
+
+- Spatial parameter calculation now works when no strides are detected for a sensor. ()
+
 ## [2.2.2] - 2023-06-22
 
 ### Fixed

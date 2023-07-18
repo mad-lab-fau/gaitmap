@@ -291,7 +291,6 @@ class TestSpatialParameterCalculation:
     def test_stride_list_types(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ):
-
         # The default single_sensor_stride_list is a min_vel stride list.
         # If we set expected_stride_type to "ic", we should get an error.
         t = SpatialParameterCalculation(expected_stride_type="ic")
@@ -325,6 +324,18 @@ class TestSpatialParameterCalculation:
             * 100,
             check_names=False,
         )
+
+    def test_empty_stride_list_throws_no_error(
+        self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
+    ):
+        """Test that an empty stride list does not throw an error."""
+        t = SpatialParameterCalculation(expected_stride_type="ic")
+        single_sensor_stride_list = single_sensor_stride_list.iloc[0:0]
+        single_sensor_position_list = single_sensor_position_list.iloc[0:0]
+        single_sensor_orientation_list = single_sensor_orientation_list.iloc[0:0]
+        t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
+
+        assert t.parameters_.empty
 
 
 class TestSpatialParameterRegression:
