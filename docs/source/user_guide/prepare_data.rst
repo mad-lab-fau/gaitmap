@@ -14,8 +14,11 @@ Some testing data
 In case you don't have data on your own, but you want to play around with the algorithms, we provide some testing data
 that can be loaded using `gaitmap.example_data` (see :ref:`here <example_data>`).
 
-Before you can use this data, you need to download the test files from `here <https://github.com/mad-lab-fau/gaitmap/tree/master/example_data>`__.
-and store them in a `.gaitmap_data/` in your home directory (you can also just run the loader function and it will tell you where to put the files).
+If you do not have the `test files <https://github.com/mad-lab-fau/gaitmap/tree/master/example_data>`__ locally
+(e.g. because you installed gaitmap using pip), the loader function will  automatically download the files to your local cache folder.
+If you want to save them to a custom folder instead you can set the environment variable `GAITMAP_DATA_DIR` before importing
+the example data module.
+
 Then you can load the data using the following code:
 
 .. code-block:: python
