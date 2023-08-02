@@ -39,6 +39,7 @@ scikit-learn = ">=1.0.1"
 pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
 tpcp = ">=0.15.0"
 pingouin = {version = "^0.5.3", optional = true}
+pooch = "^1.7.0"
 
 [tool.poetry.extras]
 hmm = ["pomegranate"]

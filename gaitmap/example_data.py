@@ -3,17 +3,44 @@
 The example data provides short sample data from foot mounted IMUs as well as calculated references from a camera based
 Motion capture system for 2x20m walk test of a healthy subject.
 
-The data is either taken from the local filesystem in case gaitlab was manually installed or you are asked to
-download the data manually.
+The data is either taken from the local filesystem in case gaitmap was installed manually or it is automatically
+downloaded to your cache folder (or to the path specified in the `GAITMAP_DATA_DIR` environment variable).
 """
 
 from pathlib import Path
 
 import pandas as pd
+import pooch
+from gaitmap import __version__
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
 PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
-GITHUB_FOLDER_PATH = "https://github.com/mad-lab-fau/gaitmap/tree/master/example_data/{}"
+GITHUB_FOLDER_PATH = "https://raw.githubusercontent.com/mad-lab-fau/gaitmap/v{version}/example_data/"
+
+
+BRIAN = pooch.create(
+    # Use the default cache folder for the operating system
+    path=pooch.os_cache("gaitmap"),
+    # The remote data is on Github
+    base_url=GITHUB_FOLDER_PATH,
+    version=__version__,
+    version_dev="master",
+    registry={
+        "imu_sample.csv": "sha256:fdb91f0a1e58b1ac518a324d38c9177de6c4388137c1b1683e4a72460873bfd7",
+        "imu_sample_healthy_stair_down.csv": "935442b1ec74ad69211ff3364e1d949c2811f1e24afa7f2f5322ce167976980e",
+        "imu_sample_healthy_stair_up.csv": "91c66d4370fa2c152ab280df3ac2c607c71bf788f3a4bff7e690030aa6f5d5fe",
+        "imu_sample_ms_left.csv": "5308a0833629a6ea76f3cdba3dca4ac185eabfd93e00b85f9cdaaa2a7c599b62",
+        "imu_sample_ms_right.csv": "5349aeed45fbdb491c16f633b1f10a0d1c42b1bb2f56b429ce5fa9b9cd484376",
+        "imu_sample_not_rotated.csv": "5136b5c7e086997d4a7423d9320a7abf2c8e467821920387157620959f427311",
+        "mocap_sample.csv": "e27e89a75b38cb53520385eb252786c951a74a8f4a3d252322330ab672f6c00e",
+        "orientation_sample.csv": "fe8f1c7fd12fccbbff916ab98f299b250f5c887634fbc2bb636fbcd02b114b0c",
+        "position_sample.csv": "12cf9b837f51a01c1b5caf3e24d767307cf5d6619a372baf627481ff2c1e2703",
+        "stride_borders_sample.csv": "6b93f875b7369bc9f6edd5842771dba79aef4e5922f7542786900852029ca914",
+        "stride_events_sample.csv": "9fa47ac00ebe96fb6dc8447c49cf2ae1cf9559300101700a6875f094e4d5c274",
+    },
+    # The name of an environment variable that *can* overwrite the path
+    env="GAITMAP_DATA_DIR",
+)
 
 
 def _is_manual_installed() -> bool:
@@ -23,16 +50,9 @@ def _is_manual_installed() -> bool:
 def _get_data(filename: str) -> str:
     if _is_manual_installed():
         return str(LOCAL_EXAMPLE_PATH / filename)
-    if (PC_EXAMPLE_PATH / filename).is_file():
-        return str(PC_EXAMPLE_PATH / filename)
-    github_path = GITHUB_FOLDER_PATH.format(filename)
-    raise ValueError(
-        "The gaitmap Python package does not contain the example data to save space. "
-        'Please dowload the example folder manually from "{}" and place its content in the folder "{}". '
-        'If the folder does not exist create it. Note the "." in front of the folder name.'.format(
-            github_path, PC_EXAMPLE_PATH
-        )
-    )
+    else:
+        # checks if file is already in local cache folder, otherwise downloads it from github; hashes are checked
+        return BRIAN.fetch(filename)
 
 
 def get_healthy_example_imu_data():
