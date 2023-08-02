@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 import pooch
+
 from gaitmap import __version__
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
@@ -50,9 +51,9 @@ def _is_manual_installed() -> bool:
 def _get_data(filename: str) -> str:
     if _is_manual_installed():
         return str(LOCAL_EXAMPLE_PATH / filename)
-    else:
-        # checks if file is already in local cache folder, otherwise downloads it from github; hashes are checked
-        return BRIAN.fetch(filename)
+
+    # checks if file is already in local cache folder, otherwise downloads it from github; hashes are checked
+    return BRIAN.fetch(filename)
 
 
 def get_healthy_example_imu_data():
