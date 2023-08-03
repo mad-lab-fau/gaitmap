@@ -8,7 +8,8 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
-## [Unreleased]
+## [2.3.0] - 2023-08-03
+
 ### Changed
 
 - Example data is now automatically downloaded if it is not already present.
