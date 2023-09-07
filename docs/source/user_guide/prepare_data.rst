@@ -216,10 +216,12 @@ If you know the rough mounting orientation of you sensors, the process is relati
 
    .. code-block:: python
 
+      from scipy.spatial.transform import Rotation
+
       # For multiple sensors, we write down the rotation matrices for each sensor into a dict
       rotation_matrices = {
-            "left_sensor_name": np.array([[ 0, -1,  0], [ 0,  0,  1], [-1,  0,  0]]),
-            "right_sensor_name": np.array([[ 0,  1,  0], [ 0,  0, -1], [-1,  0,  0]])
+            "left_sensor_name": Rotation.from_matrix(np.array([[ 0, -1,  0], [ 0,  0,  1], [-1,  0,  0]])),
+            "right_sensor_name": Rotation.from_matrix(np.array([[ 0,  1,  0], [ 0,  0, -1], [-1,  0,  0]]))
       }
       from gaitmap.utils.rotations import rotate_dataset
 
