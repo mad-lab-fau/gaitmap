@@ -4,8 +4,8 @@ source="gaitmap_logo_source"
 target_dir="../_static/logo/"
 
 
-inkscape --export-type="png" --export-id="logo-with-text;logo" --export-id-only --export-dpi=250 "${source}.svg"
-inkscape --export-type="svg" --export-id="logo-with-text;logo" --export-id-only "${source}.svg"
+inkscape --export-type="png,svg" --export-id="logo-with-text" --export-id-only --export-dpi=250 "${source}.svg" --export-filename="${source}_logo-with-text"
+inkscape --export-type="png,svg" --export-id="logo" --export-id-only "${source}.svg" --export-filename="${source}_logo"
 mkdir -p "${target_dir}"
 mv "${source}_logo.png" "${target_dir}gaitmap_logo.png"
 mv "${source}_logo.svg" "${target_dir}gaitmap_logo.svg"
