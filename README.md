@@ -19,7 +19,7 @@ getting into your way.
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
 **Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)<br>
-**Learn More about the gaitmap ecosystem:** Coming soon!
+**Learn more about the gaitmap ecosystem:** [the gaitmap ecosystem](https://gaitmap.readthedocs.io/en/latest/source/user_guide/gaitmap_ecosystem.html)
 
 ## Installation
 

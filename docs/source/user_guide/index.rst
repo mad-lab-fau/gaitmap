@@ -8,6 +8,7 @@ User Guide
 .. toctree::
     :maxdepth: 1
 
+    gaitmap_ecosystem
     coordinate_systems
     datatypes
     prepare_data
