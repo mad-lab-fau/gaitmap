@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/gaitmap)](https://pypi.org/project/gaitmap/)
 [![pipeline status](https://github.com/mad-lab-fau/gaitmap/workflows/Test%20and%20Lint/badge.svg)](https://github.com/mad-lab-fau/gaitmap/actions/workflows/test-and-lint.yml)
 [![codecov](https://codecov.io/gh/mad-lab-fau/gaitmap/branch/master/graph/badge.svg?token=5NP5ZZ3KGX)](https://codecov.io/gh/mad-lab-fau/gaitmap)
-[![Documentation Status](https://readthedocs.org/projects/gaitmap/badge/?version=latest)](https://gaitmap.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://gaitmap.readthedocs.io/en/latest/README.html)](https://gaitmap.readthedocs.io/en/latest/?badge=latest)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/gaitmap)
 
@@ -18,7 +18,7 @@ getting into your way.
 - ⚙️ Familiar API inspired by scikit-learn
 - 🤝 Interoperable with the other libraries from the gaitmap ecosystem ([gaitmap-dataset](https://github.com/mad-lab-fau/gaitmap-datasets), [tpcp](https://github.com/mad-lab-fau/tpcp), ...)
 
-**Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/)<br>
+**Documentation:** [gaitmap.readthedocs.io](https://gaitmap.readthedocs.io/en/latest/README.html)<br>
 **Learn more about the gaitmap ecosystem:** [the gaitmap ecosystem](https://gaitmap.readthedocs.io/en/latest/source/user_guide/gaitmap_ecosystem.html)
 
 ## Installation
