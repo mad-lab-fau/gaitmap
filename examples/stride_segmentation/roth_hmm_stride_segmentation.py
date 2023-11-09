@@ -133,7 +133,7 @@ hidden_state_sequence_feature_space = hmm_seg.result_model_[sensor].hidden_state
 ax2.plot(hidden_state_sequence_feature_space, color="tab:green")
 ax2.tick_params(axis="y", labelcolor="tab:green")
 
-plt.xlim([0, 500])
+# plt.xlim([0, 500])
 fig.tight_layout()
 plt.show()
 

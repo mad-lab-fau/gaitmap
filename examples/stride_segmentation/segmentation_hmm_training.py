@@ -87,7 +87,7 @@ from gaitmap.stride_segmentation.hmm import SimpleHmm
 
 stride_model = SimpleHmm(
     n_states=20,
-    n_gmm_components=5,
+    n_gmm_components=6,
     stop_threshold=1e-9,
     max_iterations=5,
     architecture="left-right-strict",
@@ -95,8 +95,8 @@ stride_model = SimpleHmm(
 )
 
 transition_model = SimpleHmm(
-    n_states=2,
-    n_gmm_components=2,
+    n_states=5,
+    n_gmm_components=3,
     stop_threshold=1e-9,
     max_iterations=5,
     architecture="left-right-loose",
