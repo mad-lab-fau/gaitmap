@@ -473,12 +473,20 @@ def predict(
     return np.asarray(labels_predicted)
 
 
-def labels_to_prior(labels_sequence, n_states):
+def labels_to_prior(labels_sequence, n_states, certainty=0.9):
     labels_sequence_as_prior = []
-    # We need to turn all labels into prior probabilities by creating a one-hot encoding]
-    tmp_mat = np.eye(n_states)
+    per_state_prior = []
+    for state in range(n_states):
+        tmp = np.zeros(n_states)
+        tmp[state] = certainty
+        tmp[tmp == 0] = 1 - certainty
+        per_state_prior.append(tmp)
+    per_state_prior = np.asarray(per_state_prior)
+    # normalize
+    per_state_prior = per_state_prior / per_state_prior.sum(axis=1)[:, np.newaxis]
+
     for labels in labels_sequence:
-        labels_sequence_as_prior.append(tmp_mat[labels.astype(int)])
+        labels_sequence_as_prior.append(per_state_prior[labels.astype(int)])
 
     return labels_sequence_as_prior
 

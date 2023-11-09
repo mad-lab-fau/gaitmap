@@ -19,7 +19,6 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _DataToShortError,
     convert_stride_list_to_transition_list,
-    create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     freeze_nested_distribution,
     get_train_data_sequences_strides,
@@ -528,16 +527,17 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
 
         # Now that we have a fully labeled dataset, we use our already fitted distributions as input for the new model
         if self.initialization == "fully-connected":
-            trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(self.n_states)
-
-            # TODO: Update to new API
-            new_model = pgHMM.from_matrix(
-                copy.deepcopy(distributions),
-                edges=trans_mat,
-                starts=start_probs,
-                ends=None,
-                verbose=self.verbose,
-            )
+            raise NotImplementedError("Fully connected initialization is not yet implemented!")
+            # trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(self.n_states)
+            #
+            # # TODO: Update to new API
+            # new_model = pgHMM.from_matrix(
+            #     copy.deepcopy(distributions),
+            #     edges=trans_mat,
+            #     starts=start_probs,
+            #     ends=None,
+            #     verbose=self.verbose,
+            # )
 
         elif self.initialization == "labels":
             # combine already trained transition matrices -> zero pad "stride" transition matrix to the left
@@ -599,7 +599,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         # This means this fit step should only update the transition probabilities.
         new_model.fit(
             data_train_sequence,
-            priors=labels_to_prior(labels_train_sequence, len(new_model.distributions)),
+            priors=labels_to_prior(labels_train_sequence, len(new_model.distributions), certainty=1),
         )
 
         self.model = new_model

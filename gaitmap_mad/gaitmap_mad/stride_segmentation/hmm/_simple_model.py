@@ -111,9 +111,11 @@ def initialize_distributions_and_transmat(
     # allow transition model to start and end in all states (as we do not have any specific information about
     # "transitions", this could be actually anything in the data which is no stride)
     elif architecture == "left-right-loose":
-        transition_matrix, start_probs, end_probs = create_transition_matrix_left_right_loose(
-            n_states, self_transition=True
-        )
+        (
+            transition_matrix,
+            start_probs,
+            end_probs,
+        ) = create_transition_matrix_left_right_loose(n_states, self_transition=True)
 
     # fully connected model with all transitions initialized equally. Allowing all possible transitions.
     else:  # architecture == "fully-connected"
@@ -136,7 +138,12 @@ def initialize_distributions_and_transmat(
     # The start probs are just normalized by themselves.
     start_probs_normalized = start_probs / np.sum(start_probs)
 
-    return distributions, transition_matrix_normalized, start_probs_normalized, end_probs_normalized
+    return (
+        distributions,
+        transition_matrix_normalized,
+        start_probs_normalized,
+        end_probs_normalized,
+    )
 
 
 class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
@@ -171,8 +178,10 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         The threshold for the training algorithm to stop.
     max_iterations
         The maximum number of iterations for the training algorithm.
-    name
-        The name of the model.
+    label_certainty
+        This defines how much the initial labels during training should be trusted.
+        If set to 1.0, the initial labels will be fully trusted and the model will effectivly not be trained.
+        A value of 0.5 means fully uncertain.
     verbose
         Whether to print progress information during training.
     n_jobs
@@ -245,6 +254,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
     stop_threshold: float
     max_iterations: int
+    label_certainty: float
     verbose: bool
     n_jobs: int
     model: OptiPara[Optional[pgHMM]]
@@ -258,6 +268,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
         stop_threshold: float = 1e-9,
         max_iterations: int = 1e8,
+        label_certainty: float = 0.7,
         verbose: bool = True,
         n_jobs: int = 1,
         model: Optional[pgHMM] = None,
@@ -272,6 +283,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         self.n_jobs = n_jobs
         self.model = model
         self.data_columns = data_columns
+        self.label_certainty = label_certainty
 
     def predict_hidden_state_sequence(self, feature_data: SingleSensorData) -> np.ndarray:
         """Perform prediction based on given data and given model.
@@ -418,7 +430,11 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
             tol=self.stop_threshold,
         )
 
-        labels_sequence_as_prior = labels_to_prior(labels_sequence_train, n_states=self.n_states)
+        labels_sequence_as_prior = labels_to_prior(
+            labels_sequence_train,
+            n_states=self.n_states,
+            certainty=self.label_certainty,
+        )
 
         model.fit(
             data_sequence_train,

@@ -201,6 +201,6 @@ for start, end in hmm.matches_start_end_original_[sensor]:
 axs[1].set_ylabel("Hidden State [N]")
 
 axs[1].set_xlabel("Samples @ %d Hz" % sampling_rate_hz)
-plt.xlim([6000, 7200])
+# plt.xlim([6000, 7200])
 fig.tight_layout()
 plt.show()
