@@ -272,37 +272,38 @@ class TestSimpleModel:
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
     def test_different_architectures(self, architecture):
         # We test initialization directly, otherwise training will modify the transition matrizes
-        model = initialize_distributions_and_transmat(
+        model, transition_matrix, start_probs, end_probs = initialize_distributions_and_transmat(
             [np.random.rand(100, 3)],
             [np.random.choice(5, 100)],
             n_states=5,
             n_gmm_components=3,
             architecture=architecture,
         )
-        transition_matrix = model.dense_transition_matrix()
-        expected = np.zeros((7, 7))
+        expected = np.zeros((5, 5))
         if architecture == "left-right-strict":
             # Normal transitions
             expected[0:5, 0:5] += np.diag(np.ones(5) / 2) + np.diag(np.ones(4) / 2, k=1)
             # Start state
-            expected[5, 0] = 1
+            expected_start = [1, 0, 0, 0, 0]
             # End state
-            expected[4, 6] = 0.5
+            expected_end = [0, 0, 0, 0, 0.5]
         elif architecture == "left-right-loose":
             # Normal transitions
             expected[0:5, 0:5] += np.diag(np.ones(5) / 3) + np.diag(np.ones(4) / 3, k=1)
             expected[4, 0] = 1 / 3
             # Start state
-            expected[5, :5] = 1 / 5
-            # End state
-            expected[:5, 6] = 1 / 3
+            expected_start = np.array([1 / 5, 1 / 5, 1 / 5, 1 / 5, 1 / 5], dtype=np.float32)
+            # # End state
+            expected_end = np.array([1 / 3, 1 / 3, 1 / 3, 1 / 3, 1 / 3], dtype=np.float32)
         elif architecture == "fully-connected":
-            expected[0:5, 0:5] = 1 / 10
+            expected[0:5, 0:5] = 1 / (5 + 1)
             # Start state
-            expected[5, :5] = 1 / 5
-            # End state
-            expected[:5, 6] = 1 / 2
+            expected_start = np.array([1 / 5, 1 / 5, 1 / 5, 1 / 5, 1 / 5], dtype=np.float32)
+            # # End state
+            expected_end = np.array([1 / 6, 1 / 6, 1 / 6, 1 / 6, 1 / 6], dtype=np.float32)
         assert_almost_equal(transition_matrix, expected)
+        assert_array_equal(start_probs, expected_start)
+        assert_array_equal(end_probs, expected_end)
 
     def test_self_optimize_calls_self_optimize_with_info(self):
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]

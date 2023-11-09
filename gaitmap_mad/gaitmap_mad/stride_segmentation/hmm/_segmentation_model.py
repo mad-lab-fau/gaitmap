@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 import copy
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Set, cast
+from typing import Any, List, Literal, Optional, Sequence, Set, Tuple, cast
 
 import numpy as np
 import pandas as pd

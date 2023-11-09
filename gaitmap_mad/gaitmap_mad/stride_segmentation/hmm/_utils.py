@@ -5,12 +5,51 @@ from typing import Any, List, Optional, Set, Tuple
 import numpy as np
 import pandas as pd
 import torch
+from pomegranate._utils import _update_parameter
 from pomegranate.distributions import Normal
 from pomegranate.gmm import GeneralMixtureModel
 from pomegranate.hmm import DenseHMM as pgHMM
 from tpcp import BaseTpcpObject, CloneFactory
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import (
+    SingleSensorData,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+)
+
+
+class RobustNormal(Normal):
+    def from_summaries(self):
+        """Update the model parameters given the extracted statistics.
+
+        This method uses calculated statistics from calls to the `summarize`
+        method to update the distribution parameters. Hyperparameters for the
+        update are passed in at initialization time.
+
+        Note: Internally, a call to `fit` is just a successive call to the
+        `summarize` method followed by the `from_summaries` method.
+        """
+        if self.frozen is True:
+            return
+
+        means = self._xw_sum / self._w_sum
+
+        if self.covariance_type == "full":
+            v = self._xw_sum.unsqueeze(0) * self._xw_sum.unsqueeze(1)
+            covs = self._xxw_sum / self._w_sum - v / self._w_sum**2.0
+
+            covs += np.eye(covs.shape[0]) * 1e-6
+
+        elif self.covariance_type in ["diag", "sphere"]:
+            covs = self._xxw_sum / self._w_sum - self._xw_sum**2.0 / self._w_sum**2.0
+            if self.covariance_type == "sphere":
+                covs = covs.mean(dim=-1)
+
+            covs += 1e-6
+
+        _update_parameter(self.means, means, self.inertia)
+        _update_parameter(self.covs, covs, self.inertia)
+        self._reset_cache()
 
 
 class ShortenedHMMPrint(BaseTpcpObject):
@@ -26,9 +65,11 @@ class ShortenedHMMPrint(BaseTpcpObject):
         return super().__repr_parameter__(name, value)
 
 
-def create_transition_matrix_fully_connected(n_states: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def create_transition_matrix_fully_connected(
+    n_states: int,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition matrix with only 1 entries."""
-    transition_matrix = np.ones((n_states, n_states)) / n_states
+    transition_matrix = np.ones((n_states, n_states))
     start_probs = np.ones(n_states)
     end_probs = np.ones(n_states)
 
@@ -51,6 +92,22 @@ def create_transition_matrix_left_right(
     # and force end with last state
     end_probs = np.zeros(n_states)
     end_probs[-1] = 1
+
+    return transition_matrix, start_probs, end_probs
+
+
+def create_transition_matrix_left_right_loose(
+    n_states: int, self_transition: bool = True
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Create nxn transition for left to right model."""
+    transition_matrix = np.zeros((n_states, n_states))
+    transition_matrix[range(n_states - 1), range(1, n_states)] = 1
+    transition_matrix[range(n_states), range(n_states)] = 1
+    if self_transition:
+        transition_matrix[-1][0] = 1
+
+    start_probs = np.ones(n_states).astype(np.float32)
+    end_probs = np.ones(n_states).astype(np.float32)
 
     return transition_matrix, start_probs, end_probs
 
@@ -107,7 +164,7 @@ def gmms_from_samples(
         clustered_data = [np.reshape(data, (len(data), 1)) for data in clustered_data]
 
     # In pg > 1.0 all distributions are multivariate
-    pg_dist_type = Normal
+    pg_dist_type = RobustNormal
 
     if n_components > 1:
         for cluster in clustered_data:
@@ -140,7 +197,6 @@ def gmms_from_samples(
         distributions = [pg_dist_type().fit(dataset) for dataset in clustered_data]
 
     return distributions, clustered_data
-
 
 
 def extract_transitions_starts_stops_from_hidden_state_sequence(
@@ -222,11 +278,16 @@ def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarra
     max_handled_state = remainder // 2
     label_sequence = np.repeat(np.arange(remainder // 2), save_repeats + 1)
     label_sequence = np.append(
-        label_sequence, np.repeat(np.arange(n_states - remainder) + max_handled_state, save_repeats)
+        label_sequence,
+        np.repeat(np.arange(n_states - remainder) + max_handled_state, save_repeats),
     )
     max_handled_state = n_states - remainder + max_handled_state
     label_sequence = np.append(
-        label_sequence, np.repeat(np.arange(n_states - max_handled_state) + max_handled_state, save_repeats + 1)
+        label_sequence,
+        np.repeat(
+            np.arange(n_states - max_handled_state) + max_handled_state,
+            save_repeats + 1,
+        ),
     )
 
     return label_sequence
@@ -250,12 +311,15 @@ def convert_stride_list_to_transition_list(
     transition_ends = [*stride_list["start"], last_end]
 
     return pd.DataFrame(
-        [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0], columns=["start", "end"]
+        [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0],
+        columns=["start", "end"],
     )
 
 
 def get_train_data_sequences_transitions(
-    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
+    data_train_sequence: List[SingleSensorData],
+    stride_list_sequence: List[SingleSensorStrideList],
+    n_states: int,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Extract Transition Training set.
 
@@ -269,7 +333,6 @@ def get_train_data_sequences_transitions(
     n_too_short_transitions = 0
 
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
-
         # for each transition, get data and create some naive labels for initialization
         for start, end in convert_stride_list_to_transition_list(stride_list, data.shape[0])[
             ["start", "end"]
@@ -296,7 +359,9 @@ def get_train_data_sequences_transitions(
 
 
 def get_train_data_sequences_strides(
-    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
+    data_train_sequence: List[SingleSensorData],
+    stride_list_sequence: List[SingleSensorStrideList],
+    n_states: int,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Extract Transition Training set.
 

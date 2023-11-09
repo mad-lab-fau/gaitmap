@@ -163,7 +163,7 @@ segmentation_model = segmentation_model.self_optimize(
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(np.e ** segmentation_model.model.edges)
+print(np.e**segmentation_model.model.edges)
 
 print(segmentation_model.model.distributions[segmentation_model.n_states - 1])
 

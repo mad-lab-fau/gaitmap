@@ -1,7 +1,7 @@
 """Simple model base classes and helper."""
 
 import warnings
-from typing import Literal, Optional, Sequence, Tuple, Union, List
+from typing import List, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,6 +16,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
+    create_transition_matrix_left_right_loose,
     gmms_from_samples,
     labels_to_prior,
     predict,
@@ -110,16 +111,32 @@ def initialize_distributions_and_transmat(
     # allow transition model to start and end in all states (as we do not have any specific information about
     # "transitions", this could be actually anything in the data which is no stride)
     elif architecture == "left-right-loose":
-        transition_matrix, _, _ = create_transition_matrix_left_right(n_states, self_transition=True)
-
-        start_probs = np.ones(n_states).astype(np.float32) / n_states
-        end_probs = np.ones(n_states).astype(np.float32) / n_states
+        transition_matrix, start_probs, end_probs = create_transition_matrix_left_right_loose(
+            n_states, self_transition=True
+        )
 
     # fully connected model with all transitions initialized equally. Allowing all possible transitions.
     else:  # architecture == "fully-connected"
-        transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
+        (
+            transition_matrix,
+            start_probs,
+            end_probs,
+        ) = create_transition_matrix_fully_connected(n_states)
 
-    return distributions, transition_matrix.astype(np.float32), start_probs, end_probs
+    transition_matrix = transition_matrix.astype(np.float32)
+    start_probs = start_probs.astype(np.float32)
+    end_probs = end_probs.astype(np.float32)
+
+    # We need to normalize the transition matrix while considering the end states.
+    normalization_factor = np.sum(transition_matrix, axis=1) + end_probs
+
+    end_probs_normalized = end_probs / normalization_factor
+    transition_matrix_normalized = transition_matrix / normalization_factor[:, None]
+
+    # The start probs are just normalized by themselves.
+    start_probs_normalized = start_probs / np.sum(start_probs)
+
+    return distributions, transition_matrix_normalized, start_probs_normalized, end_probs_normalized
 
 
 class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
@@ -372,8 +389,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
         # We also ensure that in all provided dataframes the same columns and column order exists
         data_sequence_train = [
-            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy())
-            for dataset in data_sequence
+            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy()) for dataset in data_sequence
         ]
         labels_sequence_train = []
         for labels in labels_sequence:
@@ -384,7 +400,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
             warnings.warn("Model already exists. Overwriting existing model.")
 
         # initialize model by naive equidistant labels
-        distributions, trans_mat, start_probs, end_probs = initialize_distributions_and_transmat(
+        (distributions, trans_mat, start_probs, end_probs,) = initialize_distributions_and_transmat(
             data_sequence_train,
             labels_sequence_train,
             n_states=self.n_states,
