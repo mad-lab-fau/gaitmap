@@ -204,10 +204,10 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 def _madgwick_update_series(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
-    for i, (acc_val, gyro_val) in enumerate(zip(gyro, acc)):
+    for i, (gyro_val, acc_val) in enumerate(zip(gyro, acc)):
         initial_orientation = _madgwick_update(
-            gyro=acc_val,
-            acc=gyro_val,
+            gyro=gyro_val,
+            acc=acc_val,
             initial_orientation=initial_orientation,
             sampling_rate_hz=sampling_rate_hz,
             beta=beta,
