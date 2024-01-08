@@ -34,6 +34,7 @@ from gaitmap.utils.rotations import find_angle_between_orientations, find_unsign
 ParamterNames = Literal[
     "stride_length",
     "gait_velocity",
+    "max_orientation_change",
     "ic_angle",
     "tc_angle",
     "turning_angle",
@@ -95,6 +96,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     Arc Length
         The overall arc length is directly calculated from the position of the sensor by adding the absolute changes in
         position at every time point.
+    Max. orientation change
+        The maximum change of angle in the sagittal plane. It is similar to the range of motion, however, the measured
+        parameter is value effected by other joints such as knee and hip as well.
     Turning Angle
         The turning angle is calculated as the difference in orientation of the forward direction between the first
         and the last sample of each stride.
@@ -185,6 +189,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         pretty_columns = {
             "stride_length": "stride length [m]",
             "gait_velocity": "gait velocity [m/s]",
+            "max_orientation_change": "max. angle change [deg]",
             "ic_angle": "ic angle [deg]",
             "tc_angle": "tc angle [deg]",
             "turning_angle": "turning angle [deg]",
@@ -302,7 +307,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         parameters_
             Data frame containing spatial parameters of single sensor
         sole_angle_course_
-            The sole angle in the sagttial plane for each stride
+            The sole angle in the sagittal plane for each stride
 
         """
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
@@ -375,6 +380,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         else:
             warnings.warn("TC angle could not be calculated as TC event is not available.")
 
+        if self._should_calculate("max_orientation_change"):
+            param_dict["max_orientation_change"] = _get_max_angle_change(sagittal_angles=angle_course + 90)
+
         if self._should_calculate("turning_angle"):
             param_dict["turning_angle"] = _calc_turning_angle(orientations)
 
@@ -397,6 +405,14 @@ def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
 def _get_angle_at_index(angle_course: pd.Series, index_per_stride: pd.Series) -> pd.Series:
     indexer = pd.MultiIndex.from_frame(index_per_stride.reset_index())
     return angle_course[indexer].reset_index(level=1, drop=True)
+
+
+def _get_max_angle_change(sagittal_angles: pd.Series) -> pd.Series:
+    # get the maximum change in the orientation in sagittal plane. the sagittal angle is equal to the angle_course +90
+    # degrees. This parameter can have a value between 0 and 180.
+    max_angle = sagittal_angles.groupby(level="s_id").max()
+    min_angle = sagittal_angles.groupby(level="s_id").min()
+    return max_angle - min_angle
 
 
 def _calc_turning_angle(orientations: pd.DataFrame) -> pd.Series:
