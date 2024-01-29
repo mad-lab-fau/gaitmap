@@ -3,6 +3,7 @@ from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 import numba.typed
 import numpy as np
+import pandas as pd
 from numba import njit
 from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
@@ -122,6 +123,13 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     array([1, 1])
 
     """
+    # check if input is a Series. For a Series, start and end will just be the first and last index
+    if isinstance(bool_array, pd.Series):
+        raise TypeError(
+            "Input must be boolean array! You provided a pandas Series."
+            "You can convert it to a numpy array with .values"
+        )
+
     # check if input is actually a boolean array
     if not np.array_equal(bool_array, bool_array.astype(bool)):
         raise ValueError("Input must be boolean array!")
