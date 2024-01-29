@@ -127,7 +127,7 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     # check if input is a numpy array. E.g. for a Series, start and end will just be the first and last index.
     if not isinstance(bool_array, np.ndarray):
         raise TypeError(
-            f"Input must be a numpy array!"
+            "Input must be a numpy array!"
         )
 
     # check if input is actually a boolean array
