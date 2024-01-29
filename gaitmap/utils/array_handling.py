@@ -101,7 +101,8 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
 def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     """Find regions in bool array and convert those to start-end indices.
 
-    The end index is inclusiv!
+    The end index is the first element after the True-region,
+    so you can use it for upper-bound exclusive slicing etc.
 
     Parameters
     ----------
