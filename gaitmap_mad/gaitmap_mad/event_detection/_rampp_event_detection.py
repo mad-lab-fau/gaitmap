@@ -7,7 +7,9 @@ from joblib import Memory
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
-from gaitmap.data_transform import BaseFilter
+from gaitmap.data_transform import BaseFilter, ButterworthFilter
+from tpcp import cf
+from typing_extensions import Literal
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
@@ -30,6 +32,10 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
+    ic_lowpass_filter
+        An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
+        applied to the gyr_ml data before the IC is detected.
+        While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
@@ -38,6 +44,8 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
+    stride_type
+        The stride list type that should be either "ic", or "segmented"
 
     Attributes
     ----------
@@ -150,21 +158,27 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
        biomedical engineering, 62(4), 1089-1097.. https://doi.org/10.1109/TBME.2014.2368211
 
     """
-
+    ic_lowpass_filter: BaseFilter
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
+    stride_type: Literal["segmented", "ic"]
 
     def __init__(
-        self,
-        ic_search_region_ms: Tuple[float, float] = (80, 50),
-        min_vel_search_win_size_ms: float = 100,
-        memory: Optional[Memory] = None,
-        enforce_consistency: bool = True,
-        detect_only: Optional[Tuple[str, ...]] = None,
+            self,
+            ic_search_region_ms: Tuple[float, float] = (80, 50),
+            min_vel_search_win_size_ms: float = 100,
+            memory: Optional[Memory] = None,
+            enforce_consistency: bool = True,
+            detect_only: Optional[Tuple[str, ...]] = None,
+            ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
+            stride_type: Literal["segmented", "ic"] = "segmented",
     ):
+        self.ic_lowpass_filter = ic_lowpass_filter
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
+        self.stride_type = stride_type
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only,
+                         stride_type=stride_type)
 
     def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.
@@ -186,19 +200,39 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
             "ic_search_region": ic_search_region,
             "min_vel_search_win_size": min_vel_search_win_size,
             "sampling_rate_hz": self.sampling_rate_hz,
-            "gyr_ic_lowpass_filter": None,
+            "gyr_ic_lowpass_filter": self.ic_lowpass_filter,
         }
 
 
 def _find_all_events(
-    gyr: pd.DataFrame,
-    acc: pd.DataFrame,
-    stride_list: pd.DataFrame,
-    events: Tuple[str, ...],
-    ic_search_region: Tuple[float, float],
-    min_vel_search_win_size: int,
-    sampling_rate_hz: float,
-    gyr_ic_lowpass_filter: Optional[BaseFilter],
+        gyr: pd.DataFrame,
+        acc: pd.DataFrame,
+        stride_list: pd.DataFrame,
+        events: Tuple[str, ...],
+        ic_search_region: Tuple[float, float],
+        min_vel_search_win_size: int,
+        sampling_rate_hz: float,
+        gyr_ic_lowpass_filter: Optional[BaseFilter],
+        stride_type: Literal["segmented", "ic"]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Find events in provided data by checking the stride type and calling the relevant method."""
+    if stride_type == 'ic':
+        return _find_all_events_for_ic_stride(gyr, acc, stride_list, events, ic_search_region, min_vel_search_win_size,
+                                   sampling_rate_hz, gyr_ic_lowpass_filter)
+    else:  # the default stride type (segmented)
+        return _find_all_events_for_segmented_stride(gyr, acc, stride_list, events, ic_search_region, min_vel_search_win_size,
+                                          sampling_rate_hz, gyr_ic_lowpass_filter)
+
+
+def _find_all_events_for_segmented_stride(
+        gyr: pd.DataFrame,
+        acc: pd.DataFrame,
+        stride_list: pd.DataFrame,
+        events: Tuple[str, ...],
+        ic_search_region: Tuple[float, float],
+        min_vel_search_win_size: int,
+        sampling_rate_hz: float,
+        gyr_ic_lowpass_filter: Optional[BaseFilter],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"]
@@ -225,9 +259,9 @@ def _find_all_events(
             gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
             acc_sec = acc_pa[start:end]
             gyr_grad = np.gradient(gyr_ml[start:end])
-            ic_events.append(start + _detect_ic(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
+            ic_events.append(start + _detect_ic_for_segmented_stride(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
         if "tc" in events:
-            tc_events.append(start + _detect_tc(gyr_ml[start:end]))
+            tc_events.append(start + _detect_tc_for_segmented_stride(gyr_ml[start:end]))
         if "min_vel" in events:
             min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr[start:end], min_vel_search_win_size))
 
@@ -238,7 +272,142 @@ def _find_all_events(
     )
 
 
-def _detect_ic(
+def _find_all_events_for_ic_stride(
+        gyr: pd.DataFrame,
+        acc: pd.DataFrame,
+        stride_list: pd.DataFrame,
+        events: Tuple[str, ...],
+        ic_search_region: Tuple[float, float],
+        min_vel_search_win_size: int,
+        sampling_rate_hz: float,
+        gyr_ic_lowpass_filter: Optional[BaseFilter],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Find events in provided data by looping over single strides."""
+    gyr_ml = gyr["gyr_ml"]
+    if "ic" in events:
+        if gyr_ic_lowpass_filter is not None:
+            gyr_ml_filtered = gyr_ic_lowpass_filter.filter(
+                gyr_ml, sampling_rate_hz=sampling_rate_hz
+            ).filtered_data_.to_numpy()
+        else:
+            gyr_ml_filtered = gyr_ml.to_numpy()
+    else:
+        gyr_ml_filtered = None
+    gyr = gyr.to_numpy()
+    acc_pa = -acc["acc_pa"].to_numpy()  # have to invert acc data to work on rampp paper
+    ic_events = []
+    tc_events = []
+    min_vel_events = []
+    _is_initial_stride = False
+    for index, stride in stride_list.iterrows():
+        current_stride_start = stride["start"]
+        current_stride_end = stride["end"]
+        if "ic" in events:
+            if index == 0:
+                _is_initial_stride = True
+                # in the first stride, we search only the current stride
+                previous_stride_start = stride["start"]
+                previous_stride_end = stride["end"]
+            else:
+                previous_stride_start = stride_list.loc[index - 1]["start"]
+                previous_stride_end = stride_list.loc[index - 1]["end"]
+            # to get the ic event we use a search window between the peak of previous stride and part of the current
+            # stride get data of current stride
+            gyr_ml_filtered_sec_current_stride = gyr_ml_filtered[current_stride_start:current_stride_end]
+            acc_sec_current_stride = acc_pa[current_stride_start:current_stride_end]
+            # get data of previous stride
+            gyr_ml_filtered_sec_previous_stride = gyr_ml_filtered[previous_stride_start:previous_stride_end]
+            acc_sec_previous_stride = acc_pa[previous_stride_start:previous_stride_end]
+
+            ic_events.append(current_stride_start + _detect_ic_for_ic_stride(gyr_ml_filtered_sec_previous_stride,
+                                                                gyr_ml_filtered_sec_current_stride,
+                                                                acc_sec_previous_stride, acc_sec_current_stride,
+                                                                ic_search_region, _is_initial_stride))
+
+            _is_initial_stride = False
+
+        if "tc" in events:
+            tc_events.append(current_stride_start + _detect_tc_for_ic_stride(gyr_ml_filtered[
+                                                               current_stride_start:current_stride_end]))  # use the filtered signal here because for some patients there is a lot of noise around ic
+        if "min_vel" in events:
+            min_vel_events.append(current_stride_start + _detect_min_vel_gyr_energy(gyr[current_stride_start:
+                                                                                        current_stride_end],
+                                                                                    min_vel_search_win_size))
+
+    return (
+        np.array(ic_events, dtype=float) if ic_events else None,
+        np.array(tc_events, dtype=float) if tc_events else None,
+        np.array(min_vel_events, dtype=float) if min_vel_events else None,
+    )
+
+
+def _detect_ic_for_ic_stride(
+        gyr_ml_previous_stride: np.ndarray, gyr_ml_current_stride: np.ndarray, acc_pa_inv_previous_stride: np.ndarray,
+        acc_pa_inv_current_stride: np.ndarray, ic_search_region: Tuple[float, float], is_initial_stride: bool
+) -> float:
+    """Find the ic.
+
+    Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
+    in gaitmap.
+    This is because the algorithm was originally developed considering a different coordinate system.
+    To keep the logic identical to the original paper, we pass in the inverted signal axis (see parent function)
+    """
+    # Determine rough search region
+
+    # Determine rough search region as the region between the peak of the previous stride and 0.2 of the stance phase
+    # of the current stride
+    if is_initial_stride:
+        search_region = 0, int(0.2 * gyr_ml_current_stride.shape[0])
+    else:
+        peak = _find_previous_stride_positive_peak(gyr_ml_previous_stride)
+        search_region = peak, int(gyr_ml_previous_stride.shape[0] + 0.1 * gyr_ml_current_stride.shape[0])
+    if search_region[1] - search_region[0] < 0:
+        # The gyr argmax was not found
+        return np.nan
+
+    # alternative:
+    # concatenate the two strides
+    gyr_ml_concatenated = np.concatenate((gyr_ml_previous_stride, gyr_ml_current_stride))
+    gyr_ml_concatenated_grad = np.gradient(gyr_ml_concatenated)
+
+    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_concatenated_grad[slice(*search_region)]))
+    refined_search_region_end = int(
+        refined_search_region_start + np.argmax(gyr_ml_concatenated_grad[refined_search_region_start:search_region[1]])
+    )
+
+    if refined_search_region_end - refined_search_region_start < 0:
+        return np.nan
+
+    # Find heel strike candidate in search region based on gyr
+    if refined_search_region_start == refined_search_region_end:
+        heel_strike_candidate = refined_search_region_start
+    else:
+        heel_strike_candidate = refined_search_region_start + np.argmin(
+            gyr_ml_concatenated[refined_search_region_start:refined_search_region_end]
+        )
+
+    # Acc search window
+    acc_pa_inv_concatenated = np.concatenate((acc_pa_inv_previous_stride, acc_pa_inv_current_stride))
+    acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
+    acc_search_region_end = int(np.min(np.array([acc_pa_inv_concatenated.shape[0],
+                                                 heel_strike_candidate + ic_search_region[1]])))
+    if is_initial_stride:
+        return float(np.argmin(acc_pa_inv_current_stride[acc_search_region_start:
+                                                         acc_search_region_end]))
+    else:
+        return float(acc_search_region_start + np.argmin(acc_pa_inv_concatenated[acc_search_region_start:
+                                                                                 acc_search_region_end]) -
+                     acc_pa_inv_previous_stride.shape[0])
+
+
+def _detect_tc_for_ic_stride(gyr_ml: np.ndarray) -> float:
+    try:
+        return _find_first_negative_before_peak(gyr_ml)
+    except IndexError:
+        return np.nan
+
+
+def _detect_ic_for_segmented_stride(
     gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
 ) -> float:
     """Find the ic.
@@ -277,8 +446,36 @@ def _detect_ic(
     return float(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
 
 
-def _detect_tc(gyr_ml: np.ndarray) -> float:
+def _detect_tc_for_segmented_stride(gyr_ml: np.ndarray) -> float:
     try:
         return np.where(np.diff(np.signbit(gyr_ml)))[0][0]
     except IndexError:
         return np.nan
+
+
+def _find_first_negative_before_peak(arr):
+    """To find the tc.
+
+        find the peak of the signal and then search for the first negative value before the peak
+        """
+
+    peak_index = np.argmax(arr)  # Find the index of the largest positive number (peak)
+
+    # Find the index of the first negative  number before the peak (where the sign of the signal change)
+    i = peak_index
+    for i in range(peak_index - 1, -1, -1):
+        if arr[i] < 0:
+            return i  # Return the index of the smallest positive number before the peak
+
+    return i
+
+
+def _find_previous_stride_positive_peak(gyr_ml_previous_stride):
+    """To find the start of the search region for the ic.
+
+    """
+    try:
+        return np.argmax(gyr_ml_previous_stride)
+    except IndexError:
+        return np.nan
+
