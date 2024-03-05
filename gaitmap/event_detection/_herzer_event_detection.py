@@ -1,12 +1,13 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
+import warnings
 from typing import Callable, Dict, Optional, Tuple, Union
-from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from scipy import signal
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
@@ -241,6 +242,7 @@ def _find_all_events(
     stride_type: Literal["segmented"]
 ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
+    warnings.warn("This algorithm works on "+stride_type+" stride type, IC stride type is not supoorted")
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
     # inverting acc, as this algorithm was developed assuming a flipped axis like the original Rampp algorithm

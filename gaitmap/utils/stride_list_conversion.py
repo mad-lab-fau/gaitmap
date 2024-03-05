@@ -51,7 +51,7 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
 
 
 def _segmented_stride_list_to_min_vel_single_sensor(
-    stride_list: SingleSensorStrideList, target_stride_type: Literal["min_vel", "ic"],
+        stride_list: SingleSensorStrideList, target_stride_type: Literal["min_vel", "ic"],
         source_stride_type: Literal["segmented", "ic"]
 ) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Convert a segmented stride list with detected events into other types of stride lists.
@@ -93,7 +93,8 @@ def _segmented_stride_list_to_min_vel_single_sensor(
             converted_stride_list["pre_ic"] = converted_stride_list["ic"]
             # ic of each stride is the ic in the subsequent segmented stride
             converted_stride_list["ic"] = converted_stride_list["ic"].shift(-1)
-        if "tc" in converted_stride_list.columns and source_stride_type == "segmented": #do not shift if source_stride_type is "ic"
+        if "tc" in converted_stride_list.columns and source_stride_type == "segmented":
+            # do not shift if source_stride_type is "ic"
             # tc of each stride is the tc in the subsequent segmented stride
             converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
@@ -117,9 +118,9 @@ def _segmented_stride_list_to_min_vel_single_sensor(
 
 
 def enforce_stride_list_consistency(
-    stride_list: SingleSensorStrideList,
-    stride_type=Literal["segmented", "min_vel", "ic"],
-    check_stride_list: bool = True,
+        stride_list: SingleSensorStrideList,
+        stride_type=Literal["segmented", "min_vel", "ic"],
+        check_stride_list: bool = True,
 ) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Exclude those strides where the gait events do not match the expected order or contain NaN.
 
@@ -171,8 +172,8 @@ def enforce_stride_list_consistency(
 
 
 def intersect_stride_list(
-    stride_event_list: SingleSensorStrideList,
-    regions_of_interest: SingleSensorRegionsOfInterestList,
+        stride_event_list: SingleSensorStrideList,
+        regions_of_interest: SingleSensorRegionsOfInterestList,
 ) -> List[SingleSensorStrideList]:
     """Split the stride list into multiple stride lists based on the regions of interest.
 
@@ -211,7 +212,7 @@ def intersect_stride_list(
         # find all strides that are fully contained in the roi
         partial_stride_list = stride_list.loc[
             (stride_list["start"] >= roi["start"]) & (stride_list["end"] <= roi["end"])
-        ]
+            ]
         partial_stride_list -= roi["start"]
         stride_lists.append(partial_stride_list)
 

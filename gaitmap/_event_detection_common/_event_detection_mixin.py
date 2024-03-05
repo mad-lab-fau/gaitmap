@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 from joblib import Memory
 from numpy.linalg import norm
-from typing_extensions import Self
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
@@ -125,7 +124,8 @@ class _EventDetectionMixin:
         # find events in all segments
         event_detection_func = self._select_all_event_detection_method()
         event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, events=events, stride_type=self.stride_type,**detect_kwargs)
+        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, events=events, stride_type=self.stride_type,
+                                               **detect_kwargs)
 
         # build first dict / df based on segment start and end
         segmented_event_list = {
