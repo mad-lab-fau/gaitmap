@@ -1,5 +1,6 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
 from typing import Callable, Dict, Optional, Tuple, Union
+from typing_extensions import Literal
 
 import numpy as np
 import pandas as pd
@@ -187,6 +188,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     ic_lowpass_filter: BaseFilter
     memory: Optional[Memory]
     enforce_consistency: bool
+    stride_type: Literal["segmented"]
 
     def __init__(
         self,
@@ -197,12 +199,15 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
+            stride_type: Literal["segmented"] = "segmented",
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         self.ic_lowpass_filter = ic_lowpass_filter
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
+        self.stride_type = stride_type
+        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only,
+                         stride_type=stride_type)
 
     def _get_detect_kwargs(self) -> Dict[str, int]:
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
@@ -233,6 +238,7 @@ def _find_all_events(
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
+    stride_type: Literal["segmented"]
 ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
