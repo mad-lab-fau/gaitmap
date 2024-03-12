@@ -13,7 +13,7 @@ from gaitmap.event_detection import RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.event_detection._rampp_event_detection import _detect_tc
+from gaitmap_mad.event_detection._rampp_event_detection import _detect_tc_for_segmented_stride
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 
@@ -223,11 +223,11 @@ class TestEventDetectionRampp:
         """Test correct handling of signal that does or does not provide a change of the sign."""
         # with sign change
         signal1 = np.concatenate([np.ones(10), np.ones(10) * -1])
-        assert _detect_tc(signal1) == 9
+        assert _detect_tc_for_segmented_stride(signal1) == 9
 
         # without sign change
         signal2 = np.ones(10)
-        assert np.isnan(_detect_tc(signal2))
+        assert np.isnan(_detect_tc_for_segmented_stride(signal2))
 
     @pytest.mark.parametrize(
         "detect_only",

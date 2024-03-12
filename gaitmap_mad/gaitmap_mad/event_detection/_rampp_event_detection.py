@@ -33,10 +33,6 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
-    ic_lowpass_filter
-        An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
-        applied to the gyr_ml data before the IC is detected.
-        While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     enforce_consistency
         An optional bool that can be set to False if you wish to disable postprocessing
         (see Notes section for more information).
@@ -46,7 +42,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
     input_stride_type
-        The stride list type that should be either "ic", or "segmented"
+        The stride list type that should be either "ic", or "segmented".
 
     Attributes
     ----------
@@ -160,7 +156,6 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     """
 
-    ic_lowpass_filter: BaseFilter
     ic_search_region_ms: Tuple[float, float]
     min_vel_search_win_size_ms: float
     input_stride_type: Literal["segmented", "ic"]
@@ -172,10 +167,8 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-        ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
-        self.ic_lowpass_filter = ic_lowpass_filter
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.input_stride_type = input_stride_type
@@ -206,7 +199,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
             "ic_search_region": ic_search_region,
             "min_vel_search_win_size": min_vel_search_win_size,
             "sampling_rate_hz": self.sampling_rate_hz,
-            "gyr_ic_lowpass_filter": self.ic_lowpass_filter,
+            "gyr_ic_lowpass_filter": None,
         }
 
 

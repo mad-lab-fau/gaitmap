@@ -55,7 +55,8 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
-
+    input_stride_type
+        The stride list type that should be either "ic", or "segmented".
 
     Attributes
     ----------
@@ -206,7 +207,6 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         self.ic_lowpass_filter = ic_lowpass_filter
-        self.input_stride_type = input_stride_type
         super().__init__(
             memory=memory,
             enforce_consistency=enforce_consistency,
