@@ -1,6 +1,6 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
-from typing import Dict, Optional, Tuple, Literal
+from typing import Dict, Literal, Optional, Tuple
 
 from joblib import Memory
 from tpcp import cf

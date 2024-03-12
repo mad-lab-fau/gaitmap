@@ -5,12 +5,11 @@ from typing import Callable, Dict, Optional, Tuple, Union, cast
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from tpcp import cf
 from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
-from gaitmap.data_transform import BaseFilter, ButterworthFilter
+from gaitmap.data_transform import BaseFilter
 
 
 class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
