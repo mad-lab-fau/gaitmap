@@ -1,4 +1,5 @@
 """A mixin for all common tests that should be run on all algorithm classes."""
+
 import inspect
 
 import joblib
@@ -51,7 +52,6 @@ class TestAlgorithmMixin:
 
         documented_names = {p.name for p in docs["Attributes"]}
         actual_names = set(get_results(after_action_instance).keys())
-
         assert documented_names == actual_names
 
     def test_all_other_parameters_documented(self, after_action_instance):

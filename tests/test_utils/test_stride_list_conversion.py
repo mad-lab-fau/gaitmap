@@ -111,7 +111,9 @@ class TestConvertSegmentedStrideList:
     def test_simple_conversion(self, target):
         stride_list = self._create_example_stride_list_with_pause()
 
-        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(stride_list, target_stride_type=target)
+        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(
+            stride_list, source_stride_type="segmented", target_stride_type=target
+        )
 
         # We do not test everything here, but just see if it passes the basic checks.
         assert np.all(converted["start"] == converted[target])
@@ -119,7 +121,7 @@ class TestConvertSegmentedStrideList:
         assert len(dropped) == 2
         assert list(dropped.index) == [4, 9]
         # check consistency
-        _, tmp = enforce_stride_list_consistency(converted, stride_type=target)
+        _, tmp = enforce_stride_list_consistency(converted, input_stride_type=target)
         assert len(tmp) == 0
         # Check that the length of all strides is still 1
         assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
@@ -129,7 +131,9 @@ class TestConvertSegmentedStrideList:
         stride_list = self._create_example_stride_list_with_pause()
         # Drop the second to last stride to create a pause
         stride_list = stride_list.drop(8)
-        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(stride_list, "min_vel")
+        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(
+            stride_list, source_stride_type="segmented", target_stride_type="min_vel"
+        )
 
         # Check that the length of all strides is still 1
         assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
@@ -148,7 +152,7 @@ class TestConvertSegmentedStrideList:
 
         # We do not test everything here, but just see if it passes the basic checks.
         assert np.all(converted["start"] == converted[target])
-        _, tmp = enforce_stride_list_consistency(converted, stride_type=target)
+        _, tmp = enforce_stride_list_consistency(converted, input_stride_type=target)
         assert len(tmp) == 0
 
         assert_frame_equal(converted, converted_multiple)

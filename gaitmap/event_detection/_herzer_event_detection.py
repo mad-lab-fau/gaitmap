@@ -1,4 +1,5 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
+
 from typing import Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -6,6 +7,7 @@ import pandas as pd
 from joblib import Memory
 from scipy import signal
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
@@ -53,7 +55,8 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
-
+    input_stride_type
+        The stride list type that should be either "ic", or "segmented".
 
     Attributes
     ----------
@@ -187,6 +190,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     ic_lowpass_filter: BaseFilter
     memory: Optional[Memory]
     enforce_consistency: bool
+    input_stride_type: Literal["segmented"]
 
     def __init__(
         self,
@@ -197,12 +201,18 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
+        input_stride_type: Literal["segmented"] = "segmented",
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         self.ic_lowpass_filter = ic_lowpass_filter
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
+        super().__init__(
+            memory=memory,
+            enforce_consistency=enforce_consistency,
+            detect_only=detect_only,
+            input_stride_type=input_stride_type,
+        )
 
     def _get_detect_kwargs(self) -> Dict[str, int]:
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
@@ -233,8 +243,11 @@ def _find_all_events(
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
+    input_stride_type: Literal["segmented"],
 ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
+    if input_stride_type != "segmented":
+        raise NotImplementedError()
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
     # inverting acc, as this algorithm was developed assuming a flipped axis like the original Rampp algorithm
