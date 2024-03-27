@@ -18,5 +18,5 @@ build:
       - pip install poetry
     post_install:
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --all-extras
-      - poetry run pip install ./gaitmap_mad
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry run pip install ./gaitmap_mad --upgrade
 
