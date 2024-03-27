@@ -77,7 +77,7 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 # ----------------------
 
 
-def plot_dtw(dtw, sensor="left_sensor"):
+def plot_dtw(dtw, sensor="left_sensor") -> None:
     fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
     dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
     axs[0].set_ylabel("gyro [deg/s]")

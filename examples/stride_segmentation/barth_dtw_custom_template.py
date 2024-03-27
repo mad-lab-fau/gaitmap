@@ -45,7 +45,7 @@ for ax, foot in zip(axs, ["left", "right"]):
     ax.set_title(f"{foot} foot")
     convert_left_foot_to_fbf(template_data[f"{foot}_sensor"])[BF_GYR].plot(ax=ax)
     # Mark stride borders with vertical lines
-    for i, val in template_stride_borders[f"{foot}_sensor"].iterrows():
+    for _i, val in template_stride_borders[f"{foot}_sensor"].iterrows():
         ax.axvline(x=val["end"] / sampling_rate_hz, color="k")
         ax.axvline(x=val["start"] / sampling_rate_hz, color="k")
 
@@ -182,7 +182,7 @@ for ax, foot in zip(axs, ["left", "right"]):
     ax.set_title(f"{foot} foot")
     bf_data[f"{foot}_sensor"][BF_GYR].plot(ax=ax)
     # Mark stride borders with vertical lines
-    for i, val in dtw.stride_list_[f"{foot}_sensor"].iterrows():
+    for _i, val in dtw.stride_list_[f"{foot}_sensor"].iterrows():
         ax.axvline(x=val["end"] / sampling_rate_hz, color="k")
         ax.axvline(x=val["start"] / sampling_rate_hz, color="k")
 

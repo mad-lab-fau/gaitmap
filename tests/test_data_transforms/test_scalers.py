@@ -32,7 +32,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     __test__ = True
 
     @pytest.fixture(params=all_scaler, autouse=True)
-    def set_algo_class(self, request):
+    def set_algo_class(self, request) -> None:
         self.algorithm_class = request.param
 
     @pytest.fixture()
@@ -47,7 +47,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestFixedScaler:
-    def test_transform_default(self):
+    def test_transform_default(self) -> None:
         t = FixedScaler()
         data = pd.DataFrame(np.random.rand(10, 10))
         t.transform(data)
@@ -56,7 +56,7 @@ class TestFixedScaler:
         assert t.transformed_data_.equals(data)
 
     @pytest.mark.parametrize(("scale", "offset"), [(1, 1), (2, 1), (3, 2)])
-    def test_transform(self, scale, offset):
+    def test_transform(self, scale, offset) -> None:
         t = FixedScaler(scale=scale, offset=offset)
         data = pd.DataFrame(np.random.rand(10, 10))
         t.transform(data)
@@ -66,7 +66,7 @@ class TestFixedScaler:
 
 class TestStandardScaler:
     @pytest.mark.parametrize("ddof", [0, 1, 2])
-    def test_transform(self, ddof):
+    def test_transform(self, ddof) -> None:
         t = StandardScaler(ddof=ddof)
         data = pd.DataFrame(np.random.rand(10, 10))
         t.transform(data)
@@ -77,7 +77,7 @@ class TestStandardScaler:
 
 class TestTrainableStandardScaler:
     @pytest.mark.parametrize("ddof", [0, 1, 2])
-    def test_transform(self, ddof):
+    def test_transform(self, ddof) -> None:
         t = TrainableStandardScaler(ddof=ddof)
         train_data = pd.DataFrame(np.random.rand(10, 10))
         test_data = pd.DataFrame(np.random.rand(10, 10))
@@ -100,7 +100,7 @@ class TestTrainableStandardScaler:
             (test_data - train_data.to_numpy().mean()) / train_data.to_numpy().std(ddof=ddof)
         )
 
-    def test_iterative_std_calculation(self):
+    def test_iterative_std_calculation(self) -> None:
         test_data = [pd.DataFrame(np.random.rand(10, 10)) for _ in range(5)]
         test_data_concatenated = pd.concat(test_data)
         t = TrainableStandardScaler()
@@ -109,7 +109,7 @@ class TestTrainableStandardScaler:
 
         assert t.std == pytest.approx(test_data_concatenated.to_numpy().std(ddof=t.ddof), rel=1e-5)
 
-    def test_raise_error_before_optimization(self):
+    def test_raise_error_before_optimization(self) -> None:
         t = TrainableStandardScaler()
         with pytest.raises(ValueError):
             t.transform(pd.DataFrame(np.random.rand(10, 10)))
@@ -118,7 +118,7 @@ class TestTrainableStandardScaler:
 class TestAbsMaxScaler:
     @pytest.mark.parametrize("out_max", [2, 3, 0.3])
     @pytest.mark.parametrize("data_factor", [1, -2, 0.3])
-    def test_transform(self, out_max, data_factor):
+    def test_transform(self, out_max, data_factor) -> None:
         t = AbsMaxScaler(out_max=out_max)
         data = pd.DataFrame([[0, 1, 1], [2, 1, 3]]) * data_factor
         t.transform(data)
@@ -129,7 +129,7 @@ class TestAbsMaxScaler:
 
 class TestTrainableAbsMaxScaler:
     @pytest.mark.parametrize("out_max", [2, 3, 0.3])
-    def test_transform(self, out_max):
+    def test_transform(self, out_max) -> None:
         t = TrainableAbsMaxScaler(out_max=out_max)
         train_data = pd.DataFrame(np.random.rand(10, 10))
         test_data = pd.DataFrame(np.random.rand(10, 10))
@@ -148,7 +148,7 @@ class TestTrainableAbsMaxScaler:
         assert id(t.data) == id(test_data)
         assert_frame_equal(t.transformed_data_, test_data / np.max(np.abs(train_data.to_numpy())) * out_max)
 
-    def test_raise_error_before_optimization(self):
+    def test_raise_error_before_optimization(self) -> None:
         t = TrainableAbsMaxScaler()
         with pytest.raises(ValueError):
             t.transform(pd.DataFrame(np.random.rand(10, 10)))
@@ -156,7 +156,7 @@ class TestTrainableAbsMaxScaler:
 
 class TestMinMaxScaler:
     @pytest.mark.parametrize("out_range", [(0, 1), (0, 2), (-1, 1), (-1, 2)])
-    def test_transform(self, out_range):
+    def test_transform(self, out_range) -> None:
         t = MinMaxScaler(out_range=out_range)
         data = pd.DataFrame(np.random.rand(10, 10))
         t.transform(data)
@@ -165,7 +165,7 @@ class TestMinMaxScaler:
         assert t.transformed_data_.to_numpy().max() == pytest.approx(out_range[1], rel=1e-3)
 
     @pytest.mark.parametrize("out_range", [(0, 0), (1, -1), (2, 2)])
-    def test_raise_error_for_invalid_out_range(self, out_range):
+    def test_raise_error_for_invalid_out_range(self, out_range) -> None:
         data = pd.DataFrame(np.random.rand(10, 10))
         t = MinMaxScaler(out_range=out_range)
         with pytest.raises(ValueError):
@@ -174,7 +174,7 @@ class TestMinMaxScaler:
 
 class TestTrainableMinMaxScaler:
     @pytest.mark.parametrize("out_range", [(0, 1), (0, 2), (-1, 1), (-1, 2)])
-    def test_transform(self, out_range):
+    def test_transform(self, out_range) -> None:
         t = TrainableMinMaxScaler(out_range=out_range)
         train_data = pd.DataFrame(np.random.rand(10, 10))
         test_data = pd.DataFrame(np.random.rand(10, 10))
@@ -200,7 +200,7 @@ class TestTrainableMinMaxScaler:
             + out_range[0],
         )
 
-    def test_raise_error_before_optimization(self):
+    def test_raise_error_before_optimization(self) -> None:
         t = TrainableMinMaxScaler()
         with pytest.raises(ValueError):
             t.transform(pd.DataFrame(np.random.rand(10, 10)))

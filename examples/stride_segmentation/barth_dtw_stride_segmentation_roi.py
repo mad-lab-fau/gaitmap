@@ -83,7 +83,7 @@ roi_seg = roi_seg.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz, regio
 # The additional "roi_id" column indicates in which ROI a stride was identified in.
 
 stride_list_left = roi_seg.stride_list_["left_sensor"]
-print("{} strides were detected.".format(len(stride_list_left)))
+print(f"{len(stride_list_left)} strides were detected.")
 stride_list_left
 
 # %%

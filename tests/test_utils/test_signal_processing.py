@@ -3,7 +3,7 @@ import numpy as np
 from gaitmap.utils.signal_processing import row_wise_autocorrelation
 
 
-def test_row_wise_autocorrelation():
+def test_row_wise_autocorrelation() -> None:
     """Test if the manually implemented row wise autocorrelation function produces similar results than the numpy
     implementation
     .

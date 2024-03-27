@@ -1,4 +1,5 @@
 """Segmentation _model base classes and helper."""
+
 import copy
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
@@ -337,7 +338,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         name: str = "segmentation_model",
         model: Optional[pgHMM] = None,
         data_columns: Optional[Tuple[str, ...]] = None,
-    ):
+    ) -> None:
         self.stride_model = stride_model
         self.transition_model = transition_model
         self.feature_transform = feature_transform

@@ -1,0 +1,141 @@
+line-length = 120
+target-version = "py38"
+
+[lint]
+select = [
+    # pyflakes
+    "F",
+    # pycodestyle
+    "E",
+    "W",
+    # mccabe
+    "C90",
+    # isort
+    "I",
+    # pydocstyle
+    "D",
+    # pyupgrade
+    "UP",
+    # pep8-naming
+    "N",
+    # flake8-blind-except
+    "BLE",
+    # flake8-2020
+    "YTT",
+    # flake8-builtins
+    "A",
+    # flake8-comprehensions
+    "C4",
+    # flake8-debugger
+    "T10",
+    # flake8-errmsg
+    "EM",
+    # flake8-implicit-str-concat
+    "ISC",
+    # flake8-pytest-style
+    "PT",
+    # flake8-return
+    "RET",
+    # flake8-simplify
+    "SIM",
+    # flake8-unused-arguments
+    "ARG",
+    # pandas-vet
+    "PD",
+    # pygrep-hooks
+    "PGH",
+    # flake8-bugbear
+    "B",
+    # flake8-quotes
+    "Q",
+    # pylint
+    "PL",
+    # flake8-pie
+    "PIE",
+    # flake8-type-checking
+    "TCH",
+    # tryceratops
+    "TRY",
+    # flake8-use-pathlib
+    "PTH",
+    "RUF",
+    # Numpy rules
+    "NPY",
+    # Implicit namespace packages
+    "INP",
+    # No relative imports
+    "TID252",
+    # f-strings over string concatenation
+    "FLY",
+    # Annotations
+    # No enforced annotations
+#    "ANN"
+
+
+]
+
+ignore = [
+    # controversial
+    "B006",
+    # controversial
+    "B008",
+    "B010",
+    # Magic constants
+    "PLR2004",
+    # Strings in error messages
+    "EM101",
+    "EM102",
+    "EM103",
+    # Exception strings
+    "TRY003",
+    # Varaibles before return
+    "RET504",
+    # Abstract raise into inner function
+    "TRY301",
+    # df as varaible name
+    "PD901",
+    # melt over stack
+    "PD013",
+    # No Any annotations
+    "ANN401",
+    # Self annotation
+    "ANN101",
+    # To many arguments
+    "PLR0913",
+    # Class attribute shadows builtin
+    "A003",
+    # No typing for `cls`
+    "ANN102",
+    # Ignore because of formatting
+    "ISC001",
+    # Use type-checking block
+    "TCH001",
+    "TCH002",
+    "TCH003",
+    # No stacklevel
+    "B028",
+    # Overwriting loop variable
+    "PLW2901"
+
+]
+
+
+exclude = [
+    "doc/sphinxext/*.py",
+    "doc/build/*.py",
+    "doc/temp/*.py",
+    ".eggs/*.py",
+    "example_data",
+]
+
+
+[lint.per-file-ignores]
+# https://github.com/astral-sh/ruff/issues/8925
+"examples/**/*.py" = ["D400"]
+
+
+[lint.pydocstyle]
+convention = "numpy"
+
+[format]
+docstring-code-format = true

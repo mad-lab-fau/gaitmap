@@ -18,6 +18,7 @@ This is also a great example of how to use the `tpcp` optimization methods in co
        Navigation.”
 
 """
+
 import pandas as pd
 
 # %%
@@ -76,13 +77,13 @@ from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.trajectory_reconstruction import RtsKalman
-from gaitmap.zupt_detection import AredZuptDetector, ShoeZuptDetector
+from gaitmap.zupt_detection import ShoeZuptDetector
 
 
 class TrajectoryPipeline(Pipeline[HealthyImu]):
     trajectory_: pd.DataFrame
 
-    def __init__(self, zupt_method: BaseZuptDetector = cf(ShoeZuptDetector())):
+    def __init__(self, zupt_method: BaseZuptDetector = cf(ShoeZuptDetector())) -> None:
         self.zupt_method = zupt_method
 
     def run(self, datapoint: HealthyImu) -> Self:

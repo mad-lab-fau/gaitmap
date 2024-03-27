@@ -8,6 +8,7 @@ the right thing.
 - The same is True for the threshold/max_cost
 
 """
+
 from typing import Dict, Union
 from unittest.mock import patch
 
@@ -54,15 +55,15 @@ class DtwTestBase:
 class TestIOErrors(DtwTestBase):
     """Test that the correct errors are raised if wrong parameter values are provided."""
 
-    def test_no_template_provided(self):
+    def test_no_template_provided(self) -> None:
         with pytest.raises(ValueError) as e:
             dtw = self.init_dtw(template=None)
             dtw.segment(None, None)
 
         assert "`template` must be specified" in str(e)
 
-    @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
-    def test_unsuitable_datatype(self, data):
+    @pytest.mark.parametrize("data", [pd.DataFrame, [], None])
+    def test_unsuitable_datatype(self, data) -> None:
         """No proper Sensordata provided."""
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValidationError) as e:
@@ -71,7 +72,7 @@ class TestIOErrors(DtwTestBase):
 
         assert "neither single- or multi-sensor data" in str(e)
 
-    def test_invalid_template_combination(self):
+    def test_invalid_template_combination(self) -> None:
         """Invalid combinations of template and dataset format."""
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
@@ -80,7 +81,7 @@ class TestIOErrors(DtwTestBase):
 
         assert "Invalid combination of data and template" in str(e)
 
-    def test_multi_sensor_dataset_without_proper_template(self):
+    def test_multi_sensor_dataset_without_proper_template(self) -> None:
         """Invalid combination of template and multisensor dataset."""
         # This template can not be used with multi sensor dataframes.
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
@@ -96,7 +97,7 @@ class TestIOErrors(DtwTestBase):
 
         assert "template must either be of type `Dict[str, DtwTemplate]`" in str(e)
 
-    def test_invalid_find_matches_method(self):
+    def test_invalid_find_matches_method(self) -> None:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
             dtw = self.init_dtw(template=template, find_matches_method="invalid_name")
@@ -104,9 +105,9 @@ class TestIOErrors(DtwTestBase):
 
         assert "find_matches_method" in str(e)
 
-    @pytest.mark.parametrize("para", ("max_template_stretch_ms", "max_signal_stretch_ms"))
-    @pytest.mark.parametrize("value", (-2, 0))
-    def test_invalid_stretch_larger_zero(self, para, value):
+    @pytest.mark.parametrize("para", ["max_template_stretch_ms", "max_signal_stretch_ms"])
+    @pytest.mark.parametrize("value", [-2, 0])
+    def test_invalid_stretch_larger_zero(self, para, value) -> None:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         with pytest.raises(ValueError) as e:
             dtw = self.init_dtw(template=template, **{para: value})
@@ -115,8 +116,8 @@ class TestIOErrors(DtwTestBase):
         assert para in str(e)
         assert str(value) in str(e)
 
-    @pytest.mark.parametrize("paras", ((None, 100), (100, None)))
-    def test_none_constrain_is_inf(self, paras):
+    @pytest.mark.parametrize("paras", [(None, 100), (100, None)])
+    def test_none_constrain_is_inf(self, paras) -> None:
         para_names = ("max_template_stretch_ms", "max_signal_stretch_ms")
         func_names = ("max_subseq_steps", "max_longseq_steps")
         none_index = list(paras).index(None)
@@ -139,7 +140,7 @@ class TestIOErrors(DtwTestBase):
             assert kwargs[func_names[none_index]] == np.inf
             assert kwargs[func_names[not none_index]] == paras[para_names[not none_index]] / 1000 * sampling_rate
 
-    def test_constrains_without_template_sampling_rate(self):
+    def test_constrains_without_template_sampling_rate(self) -> None:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=None)
         data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
         dtw = self.init_dtw(template=template, max_template_stretch_ms=3)
@@ -149,7 +150,7 @@ class TestIOErrors(DtwTestBase):
 
         assert "sampling_rate_hz" in str(e)
 
-    def test_constrains_correct_sampling_rate_used(self):
+    def test_constrains_correct_sampling_rate_used(self) -> None:
         template_sampling_rate = 100
         signal_sampling_rate = 10
         template = DtwTemplate(data=np.ones(30), sampling_rate_hz=template_sampling_rate)
@@ -191,14 +192,14 @@ class TestSimpleSegment(DtwTestBase):
     template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
 
     @pytest.fixture(params=list(BaseDtw._allowed_methods_map.keys()), autouse=True)
-    def _create_instance(self, request):
+    def _create_instance(self, request) -> None:
         dtw = self.init_dtw(
             template=self.template,
             find_matches_method=request.param,
         )
         self.dtw = dtw
 
-    def test_sdtw_simple_match(self):
+    def test_sdtw_simple_match(self) -> None:
         """Test dtw with single match and hand calculated outcomes."""
         sequence = [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
@@ -221,7 +222,7 @@ class TestSimpleSegment(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.data, sequence)
 
-    def test_sdtw_multi_match(self):
+    def test_sdtw_multi_match(self) -> None:
         """Test dtw with multiple matches and hand calculated outcomes."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
 
@@ -240,13 +241,13 @@ class TestSimpleSegment(DtwTestBase):
 class TestMultiDimensionalArrayInputs(DtwTestBase):
     @pytest.mark.parametrize(
         ("template", "data"),
-        (
+        [
             (np.array([[0, 1.0, 0]]), np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])),
             (np.array([0, 1.0, 0]), np.array([2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]])),
             (np.array([[0, 1.0, 0]]), np.array([2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]])),
-        ),
+        ],
     )
-    def test_pseudo_2d_inputs(self, template, data):
+    def test_pseudo_2d_inputs(self, template, data) -> None:
         template = DtwTemplate(data=template, sampling_rate_hz=100.0)
 
         dtw = self.init_dtw(template=template)
@@ -254,7 +255,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
-    def test_1d_dataframe_inputs(self):
+    def test_1d_dataframe_inputs(self) -> None:
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
         template = DtwTemplate(data=template, sampling_rate_hz=100.0)
@@ -264,7 +265,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
-    def test_no_matches_found(self):
+    def test_no_matches_found(self) -> None:
         """Test that no errors are raised when no matches are found."""
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.ones(10), columns=["col1"])
@@ -277,9 +278,9 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
         np.testing.assert_array_equal(dtw.paths_, [])
         np.testing.assert_array_equal(dtw.costs_, [])
 
-    @pytest.mark.parametrize("m_cols", (2, 3))
-    @pytest.mark.parametrize("input_type", (np.array, pd.DataFrame))
-    def test_valid_multi_d_input(self, m_cols, input_type):
+    @pytest.mark.parametrize("m_cols", [2, 3])
+    @pytest.mark.parametrize("input_type", [np.array, pd.DataFrame])
+    def test_valid_multi_d_input(self, m_cols, input_type) -> None:
         """Test if we get the same results with simple multi D inputs.
 
         Data and template are repeated to have the shape (n, m_cols), where n is the number of samples
@@ -300,8 +301,8 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
-    @pytest.mark.parametrize("input_type", (np.array, pd.DataFrame))
-    def test_data_has_more_cols_than_template(self, input_type):
+    @pytest.mark.parametrize("input_type", [np.array, pd.DataFrame])
+    def test_data_has_more_cols_than_template(self, input_type) -> None:
         """In case the data has more cols, only the first m cols of the data is used.
 
         Note that this does not really tests if this work, but just that it doesn't throw an error.
@@ -324,7 +325,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         np.testing.assert_array_equal(dtw.matches_start_end_, [[5, 8], [18, 21]])
 
-    def test_data_has_less_cols_than_template_array(self):
+    def test_data_has_less_cols_than_template_array(self) -> None:
         """In case the data has more cols, only the first m cols of the data is used."""
         n_cols_template = 3
         n_cols_data = 2
@@ -339,7 +340,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         assert "less columns" in str(e)
 
-    def test_data_has_wrong_cols_than_template_df(self):
+    def test_data_has_wrong_cols_than_template_df(self) -> None:
         """An error should be raised, if the template has columns that are not in the df."""
         n_cols_template = 3
         n_cols_data = 2
@@ -356,7 +357,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         assert str(["col3"]) in str(e)
 
-    def test_no_sampling_rate_for_resample(self):
+    def test_no_sampling_rate_for_resample(self) -> None:
         """Error is raised when resample is True, but no sampling rate provided."""
         template = DtwTemplate(data=np.ndarray([]))
 
@@ -366,7 +367,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
         assert "sampling_rate_hz" in str(e)
 
-    def test_sampling_rate_mismatch_warning(self):
+    def test_sampling_rate_mismatch_warning(self) -> None:
         """Test if warning is raised, when template and data do not have the same sampling rate and resample is False."""
         template = pd.DataFrame(np.array([0, 1.0, 0]), columns=["col1"])
         data = pd.DataFrame(np.array(2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]), columns=["col1"])
@@ -384,7 +385,7 @@ class TestMultiSensorInputs(DtwTestBase):
     data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
 
     @pytest.fixture(params=("dict", "frame"), autouse=True)
-    def multi_sensor_dataset(self, request):
+    def multi_sensor_dataset(self, request) -> None:
         sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
         sensor1 = pd.DataFrame(sensor1, columns=["col1"])
         sensor2 = np.array([*np.ones(2) * 2, 0, 1.0, 0, *np.ones(8) * 2])
@@ -395,7 +396,7 @@ class TestMultiSensorInputs(DtwTestBase):
         elif request.param == "frame":
             self.data = pd.concat(data, axis=1)
 
-    def test_single_template_multi_sensors(self):
+    def test_single_template_multi_sensors(self) -> None:
         """In case a single template and multiple sensors are provided, the template is applied to all sensors."""
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
@@ -438,7 +439,7 @@ class TestMultiSensorInputs(DtwTestBase):
             ],
         )
 
-    def test_no_matches_found_multiple(self):
+    def test_no_matches_found_multiple(self) -> None:
         """Test postprocessing still works, even when there are no matches."""
         template = [0, 1.0, 0]
         template = pd.DataFrame(template, columns=["col1"])
@@ -457,7 +458,7 @@ class TestMultiSensorInputs(DtwTestBase):
             np.testing.assert_array_equal(dtw.paths_[s], [])
             np.testing.assert_array_equal(dtw.costs_[s], [])
 
-    def test_multi_template_multi_sensors(self):
+    def test_multi_template_multi_sensors(self) -> None:
         """Test multiple templates with multiple sensors.
 
         In case a multiple template and multiple sensors are provided, each template is applied to data with the same
@@ -509,13 +510,13 @@ class TestMultiSensorInputs(DtwTestBase):
 
 
 class TestTemplateResampling(DtwTestBase):
-    def test_resample_length(self):
+    def test_resample_length(self) -> None:
         """Unittest the resample func."""
         test_template = np.ones(100)
         resampled_template = BaseDtw._resample_template(test_template, 100, 200)
         assert len(resampled_template) == 200
 
-    def test_resample_real_example(self):
+    def test_resample_real_example(self) -> None:
         """Toy example with hand calculated outcomes."""
         # Test that this works in general
         template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
@@ -548,8 +549,8 @@ class TestTemplateResampling(DtwTestBase):
 
         assert len(dtw.matches_start_end_) == 0
 
-    @pytest.mark.parametrize("sampling_rate", (102.4, 204.8, 100, 500, 409.6))
-    def test_resample_decimal_values(self, sampling_rate):
+    @pytest.mark.parametrize("sampling_rate", [102.4, 204.8, 100, 500, 409.6])
+    def test_resample_decimal_values(self, sampling_rate) -> None:
         """As a test, we gonna try to resample the Barth Template to various sampling rates."""
         test_template = BarthOriginalTemplate().get_data()
         resampled_template = BaseDtw._resample_template(
@@ -559,7 +560,7 @@ class TestTemplateResampling(DtwTestBase):
         # We just gonna check the length of the resampled template
         assert len(resampled_template) == int(200 * sampling_rate / 204.8)
 
-    def test_bug_missing_if(self):
+    def test_bug_missing_if(self) -> None:
         """Test that no error is thrown if sampling rates are different, but the template has no sampling rate."""
         template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
         test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
@@ -572,7 +573,7 @@ class TestTemplateResampling(DtwTestBase):
         except Exception as e:
             pytest.fail(f"Raised unexpected error: {e}", pytrace=True)
 
-    def test_error_if_not_template_sampling_rate(self):
+    def test_error_if_not_template_sampling_rate(self) -> None:
         """If the template should be resampled, but the template has no sampling rate, raise an error."""
         template = [0, 1, 2, 3, 4, 3, 2, 1, 0]
         test_data = np.array([0, 0, *template, 0, 0, *template, 0, 0])
@@ -585,7 +586,7 @@ class TestTemplateResampling(DtwTestBase):
 
         assert "resample the template" in str(e)
 
-    def test_warning_when_no_resample_but_different_sampling_rate(self):
+    def test_warning_when_no_resample_but_different_sampling_rate(self) -> None:
         """In case the template and the data have different sampling rates, but resample is false, the user will be
         warned.
         """
@@ -613,7 +614,7 @@ class TestTemplateResampling(DtwTestBase):
 class TestDtwConstrains(DtwTestBase):
     """Test that the local warping constrains work as expected."""
 
-    def test_signal_constrained(self):
+    def test_signal_constrained(self) -> None:
         template = np.array([0, 1, 0])
         sequence = [*np.ones(5) * 2, *np.repeat(template, 5), *np.ones(5) * 2, *np.repeat(template, 3), *np.ones(5) * 2]
         template = DtwTemplate(data=template, sampling_rate_hz=1)
@@ -638,7 +639,7 @@ class TestDtwConstrains(DtwTestBase):
         assert dtw.costs_[0] == 0.0
         assert len(dtw.paths_[0]) == 5
 
-    def test_template_constrained(self):
+    def test_template_constrained(self) -> None:
         template = np.array([0, 1, 0])
         sequence = [*np.ones(5) * 2, *template, *np.ones(5) * 2, *np.repeat(template, 2), *np.ones(5) * 2]
         template = np.repeat(template, 6)

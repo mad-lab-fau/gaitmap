@@ -24,7 +24,7 @@ class TestMetaFunctionalityComboZuptDetector(TestAlgorithmMixin):
 
 
 class DummyZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
-    def __init__(self, zupts):
+    def __init__(self, zupts) -> None:
         self.zupts = zupts
 
     def detect(self, data, sampling_rate_hz, **kwargs):
@@ -35,11 +35,11 @@ class DummyZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
 
 class TestComboZuptDetector:
     @pytest.mark.parametrize("detector_list", [None, []])
-    def test_empty_detector_list(self, detector_list):
+    def test_empty_detector_list(self, detector_list) -> None:
         with pytest.raises(ValueError):
             ComboZuptDetector(detector_list).detect(pd.DataFrame(), sampling_rate_hz=1)
 
-    def test_kwargs_forwarded(self):
+    def test_kwargs_forwarded(self) -> None:
         class MockZUPTDetector(BaseZuptDetector):
             zupts_ = pd.DataFrame(columns=["start", "end"])
             per_sample_zupts_ = np.zeros(10)
@@ -53,7 +53,7 @@ class TestComboZuptDetector:
             for call in mock_detect.call_args_list:
                 assert call.kwargs["foo"] == "bar"
 
-    def test_dummy(self):
+    def test_dummy(self) -> None:
         zupts = pd.DataFrame(
             [[0, 10], [30, 55], [85, 90]],
             columns=["start", "end"],
@@ -62,7 +62,7 @@ class TestComboZuptDetector:
         test.detect(pd.DataFrame(np.zeros(100)), sampling_rate_hz=1)
         assert_array_equal(test.zupts_, zupts)
 
-    def test_empty_data_edge_case(self):
+    def test_empty_data_edge_case(self) -> None:
         zupts = pd.DataFrame(
             [[0, 10], [30, 55], [85, 90]],
             columns=["start", "end"],
@@ -71,7 +71,7 @@ class TestComboZuptDetector:
         test.detect(pd.DataFrame(), sampling_rate_hz=1)
         assert_array_equal(test.zupts_, pd.DataFrame(columns=["start", "end"]))
 
-    def test_combine_with_or(self):
+    def test_combine_with_or(self) -> None:
         zupts_a = pd.DataFrame(
             [[0, 10], [30, 55], [85, 90]],
             columns=["start", "end"],
@@ -86,7 +86,7 @@ class TestComboZuptDetector:
             test.zupts_, pd.DataFrame([[0, 10], [30, 60], [85, 90], [95, 100]], columns=["start", "end"])
         )
 
-    def test_combine_with_and(self):
+    def test_combine_with_and(self) -> None:
         zupts_a = pd.DataFrame(
             [[0, 10], [30, 55], [85, 90]],
             columns=["start", "end"],

@@ -1,4 +1,5 @@
 """Dtw template base classes and helper."""
+
 from importlib.resources import open_text
 from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
 
@@ -24,7 +25,7 @@ class BaseDtwTemplate(BaseAlgorithm):
         *,
         scaling: Optional[BaseTransformer] = None,
         use_cols: Optional[Sequence[Union[str, int]]] = None,
-    ):
+    ) -> None:
         self.scaling = scaling
         self.use_cols = use_cols
 
@@ -104,7 +105,9 @@ class BarthOriginalTemplate(BaseDtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Optional[Sequence[Union[str, int]]] = None):
+    def __init__(
+        self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Optional[Sequence[Union[str, int]]] = None
+    ) -> None:
         super().__init__(scaling=scaling, use_cols=use_cols)
 
     def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
@@ -186,8 +189,7 @@ class DtwTemplate(BaseDtwTemplate):
         sampling_rate_hz: Optional[float] = None,
         scaling: Optional[BaseTransformer] = None,
         use_cols: Optional[Sequence[Union[str, int]]] = None,
-    ):
-
+    ) -> None:
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         super().__init__(scaling=scaling, use_cols=use_cols)
@@ -279,7 +281,7 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
         interpolation_method: str = "linear",
         n_samples: Optional[int] = None,
         use_cols: Optional[Sequence[Union[str, int]]] = None,
-    ):
+    ) -> None:
         self.interpolation_method = interpolation_method
         self.n_samples = n_samples
         super().__init__(

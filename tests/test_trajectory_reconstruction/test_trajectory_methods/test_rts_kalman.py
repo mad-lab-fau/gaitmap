@@ -46,7 +46,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         kwargs = {**self.default_kwargs, **kwargs}
         return RtsKalman().set_params(**kwargs)
 
-    def test_covariance_output_format(self):
+    def test_covariance_output_format(self) -> None:
         test = self.init_algo_class(zupt_detector__window_length_s=1)
         fs = 15
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
@@ -55,7 +55,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
         assert test.covariance_.shape == (len(sensor_data) + 1, 9 * 9)
 
-    def test_zupt_output(self):
+    def test_zupt_output(self) -> None:
         test = self.init_algo_class(
             zupt_detector__inactive_signal_threshold=10,
             zupt_detector__window_length_s=0.3,
@@ -71,7 +71,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
 
         assert_array_almost_equal(expected_zupts, test.zupts_)
 
-    def test_corrects_velocity_drift(self):
+    def test_corrects_velocity_drift(self) -> None:
         """Check that ZUPTs correct a velocity drift and set velocity to zero."""
         test = self.init_algo_class(zupt_detector__window_length_s=0.3, level_walking=False)
         acc = np.array([5.0, 5.0, 12.81])
@@ -82,7 +82,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         test.estimate(sensor_data, sampling_rate_hz=10)
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
-    def test_corrects_z_position(self):
+    def test_corrects_z_position(self) -> None:
         """Check that level walking reset position to zero during ZUPTs."""
         test = self.init_algo_class(zupt_detector__window_length_s=1)
         accel_data = np.repeat(np.concatenate(([0.0, 0.0, 100], [0.0, 0.0, 40.0]))[None, :], 5, axis=0)
@@ -93,7 +93,7 @@ class TestTrajectoryMethod(TestTrajectoryMethodMixin):
         assert test.position_.to_numpy()[4][2] < -0.8
         assert_array_almost_equal(test.position_.to_numpy()[-1], [0.0, 0.0, 0.0], decimal=10)
 
-    def test_stride_list_forwarded_to_zupt(self):
+    def test_stride_list_forwarded_to_zupt(self) -> None:
         """Test that the stride list passed to reconstruct is forwarded to the detect method of the ZUPT detector."""
 
         class MockZUPTDetector(BaseZuptDetector):

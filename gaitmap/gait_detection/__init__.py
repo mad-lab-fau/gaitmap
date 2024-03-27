@@ -2,6 +2,7 @@
 
 Different algorithms for gait sequence detection are going to be collected here.
 """
+
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {

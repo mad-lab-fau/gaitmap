@@ -83,7 +83,7 @@ def madgwick_motion_update(acc, gyro, orientation, position, velocity, sampling_
 
 
 @njit()
-def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements
+def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # noqa: PLR0915
     accel,
     gyro,
     initial_orientation,

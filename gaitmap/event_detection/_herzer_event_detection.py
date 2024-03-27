@@ -1,4 +1,5 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
+
 from typing import Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -197,7 +198,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-    ):
+    ) -> None:
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
@@ -328,9 +329,7 @@ def _detect_ic(
     # and the start acc_pa max has to be the max before that which is not necessarily
     # the global max within the search region
     refined_search_region_end = int(
-        search_region[0]
-        + np.argmax(gyr_ml_grad[slice(*search_region)])
-        + 1
+        search_region[0] + np.argmax(gyr_ml_grad[slice(*search_region)]) + 1
         # +1 because the min max distance is often very small
         # and in a search range the last value is normally not included but here it should be
     )

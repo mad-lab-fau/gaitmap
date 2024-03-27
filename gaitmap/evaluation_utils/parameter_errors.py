@@ -1,4 +1,5 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
+
 import warnings
 from typing import Dict, Literal, Tuple, Union
 
@@ -250,7 +251,6 @@ def calculate_aggregated_parameter_errors(
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
-    ...
     >>> predicted_sensor_left = pd.DataFrame(columns=["para"], data=[23, 82, 42]).rename_axis("s_id")
     >>> reference_sensor_left = pd.DataFrame(columns=["para"], data=[21, 86, 65]).rename_axis("s_id")
     >>> predicted_sensor_right = pd.DataFrame(columns=["para"], data=[26, -58, -3]).rename_axis("s_id")
@@ -326,7 +326,7 @@ def calculate_aggregated_parameter_errors(
     >>> calculate_aggregated_parameter_errors(
     ...     predicted_parameter={"left_sensor": predicted_sensor_left, "right_sensor": predicted_sensor_right},
     ...     reference_parameter={"left_sensor": reference_sensor_left, "right_sensor": reference_sensor_right},
-    ...     calculate_per_sensor=False
+    ...     calculate_per_sensor=False,
     ... )  # doctest: +NORMALIZE_WHITESPACE
                                    para
     predicted_mean            18.666667

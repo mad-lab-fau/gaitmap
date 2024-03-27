@@ -1,4 +1,5 @@
 """Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
+
 from typing import Dict, Union
 
 import numpy as np

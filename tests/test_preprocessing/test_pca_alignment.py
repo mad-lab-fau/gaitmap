@@ -25,7 +25,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestPcaAlignment:
     """Test the pca alignment class `PcaAlignment`."""
 
-    def test_single_sensor_input(self, healthy_example_imu_data):
+    def test_single_sensor_input(self, healthy_example_imu_data) -> None:
         """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data["left_sensor"]
 
@@ -38,7 +38,7 @@ class TestPcaAlignment:
         assert isinstance(pca_align.rotation_, Rotation)
         assert isinstance(pca_align.pca_, PCA)
 
-    def test_multi_sensor_input(self, healthy_example_imu_data):
+    def test_multi_sensor_input(self, healthy_example_imu_data) -> None:
         """Dummy test to see if the algorithm is generally working on the example data."""
         data = healthy_example_imu_data
 
@@ -52,7 +52,7 @@ class TestPcaAlignment:
             assert isinstance(pca_align.rotation_[sensor], Rotation)
             assert isinstance(pca_align.pca_[sensor], PCA)
 
-    def test_invalid_pca_plane_axis(self, healthy_example_imu_data):
+    def test_invalid_pca_plane_axis(self, healthy_example_imu_data) -> None:
         """Test if value error is raised correctly if invalid axis for the search plane are defined."""
         data = healthy_example_imu_data
 
@@ -65,7 +65,7 @@ class TestPcaAlignment:
         with pytest.raises(ValueError, match=r".*Invalid axis for pca plane *"):
             PcaAlignment(target_axis="y", pca_plane_axis=("acc_x")).align(data)
 
-    def test_invalid_target_axis(self, healthy_example_imu_data):
+    def test_invalid_target_axis(self, healthy_example_imu_data) -> None:
         """Test if value error is raised correctly if invalid axis for the search plane are defined."""
         data = healthy_example_imu_data
 
@@ -77,12 +77,12 @@ class TestPcaAlignment:
 
     @pytest.mark.parametrize(
         ("axis", "rot"),
-        (
+        [
             ("x", np.array([[0.28177506, 0.95948049, 0.0], [-0.95948049, 0.28177506, -0.0], [-0.0, 0.0, 1.0]])),
             ("y", np.array([[0.95948049, -0.28177506, 0.0], [0.28177506, 0.95948049, 0.0], [0.0, 0.0, 1.0]])),
-        ),
+        ],
     )
-    def test_correct_rotation_regression(self, healthy_example_imu_data, snapshot, axis, rot):
+    def test_correct_rotation_regression(self, healthy_example_imu_data, snapshot, axis, rot) -> None:
         """Test if the alignment actually returns the expected rotation matrix on real imu data."""
         data = healthy_example_imu_data["left_sensor"]
 
@@ -92,7 +92,7 @@ class TestPcaAlignment:
         assert_almost_equal(rot, pca_align.rotation_.as_matrix())
         snapshot.assert_match(pca_align.aligned_data_, check_names=False)
 
-    def test_correct_rotation_complementary(self, healthy_example_imu_data):
+    def test_correct_rotation_complementary(self, healthy_example_imu_data) -> None:
         """Test if the alignment actually returns the expected rotation matrix on real imu data."""
         data = healthy_example_imu_data["left_sensor"]
 
@@ -113,8 +113,8 @@ class TestPcaAlignment:
             pca_align_y.aligned_data_["gyr_x"].to_numpy(), -pca_align_x.aligned_data_["gyr_y"].to_numpy()
         )
 
-    @pytest.mark.parametrize("axis", ("x", "y"))
-    def test_is_righthanded_rotation(self, healthy_example_imu_data, axis):
+    @pytest.mark.parametrize("axis", ["x", "y"])
+    def test_is_righthanded_rotation(self, healthy_example_imu_data, axis) -> None:
         """Test if the resulting rotation object is a valid righthanded rotation."""
         data = healthy_example_imu_data["left_sensor"]
 

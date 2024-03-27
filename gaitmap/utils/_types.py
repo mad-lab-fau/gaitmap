@@ -2,6 +2,7 @@
 
 For user facing type declarations, please see `gaitmap.utils.datatype_helper`.
 """
+
 from typing import TYPE_CHECKING, Any, Hashable, TypeVar, Union
 
 import pandas as pd

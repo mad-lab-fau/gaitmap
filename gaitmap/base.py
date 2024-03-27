@@ -44,7 +44,7 @@ class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # noqa: C901
+    def default(self, o):  # noqa: C901, PLR0911
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
@@ -84,7 +84,7 @@ class _CustomEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
+def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements  # noqa: PLR0911
     if "_gaitmap_obj" in json_obj:
         return _BaseSerializable._find_subclass(json_obj["_gaitmap_obj"])._from_json_dict(json_obj)
     if "_obj_type" in json_obj:

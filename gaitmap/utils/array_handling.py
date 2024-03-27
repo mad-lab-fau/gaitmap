@@ -1,4 +1,5 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
+
 from typing import Iterable, Iterator, List, Optional, Tuple, Union
 
 import numba.typed
@@ -52,8 +53,8 @@ def sliding_window_view(arr: np.ndarray, window_length: int, overlap: int, nan_p
 
     Examples
     --------
-    >>> data = np.arange(0,10)
-    >>> windowed_view = sliding_window_view(arr = data, window_length = 5, overlap = 3, nan_padding = True)
+    >>> data = np.arange(0, 10)
+    >>> windowed_view = sliding_window_view(arr=data, window_length=5, overlap=3, nan_padding=True)
     >>> windowed_view
     array([[ 0.,  1.,  2.,  3.,  4.],
            [ 2.,  3.,  4.,  5.,  6.],
@@ -114,12 +115,12 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
 
     Examples
     --------
-    >>> example_array = np.array([0,0,1,1,0,0,1,1,1])
+    >>> example_array = np.array([0, 0, 1, 1, 0, 0, 1, 1, 1])
     >>> start_end_list = bool_array_to_start_end_array(example_array)
     >>> start_end_list
     array([[2, 4],
            [6, 9]])
-    >>> example_array[start_end_list[0, 0]: start_end_list[0, 1]]
+    >>> example_array[start_end_list[0, 0] : start_end_list[0, 1]]
     array([1, 1])
 
     """
@@ -138,7 +139,7 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     return np.array([[s.start, s.stop] for s in slices])
 
 
-def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: int = None) -> np.ndarray:
+def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: Optional[int] = None) -> np.ndarray:
     """Convert a start-end list to a bool array.
 
     Parameters
@@ -162,11 +163,11 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
     Examples
     --------
     >>> import numpy as np
-    >>> example_array = np.array([[3,5],[7,8]])
+    >>> example_array = np.array([[3, 5], [7, 8]])
     >>> start_end_array_to_bool_array(example_array, pad_to_length=12)
     array([False, False, False,  True,  True,  True, False,  True,  True,
            False, False, False])
-    >>> example_array = np.array([[3,5],[7,8]])
+    >>> example_array = np.array([[3, 5], [7, 8]])
     >>> start_end_array_to_bool_array(example_array, pad_to_length=None)
     array([False, False, False,  True,  True,  True, False,  True,  True])
 
@@ -273,7 +274,7 @@ def find_extrema_in_radius(
     if extrema_type not in extrema_funcs:
         raise ValueError(f"`extrema_type` must be one of {list(extrema_funcs.keys())}, not {extrema_type}")
     extrema_func = extrema_funcs[extrema_type]
-    if radius == 0 or radius == (0, 0):
+    if radius in (0, (0, 0)):
         # In case the search radius is 0 samples, we can just return the input.
         return indices
     if isinstance(radius, int):
@@ -353,7 +354,6 @@ def multi_array_interpolation(arrays: List[np.ndarray], n_samples, kind: str = "
 
 @numba.njit()
 def _fast_linear_interpolation(arrays: numba.typed.List, n_samples) -> np.ndarray:
-
     final_array = np.empty((len(arrays), arrays[0].shape[1], n_samples))
     for i, s in enumerate(arrays):
         s_len = len(s)
@@ -456,8 +456,8 @@ def iterate_region_data(
                     "The label sequences must be either SingleSensorStrideList or SingleSensorRegionsOfInterestList. "
                     "\n"
                     "The validations failed with the following errors: \n\n"
-                    f"Stride List: \n\n{str(e_stride_list)}\n\n"
-                    f"Regions of Interest List: \n\n{str(e_roi)}"
+                    f"Stride List: \n\n{e_stride_list!s}\n\n"
+                    f"Regions of Interest List: \n\n{e_roi!s}"
                 ) from e_roi
         if expected_col_order is None:
             # In the first iteration we pull the column order.
@@ -465,5 +465,5 @@ def iterate_region_data(
             # user to put all the data in RAM first.
             expected_col_order = df.columns
         df = df.reindex(columns=expected_col_order)
-        for (_, s, e) in labels[["start", "end"]].itertuples():
+        for _, s, e in labels[["start", "end"]].itertuples():
             yield df.iloc[s:e]

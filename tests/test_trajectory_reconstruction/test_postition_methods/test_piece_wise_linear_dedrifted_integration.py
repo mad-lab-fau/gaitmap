@@ -35,8 +35,8 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         # For basic integration tests, we do not remove gravity
         return PieceWiseLinearDedriftedIntegration(gravity=None).set_params(zupt_detector__window_length_s=0.1)
 
-    @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
-    def test_symetric_velocity_integrations(self, acc):
+    @pytest.mark.parametrize("acc", [[0, 0, 1], [1, 2, 3]])
+    def test_symetric_velocity_integrations(self, acc) -> None:
         """All test data starts and ends at zero."""
         # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
@@ -55,8 +55,8 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
 
-    @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]))
-    def test_all_axis(self, acc):
+    @pytest.mark.parametrize("acc", [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]])
+    def test_all_axis(self, acc) -> None:
         """Test against the physics equation."""
         # we had to overwrite this test as the PieceWiseLinearDedriftedIntegration function requires some valid
         # zupt updates within the test data
@@ -103,7 +103,7 @@ class TestSimpleIntegrationsNoGravity(TestPositionMethodNoGravityMixin):
 class TestPieceWiseLinearDedriftedIntegration:
     """Test the position estimation class `PieceWiseLinearDedriftedIntegration`."""
 
-    def test_drift_model_simple(self):
+    def test_drift_model_simple(self) -> None:
         """Run a simple example and estimate its drift _model."""
         data = np.array(
             [
@@ -291,7 +291,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         )
         assert_almost_equal(estimated_drift_model, expected_output)
 
-    def test_drift_model_multidimensional(self):
+    def test_drift_model_multidimensional(self) -> None:
         data = np.column_stack([np.linspace(1, 10, 10), np.linspace(10, 20, 10), np.linspace(20, 10, 10)])
         zupt = np.array([[5, 10]])
         estimated_drift_model = PieceWiseLinearDedriftedIntegration()._estimate_piece_wise_linear_drift_model(
@@ -300,7 +300,7 @@ class TestPieceWiseLinearDedriftedIntegration:
 
         assert_almost_equal(estimated_drift_model, data)
 
-    def test_drift_model(self):
+    def test_drift_model(self) -> None:
         """Test drift _model on simple slope with different zupt edge conditions."""
         data = np.arange(20)
         zupt = np.repeat(False, 20)
@@ -317,7 +317,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         )
         assert_almost_equal(data, estimated_drift_model)
 
-    def test_all_zupt_data(self):
+    def test_all_zupt_data(self) -> None:
         """Test drift _model all zupt."""
         data = np.arange(20)
         zupt = np.repeat(True, 20)
@@ -327,7 +327,7 @@ class TestPieceWiseLinearDedriftedIntegration:
         )
         assert_almost_equal(data, estimated_drift_model)
 
-    def test_no_zupt_data(self):
+    def test_no_zupt_data(self) -> None:
         """Test drift _model no zupts available."""
         data = np.arange(20)
         zupt = np.repeat(False, 20)

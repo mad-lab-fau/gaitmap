@@ -20,8 +20,8 @@ class TestEvaluateStrideEventList:
 
         return df
 
-    @pytest.mark.parametrize("value", (["1", "2", "3"], "wrong_column", ""))
-    def test_invalid_column_values(self, value):
+    @pytest.mark.parametrize("value", [["1", "2", "3"], "wrong_column", ""])
+    def test_invalid_column_values(self, value) -> None:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20]], "ic")
 
         with pytest.raises(ValueError) as e:
@@ -30,7 +30,7 @@ class TestEvaluateStrideEventList:
         assert "One or more selected columns" in str(e.value)
         assert str(value) in str(e.value)
 
-    def test_perfect_match(self):
+    def test_perfect_match(self) -> None:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
         out = evaluate_stride_event_list(ground_truth=sl, stride_event_list=sl, match_cols="ic", tolerance=0)
@@ -42,7 +42,7 @@ class TestEvaluateStrideEventList:
         assert len(out["fn"]) == 0
         assert len(out) == (len(out["tp"]) + len(out["fn"]))
 
-    def test_match(self):
+    def test_match(self) -> None:
         sl1 = self._create_valid_list([[0, 1, 0], [1, 2, 20], [2, 3, 30]], "ic")
         sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 

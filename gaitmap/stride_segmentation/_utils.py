@@ -1,4 +1,5 @@
 """Some general utils for the stride segmentation algorithms."""
+
 from typing import Tuple, Union
 
 import numpy as np

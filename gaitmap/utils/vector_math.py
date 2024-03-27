@@ -3,6 +3,7 @@
 Wherever possible, these functions are designed to handle multiple vectors at the same time to perform efficient
 computations.
 """
+
 from typing import Union
 
 import numpy as np
@@ -49,7 +50,7 @@ def is_almost_parallel_or_antiparallel(
 
     array of vectors
 
-    >>> is_almost_parallel_or_antiparallel(np.array([[0, 0, 1],[0,1,0]]), np.array([[0, 0, 2],[1,0,0]]))
+    >>> is_almost_parallel_or_antiparallel(np.array([[0, 0, 1], [0, 1, 0]]), np.array([[0, 0, 2], [1, 0, 0]]))
     array([True,False])
 
     """
@@ -80,7 +81,7 @@ def normalize(v: np.ndarray) -> np.ndarray:
 
     2D array
 
-    >>> normalize(np.array([[2, 0, 0],[2, 0, 0]]))
+    >>> normalize(np.array([[2, 0, 0], [2, 0, 0]]))
     array([[1., 0., 0.],
            [1., 0., 0.]])
 
@@ -143,7 +144,7 @@ def find_orthogonal(v1: np.ndarray, v2: np.ndarray) -> np.ndarray:
 
     Examples
     --------
-    >>> find_orthogonal(np.array([1, 0, 0]),np.array([-1, 0, 0]))
+    >>> find_orthogonal(np.array([1, 0, 0]), np.array([-1, 0, 0]))
     array([0, 0, -1])
 
     """

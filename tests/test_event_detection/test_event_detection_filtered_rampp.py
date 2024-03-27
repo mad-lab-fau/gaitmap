@@ -36,7 +36,9 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
     algorithm_class = FilteredRamppEventDetection
 
-    def test_is_identical_to_normal_rampp(self, healthy_example_imu_data, healthy_example_stride_borders, snapshot):
+    def test_is_identical_to_normal_rampp(
+        self, healthy_example_imu_data, healthy_example_stride_borders, snapshot
+    ) -> None:
         """Test if the output is the same as normal Rampp for lax filter parameters."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -51,7 +53,9 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
             assert_frame_equal(ed.segmented_event_list_[sensor], rampp_ed.segmented_event_list_[sensor])
 
     @pytest.mark.parametrize("filter_paras", [(3, 5), (2, 10)])
-    def test_correct_arguments_are_passed(self, healthy_example_imu_data, healthy_example_stride_borders, filter_paras):
+    def test_correct_arguments_are_passed(
+        self, healthy_example_imu_data, healthy_example_stride_borders, filter_paras
+    ) -> None:
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )

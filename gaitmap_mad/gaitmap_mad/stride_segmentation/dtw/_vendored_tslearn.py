@@ -100,8 +100,7 @@ def subsequence_path(acc_cost_mat, idx_path_end):
 
     Examples
     --------
-    >>> acc_cost_mat = numpy.array([[1., 0., 0., 1., 4.],
-    ...                             [5., 1., 1., 0., 1.]])
+    >>> acc_cost_mat = numpy.array([[1.0, 0.0, 0.0, 1.0, 4.0], [5.0, 1.0, 1.0, 0.0, 1.0]])
     >>> # calculate the globally optimal path
     >>> optimal_end_point = numpy.argmin(acc_cost_mat[-1, :])
     >>> path = subsequence_path(acc_cost_mat, optimal_end_point)

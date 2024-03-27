@@ -1,4 +1,5 @@
 """Roth et al. HMM based stride segmentation model."""
+
 import multiprocessing
 import warnings
 

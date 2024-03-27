@@ -1,4 +1,5 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
+
 from functools import partial
 from typing import Callable, Optional, Sequence, Tuple, get_args
 
@@ -96,7 +97,7 @@ def find_static_samples(
     Examples
     --------
     >>> test_data = load_gyro_data(path)
-    >>> get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th = 5, metric = 'mean')
+    >>> get_static_moments(gyro_data, window_length=128, overlap=64, inactive_signal_th=5, metric="mean")
 
     References
     ----------
@@ -119,7 +120,7 @@ def find_static_samples(
     if window_length > len(signal):
         raise ValueError(
             "Invalid window length, window must be smaller or equal than given signal length. Given signal length: "
-            "{} with given window_length: {}.".format(len(signal), window_length)
+            f"{len(signal)} with given window_length: {window_length}."
         )
 
     # add default overlap value
@@ -221,7 +222,7 @@ def find_static_sequences(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: int = None,
+    overlap: Optional[int] = None,
 ) -> np.ndarray:
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 

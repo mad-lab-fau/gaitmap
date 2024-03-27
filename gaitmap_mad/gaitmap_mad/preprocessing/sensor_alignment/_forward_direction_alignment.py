@@ -86,7 +86,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
 
     >>> fdsa = ForwardDirectionSignAlignment(forward_direction="x", rotation_axis="z", baseline_velocity_threshold=0.2)
     >>> fdsa = fdsa.align(data, 204.8)
-    >>> fdsa.aligned_data_['left_sensor']
+    >>> fdsa.aligned_data_["left_sensor"]
     <copy of dataset with axis aligned to the medio-lateral plane>
     ...
     >>> fdsa.is_flipped_  # True when the data was rotated by 180 deg, False afterwise
@@ -132,7 +132,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
                 gravity=GRAV_VEC,
             )
         ),
-    ):
+    ) -> None:
         self.forward_direction = forward_direction
         self.rotation_axis = rotation_axis
         self.baseline_velocity_threshold = baseline_velocity_threshold

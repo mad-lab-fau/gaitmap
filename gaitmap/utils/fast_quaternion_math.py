@@ -2,6 +2,7 @@
 
 Note that we follow the same order as :class:`~scipy.spatial.transform.Rotation` (x, y, z, w).
 """
+
 import numpy as np
 from numba import njit
 

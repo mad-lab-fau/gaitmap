@@ -13,7 +13,6 @@ The used implementation is based on the work of Roth et al [1]_
    Hidden Markov Model based Stride Segmentation on Unsupervised Free-living Gait Data in Parkinson’s Disease Patients.
    Journal of NeuroEngineering and Rehabilitation, (JNER).
 """
-import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -77,7 +76,7 @@ hmm_seg = hmm_seg.segment(bf_data, sampling_rate_hz=sampling_rate_hz)
 # The main output is the `stride_list_`, which contains the start and the end of all identified strides.
 # As we passed a dataset with two sensors, the output will be a dictionary.
 stride_list_left = hmm_seg.stride_list_["left_sensor"]
-print("{} strides were detected.".format(len(stride_list_left)))
+print(f"{len(stride_list_left)} strides were detected.")
 stride_list_left.head()
 
 # %%

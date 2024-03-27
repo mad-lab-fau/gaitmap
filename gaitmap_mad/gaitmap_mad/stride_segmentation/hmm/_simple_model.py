@@ -272,7 +272,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         name: str = "my_model",
         model: Optional[pgHMM] = None,
         data_columns: Optional[Tuple[str, ...]] = None,
-    ):
+    ) -> None:
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
         self.algo_train = algo_train

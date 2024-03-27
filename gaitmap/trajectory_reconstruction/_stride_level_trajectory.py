@@ -1,4 +1,5 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
+
 from typing import Optional
 
 from scipy.spatial.transform import Rotation
@@ -112,9 +113,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     >>> sampling_rate_hz = 204.8
     >>> stride_list = ...
     >>> per_stride_traj = per_stride_traj.estimate(
-    ...                        data,
-    ...                        stride_event_list=stride_list,
-    ...                        sampling_rate_hz=sampling_rate_hz
+    ...     data, stride_event_list=stride_list, sampling_rate_hz=sampling_rate_hz
     ... )
     >>> per_stride_traj.position_
     <Dataframe or dict with all the positions per stride>
@@ -141,7 +140,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
-    ):
+    ) -> None:
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
@@ -173,7 +172,7 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         if dataset_type != stride_list_type:
             raise ValidationError(
                 "An invalid combination of stride list and dataset was provided. "
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
+                f"The dataset is {dataset_type} sensor and the stride list is {stride_list_type} sensor."
             )
 
         # For the per stride integration, we create a dummy stride list-list, containing only the single stride that is

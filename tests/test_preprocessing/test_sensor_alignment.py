@@ -17,7 +17,7 @@ class TestAlignToGravity:
     sample_sensor_dataset: MultiSensorData
 
     @pytest.fixture(autouse=True, params=("dict", "frame"))
-    def _sample_sensor_data(self, request):
+    def _sample_sensor_data(self, request) -> None:
         """Create some sample data.
 
         This data is recreated before each test (using pytest.fixture).
@@ -32,7 +32,7 @@ class TestAlignToGravity:
         elif request.param == "frame":
             self.sample_sensor_dataset = pd.concat(dataset, axis=1)
 
-    def test_no_static_moments_in_dataset(self):
+    def test_no_static_moments_in_dataset(self) -> None:
         """Test if value error is raised correctly if no static window can be found on dataset with given user
         settings.
         """
@@ -45,7 +45,7 @@ class TestAlignToGravity:
                 metric="maximum",
             )
 
-    def test_mulit_sensor_dataset_misaligned(self):
+    def test_mulit_sensor_dataset_misaligned(self) -> None:
         """Test basic alignment using different 180 deg rotations on each dataset."""
         gravity = np.array([0.0, 0.0, 1.0])
 
@@ -62,7 +62,7 @@ class TestAlignToGravity:
         assert_almost_equal(aligned_dataset["s1"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
         assert_almost_equal(aligned_dataset["s2"][SF_ACC].to_numpy(), np.repeat(gravity[None, :], 5, axis=0))
 
-    def test_single_sensor_dataset_misaligned(self):
+    def test_single_sensor_dataset_misaligned(self) -> None:
         """Test basic alignment using different 180 deg rotations on single sensor."""
         gravity = np.array([0.0, 0.0, 1.0])
 
@@ -79,7 +79,7 @@ class TestAlignToGravity:
 
 class TestXYAlignment:
     @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_xy_alignment_simple(self, angle):
+    def test_xy_alignment_simple(self, angle) -> None:
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
         rot = align_heading_of_sensors(signal, rot_signal)
@@ -92,7 +92,7 @@ class TestXYAlignment:
 
     def test_xy_alignment_dummy(
         self,
-    ):
+    ) -> None:
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), 0).apply(signal)
         rot = align_heading_of_sensors(signal, rot_signal)
@@ -101,7 +101,7 @@ class TestXYAlignment:
         assert_almost_equal(rotvec, [0, 0, 0])
 
     @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_xy_alignment_with_noise(self, angle):
+    def test_xy_alignment_with_noise(self, angle) -> None:
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
 
@@ -116,7 +116,7 @@ class TestXYAlignment:
         assert_almost_equal(np.abs(rotvec / norm(rotvec) @ [0, 0, 1]), 1, 3)
 
     @pytest.mark.parametrize("angle", [90, 180.0, 22.0, 45.0, -90, -45])
-    def test_smoothing(self, angle):
+    def test_smoothing(self, angle) -> None:
         signal = np.random.normal(scale=1000, size=(500, 3))
         rot_signal = rotation_from_angle(np.array([0, 0, 1]), np.deg2rad(angle)).apply(signal)
 

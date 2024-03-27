@@ -28,7 +28,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestStrideLevelTrajectory:
-    def test_event_list_forwarded(self):
+    def test_event_list_forwarded(self) -> None:
         with patch.object(MockTrajectory, "estimate") as mock_estimate:
             mock_estimate.return_value = MockTrajectory()
             test = StrideLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())
@@ -55,7 +55,7 @@ class TestStrideLevelTrajectory:
                 pd.DataFrame({"start": [0], "end": [7], "min_vel": [0]}, index=pd.Series([3], name="s_id")),
             )
 
-    def test_event_list_forwarded_multi(self):
+    def test_event_list_forwarded_multi(self) -> None:
         with patch.object(MockTrajectory, "estimate") as mock_estimate:
             mock_estimate.return_value = MockTrajectory()
             test = StrideLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())

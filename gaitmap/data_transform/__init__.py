@@ -1,4 +1,5 @@
 """Classes representing data transformations as preprocessing for different algorithms."""
+
 from gaitmap.data_transform._base import (
     BaseTransformer,
     ChainedTransformer,

@@ -1,4 +1,5 @@
 """Internal helpers for dataset validation."""
+
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import pandas as pd
@@ -33,13 +34,13 @@ def _get_expected_dataset_cols(
     return expected_cols
 
 
-def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]):
+def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]) -> None:
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
         raise ValidationError(f"The dataobject is expected to be one of ({dtype},). But it is a {type(obj)}")
 
 
-def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: bool = True):
+def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: bool = True) -> None:
     """Check if a pd.DataFrame has a multiindex as columns.
 
     Parameters
@@ -57,20 +58,20 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
         if expected is False:
             raise ValidationError(
                 "The dataframe is expected to have a single level of columns. "
-                "But it has a MultiIndex with {} levels.".format(df.columns.nlevels)
+                f"But it has a MultiIndex with {df.columns.nlevels} levels."
             )
         raise ValidationError(
-            "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-            "It has just a single normal column level.".format(nlevels)
+            f"The dataframe is expected to have a MultiIndex with {nlevels} levels as columns. "
+            "It has just a single normal column level."
         )
     if has_multiindex is True and not df.columns.nlevels == nlevels:
         raise ValidationError(
-            "The dataframe is expected to have a MultiIndex with {} levels as columns. "
-            "It has a MultiIndex with {} levels.".format(nlevels, df.columns.nlevels)
+            f"The dataframe is expected to have a MultiIndex with {nlevels} levels as columns. "
+            f"It has a MultiIndex with {df.columns.nlevels} levels."
         )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Hashable], List[str]]]):
+def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Hashable], List[str]]]) -> None:
     """Check if the dataframe has at least all columns sets.
 
     Examples
@@ -93,34 +94,27 @@ def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Has
         else:
             helper_str = f"one of the following sets of columns: {columns_sets}"
         raise ValidationError(
-            "The dataframe is expected to have {}. Instead it has the following columns: {}".format(
-                helper_str, list(df.columns)
-            )
+            f"The dataframe is expected to have {helper_str}. Instead it has the following columns: {list(df.columns)}"
         )
 
 
-def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable]):
+def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable]) -> None:
     ex_index_cols = list(index_cols)
     ac_index_cols = list(df.index.names)
     if ex_index_cols != ac_index_cols:
         raise ValidationError(
-            "The dataframe is expected to have exactly the following index columns ({}), "
-            "but it has {}".format(index_cols, df.index.name)
+            f"The dataframe is expected to have exactly the following index columns ({index_cols}), "
+            f"but it has {df.index.name}"
         )
 
 
 # This function exists to avoid cyclic imports in this module
 def _get_multi_sensor_data_names(dataset: Union[dict, pd.DataFrame]) -> Sequence[str]:
-    if isinstance(dataset, pd.DataFrame):
-        keys = dataset.columns.unique(level=0)
-    else:
-        # In case it is a dict
-        keys = dataset.keys()
-
+    keys = dataset.columns.unique(level=0) if isinstance(dataset, pd.DataFrame) else dataset.keys()
     return keys
 
 
-def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]):
+def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]) -> None:
     sensors = _get_multi_sensor_data_names(obj)
     if len(sensors) == 0:
         raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")

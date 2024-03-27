@@ -105,9 +105,9 @@ class PcaAlignment(BaseSensorAlignment):
     Align dataset to medio-lateral plane, by aligning the y-axis with the dominant component in the
     gyro x-y-plane
 
-    >>> pca_alignment = PcaAlignment(target_axis="y", pca_plane_axis=("gyr_x","gyr_y"))
+    >>> pca_alignment = PcaAlignment(target_axis="y", pca_plane_axis=("gyr_x", "gyr_y"))
     >>> pca_alignment = pca_alignment.align(data, 204.8)
-    >>> pca_alignment.aligned_data_['left_sensor']
+    >>> pca_alignment.aligned_data_["left_sensor"]
     <copy of dataset with axis aligned to the medio-lateral plane>
     ...
 
@@ -137,7 +137,7 @@ class PcaAlignment(BaseSensorAlignment):
 
     data: SensorData
 
-    def __init__(self, target_axis: str = "y", pca_plane_axis: Sequence[str] = ("gyr_x", "gyr_y")):
+    def __init__(self, target_axis: str = "y", pca_plane_axis: Sequence[str] = ("gyr_x", "gyr_y")) -> None:
         self.target_axis = target_axis
         self.pca_plane_axis = pca_plane_axis
 

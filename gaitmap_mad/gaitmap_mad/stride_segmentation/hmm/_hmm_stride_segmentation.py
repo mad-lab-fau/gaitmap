@@ -1,4 +1,5 @@
 """HMM based stride segmentation by Roth et al. 2021."""
+
 from contextlib import suppress
 from importlib.resources import open_text
 from pathlib import Path
@@ -135,7 +136,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         *,
         snap_to_min_win_ms: Optional[float] = 100,
         snap_to_min_axis: str = "gyr_ml",
-    ):
+    ) -> None:
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
         self.model = model

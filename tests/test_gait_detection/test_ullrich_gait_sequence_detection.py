@@ -32,7 +32,7 @@ class TestMetaFunctionality(MetaTestConfig, TestAlgorithmMixin):
 class TestUllrichGaitSequenceDetection:
     """Test the gait sequence detection by Ullrich."""
 
-    def test_single_sensor_input(self, healthy_example_imu_data, snapshot):
+    def test_single_sensor_input(self, healthy_example_imu_data, snapshot) -> None:
         """Dummy test to see if the algorithm is generally working on the example data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -51,7 +51,7 @@ class TestUllrichGaitSequenceDetection:
         assert isinstance(gsd.start_, np.ndarray)
         assert isinstance(gsd.end_, np.ndarray)
 
-    def test_multi_sensor_input(self, healthy_example_imu_data, snapshot):
+    def test_multi_sensor_input(self, healthy_example_imu_data, snapshot) -> None:
         """Dummy test to see if the algorithm is generally working on the example data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -72,7 +72,7 @@ class TestUllrichGaitSequenceDetection:
 
     @pytest.mark.parametrize(
         ("sensor_channel_config", "peak_prominence", "merge_gait_sequences_from_sensors"),
-        (
+        [
             ("gyr_ml", 17, False),
             ("gyr_ml", 17, True),
             ("acc_si", 8, False),
@@ -81,7 +81,7 @@ class TestUllrichGaitSequenceDetection:
             ("acc", 13, True),
             ("gyr", 11, False),
             ("gyr", 11, True),
-        ),
+        ],
     )
     def test_different_activities_different_configs(
         self,
@@ -90,7 +90,7 @@ class TestUllrichGaitSequenceDetection:
         peak_prominence,
         merge_gait_sequences_from_sensors,
         snapshot,
-    ):
+    ) -> None:
         """Test if the algorithm is generally working with different sensor channel configs and their respective
         optimal peak prominence thresholds.
         """
@@ -126,7 +126,7 @@ class TestUllrichGaitSequenceDetection:
         assert all(gsd.end_["left_sensor"] == gsd.gait_sequences_["left_sensor"]["end"])
         snapshot.assert_match(gsd.gait_sequences_["left_sensor"], check_dtype=False)
 
-    def test_signal_length_one_window_size(self, healthy_example_imu_data, snapshot):
+    def test_signal_length_one_window_size(self, healthy_example_imu_data, snapshot) -> None:
         """Test to see if the algorithm is working if the signal length equals to one window size."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -145,7 +145,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.start_) == 1
         assert len(gsd.end_) == 1
 
-    def test_on_signal_without_activity(self, snapshot):
+    def test_on_signal_without_activity(self, snapshot) -> None:
         """Test to see if the algorithm is working if the signal contains no activity at all."""
         data_columns = BF_COLS
 
@@ -160,7 +160,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.start_) == 0
         assert len(gsd.end_) == 0
 
-    def test_on_signal_with_only_nongait(self, snapshot):
+    def test_on_signal_with_only_nongait(self, snapshot) -> None:
         """Test to see if the algorithm is working if the signal contains only non-gait activity."""
         data_columns = BF_COLS
 
@@ -182,7 +182,7 @@ class TestUllrichGaitSequenceDetection:
         assert len(gsd.start_) == 0
         assert len(gsd.end_) == 0
 
-    def test_invalid_sensor_channel_config_type(self, healthy_example_imu_data):
+    def test_invalid_sensor_channel_config_type(self, healthy_example_imu_data) -> None:
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -194,7 +194,7 @@ class TestUllrichGaitSequenceDetection:
             gsd.detect(data, 204.8)
 
     @pytest.mark.parametrize("sensor_channel_config", "dummy")
-    def test_invalid_sensor_channel_config_value(self, healthy_example_imu_data, sensor_channel_config):
+    def test_invalid_sensor_channel_config_value(self, healthy_example_imu_data, sensor_channel_config) -> None:
         """Check if ValueError is raised for wrong sensor_channel_config data type."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -204,7 +204,7 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(sensor_channel_config=sensor_channel_config)
             gsd.detect(data, 204.8)
 
-    def test_invalid_window_size(self, healthy_example_imu_data):
+    def test_invalid_window_size(self, healthy_example_imu_data) -> None:
         """Check if ValueError is raised for window size higher than len of signal."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -217,8 +217,8 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(window_size_s=window_size_s)
             gsd.detect(data, 204.8)
 
-    @pytest.mark.parametrize("locomotion_band", ([1], (0, 1, 2)))
-    def test_invalid_locomotion_band_size(self, healthy_example_imu_data, locomotion_band):
+    @pytest.mark.parametrize("locomotion_band", [[1], (0, 1, 2)])
+    def test_invalid_locomotion_band_size(self, healthy_example_imu_data, locomotion_band) -> None:
         """Check if ValueError is raised for locomotion band with other than two values."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -228,8 +228,8 @@ class TestUllrichGaitSequenceDetection:
             gsd1 = UllrichGaitSequenceDetection(locomotion_band=locomotion_band)
             gsd1.detect(data, 204.8)
 
-    @pytest.mark.parametrize("locomotion_band", ((3, 0.5), (0.5, 0.5)))
-    def test_invalid_locomotion_value_order(self, healthy_example_imu_data, locomotion_band):
+    @pytest.mark.parametrize("locomotion_band", [(3, 0.5), (0.5, 0.5)])
+    def test_invalid_locomotion_value_order(self, healthy_example_imu_data, locomotion_band) -> None:
         """Check if ValueError is raised for locomotion band where second value is smaller or equal than first."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -239,7 +239,7 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(locomotion_band=locomotion_band)
             gsd.detect(data, 204.8)
 
-    def test_invalid_locomotion_upper_value(self, healthy_example_imu_data):
+    def test_invalid_locomotion_upper_value(self, healthy_example_imu_data) -> None:
         """Check if ValueError is raised for locomotion band where the upper limit is too close to Nyquist freq."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -250,8 +250,8 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(locomotion_band=locomotion_band)
             gsd.detect(data, 204.8)
 
-    @pytest.mark.parametrize("harmonic_tolerance_hz", (-3, 0))
-    def test_invalid_harmonic_tolerance(self, healthy_example_imu_data, harmonic_tolerance_hz):
+    @pytest.mark.parametrize("harmonic_tolerance_hz", [-3, 0])
+    def test_invalid_harmonic_tolerance(self, healthy_example_imu_data, harmonic_tolerance_hz) -> None:
         """Check if ValueError is raised for harmonic tolerance of being too small Hz."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -261,7 +261,7 @@ class TestUllrichGaitSequenceDetection:
             gsd_1 = UllrichGaitSequenceDetection(harmonic_tolerance_hz=harmonic_tolerance_hz)
             gsd_1.detect(data, 204.8)
 
-    def test_invalid_merging_gait_sequences(self, healthy_example_imu_data):
+    def test_invalid_merging_gait_sequences(self, healthy_example_imu_data) -> None:
         """Check if data and value for merge_gait_sequences_from_sensors fit to each other. Only gait sequences detected
         from synced data can be merge.
         """
@@ -276,7 +276,7 @@ class TestUllrichGaitSequenceDetection:
             gsd = UllrichGaitSequenceDetection(merge_gait_sequences_from_sensors=merge_gait_sequences_from_sensors)
             gsd.detect(data_dict, 204.8)
 
-    def test_merging_gait_sequences(self, healthy_example_imu_data):
+    def test_merging_gait_sequences(self, healthy_example_imu_data) -> None:
         """Check if merging of gait sequences works for synchronized data."""
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
@@ -298,7 +298,7 @@ class TestUllrichGaitSequenceDetection:
 
         assert_frame_equal(gsd_merged.gait_sequences_["left_sensor"], gsd_merged.gait_sequences_["right_sensor"])
 
-    def test_merging_for_no_activity(self):
+    def test_merging_for_no_activity(self) -> None:
         """Test to see if the merging is working if the signal contains no activity at all."""
         data_columns = BF_COLS
 
@@ -318,7 +318,7 @@ class TestUllrichGaitSequenceDetection:
         for sensor in ["left_sensor", "right_sensor"]:
             assert gsd.gait_sequences_[sensor].empty
 
-    def test_merging_on_signal_with_only_nongait(self):
+    def test_merging_on_signal_with_only_nongait(self) -> None:
         """Test to see if the merging is working if the signal contains only non-gait activity."""
         data_columns = BF_COLS
 
@@ -345,7 +345,7 @@ class TestUllrichGaitSequenceDetection:
         for sensor in ["left_sensor", "right_sensor"]:
             assert gsd.gait_sequences_[sensor].empty
 
-    def test_merge_gait_sequences_multi_sensor_data(self):
+    def test_merge_gait_sequences_multi_sensor_data(self) -> None:
         """Test the pure functionality of the merging with dummy data."""
         data_columns = BF_COLS
 
@@ -368,7 +368,7 @@ class TestUllrichGaitSequenceDetection:
         for sensor in ["left_sensor", "right_sensor"]:
             assert_frame_equal(out[sensor], expected_merged, check_dtype=False)
 
-    def test_gait_sequence_concat(self):
+    def test_gait_sequence_concat(self) -> None:
         """Test the concatenation of subsequent gait sequences."""
         sig_length = 95
         window_size = 10
@@ -383,13 +383,13 @@ class TestUllrichGaitSequenceDetection:
 
     @pytest.mark.parametrize(
         ("margin_s", "output"),
-        (
+        [
             (10, np.array([[90, 510], [590, 810], [990, 1410], [1890, 2000]])),  # simple case, no overlaps
             (200, np.array([[0, 1600], [1700, 2000]])),  # simple overlaps, exceeding signal range
             (800, np.array([[0, 2000]])),  # multiple overlaps
-        ),
+        ],
     )
-    def test_adding_of_margin(self, margin_s, output):
+    def test_adding_of_margin(self, margin_s, output) -> None:
         """Test the addition of a symmetric margin to all gait sequences."""
         # dummy array with start and end sample values of gait sequences
         gait_sequences_start_end = np.array([[100, 500], [600, 800], [1000, 1400], [1900, 2000]])
@@ -405,7 +405,7 @@ class TestUllrichGaitSequenceDetection:
         # margin
         np.testing.assert_array_equal(margin_added, output)
 
-    def test_adding_of_margin_empty_gsd(self):
+    def test_adding_of_margin_empty_gsd(self) -> None:
         """Test correct behavior in case no gait sequences are detected."""
         gait_sequences_start_end = np.array([])
         sig_length = 2000

@@ -28,7 +28,7 @@ class TestIODataStructures:
     output_list_type: Literal["roi", "stride"]
 
     @pytest.fixture(params=(StrideLevelTrajectory, RegionLevelTrajectory), autouse=True)
-    def select_wrapper(self, healthy_example_stride_events, request):
+    def select_wrapper(self, healthy_example_stride_events, request) -> None:
         self.wrapper_class = request.param
         if self.wrapper_class == RegionLevelTrajectory:
             self.example_region = {
@@ -41,7 +41,7 @@ class TestIODataStructures:
             self.output_list_type = "stride"
             self.key = "s_id"
 
-    def test_invalid_input_data(self, healthy_example_imu_data):
+    def test_invalid_input_data(self, healthy_example_imu_data) -> None:
         """Test if error is raised correctly on invalid input data type."""
         data = healthy_example_imu_data
         stride_list = self.example_region
@@ -57,23 +57,23 @@ class TestIODataStructures:
         with pytest.raises(ValidationError, match=r".*neither a single- or a multi-sensor "):
             gyr_int.estimate(data, fake_stride_list, sampling_rate_hz=204.8)
 
-    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
-    def test_invalid_input_method(self, healthy_example_imu_data, method):
+    @pytest.mark.parametrize("method", ["ori_method", "pos_method"])
+    def test_invalid_input_method(self, healthy_example_imu_data, method) -> None:
         """Test if correct errors are raised for invalid pos and ori methods."""
         instance = self.wrapper_class(**{method: "wrong"})
         with pytest.raises(ValueError) as e:
             instance.estimate(healthy_example_imu_data, self.example_region, sampling_rate_hz=204.8)
         assert method in str(e)
 
-    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
-    def test_only_pos_or_ori_provided(self, healthy_example_imu_data, method):
+    @pytest.mark.parametrize("method", ["ori_method", "pos_method"])
+    def test_only_pos_or_ori_provided(self, healthy_example_imu_data, method) -> None:
         instance = self.wrapper_class(**{method: None})
         with pytest.raises(ValueError) as e:
             instance.estimate(healthy_example_imu_data, self.example_region, sampling_rate_hz=204.8)
         assert "either a `ori` and a `pos` method" in str(e)
 
-    @pytest.mark.parametrize("method", ("ori_method", "pos_method"))
-    def test_trajectory_warning(self, healthy_example_imu_data, method):
+    @pytest.mark.parametrize("method", ["ori_method", "pos_method"])
+    def test_trajectory_warning(self, healthy_example_imu_data, method) -> None:
         instance = self.wrapper_class(**{method: RtsKalman()})
         with pytest.warns(UserWarning) as w:
             instance.estimate(
@@ -83,7 +83,7 @@ class TestIODataStructures:
             )
         assert "trajectory method as ori or pos method" in str(w[0])
 
-    def test_passed_both_warning(self, healthy_example_imu_data):
+    def test_passed_both_warning(self, healthy_example_imu_data) -> None:
         """Test that a warning is raised when passing ori and pos and trajectory emthods all at one.
 
         This will happen by default, when leaving ori and pos as default values
@@ -97,7 +97,7 @@ class TestIODataStructures:
             )
         assert "You provided a trajectory method AND an ori or pos method." in str(w[0])
 
-    def test_single_sensor_output(self, healthy_example_imu_data, snapshot):
+    def test_single_sensor_output(self, healthy_example_imu_data, snapshot) -> None:
         test_stride_events = self.example_region["left_sensor"].iloc[:3]
         test_data = healthy_example_imu_data["left_sensor"].iloc[: int(test_stride_events.iloc[-1]["end"])]
 
@@ -121,7 +121,7 @@ class TestIODataStructures:
         snapshot.assert_match(instance.orientation_.loc[first_last_stride], "ori")
         snapshot.assert_match(instance.position_.loc[first_last_stride], "pos")
 
-    def test_single_sensor_output_empty_stride_list(self, healthy_example_imu_data):
+    def test_single_sensor_output_empty_stride_list(self, healthy_example_imu_data) -> None:
         empty_stride_events = pd.DataFrame(columns=self.example_region["left_sensor"].columns)
         test_data = healthy_example_imu_data["left_sensor"]
 
@@ -133,7 +133,7 @@ class TestIODataStructures:
         assert len(instance.orientation_) == 0
         assert len(instance.position_) == 0
 
-    def test_multi_sensor_output(self, healthy_example_imu_data, snapshot):
+    def test_multi_sensor_output(self, healthy_example_imu_data, snapshot) -> None:
         test_stride_events = self.example_region
         test_data = healthy_example_imu_data
 
@@ -172,14 +172,14 @@ class TestInitCalculation:
     No complicated tests here, as this uses `get_gravity_rotation`, which is well tested
     """
 
-    def test_calc_initial_dummy(self):
+    def test_calc_initial_dummy(self) -> None:
         """No rotation expected as already aligned."""
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 20, axis=0), columns=SF_COLS)
         start_ori = _initial_orientation_from_start(dummy_data, 10, 8)
         assert_array_equal(start_ori.as_quat(), Rotation.identity().as_quat())
 
     @pytest.mark.parametrize("start", [0, 99])
-    def test_start_of_stride_equals_start_or_end_of_data(self, start):
+    def test_start_of_stride_equals_start_or_end_of_data(self, start) -> None:
         """If start is to close to the start or the end of the data a warning is emitted."""
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 100, axis=0), columns=SF_COLS)
         with pytest.warns(UserWarning) as w:
@@ -187,14 +187,14 @@ class TestInitCalculation:
 
         assert "complete window length" in str(w[0])
 
-    def test_only_single_value(self):
+    def test_only_single_value(self) -> None:
         dummy_data = pd.DataFrame(np.repeat(np.array([0, 0, 1, 0, 0, 0])[None, :], 20, axis=0), columns=SF_COLS)
         start_ori = _initial_orientation_from_start(dummy_data, 10, 0)
         assert_array_equal(start_ori.as_quat(), Rotation.identity().as_quat())
 
 
 class MockTrajectory(BaseTrajectoryMethod):
-    def __init__(self, initial_orientation=None):
+    def __init__(self, initial_orientation=None) -> None:
         self.initial_orientation = initial_orientation
         super().__init__()
 

@@ -1,5 +1,6 @@
 import re
 from tempfile import TemporaryDirectory
+from typing import NoReturn
 
 import joblib
 import pytest
@@ -19,15 +20,15 @@ class TestCachingMixin:
     def after_action_instance(self) -> BaseType:
         pass
 
-    def assert_after_action_instance(self, instance):
+    def assert_after_action_instance(self, instance) -> NoReturn:
         """Test some aspects of the resulting instance to ensure that results retrieved from cache are correct."""
         raise NotImplementedError()
 
-    def test_memory_as_params(self, after_action_instance):
+    def test_memory_as_params(self, after_action_instance) -> None:
         assert hasattr(after_action_instance, "memory")
         assert "memory" in after_action_instance.get_params()
 
-    def test_cached_call_works(self, after_action_instance, capsys):
+    def test_cached_call_works(self, after_action_instance, capsys) -> None:
         parameters = get_action_params(after_action_instance)
         algo = after_action_instance.clone()
 
@@ -80,7 +81,7 @@ class TestCachingMixin:
         assert algo_json == after_first_json == after_second_json
         assert algo_hash == after_first_hash == after_second_hash
 
-    def test_cached_json_export(self):
+    def test_cached_json_export(self) -> None:
         """Test that there is a warning on json export."""
         instance = self.algorithm_class(memory=Memory(None))
         with pytest.warns(UserWarning) as w:

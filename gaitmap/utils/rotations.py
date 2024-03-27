@@ -2,6 +2,7 @@
 
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
+
 from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -41,7 +42,7 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     >>> rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(180))
     >>> rot.as_quat().round(decimals=3)
     array([1., 0., 0., 0.])
-    >>> rot.apply(np.array([[0, 0, 1.], [0, 1, 0.]])).round()
+    >>> rot.apply(np.array([[0, 0, 1.0], [0, 1, 0.0]])).round()
     array([[ 0., -0., -1.],
            [ 0., -1.,  0.]])
 
@@ -53,7 +54,7 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
            [1.   , 0.   , 0.   , 0.   ]])
     >>> # In case of multiple rotations, the first rotation is applied to the first vector
     >>> # and the second to the second
-    >>> rot.apply(np.array([[0, 0, 1.], [0, 1, 0.]])).round()
+    >>> rot.apply(np.array([[0, 0, 1.0], [0, 1, 0.0]])).round()
     array([[ 0., -1.,  0.],
            [ 0., -1.,  0.]])
 
@@ -340,7 +341,7 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, Li
     Examples
     --------
     >>> # Create composite rotation around y and z axis
-    >>> rot = Rotation.from_rotvec([0, 0, np.pi / 2]) * Rotation.from_rotvec([0, np.pi / 4, 0 ])
+    >>> rot = Rotation.from_rotvec([0, 0, np.pi / 2]) * Rotation.from_rotvec([0, np.pi / 4, 0])
     >>> find_rotation_around_axis(rot, [0, 0, 1]).as_rotvec()  # Extract part around z
     array([0.        , 0.        , 1.57079633])
     >>> find_rotation_around_axis(rot, [0, 1, 0]).as_rotvec()  # Extract part around y
@@ -444,7 +445,7 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> Union[np.ndarray, 
 
     two vectors: 2D
 
-    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0],[-1, 0, 0]]), np.array([[-1, 0, 0],[-1, 0, 0]]))
+    >>> find_unsigned_3d_angle(np.array([[-1, 0, 0], [-1, 0, 0]]), np.array([[-1, 0, 0], [-1, 0, 0]]))
     array([0,0])
 
     """

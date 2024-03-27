@@ -113,7 +113,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         steepness: float = 0.08,
         level_assumption: bool = True,
         gravity: Optional[np.ndarray] = cf(GRAV_VEC),
-    ):
+    ) -> None:
         self.turning_point = turning_point
         self.steepness = steepness
         self.level_assumption = level_assumption

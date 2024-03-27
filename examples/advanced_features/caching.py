@@ -32,7 +32,6 @@ If you really want to cache the full method calls (on your own risk), see the la
 # ----------------
 # We will simply copy the stride segmentation example to have some data to work with.
 from gaitmap.example_data import get_healthy_example_imu_data
-from gaitmap.stride_segmentation import BarthOriginalTemplate
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
 
 data = get_healthy_example_imu_data().iloc[:2000]

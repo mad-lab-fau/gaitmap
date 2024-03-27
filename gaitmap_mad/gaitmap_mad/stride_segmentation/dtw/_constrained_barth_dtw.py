@@ -1,4 +1,5 @@
 """A version of BarthDTW that used local warping constrains by default."""
+
 from typing import Dict, Optional, Union
 
 from joblib import Memory
@@ -148,7 +149,7 @@ class ConstrainedBarthDtw(BarthDtw):
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
         memory: Optional[Memory] = None,
-    ):
+    ) -> None:
         super().__init__(
             template=template,
             max_cost=max_cost,

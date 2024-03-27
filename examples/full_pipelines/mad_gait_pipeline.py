@@ -15,6 +15,7 @@ For more details on the individual steps have a look at the extended examples an
 - :ref:`Temporal Parameters <example_temporal_parameters>` and :ref:`Spatial Parameters <example_spatial_parameters>`
 
 """
+
 # %%
 # Load example data
 # -----------------
@@ -46,7 +47,7 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
     np.array([0, 0, 1]), np.deg2rad(90)
 )
 
-rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
+rotations = {"left_sensor": left_rot, "right_sensor": right_rot}
 dataset_sf = flip_dataset(example_dataset, rotations)
 
 # Align to Gravity
@@ -120,22 +121,20 @@ spatial_paras = spatial_paras.calculate(
 import matplotlib.pyplot as plt
 
 print(
-    "The following number of strides were identified and parameterized for each sensor: {}".format(
-        {k: len(v) for k, v in ed.min_vel_event_list_.items()}
-    )
+    f"The following number of strides were identified and parameterized for each sensor: {({k: len(v) for k, v in ed.min_vel_event_list_.items()})}"
 )
 
 # %%
 for k, v in temporal_paras.parameters_pretty_.items():
     v.plot()
-    plt.title("All temporal parameters of sensor {}".format(k))
+    plt.title(f"All temporal parameters of sensor {k}")
 
 # %%
 for k, v in spatial_paras.parameters_pretty_.items():
     v[["stride length [m]", "gait velocity [m/s]", "arc length [m]"]].plot()
-    plt.title("All spatial parameters of sensor {}".format(k))
+    plt.title(f"All spatial parameters of sensor {k}")
 
 # %%
 for k, v in spatial_paras.parameters_pretty_.items():
     v.filter(like="angle").plot()
-    plt.title("All angle parameters of sensor {}".format(k))
+    plt.title(f"All angle parameters of sensor {k}")

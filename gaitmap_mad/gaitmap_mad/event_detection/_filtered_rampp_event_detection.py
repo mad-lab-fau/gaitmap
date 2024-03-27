@@ -1,4 +1,5 @@
 """The event detection algorithm by Rampp et al. 2014."""
+
 from typing import Dict, Optional, Tuple
 
 from joblib import Memory
@@ -96,7 +97,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-    ):
+    ) -> None:
         self.ic_lowpass_filter = ic_lowpass_filter
         super().__init__(
             memory=memory,

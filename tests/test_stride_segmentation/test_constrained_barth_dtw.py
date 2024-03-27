@@ -2,6 +2,7 @@
 
 We only test the meta functionality and a regressions, as it is basically identical to BarthDtw, except some defaults.
 """
+
 import numpy as np
 import pytest
 
@@ -35,7 +36,7 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 class TestRegressionOnRealDataConstrainedDtw:
     """These regression tests run on a MS dataset, which produces a bunch of issues wiht the normal dtw."""
 
-    def test_real_data_both_feed_regression(self, ms_example_imu_data, snapshot):
+    def test_real_data_both_feed_regression(self, ms_example_imu_data, snapshot) -> None:
         data = convert_to_fbf(ms_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         dtw = ConstrainedBarthDtw(template=BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")))  # Test with default
         # paras

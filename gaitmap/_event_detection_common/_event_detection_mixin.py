@@ -44,7 +44,7 @@ class _EventDetectionMixin:
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-    ):
+    ) -> None:
         self.memory = memory
         self.enforce_consistency = enforce_consistency
         self.detect_only = detect_only
@@ -73,7 +73,7 @@ class _EventDetectionMixin:
         if dataset_type != stride_list_type:
             raise ValidationError(
                 "An invalid combination of stride list and dataset was provided."
-                "The dataset is {} sensor and the stride list is {} sensor.".format(dataset_type, stride_list_type)
+                f"The dataset is {dataset_type} sensor and the stride list is {stride_list_type} sensor."
             )
 
         self.data = data

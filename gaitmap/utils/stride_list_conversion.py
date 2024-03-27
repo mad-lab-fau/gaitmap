@@ -1,4 +1,5 @@
 """A couple of utils to convert stride lists into different formats."""
+
 from typing import List, Tuple
 
 import numpy as np

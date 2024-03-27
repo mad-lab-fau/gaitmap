@@ -1,4 +1,5 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
+
 from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
@@ -139,9 +140,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     >>> sampling_rate_hz = 204.8
     >>> roi_list = ...
     >>> per_region_traj = per_region_traj.estimate(
-    ...                                            data,
-    ...                                            regions_of_interest=roi_list,
-    ...                                            sampling_rate_hz=sampling_rate_hz
+    ...     data, regions_of_interest=roi_list, sampling_rate_hz=sampling_rate_hz
     ... )
     >>> per_region_traj.position_
     <Dataframe or dict with all the positions per region>
@@ -164,10 +163,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     >>> roi_list = ...
     >>> stride_list = ...
     >>> per_region_traj = per_region_traj.estimate_intersect(
-    ...                                                      data,
-    ...                                                      regions_of_interest=roi_list,
-    ...                                                      stride_event_list=stride_list,
-    ...                                                      sampling_rate_hz=sampling_rate_hz
+    ...     data, regions_of_interest=roi_list, stride_event_list=stride_list, sampling_rate_hz=sampling_rate_hz
     ... )
     >>> per_region_traj.position_
     <Dataframe or dict with all the positions per stride>
@@ -196,7 +192,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
         align_window_width: int = 8,
-    ):
+    ) -> None:
         # TODO: Make align window with a second value?
         self.align_window_width = align_window_width
         super().__init__(ori_method=ori_method, pos_method=pos_method, trajectory_method=trajectory_method)
@@ -397,8 +393,8 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
                     ) from e
             if data_type != stride_list_type:
                 raise ValidationError(
-                    "You are trying to intersect the results from a {} sensor dataset with a {} "
-                    "sensor stride list".format(data_type, stride_list_type)
+                    f"You are trying to intersect the results from a {data_type} sensor dataset with a "
+                    f"{stride_list_type} sensor stride list"
                 )
             if data_type == "single":
                 data = self._intersect(data, self.regions_of_interest, stride_event_list)

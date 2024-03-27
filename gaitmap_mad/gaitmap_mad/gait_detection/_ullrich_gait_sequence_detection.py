@@ -1,7 +1,8 @@
 """The gait sequence detection algorithm by Ullrich et al. 2020."""
+
 import copy
 import itertools
-from typing import Dict, Tuple, TypeVar, Union
+from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -146,12 +147,12 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_channel_config: str = "gyr_ml",
         peak_prominence: float = 17.0,
         window_size_s: float = 10,
-        active_signal_threshold: float = None,
+        active_signal_threshold: Optional[float] = None,
         locomotion_band: Tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
-        additional_margin_s: float = None,
-    ):
+        additional_margin_s: Optional[float] = None,
+    ) -> None:
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
         self.window_size_s = window_size_s
@@ -400,7 +401,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
 
         return valid_windows
 
-    def _assert_input_data(self, data):
+    def _assert_input_data(self, data) -> None:
         if self.merge_gait_sequences_from_sensors and is_multi_sensor_data(data) and not isinstance(data, pd.DataFrame):
             raise ValueError("Merging of data set is only possible for synchronized data sets.")
 
@@ -429,11 +430,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         # cause edge cases for the flattened fft peak detection later on.
         if (self.sampling_rate_hz / 2) - (5 * self.locomotion_band[1]) < 5:
             raise ValueError(
-                "The upper limit of the locomotion band ({} Hz) is too close to the Nyquist frequency ({} Hz) of the "
-                "signal, given the sampling rate of {} Hz. The difference between upper limit of locomotion band and "
-                "Nyquist frequency should be smaller than 5 Hz.".format(
-                    self.locomotion_band[1], self.sampling_rate_hz / 2, self.sampling_rate_hz
-                )
+                f"The upper limit of the locomotion band ({self.locomotion_band[1]} Hz) is too close to the Nyquist "
+                f"frequency ({self.sampling_rate_hz / 2} Hz) of the signal, given the sampling rate of "
+                f"{self.sampling_rate_hz} Hz. "
+                "The difference between upper limit of locomotion band and Nyquist frequency should be smaller than "
+                "5 Hz."
             )
 
     def _merge_gait_sequences_multi_sensor_data(

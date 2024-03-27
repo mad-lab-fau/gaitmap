@@ -1,4 +1,5 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
+
 import warnings
 from typing import Dict, Literal, Optional, Sequence, Union
 
@@ -136,11 +137,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     >>> orientations = ...  # from orientation estimation
     >>> spatial_paras = SpatialParameterCalculation()
     >>> spatial_paras = spatial_paras.calculate(
-    ...                               stride_event_list=stride_list,
-    ...                               positions=positions,
-    ...                               orientations=orientations,
-    ...                               sampling_rate_hz=204.8
-    ...                  )
+    ...     stride_event_list=stride_list, positions=positions, orientations=orientations, sampling_rate_hz=204.8
+    ... )
     >>> spatial_paras.parameters_
     <Dataframe/dictionary with all the parameters>
     >>> spatial_paras.parameters_pretty_
@@ -167,7 +165,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self,
         calculate_only: Optional[Sequence[ParamterNames]] = None,
         expected_stride_type: Literal["min_vel", "ic"] = "min_vel",
-    ):
+    ) -> None:
         self.calculate_only = calculate_only
         self.expected_stride_type = expected_stride_type
 

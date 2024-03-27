@@ -47,7 +47,7 @@ class TestMetaFunctionalityRollingTransforms(TestAlgorithmMixin):
     @pytest.fixture(
         params=[*all_rolling_transformer, (SlidingWindowGradient, {"window_size_s": 1}, None)], autouse=True
     )
-    def set_algo_class(self, request):
+    def set_algo_class(self, request) -> None:
         self.algorithm_class, self.algo_params, _ = request.param
 
     @pytest.fixture()
@@ -70,7 +70,7 @@ def df_or_series_imu_data(request, healthy_example_imu_data):
 
 
 class TestResample:
-    def test_resample(self, df_or_series_imu_data):
+    def test_resample(self, df_or_series_imu_data) -> None:
         instance = Resample(target_sampling_rate_hz=10)
         after_instance = instance.transform(df_or_series_imu_data, sampling_rate_hz=100)
         assert after_instance.transformed_data_.shape[0] == 100
@@ -79,7 +79,7 @@ class TestResample:
         assert hasattr(after_instance, "roi_list") is False
         assert hasattr(after_instance, "transformed_roi_list_") is False
 
-    def test_new_sampling_rate_is_equal_to_old(self, df_or_series_imu_data, healthy_example_stride_borders):
+    def test_new_sampling_rate_is_equal_to_old(self, df_or_series_imu_data, healthy_example_stride_borders) -> None:
         compare_func = assert_series_equal if isinstance(df_or_series_imu_data, pd.Series) else assert_frame_equal
 
         instance = Resample(target_sampling_rate_hz=100)
@@ -91,7 +91,7 @@ class TestResample:
         assert_frame_equal(after_instance.transformed_roi_list_, healthy_example_stride_borders["left_sensor"])
         assert after_instance.transformed_roi_list_ is not healthy_example_stride_borders["left_sensor"]
 
-    def test_resample_roi_list(self, healthy_example_stride_borders):
+    def test_resample_roi_list(self, healthy_example_stride_borders) -> None:
         in_stride_borders = healthy_example_stride_borders["left_sensor"].astype({"start": "Int64", "end": "Int64"})
         instance = Resample(target_sampling_rate_hz=10)
         after_instance = instance.transform(roi_list=in_stride_borders, sampling_rate_hz=100)
@@ -110,7 +110,7 @@ class TestResample:
         assert hasattr(after_instance, "transformed_data_") is False
         assert hasattr(after_instance, "data") is False
 
-    def test_resample_data_and_roi_list(self, df_or_series_imu_data, healthy_example_stride_borders):
+    def test_resample_data_and_roi_list(self, df_or_series_imu_data, healthy_example_stride_borders) -> None:
         in_stride_borders = healthy_example_stride_borders["left_sensor"]
         instance = Resample(target_sampling_rate_hz=10)
         after_instance = instance.transform(df_or_series_imu_data, roi_list=in_stride_borders, sampling_rate_hz=100)
@@ -119,14 +119,14 @@ class TestResample:
         assert after_instance.roi_list is in_stride_borders
         assert after_instance.data is df_or_series_imu_data
 
-    def test_require_sampling_rate(self):
+    def test_require_sampling_rate(self) -> None:
         instance = Resample(target_sampling_rate_hz=10)
         with pytest.raises(ValueError) as e:
             instance.transform()
 
         assert "sampling_rate_hz" in str(e.value)
 
-    def test_require_target_sampling_rate(self):
+    def test_require_target_sampling_rate(self) -> None:
         instance = Resample()
         with pytest.raises(ValueError) as e:
             instance.transform(sampling_rate_hz=10)
@@ -141,19 +141,19 @@ class _TestSlidingWindowTransformer:
     @pytest.mark.parametrize(
         ("window_size_s", "effective_win_size"), [(1, 101), (0.5, 51), (0.1, 11), (0.23, 23), (0.111, 11)]
     )
-    def test_effective_window_size_samples(self, healthy_example_imu_data, window_size_s, effective_win_size):
+    def test_effective_window_size_samples(self, healthy_example_imu_data, window_size_s, effective_win_size) -> None:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:100]
         data_left.columns = BF_COLS
         instance = self.algorithm_class(window_size_s=window_size_s)
         after_instance = instance.transform(data_left, sampling_rate_hz=100)
         assert after_instance.effective_window_size_samples_ == effective_win_size
 
-    def test_window_size_s_required(self):
+    def test_window_size_s_required(self) -> None:
         with pytest.raises(ValueError) as e:
             self.algorithm_class().transform([], sampling_rate_hz=100)
         assert "window_size_s" in str(e.value)
 
-    def test_sampling_rate_required(self):
+    def test_sampling_rate_required(self) -> None:
         with pytest.raises(ValueError) as e:
             self.algorithm_class(window_size_s=1).transform([])
         assert "sampling_rate_hz" in str(e.value)
@@ -167,11 +167,11 @@ class TestSlidingWindowTransformers(_TestSlidingWindowTransformer):
     equivalent_method: Callable
 
     @pytest.fixture(params=all_rolling_transformer, autouse=True)
-    def set_algo_class(self, request):
+    def set_algo_class(self, request) -> None:
         self.algorithm_class, self.algo_params, self.equivalent_method = request.param
 
     @pytest.mark.parametrize("win_size_s", [0.1, 0.2])
-    def test_output(self, df_or_series_imu_data, win_size_s):
+    def test_output(self, df_or_series_imu_data, win_size_s) -> None:
         """Test the output shape and the values for the first couple of windows."""
         instance = self.algorithm_class(window_size_s=win_size_s)
         after_instance = instance.transform(df_or_series_imu_data, sampling_rate_hz=100)
@@ -219,7 +219,7 @@ class TestSlidingWindowGradient(_TestSlidingWindowTransformer):
     algorithm_class = SlidingWindowGradient
 
     @pytest.mark.parametrize("win_size_s", [0.1, 0.2])
-    def test_output(self, df_or_series_imu_data, win_size_s):
+    def test_output(self, df_or_series_imu_data, win_size_s) -> None:
         """Test the output shape and the values for the first couple of windows."""
         instance = SlidingWindowGradient(window_size_s=win_size_s)
         after_instance = instance.transform(df_or_series_imu_data, sampling_rate_hz=100)

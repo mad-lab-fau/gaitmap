@@ -1,6 +1,7 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
+
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -183,7 +184,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         snap_to_min_axis: Optional[str] = "gyr_ml",
         conflict_resolution: bool = True,
         memory: Optional[Memory] = None,
-    ):
+    ) -> None:
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
         self.conflict_resolution = conflict_resolution
@@ -208,7 +209,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         return self._format_stride_list(start_ends)
 
     @stride_list_.setter
-    def stride_list_(self, arg: StrideList):  # noqa: no-self-use
+    def stride_list_(self, arg: StrideList) -> NoReturn:  # noqa: ARG002
         """Fake setter for the stride list.
 
         This is required to be type compatible with the base class.
@@ -286,7 +287,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
         return matches_start_end, to_keep
 
-    def _post_postprocess_check(self, matches_start_end):
+    def _post_postprocess_check(self, matches_start_end) -> None:
         super()._post_postprocess_check(matches_start_end)
         # Check if there are still overlapping strides
         if np.any(np.diff(matches_start_end.flatten()) < 0):

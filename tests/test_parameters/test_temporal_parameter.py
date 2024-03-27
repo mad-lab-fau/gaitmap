@@ -73,15 +73,16 @@ class TestTemporalParameterCalculation:
             return _min_vel_stride_list()
         elif stride_list_type == "ic":
             return ic_stride_list()
+        return None
 
-    def test_single_sensor_multiple_strides(self, stride_list, stride_list_type):
+    def test_single_sensor_multiple_strides(self, stride_list, stride_list_type) -> None:
         """Test calculate temporal parameters for single sensor."""
         stride_events_list, temporal_parameters = stride_list
         t = TemporalParameterCalculation(expected_stride_type=stride_list_type)
         t.calculate(stride_events_list, 100)
         assert_frame_equal(t.parameters_, temporal_parameters)
 
-    def test_multiple_sensor(self, stride_list, stride_list_type):
+    def test_multiple_sensor(self, stride_list, stride_list_type) -> None:
         """Test calculate temporal parameters for multiple sensors , multiple strides for all sensors."""
         stride_events_list1, temporal_parameters = stride_list
         stride_events_list = {"sensor1": stride_events_list1.iloc[:2], "sensor2": stride_events_list1}
@@ -96,14 +97,14 @@ class TestTemporalParameterCalculation:
 
 
 class TestTemporalParametersIcStrideList:
-    def test_single_sensor_multiple_strides(self, min_vel_stride_list):
+    def test_single_sensor_multiple_strides(self, min_vel_stride_list) -> None:
         """Test calculate temporal parameters for single sensor."""
         stride_events_list, temporal_parameters = min_vel_stride_list
         t = TemporalParameterCalculation()
         t.calculate(stride_events_list, 100)
         assert_frame_equal(t.parameters_, temporal_parameters)
 
-    def test_multiple_sensor(self, min_vel_stride_list):
+    def test_multiple_sensor(self, min_vel_stride_list) -> None:
         """Test calculate temporal parameters for multiple sensors , multiple strides for all sensors."""
         stride_events_list1, temporal_parameters = min_vel_stride_list
         stride_events_list = {"sensor1": stride_events_list1.iloc[:2], "sensor2": stride_events_list1}
@@ -118,7 +119,7 @@ class TestTemporalParametersIcStrideList:
 
 
 class TestTemporalParameterRegression:
-    def test_regression_on_example_data(self, healthy_example_stride_events, snapshot):
+    def test_regression_on_example_data(self, healthy_example_stride_events, snapshot) -> None:
         healthy_example_stride_events = healthy_example_stride_events["left_sensor"]
         t = TemporalParameterCalculation()
         t.calculate(healthy_example_stride_events, 204.8)

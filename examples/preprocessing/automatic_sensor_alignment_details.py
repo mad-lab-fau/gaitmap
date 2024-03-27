@@ -261,7 +261,7 @@ pca_rotation = pca_alignment.rotation_[sensor]
 # We see that the PCA alignment method applies a pure heading correction.
 # Further the angle value, basically matches the rotation we applied in step 1 perfectly.
 rot_angles = np.rad2deg(pca_rotation.as_euler("xyz"))
-print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
+print(f"X-rot: {rot_angles[0]:.1f} deg, Y-rot: {rot_angles[1]:.1f} deg, Z-rot: {rot_angles[2]:.1f} deg")
 
 
 # %%
@@ -338,7 +338,7 @@ fdsa_rotation = fdsa.rotation_[sensor]
 # Lets look at the rotation angles in degree.
 # The forward direction sign alignment applied the required 180deg flip to the data.
 rot_angles = np.rad2deg(fdsa_rotation.as_euler("xyz"))
-print("X-rot: %.1f deg, Y-rot: %.1f deg, Z-rot: %.1f deg" % (rot_angles[0], rot_angles[1], rot_angles[2]))
+print(f"X-rot: {rot_angles[0]:.1f} deg, Y-rot: {rot_angles[1]:.1f} deg, Z-rot: {rot_angles[2]:.1f} deg")
 
 # %%
 # As a final result of the automatic alignment pipeline all misalignment around all axis were subsequently fixed.

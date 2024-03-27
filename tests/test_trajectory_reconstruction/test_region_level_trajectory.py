@@ -37,15 +37,15 @@ class TestMetaFunctionality(TestAlgorithmMixin):
         )
         return trajectory
 
-    def test_all_other_parameters_documented(self, after_action_instance):
+    def test_all_other_parameters_documented(self, after_action_instance) -> None:
         # As the class has multiple action methods with different parameters, this test can not pass in its current
         # state
         pytest.skip()
 
 
 class TestEstimateIntersect:
-    @pytest.mark.parametrize(("sl_type", "roi_type"), (("single", "multi"), ("multi", "single")))
-    def test_datatypes_mismatch(self, sl_type, roi_type, healthy_example_imu_data):
+    @pytest.mark.parametrize(("sl_type", "roi_type"), [("single", "multi"), ("multi", "single")])
+    def test_datatypes_mismatch(self, sl_type, roi_type, healthy_example_imu_data) -> None:
         roi_list = pd.DataFrame({"start": [0], "end": [8]}).rename_axis("roi_id")
         stride_list = pd.DataFrame({"start": [0], "end": [1]}).rename_axis("s_id")
         if roi_type == "multi":
@@ -65,7 +65,7 @@ class TestEstimateIntersect:
 
         assert f"The stride list is {sl_type} sensor and the ROI list is {roi_type} sensor." in str(e)
 
-    def test_simple(self):
+    def test_simple(self) -> None:
         acc_xy = pd.Series([0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 0, 0])
         acc_z = pd.Series([9.81] * len(acc_xy))
         gyr = pd.Series([0.0] * len(acc_xy))
@@ -93,13 +93,13 @@ class TestEstimateIntersect:
 class TestIntersect:
     @pytest.mark.parametrize(
         ("position", "starts", "ends"),
-        (
+        [
             ([-1, 0, 0, 0, 1, 1, 1, 2, 2, 2], [0, 3, 6], [3, 6, 9]),
             ([-1, 0, 0, 0, -1, 1, 1, 1, 2, 2, 2], [0, 4, 7], [3, 7, 10]),
             ([-1, 0, 0, 0, 1, 1, 1, 2, 2, 2], [0], [9]),
-        ),
+        ],
     )
-    def test_intersect_single_region(self, position, starts, ends):
+    def test_intersect_single_region(self, position, starts, ends) -> None:
         # Note that the first value of position simulates the initial orientation calculated by the method.
         # The stride and roi list indices are relative to the data, which has one sample less.
         test_position = pd.DataFrame(
@@ -121,7 +121,7 @@ class TestIntersect:
         # Output should pass stride pos list test
         assert is_single_sensor_position_list(intersected_pos, "stride")
 
-    def test_strides_outside_region(self):
+    def test_strides_outside_region(self) -> None:
         # Strides outside regions should simply be ignored
         position = [-1, 0, 0, 0, 1, 1, 1, 2, 2, 2]
         # 2 outside, 2 inside
@@ -140,7 +140,7 @@ class TestIntersect:
 
         assert len(intersected_pos.groupby("s_id")) == 2
 
-    def test_multiple_roi(self):
+    def test_multiple_roi(self) -> None:
         # two gait sequences with some padding in between
         position = {"gs1": pd.Series([-1, 0, 0, 0, 1, 1, 1]), "gs2": pd.Series([-1, 2, 2, 2, 3, 3, 3])}
         test_roi_list = pd.DataFrame({"roi_id": ["gs1", "gs2"], "start": [0, 8], "end": [6, 14]})
@@ -165,7 +165,7 @@ class TestIntersect:
         np.testing.assert_array_equal(intersected_pos["pos_x"].loc[2].to_numpy(), [-1, 2, 2, 2])
         np.testing.assert_array_equal(intersected_pos["pos_x"].loc[3].to_numpy(), [2, 3, 3, 3])
 
-    def test_overlapping_roi(self):
+    def test_overlapping_roi(self) -> None:
         # Overlapping rois the stride information should be taken from the last roi.
         position = {"gs1": pd.Series([-1, 0, 0, 0, 1, 1, 1]), "gs2": pd.Series([-1, 2, 2, 2, 3, 3, 3])}
         # ROIs completely overlap
@@ -187,13 +187,13 @@ class TestIntersect:
         np.testing.assert_array_equal(intersected_pos["pos_x"].loc[0].to_numpy(), [-1, 2, 2, 2])
         np.testing.assert_array_equal(intersected_pos["pos_x"].loc[1].to_numpy(), [2, 3, 3, 3])
 
-    def test_estimate_must_be_called(self):
+    def test_estimate_must_be_called(self) -> None:
         with pytest.raises(ValidationError) as e:
             RegionLevelTrajectory().intersect({})
 
         assert "`estimate`" in str(e)
 
-    def test_estimate_intersect_was_called(self):
+    def test_estimate_intersect_was_called(self) -> None:
         # Simulate calling `estimate_intersect` by setting a stride-level pos list:
         position = [1, 1, 1]
         position_list = pd.DataFrame(
@@ -210,8 +210,8 @@ class TestIntersect:
 
         assert "`estimate_intersect`" in str(e)
 
-    @pytest.mark.parametrize(("sl_type", "pos_type"), (("single", "multi"), ("multi", "single")))
-    def test_datatypes_mismatch(self, sl_type, pos_type):
+    @pytest.mark.parametrize(("sl_type", "pos_type"), [("single", "multi"), ("multi", "single")])
+    def test_datatypes_mismatch(self, sl_type, pos_type) -> None:
         position = [1, 1, 1]
         position_list = pd.DataFrame(
             np.array([[0] * len(position), position, position, position]).T,
@@ -234,15 +234,15 @@ class TestIntersect:
 
         assert f"{pos_type} sensor dataset with a {sl_type} sensor stride list" in str(e)
 
-    @pytest.mark.parametrize("value", ((), "invalid", ("invalid1", "orientation")))
-    def test_invalid_return_data(self, value):
+    @pytest.mark.parametrize("value", [(), "invalid", ("invalid1", "orientation")])
+    def test_invalid_return_data(self, value) -> None:
         rlt = RegionLevelTrajectory()
         rlt.position_ = [1]  # Something other than None
         with pytest.raises(ValueError) as e:
             rlt.intersect({}, value)
         assert str(("orientation", "position", "velocity")) in str(e)
 
-    def test_data_has_been_modified(self):
+    def test_data_has_been_modified(self) -> None:
         rlt = RegionLevelTrajectory()
         # Simulate non-valid result properties
         rlt.position_ = "not a valid position list"
@@ -252,7 +252,7 @@ class TestIntersect:
 
         assert "manipulated the outputs" in str(e)
 
-    def test_multiple_sensors(self):
+    def test_multiple_sensors(self) -> None:
         position = [-1, 0, 0, 0, 1, 1, 1]
         starts = [0, 3]
         ends = [3, 6]
@@ -276,8 +276,8 @@ class TestIntersect:
 
 
 class TestRegionLevelTrajectory:
-    @pytest.mark.parametrize("method", ("estimate", "estimate_intersect"))
-    def test_event_list_forwarded(self, method):
+    @pytest.mark.parametrize("method", ["estimate", "estimate_intersect"])
+    def test_event_list_forwarded(self, method) -> None:
         with patch.object(MockTrajectory, "estimate") as mock_estimate:
             mock_estimate.return_value = MockTrajectory()
             test = RegionLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())
@@ -303,8 +303,8 @@ class TestRegionLevelTrajectory:
                 pd.DataFrame({"start": [0, 3], "end": [3, 5], "min_vel": [0, 3]}, index=pd.Series([4, 5], name="s_id")),
             )
 
-    @pytest.mark.parametrize("method", ("estimate", "estimate_intersect"))
-    def test_event_list_forwarded_multi(self, method):
+    @pytest.mark.parametrize("method", ["estimate", "estimate_intersect"])
+    def test_event_list_forwarded_multi(self, method) -> None:
         with patch.object(MockTrajectory, "estimate") as mock_estimate:
             mock_estimate.return_value = MockTrajectory()
             test = RegionLevelTrajectory(ori_method=None, pos_method=None, trajectory_method=MockTrajectory())
