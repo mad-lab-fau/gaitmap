@@ -57,7 +57,7 @@ class HealthyImu(Dataset):
     @property
     def mocap_trajectory_(self) -> pd.DataFrame:
         self.assert_is_single(None, "data")
-        df = get_healthy_example_mocap_data().filter(like=self.group[0].upper())
+        df = get_healthy_example_mocap_data().filter(like=self.group_label.foot[0].upper())
         # This strips the L_/R_ prefix
         df.columns = pd.MultiIndex.from_tuples((m[2:], a) for m, a in df.columns)
         return df
