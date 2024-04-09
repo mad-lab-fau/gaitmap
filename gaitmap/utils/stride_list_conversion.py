@@ -18,12 +18,12 @@ from gaitmap.utils.datatype_helper import (
 )
 
 
-def convert_segmented_stride_list(
+def convert_stride_list(
     stride_list: StrideList,
     target_stride_type: Literal["min_vel", "ic"],
     source_stride_type: Literal["segmented", "ic"] = "segmented",
 ) -> StrideList:
-    """Convert a segmented stride list with detected events into other types of stride lists.
+    """Convert a stride list with detected events into other types of stride lists.
 
     During the conversion some strides might be removed.
     For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.
@@ -45,23 +45,23 @@ def convert_segmented_stride_list(
     """
     stride_list_type = is_stride_list(stride_list, stride_type="segmented")
     if stride_list_type == "single":
-        return _segmented_stride_list_to_min_vel_single_sensor(
+        return _stride_list_to_min_vel_single_sensor(
             stride_list, target_stride_type=target_stride_type, source_stride_type=source_stride_type
         )[0]
     return {
-        k: _segmented_stride_list_to_min_vel_single_sensor(
+        k: _stride_list_to_min_vel_single_sensor(
             v, target_stride_type=target_stride_type, source_stride_type=source_stride_type
         )[0]
         for k, v in stride_list.items()
     }
 
 
-def _segmented_stride_list_to_min_vel_single_sensor(
+def _stride_list_to_min_vel_single_sensor(
     stride_list: SingleSensorStrideList,
     target_stride_type: Literal["min_vel", "ic"],
     source_stride_type: Literal["segmented", "ic"],
 ) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
-    """Convert a segmented stride list with detected events into other types of stride lists.
+    """Convert a stride list with detected events into other types of stride lists.
 
     During the conversion some strides might be removed.
     For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.

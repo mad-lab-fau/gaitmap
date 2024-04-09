@@ -134,6 +134,9 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
         This approach is identical to [1]_.
 
+    The :func:`~gaitmap.event_detection.HerzerEventDetection.detect` method is implemented only for "segmented" stride
+    type
+
     The :func:`~gaitmap.event_detection.HerzerEventDetection.detect` method provides a stride list `min_vel_event_list`
     with the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
     `min_vel` samples.
@@ -247,7 +250,7 @@ def _find_all_events(
 ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
     if input_stride_type != "segmented":
-        raise NotImplementedError()
+        raise NotImplementedError("This method support only segmented stride type")
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
     # inverting acc, as this algorithm was developed assuming a flipped axis like the original Rampp algorithm

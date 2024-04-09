@@ -23,7 +23,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     ----------
     ic_search_region_ms
         The region to look for the initial contact in the acc_pa signal in ms given an ic candidate. According to [1]_,
-        for the ic the algorithm first looks for a local minimum in the gyr_ml signal after the swing phase. The actual
+        for the ic the algorithm first looks for a local minimum in the gyr_ml signal. The actual
         ic is then determined in the acc_pa signal in the ic_search_region_ms around that gyr_ml minimum.
         ic_search_region_ms[0] describes the start and ic_search_region_ms[1] the end of the region to check around the
         gyr_ml minimum. The values of `ic_search_region_ms` must be greater or equal than the sample time
@@ -51,7 +51,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         Hence, the start sample of each stride corresponds to the min_vel sample of that stride and the end sample
         corresponds to the min_vel sample of the subsequent stride.
         Strides for which no valid events could be found are removed.
-        Additional strides might have been removed due to the conversion from segmented to min_vel strides.
+        Additional strides might have been removed due to the conversion from segmented or ic to min_vel strides.
         The 's_id' index is selected according to which segmented stride the pre-ic belongs to.
 
     segmented_event_list_ : A stride list or dictionary with such values
@@ -99,7 +99,8 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     initial contact (`ic`), originally called heel strike (HS) in the paper [1]_:
         At `ic` the foot decelerates rapidly when the foot hits the ground.
         For the detection of `ic` only the signal between the absolute maximum and the end of the first half of the
-        gyr_ml signal is considered.
+        gyr_ml signal is considered in the case of "segmented" input stride type whereas the window between
+        [few samples before stride start,.2 of stance phase] is considered in case of "ic" input stride type.
         Within this segment, `ic` is found by searching for the minimum between the point of the steepest negative
         slope and the point of the steepest positive slope in the following signal.
         After that the acc_pa signal is searched for a maximum in the area before and after the described minimum in
@@ -125,7 +126,9 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     the stride list.
 
     The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check that is enabled by default.
-    The gait events within one stride provided by the `stride_list` must occur in the expected order.
+    The gait events within one stride provided by the `stride_list` must occur in the expected order. For example,
+    in case of "segmented" input stride type, the expected order is ["tc", "ic", "min_vel"] whereas the expected order
+    for "ic" input stride type is ["ic", "min_vel", "tc"]
     Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
     If you wish to disable this consistency check, set `enforce_consistency` to False.
@@ -133,13 +136,13 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     all detected events for the exact stride list that was used as input.
     Note, that this list might contain NaN for some events.
 
-    Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
+    Furthermore, during the conversion from the stride list to the "min_vel" stride list, breaks in
     continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
     first (segmented) stride of each sequence is dropped.
     This is required due to the shift of stride borders between the `stride_list` and the `min_vel_event_list`.
     Thus, the first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
     the first stride in the `min_vel_event_list`.
-    Therefore, the `min_vel_event_list` list has one stride less per gait sequence than the `segmented_stride_list`.
+    Therefore, the `min_vel_event_list` list has one stride less per gait sequence than the `stride_list`.
 
     Further information regarding the coordinate system can be found :ref:`here<coordinate_systems>` and regarding the
     different types of strides can be found :ref:`here<stride_list_guide>`.
@@ -315,51 +318,27 @@ def _find_all_events_for_ic_stride(
     tc_events = []
     min_vel_events = []
     _is_initial_stride = False
-    for index, stride in stride_list.iterrows():
-        current_stride_start = stride["start"]
-        current_stride_end = stride["end"]
+    for _index, stride in stride_list.iterrows():
+        start = stride["start"]
+        end = stride["end"]
         if "ic" in events:
-            if index == 0:
-                _is_initial_stride = True
-                # in the first stride, we search only the current stride
-                previous_stride_start = stride["start"]
-                previous_stride_end = stride["end"]
-            else:
-                previous_stride_start = stride_list.loc[index - 1]["start"]
-                previous_stride_end = stride_list.loc[index - 1]["end"]
-            # to get the ic event we use a search window between the peak of previous stride and part of the current
-            # stride get data of current stride
-            gyr_ml_filtered_sec_current_stride = gyr_ml_filtered[current_stride_start:current_stride_end]
-            acc_sec_current_stride = acc_pa[current_stride_start:current_stride_end]
-            # get data of previous stride
-            gyr_ml_filtered_sec_previous_stride = gyr_ml_filtered[previous_stride_start:previous_stride_end]
-            acc_sec_previous_stride = acc_pa[previous_stride_start:previous_stride_end]
-
+            # to get the ic event we use a search window between the start of the stride and part of it
             ic_events.append(
-                current_stride_start
-                + _detect_ic_for_ic_stride(
-                    gyr_ml_filtered_sec_previous_stride,
-                    gyr_ml_filtered_sec_current_stride,
-                    acc_sec_previous_stride,
-                    acc_sec_current_stride,
+                _detect_ic_for_ic_stride(
+                    start,
+                    end,
+                    gyr_ml_filtered,
+                    acc_pa,
+                    np.gradient(gyr_ml),
                     ic_search_region,
-                    _is_initial_stride,
                 )
             )
 
-            _is_initial_stride = False
-
         if "tc" in events:
             # use the filtered signal here because for some patients there is a lot of noise around ic
-            tc_events.append(
-                current_stride_start
-                + _detect_tc_for_ic_stride(gyr_ml_filtered[current_stride_start:current_stride_end])
-            )
+            tc_events.append(start + _detect_tc_for_ic_stride(gyr_ml_filtered[start:end]))
         if "min_vel" in events:
-            min_vel_events.append(
-                current_stride_start
-                + _detect_min_vel_gyr_energy(gyr[current_stride_start:current_stride_end], min_vel_search_win_size)
-            )
+            min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr[start:end], min_vel_search_win_size))
 
     return (
         np.array(ic_events, dtype=float) if ic_events else None,
@@ -369,12 +348,12 @@ def _find_all_events_for_ic_stride(
 
 
 def _detect_ic_for_ic_stride(
-    gyr_ml_previous_stride: np.ndarray,
-    gyr_ml_current_stride: np.ndarray,
-    acc_pa_inv_previous_stride: np.ndarray,
-    acc_pa_inv_current_stride: np.ndarray,
+    start,
+    end,
+    gyr_ml: np.ndarray,
+    acc_pa_inv: np.ndarray,
+    gyr_ml_grad: np.ndarray,
     ic_search_region: Tuple[float, float],
-    is_initial_stride: bool,
 ) -> float:
     """Find the ic.
 
@@ -385,26 +364,17 @@ def _detect_ic_for_ic_stride(
     """
     # Determine rough search region
 
-    # Determine rough search region as the region between the peak of the previous stride and 0.2 of the stance phase
+    # Determine rough search region as the region between few samples before the start of the stride
+    # and 0.2 of the stance phase
     # of the current stride
-    if is_initial_stride:
-        search_region = 0, int(0.2 * gyr_ml_current_stride.shape[0])
-    else:
-        peak = _find_previous_stride_positive_peak(gyr_ml_previous_stride)
-        search_region = peak, int(gyr_ml_previous_stride.shape[0] + 0.1 * gyr_ml_current_stride.shape[0])
+    gyr_ml_sec = gyr_ml[start:end]
+    search_region = start - ic_search_region[0], start + int(0.2 * gyr_ml_sec.shape[0])
     if search_region[1] - search_region[0] < 0:
-        # The gyr argmax was not found
         return np.nan
-
     # alternative:
-    # concatenate the two strides
-    gyr_ml_concatenated = np.concatenate((gyr_ml_previous_stride, gyr_ml_current_stride))
-    gyr_ml_concatenated_grad = np.gradient(gyr_ml_concatenated)
-
-    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_concatenated_grad[slice(*search_region)]))
+    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)]))
     refined_search_region_end = int(
-        refined_search_region_start
-        + np.argmax(gyr_ml_concatenated_grad[refined_search_region_start : search_region[1]])
+        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start : search_region[1]])
     )
 
     if refined_search_region_end - refined_search_region_start < 0:
@@ -415,23 +385,14 @@ def _detect_ic_for_ic_stride(
         heel_strike_candidate = refined_search_region_start
     else:
         heel_strike_candidate = refined_search_region_start + np.argmin(
-            gyr_ml_concatenated[refined_search_region_start:refined_search_region_end]
+            gyr_ml[refined_search_region_start:refined_search_region_end]
         )
-
     # Acc search window
-    acc_pa_inv_concatenated = np.concatenate((acc_pa_inv_previous_stride, acc_pa_inv_current_stride))
     acc_search_region_start = int(np.max(np.array([0, heel_strike_candidate - ic_search_region[0]])))
     acc_search_region_end = int(
-        np.min(np.array([acc_pa_inv_concatenated.shape[0], heel_strike_candidate + ic_search_region[1]]))
+        np.min(np.array([start + gyr_ml_sec.shape[0], heel_strike_candidate + ic_search_region[1]]))
     )
-    if is_initial_stride:
-        return float(np.argmin(acc_pa_inv_current_stride[acc_search_region_start:acc_search_region_end]))
-
-    return float(
-        acc_search_region_start
-        + np.argmin(acc_pa_inv_concatenated[acc_search_region_start:acc_search_region_end])
-        - acc_pa_inv_previous_stride.shape[0]
-    )
+    return float(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
 
 
 def _detect_tc_for_ic_stride(gyr_ml: np.ndarray) -> float:
@@ -493,14 +454,11 @@ def _find_first_negative_before_peak(arr):
     find the peak of the signal and then search for the first negative value before the peak
     """
     peak_index = np.argmax(arr)  # Find the index of the largest positive number (peak)
+    negative_index = np.where(arr[:peak_index] < 0)[0]
+    if len(negative_index) > 0:
+        return negative_index[-1]  # Return the index of the last negative number before the peak
 
-    # Find the index of the first negative  number before the peak (where the sign of the signal change)
-    i = peak_index
-    for i in range(peak_index - 1, -1, -1):
-        if arr[i] < 0:
-            return i  # Return the index of the smallest positive number before the peak
-
-    return i
+    return np.nan
 
 
 def _find_previous_stride_positive_peak(gyr_ml_previous_stride):

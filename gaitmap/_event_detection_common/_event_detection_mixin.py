@@ -22,7 +22,7 @@ from gaitmap.utils.datatype_helper import (
 )
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    _segmented_stride_list_to_min_vel_single_sensor,
+    _stride_list_to_min_vel_single_sensor,
     enforce_stride_list_consistency,
 )
 
@@ -150,7 +150,7 @@ class _EventDetectionMixin:
             return {"segmented_event_list": segmented_event_list}
 
         # convert to min_vel event list
-        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
+        min_vel_event_list, _ = _stride_list_to_min_vel_single_sensor(
             segmented_event_list, source_stride_type=self.input_stride_type, target_stride_type="min_vel"
         )
 

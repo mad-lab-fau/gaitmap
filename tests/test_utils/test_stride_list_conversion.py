@@ -6,8 +6,8 @@ from pandas._testing import assert_frame_equal
 from gaitmap.utils.consts import SL_EVENT_ORDER
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    _segmented_stride_list_to_min_vel_single_sensor,
-    convert_segmented_stride_list,
+    _stride_list_to_min_vel_single_sensor,
+    convert_stride_list,
     enforce_stride_list_consistency,
     intersect_stride_list,
 )
@@ -111,7 +111,7 @@ class TestConvertSegmentedStrideList:
     def test_simple_conversion(self, target):
         stride_list = self._create_example_stride_list_with_pause()
 
-        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(
+        converted, dropped = _stride_list_to_min_vel_single_sensor(
             stride_list, source_stride_type="segmented", target_stride_type=target
         )
 
@@ -131,7 +131,7 @@ class TestConvertSegmentedStrideList:
         stride_list = self._create_example_stride_list_with_pause()
         # Drop the second to last stride to create a pause
         stride_list = stride_list.drop(8)
-        converted, dropped = _segmented_stride_list_to_min_vel_single_sensor(
+        converted, dropped = _stride_list_to_min_vel_single_sensor(
             stride_list, source_stride_type="segmented", target_stride_type="min_vel"
         )
 
@@ -144,10 +144,10 @@ class TestConvertSegmentedStrideList:
     @pytest.mark.parametrize("target", ("ic", "min_vel"))
     def test_simple_conversion_multiple(self, target):
         stride_list = self._create_example_stride_list_with_pause()
-        converted = convert_segmented_stride_list(stride_list, target_stride_type=target)
+        converted = convert_stride_list(stride_list, target_stride_type=target)
 
         stride_list = {"s1": stride_list}
-        converted_multiple = convert_segmented_stride_list(stride_list, target_stride_type=target)
+        converted_multiple = convert_stride_list(stride_list, target_stride_type=target)
         converted_multiple = converted_multiple["s1"]
 
         # We do not test everything here, but just see if it passes the basic checks.
