@@ -1,9 +1,10 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
-from typing import Dict, Literal, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 from joblib import Memory
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
