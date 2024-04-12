@@ -1,0 +1,41 @@
+{
+    "schema":{
+        "fields":[
+            {
+                "name":"s_id",
+                "type":"integer"
+            },
+            {
+                "name":"start",
+                "type":"number"
+            },
+            {
+                "name":"end",
+                "type":"number"
+            },
+            {
+                "name":"ic",
+                "type":"number"
+            },
+            {
+                "name":"tc",
+                "type":"number"
+            },
+            {
+                "name":"min_vel",
+                "type":"number"
+            },
+            {
+                "name":"pre_ic",
+                "type":"number"
+            }
+        ],
+        "primaryKey":[
+            "s_id"
+        ],
+        "pandas_version":"1.4.0"
+    },
+    "data":[
+
+    ]
+}
