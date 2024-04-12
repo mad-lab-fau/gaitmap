@@ -303,7 +303,7 @@ def _find_all_events_for_ic_stride(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"]
-    if "ic" in events:
+    if "ic" in events or "tc" in events:
         if gyr_ic_lowpass_filter is not None:
             gyr_ml_filtered = gyr_ic_lowpass_filter.filter(
                 gyr_ml, sampling_rate_hz=sampling_rate_hz
