@@ -206,7 +206,6 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         detect_only: Optional[Tuple[str, ...]] = None,
         input_stride_type: Literal["segmented"] = "segmented",
     ):
-    ) -> None:
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
