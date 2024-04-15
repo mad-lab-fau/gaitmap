@@ -103,7 +103,9 @@ class MyPipeline(OptimizablePipeline):
     cost_func_: np.ndarray
 
     # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(InterpolatedDtwTemplate())):
+    def __init__(
+        self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(InterpolatedDtwTemplate())
+    ) -> None:
         self.max_cost = max_cost
         self.template = template
 

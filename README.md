@@ -142,8 +142,23 @@ For all these topics check out our [contributing guide](https://gaitmap.readthed
 If you use *gaitmap* in your research we would appreciate a citation.
 This helps us to justify the time we invest in the development and maintenance of the library.
 
-We currently prepare a paper to describe the *gaitmap* library in detail.
-Until then, please simply cite the repository.
+
+> A. Küderle et al., "Gaitmap—An Open Ecosystem for IMU-Based Human Gait Analysis and Algorithm Benchmarking," in IEEE Open Journal of Engineering in Medicine and Biology, vol. 5, pp. 163-172, 2024, doi: 10.1109/OJEMB.2024.3356791.
+
+
+```bibtex
+@ARTICLE{10411039,
+  author={Küderle, Arne and Ullrich, Martin and Roth, Nils and Ollenschläger, Malte and Ibrahim, Alzhraa A. and Moradi, Hamid and Richer, Robert and Seifer, Ann-Kristin and Zürl, Matthias and Sîmpetru, Raul C. and Herzer, Liv and Prossel, Dominik and Kluge, Felix and Eskofier, Bjoern M.},
+  journal={IEEE Open Journal of Engineering in Medicine and Biology}, 
+  title={Gaitmap—An Open Ecosystem for IMU-Based Human Gait Analysis and Algorithm Benchmarking}, 
+  year={2024},
+  volume={5},
+  number={},
+  pages={163-172},
+  keywords={Pipelines;Benchmark testing;Software algorithms;Ecosystems;Machine learning algorithms;Estimation;Trajectory;Accelerometer;walking;biomarker;biomechanics;movement analysis},
+  doi={10.1109/OJEMB.2024.3356791}}
+```
+
 
 If you use a specific algorithm please also make sure you cite the original paper of the algorithm!
 We recommend the following citation style:

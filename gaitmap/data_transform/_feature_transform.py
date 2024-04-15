@@ -1,6 +1,7 @@
 """A set of transformers that can be used to calculate traditional features from a timeseries."""
+
 from copy import copy
-from typing import Optional
+from typing import NoReturn, Optional
 
 import numpy as np
 import pandas as pd
@@ -55,7 +56,7 @@ class Resample(BaseTransformer):
     def __init__(
         self,
         target_sampling_rate_hz: Optional[float] = None,
-    ):
+    ) -> None:
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
     def transform(
@@ -129,7 +130,7 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
 
     sampling_rate_hz: float
 
-    def __init__(self, window_size_s: Optional[float] = None):
+    def __init__(self, window_size_s: Optional[float] = None) -> None:
         self.window_size_s = window_size_s
 
     @property
@@ -289,7 +290,7 @@ def _get_centered_window_view(array, window_size_samples, pad_value=0.0):
 
 
 class _CustomSlidingWindowTransform(BaseSlidingWindowFeatureTransform):
-    def _apply_to_window_view(self, windowed_view: np.ndarray, data: pd.DataFrame):
+    def _apply_to_window_view(self, windowed_view: np.ndarray, data: pd.DataFrame) -> NoReturn:
         raise NotImplementedError
 
     def _transform(self, data: SingleSensorData, sampling_rate_hz: float, **_) -> SingleSensorData:  # noqa: ARG002

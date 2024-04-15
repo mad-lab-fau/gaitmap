@@ -48,11 +48,11 @@ def create_dummy_multi_sensor_roi():
 
 class TestParameterValidation:
     @pytest.fixture(autouse=True)
-    def _create_instance(self):
+    def _create_instance(self) -> None:
         instance = RoiStrideSegmentation(BarthDtw())
         self.instance = instance
 
-    def test_empty_algorithm_raises_error(self):
+    def test_empty_algorithm_raises_error(self) -> None:
         instance = RoiStrideSegmentation()
         with pytest.raises(ValueError):
             instance.segment(
@@ -63,8 +63,8 @@ class TestParameterValidation:
 
         assert "`segmentation_algorithm` must be a valid instance of a StrideSegmentation algorithm"
 
-    @pytest.mark.parametrize("data", (pd.DataFrame, [], None))
-    def test_unsuitable_datatype(self, data):
+    @pytest.mark.parametrize("data", [pd.DataFrame, [], None])
+    def test_unsuitable_datatype(self, data) -> None:
         """No proper Sensordata provided."""
         with pytest.raises(ValidationError) as e:
             self.instance.segment(
@@ -75,8 +75,8 @@ class TestParameterValidation:
 
         assert "neither single- or multi-sensor data" in str(e)
 
-    @pytest.mark.parametrize("roi", (pd.DataFrame(), None))
-    def test_invalid_roi_single_dataset(self, roi):
+    @pytest.mark.parametrize("roi", [pd.DataFrame(), None])
+    def test_invalid_roi_single_dataset(self, roi) -> None:
         """Test that an error is raised if an invalid roi is provided."""
         with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
@@ -84,7 +84,7 @@ class TestParameterValidation:
 
         assert "neither a single- or a multi-sensor regions of interest list" in str(e)
 
-    def test_multi_roi_single_sensor(self):
+    def test_multi_roi_single_sensor(self) -> None:
         with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             self.instance.segment(
@@ -93,7 +93,7 @@ class TestParameterValidation:
 
         assert "multi-sensor regions of interest list with a single sensor" in str(e)
 
-    def test_invalid_roi_multiple_dataset(self):
+    def test_invalid_roi_multiple_dataset(self) -> None:
         """Test that an error is raised if an invalid roi is provided."""
         with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
@@ -101,7 +101,7 @@ class TestParameterValidation:
 
         assert "neither a single- or a multi-sensor regions of interest list" in str(e)
 
-    def test_single_roi_unsync_multi(self):
+    def test_single_roi_unsync_multi(self) -> None:
         with pytest.raises(ValidationError) as e:
             # call segment with invalid ROI
             # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
@@ -112,7 +112,7 @@ class TestParameterValidation:
 
         assert "single-sensor regions of interest list with an unsynchronised" in str(e)
 
-    def test_invalid_stride_id_naming(self):
+    def test_invalid_stride_id_naming(self) -> None:
         self.instance.set_params(s_id_naming="wrong")
 
         with pytest.raises(ValueError) as e:
@@ -123,7 +123,7 @@ class TestParameterValidation:
             )
         assert "s_id_naming" in str(e)
 
-    def test_additional_sensors_in_roi(self):
+    def test_additional_sensors_in_roi(self) -> None:
         with pytest.raises(KeyError) as e:
             # Note, that the empty dataframe as data is actually valid data object and will not raise a validation
             # error.
@@ -139,7 +139,7 @@ class MockStrideSegmentation(BaseStrideSegmentation):
 
     _action_methods = ("segment", "secondary_segment")
 
-    def __init__(self, n=3):
+    def __init__(self, n=3) -> None:
         self.n = 3
 
     def segment(self: BaseType, data: SensorData, sampling_rate_hz: float, **kwargs) -> BaseType:
@@ -176,10 +176,10 @@ class TestCombinedStridelist:
     """Test the actual ROI stuff."""
 
     @pytest.fixture(autouse=True, params=["replace", "prefix"])
-    def _s_id_naming(self, request):
+    def _s_id_naming(self, request) -> None:
         self.s_id_naming = request.param
 
-    def test_single_sensor(self):
+    def test_single_sensor(self) -> None:
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = pd.DataFrame(np.ones(27))
         roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
@@ -189,7 +189,7 @@ class TestCombinedStridelist:
         assert is_single_sensor_stride_list(roi_seg.stride_list_)
 
         assert len(roi_seg.instances_per_roi_) == len(roi)
-        assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values()])
+        assert all(isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values())
 
         if self.s_id_naming == "replace":
             assert_array_equal(roi_seg.stride_list_.index, list(range(len(roi_seg.stride_list_))))
@@ -204,7 +204,7 @@ class TestCombinedStridelist:
                 if r[1]["roi_id"] == stride[1]["roi_id"]:
                     assert stride[1]["start"] >= r[1]["start"]
 
-    def test_multi_sensor(self):
+    def test_multi_sensor(self) -> None:
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = {"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}
         roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
@@ -213,10 +213,10 @@ class TestCombinedStridelist:
         roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
         assert is_multi_sensor_stride_list(roi_seg.stride_list_)
         assert len(roi_seg.instances_per_roi_) == len(roi)
-        assert all([isinstance(o, dict) for o in roi_seg.instances_per_roi_.values()])
+        assert all(isinstance(o, dict) for o in roi_seg.instances_per_roi_.values())
 
         for sensor in ["s1", "s2"]:
-            assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_[sensor].values()])
+            assert all(isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_[sensor].values())
             assert len(roi_seg.stride_list_[sensor]) == len(roi[sensor]) * roi_seg.segmentation_algorithm.n
             if self.s_id_naming == "replace":
                 assert_array_equal(roi_seg.stride_list_[sensor].index, list(range(len(roi_seg.stride_list_[sensor]))))
@@ -232,7 +232,7 @@ class TestCombinedStridelist:
                     if r[1]["roi_id"] == stride[1]["roi_id"]:
                         assert stride[1]["start"] >= r[1]["start"]
 
-    def test_multi_sensor_sync(self):
+    def test_multi_sensor_sync(self) -> None:
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = pd.concat({"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}, axis=1)
         roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])
@@ -240,7 +240,7 @@ class TestCombinedStridelist:
         roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
         assert is_multi_sensor_stride_list(roi_seg.stride_list_)
         assert len(roi_seg.instances_per_roi_) == len(roi)
-        assert all([isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values()])
+        assert all(isinstance(o, MockStrideSegmentation) for o in roi_seg.instances_per_roi_.values())
 
         for sensor in ["s1", "s2"]:
             assert len(roi_seg.stride_list_[sensor]) == len(roi) * roi_seg.segmentation_algorithm.n
@@ -259,8 +259,8 @@ class TestCombinedStridelist:
                         assert stride[1]["start"] >= r[1]["start"]
 
 
-@pytest.mark.parametrize("action_method", (None, "segment", "secondary_segment"))
-def test_alternative_action_method(action_method):
+@pytest.mark.parametrize("action_method", [None, "segment", "secondary_segment"])
+def test_alternative_action_method(action_method) -> None:
     roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), action_method=action_method)
     data = pd.concat({"s1": pd.DataFrame(np.ones(27)), "s2": pd.DataFrame(np.zeros(27))}, axis=1)
     roi = pd.DataFrame(np.array([[0, 1, 3], [0, 9, 18], [8, 17, 26]]).T, columns=["roi_id", "start", "end"])

@@ -2,6 +2,7 @@
 
 Definitions can be found in the :ref:`coordinate_systems` guide.
 """
+
 import warnings
 from typing import List, Optional
 
@@ -83,8 +84,8 @@ def convert_to_fbf(
     data: MultiSensorData,
     left: Optional[List[str]] = None,
     right: Optional[List[str]] = None,
-    right_like: str = None,
-    left_like: str = None,
+    right_like: Optional[str] = None,
+    left_like: Optional[str] = None,
 ):
     """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 
@@ -120,7 +121,7 @@ def convert_to_fbf(
     --------
     These examples assume that your dataset has two sensors called `left_sensor` and `right_sensor`.
 
-    >>> dataset = ... # Sensordata in FSF
+    >>> dataset = ...  # Sensordata in FSF
     >>> fbf_dataset = convert_to_fbf(dataset, left_like="left_", right_like="right_")
 
     Alternatively, you can specify the full sensor names.
@@ -164,9 +165,8 @@ def _handle_foot(foot, foot_like, data, rot_func):
         foot = [sensor for sensor in get_multi_sensor_names(data) if foot_like in sensor]
         if not foot:
             warnings.warn(
-                "The substring {} is not contained in any sensor name. Available sensor names are: {}".format(
-                    foot_like, get_multi_sensor_names(data)
-                )
+                f"The substring {foot_like} is not contained in any sensor name. Available sensor names are: "
+                f"{get_multi_sensor_names(data)}"
             )
     foot = foot or []
     for s in foot:

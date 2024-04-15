@@ -171,6 +171,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         detect_only: Optional[Tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
+    ) -> None:
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.input_stride_type = input_stride_type
@@ -194,7 +195,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         )
         if all(v == 0 for v in ic_search_region):
             raise ValueError(
-                "The chosen values are smaller than the sample time ({} ms)".format((1 / self.sampling_rate_hz) * 1000)
+                f"The chosen values are smaller than the sample time ({(1 / self.sampling_rate_hz) * 1000} ms)"
             )
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
         return {

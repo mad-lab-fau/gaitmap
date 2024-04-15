@@ -25,6 +25,7 @@ evaluation via cross-validation.
 If you want to have more information on how the dataset and pipeline is built, head over to this example.
 Here we will just copy the code over.
 """
+
 import numpy as np
 import pandas as pd
 from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
@@ -70,7 +71,7 @@ class MyPipeline(OptimizablePipeline):
     cost_func_: np.ndarray
 
     # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
-    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(BarthOriginalTemplate())):
+    def __init__(self, max_cost: float = 3, template: BaseDtwTemplate = CloneFactory(BarthOriginalTemplate())) -> None:
         self.max_cost = max_cost
         self.template = template
 
@@ -227,7 +228,7 @@ timings
 optimized_pipeline = result_df["optimizer"][0]
 optimized_pipeline
 
-#%%
+# %%
 optimized_pipeline.optimized_pipeline_.get_params()
 
 # %%

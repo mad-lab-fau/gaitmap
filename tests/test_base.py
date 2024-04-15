@@ -1,4 +1,5 @@
 """This tests the BaseAlgorithm and fundamental functionality."""
+
 from inspect import Parameter, signature
 from typing import Any, Dict, Tuple
 
@@ -11,7 +12,7 @@ from tests.conftest import _get_params_without_nested_class
 
 
 def _init_getter():
-    def _fake_init(self, **kwargs):
+    def _fake_init(self, **kwargs) -> None:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -75,7 +76,7 @@ def example_test_class_after_action(example_test_class_initialised) -> Tuple[Bas
     return test_instance, params
 
 
-def test_get_action_method(example_test_class_after_action):
+def test_get_action_method(example_test_class_after_action) -> None:
     instance, test_parameters = example_test_class_after_action
 
     assert get_action_methods_names(instance)[0] == test_parameters["action_method_name"]
@@ -86,25 +87,25 @@ def test_get_action_method(example_test_class_after_action):
             get_action_method(instance)
 
 
-def test_get_attributes(example_test_class_after_action):
+def test_get_attributes(example_test_class_after_action) -> None:
     instance, test_parameters = example_test_class_after_action
 
     assert get_results(instance) == test_parameters["attributes"]
 
 
-def test_get_parameter(example_test_class_after_action):
+def test_get_parameter(example_test_class_after_action) -> None:
     instance, test_parameters = example_test_class_after_action
 
     assert instance.get_params() == test_parameters["params"]
 
 
-def test_get_other_parameter(example_test_class_after_action):
+def test_get_other_parameter(example_test_class_after_action) -> None:
     instance, test_parameters = example_test_class_after_action
 
     assert get_action_params(instance) == test_parameters["other_params"]
 
 
-def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialised):
+def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialised) -> None:
     instance, test_parameters = example_test_class_initialised
 
     key = "not_existend_without_underscore"
@@ -118,7 +119,7 @@ def test_normal_wrong_attr_still_raises_attr_error(example_test_class_initialise
 
 
 @pytest.mark.parametrize("key", ["wrong_with_", "wrong_without"])
-def test_attribute_helper_after_action_wrong(example_test_class_after_action, key):
+def test_attribute_helper_after_action_wrong(example_test_class_after_action, key) -> None:
     instance, test_parameters = example_test_class_after_action
 
     if not test_parameters["attributes"]:
@@ -132,13 +133,13 @@ def test_attribute_helper_after_action_wrong(example_test_class_after_action, ke
     assert get_action_methods_names(instance)[0] not in str(e.value)
 
 
-def test_action_is_not_applied(example_test_class_initialised):
+def test_action_is_not_applied(example_test_class_initialised) -> None:
     instance, _ = example_test_class_initialised
 
     assert is_action_applied(instance) is False
 
 
-def test_action_is_applied(example_test_class_after_action):
+def test_action_is_applied(example_test_class_after_action) -> None:
     instance, test_parameters = example_test_class_after_action
 
     if not test_parameters["attributes"]:
@@ -147,7 +148,7 @@ def test_action_is_applied(example_test_class_after_action):
     assert is_action_applied(instance) is True
 
 
-def test_nested_get_params():
+def test_nested_get_params() -> None:
     nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
     top_level_params = {"test1": "t1"}
     test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
@@ -163,7 +164,7 @@ def test_nested_get_params():
         assert params[k] == v
 
 
-def test_nested_set_params():
+def test_nested_set_params() -> None:
     nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
     top_level_params = {"test1": "t1"}
     test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
@@ -181,7 +182,7 @@ def test_nested_set_params():
         assert params_nested[k] == v
 
 
-def test_nested_clone():
+def test_nested_clone() -> None:
     nested_instance = create_test_class("nested", params={"nested1": "n1", "nested2": "n2"})
     top_level_params = {"test1": "t1"}
     test_instance = create_test_class("test", params={**top_level_params, "nested_class": nested_instance})
@@ -199,7 +200,7 @@ def test_nested_clone():
         assert cloned_params[k] == v
 
 
-def test_clone_pomegranate():
+def test_clone_pomegranate() -> None:
     pytest.importorskip("pomegranate")
     from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 

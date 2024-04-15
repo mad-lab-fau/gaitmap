@@ -85,13 +85,13 @@ class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
     def valid_instance(self, after_action_instance):
         return SimpleHmm(n_states=5, n_gmm_components=3)
 
-    def test_empty_init(self):
+    def test_empty_init(self) -> None:
         pytest.skip()
 
 
 class TestRothHmmFeatureTransform:
     @pytest.mark.parametrize("target_sampling_rate", [50, 25])
-    def test_inverse_transform_state_sequence(self, target_sampling_rate):
+    def test_inverse_transform_state_sequence(self, target_sampling_rate) -> None:
         transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=target_sampling_rate)
         in_state_sequence = np.array([0, 1, 2, 3, 4, 5])
         state_sequence = transform.inverse_transform_state_sequence(
@@ -104,7 +104,7 @@ class TestRothHmmFeatureTransform:
 
     @pytest.mark.parametrize("features", [["raw"], ["raw", "gradient"], ["raw", "gradient", "mean"]])
     @pytest.mark.parametrize("axes", [["gyr_ml"], ["acc_pa"], ["gyr_ml", "acc_pa"]])
-    def test_select_features(self, features, healthy_example_imu_data, axes):
+    def test_select_features(self, features, healthy_example_imu_data, axes) -> None:
         transform = RothHmmFeatureTransformer(
             features=features,
             axes=axes,
@@ -120,7 +120,7 @@ class TestRothHmmFeatureTransform:
             f"{feature}{feature_prefixes[feature]}__{axis}" for feature in features for axis in axes
         }
 
-    def test_actual_output(self, healthy_example_imu_data):
+    def test_actual_output(self, healthy_example_imu_data) -> None:
         # We disable downsampling, standardization, and filtering for this test
         transform = RothHmmFeatureTransformer(
             sampling_rate_feature_space_hz=100,
@@ -150,20 +150,20 @@ class TestRothHmmFeatureTransform:
 
         assert transform.data is data
 
-    def test_type_error_filter(self):
+    def test_type_error_filter(self) -> None:
         with pytest.raises(TypeError) as e:
             RothHmmFeatureTransformer(low_pass_filter="test").transform([], sampling_rate_hz=100)
 
         assert "low_pass_filter" in str(e.value)
 
     @pytest.mark.parametrize(("roi", "data"), [(None, []), ([], None)])
-    def test_value_error_missing_sampling_rate(self, roi, data):
+    def test_value_error_missing_sampling_rate(self, roi, data) -> None:
         with pytest.raises(ValueError) as e:
             RothHmmFeatureTransformer().transform(data, roi_list=roi, sampling_rate_hz=None)
 
         assert "sampling_rate_hz" in str(e.value)
 
-    def test_resample_roi(self):
+    def test_resample_roi(self) -> None:
         transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=50)
         roi = pd.DataFrame(np.array([[0, 100], [200, 300], [400, 500]]), columns=["start", "end"])
         resampled_roi = transform.transform(roi_list=roi, sampling_rate_hz=100).transformed_roi_list_
@@ -173,7 +173,7 @@ class TestRothHmmFeatureTransform:
 
 
 class TestSimpleModel:
-    def test_error_on_different_number_data_and_labels(self):
+    def test_error_on_different_number_data_and_labels(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
                 [np.random.rand(100, 3)], [np.random.rand(100), np.random.rand(100)]
@@ -181,7 +181,7 @@ class TestSimpleModel:
 
         assert "The given training sequence and initial training labels" in str(e.value)
 
-    def test_error_if_datasequence_shorter_nstates(self):
+    def test_error_if_datasequence_shorter_nstates(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
                 [np.random.rand(100, 3), np.random.rand(3, 3)], [np.random.rand(100), np.random.rand(3)]
@@ -189,7 +189,7 @@ class TestSimpleModel:
 
         assert "Invalid training sequence!" in str(e.value)
 
-    def test_error_on_different_length_data_and_labels(self):
+    def test_error_on_different_length_data_and_labels(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
                 [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.rand(99))]
@@ -197,7 +197,7 @@ class TestSimpleModel:
 
         assert "a different number of samples" in str(e.value)
 
-    def test_invalid_label_sequence(self):
+    def test_invalid_label_sequence(self) -> None:
         n_states = 5
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=n_states, n_gmm_components=3).self_optimize(
@@ -217,7 +217,7 @@ class TestSimpleModel:
     # We test one value with n_states > 10, as this should trigger a sorting bug in pomegranate that we are handling
     # explicitly
     @pytest.mark.parametrize("n_states", [5, 12])
-    def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states):
+    def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states) -> None:
         model = SimpleHmm(n_states=n_states, n_gmm_components=n_gmm_components, max_iterations=1)
         model.self_optimize([data], [pd.Series(np.tile(np.arange(n_states), int(np.ceil(100 / n_states)))[:100])])
 
@@ -235,7 +235,7 @@ class TestSimpleModel:
                     dists = state.distribution.distributions
                 assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
 
-    def test_model_exists_warning(self):
+    def test_model_exists_warning(self) -> None:
         model = SimpleHmm(n_states=5, n_gmm_components=3)
         model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
         with pytest.warns(UserWarning) as e:
@@ -243,7 +243,7 @@ class TestSimpleModel:
 
         assert "Model already exists" in str(e[0].message)
 
-    def test_predict_rasies_error_without_optimize(self):
+    def test_predict_rasies_error_without_optimize(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3).predict_hidden_state_sequence(
                 pd.DataFrame(np.random.rand(100, 3))
@@ -251,7 +251,7 @@ class TestSimpleModel:
 
         assert "You need to train the HMM before calling `predict_hidden_state_sequence`" in str(e.value)
 
-    def test_predict_raises_error_on_invalid_columns(self):
+    def test_predict_raises_error_on_invalid_columns(self) -> None:
         model = SimpleHmm(n_states=5, n_gmm_components=3)
         col_names = ["feature1", "feature2", "feature3"]
         invalid_col_names = ["feature1", "feature2", "feature4"]
@@ -265,7 +265,7 @@ class TestSimpleModel:
         assert str(tuple(col_names)) in str(e.value)
 
     @pytest.mark.parametrize("algorithm", ["viterbi", "map"])
-    def test_predict(self, algorithm):
+    def test_predict(self, algorithm) -> None:
         model = SimpleHmm(n_states=5, n_gmm_components=3)
         model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
         pred = model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)), algorithm=algorithm)
@@ -273,7 +273,7 @@ class TestSimpleModel:
         assert set(pred) == set(range(5))
 
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
-    def test_different_architectures(self, architecture):
+    def test_different_architectures(self, architecture) -> None:
         # We test initialization directly, otherwise training will modify the transition matrizes
         model = initialize_hmm(
             [np.random.rand(100, 3)],
@@ -307,7 +307,7 @@ class TestSimpleModel:
             expected[:5, 6] = 1 / 2
         assert_almost_equal(transition_matrix, expected)
 
-    def test_self_optimize_calls_self_optimize_with_info(self):
+    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
 
         with patch.object(SimpleHmm, "self_optimize_with_info") as mock:
@@ -317,14 +317,14 @@ class TestSimpleModel:
 
             mock.assert_called_once_with(data, labels)
 
-    def test_self_optimize_with_info_returns_history(self):
+    def test_self_optimize_with_info_returns_history(self) -> None:
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
         instance = SimpleHmm(n_states=5, n_gmm_components=3)
         trained_instance, history = instance.self_optimize_with_info(data, labels)
         assert instance is trained_instance
         assert isinstance(history, History)
 
-    def test_invalid_architecture_raises_error(self):
+    def test_invalid_architecture_raises_error(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3, architecture="invalid").self_optimize(
                 [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
@@ -334,13 +334,13 @@ class TestSimpleModel:
 
 
 class TestRothSegmentationHmm:
-    def test_predict_without_model_raises_error(self):
+    def test_predict_without_model_raises_error(self) -> None:
         with pytest.raises(ValueError) as e:
             RothSegmentationHmm().predict(pd.DataFrame(np.random.rand(100, 3)), sampling_rate_hz=100)
 
         assert "No trained model for prediction available!" in str(e.value)
 
-    def test_self_optimize_calls_self_optimize_with_info(self):
+    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.DataFrame({"start": [0], "end": [100]})]
 
         with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
@@ -350,7 +350,7 @@ class TestRothSegmentationHmm:
 
             mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
 
-    def test_self_optimize_with_info_returns_history(self):
+    def test_self_optimize_with_info_returns_history(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
@@ -366,7 +366,7 @@ class TestRothSegmentationHmm:
             assert isinstance(v, History)
         assert set(history.keys()) == {"stride_model", "transition_model", "self"}
 
-    def test_short_strides_raise_warning(self):
+    def test_short_strides_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]})],
@@ -381,7 +381,7 @@ class TestRothSegmentationHmm:
 
         assert "1 strides (out of 4)" in str(w[0].message)
 
-    def test_short_transitions_raise_warning(self):
+    def test_short_transitions_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
@@ -398,7 +398,7 @@ class TestRothSegmentationHmm:
         # The first warning is the warning about negative improvements during training
         assert "1 transitions (out of 3)" in str(w[1].message)
 
-    def test_strange_inputs_trigger_nan_error(self):
+    def test_strange_inputs_trigger_nan_error(self) -> None:
         # XXXX: We test the skip at the moment because it is not deteministic...
         pytest.skip()
 
@@ -422,7 +422,7 @@ class TestRothSegmentationHmm:
         assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
 
-    def test_training_updates_all_models(self):
+    def test_training_updates_all_models(self) -> None:
         """Training should modify the stride, the transition model and the model itself."""
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
@@ -447,7 +447,7 @@ class TestRothSegmentationHmm:
 
 
 class TestHmmStrideSegmentation:
-    def test_segment_with_single_dataset(self, healthy_example_imu_data):
+    def test_segment_with_single_dataset(self, healthy_example_imu_data) -> None:
         data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
         model = PreTrainedRothSegmentationModel()
         instance = HmmStrideSegmentation(model=model)
@@ -462,7 +462,7 @@ class TestHmmStrideSegmentation:
         assert isinstance(result.hidden_state_sequence_, np.ndarray)
         assert result.hidden_state_sequence_ is result.result_model_.hidden_state_sequence_
 
-    def test_segment_with_multi_dataset(self, healthy_example_imu_data):
+    def test_segment_with_multi_dataset(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")
         model = PreTrainedRothSegmentationModel()
         instance = HmmStrideSegmentation(model=model)
@@ -482,14 +482,14 @@ class TestHmmStrideSegmentation:
             assert isinstance(result.hidden_state_sequence_[sensor], np.ndarray)
             assert result.hidden_state_sequence_[sensor] is result.result_model_[sensor].hidden_state_sequence_
 
-    def test_matches_start_end_and_stride_list_identical(self, healthy_example_imu_data):
+    def test_matches_start_end_and_stride_list_identical(self, healthy_example_imu_data) -> None:
         data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])[:3000]
         instance = HmmStrideSegmentation()
         result: HmmStrideSegmentation = instance.segment(data, 204.8)
 
         assert np.array_equal(result.matches_start_end_, result.stride_list_.to_numpy())
 
-    def test_matches_start_end_original_identical_without_post(self, healthy_example_imu_data):
+    def test_matches_start_end_original_identical_without_post(self, healthy_example_imu_data) -> None:
         data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])[:3000]
 
         # With post processing (default), they should be different
@@ -551,7 +551,7 @@ class TestHmmStrideSegmentation:
             ),
         ],
     )
-    def test_hidden_state_sequence_start_end(self, starts, ends, correct):
+    def test_hidden_state_sequence_start_end(self, starts, ends, correct) -> None:
         """Test that the start end values are correctly extracted."""
         hidden_state_sequence = np.zeros(50)
         hidden_state_sequence[starts] = 1
@@ -562,5 +562,5 @@ class TestHmmStrideSegmentation:
         assert_array_equal(starts_ends, correct)
 
 
-def test_pre_trained_model_returns_correctly():
+def test_pre_trained_model_returns_correctly() -> None:
     assert isinstance(PreTrainedRothSegmentationModel(), RothSegmentationHmm)

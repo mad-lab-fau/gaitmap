@@ -1,4 +1,5 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
+
 import warnings
 from typing import Dict, Union, overload
 
@@ -8,19 +9,21 @@ from typing_extensions import Literal, TypedDict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
-_ScoresDict = TypedDict("_ScoresDict", {"precision": float, "recall": float, "f1_score": float})
+
+class _ScoresDict(TypedDict):
+    precision: float
+    recall: float
+    f1_score: float
 
 
 @overload
 def recall_score(
     matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]:
-    ...
+) -> Dict[_Hashable, float]: ...
 
 
 @overload
-def recall_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
-    ...
+def recall_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float: ...
 
 
 def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
@@ -76,13 +79,11 @@ def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 @overload
 def precision_score(
     matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]:
-    ...
+) -> Dict[_Hashable, float]: ...
 
 
 @overload
-def precision_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
-    ...
+def precision_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float: ...
 
 
 def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
@@ -140,13 +141,11 @@ def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"
 @overload
 def f1_score(
     matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]:
-    ...
+) -> Dict[_Hashable, float]: ...
 
 
 @overload
-def f1_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float:
-    ...
+def f1_score(matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn") -> float: ...
 
 
 def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
@@ -205,15 +204,13 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 @overload
 def precision_recall_f1_score(
     matches_df: Dict[str, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[str, _ScoresDict]:
-    ...
+) -> Dict[str, _ScoresDict]: ...
 
 
 @overload
 def precision_recall_f1_score(
     matches_df: pd.DataFrame, *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> _ScoresDict:
-    ...
+) -> _ScoresDict: ...
 
 
 def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
@@ -276,7 +273,7 @@ def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1
 
 
 def _get_match_type_dfs(
-    match_results: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
+    match_results: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
 ) -> Union[Dict[_Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
     is_not_dict = not isinstance(match_results, dict)
     if is_not_dict:

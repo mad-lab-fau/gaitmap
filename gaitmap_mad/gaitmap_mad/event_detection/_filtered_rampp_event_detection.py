@@ -102,6 +102,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         detect_only: Optional[Tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
+    ) -> None:
         self.ic_lowpass_filter = ic_lowpass_filter
         self.input_stride_type = input_stride_type
         super().__init__(

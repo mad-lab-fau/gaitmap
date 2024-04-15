@@ -81,11 +81,9 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
-    >>> pwli = PieceWiseLinearDedriftedIntegration(NormZuptDetector(window_length_s=0.15,
-    ...                                                             inactive_signal_threshold=15.
-    ...                                            ),
-    ...                                            gravity=np.array([0, 0, 9.81])
-    ...        )
+    >>> pwli = PieceWiseLinearDedriftedIntegration(
+    ...     NormZuptDetector(window_length_s=0.15, inactive_signal_threshold=15.0), gravity=np.array([0, 0, 9.81])
+    ... )
     >>> # Apply the algorithm
     >>> pwli = pwli.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -144,7 +142,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         ),
         level_assumption: bool = True,
         gravity: Optional[np.ndarray] = cf(GRAV_VEC),
-    ):
+    ) -> None:
         self.zupt_detector = zupt_detector
         self.level_assumption = level_assumption
         self.gravity = gravity

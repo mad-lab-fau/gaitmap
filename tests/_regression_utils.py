@@ -3,6 +3,7 @@
 This is inspired by github.com/syrusakbary/snapshottest.
 Note that it can not be used in combination with this module!
 """
+
 import re
 from pathlib import Path
 
@@ -11,7 +12,7 @@ import pandas as pd
 from pandas._testing import assert_frame_equal
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     group = parser.getgroup("snapshottest")
     group.addoption(
         "--snapshot-update", action="store_true", default=False, dest="snapshot_update", help="Update the snapshots."
@@ -23,7 +24,7 @@ class SnapshotNotFound(Exception):
 
 
 class PyTestSnapshotTest:
-    def __init__(self, request=None):
+    def __init__(self, request=None) -> None:
         self.request = request
         self.curr_snapshot_number = 0
         super().__init__()
@@ -64,7 +65,7 @@ class PyTestSnapshotTest:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def store(self, value):
+    def store(self, value) -> None:
         self.snapshot_folder.mkdir(parents=True, exist_ok=True)
         if isinstance(value, pd.DataFrame):
             value.to_json(self.file_name_json, indent=4, orient="table")
@@ -97,7 +98,7 @@ class PyTestSnapshotTest:
         else:
             raise ValueError(f"The dtype {dtype} is not supported for snapshot testing")
 
-    def assert_match(self, value, name="", **kwargs):
+    def assert_match(self, value, name="", **kwargs) -> None:
         self.curr_snapshot = name or self.curr_snapshot_number
         if self.update:
             self.store(value)

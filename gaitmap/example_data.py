@@ -16,7 +16,7 @@ from gaitmap import __version__
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent / "example_data/"
 PC_EXAMPLE_PATH = Path.home() / ".gaitmap_data/"
-GITHUB_FOLDER_PATH = "https://raw.githubusercontent.com/mad-lab-fau/gaitmap/v{version}/example_data/"
+GITHUB_FOLDER_PATH = "https://raw.githubusercontent.com/mad-lab-fau/gaitmap/{version}/example_data/"
 
 
 BRIAN = pooch.create(
@@ -24,7 +24,7 @@ BRIAN = pooch.create(
     path=pooch.os_cache("gaitmap"),
     # The remote data is on Github
     base_url=GITHUB_FOLDER_PATH,
-    version=__version__,
+    version=f"v{__version__}",
     version_dev="master",
     registry={
         "imu_sample.csv": "sha256:fdb91f0a1e58b1ac518a324d38c9177de6c4388137c1b1683e4a72460873bfd7",

@@ -82,12 +82,14 @@ def evaluate_segmented_stride_list(
 
     Examples
     --------
-    >>> stride_list_ground_truth = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    >>> stride_list_seg = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
+    >>> stride_list_ground_truth = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
+    >>> stride_list_seg = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
     >>> matches = evaluate_segmented_stride_list(
-    ...     ground_truth=stride_list_ground_truth,
-    ...     segmented_stride_list=stride_list_seg,
-    ...     tolerance=2
+    ...     ground_truth=stride_list_ground_truth, segmented_stride_list=stride_list_seg, tolerance=2
     ... )
     >>> matches
       s_id s_id_ground_truth match_type
@@ -98,24 +100,21 @@ def evaluate_segmented_stride_list(
     4  NaN                 1         fn
 
     >>> stride_list_ground_truth_left = pd.DataFrame(
-    ...     [[10,21],[20,34],[31,40]],
-    ...     columns=["start", "end"]
-    ... ).rename_axis('s_id')
+    ...     [[10, 21], [20, 34], [31, 40]], columns=["start", "end"]
+    ... ).rename_axis("s_id")
     >>> stride_list_ground_truth_right = pd.DataFrame(
-    ...     [[10,21],[20,34],[31,40]],
-    ...     columns=["start", "end"]
-    ... ).rename_axis('s_id')
-    ...
+    ...     [[10, 21], [20, 34], [31, 40]], columns=["start", "end"]
+    ... ).rename_axis("s_id")
     >>> stride_list_seg_left = pd.DataFrame(
-    ...     [[10,20],[21,30],[31,40],[50,60]],
-    ...     columns=["start", "end"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_seg_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    ...
+    ...     [[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start", "end"]
+    ... ).rename_axis("s_id")
+    >>> stride_list_seg_right = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
     >>> matches = evaluate_segmented_stride_list(
     ...     ground_truth={"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
     ...     segmented_stride_list={"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
-    ...     tolerance=2
+    ...     tolerance=2,
     ... )
     >>> matches["left_sensor"]
       s_id s_id_ground_truth match_type
@@ -251,14 +250,16 @@ def match_stride_lists(
     --------
     Single Sensor:
 
-    >>> stride_list_left = pd.DataFrame([[10,20],[21,30],[31,40],[50,60]], columns=["start", "end"]).rename_axis('s_id')
-    >>> stride_list_right = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
+    >>> stride_list_left = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
+    >>> stride_list_right = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start", "end"]).rename_axis("s_id")
     >>> match_stride_lists(
     ...     stride_list_a=stride_list_left,
     ...     stride_list_b=stride_list_right,
     ...     tolerance=2,
     ...     postfix_a="_left",
-    ...     postfix_b="_right"
+    ...     postfix_b="_right",
     ... )
       s_id_left s_id_right
     0         0          0
@@ -270,21 +271,21 @@ def match_stride_lists(
     Multi Sensor:
 
     >>> stride_list_left_11 = pd.DataFrame(
-    ...     [[10,20],[21,30],[31,40],[50,60]],
-    ...     columns=["start", "end"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_12 = pd.DataFrame([[10,21],[20,34],[31,40]], columns=["start", "end"]).rename_axis('s_id')
-    ...
+    ...     [[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start", "end"]
+    ... ).rename_axis("s_id")
+    >>> stride_list_right_12 = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
     >>> stride_list_left_21 = pd.DataFrame(
-    ...     [[10,20],[31,41],[21,31],[50,60]],
-    ...     columns=["start", "end"]
-    ... ).rename_axis('s_id')
-    >>> stride_list_right_22 = pd.DataFrame([[10,22],[31, 41],[20, 36]], columns=["start", "end"]).rename_axis('s_id')
-    ...
+    ...     [[10, 20], [31, 41], [21, 31], [50, 60]], columns=["start", "end"]
+    ... ).rename_axis("s_id")
+    >>> stride_list_right_22 = pd.DataFrame([[10, 22], [31, 41], [20, 36]], columns=["start", "end"]).rename_axis(
+    ...     "s_id"
+    ... )
     >>> test_output = match_stride_lists(
     ...     stride_list_a={"left_sensor": stride_list_left_11, "right_sensor": stride_list_right_12},
     ...     stride_list_b={"left_sensor": stride_list_left_21, "right_sensor": stride_list_right_22},
-    ...     tolerance=1
+    ...     tolerance=1,
     ... )
     >>> test_output["left_sensor"]
        s_id_a  s_id_b
@@ -377,9 +378,7 @@ def _match_single_stride_lists(
 ) -> pd.DataFrame:
     if not (set(match_cols).issubset(stride_list_a.columns) and set(match_cols).issubset(stride_list_b.columns)):
         raise ValueError(
-            "One or more selected columns ({}) are missing in at least one of the provided stride lists".format(
-                match_cols
-            )
+            f"One or more selected columns ({match_cols}) are missing in at least one of the provided stride lists"
         )
     stride_list_a = set_correct_index(stride_list_a, SL_INDEX)
     stride_list_b = set_correct_index(stride_list_b, SL_INDEX)

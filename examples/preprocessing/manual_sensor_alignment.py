@@ -71,7 +71,7 @@ right_rot = rotation_from_angle(np.array([1, 0, 0]), np.deg2rad(90)) * rotation_
     np.array([0, 0, 1]), np.deg2rad(90)
 )
 
-rotations = dict(left_sensor=left_rot, right_sensor=right_rot)
+rotations = {"left_sensor": left_rot, "right_sensor": right_rot}
 
 # As all rotations are just "axis-flips" we can use flip_dataset to apply the rotations, which is much faster than using
 # `rotate_dataset`.

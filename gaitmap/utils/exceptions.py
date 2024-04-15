@@ -8,12 +8,12 @@ class ValidationError(Exception):
 class GaitmapMadImportError(ImportError):
     """An error indicating that the algorithm is implemented in gaitmap-mad and not gaitmap."""
 
-    def __init__(self, object_name: str, module_name: str):
+    def __init__(self, object_name: str, module_name: str) -> None:
         self.object_name = object_name
         self.module_name = module_name
         super().__init__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a string representation of the error."""
         return (
             f"You are trying to import {self.object_name} from {self.module_name}."

@@ -38,8 +38,8 @@ short_sequence = dataset_scaled
 sz1 = len(long_sequence)
 sz2 = len(short_sequence)
 
-print("Shape long sequence: {}".format(long_sequence.shape))
-print("Shape short sequence: {}".format(short_sequence.shape))
+print(f"Shape long sequence: {long_sequence.shape}")
+print(f"Shape short sequence: {short_sequence.shape}")
 
 # %%
 # Plot the sequences
@@ -80,7 +80,7 @@ dtw = BaseDtw(template, min_match_length_s=0.6 * sequence_length / sampling_rate
 # Afterwards a set of results are available on the dtw object
 dtw = dtw.segment(long_sequence, sampling_rate_hz=sampling_rate_hz)
 
-print("{} matches were found".format(len(dtw.matches_start_end_)))
+print(f"{len(dtw.matches_start_end_)} matches were found")
 print(dtw.matches_start_end_)
 
 # %%

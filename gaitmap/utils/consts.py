@@ -1,4 +1,5 @@
 """Common constants used in the library."""
+
 import numpy as np
 
 #: The default names of the Gyroscope columns in the sensor frame

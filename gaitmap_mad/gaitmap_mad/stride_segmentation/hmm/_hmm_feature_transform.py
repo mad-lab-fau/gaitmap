@@ -1,5 +1,6 @@
 """Feature transformation class for HMM."""
-from typing import List, Optional
+
+from typing import List, NoReturn, Optional
 
 import numpy as np
 import pandas as pd
@@ -53,7 +54,7 @@ class BaseHmmFeatureTransformer(BaseTransformer):
         roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
         sampling_rate_hz: Optional[float] = None,
         **kwargs,
-    ):
+    ) -> NoReturn:
         """Transform the data and the roi/stride list into to the feature space.
 
         Transforming the roi/stride list is only required, if the sampling rate of the features space is different from
@@ -170,7 +171,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         features: List[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
         standardization: bool = True,
-    ):
+    ) -> None:
         self.sampling_rate_feature_space_hz = sampling_rate_feature_space_hz
         self.low_pass_filter = low_pass_filter
         self.axes = axes

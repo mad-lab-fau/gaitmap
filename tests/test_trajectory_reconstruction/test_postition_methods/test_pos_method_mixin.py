@@ -19,7 +19,7 @@ class TestPositionMethodNoGravityMixin:
     def init_algo_class(self) -> BasePositionMethod:
         raise NotImplementedError("Should be implemented by ChildClass")
 
-    def test_idiot_update(self):
+    def test_idiot_update(self) -> None:
         """Integrate zeros."""
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
@@ -35,7 +35,7 @@ class TestPositionMethodNoGravityMixin:
         assert_frame_equal(test.velocity_, expected_vel)
         assert_frame_equal(test.position_, expected_pos)
 
-    def test_output_formats(self):
+    def test_output_formats(self) -> None:
         test = self.init_algo_class()
         sensor_data = pd.DataFrame(np.zeros((10, 6)), columns=SF_COLS)
 
@@ -45,8 +45,8 @@ class TestPositionMethodNoGravityMixin:
         assert len(test.position_) == len(sensor_data) + 1
         assert len(test.velocity_) == len(sensor_data) + 1
 
-    @pytest.mark.parametrize("acc", ([0, 0, 1], [1, 2, 3]))
-    def test_symetric_velocity_integrations(self, acc):
+    @pytest.mark.parametrize("acc", [[0, 0, 1], [1, 2, 3]])
+    def test_symetric_velocity_integrations(self, acc) -> None:
         """All test data starts and ends at zero."""
         test = self.init_algo_class()
 
@@ -60,8 +60,8 @@ class TestPositionMethodNoGravityMixin:
         assert_array_equal(test.velocity_.to_numpy()[0], expected)
         assert_array_equal(test.velocity_.to_numpy()[-1], expected)
 
-    @pytest.mark.parametrize("acc", ([0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]))
-    def test_all_axis(self, acc):
+    @pytest.mark.parametrize("acc", [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 2, 0], [1, 2, 0], [1, 2, 3]])
+    def test_all_axis(self, acc) -> None:
         """Test against the physics equation."""
         test = self.init_algo_class()
 
@@ -87,7 +87,7 @@ class TestPositionMethodNoGravityMixin:
         assert_array_almost_equal(test.velocity_.to_numpy()[n_steps], expected_vel)
         assert_array_almost_equal(test.position_.to_numpy()[n_steps], expected_pos)
 
-    def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot):
+    def test_single_stride_regression(self, healthy_example_imu_data, healthy_example_stride_events, snapshot) -> None:
         """Simple regression test with default parameters."""
         test = self.init_algo_class()
         fs = 204.8

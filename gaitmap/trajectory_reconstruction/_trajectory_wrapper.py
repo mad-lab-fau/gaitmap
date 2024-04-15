@@ -1,4 +1,5 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
+
 import warnings
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
@@ -44,12 +45,12 @@ class _TrajectoryReconstructionWrapperMixin:
         ori_method: Optional[BaseOrientationMethod] = cf(SimpleGyroIntegration()),
         pos_method: Optional[BasePositionMethod] = cf(ForwardBackwardIntegration()),
         trajectory_method: Optional[BaseTrajectoryMethod] = None,
-    ):
+    ) -> None:
         self.ori_method = ori_method
         self.pos_method = pos_method
         self.trajectory_method = trajectory_method
 
-    def _validate_methods(self):
+    def _validate_methods(self) -> None:
         if self.trajectory_method:
             if self.ori_method or self.pos_method:
                 warnings.warn(

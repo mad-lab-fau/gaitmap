@@ -201,7 +201,7 @@ class TestEventDetectionRampp:
 
         assert "The passed object appears to be neither single- or multi-sensor data" in str(e)
 
-    def test_min_vel_search_win_size_ms_dummy_data(self):
+    def test_min_vel_search_win_size_ms_dummy_data(self) -> None:
         """Test if error is raised correctly if windows size matches the size of the input data."""
         dummy_gyr = np.ones((100, 3))
         with pytest.raises(ValueError, match=r"min_vel_search_win_size_ms is*"):

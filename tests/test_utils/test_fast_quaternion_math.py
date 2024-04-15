@@ -24,7 +24,7 @@ class TestRateOfChangeFromGyro:
             ([0.5, 0.5, 0.5, 0.5], [1.0, 4.0, 0.4]),
         ],
     )
-    def test_rate_of_change_from_gyro(self, q, g):
+    def test_rate_of_change_from_gyro(self, q, g) -> None:
         q = np.array(q)
         g = np.array(g)
         assert_array_almost_equal(rate_of_change_from_gyro(g, q), 0.5 * multiply(q, np.append(g, 0.0)))
@@ -41,7 +41,7 @@ class TestMulitply:
             ([0.5, 0.5, 0.5, 0.5], [0.0, 0.0, 0.707107, 0.707107]),
         ],
     )
-    def test_quaternion_multiplication(self, q1, q2):
+    def test_quaternion_multiplication(self, q1, q2) -> None:
         q1 = np.array(q1)
         q2 = np.array(q2)
         assert_array_almost_equal(multiply(q1, q2), (Rotation.from_quat(q1) * Rotation.from_quat(q2)).as_quat())
@@ -59,7 +59,7 @@ class TestRotateVector:
             ([0.5, 0.5, 0.5, 0.5], [1.0, 4.0, 0.4]),
         ],
     )
-    def test_rotate_vector_by_quaternion(self, q, v):
+    def test_rotate_vector_by_quaternion(self, q, v) -> None:
         q = np.array(q)
         v = np.array(v)
         assert_array_almost_equal(rotate_vector(q, v), Rotation.from_quat(q).apply(v))
@@ -71,7 +71,7 @@ class TestQuatFromRotvec:
     @pytest.mark.parametrize(
         "v", [([1.0, 0.0, 0.0]), ([1.0, 1.0, 0.0]), ([1.0, 1.0, 1.0]), ([0.2, 0.1, 5.0]), ([10.0, 0.2, 0.0])]
     )
-    def test_quat_from_rotation_vector(self, v):
+    def test_quat_from_rotation_vector(self, v) -> None:
         """Test quat_from_rotation_vector`."""
         v = np.array(v)
         assert_array_almost_equal(quat_from_rotvec(v), Rotation.from_rotvec(v).as_quat())
@@ -81,6 +81,6 @@ class TestFindNormalize(TestNormalize):
     def func(self, x):
         return normalize(x)
 
-    def test_normalize_all_zeros(self):
+    def test_normalize_all_zeros(self) -> None:
         """Test vector [0, 0, 0]."""
         assert_array_almost_equal(self.func(np.array([0.0, 0, 0])), [0.0, 0, 0])

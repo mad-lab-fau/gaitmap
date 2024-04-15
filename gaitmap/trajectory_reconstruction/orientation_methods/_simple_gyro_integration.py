@@ -1,4 +1,5 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
+
 from typing import Optional, Union
 
 import numpy as np
@@ -82,7 +83,7 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         self,
         initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
         memory: Optional[Memory] = None,
-    ):
+    ) -> None:
         self.initial_orientation = initial_orientation
         self.memory = memory
 

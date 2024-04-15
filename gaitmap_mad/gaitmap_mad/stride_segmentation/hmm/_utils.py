@@ -1,4 +1,5 @@
 """Utils and helper functions for HMM classes."""
+
 import json
 import warnings
 from typing import Any, List, Literal, Optional, Set, Tuple
@@ -13,7 +14,7 @@ from tpcp._hash import custom_hash
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
 
 
-def _add_transition(model, a, b, probability, pseudocount, group):
+def _add_transition(model, a, b, probability, pseudocount, group) -> None:
     """Hacky way to add a transition when cloning a model in the "wrong" way."""
     pseudocount = pseudocount or probability
     model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
@@ -91,7 +92,7 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
     new_state_order = [state.name for state in states]
 
     # Add all the edges to the model
-    for (start, end, data) in list(orig_model.graph.edges(data=True)):
+    for start, end, data in list(orig_model.graph.edges(data=True)):
         _add_transition(
             model,
             states[new_state_order.index(start.name)],
@@ -181,7 +182,7 @@ def create_transition_matrix_left_right(
     return transition_matrix, start_probs, end_probs
 
 
-def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3):
+def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3) -> None:
     """Print model transition matrix in user-friendly format."""
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision)
@@ -326,7 +327,7 @@ def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
     return True
 
 
-def check_history_for_training_failure(history: History):
+def check_history_for_training_failure(history: History) -> None:
     """Check if training history contains any NaNs."""
     if not np.all(np.isfinite(history.improvements)) or np.any(np.array(history.improvements) < 0):
         warnings.warn(
@@ -348,7 +349,7 @@ def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
     raise ValueError(f"State {state_name} not found within given _model!")
 
 
-def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], transition_probability: float):
+def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], transition_probability: float) -> None:
     """Add a transition to an existing model by state-names.
 
     add_transition(model, transition = ("s0","s1"), transition_probability = 0.5)
@@ -447,11 +448,11 @@ def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarra
 
     Example
     -------
-    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 5)
+    >>> create_equidistant_label_sequence(n_labels=10, n_states=5)
     array([0, 0, 1, 1, 2, 2, 3, 3, 4, 4])
-    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 4)
+    >>> create_equidistant_label_sequence(n_labels=10, n_states=4)
     array([0, 0, 0, 1, 1, 2, 2, 3, 3, 3])
-    >>> create_equidistant_label_sequence(n_labels = 10, n_states = 3)
+    >>> create_equidistant_label_sequence(n_labels=10, n_states=3)
     array([0, 0, 0, 1, 1, 1, 2, 2, 2, 2])
 
     """
@@ -513,7 +514,6 @@ def get_train_data_sequences_transitions(
     n_too_short_transitions = 0
 
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
-
         # for each transition, get data and create some naive labels for initialization
         for start, end in convert_stride_list_to_transition_list(stride_list, data.shape[0])[
             ["start", "end"]
@@ -632,7 +632,7 @@ def predict(
     data = np.ascontiguousarray(data.to_numpy())
     try:
         labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
-    except Exception as e:  # noqa: broad-except
+    except Exception as e:  # noqa: BLE001
         if not model_params_are_finite(model):
             raise ValueError(
                 "Prediction failed! (See error above.). "

@@ -7,6 +7,7 @@ Other algorithm are only able to detect stride candidates and need to be paired 
 algorithm, as implemented in :py:mod:`gaitmap.event_detection`, to be able to provide information about biomechanical
 events.
 """
+
 from gaitmap_mad.stride_segmentation.dtw import (
     BarthDtw,
     BarthOriginalTemplate,

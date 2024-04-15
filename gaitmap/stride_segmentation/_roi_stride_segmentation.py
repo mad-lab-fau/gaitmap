@@ -1,4 +1,5 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
+
 from copy import deepcopy
 from typing import Dict, Generic, Optional, TypeVar, Union
 
@@ -142,7 +143,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         segmentation_algorithm: Optional[StrideSegmentationAlgorithm] = None,
         s_id_naming: Literal["replace", "prefix"] = "replace",
         action_method: Optional[str] = None,
-    ):
+    ) -> None:
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
         self.action_method = action_method
@@ -273,7 +274,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             )
         return concat_stride_list.set_index("s_id")
 
-    def _validate_parameters(self):
+    def _validate_parameters(self) -> None:
         if self.segmentation_algorithm is None:
             raise ValueError(
                 "`segmentation_algorithm` must be a valid instance of a StrideSegmentation algorithm. Currently `None`"
@@ -281,7 +282,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         if self.s_id_naming not in ["replace", "prefix"]:
             raise ValueError("Invalid value for `s_id_naming`")
 
-    def _validate_other_parameters(self):
+    def _validate_other_parameters(self) -> None:
         self._multi_dataset = is_sensor_data(self.data, check_acc=False, check_gyr=False) == "multi"
         self._multi_roi = is_regions_of_interest_list(self.regions_of_interest, region_type="any") == "multi"
         if self._multi_roi and not self._multi_dataset:
@@ -297,6 +298,6 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
             missing_sensors = [key for key in self.regions_of_interest if key not in sensor_names]
             if len(missing_sensors) > 0:
                 raise KeyError(
-                    "The regions of interest list contains information for a sensor ({}) that is not in the "
-                    "dataset.".format(missing_sensors)
+                    f"The regions of interest list contains information for a sensor ({missing_sensors}) that is not "
+                    "in the dataset."
                 )

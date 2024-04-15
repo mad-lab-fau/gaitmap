@@ -1,4 +1,5 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
+
 from typing import Optional, Union
 
 import numpy as np
@@ -115,14 +116,13 @@ class RtsKalman(BaseTrajectoryMethod):
     >>> data = pd.DataFrame(..., columns=SF_COLS)
     >>> sampling_rate_hz = 100
     >>> # Create an algorithm instance
-    >>> kalman = RtsKalman(initial_orientation=np.array([0, 0, 0, 1.0]),
-    ...                    zupt_variance=10e-8,
-    ...                    velocity_error_variance=10e5,
-    ...                    orientation_error_variance=10e-2,
-    ...                    zupt_detector=NormZuptDetector(semsor="gyr",
-    ...                                                   window_length_s=0.05
-    ...                    )
-    ...             )
+    >>> kalman = RtsKalman(
+    ...     initial_orientation=np.array([0, 0, 0, 1.0]),
+    ...     zupt_variance=10e-8,
+    ...     velocity_error_variance=10e5,
+    ...     orientation_error_variance=10e-2,
+    ...     zupt_detector=NormZuptDetector(semsor="gyr", window_length_s=0.05),
+    ... )
     >>> # Apply the algorithm
     >>> kalman = kalman.estimate(data, sampling_rate_hz=sampling_rate_hz)
     >>> # Inspect the results
@@ -177,7 +177,7 @@ class RtsKalman(BaseTrajectoryMethod):
                 sensor="gyr", window_length_s=0.05, window_overlap=0.5, metric="maximum", inactive_signal_threshold=34.0
             )
         ),
-    ):
+    ) -> None:
         self.initial_orientation = initial_orientation
         self.zupt_variance = zupt_variance
         self.velocity_error_variance = velocity_error_variance
@@ -374,7 +374,7 @@ class MadgwickRtsKalman(RtsKalman):
             )
         ),
         madgwick_beta: float = 0.2,
-    ):
+    ) -> None:
         self.madgwick_beta = madgwick_beta
         super().__init__(
             initial_orientation=initial_orientation,

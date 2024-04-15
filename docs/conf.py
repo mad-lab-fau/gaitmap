@@ -16,7 +16,7 @@ import sys
 from datetime import datetime
 from inspect import getsourcefile
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
@@ -32,7 +32,7 @@ from sphinxext.githublink import make_linkcode_resolve
 def replace_gitlab_links(base_url, text):
     regex = base_url + r"-/(merge_requests|issues|commit)/(\w+)"
 
-    def substitute(matchobj):
+    def substitute(matchobj) -> str:
         tokens = {"merge_requests": "!", "issues": "#"}
         if matchobj.group(1) == "commit":
             return f"[mad-gitlab: {matchobj.group(2)[:5]}]({matchobj.group(0)})"
@@ -45,7 +45,7 @@ def replace_gitlab_links(base_url, text):
 def convert_github_links(base_url, text):
     regex = base_url + r"(pull|issues|commit)/(\w+)"
 
-    def substitute(matchobj):
+    def substitute(matchobj) -> str:
         if matchobj.group(1) == "commit":
             return f"[{matchobj.group(2)[:5]}]({matchobj.group(0)})"
         return f"[#{matchobj.group(2)}]({matchobj.group(0)})"
@@ -229,10 +229,11 @@ linkcode_resolve = make_linkcode_resolve(
 )
 
 
-def skip_properties(app, what, name, obj, skip, options):
+def skip_properties(app, what, name, obj, skip, options) -> Optional[bool]:
     """This removes all properties from the documentation as they are expected to be documented in the docstring."""
     if isinstance(obj, property):
         return True
+    return None
 
 
 GAITMAP_MAD_TEST = """
@@ -244,7 +245,7 @@ GAITMAP_MAD_TEST = """
 """
 
 
-def add_info_about_origin(app, what, name, obj, options, lines: List[str]):
+def add_info_about_origin(app, what, name, obj, options, lines: List[str]) -> None:
     """Add a short info text to all algorithms that are only available via gaitmap_mad."""
     if what != "class":
         return
@@ -259,6 +260,6 @@ def add_info_about_origin(app, what, name, obj, options, lines: List[str]):
             lines.insert(2, l)
 
 
-def setup(app):
+def setup(app) -> None:
     app.connect("autodoc-skip-member", skip_properties)
     app.connect("autodoc-process-docstring", add_info_about_origin)

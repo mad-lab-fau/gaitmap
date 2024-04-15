@@ -14,7 +14,7 @@ class TestButterworthMetaFunctionality(TestAlgorithmMixin):
 
     algorithm_class = ButterworthFilter
 
-    def test_empty_init(self):
+    def test_empty_init(self) -> None:
         pytest.skip()
 
     @pytest.fixture()
@@ -27,8 +27,8 @@ class TestButterworthMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestButterworth:
-    @pytest.mark.parametrize("in_val", (pd.DataFrame(np.random.rand(50, 3)), pd.Series(np.random.rand(50))))
-    def test_input_type_and_shape_conserved(self, in_val):
+    @pytest.mark.parametrize("in_val", [pd.DataFrame(np.random.rand(50, 3)), pd.Series(np.random.rand(50))])
+    def test_input_type_and_shape_conserved(self, in_val) -> None:
         filter = ButterworthFilter(1, 5)
 
         before_dtype = type(in_val)
@@ -49,7 +49,7 @@ class TestButterworth:
         assert filter.transformed_data_.shape == before_shape
         assert isinstance(filter.transformed_data_, before_dtype)
 
-    def test_filter_is_applied_correctly(self):
+    def test_filter_is_applied_correctly(self) -> None:
         filter = ButterworthFilter(1, 5, "highpass")
         data = pd.DataFrame(np.random.rand(50, 3))
         sampling_rate_hz = 100

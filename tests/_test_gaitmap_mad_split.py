@@ -6,6 +6,7 @@ sys.modules.
 
 Hence, these tests are excluded (Leading "_" in filename), but can be run manually.
 """
+
 import importlib
 import sys
 
@@ -20,12 +21,12 @@ def _gaitmap_mad_sys_modifier():
     # entry to None.
 
     # This import will force gaitmap_mad to be in sys.modules.
-    import gaitmap_mad
+    import gaitmap_mad  # noqa: F401
 
     sys.modules["gaitmap_mad"] = None
     yield
     sys.modules.pop("gaitmap_mad")
-    import gaitmap_mad  # noqa: unused-import
+    import gaitmap_mad  # noqa: F401
 
     # We just go overboard to be save and reimport all gaitmap modules after the cleanup.
     modules_to_reload = []
@@ -48,12 +49,12 @@ def _gaitmap_mad_change_version():
     importlib.reload(gaitmap_mad)
 
 
-def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier):
+def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier) -> None:
     # First we need to remove gaitmap_mad from sys.modules, so that it is not imported.
     # We need to make sure that this is a fresh import:
     sys.modules.pop("gaitmap.stride_segmentation", None)
     with pytest.raises(GaitmapMadImportError) as e:
-        from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
+        from gaitmap.stride_segmentation import BarthDtw  # noqa: F401
 
     assert e.value.object_name == "BarthDtw"
     assert e.value.module_name == "gaitmap.stride_segmentation"
@@ -61,16 +62,16 @@ def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier):
     assert "gaitmap.stride_segmentation" in str(e.value)
 
 
-def test_gaitmap_mad_version_mismatch(_gaitmap_mad_change_version):
+def test_gaitmap_mad_version_mismatch(_gaitmap_mad_change_version) -> None:
     # We need to make sure that this is a fresh import:
     sys.modules.pop("gaitmap.stride_segmentation", None)
     with pytest.raises(AssertionError):
-        from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
+        from gaitmap.stride_segmentation import BarthDtw  # noqa: F401
 
 
-def test_raises_no_error_gaitmap_mad_installed():
+def test_raises_no_error_gaitmap_mad_installed() -> None:
     # We need to make sure that this is a fresh import:
     sys.modules.pop("gaitmap.stride_segmentation", None)
-    from gaitmap.stride_segmentation import BarthDtw  # noqa: unused-import
+    from gaitmap.stride_segmentation import BarthDtw  # noqa: F401
 
     assert True

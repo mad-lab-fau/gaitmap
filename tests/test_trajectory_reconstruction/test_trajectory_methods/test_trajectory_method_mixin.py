@@ -21,7 +21,7 @@ class TestTrajectoryMethodMixin:
     def init_algo_class(self) -> BaseTrajectoryMethod:
         raise NotImplementedError("Should be implemented by ChildClass")
 
-    def test_idiot_update(self):
+    def test_idiot_update(self) -> None:
         """Integrate zeros except for gravity."""
         test = self.init_algo_class()
         idiot_data = pd.DataFrame(np.zeros((15, 6)), columns=SF_COLS)
@@ -41,7 +41,7 @@ class TestTrajectoryMethodMixin:
         assert_frame_equal(test.velocity_, expected_vel)
         assert_frame_equal(test.orientation_, expected_ori)
 
-    def test_output_formats(self):
+    def test_output_formats(self) -> None:
         test = self.init_algo_class()
         fs = 100
         sensor_data = np.repeat(np.array([0.0, 0.0, 9.81, 0.0, 0.0, 0.0])[None, :], fs, axis=0)
@@ -59,9 +59,9 @@ class TestTrajectoryMethodMixin:
 
     @pytest.mark.parametrize(
         ("axis_to_rotate", "vector_to_rotate", "expected_result"),
-        (([1, 0, 0], [0, 0, 1], [0, 0, -1]), ([0, 1, 0], [0, 0, 1], [0, 0, -1]), ([0, 0, 1], [1, 0, 0], [-1, 0, 0])),
+        [([1, 0, 0], [0, 0, 1], [0, 0, -1]), ([0, 1, 0], [0, 0, 1], [0, 0, -1]), ([0, 0, 1], [1, 0, 0], [-1, 0, 0])],
     )
-    def test_180(self, axis_to_rotate: int, vector_to_rotate: list, expected_result: list):
+    def test_180(self, axis_to_rotate: int, vector_to_rotate: list, expected_result: list) -> None:
         """Rotate by 180 degree around one axis and check resulting rotation by transforming a 3D vector with start
         and final rotation.
 
@@ -89,7 +89,7 @@ class TestTrajectoryMethodMixin:
         np.testing.assert_array_almost_equal(Rotation(rot_final).apply(vector_to_rotate), expected_result, decimal=1)
         assert len(test.orientation_) == fs + 1
 
-    def test_symmetric_velocity_integrations(self):
+    def test_symmetric_velocity_integrations(self) -> None:
         """Test data starts and ends at zero."""
         test = self.init_algo_class()
         acc = np.array([0.0, 0.0, 10.0])
@@ -106,7 +106,7 @@ class TestTrajectoryMethodMixin:
         assert_array_almost_equal(test.velocity_.to_numpy()[0], expected, decimal=10)
         assert_array_almost_equal(test.velocity_.to_numpy()[-1], expected, decimal=10)
 
-    def test_full_trajectory_regression(self, healthy_example_imu_data, snapshot):
+    def test_full_trajectory_regression(self, healthy_example_imu_data, snapshot) -> None:
         """Simple regression test with default parameters."""
         test = self.init_algo_class()
         fs = 204.8

@@ -47,7 +47,7 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
 
     def __init__(
         self, detectors: Optional[List[Tuple[str, BaseZuptDetector]]] = None, operation: Literal["and", "or"] = "or"
-    ):
+    ) -> None:
         self.detectors = detectors
         self.operation = operation
 

@@ -2,6 +2,7 @@
 
 Different algorithms for event detection are going to be collected here.
 """
+
 from gaitmap_mad.event_detection._filtered_rampp_event_detection import FilteredRamppEventDetection
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
 

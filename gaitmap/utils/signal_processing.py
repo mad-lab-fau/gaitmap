@@ -25,8 +25,8 @@ def butter_lowpass_filter_1d(data: np.ndarray, sampling_rate_hz: float, cutoff_f
 
     Examples
     --------
-    >>> data = np.arange(0,100)
-    >>> data_filtered = butter_lowpass_filter_1d(data = data, sampling_rate_hz = 10, cutoff_freq_hz = 1, order = 4)
+    >>> data = np.arange(0, 100)
+    >>> data_filtered = butter_lowpass_filter_1d(data=data, sampling_rate_hz=10, cutoff_freq_hz=1, order=4)
     >>> data_filtered
     array([0.00000000e+00, 4.82434336e-03, 4.03774045e-02, 1.66525148e-01,...])
 
@@ -53,7 +53,7 @@ def row_wise_autocorrelation(array: np.ndarray, lag_max: int):
 
     Examples
     --------
-    >>> t = np.arange(0,1,0.1)
+    >>> t = np.arange(0, 1, 0.1)
     >>> sin_wave = np.sin(t)
     >>> array = np.array([sin_wave, sin_wave])
     >>> out = row_wise_autocorrelation(array, 5)

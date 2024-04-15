@@ -35,7 +35,7 @@ class TestSimpleRotations(TestOrientationMethodMixin):
     def init_algo_class(self) -> BaseOrientationMethod:
         return MadgwickAHRS()
 
-    def test_correction_works(self):
+    def test_correction_works(self) -> None:
         """Madgwick should be able to resist small roations if acc does not change."""
         ori = np.array([0, 0, 0, 1.0])
         initial_ori = ori

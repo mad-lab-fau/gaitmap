@@ -1,4 +1,5 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
+
 from typing import Optional, Tuple
 
 import numpy as np
@@ -184,7 +185,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         window_overlap_samples: Optional[int] = None,
         metric: METRIC_FUNCTION_NAMES = "mean",
         inactive_signal_threshold: float = 15,
-    ):
+    ) -> None:
         self.sensor = sensor
         self.window_length_s = window_length_s
         self.window_overlap = window_overlap
@@ -333,7 +334,7 @@ class AredZuptDetector(NormZuptDetector):
         window_overlap_samples: Optional[int] = -1,
         metric: METRIC_FUNCTION_NAMES = "squared_mean",
         inactive_signal_threshold: float = 180,
-    ):
+    ) -> None:
         super().__init__(
             sensor=sensor,
             window_length_s=window_length_s,
@@ -459,7 +460,7 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         window_overlap: Optional[float] = 0.5,
         window_overlap_samples: Optional[int] = None,
         inactive_signal_threshold: float = 2310129700,
-    ):
+    ) -> None:
         self.acc_noise_variance = acc_noise_variance
         self.gyr_noise_variance = gyr_noise_variance
         self.window_length_s = window_length_s

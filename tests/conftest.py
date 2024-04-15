@@ -30,7 +30,7 @@ except ImportError:
 
 
 @pytest.fixture(autouse=True)
-def reset_random_seed():
+def reset_random_seed() -> None:
     np.random.seed(10)
     random.seed(10)
 
@@ -41,7 +41,7 @@ def snapshot(request):
         yield snapshot_test
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     group = parser.getgroup("snapshottest")
     group.addoption(
         "--snapshot-update", action="store_true", default=False, dest="snapshot_update", help="Update the snapshots."
@@ -63,7 +63,7 @@ def _get_params_without_nested_class(instance: BaseTpcpObject) -> Dict[str, Any]
     return {k: v for k, v in instance.get_params().items() if not hasattr(v, "get_params")}
 
 
-def compare_algo_objects(a, b):
+def compare_algo_objects(a, b) -> None:
     parameters = _get_params_without_nested_class(a)
     b_parameters = _get_params_without_nested_class(b)
 
@@ -74,7 +74,7 @@ def compare_algo_objects(a, b):
         compare_val(value, json_val, p)
 
 
-def compare_val(value, json_val, name):
+def compare_val(value, json_val, name) -> None:
     if isinstance(value, BaseTpcpObject):
         compare_algo_objects(value, json_val)
     elif isinstance(value, np.ndarray):

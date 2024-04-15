@@ -18,6 +18,7 @@ To learn more about the concept, review the :ref:`evaluation guide <algorithm_ev
 tuning hyperparameters <https://scikit-learn.org/stable/modules/grid_search.html#grid-search>`_.
 
 """
+
 import random
 from typing import Optional
 
@@ -87,7 +88,7 @@ class MyPipeline(OptimizablePipeline):
         # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
         template: InterpolatedDtwTemplate = CloneFactory(InterpolatedDtwTemplate(scaling=TrainableAbsMaxScaler())),
         n_train_strides: Optional[int] = None,
-    ):
+    ) -> None:
         self.max_cost = max_cost
         self.template = template
         self.n_train_strides = n_train_strides

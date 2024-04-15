@@ -1,4 +1,5 @@
 """A set of filters that can be applied to data."""
+
 from typing import Literal, Optional, Tuple, Union
 
 import pandas as pd
@@ -22,9 +23,7 @@ class BaseFilter(BaseTransformer):
         """
         return self.transformed_data_
 
-    def filter(  # noqa: A003
-        self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs
-    ) -> Self:
+    def filter(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
         """Filter the data.
 
         This will apply the filter along the **first** axis (axis=0) (aka each column will be filtered).
@@ -84,7 +83,7 @@ class ButterworthFilter(BaseFilter):
         order: int,
         cutoff_freq_hz: Union[float, Tuple[float, float]],
         filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"] = "lowpass",
-    ):
+    ) -> None:
         self.order = order
         self.cutoff_freq_hz = cutoff_freq_hz
         self.filter_type = filter_type

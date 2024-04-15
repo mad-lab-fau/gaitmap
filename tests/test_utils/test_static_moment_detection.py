@@ -12,13 +12,13 @@ from gaitmap.utils.static_moment_detection import (
 class TestFindStaticSamples:
     """Test the function `sliding_window_view`."""
 
-    def test_invalid_input_dimension_default_overlap(self):
+    def test_invalid_input_dimension_default_overlap(self) -> None:
         """Test if value error is raised correctly on invalid input dimensions."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         with pytest.raises(ValueError, match=r".* dimensions.*"):
             find_static_samples(test_input, window_length=4, inactive_signal_th=0, metric="maximum")
 
-    def test_invalid_input_metric_default_overlap(self):
+    def test_invalid_input_metric_default_overlap(self) -> None:
         """Test if value error is raised correctly on invalid input dimensions."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -27,14 +27,14 @@ class TestFindStaticSamples:
                 test_input, window_length=4, overlap=3, inactive_signal_th=0, metric="some_invalid_metric"
             )
 
-    def test_invalid_window_length(self):
+    def test_invalid_window_length(self) -> None:
         """Test if value error is raised correctly on invalid input dimensions."""
         test_input = np.array([0, 0, 0, 0, 0, 0])
         test_input = np.column_stack([test_input, test_input, test_input])
         with pytest.raises(ValueError, match=r".*Invalid window length*"):
             find_static_samples(test_input, window_length=10, overlap=3, inactive_signal_th=0, metric="maximum")
 
-    def test_single_window_fit(self):
+    def test_single_window_fit(self) -> None:
         """Test input where only a single window length fits within input signal."""
         test_input = np.array([0, 0, 0, 0, 0, 1, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -47,7 +47,7 @@ class TestFindStaticSamples:
         assert min_vel_index == 2
         assert miv_vel_value == 0
 
-    def test_max_overlap_metric_max_w4_default_overlap(self):
+    def test_max_overlap_metric_max_w4_default_overlap(self) -> None:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -61,7 +61,7 @@ class TestFindStaticSamples:
         assert min_vel_index == 2
         assert miv_vel_value == 0
 
-    def test_max_overlap_metric_max_w3(self):
+    def test_max_overlap_metric_max_w3(self) -> None:
         """Test binary input data on max metric with window size 3."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -75,7 +75,7 @@ class TestFindStaticSamples:
         assert min_vel_index == 1
         assert miv_vel_value == 0
 
-    def test_max_overlap_metric_max_w6_default_overlap(self):
+    def test_max_overlap_metric_max_w6_default_overlap(self) -> None:
         """Test binary input data on max metric with window size 6."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -89,7 +89,7 @@ class TestFindStaticSamples:
         assert min_vel_index == 3
         assert miv_vel_value == 0
 
-    def test_max_overlap_mean_w3_with_noise_default_overlap(self):
+    def test_max_overlap_mean_w3_with_noise_default_overlap(self) -> None:
         """Test binary input data on mean metric with window size 4 after adding a bit of noise."""
         test_input = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -104,7 +104,7 @@ class TestFindStaticSamples:
         assert min_vel_index == 11
         assert miv_vel_value == 0
 
-    def test_max_overlap_max_w3_with_noise(self):
+    def test_max_overlap_max_w3_with_noise(self) -> None:
         """Test binary input data on max metric with window size 4 after adding a bit of noise."""
         test_input = np.array([0, 0.1, 0, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -122,7 +122,7 @@ class TestFindStaticSamples:
 class TestFindStaticSequences:
     """Test the function `sliding_window_view`."""
 
-    def test_max_overlap_metric_max_w4_default_overlap(self):
+    def test_max_overlap_metric_max_w4_default_overlap(self) -> None:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -134,7 +134,7 @@ class TestFindStaticSequences:
         )
         assert_array_equal(test_output, expected_output)
 
-    def test_max_overlap_metric_mean_w4_default_overlap(self):
+    def test_max_overlap_metric_mean_w4_default_overlap(self) -> None:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0.1, 0, 0.1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0.1, 0, 0, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -148,7 +148,7 @@ class TestFindStaticSequences:
 
 
 class TestFirstStaticWindowsMultiSensor:
-    def test_basic_single_sensor(self):
+    def test_basic_single_sensor(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0])
         test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
 
@@ -158,7 +158,7 @@ class TestFirstStaticWindowsMultiSensor:
         )
         assert_array_equal(test_output, (6, 10))
 
-    def test_basic_multi_sensor(self):
+    def test_basic_multi_sensor(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
         test_input_2 = np.array([1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0])
         test_input = np.column_stack([test_input, test_input, test_input])
@@ -170,7 +170,7 @@ class TestFirstStaticWindowsMultiSensor:
         )
         assert_array_equal(test_output, (8, 12))
 
-    def test_invalid_shape_sub_array(self):
+    def test_invalid_shape_sub_array(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
         test_input_2 = np.array([1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0])
 
@@ -181,7 +181,7 @@ class TestFirstStaticWindowsMultiSensor:
             )
         assert "2D" in str(e)
 
-    def test_invalid_shape_np_array(self):
+    def test_invalid_shape_np_array(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
         test_input = np.column_stack([test_input, test_input, test_input])
 
@@ -192,7 +192,7 @@ class TestFirstStaticWindowsMultiSensor:
             )
         assert "3D" in str(e)
 
-    def test_invalid_metric(self):
+    def test_invalid_metric(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
 
@@ -205,7 +205,7 @@ class TestFirstStaticWindowsMultiSensor:
 
         assert "metric" in str(e)
 
-    def test_no_static_window(self):
+    def test_no_static_window(self) -> None:
         test_input = np.array([1, 1, 1, 1, 1, 1])
         test_input = np.column_stack([test_input, test_input, test_input])[:, None, :]
 

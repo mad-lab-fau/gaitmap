@@ -28,9 +28,9 @@ class TestEnforceStrideListConsistency:
 
     @pytest.mark.parametrize(
         "stride_type",
-        ("segmented", "min_vel", "ic"),
+        ["segmented", "min_vel", "ic"],
     )
-    def test_all_good(self, stride_type):
+    def test_all_good(self, stride_type) -> None:
         event_list = self._create_example_stride_list(stride_type)
         filtered_event_list, removed_strides = enforce_stride_list_consistency(event_list, stride_type)
         assert_frame_equal(event_list, filtered_event_list)
@@ -38,9 +38,9 @@ class TestEnforceStrideListConsistency:
 
     @pytest.mark.parametrize(
         "stride_type",
-        ("segmented", "min_vel", "ic"),
+        ["segmented", "min_vel", "ic"],
     )
-    def test_simple_error(self, stride_type):
+    def test_simple_error(self, stride_type) -> None:
         event_list = self._create_example_stride_list(stride_type)
         wrong_s_ids = [0, 3, 5, 19]
         modified = SL_EVENT_ORDER[stride_type][-1]
@@ -56,9 +56,9 @@ class TestEnforceStrideListConsistency:
 
     @pytest.mark.parametrize(
         "stride_type",
-        ("segmented", "min_vel", "ic"),
+        ["segmented", "min_vel", "ic"],
     )
-    def test_nan_removal(self, stride_type):
+    def test_nan_removal(self, stride_type) -> None:
         """Test that strides that contain NaN in any column are removed."""
         event_list = self._create_example_stride_list(stride_type)
         nan_s_ids = [0, 3, 5, 19]
@@ -110,8 +110,8 @@ class TestConvertSegmentedStrideList:
         stride_list = stride_list.drop(5)
         return stride_list
 
-    @pytest.mark.parametrize("target", ("ic", "min_vel"))
-    def test_simple_conversion(self, target):
+    @pytest.mark.parametrize("target", ["ic", "min_vel"])
+    def test_simple_conversion(self, target) -> None:
         stride_list = self._create_example_stride_list_with_pause()
 
         converted, dropped = _stride_list_to_min_vel_single_sensor(
@@ -129,7 +129,7 @@ class TestConvertSegmentedStrideList:
         # Check that the length of all strides is still 1
         assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
 
-    def test_second_to_last_stride_is_break(self):
+    def test_second_to_last_stride_is_break(self) -> None:
         """Test an edge case where there is a break right before the last stride."""
         stride_list = self._create_example_stride_list_with_pause()
         # Drop the second to last stride to create a pause
@@ -144,8 +144,8 @@ class TestConvertSegmentedStrideList:
         assert len(dropped) == 3
         assert list(dropped.index) == [4, 7, 9]
 
-    @pytest.mark.parametrize("target", ("ic", "min_vel"))
-    def test_simple_conversion_multiple(self, target):
+    @pytest.mark.parametrize("target", ["ic", "min_vel"])
+    def test_simple_conversion_multiple(self, target) -> None:
         stride_list = self._create_example_stride_list_with_pause()
         converted = convert_stride_list(stride_list, target_stride_type=target)
 
@@ -224,8 +224,7 @@ class TestConvertIcStrideList:
 
 
 class TestIntersectStrideList:
-    def test_simple_with_overlap(self):
-
+    def test_simple_with_overlap(self) -> None:
         stride_list = pd.DataFrame(
             {"start": [10, 25, 30, 50], "end": [20, 30, 40, 55]}, index=pd.Series([0, 1, 2, 3], name="s_id")
         )

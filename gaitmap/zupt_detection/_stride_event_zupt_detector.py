@@ -57,7 +57,7 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
     half_region_size_s: float
     half_region_size_samples_: int
 
-    def __init__(self, half_region_size_s: float = 0.05):
+    def __init__(self, half_region_size_s: float = 0.05) -> None:
         self.half_region_size_s = half_region_size_s
 
     def detect(

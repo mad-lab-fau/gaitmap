@@ -1,4 +1,5 @@
 """A set of helper functions to make developing algorithms easier."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,7 +8,7 @@ from gaitmap.utils._types import _Hashable, _HashableVar
 
 
 def invert_result_dictionary(
-    nested_dict: dict[_Hashable, dict[_HashableVar, Any]]
+    nested_dict: dict[_Hashable, dict[_HashableVar, Any]],
 ) -> dict[_HashableVar, dict[_Hashable, Any]]:
     """Invert result dictionaries that are obtained from multi sensor results.
 
@@ -33,7 +34,7 @@ def invert_result_dictionary(
     return out
 
 
-def set_params_from_dict(obj: Any, param_dict: dict[str, Any], result_formatting: bool = False):
+def set_params_from_dict(obj: Any, param_dict: dict[str, Any], result_formatting: bool = False) -> None:
     """Update object attributes from dictionary.
 
     The object will be updated inplace.

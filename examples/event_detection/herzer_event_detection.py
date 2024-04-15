@@ -62,7 +62,7 @@ ed = ed.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=sampling_
 # stride list.
 # As we passed a dataset with two sensors, the output will be a dictionary.
 min_vel_events_left = ed.min_vel_event_list_["left_sensor"]
-print("Gait events for {} min_vel strides were detected.".format(len(min_vel_events_left)))
+print(f"Gait events for {len(min_vel_events_left)} min_vel strides were detected.")
 min_vel_events_left.head()
 
 # %%
@@ -70,7 +70,7 @@ min_vel_events_left.head()
 # `min_vel_event_list_`, but the start and the end of each stride are unchanged compared to the input.
 # This also means that no strides are removed due to the conversion step explained below.
 segmented_events_left = ed.segmented_event_list_["left_sensor"]
-print("Gait events for {} segmented strides were detected.".format(len(segmented_events_left)))
+print(f"Gait events for {len(segmented_events_left)} segmented strides were detected.")
 segmented_events_left.head()
 
 # %%
@@ -105,7 +105,7 @@ min_vel_idx = ed.min_vel_event_list_["left_sensor"]["min_vel"].to_numpy().astype
 
 for ax, data in zip(axs, axs_data):
     ax.plot(data)
-    for i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
+    for _i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")
 
@@ -141,7 +141,7 @@ ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
 pre_ic_idx = ed.min_vel_event_list_["left_sensor"]["pre_ic"].to_numpy().astype(int)
 
 for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
-    for i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
+    for _i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")
 
@@ -217,7 +217,7 @@ fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))
 sensor_axis = "gyr_ml"
 
 ax1.plot(bf_data.reset_index(drop=True)["left_sensor"][sensor_axis])
-for i, stride in segmented_stride_list.iterrows():
+for _i, stride in segmented_stride_list.iterrows():
     ax1.axvline(stride["start"], color="g")
     ax1.axvline(stride["end"], color="r")
     ax1.axvspan(stride["start"], stride["end"], alpha=0.2)
@@ -229,7 +229,7 @@ tc_idx = ed2.min_vel_event_list_["tc"].to_numpy().astype(int)
 min_vel_idx = ed2.min_vel_event_list_["min_vel"].to_numpy().astype(int)
 pre_ic_idx = ed2.min_vel_event_list_["pre_ic"].to_numpy().astype(int)
 
-for i, stride in ed2.min_vel_event_list_.iterrows():
+for _i, stride in ed2.min_vel_event_list_.iterrows():
     ax2.axvline(stride["start"], color="g")
     ax2.axvline(stride["end"], color="r")
     ax2.axvspan(stride["start"], stride["end"], alpha=0.2)

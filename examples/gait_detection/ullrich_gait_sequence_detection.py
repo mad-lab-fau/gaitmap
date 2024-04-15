@@ -100,7 +100,7 @@ gsd = gsd.detect(data=test_data_df, sampling_rate_hz=sampling_rate_hz)
 # `end` of all detected gait sequences. It furthermore has a column `gs_id` for the gait sequence id which is used in
 # further processing steps to assign for example single strides to their respective `gs_id`.
 gait_sequences = gsd.gait_sequences_
-print("{} gait sequences were detected.".format(len(gait_sequences)))
+print(f"{len(gait_sequences)} gait sequences were detected.")
 gait_sequences.head()
 
 # %%
@@ -115,7 +115,7 @@ ax1.plot(test_data_df["gyr_ml"], label="gyr_ml")
 start_idx = gait_sequences["start"].to_numpy().astype(int)
 end_idx = gait_sequences["end"].to_numpy().astype(int)
 
-for i, gs in gait_sequences.iterrows():
+for _i, gs in gait_sequences.iterrows():
     start_sample = int(gs["start"])
     end_sample = int(gs["end"])
     ax1.axvline(start_sample, color="g")

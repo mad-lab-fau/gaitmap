@@ -1,4 +1,5 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
+
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
@@ -135,7 +136,7 @@ def is_single_sensor_data(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be SingleSensorData. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
     return True
@@ -194,7 +195,7 @@ def is_multi_sensor_data(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be MultiSensorData. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
 
@@ -205,9 +206,7 @@ def is_multi_sensor_data(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object appears to be MultiSensorData, "
-                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
-                    k, str(e)
-                )
+                f'but for the sensor with the name "{k}", the following validation error was raised:\n\n{e!s}'
             ) from e
         return False
     return True
@@ -269,10 +268,10 @@ def is_sensor_data(
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"
         "=============\n"
-        f"{str(single_error)}\n\n"
+        f"{single_error!s}\n\n"
         "Multi-Sensor\n"
         "=============\n"
-        f"{str(multi_error)}"
+        f"{multi_error!s}"
     )
 
 
@@ -365,8 +364,8 @@ def is_single_sensor_stride_list(
             and not np.array_equal(stride_list["start"].to_numpy(), stride_list[start_event[stride_type]].to_numpy())
         ):
             raise ValidationError(
-                "For a {} stride list, the start column is expected to be identical to the {} column, "
-                "but they are different.".format(stride_type, start_event[stride_type])
+                f"For a {stride_type} stride list, the start column is expected to be identical to the "
+                f"{start_event[stride_type]} column, but they are different."
             )
         # Check that the stride ids are unique
         if not stride_list.index.nunique() == stride_list.index.size:
@@ -376,7 +375,7 @@ def is_single_sensor_stride_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be a SingleSensorStrideList. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
     return True
@@ -424,7 +423,7 @@ def is_multi_sensor_stride_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be a MultiSensorStrideList. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
 
@@ -440,9 +439,7 @@ def is_multi_sensor_stride_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object appears to be a MultiSensorStrideList, "
-                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
-                    k, str(e)
-                )
+                f'but for the sensor with the name "{k}", the following validation error was raised:\n\n{e!s}'
             ) from e
         return False
     return True
@@ -508,10 +505,10 @@ def is_stride_list(
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"
         "=============\n"
-        f"{str(single_error)}\n\n"
+        f"{single_error!s}\n\n"
         "Multi-Sensor\n"
         "=============\n"
-        f"{str(multi_error)}"
+        f"{multi_error!s}"
     )
 
 
@@ -522,8 +519,8 @@ def get_single_sensor_regions_of_interest_types(roi_list: SingleSensorRegionsOfI
     matched_index_col = [col for col in roi_list_columns if col in valid_index_dict.values()]
     if not matched_index_col:
         raise ValidationError(
-            "The region of interest list is expected to have one of {} either as a column or in the "
-            "index".format(list(valid_index_dict.values()))
+            f"The region of interest list is expected to have one of {list(valid_index_dict.values())} either as a "
+            "column or in the index"
         )
     region_type = cast(
         Literal["roi", "gs"], list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
@@ -574,10 +571,9 @@ def is_single_sensor_regions_of_interest_list(
         actual_region_type = get_single_sensor_regions_of_interest_types(roi_list)
         if region_type not in ("any", actual_region_type):
             raise ValidationError(
-                "A ROI list of type {} is expected to have a either an index or a column named {}. "
-                "The provided ROI list appears to be of the type {} instead.".format(
-                    region_type, ROI_ID_COLS[region_type], actual_region_type
-                )
+                f"A ROI list of type {region_type} is expected to have a either an index or a column named "
+                f"{ROI_ID_COLS[region_type]}."
+                "The provided ROI list appears to be of the type {actual_region_type} instead."
             )
 
         roi_list = set_correct_index(roi_list, [ROI_ID_COLS[actual_region_type]])
@@ -590,7 +586,7 @@ def is_single_sensor_regions_of_interest_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be a SingleSensorRegionsOfInterestList. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
 
@@ -632,7 +628,7 @@ def is_multi_sensor_regions_of_interest_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object does not seem to be a MultiSensorRegionsOfInterestList. "
-                "The validation failed with the following error:\n\n{}".format(str(e))
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
 
@@ -643,9 +639,7 @@ def is_multi_sensor_regions_of_interest_list(
         if raise_exception is True:
             raise ValidationError(
                 "The passed object appears to be a MultiSensorRegionsOfInterestList, "
-                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
-                    k, str(e)
-                )
+                f'but for the sensor with the name "{k}", the following validation error was raised:\n\n{e!s}'
             ) from e
         return False
     return True
@@ -703,10 +697,10 @@ def is_regions_of_interest_list(
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"
         "=============\n"
-        f"{str(single_error)}\n\n"
+        f"{single_error!s}\n\n"
         "Multi-Sensor\n"
         "=============\n"
-        f"{str(multi_error)}"
+        f"{multi_error!s}"
     )
 
 
@@ -725,7 +719,7 @@ def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[_Hashable]:
 
 
 def get_single_sensor_trajectory_list_types(
-    traj_list: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList]
+    traj_list: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
 ) -> Literal["roi", "gs", "stride"]:
     """Identify which type of trajectory list is passed by checking the existing columns."""
     traj_list_columns = traj_list.reset_index().columns
@@ -733,8 +727,8 @@ def get_single_sensor_trajectory_list_types(
     matched_index_col = [col for col in traj_list_columns if col in valid_index_dict.values()]
     if not matched_index_col:
         raise ValidationError(
-            "The trajectory (orientation, position, velocity) list is expected to have one of {} either as a column or "
-            "in the index".format(list(valid_index_dict.values()))
+            "The trajectory (orientation, position, velocity) list is expected to have one of "
+            f"{list(valid_index_dict.values())} either as a column or in the index"
         )
     list_type = cast(
         Literal["roi", "gs", "stride"],
@@ -771,8 +765,8 @@ def _is_single_sensor_trajectory_list(
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object does not seem to be a {}. "
-                "The validation failed with the following error:\n\n{}".format(input_datatype, str(e))
+                f"The passed object does not seem to be a {input_datatype}. "
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
     return True
@@ -791,8 +785,8 @@ def _is_multi_sensor_trajectory_list(
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object does not seem to be a {}. "
-                "The validation failed with the following error:\n\n{}".format(input_datatype, str(e))
+                f"The passed object does not seem to be a {input_datatype}. "
+                f"The validation failed with the following error:\n\n{e!s}"
             ) from e
         return False
 
@@ -802,10 +796,8 @@ def _is_multi_sensor_trajectory_list(
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
-                "The passed object appears to be a {}, "
-                'but for the sensor with the name "{}", the following validation error was raised:\n\n{}'.format(
-                    input_datatype, k, str(e)
-                )
+                f"The passed object appears to be a {input_datatype}, "
+                f'but for the sensor with the name "{k}", the following validation error was raised:\n\n{e!s}'
             ) from e
         return False
     return True
@@ -837,10 +829,10 @@ def _is_trajectory_list(
         "Below you can find the errors raised for both checks:\n\n"
         "Single-Sensor\n"
         "=============\n"
-        f"{str(single_error)}\n\n"
+        f"{single_error!s}\n\n"
         "Multi-Sensor\n"
         "=============\n"
-        f"{str(multi_error)}"
+        f"{multi_error!s}"
     )
 
 
@@ -1254,8 +1246,8 @@ def set_correct_index(
         _assert_has_columns(df_just_right_index, [index_cols])
     except ValidationError as e:
         raise ValidationError(
-            "The dataframe is expected to have the following columns either in the index or as columns ({}), "
-            "but it has {}".format(index_cols, df.columns)
+            "The dataframe is expected to have the following columns either in the index or as columns "
+            f"({index_cols}), but it has {df.columns}"
         ) from e
 
     return df_just_right_index.set_index(index_cols)

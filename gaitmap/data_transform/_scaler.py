@@ -1,4 +1,5 @@
 """Transformers that scale data to certain data ranges."""
+
 from typing import Optional, Sequence, Tuple
 
 import numpy as np
@@ -41,7 +42,7 @@ class FixedScaler(BaseTransformer):
     scale: Parameter[float]
     offset: Parameter[float]
 
-    def __init__(self, scale: float = 1, offset: float = 0):
+    def __init__(self, scale: float = 1, offset: float = 0) -> None:
         self.scale = scale
         self.offset = offset
 
@@ -94,7 +95,7 @@ class StandardScaler(BaseTransformer):
 
     ddof: Parameter[int] = 1
 
-    def __init__(self, ddof: int = 1):
+    def __init__(self, ddof: int = 1) -> None:
         self.ddof = ddof
 
     def transform(self, data: SingleSensorData, **_) -> Self:
@@ -150,7 +151,7 @@ class TrainableStandardScaler(StandardScaler, TrainableTransformerMixin):
     mean: OptimizableParameter[Optional[float]]
     std: OptimizableParameter[Optional[float]]
 
-    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None, ddof: int = 1):
+    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None, ddof: int = 1) -> None:
         self.mean = mean
         self.std = std
         super().__init__(ddof=ddof)
@@ -234,7 +235,7 @@ class AbsMaxScaler(BaseTransformer):
 
     out_max: Parameter[float]
 
-    def __init__(self, out_max: float = 1):
+    def __init__(self, out_max: float = 1) -> None:
         self.out_max = out_max
 
     def transform(self, data: SingleSensorData, **_) -> Self:
@@ -313,7 +314,7 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
     data_max: OptimizableParameter[Optional[float]]
 
-    def __init__(self, out_max: float = 1, data_max: Optional[float] = None):
+    def __init__(self, out_max: float = 1, data_max: Optional[float] = None) -> None:
         self.data_max = data_max
         super().__init__(out_max=out_max)
 
@@ -394,7 +395,7 @@ class MinMaxScaler(BaseTransformer):
     def __init__(
         self,
         out_range: Tuple[float, float] = (0, 1.0),
-    ):
+    ) -> None:
         self.out_range = out_range
 
     def transform(self, data: SingleSensorData, **_) -> Self:
@@ -488,7 +489,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
         self,
         out_range: Tuple[float, float] = (0, 1.0),
         data_range: Optional[Tuple[float, float]] = None,
-    ):
+    ) -> None:
         self.data_range = data_range
         super().__init__(out_range=out_range)
 

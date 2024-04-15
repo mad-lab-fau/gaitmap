@@ -116,20 +116,20 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestIndividualParameter:
-    def test_stride_length(self, single_sensor_position_list_with_index, single_sensor_stride_length):
+    def test_stride_length(self, single_sensor_position_list_with_index, single_sensor_stride_length) -> None:
         assert_series_equal(_calc_stride_length(single_sensor_position_list_with_index), single_sensor_stride_length)
 
-    def test_arc_length(self, single_sensor_position_list_with_index, single_sensor_arc_length):
+    def test_arc_length(self, single_sensor_position_list_with_index, single_sensor_arc_length) -> None:
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
 
-    def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle):
+    def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle) -> None:
         assert_series_equal(
             _calc_turning_angle(single_sensor_orientation_list_with_index),
             single_sensor_turning_angle,
             check_exact=False,
         )
 
-    def test_turning_angle_empty_orientation(self):
+    def test_turning_angle_empty_orientation(self) -> None:
         """Test the turning angle computation in case of empty orientation input.
 
         For scipy<=1.5.4 this produced an empty Series automatically. For scipy>1.6.0 we need to handle the case of
@@ -147,12 +147,12 @@ class TestIndividualParameter:
             check_exact=False,
         )
 
-    def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course):
+    def test_sole_angle(self, single_sensor_orientation_list_with_index, single_sensor_sole_angle_course) -> None:
         assert_series_equal(
             _compute_sole_angle_course(single_sensor_orientation_list_with_index), single_sensor_sole_angle_course
         )
 
-    def test_sole_angle_empty_orientation(self):
+    def test_sole_angle_empty_orientation(self) -> None:
         """Test the sole angle computation in case of empty orientation input.
 
         For scipy<=1.5.4 this produced an empty Series automatically. For scipy>1.6.0 we need to handle the case of
@@ -187,7 +187,7 @@ class TestSpatialParameterCalculation:
 
     def test_single_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
-    ):
+    ) -> None:
         """Test calculate spatial parameters for single sensor."""
         t = SpatialParameterCalculation()
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
@@ -198,7 +198,7 @@ class TestSpatialParameterCalculation:
 
     def test_multiple_sensor(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
-    ):
+    ) -> None:
         """Test calculate spatial parameters for single sensor and single stride."""
         stride_events_list = {"sensor1": single_sensor_stride_list, "sensor2": single_sensor_stride_list}
         position_list = {"sensor1": single_sensor_position_list, "sensor2": single_sensor_position_list}
@@ -230,7 +230,7 @@ class TestSpatialParameterCalculation:
         single_sensor_stride_list,
         single_sensor_position_list,
         single_sensor_orientation_list,
-    ):
+    ) -> None:
         """Test that it is possible to calculate spatial parameters with partial information."""
         stride_list = single_sensor_stride_list.drop(list(exclude), axis=1)
         stride_events_list = {"sensor1": stride_list, "sensor2": stride_list}
@@ -242,7 +242,7 @@ class TestSpatialParameterCalculation:
             assert set(sensor.columns) == set(self.parameters) - set(expected_missing)
             assert len(sensor) == len(single_sensor_stride_list)
 
-    def test_only_ori_provided(self, single_sensor_stride_list, single_sensor_orientation_list):
+    def test_only_ori_provided(self, single_sensor_stride_list, single_sensor_orientation_list) -> None:
         """Test calculate spatial parameters for single sensor."""
         t = SpatialParameterCalculation()
         t.calculate(
@@ -260,7 +260,7 @@ class TestSpatialParameterCalculation:
         self,
         single_sensor_stride_list,
         single_sensor_position_list,
-    ):
+    ) -> None:
         t = SpatialParameterCalculation()
         t.calculate(
             stride_event_list=single_sensor_stride_list,
@@ -282,7 +282,7 @@ class TestSpatialParameterCalculation:
     @pytest.mark.parametrize("calculate_only", [["stride_length"], ["gait_velocity"], ["arc_length", "stride_length"]])
     def test_calculate_only(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, calculate_only
-    ):
+    ) -> None:
         t = SpatialParameterCalculation(calculate_only=calculate_only)
         t.calculate(single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list, 100)
 
@@ -290,7 +290,7 @@ class TestSpatialParameterCalculation:
 
     def test_stride_list_types(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
-    ):
+    ) -> None:
         # The default single_sensor_stride_list is a min_vel stride list.
         # If we set expected_stride_type to "ic", we should get an error.
         t = SpatialParameterCalculation(expected_stride_type="ic")
@@ -327,7 +327,7 @@ class TestSpatialParameterCalculation:
 
     def test_empty_stride_list_throws_no_error(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
-    ):
+    ) -> None:
         """Test that an empty stride list does not throw an error."""
         t = SpatialParameterCalculation(expected_stride_type="ic")
         single_sensor_stride_list = single_sensor_stride_list.iloc[0:0]
@@ -341,7 +341,7 @@ class TestSpatialParameterCalculation:
 class TestSpatialParameterRegression:
     def test_regression_on_example_data(
         self, healthy_example_orientation, healthy_example_position, healthy_example_stride_events, snapshot
-    ):
+    ) -> None:
         # Convert stride list back to mocap samples:
         healthy_example_stride_events["left_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8
         healthy_example_stride_events["right_sensor"][["start", "end", "tc", "ic", "min_vel", "pre_ic"]] *= 100 / 204.8

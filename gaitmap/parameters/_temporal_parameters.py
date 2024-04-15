@@ -1,4 +1,5 @@
 """Calculate temporal parameters algorithm."""
+
 from typing import Dict, Literal, Tuple, TypeVar, Union
 
 import pandas as pd
@@ -70,7 +71,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     --------
     This method requires the output of a event detection method as input.
 
-    >>> stride_list = ... #  from event detection
+    >>> stride_list = ...  #  from event detection
     >>> temporal_paras = TemporalParameterCalculation()
     >>> temporal_paras = temporal_paras.calculate(stride_event_list=stride_list, sampling_rate_hz=204.8)
     >>> temporal_paras.parameters_
@@ -91,7 +92,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
     sampling_rate_hz: float
     stride_event_list: StrideList
 
-    def __init__(self, expected_stride_type: Literal["min_vel", "ic"] = "min_vel"):
+    def __init__(self, expected_stride_type: Literal["min_vel", "ic"] = "min_vel") -> None:
         self.expected_stride_type = expected_stride_type
 
     @property

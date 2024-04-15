@@ -9,7 +9,7 @@ Grid Search optimal Algorithm Parameter
           Hence, it makes sense to cross-check the official examples.
 
 """
-import joblib
+
 import pandas as pd
 
 # %%
@@ -90,7 +90,7 @@ class MyPipeline(Pipeline):
 
     segmented_stride_list_: SingleSensorStrideList
 
-    def __init__(self, max_cost: float = 3):
+    def __init__(self, max_cost: float = 3) -> None:
         self.max_cost = max_cost
 
     def run(self, datapoint: MyDataset):

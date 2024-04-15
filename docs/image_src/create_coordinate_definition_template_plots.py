@@ -32,8 +32,9 @@ docs_blue = np.array([0, 181, 232]) / 255.0
 
 colors = [docs_red, docs_green, docs_blue]
 
+
 # helper to plot different coordinate frames
-def plot_stride(data, column_names, sensor_id, stride_id, export_name):
+def plot_stride(data, column_names, sensor_id, stride_id, export_name) -> None:
     fig, axs = plt.subplots(2, figsize=(7, 7))
     start = dtw.stride_list_[sensor_id].iloc[stride_id].start
     end = dtw.stride_list_[sensor_id].iloc[stride_id].end
@@ -61,12 +62,12 @@ def plot_stride(data, column_names, sensor_id, stride_id, export_name):
     fig.savefig(sensor_id + col[3:] + ".pdf", bbox_inches="tight")
 
 
-#%%
+# %%
 # Plot "Stride-Template" in Sensor Frame
 plot_stride(dataset_sf, SF_COLS, "left_sensor", 5, "left_sensor_sensor_frame_template.pdf")
 plot_stride(dataset_sf, SF_COLS, "right_sensor", 18, "right_sensor_sensor_frame_template.pdf")
 
-#%%
+# %%
 # Plot "Stride-Template" in Body Frame
 plot_stride(dataset_bf, BF_COLS, "left_sensor", 5, "left_sensor_body_frame_template.pdf")
 plot_stride(dataset_bf, BF_COLS, "right_sensor", 18, "right_sensor_body_frame_template.pdf")

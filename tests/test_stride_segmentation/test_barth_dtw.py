@@ -39,7 +39,7 @@ class TestCachingFunctionality(MetaTestConfig, TestCachingMixin):
 
 
 class TestRegressionOnRealData:
-    def test_real_data_both_feed_regression(self, healthy_example_imu_data, snapshot):
+    def test_real_data_both_feed_regression(self, healthy_example_imu_data, snapshot) -> None:
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])
         dtw = BarthDtw()  # Test with default paras
         dtw.segment(data, sampling_rate_hz=204.8)
@@ -50,7 +50,7 @@ class TestRegressionOnRealData:
         snapshot.assert_match(dtw.stride_list_["left_sensor"], "left")
         snapshot.assert_match(dtw.stride_list_["right_sensor"], "right")
 
-    def test_snapping_on_off(self, healthy_example_imu_data):
+    def test_snapping_on_off(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"]).iloc[:1000]
         # off
         dtw = BarthDtw(snap_to_min_win_ms=None)
@@ -69,7 +69,7 @@ class TestRegressionOnRealData:
         assert not np.array_equal(dtw.matches_start_end_["left_sensor"], dtw.matches_start_end_original_["left_sensor"])
         assert_array_equal(dtw.matches_start_end_original_["left_sensor"], out_without_snapping)
 
-    def test_conflict_resolution_on_off(self, healthy_example_imu_data):
+    def test_conflict_resolution_on_off(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"]).iloc[:1000]
         # For both cases set the threshold so high that wrong matches will occure
         max_cost = 5
@@ -106,7 +106,7 @@ class DtwTestBaseBarth:
 
 class TestBarthDtwAdditions(DtwTestBaseBarth):
     # TODO: Add a test were a stride ends at the last sample before snapping
-    def test_stride_list(self):
+    def test_stride_list(self) -> None:
         """Test that the output of the stride list is correct."""
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
@@ -119,7 +119,7 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
         expected_stride_list = expected_stride_list.set_index("s_id")
         assert_frame_equal(dtw.stride_list_.astype(np.int64), expected_stride_list.astype(np.int64))
 
-    def test_stride_list_multi_d(self):
+    def test_stride_list_multi_d(self) -> None:
         """Test that the output of the stride list is correct."""
         sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
         sensor1 = pd.DataFrame(sensor1, columns=["col1"])
@@ -142,14 +142,14 @@ class TestBarthDtwAdditions(DtwTestBaseBarth):
             pd.DataFrame([[0, 2, 5]], columns=["s_id", "start", "end"]).set_index("s_id").astype(np.int64),
         )
 
-    def test_stride_list_passes_test_func(self):
+    def test_stride_list_passes_test_func(self) -> None:
         sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.init_dtw(template).segment(np.array(sequence), sampling_rate_hz=100.0)
 
         assert is_single_sensor_stride_list(dtw.stride_list_)
 
-    def test_stride_list_passes_test_func_multiple(self):
+    def test_stride_list_passes_test_func_multiple(self) -> None:
         sensor1 = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
         sensor1 = pd.DataFrame(sensor1, columns=["col1"])
         sensor2 = np.array([*np.ones(2) * 2, 0, 1.0, 0, *np.ones(8) * 2])
@@ -171,7 +171,7 @@ class TestPostProcessing:
     Snapping is not tested here (fully) as it is well covered by the regression tests
     """
 
-    def test_simple_stride_time(self):
+    def test_simple_stride_time(self) -> None:
         example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
         bad_strides_short = [2, 5, 9]
         example_stride_list[bad_strides_short, 1] -= 0.5
@@ -203,7 +203,7 @@ class TestPostProcessing:
         # Check that the correct strides were identified
         assert np.all(~to_keep[bad_strides])
 
-    def test_simple_double_start(self):
+    def test_simple_double_start(self) -> None:
         example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
         cost = np.ones(len(example_stride_list))
         # Introduce errors
@@ -241,7 +241,7 @@ class TestPostProcessing:
         # Check that the correct 3 strides were identified
         assert np.all(~to_keep[bad_strides])
 
-    def test_previous_removal_double_start(self):
+    def test_previous_removal_double_start(self) -> None:
         example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
         cost = np.ones(len(example_stride_list))
         # Introduce errors
@@ -287,7 +287,7 @@ class TestPostProcessing:
         # Check that the correct 5 strides were identified
         assert np.all(~to_keep[bad_strides])
 
-    def test_previous_removal_double_start_unsorted(self):
+    def test_previous_removal_double_start_unsorted(self) -> None:
         example_stride_list = np.array([np.arange(10), np.arange(10) + 1.0]).T
         cost = np.ones(len(example_stride_list))
         # Introduce errors
@@ -333,7 +333,7 @@ class TestPostProcessing:
         # Check that the correct 5 strides were identified
         assert np.all(~to_keep[bad_strides])
 
-    def test_post_post_warning_is_raised(self, healthy_example_imu_data):
+    def test_post_post_warning_is_raised(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, right=["right_sensor"], left=["left_sensor"])[:1000]
         # Disable all conflict resolutions to force a double match
         dtw = BarthDtw(max_cost=10000, min_match_length_s=None, conflict_resolution=False, snap_to_min_win_ms=None)
@@ -351,7 +351,7 @@ class TestPostProcessing:
             # Check that no UserWarning was recorded
             w.pop(UserWarning)
 
-    def test_snapping_edge_case(self):
+    def test_snapping_edge_case(self) -> None:
         """Testing if snapping works, even if one of the strides ends inclusive the last sample.
 
         This is a special case, as we add 1 to the end of all matches, so that the end is exclusive.

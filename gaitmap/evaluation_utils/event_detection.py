@@ -76,18 +76,13 @@ def evaluate_stride_event_list(
     Examples
     --------
     >>> stride_list_ground_truth = DataFrame(
-    ...     [[10,21, 10],[20,34, 30],[31,40, 20]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
+    ...     [[10, 21, 10], [20, 34, 30], [31, 40, 20]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> stride_list_seg = DataFrame(
-    ...     [[10,20, 10],[21,30, 30],[31,40, 22]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
+    ...     [[10, 20, 10], [21, 30, 30], [31, 40, 22]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> matches = evaluate_stride_event_list(
-    ...     ground_truth=stride_list_ground_truth,
-    ...     stride_event_list=stride_list_seg,
-    ...     match_cols="ic",
-    ...     tolerance=3
+    ...     ground_truth=stride_list_ground_truth, stride_event_list=stride_list_seg, match_cols="ic", tolerance=3
     ... )
     >>> matches
        s_id  s_id_ground_truth match_type
@@ -96,28 +91,22 @@ def evaluate_stride_event_list(
     2     2                  2         tp
 
     >>> stride_list_ground_truth_left = DataFrame(
-    ...     [[10,21,30],[20,34,20],[31,40,10], [10, 30 ,60]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
+    ...     [[10, 21, 30], [20, 34, 20], [31, 40, 10], [10, 30, 60]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> stride_list_ground_truth_right = DataFrame(
-    ...     [[10,21,1],[20,34,2],[31,40,3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
+    ...     [[10, 21, 1], [20, 34, 2], [31, 40, 3]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> stride_list_seg_left = DataFrame(
-    ...     [[10,20, 30],[21,30,20],[31,40,13]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
+    ...     [[10, 20, 30], [21, 30, 20], [31, 40, 13]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> stride_list_seg_right = DataFrame(
-    ...     [[10,21, 1],[20,34, 2],[31,40, 3]],
-    ...     columns=["start", "end", "ic"]
-    ... ).rename_axis('s_id')
-    ...
+    ...     [[10, 21, 1], [20, 34, 2], [31, 40, 3]], columns=["start", "end", "ic"]
+    ... ).rename_axis("s_id")
     >>> matches_multi = evaluate_stride_event_list(
     ...     ground_truth={"left_sensor": stride_list_ground_truth_left, "right_sensor": stride_list_ground_truth_right},
     ...     stride_event_list={"left_sensor": stride_list_seg_left, "right_sensor": stride_list_seg_right},
     ...     match_cols="ic",
-    ...     tolerance=2
+    ...     tolerance=2,
     ... )
     >>> matches_multi["left_sensor"]
       s_id s_id_ground_truth match_type

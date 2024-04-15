@@ -1,6 +1,7 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
+
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -257,7 +258,10 @@ class BaseDtw(BaseAlgorithm):
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
-    _allowed_methods_map = {"min_under_thres": find_matches_min_under_threshold, "find_peaks": find_matches_find_peaks}
+    _allowed_methods_map: ClassVar = {
+        "min_under_thres": find_matches_min_under_threshold,
+        "find_peaks": find_matches_find_peaks,
+    }
     _min_sequence_length: Optional[float]
     _max_sequence_length: Optional[float]
     _max_template_stretch: Optional[int]
@@ -294,7 +298,7 @@ class BaseDtw(BaseAlgorithm):
         max_template_stretch_ms: Optional[float] = None,
         max_signal_stretch_ms: Optional[float] = None,
         memory: Optional[Memory] = None,
-    ):
+    ) -> None:
         self.template = template
         self.max_cost = max_cost
         self.min_match_length_s = min_match_length_s
@@ -400,9 +404,9 @@ class BaseDtw(BaseAlgorithm):
             and self.resample_template is False
         ):
             warnings.warn(
-                "The data and template sampling rate are different ({} Hz vs. {} Hz), "
-                "but `resample_template` is False. "
-                "This might lead to unexpected results".format(template_sampling_rate, self.sampling_rate_hz)
+                f"The data and template sampling rate are different ({template_sampling_rate} Hz vs. "
+                f"{self.sampling_rate_hz} Hz), but `resample_template` is False. "
+                "This might lead to unexpected results"
             )
 
         # Extract the parts of the data that is relevant for matching and apply potential data transforms defined in
@@ -570,7 +574,7 @@ class BaseDtw(BaseAlgorithm):
             to_keep[indices[invalid_strides]] = False
         return matches_start_end, to_keep
 
-    def _post_postprocess_check(self, matches_start_end):
+    def _post_postprocess_check(self, matches_start_end) -> None:
         """Check that is invoked after all processing is done.
 
         Parameters
@@ -614,9 +618,8 @@ class BaseDtw(BaseAlgorithm):
                 return template_array, data
             if template_array.shape[1] > data.shape[1]:
                 raise ValueError(
-                    "The provided data has less columns than the used template. ({} < {})".format(
-                        data.shape[1], template_array.shape[1]
-                    )
+                    "The provided data has less columns than the used template. "
+                    f"({data.shape[1]} < {template_array.shape[1]})"
                 )
             return (
                 template_array,
@@ -635,7 +638,7 @@ class BaseDtw(BaseAlgorithm):
                     "Some columns of the template are not available in the data! This might happen because you "
                     "provided the data in the wrong coordinate frame (Sensor vs. Body)."
                     "Review the general documentation for more information."
-                    "\n\nMissing columns: {}".format(list(set(template_array.columns) - set(data.columns)))
+                    f"\n\nMissing columns: {list(set(template_array.columns) - set(data.columns))}"
                 ) from e
             return template_array.to_numpy(), data.to_numpy()
         # TODO: Better error message
@@ -650,26 +653,24 @@ class BaseDtw(BaseAlgorithm):
             paths.append(path_array)
         return paths
 
-    def _validate_basic_inputs(self):
+    def _validate_basic_inputs(self) -> None:
         if self.template is None:
             raise ValueError("A `template` must be specified.")
 
         if self.find_matches_method not in self._allowed_methods_map:
             raise ValueError(
-                "Invalid value for `find_matches_method`. Must be one of {}".format(
-                    list(self._allowed_methods_map.keys())
-                )
+                f"Invalid value for `find_matches_method`. Must be one of {list(self._allowed_methods_map.keys())}"
             )
 
         if self.max_template_stretch_ms is not None and self.max_template_stretch_ms <= 0:
             raise ValueError(
                 "Invalid value for `max_template_stretch_ms`."
-                "The value must be a number larger than 0 and not {}".format(self.max_template_stretch_ms)
+                f"The value must be a number larger than 0 and not {self.max_template_stretch_ms}"
             )
         if self.max_signal_stretch_ms is not None and self.max_signal_stretch_ms <= 0:
             raise ValueError(
                 "Invalid value for `max_signal_stretch_ms`."
-                "The value must be a number larger than 0 and not {}".format(self.max_signal_stretch_ms)
+                f"The value must be a number larger than 0 and not {self.max_signal_stretch_ms}"
             )
 
     def _calculate_constrains(self, template: BaseDtwTemplate):
