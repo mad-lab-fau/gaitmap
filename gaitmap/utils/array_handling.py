@@ -397,6 +397,9 @@ def merge_intervals(input_array: np.ndarray, gap_size: int = 0) -> np.ndarray:
            [18, 20]])
 
     """
+    if input_array.shape[0] == 0:
+        return input_array
+
     return np.array(_solve_overlap(np.sort(input_array, axis=0, kind="stable"), gap_size))
 
 
