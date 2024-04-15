@@ -171,7 +171,6 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         detect_only: Optional[Tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
-    ) -> None:
         self.ic_search_region_ms = ic_search_region_ms
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.input_stride_type = input_stride_type
