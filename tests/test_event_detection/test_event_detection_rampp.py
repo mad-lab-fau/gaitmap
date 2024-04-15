@@ -13,29 +13,30 @@ from gaitmap.event_detection import RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.event_detection._rampp_event_detection import _detect_tc_for_segmented_stride, _detect_tc_for_ic_stride
+from gaitmap_mad.event_detection._rampp_event_detection import _detect_tc_for_ic_stride, _detect_tc_for_segmented_stride
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 
+common_arguments = pytest.mark.parametrize(
+    ("input_stride_type", "imu_data", "stride_borders", "sampling_rate"),
+    [
+        ("segmented", "healthy_example_imu_data", "healthy_example_stride_borders", 204.8),
+        ("ic", "healthy_example_imu_data_ic_stride", "healthy_example_stride_borders_ic_stride", 102.4),
+    ],
+)
 
-common_arguments =pytest.mark.parametrize(
-        ("input_stride_type", "imu_data", "stride_borders", "sampling_rate"),
-        [
-            ("segmented", "healthy_example_imu_data", "healthy_example_stride_borders", 204.8),
-            ("ic", "healthy_example_imu_data_ic_stride", "healthy_example_stride_borders_ic_stride", 102.4),
-        ],
-    )
+
 class MetaTestConfig:
     algorithm_class = RamppEventDetection
 
-    @common_arguments
-    def after_action_instance(self, input_stride_type, imu_data, stride_borders, sampling_rate, request) -> BaseType:
-        data_left = request.getfixturevalue(imu_data)["left_sensor"]
+    @pytest.fixture()
+    def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
+        data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS
         # only use the first entry of the stride list
-        stride_list_left = request.getfixturevalue(stride_borders)["left_sensor"].iloc[0:1]
-        ed = RamppEventDetection(input_stride_type=input_stride_type)
-        ed.detect(data_left, stride_list_left, sampling_rate_hz=sampling_rate)
+        stride_list_left = healthy_example_stride_borders["left_sensor"].iloc[0:1]
+        ed = RamppEventDetection()
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
         return ed
 
 
