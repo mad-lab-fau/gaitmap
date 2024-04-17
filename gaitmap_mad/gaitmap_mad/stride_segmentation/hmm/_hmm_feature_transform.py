@@ -4,6 +4,7 @@ from typing import List, NoReturn, Optional
 
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 from sklearn import preprocessing
 from tpcp import cf
 
@@ -64,7 +65,9 @@ class BaseHmmFeatureTransformer(BaseTransformer):
         """
         raise NotImplementedError()
 
-    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, sampling_rate_hz: float) -> np.ndarray:
+    def inverse_transform_state_sequence(
+        self, state_sequence: np.ndarray, data: np.array, *, sampling_rate_hz: float
+    ) -> np.ndarray:
         """Inverse transform a state sequence to the original sampling rate.
 
         Parameters
@@ -210,6 +213,12 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         self.sampling_rate_hz = sampling_rate_hz
         if sampling_rate_hz is None:
             raise ValueError(f"{type(self).__name__}.transform requires a `sampling_rate_hz` to be passed.")
+        if sampling_rate_hz < self.sampling_rate_feature_space_hz:
+            raise ValueError(
+                f"Invalid value for `sampling_rate_hz`={sampling_rate_hz}. \n"
+                f"Sampling rate of data can not be lower than the  feature space sampling rate of the "
+                f"used model {type(self).__name__}: {self.sampling_rate_feature_space_hz}Hz."
+            )
         if data is not None:
             self.data = data
 
@@ -259,7 +268,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
         return self
 
-    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, sampling_rate_hz: float) -> np.ndarray:
+    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, data: np.array) -> np.ndarray:
         """Inverse transform a state sequence to the original sampling rate.
 
         Parameters
@@ -267,12 +276,15 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         state_sequence
             The state sequence to be transformed back to the original sampling rate.
             This is done by repeating each state for the number of samples it was downsampled to.
-        sampling_rate_hz
-            The sampling rate of the original data in Hz
+        data
+            The original data used for the transformation
 
         Returns
         -------
         The state sequence in the original sampling rate
 
         """
-        return np.repeat(state_sequence, sampling_rate_hz / self.sampling_rate_feature_space_hz)
+        downsampled_x = np.arange(0, len(data) - 1, len(data) / len(state_sequence))
+        new_x = np.arange(0, len(data))
+        interpolated = interp1d(downsampled_x, state_sequence, kind="nearest", fill_value="extrapolate")(new_x)
+        return interpolated.astype(int)
