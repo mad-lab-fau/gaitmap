@@ -90,17 +90,17 @@ class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
 
 
 class TestRothHmmFeatureTransform:
-    @pytest.mark.parametrize("target_sampling_rate", [50, 25])
+    @pytest.mark.parametrize("target_sampling_rate", [50, 25, 16.3])
     def test_inverse_transform_state_sequence(self, target_sampling_rate) -> None:
         transform = RothHmmFeatureTransformer(sampling_rate_feature_space_hz=target_sampling_rate)
-        in_state_sequence = np.array([0, 1, 2, 3, 4, 5])
-        state_sequence = transform.inverse_transform_state_sequence(
-            state_sequence=in_state_sequence,
-            sampling_rate_hz=100,
-        )
-        # output should have the same sampling rate, by repeating values
-        assert len(state_sequence) == 100 / target_sampling_rate * len(in_state_sequence)
-        assert_array_equal(state_sequence, np.repeat(in_state_sequence, 100 / target_sampling_rate))
+        in_state_sequence = np.array([0, 1, 2, 2, 4, 5])
+        len_data = int(len(in_state_sequence) * np.round(100 / target_sampling_rate))
+        data = np.zeros(len_data)
+        state_sequence = transform.inverse_transform_state_sequence(state_sequence=in_state_sequence, data=data)
+        # output should not contain any other value than in_state_sequence
+        assert_array_equal(np.unique(state_sequence), np.unique(in_state_sequence))
+        # output should have the same length as original data
+        assert len(state_sequence) == len(data)
 
     @pytest.mark.parametrize("features", [["raw"], ["raw", "gradient"], ["raw", "gradient", "mean"]])
     @pytest.mark.parametrize("axes", [["gyr_ml"], ["acc_pa"], ["gyr_ml", "acc_pa"]])

@@ -23,7 +23,7 @@ dependencies:
 
 ```bash
 poetry env use "path/to/python/you/want/to/use"
-poetry install
+poetry install --all-extras
 ```
 This will create a new folder called `.venv` inside your project dir.
 It contains the python interpreter and all site packages.
@@ -229,7 +229,9 @@ dependencies installed (see [IDE Config](#Configure-your-IDE)).
 
 ### Pycharm
 
-**Test runner**: Set the default testrunner to `pytest`. 
+**gaitmap_mad**: Add the outer `gaitmap_mad` folder as source folder.
+
+**Test runner**: Set the default testrunner to `pytest`.
 
 **Black**: Refer to this [guide](https://black.readthedocs.io/en/stable/editor_integration.html) 
 
@@ -242,6 +244,10 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 %load_ext autoreload
 %autoreload 2
 ```
+#### Trouble Shooting
+If you encounter any issues with the PyCharm interpreter, i.e., submodules are not found, this might help:
+1. Delete the `.idea` folder in the project root and restart PyCharm.
+2. Delete the gaitmap poetry environment and reinstall with `poetry install --all-extras`. 
 
 ### Jupyter Lab/Notebooks
 
