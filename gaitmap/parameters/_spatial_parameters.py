@@ -189,7 +189,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         pretty_columns = {
             "stride_length": "stride length [m]",
             "gait_velocity": "gait velocity [m/s]",
-            "max_orientation_change": "max. angle change [deg]",
+            "max_orientation_change": "max. orientation change [deg]",
             "ic_angle": "ic angle [deg]",
             "tc_angle": "tc angle [deg]",
             "turning_angle": "turning angle [deg]",
