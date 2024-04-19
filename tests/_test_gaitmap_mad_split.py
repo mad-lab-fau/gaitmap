@@ -21,12 +21,12 @@ def _gaitmap_mad_sys_modifier():
     # entry to None.
 
     # This import will force gaitmap_mad to be in sys.modules.
-    import gaitmap_mad  # noqa: F401
+    import gaitmap_mad
 
     sys.modules["gaitmap_mad"] = None
     yield
     sys.modules.pop("gaitmap_mad")
-    import gaitmap_mad  # noqa: F401
+    import gaitmap_mad  # noqa: F401, F811
 
     # We just go overboard to be save and reimport all gaitmap modules after the cleanup.
     modules_to_reload = []
@@ -60,6 +60,14 @@ def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier) -> No
     assert e.value.module_name == "gaitmap.stride_segmentation"
     assert "BarthDtw" in str(e.value)
     assert "gaitmap.stride_segmentation" in str(e.value)
+
+
+def test_error_not_raised_when_importing_ori_methods(_gaitmap_mad_sys_modifier) -> None:
+    # First we need to remove gaitmap_mad from sys.modules, so that it is not imported.
+    # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap.trajectory_reconstruction.orientation_methods", None)
+    sys.modules.pop("gaitmap.trajectory_reconstruction", None)
+    from gaitmap.trajectory_reconstruction import MadgwickAHRS  # noqa: F401
 
 
 def test_gaitmap_mad_version_mismatch(_gaitmap_mad_change_version) -> None:
