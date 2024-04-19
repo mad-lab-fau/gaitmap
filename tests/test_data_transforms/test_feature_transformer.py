@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -136,7 +136,7 @@ class TestResample:
 
 class _TestSlidingWindowTransformer:
     __test__ = False
-    algorithm_class: Type[BaseSlidingWindowFeatureTransform]
+    algorithm_class: type[BaseSlidingWindowFeatureTransform]
 
     @pytest.mark.parametrize(
         ("window_size_s", "effective_win_size"), [(1, 101), (0.5, 51), (0.1, 11), (0.23, 23), (0.111, 11)]
@@ -162,8 +162,8 @@ class _TestSlidingWindowTransformer:
 class TestSlidingWindowTransformers(_TestSlidingWindowTransformer):
     __test__ = True
 
-    algorithm_class: Type[_PandasRollingFeatureTransform]
-    algo_params: Dict[str, Any]
+    algorithm_class: type[_PandasRollingFeatureTransform]
+    algo_params: dict[str, Any]
     equivalent_method: Callable
 
     @pytest.fixture(params=all_rolling_transformer, autouse=True)

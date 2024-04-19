@@ -1,6 +1,6 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
 
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -183,7 +183,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """
 
     min_vel_search_win_size_ms: float
-    mid_swing_peak_prominence: Union[Tuple[float, float], float]
+    mid_swing_peak_prominence: Union[tuple[float, float], float]
     mid_swing_n_considered_peaks: int
     ic_lowpass_filter: BaseFilter
     memory: Optional[Memory]
@@ -192,12 +192,12 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     def __init__(
         self,
         min_vel_search_win_size_ms: float = 100,
-        mid_swing_peak_prominence: Union[Tuple[float, float], float] = 20,
+        mid_swing_peak_prominence: Union[tuple[float, float], float] = 20,
         mid_swing_n_considered_peaks: int = 3,
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=1, cutoff_freq_hz=4)),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[Tuple[str, ...]] = None,
+        detect_only: Optional[tuple[str, ...]] = None,
     ) -> None:
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
@@ -205,7 +205,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         self.ic_lowpass_filter = ic_lowpass_filter
         super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
 
-    def _get_detect_kwargs(self) -> Dict[str, int]:
+    def _get_detect_kwargs(self) -> dict[str, int]:
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
         return {
             "min_vel_search_win_size": min_vel_search_win_size,
@@ -228,13 +228,13 @@ def _find_all_events(
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
     *,
-    events: Tuple[str, ...] = ("ic", "tc", "min_vel"),
+    events: tuple[str, ...] = ("ic", "tc", "min_vel"),
     min_vel_search_win_size: int,
-    mid_swing_peak_prominence: Union[Tuple[float, float], float],
+    mid_swing_peak_prominence: Union[tuple[float, float], float],
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
-) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+) -> tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
@@ -280,7 +280,7 @@ def _find_all_events(
     )
 
 
-def _get_midswing_max(gyr_ml, peak_prominence_thresholds: Union[Tuple[float, float], float], n_considered_peaks: int):
+def _get_midswing_max(gyr_ml, peak_prominence_thresholds: Union[tuple[float, float], float], n_considered_peaks: int):
     """Return the first prominent maximum within the given stride.
 
     This maximum should correspond to the mid swing gait event.
@@ -299,7 +299,7 @@ def _detect_ic(
     gyr_ml: np.ndarray,
     acc_pa_inv: np.ndarray,
     gyr_ml_grad: np.ndarray,
-    peak_prominence_thresholds: Union[Tuple[float, float], float],
+    peak_prominence_thresholds: Union[tuple[float, float], float],
     n_considered_peaks: int,
     lowpass_filter: BaseFilter,
     sampling_rate_hz: float,

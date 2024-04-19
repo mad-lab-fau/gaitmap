@@ -1,6 +1,6 @@
 """A version of BarthDTW that used local warping constrains by default."""
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from joblib import Memory
 from tpcp import CloneFactory
@@ -135,7 +135,7 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
+        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
             BarthOriginalTemplate()
         ),
         resample_template: bool = True,

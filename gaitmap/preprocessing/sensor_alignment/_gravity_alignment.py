@@ -1,6 +1,6 @@
 """Helpers to rotate the sensor in the predefined gaitmap sensor frame."""
 
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -83,7 +83,7 @@ def align_dataset_to_gravity(
     dataset_type = is_sensor_data(dataset)
 
     window_length = int(round(window_length_s * sampling_rate_hz))
-    acc_vector: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
+    acc_vector: Union[np.ndarray, dict[_Hashable, np.ndarray]]
     if dataset_type == "single":
         # get static acc vector
         acc_vector = _get_static_acc_vector(dataset, window_length, static_signal_th, metric)

@@ -1,7 +1,7 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 
 import warnings
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -240,7 +240,7 @@ class BaseDtw(BaseAlgorithm):
 
     _action_methods = ("segment",)
 
-    template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]]
+    template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]]
     max_cost: Optional[float]
     resample_template: bool
     min_match_length_s: Optional[float]
@@ -250,10 +250,10 @@ class BaseDtw(BaseAlgorithm):
     find_matches_method: Literal["min_under_thres", "find_peaks"]
     memory: Optional[Memory]
 
-    matches_start_end_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
-    acc_cost_mat_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
-    paths_: Union[List[np.ndarray], Dict[_Hashable, List[np.ndarray]]]
-    costs_: Union[np.ndarray, Dict[_Hashable, np.ndarray]]
+    matches_start_end_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
+    acc_cost_mat_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
+    paths_: Union[list[np.ndarray], dict[_Hashable, list[np.ndarray]]]
+    costs_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
 
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
@@ -277,7 +277,7 @@ class BaseDtw(BaseAlgorithm):
     @property
     def matches_start_end_original_(
         self,
-    ) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    ) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
         """Return the starts and end directly from the paths.
 
         This will not be effected by potential changes of the postprocessing.
@@ -289,7 +289,7 @@ class BaseDtw(BaseAlgorithm):
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]] = None,
+        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
         max_cost: Optional[float] = None,
@@ -341,7 +341,7 @@ class BaseDtw(BaseAlgorithm):
         data: Union[np.ndarray, SensorData],
         sampling_rate_hz: float,
         memory: Optional[Memory] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if not memory:
             memory = Memory(None)
 
@@ -358,8 +358,8 @@ class BaseDtw(BaseAlgorithm):
         assert self.template is not None
 
         results: Union[
-            Dict[str, Union[np.ndarray, List[np.ndarray]]],
-            Dict[str, Dict[Union[_Hashable, str], Union[np.ndarray, List[np.ndarray]]]],
+            dict[str, Union[np.ndarray, list[np.ndarray]]],
+            dict[str, dict[Union[_Hashable, str], Union[np.ndarray, list[np.ndarray]]]],
         ]
         if isinstance(data, np.ndarray):
             dataset_type = "array"
@@ -370,7 +370,7 @@ class BaseDtw(BaseAlgorithm):
             # Single template single sensor: easy
             results = self._segment_single_dataset(data, template, memory=memory)
         else:  # Multisensor
-            result_dict: Dict[_Hashable, Dict[str, Union[np.ndarray, List[np.ndarray]]]] = {}
+            result_dict: dict[_Hashable, dict[str, Union[np.ndarray, list[np.ndarray]]]] = {}
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
@@ -390,8 +390,8 @@ class BaseDtw(BaseAlgorithm):
         return results
 
     def _segment_single_dataset(
-        self, dataset, template: Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]], memory: Memory
-    ) -> Dict[str, Union[np.ndarray, List[np.ndarray]]]:
+        self, dataset, template: Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]], memory: Memory
+    ) -> dict[str, Union[np.ndarray, list[np.ndarray]]]:
         template_sampling_rate = getattr(template, "sampling_rate_hz", None)
         if self.resample_template and not template_sampling_rate:
             raise ValueError(
@@ -477,7 +477,7 @@ class BaseDtw(BaseAlgorithm):
 
     def _select_cost_matrix_method(
         self, max_template_stretch: float, max_signal_stretch: float
-    ) -> Tuple[Callable, Dict[str, Any]]:
+    ) -> tuple[Callable, dict[str, Any]]:
         """Select the correct function to calculate the cost matrix.
 
         This is separate method to make it easy to overwrite by a subclass.
@@ -509,13 +509,13 @@ class BaseDtw(BaseAlgorithm):
     def _postprocess_matches(
         self,
         data,  # noqa: ARG002
-        paths: List,  # noqa: ARG002
+        paths: list,  # noqa: ARG002
         cost: np.ndarray,  # noqa: ARG002
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,  # noqa: ARG002
         to_keep: np.ndarray,
         memory: Memory,  # noqa: ARG002
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Apply postprocessing.
 
         This can be overwritten by subclasses to filter and modify the matches further.
@@ -606,7 +606,7 @@ class BaseDtw(BaseAlgorithm):
         template: BaseDtwTemplate,
         data: Union[np.ndarray, pd.DataFrame],
         sampling_rate_hz: float,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get the relevant parts of the data based on the provided template and return template and data as array."""
         template_array = template.get_data()
         data_is_numpy = isinstance(data, np.ndarray)
@@ -645,7 +645,7 @@ class BaseDtw(BaseAlgorithm):
         raise ValueError("Invalid combination of data and template")
 
     @staticmethod
-    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> List[np.ndarray]:
+    def _find_multiple_paths(acc_cost_mat: np.ndarray, start_points: np.ndarray) -> list[np.ndarray]:
         paths = []
         for start in start_points:
             path = subsequence_path(acc_cost_mat, start)

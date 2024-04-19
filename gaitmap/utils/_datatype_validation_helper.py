@@ -1,6 +1,7 @@
 """Internal helpers for dataset validation."""
 
-from typing import Dict, Iterable, List, Sequence, Tuple, Union
+from collections.abc import Iterable, Sequence
+from typing import Union
 
 import pandas as pd
 from typing_extensions import Literal
@@ -17,7 +18,7 @@ _ALLOWED_TRAJ_LIST_TYPES = Literal["stride", "roi", "gs", "any_roi"]  # pylint: 
 
 def _get_expected_dataset_cols(
     frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
-) -> List:
+) -> list:
     expected_cols = []
     if frame == "sensor":
         acc = SF_ACC
@@ -34,7 +35,7 @@ def _get_expected_dataset_cols(
     return expected_cols
 
 
-def _assert_is_dtype(obj, dtype: Union[type, Tuple[type, ...]]) -> None:
+def _assert_is_dtype(obj, dtype: Union[type, tuple[type, ...]]) -> None:
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
         raise ValidationError(f"The dataobject is expected to be one of ({dtype},). But it is a {type(obj)}")
@@ -71,7 +72,7 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
         )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[List[_Hashable], List[str]]]) -> None:
+def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[list[_Hashable], list[str]]]) -> None:
     """Check if the dataframe has at least all columns sets.
 
     Examples
@@ -114,7 +115,7 @@ def _get_multi_sensor_data_names(dataset: Union[dict, pd.DataFrame]) -> Sequence
     return keys
 
 
-def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, Dict]) -> None:
+def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, dict]) -> None:
     sensors = _get_multi_sensor_data_names(obj)
     if len(sensors) == 0:
         raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")

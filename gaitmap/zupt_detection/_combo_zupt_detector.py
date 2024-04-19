@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import numpy as np
 from typing_extensions import Self
@@ -42,11 +42,11 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
 
     _composite_params = ("detectors",)
 
-    detectors: Optional[List[Tuple[str, BaseZuptDetector]]]
+    detectors: Optional[list[tuple[str, BaseZuptDetector]]]
     operation: Literal["and", "or"]
 
     def __init__(
-        self, detectors: Optional[List[Tuple[str, BaseZuptDetector]]] = None, operation: Literal["and", "or"] = "or"
+        self, detectors: Optional[list[tuple[str, BaseZuptDetector]]] = None, operation: Literal["and", "or"] = "or"
     ) -> None:
         self.detectors = detectors
         self.operation = operation

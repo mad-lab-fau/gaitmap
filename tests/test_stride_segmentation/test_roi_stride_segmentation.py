@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -168,7 +168,7 @@ class MockStrideSegmentation(BaseStrideSegmentation):
         return out
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         return deepcopy(self._stride_list_)
 
 

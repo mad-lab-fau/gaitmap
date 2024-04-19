@@ -1,8 +1,9 @@
 """Basic transformers for higher level functionality."""
 
+from collections.abc import Sequence
 from copy import copy
 from functools import reduce
-from typing import List, Sequence, Set, Tuple, Union
+from typing import Union
 
 import pandas as pd
 from tpcp import OptimizableParameter, PureParameter
@@ -90,14 +91,14 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     """
 
-    transformer_mapping: OptimizableParameter[List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]]]
+    transformer_mapping: OptimizableParameter[list[tuple[Union[_Hashable, tuple[_Hashable, ...]], BaseTransformer]]]
     keep_all_cols: PureParameter[bool]
 
     data: SingleSensorData
 
     def __init__(
         self,
-        transformer_mapping: List[Tuple[Union[_Hashable, Tuple[_Hashable, ...]], BaseTransformer]],
+        transformer_mapping: list[tuple[Union[_Hashable, tuple[_Hashable, ...]], BaseTransformer]],
         keep_all_cols: bool = True,
     ) -> None:
         self.transformer_mapping = transformer_mapping
@@ -181,7 +182,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
         self.transformed_data_ = pd.concat(results, axis=1)[sorted(mapped_cols, key=list(data.columns).index)]
         return self
 
-    def _validate_mapping(self) -> Set[_Hashable]:
+    def _validate_mapping(self) -> set[_Hashable]:
         # Check that each column is only mentioned once:
         unique_k = []
         for k, _ in self.transformer_mapping:
@@ -196,7 +197,7 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
                 unique_k.append(i)
         return set(unique_k)
 
-    def _validate(self, data: SingleSensorData, selected_cols: Set[_Hashable]) -> None:
+    def _validate(self, data: SingleSensorData, selected_cols: set[_Hashable]) -> None:
         if not set(data.columns).issuperset(selected_cols):
             raise ValueError("You specified transformations for columns that do not exist. This is not supported!")
 
@@ -237,9 +238,9 @@ class ChainedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     _composite_params = ("chain",)
 
-    chain: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
+    chain: OptimizableParameter[list[tuple[_Hashable, BaseTransformer]]]
 
-    def __init__(self, chain: List[Tuple[_Hashable, BaseTransformer]]) -> None:
+    def __init__(self, chain: list[tuple[_Hashable, BaseTransformer]]) -> None:
         self.chain = chain
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:
@@ -332,9 +333,9 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
 
     _composite_params = ("transformers",)
 
-    transformers: OptimizableParameter[List[Tuple[_Hashable, BaseTransformer]]]
+    transformers: OptimizableParameter[list[tuple[_Hashable, BaseTransformer]]]
 
-    def __init__(self, transformers: List[Tuple[_Hashable, BaseTransformer]]) -> None:
+    def __init__(self, transformers: list[tuple[_Hashable, BaseTransformer]]) -> None:
         self.transformers = transformers
 
     def self_optimize(self, data: Sequence[SingleSensorData], **kwargs) -> Self:

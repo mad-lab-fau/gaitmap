@@ -1,6 +1,6 @@
 """Correct for 180 degree misalignments between sensor and foot coordinate frame based on forward direction."""
 
-from typing import Dict, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -111,10 +111,10 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     data: SensorData
     sampling_rate_hz: float
 
-    rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
-    is_flipped_: Union[bool, Dict[_Hashable, bool]]
-    pos_method_: Union[BasePositionMethod, Dict[_Hashable, BasePositionMethod]]
-    ori_method_: Union[BaseOrientationMethod, Dict[_Hashable, BaseOrientationMethod]]
+    rotation_: Union[Rotation, dict[_Hashable, Rotation]]
+    is_flipped_: Union[bool, dict[_Hashable, bool]]
+    pos_method_: Union[BasePositionMethod, dict[_Hashable, BasePositionMethod]]
+    ori_method_: Union[BaseOrientationMethod, dict[_Hashable, BaseOrientationMethod]]
 
     def __init__(
         self,

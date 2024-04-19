@@ -3,7 +3,7 @@
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
 
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -118,7 +118,7 @@ def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Sing
 
 
 def _rotate_or_flip_dataset(
-    dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]], single_rot_method: Callable
+    dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]], single_rot_method: Callable
 ):
     dataset_type = is_sensor_data(dataset, frame="sensor")
     if dataset_type == "single":
@@ -148,7 +148,7 @@ def _rotate_or_flip_dataset(
     return rotated_dataset
 
 
-def flip_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]]) -> SensorData:
+def flip_dataset(dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]]) -> SensorData:
     """Flip datasets around axis data of a dataset.
 
     This is equivalent to rotating the data, but only 90/180 deg rotations are allowed.
@@ -183,7 +183,7 @@ def flip_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotati
     return _rotate_or_flip_dataset(dataset, rotation, _flip_sensor)
 
 
-def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, Dict[str, Rotation]]) -> SensorData:
+def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]]) -> SensorData:
     """Apply a rotation to acc and gyro data of a dataset.
 
     Parameters
@@ -320,7 +320,7 @@ def get_gravity_rotation(gravity_vector: np.ndarray, expected_gravity: np.ndarra
     return find_shortest_rotation(gravity_vector, expected_gravity)
 
 
-def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, List]) -> Rotation:
+def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, list]) -> Rotation:
     """Calculate the rotation component of rot around the given rotation axis.
 
     This performs a swing-twist decomposition of the rotation quaternion [1]_.

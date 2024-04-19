@@ -1,7 +1,8 @@
 """Segmentation _model base classes and helper."""
 
 import copy
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -102,7 +103,7 @@ class BaseSegmentationHmm(_BaseSerializable):
     sampling_rate_hz: float
 
     @property
-    def stride_states(self) -> List[int]:
+    def stride_states(self) -> list[int]:
         """Get the indexes of the states in the hidden state sequence corresponding to strides."""
         raise NotImplementedError
 
@@ -155,7 +156,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_rate_hz: float,
-    ) -> Tuple[Self, Any]:
+    ) -> tuple[Self, Any]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but can return additional information about the training process.
@@ -297,7 +298,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     n_jobs: int
     name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
-    data_columns: OptiPara[Optional[Tuple[str, ...]]]
+    data_columns: OptiPara[Optional[tuple[str, ...]]]
 
     feature_space_data_: pd.DataFrame
     hidden_state_sequence_feature_space_: np.ndarray
@@ -337,7 +338,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         n_jobs: int = 1,
         name: str = "segmentation_model",
         model: Optional[pgHMM] = None,
-        data_columns: Optional[Tuple[str, ...]] = None,
+        data_columns: Optional[tuple[str, ...]] = None,
     ) -> None:
         self.stride_model = stride_model
         self.transition_model = transition_model
@@ -359,12 +360,12 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         return self.transition_model.n_states + self.stride_model.n_states
 
     @property
-    def stride_states(self) -> List[int]:
+    def stride_states(self) -> list[int]:
         """Return the ids of the stride states."""
         return (np.arange(self.stride_model.n_states) + self.transition_model.n_states).tolist()
 
     @property
-    def transition_states(self) -> List[int]:
+    def transition_states(self) -> list[int]:
         """Return the ids of the transition states."""
         return np.arange(self.transition_model.n_states).tolist()
 
@@ -477,7 +478,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_rate_hz: float,
-    ) -> Tuple[Self, Dict[Literal["self", "transition_model", "stride_model"], History]]:
+    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], History]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.

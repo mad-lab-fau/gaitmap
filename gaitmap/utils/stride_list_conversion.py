@@ -1,7 +1,5 @@
 """A couple of utils to convert stride lists into different formats."""
 
-from typing import List, Tuple
-
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
@@ -48,7 +46,7 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
 
 def _segmented_stride_list_to_min_vel_single_sensor(
     stride_list: SingleSensorStrideList, target_stride_type: Literal["min_vel", "ic"]
-) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
+) -> tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Convert a segmented stride list with detected events into other types of stride lists.
 
     During the conversion some strides might be removed.
@@ -115,7 +113,7 @@ def enforce_stride_list_consistency(
     stride_list: SingleSensorStrideList,
     stride_type=Literal["segmented", "min_vel", "ic"],
     check_stride_list: bool = True,
-) -> Tuple[SingleSensorStrideList, SingleSensorStrideList]:
+) -> tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Exclude those strides where the gait events do not match the expected order or contain NaN.
 
     Correct order in depends on the stride type:
@@ -169,7 +167,7 @@ def enforce_stride_list_consistency(
 def intersect_stride_list(
     stride_event_list: SingleSensorStrideList,
     regions_of_interest: SingleSensorRegionsOfInterestList,
-) -> List[SingleSensorStrideList]:
+) -> list[SingleSensorStrideList]:
     """Split the stride list into multiple stride lists based on the regions of interest.
 
     All events in the returned stride lists are made relative to the start of the region of interest.

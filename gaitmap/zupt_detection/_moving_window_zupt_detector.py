@@ -1,6 +1,6 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from typing_extensions import Literal, Self
@@ -19,7 +19,7 @@ def _validate_window(
     window_overlap: Optional[float],
     window_overlap_samples: Optional[int],
     sampling_rate_hz: float,
-) -> Tuple[int, Optional[int]]:
+) -> tuple[int, Optional[int]]:
     """Validate window_length and overlap."""
     window_length = round(sampling_rate_hz * window_length_s)
     if window_length < 3:

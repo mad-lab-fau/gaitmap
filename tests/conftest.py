@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
 healthy_example_position = pytest.fixture()(get_healthy_example_position)
 
 
-def _get_params_without_nested_class(instance: BaseTpcpObject) -> Dict[str, Any]:
+def _get_params_without_nested_class(instance: BaseTpcpObject) -> dict[str, Any]:
     return {k: v for k, v in instance.get_params().items() if not hasattr(v, "get_params")}
 
 

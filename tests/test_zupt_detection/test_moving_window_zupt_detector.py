@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Type, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -46,7 +46,7 @@ class TestMetaFunctionalityAredZuptDetector(TestAlgorithmMixin):
 class TestNormZuptDetector:
     """Test the function `sliding_window_view`."""
 
-    algorithm_class: Union[Type[NormZuptDetector], Type[AredZuptDetector]]
+    algorithm_class: Union[type[NormZuptDetector], type[AredZuptDetector]]
 
     @pytest.fixture(params=(NormZuptDetector, AredZuptDetector), autouse=True)
     def get_algorithm_class(self, request) -> None:

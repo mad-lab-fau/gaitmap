@@ -1,7 +1,7 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 
 import warnings
-from typing import Dict, List, NoReturn, Optional, Tuple, Union
+from typing import NoReturn, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -170,7 +170,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, Dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
+        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
             BarthOriginalTemplate()
         ),
         resample_template: bool = True,
@@ -229,13 +229,13 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
     def _postprocess_matches(
         self,
         data,
-        paths: List,
+        paths: list,
         cost: np.ndarray,
         matches_start_end: np.ndarray,
         acc_cost_mat: np.ndarray,
         to_keep: np.ndarray,
         memory: Memory,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
             # Late import to avoid circular import

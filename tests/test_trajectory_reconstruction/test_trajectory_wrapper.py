@@ -1,5 +1,3 @@
-from typing import Dict, Type
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -22,8 +20,8 @@ from gaitmap.utils.exceptions import ValidationError
 
 
 class TestIODataStructures:
-    wrapper_class: Type[BaseTrajectoryReconstructionWrapper]
-    example_region: Dict[str, pd.DataFrame]
+    wrapper_class: type[BaseTrajectoryReconstructionWrapper]
+    example_region: dict[str, pd.DataFrame]
     key: Literal["s_id", "roi_id"]
     output_list_type: Literal["roi", "stride"]
 

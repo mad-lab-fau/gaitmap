@@ -1,6 +1,6 @@
 """A set of helper functions to evaluate the output of an event stride segmentation against ground truth."""
 
-from typing import Dict, Union
+from typing import Union
 
 from pandas import DataFrame
 from typing_extensions import Literal
@@ -19,7 +19,7 @@ def evaluate_stride_event_list(
     one_to_one: bool = True,
     stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> Union[DataFrame, Dict[_Hashable, DataFrame]]:
+) -> Union[DataFrame, dict[_Hashable, DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing an stride event list with ground truth.
 
     This compares a stride event list with a ground truth stride event list and returns True Positives,
