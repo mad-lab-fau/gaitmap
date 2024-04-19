@@ -15,6 +15,12 @@ project.
 - Fixed a bug that when using `merge_interval` with empty input of shape (0, 2), the output was not empty.
   (https://github.com/mad-lab-fau/gaitmap/pull/61)
 
+### Changed
+- Changed resampling function in inverse feature transform of HMM. 
+Resampling of state sequence is now also possible if the `target_sample_rate` is not a multiple of the HMM `sample_rate`, e.g. `target_sample_rate=200`,  `sample_rate=52.1`  (https://github.com/mad-lab-fau/gaitmap/pull/62)
+- Changed call signature of class `BaseHmmFeatureTransformer.inverse_transform_state_sequence` (requires original `data` as input, `target_sample_rate` is no longer required).
+
+
 ## [2.3.0] - 2023-08-03
 
 ### Changed
@@ -33,14 +39,14 @@ project.
 
 ### Fixed
 
-- Fixed bug in HMM when uneven sequnece length were provided. In newer numpy versions this requires an explicit cast to 
+- Fixed bug in HMM when uneven sequence length were provided. In newer numpy versions this requires an explicit cast to 
   an object array.
 
 ## [2.2.1] - 2023-06-22
 
 ### Fixed
 
-- Fixed edecase where the output of the stride event method had the events in the wrong order for some strides.
+- Fixed edge case where the output of the stride event method had the events in the wrong order for some strides.
   The reason for that is that a valid segmented stridelist does not always result in a valid min_vel_event list for
   algorithms that are allowed to search outside the segmented stride region (e.g. `HerzerEventDetection`).
   We now check for consistency again after the stride list conversion.
@@ -56,11 +62,11 @@ Gaitmap is now available as official PyPi package!!!
   (https://github.com/mad-lab-fau/gaitmap/pull/15)
 - Certain ZUPT detectors now return the `min_vel_index_` and `min_vel_value_` as additional attributes.
   These values represent the index in the input data with the lowest velocity and the corresponding velocity value 
-  (according to the internal metric of the repective ZUPT detector).
+  (according to the internal metric of the respective ZUPT detector).
   (https://github.com/mad-lab-fau/gaitmap/pull/16)
 - New example explaining more advanced usage of the `RtsKalman` algorithm.
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
-- The `find_extrema_in_radius` and the `snap_to_min` utility functions gained the ability to define asymetric search 
+- The `find_extrema_in_radius` and the `snap_to_min` utility functions gained the ability to define asymmetric search 
   windows around the search indices.
   (https://github.com/mad-lab-fau/gaitmap/pull/21)
 - Temporal and Spatial Parameter calculation have new options to work with ic-stride lists and with partial input 
@@ -73,7 +79,7 @@ Gaitmap is now available as official PyPi package!!!
 ### Changed
 
 - We now require Pandas >2.0 as we are using the new pandas dtypes.
-  It could be that this will require you to perform some sxplicit type conversion in your code.
+  It could be that this will require you to perform some explicit type conversion in your code.
 - The Zupt Detector example is updated to use newer tpcp features
   (https://github.com/mad-lab-fau/gaitmap/pull/17)
 - The column order of the Spatial Parameter Calculation output has been changed
