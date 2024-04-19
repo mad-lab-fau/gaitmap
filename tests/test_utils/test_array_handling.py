@@ -472,6 +472,7 @@ class TestMergeIntervals:
                 np.array([[-2, 5]]),
                 1,
             ),
+            (np.empty(shape=(0, 2)), np.empty(shape=(0, 2)), 0),
             (
                 np.array([[]]),
                 np.array([[]]),
