@@ -14,6 +14,8 @@ project.
 
 - Fixed a bug that when using `merge_interval` with empty input of shape (0, 2), the output was not empty.
   (https://github.com/mad-lab-fau/gaitmap/pull/61)
+- Fixed a bug that an error was raised when importing from the TrajectoryReconstruction module without gaitmap_mad 
+  installed (https://github.com/mad-lab-fau/gaitmap/pull/63)
 
 ### Changed
 
