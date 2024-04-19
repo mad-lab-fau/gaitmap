@@ -10,6 +10,12 @@ project.
 
 ## [Unreleased]
 
+### Added
+
+- All orientation and trajectory methods now have a new parameter `rotated_data_` that provides the input data rotated
+  to the world frame based on the calculated orientation.
+  (https://github.com/mad-lab-fau/gaitmap/pull/64)
+
 ### Fixed
 
 - Fixed a bug that when using `merge_interval` with empty input of shape (0, 2), the output was not empty.
@@ -22,7 +28,7 @@ project.
 - Changed resampling function in inverse feature transform of HMM. 
   Resampling of state sequence is now also possible if the `target_sample_rate` is not a multiple of the HMM 
   sampling rate, e.g. `target_sample_rate=200`,  `sample_rate=52.1`  (https://github.com/mad-lab-fau/gaitmap/pull/62)
-- Dropped Python 3.8 support!
+- Dropped Python 3.8 support! (https://github.com/mad-lab-fau/gaitmap/pull/64)
 
 ## [2.3.0] - 2023-08-03
 
