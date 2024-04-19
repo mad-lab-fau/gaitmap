@@ -16,10 +16,10 @@ project.
   (https://github.com/mad-lab-fau/gaitmap/pull/61)
 
 ### Changed
-- Changed resampling function in inverse feature transform of HMM. 
-Resampling of state sequence is now also possible if the `target_sample_rate` is not a multiple of the HMM `sample_rate`, e.g. `target_sample_rate=200`,  `sample_rate=52.1`  (https://github.com/mad-lab-fau/gaitmap/pull/62)
-- Changed call signature of class `BaseHmmFeatureTransformer.inverse_transform_state_sequence` (requires original `data` as input, `target_sample_rate` is no longer required).
 
+- Changed resampling function in inverse feature transform of HMM. 
+  Resampling of state sequence is now also possible if the `target_sample_rate` is not a multiple of the HMM 
+  sampling rate, e.g. `target_sample_rate=200`,  `sample_rate=52.1`  (https://github.com/mad-lab-fau/gaitmap/pull/62)
 
 ## [2.3.0] - 2023-08-03
 
