@@ -49,6 +49,9 @@ class MadgwickAHRS(BaseOrientationMethod):
         This means the there are len(data) + 1 orientations.
     orientation_object_
         The orientations as a single scipy Rotation object
+    rotated_data_
+        The rotated data after applying the estimated orientation to the data.
+        The first sample of the data remain unrotated (initial orientation).
 
     Other Parameters
     ----------------
@@ -95,9 +98,6 @@ class MadgwickAHRS(BaseOrientationMethod):
     initial_orientation: Union[np.ndarray, Rotation]
     beta: float
     memory: Optional[Memory]
-
-    data: SingleSensorData
-    sampling_rate_hz: float
 
     def __init__(
         self,

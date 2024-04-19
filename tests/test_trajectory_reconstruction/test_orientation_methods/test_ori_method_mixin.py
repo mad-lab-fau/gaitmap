@@ -78,3 +78,4 @@ class TestOrientationMethodMixin:
         test.estimate(data, sampling_rate_hz=fs)
 
         snapshot.assert_match(test.orientation_, test.__class__.__name__)
+        snapshot.assert_match(test.rotated_data_, f"{test.__class__.__name__}_rotated_data")
