@@ -10,7 +10,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
         os: [ windows-latest, ubuntu-latest ]
     runs-on: ${{ matrix.os }}
 
@@ -21,14 +21,14 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies (all)
-      if : ${{ matrix.python-version == '3.8' || matrix.python-version == '3.9' }}
+      if : ${{ matrix.python-version == '3.9' }}
       run: |
         python -m pip install --upgrade pip
         pip install poetry
         poetry config virtualenvs.in-project true
         poetry install -E all
     - name: Install dependencies (no hmm)
-      if : ${{ matrix.python-version != '3.8' && matrix.python-version != '3.9' }}
+      if : ${{ matrix.python-version != '3.9' }}
       run: |
         python -m pip install --upgrade pip
         pip install poetry
