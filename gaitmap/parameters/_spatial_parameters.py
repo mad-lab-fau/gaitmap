@@ -97,8 +97,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         The overall arc length is directly calculated from the position of the sensor by adding the absolute changes in
         position at every time point.
     Max. orientation change
-        The maximum change of angle in the sagittal plane. It is similar to the range of motion, however, the measured
-        parameter is value effected by other joints such as knee and hip as well.
+        The maximum change of sensor angle in the sagittal plane.
+        This is similar to the range of motion of the ankle, however, the measured parameter is effected by other joints
+        such as knee and hip as well.
     Turning Angle
         The turning angle is calculated as the difference in orientation of the forward direction between the first
         and the last sample of each stride.

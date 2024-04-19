@@ -15,6 +15,8 @@ project.
 - All orientation and trajectory methods now have a new parameter `rotated_data_` that provides the input data rotated
   to the world frame based on the calculated orientation.
   (https://github.com/mad-lab-fau/gaitmap/pull/64)
+- The Spatial Parameter Calculation now also calculates the "Range of Motion" (i.e. the angle change of the sensor in
+  the sagittal plane) (https://github.com/mad-lab-fau/gaitmap/pull/54)
 
 ### Fixed
 
