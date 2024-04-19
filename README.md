@@ -71,8 +71,8 @@ You can track the progress in the [pull request](https://github.com/mad-lab-fau/
 
 ### Supported Python versions
 
-*gaitmap* is tested against Python 3.8 and 3.9 at the moment.
-We expect most features to work with all Python versions >= 3.8, but because of some known issues 
+*gaitmap* is tested against Python 3.9 at the moment.
+We expect most features to work with all Python versions >= 3.9, but because of some known issues 
 (see specific features above) we do not officially support them.
 
 ## Working with Algorithms

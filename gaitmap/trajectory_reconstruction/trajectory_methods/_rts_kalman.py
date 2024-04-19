@@ -82,6 +82,9 @@ class RtsKalman(BaseTrajectoryMethod):
         They can be used as a measure of how good the filter worked and how accurate the results are.
     zupts_
         2D array indicating the start and the end samples of the detected ZUPTs for debug porpuses.
+    rotated_data_
+        The rotated data after applying the estimated orientation to the data.
+        The first sample of the data remain unrotated (initial orientation).
 
     Other Parameters
     ----------------
@@ -342,6 +345,9 @@ class MadgwickRtsKalman(RtsKalman):
         They can be used as a measure of how good the filter worked and how accurate the results are.
     zupts_
         2D array indicating the start and the end samples of the detected ZUPTs for debug purposes.
+    rotated_data_
+        The rotated data after applying the estimated orientation to the data.
+        The first sample of the data remain unrotated (initial orientation).
 
     Other Parameters
     ----------------
