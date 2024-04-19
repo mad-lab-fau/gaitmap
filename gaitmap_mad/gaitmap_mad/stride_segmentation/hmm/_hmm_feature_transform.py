@@ -65,8 +65,7 @@ class BaseHmmFeatureTransformer(BaseTransformer):
         """
         raise NotImplementedError()
 
-    def inverse_transform_state_sequence(
-        self, state_sequence: np.ndarray, *, data: np.array) -> np.ndarray:
+    def inverse_transform_state_sequence(self, state_sequence: np.ndarray, *, data: np.array) -> np.ndarray:
         """Inverse transform a state sequence to the original sampling rate.
 
         Parameters
