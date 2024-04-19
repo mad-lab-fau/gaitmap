@@ -1,6 +1,6 @@
 """Calculate temporal parameters algorithm."""
 
-from typing import Dict, Literal, Tuple, TypeVar, Union
+from typing import Literal, TypeVar, Union
 
 import pandas as pd
 
@@ -87,7 +87,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    parameters_: Union[pd.DataFrame, dict[str, pd.DataFrame]]
 
     sampling_rate_hz: float
     stride_event_list: StrideList
@@ -96,7 +96,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -183,7 +183,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         return parameters_
 
 
-def _get_stride_time_cols(stride_type: Literal["min_vel", "ic"]) -> Tuple[str, str]:
+def _get_stride_time_cols(stride_type: Literal["min_vel", "ic"]) -> tuple[str, str]:
     if stride_type == "min_vel":
         return "pre_ic", "ic"
     if stride_type == "ic":
@@ -191,7 +191,7 @@ def _get_stride_time_cols(stride_type: Literal["min_vel", "ic"]) -> Tuple[str, s
     raise ValueError("stride_type should be either 'min_vel' or 'ic'")
 
 
-def _get_swing_time_cols(stride_type: Literal["min_vel", "ic"]) -> Tuple[str, str]:
+def _get_swing_time_cols(stride_type: Literal["min_vel", "ic"]) -> tuple[str, str]:
     if stride_type == "min_vel":
         return "tc", "ic"
     if stride_type == "ic":

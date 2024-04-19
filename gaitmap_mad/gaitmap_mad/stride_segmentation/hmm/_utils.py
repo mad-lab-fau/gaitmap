@@ -2,7 +2,7 @@
 
 import json
 import warnings
-from typing import Any, List, Literal, Optional, Set, Tuple
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -153,7 +153,7 @@ class ShortenedHMMPrint(BaseTpcpObject):
         return super().__repr_parameter__(name, value)
 
 
-def create_transition_matrix_fully_connected(n_states: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def create_transition_matrix_fully_connected(n_states: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition matrix with only 1 entries."""
     transition_matrix = np.ones((n_states, n_states)) / n_states
     start_probs = np.ones(n_states)
@@ -164,7 +164,7 @@ def create_transition_matrix_fully_connected(n_states: int) -> Tuple[np.ndarray,
 
 def create_transition_matrix_left_right(
     n_states: int, self_transition: bool = True
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition for left to right model."""
     transition_matrix = np.zeros((n_states, n_states))
     transition_matrix[range(n_states - 1), range(1, n_states)] = 1
@@ -192,7 +192,7 @@ def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3) -> 
         print(model)
 
 
-def cluster_data_by_labels(data_list: List[np.ndarray], label_list: List[np.ndarray]):
+def cluster_data_by_labels(data_list: list[np.ndarray], label_list: list[np.ndarray]):
     """Cluster data by labels."""
     assert isinstance(label_list, list), "label_list must be list!"
     assert isinstance(data_list, list), "data_list must be list!"
@@ -349,7 +349,7 @@ def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
     raise ValueError(f"State {state_name} not found within given _model!")
 
 
-def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], transition_probability: float) -> None:
+def add_transition(model: pg.HiddenMarkovModel, transition: tuple[str, str], transition_probability: float) -> None:
     """Add a transition to an existing model by state-names.
 
     add_transition(model, transition = ("s0","s1"), transition_probability = 0.5)
@@ -362,7 +362,7 @@ def add_transition(model: pg.HiddenMarkovModel, transition: Tuple[str, str], tra
     )
 
 
-def get_model_distributions(model: pg.HiddenMarkovModel) -> List[pg.Distribution]:
+def get_model_distributions(model: pg.HiddenMarkovModel) -> list[pg.Distribution]:
     """Return all not None distributions as list from given model."""
     distributions = []
     for state in model.states:
@@ -371,7 +371,7 @@ def get_model_distributions(model: pg.HiddenMarkovModel) -> List[pg.Distribution
     return distributions
 
 
-def labels_to_strings(labelsequence: List[Optional[np.ndarray]]) -> List[Optional[List[str]]]:
+def labels_to_strings(labelsequence: list[Optional[np.ndarray]]) -> list[Optional[list[str]]]:
     """Convert label sequence of ints to strings.
 
     Pomegranated messes up sorting of states: it will sort like this: s0, s1, s10, s2.... which can lead to unexpected
@@ -389,8 +389,8 @@ def labels_to_strings(labelsequence: List[Optional[np.ndarray]]) -> List[Optiona
 
 
 def extract_transitions_starts_stops_from_hidden_state_sequence(
-    hidden_state_sequence: List[np.ndarray],
-) -> Tuple[Set[Tuple[str, str]], np.ndarray, np.ndarray]:
+    hidden_state_sequence: list[np.ndarray],
+) -> tuple[set[tuple[str, str]], np.ndarray, np.ndarray]:
     """Extract transitions from hidden state sequence.
 
     This function will return a list of transitions as well as start and stop labels that can be found within the
@@ -500,8 +500,8 @@ def convert_stride_list_to_transition_list(
 
 
 def get_train_data_sequences_transitions(
-    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    data_train_sequence: list[SingleSensorData], stride_list_sequence: list[SingleSensorStrideList], n_states: int
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Extract Transition Training set.
 
     - data_train_sequence: list of datasets in feature space
@@ -540,8 +540,8 @@ def get_train_data_sequences_transitions(
 
 
 def get_train_data_sequences_strides(
-    data_train_sequence: List[SingleSensorData], stride_list_sequence: List[SingleSensorStrideList], n_states: int
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+    data_train_sequence: list[SingleSensorData], stride_list_sequence: list[SingleSensorStrideList], n_states: int
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Extract Transition Training set.
 
     - data_train_sequence: list of datasets in feature space
@@ -583,7 +583,7 @@ def predict(
     model: Optional[pg.HiddenMarkovModel],
     data: pd.DataFrame,
     *,
-    expected_columns: Tuple[str, ...],
+    expected_columns: tuple[str, ...],
     algorithm: Literal["viterbi", "map"],
 ) -> np.ndarray:
     """Predict the hidden state sequence for the given data.

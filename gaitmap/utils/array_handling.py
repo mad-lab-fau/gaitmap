@@ -1,6 +1,7 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
 
-from typing import Iterable, Iterator, List, Optional, Tuple, Union
+from collections.abc import Iterable, Iterator
+from typing import Optional, Union
 
 import numba.typed
 import numpy as np
@@ -187,7 +188,7 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: Op
     return bool_array.astype(bool)
 
 
-def split_array_at_nan(a: np.ndarray) -> List[Tuple[int, np.ndarray]]:
+def split_array_at_nan(a: np.ndarray) -> list[tuple[int, np.ndarray]]:
     """Split an array into sections at nan values.
 
     Examples
@@ -242,7 +243,7 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
 def find_extrema_in_radius(
     data: np.ndarray,
     indices: np.ndarray,
-    radius: Union[int, Tuple[int, int]],
+    radius: Union[int, tuple[int, int]],
     extrema_type: Literal["min", "max"] = "min",
 ):
     """Return the index of the global extrema of data in the given radius around each index in indices.
@@ -318,7 +319,7 @@ def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) 
     return array
 
 
-def multi_array_interpolation(arrays: List[np.ndarray], n_samples, kind: str = "linear") -> np.ndarray:
+def multi_array_interpolation(arrays: list[np.ndarray], n_samples, kind: str = "linear") -> np.ndarray:
     """Interpolate multiple 2D-arrays to the same length along axis 0.
 
     Parameters
@@ -421,7 +422,7 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
 def iterate_region_data(
     signal_sequence: Iterable[SingleSensorData],
     label_sequences: Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
-    expected_col_order: Optional[List[str]] = None,
+    expected_col_order: Optional[list[str]] = None,
 ) -> Iterator[SingleSensorData]:
     """Iterate over individual strides/ROIs in multiple sensor data sequences.
 

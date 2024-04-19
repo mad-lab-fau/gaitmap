@@ -2,7 +2,8 @@
 
 import copy
 import warnings
-from typing import Literal, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -256,7 +257,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     n_jobs: int
     name: Optional[str]
     model: OptiPara[Optional[pgHMM]]
-    data_columns: OptiPara[Optional[Tuple[str, ...]]]
+    data_columns: OptiPara[Optional[tuple[str, ...]]]
 
     def __init__(
         self,
@@ -271,7 +272,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         n_jobs: int = 1,
         name: str = "my_model",
         model: Optional[pgHMM] = None,
-        data_columns: Optional[Tuple[str, ...]] = None,
+        data_columns: Optional[tuple[str, ...]] = None,
     ) -> None:
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -346,7 +347,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
-    ) -> Tuple[Self, History]:
+    ) -> tuple[Self, History]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.

@@ -1,6 +1,7 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
 
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Iterable, Sequence
+from typing import Callable, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -40,26 +41,26 @@ SingleSensorPositionList = _DataFrame
 SingleSensorVelocityList = _DataFrame
 SingleSensorOrientationList = _DataFrame
 
-MultiSensorData = Union[pd.DataFrame, Dict[_Hashable, SingleSensorData]]
+MultiSensorData = Union[pd.DataFrame, dict[_Hashable, SingleSensorData]]
 SensorData = Union[SingleSensorData, MultiSensorData]
 
-MultiSensorStrideList = Dict[_Hashable, pd.DataFrame]
+MultiSensorStrideList = dict[_Hashable, pd.DataFrame]
 StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
 
-MultiSensorRegionsOfInterestList = Dict[_Hashable, pd.DataFrame]
+MultiSensorRegionsOfInterestList = dict[_Hashable, pd.DataFrame]
 RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
 
-MultiSensorPositionList = Dict[_Hashable, pd.DataFrame]
+MultiSensorPositionList = dict[_Hashable, pd.DataFrame]
 PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
 
-MultiSensorVelocityList = Dict[_Hashable, pd.DataFrame]
+MultiSensorVelocityList = dict[_Hashable, pd.DataFrame]
 VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
 
-MultiSensorOrientationList = Dict[_Hashable, pd.DataFrame]
+MultiSensorOrientationList = dict[_Hashable, pd.DataFrame]
 OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
 
 
-def to_dict_multi_sensor_data(sensordata: MultiSensorData) -> Dict[_Hashable, SingleSensorData]:
+def to_dict_multi_sensor_data(sensordata: MultiSensorData) -> dict[_Hashable, SingleSensorData]:
     """Convert a multi-sensor data to a dictionary of single sensor datas.
 
     If it is already in this format, the function will not do anything.
@@ -278,7 +279,7 @@ def is_sensor_data(
 def is_single_sensor_stride_list(
     stride_list: SingleSensorStrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+    check_additional_cols: Union[bool, tuple[str, ...]] = True,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor stride list.
@@ -384,7 +385,7 @@ def is_single_sensor_stride_list(
 def is_multi_sensor_stride_list(
     stride_list: MultiSensorStrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+    check_additional_cols: Union[bool, tuple[str, ...]] = True,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
@@ -448,7 +449,7 @@ def is_multi_sensor_stride_list(
 def is_stride_list(
     stride_list: StrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, Tuple[str, ...]] = True,
+    check_additional_cols: Union[bool, tuple[str, ...]] = True,
 ) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
@@ -740,7 +741,7 @@ def get_single_sensor_trajectory_list_types(
 def _is_single_sensor_trajectory_list(
     input_prefix: str,
     input_datatype: str,
-    expected_cols: List[str],
+    expected_cols: list[str],
     traj_list: Union[SingleSensorOrientationList, SingleSensorVelocityList, SingleSensorOrientationList],
     traj_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
     raise_exception: bool = False,

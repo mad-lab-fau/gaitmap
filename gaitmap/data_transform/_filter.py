@@ -1,6 +1,6 @@
 """A set of filters that can be applied to data."""
 
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal, Optional, Union
 
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt
@@ -73,7 +73,7 @@ class ButterworthFilter(BaseFilter):
     """
 
     order: int
-    cutoff_freq_hz: Union[float, Tuple[float, float]]
+    cutoff_freq_hz: Union[float, tuple[float, float]]
     filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"]
 
     sampling_rate_hz: float
@@ -81,7 +81,7 @@ class ButterworthFilter(BaseFilter):
     def __init__(
         self,
         order: int,
-        cutoff_freq_hz: Union[float, Tuple[float, float]],
+        cutoff_freq_hz: Union[float, tuple[float, float]],
         filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"] = "lowpass",
     ) -> None:
         self.order = order

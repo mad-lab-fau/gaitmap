@@ -9,7 +9,7 @@ the right thing.
 
 """
 
-from typing import Dict, Union
+from typing import Union
 from unittest.mock import patch
 
 import numpy as np
@@ -382,7 +382,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
 
 class TestMultiSensorInputs(DtwTestBase):
-    data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]
+    data: Union[pd.DataFrame, dict[str, pd.DataFrame]]
 
     @pytest.fixture(params=("dict", "frame"), autouse=True)
     def multi_sensor_dataset(self, request) -> None:

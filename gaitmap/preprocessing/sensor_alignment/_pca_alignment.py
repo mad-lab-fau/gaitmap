@@ -1,6 +1,7 @@
 """A implementation of a PCA based sensor alignment to perform coordinate system rotations."""
 
-from typing import Dict, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -129,8 +130,8 @@ class PcaAlignment(BaseSensorAlignment):
 
     """
 
-    rotation_: Union[Rotation, Dict[_Hashable, Rotation]]
-    pca_: Union[PCA, Dict[_Hashable, PCA]]
+    rotation_: Union[Rotation, dict[_Hashable, Rotation]]
+    pca_: Union[PCA, dict[_Hashable, PCA]]
 
     target_axis: str
     pca_plane_axis: Sequence[str]

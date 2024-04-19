@@ -1,7 +1,7 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
 import warnings
-from typing import Dict, Literal, Tuple, Union
+from typing import Literal, Union
 
 import numpy as np
 import pandas as pd
@@ -15,10 +15,10 @@ _ID_COL_NAME = "__id_col__"
 
 def calculate_parameter_errors(
     *,
-    reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-    predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    reference_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
+    predicted_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
     id_column: str = "s_id",
-) -> Tuple[Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]], Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]]:
+) -> tuple[Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]], Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]]:
     """Calculate the error per row between a parameter predicted and a given ground truth.
 
     We calculate four different groups of errors:
@@ -96,8 +96,8 @@ def calculate_parameter_errors(
 
 def calculate_aggregated_parameter_errors(
     *,
-    reference_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-    predicted_parameter: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
+    reference_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
+    predicted_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
     calculate_per_sensor: bool = True,
     scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
     id_column: str = "s_id",
@@ -496,7 +496,7 @@ def _align_parameters(reference_parameter, predicted_parameter, id_column):
     return aligned_dict, meta_error_dict
 
 
-def _calculate_error(aligned_parameters: Dict[_Hashable, pd.DataFrame]) -> Dict[_Hashable, pd.DataFrame]:
+def _calculate_error(aligned_parameters: dict[_Hashable, pd.DataFrame]) -> dict[_Hashable, pd.DataFrame]:
     """Calculate the error between a reference and a predicted parameter."""
     final_error_dict = {}
     for k, v in aligned_parameters.items():
@@ -568,7 +568,7 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
 
     paras = data.columns.get_level_values("parameter").unique()
     data = data.stack("error_type").reset_index()
-    coefs: Dict[str, pd.Series] = {}
+    coefs: dict[str, pd.Series] = {}
     for para in paras:
         try:
             # If handle error is ignore, we also ignore all warnings here.

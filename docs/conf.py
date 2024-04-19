@@ -16,7 +16,7 @@ import sys
 from datetime import datetime
 from inspect import getsourcefile
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
@@ -245,7 +245,7 @@ GAITMAP_MAD_TEST = """
 """
 
 
-def add_info_about_origin(app, what, name, obj, options, lines: List[str]) -> None:
+def add_info_about_origin(app, what, name, obj, options, lines: list[str]) -> None:
     """Add a short info text to all algorithms that are only available via gaitmap_mad."""
     if what != "class":
         return

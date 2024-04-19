@@ -1,7 +1,8 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
 
+from collections.abc import Sequence
 from functools import partial
-from typing import Callable, Optional, Sequence, Tuple, get_args
+from typing import Callable, Optional, get_args
 
 import numpy as np
 from numpy.linalg import norm
@@ -18,7 +19,7 @@ METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "square
 
 def _window_apply_threshold(
     data, window_length: int, overlap: int, func: Callable[[np.ndarray], np.ndarray], threshold: float
-) -> Tuple[np.ndarray, int, float]:
+) -> tuple[np.ndarray, int, float]:
     # allocate output array
     inactive_signal_bool_array = np.zeros(len(data))
 
@@ -45,7 +46,7 @@ def find_static_samples(
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
     overlap: Optional[int] = None,
-) -> Tuple[np.ndarray, int, float]:
+) -> tuple[np.ndarray, int, float]:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
     .. warning::
@@ -147,7 +148,7 @@ def find_static_samples_shoe(
     window_length: int,
     inactive_signal_th: float,
     overlap: Optional[int] = None,
-) -> Tuple[np.ndarray, int, float]:
+) -> tuple[np.ndarray, int, float]:
     """Use the SHOE algorithm for static moment detection.
 
     This is based on the papers [1]_ and [2]_ and uses as weighted sum of the gravity corrected acc and the gyro norm to
@@ -283,7 +284,7 @@ def find_static_sequences(
 
 def find_first_static_window_multi_sensor(
     signals: Sequence[np.ndarray], window_length: int, inactive_signal_th: float, metric: METRIC_FUNCTION_NAMES
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Find the first time window in the signal where all provided sensors are static.
 
     Parameters

@@ -2,7 +2,7 @@
 
 import copy
 import itertools
-from typing import Dict, Optional, Tuple, TypeVar, Union
+from typing import Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -148,7 +148,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         peak_prominence: float = 17.0,
         window_size_s: float = 10,
         active_signal_threshold: Optional[float] = None,
-        locomotion_band: Tuple[float, float] = (0.5, 3),
+        locomotion_band: tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
         additional_margin_s: Optional[float] = None,
@@ -189,7 +189,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         if dataset_type == "single":
             results = self._detect_single_dataset(data, window_size)
         else:  # Multisensor
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
+            results_dict: dict[_Hashable, dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(data[sensor], window_size)
             results = invert_result_dictionary(results_dict)
@@ -201,20 +201,20 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         return self
 
     @property
-    def start_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    def start_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
         """Just the start values of all gait sequences."""
         if isinstance(self.gait_sequences_, dict):
             return {k: np.array(v["start"]) for k, v in self.gait_sequences_.items()}
         return np.array(self.gait_sequences_["start"])
 
     @property
-    def end_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    def end_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
         """Just the end values of all gait sequences."""
         if isinstance(self.gait_sequences_, dict):
             return {k: np.array(v["end"]) for k, v in self.gait_sequences_.items()}
         return np.array(self.gait_sequences_["end"])
 
-    def _detect_single_dataset(self, data: pd.DataFrame, window_size: int) -> Dict[str, pd.DataFrame]:
+    def _detect_single_dataset(self, data: pd.DataFrame, window_size: int) -> dict[str, pd.DataFrame]:
         """Detect gait sequences for a single sensor data set."""
         s_3d, s_1d, active_signal_th, fft_factor = self._signal_extraction(data)
 
@@ -438,8 +438,8 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
     def _merge_gait_sequences_multi_sensor_data(
-        self, gait_sequences: Dict[_Hashable, pd.DataFrame]
-    ) -> Dict[_Hashable, pd.DataFrame]:
+        self, gait_sequences: dict[_Hashable, pd.DataFrame]
+    ) -> dict[_Hashable, pd.DataFrame]:
         """Merge gait sequences from different sensor positions for synced data.
 
         Gait sequences from individual sensors are merged using gaitmap.utils.array_handling.merge_intervals.

@@ -1,6 +1,6 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
@@ -326,12 +326,12 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def intersect(
         self,
         stride_event_list: StrideList,
-        return_data: Tuple[Literal["orientation", "position", "velocity"], ...] = (
+        return_data: tuple[Literal["orientation", "position", "velocity"], ...] = (
             "orientation",
             "position",
             "velocity",
         ),
-    ) -> Tuple[Union[PositionList, OrientationList, VelocityList], ...]:
+    ) -> tuple[Union[PositionList, OrientationList, VelocityList], ...]:
         """Cut out the trajectory of individual strides from the region trajectories.
 
         This method can only be used after `estimate` was called.
@@ -436,8 +436,8 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self,
         data: SingleSensorData,
         integration_regions: SingleSensorRegionsOfInterestList,
-        stride_list_list: Optional[List[SingleSensorStrideList]],
-    ) -> Dict[str, pd.DataFrame]:
+        stride_list_list: Optional[list[SingleSensorStrideList]],
+    ) -> dict[str, pd.DataFrame]:
         # Set the class variable to determine the correct index values per dataset.
         self._expected_integration_region_index = [
             ROI_ID_COLS[get_single_sensor_regions_of_interest_types(integration_regions)]
