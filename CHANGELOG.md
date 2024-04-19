@@ -8,6 +8,13 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed a bug that when using `merge_interval` with empty input of shape (0, 2), the output was not empty.
+  (https://github.com/mad-lab-fau/gaitmap/pull/61)
+
 ## [2.3.0] - 2023-08-03
 
 ### Changed
