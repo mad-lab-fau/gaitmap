@@ -4,6 +4,11 @@ This module provides simple methods to estimate the orientation and position on 
 to make applying these methods to the default gaitmap datasets easier.
 """
 
+from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
+from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
+from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS, SimpleGyroIntegration
+from gaitmap.trajectory_reconstruction.position_methods._forward_backwards_integration import ForwardBackwardIntegration
+from gaitmap.trajectory_reconstruction.trajectory_methods import MadgwickRtsKalman, RtsKalman
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
@@ -13,15 +18,6 @@ _gaitmap_mad_modules = {
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
     del __getattr__
     from gaitmap_mad.trajectory_reconstruction.position_methods import PieceWiseLinearDedriftedIntegration
-
-
-from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
-from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
-from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS, SimpleGyroIntegration
-from gaitmap.trajectory_reconstruction.position_methods import (
-    ForwardBackwardIntegration,
-)
-from gaitmap.trajectory_reconstruction.trajectory_methods import MadgwickRtsKalman, RtsKalman
 
 __all__ = [
     "MadgwickAHRS",
