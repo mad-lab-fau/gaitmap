@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 
 from joblib import Memory
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
@@ -42,6 +43,8 @@ class FilteredRamppEventDetection(RamppEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
+    input_stride_type
+        The stride_list_type that should be either "ic" or "segmented".
 
     Attributes
     ----------
@@ -97,14 +100,17 @@ class FilteredRamppEventDetection(RamppEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-    ) -> None:
+        input_stride_type: Literal["segmented", "ic"] = "segmented",
+    ):
         self.ic_lowpass_filter = ic_lowpass_filter
+        self.input_stride_type = input_stride_type
         super().__init__(
             memory=memory,
             enforce_consistency=enforce_consistency,
             ic_search_region_ms=ic_search_region_ms,
             min_vel_search_win_size_ms=min_vel_search_win_size_ms,
             detect_only=detect_only,
+            input_stride_type=input_stride_type,
         )
 
     def _get_detect_kwargs(self) -> Dict:

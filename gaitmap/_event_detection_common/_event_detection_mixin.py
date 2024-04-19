@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from joblib import Memory
 from numpy.linalg import norm
-from typing_extensions import Self
+from typing_extensions import Literal, Self
 
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
@@ -22,7 +22,7 @@ from gaitmap.utils.datatype_helper import (
 )
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.stride_list_conversion import (
-    _segmented_stride_list_to_min_vel_single_sensor,
+    _stride_list_to_min_vel_single_sensor,
     enforce_stride_list_consistency,
 )
 
@@ -38,16 +38,19 @@ class _EventDetectionMixin:
     data: SensorData
     sampling_rate_hz: float
     stride_list: pd.DataFrame
+    input_stride_type: Literal["segmented", "ic"]
 
     def __init__(
         self,
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[Tuple[str, ...]] = None,
-    ) -> None:
+        input_stride_type: Literal["segmented", "ic"] = "segmented",
+    ):
         self.memory = memory
         self.enforce_consistency = enforce_consistency
         self.detect_only = detect_only
+        self.input_stride_type = input_stride_type
 
     def detect(self, data: SensorData, stride_list: StrideList, *, sampling_rate_hz: float) -> Self:
         """Find gait events in data within strides provided by stride_list.
@@ -121,7 +124,9 @@ class _EventDetectionMixin:
         # find events in all segments
         event_detection_func = self._select_all_event_detection_method()
         event_detection_func = memory.cache(event_detection_func)
-        ic, tc, min_vel = event_detection_func(gyr, acc, stride_list, events=events, **detect_kwargs)
+        ic, tc, min_vel = event_detection_func(
+            gyr, acc, stride_list, events=events, input_stride_type=self.input_stride_type, **detect_kwargs
+        )
 
         # build first dict / df based on segment start and end
         segmented_event_list = {
@@ -132,13 +137,11 @@ class _EventDetectionMixin:
         for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel)):
             if event in events:
                 segmented_event_list[event] = event_list
-
         segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
-
         if self.enforce_consistency:
             # check for consistency, remove inconsistent strides
             segmented_event_list, _ = enforce_stride_list_consistency(
-                segmented_event_list, stride_type="segmented", check_stride_list=False
+                segmented_event_list, input_stride_type=self.input_stride_type, check_stride_list=False
             )
 
         if "min_vel" not in events or self.enforce_consistency is False:
@@ -147,8 +150,8 @@ class _EventDetectionMixin:
             return {"segmented_event_list": segmented_event_list}
 
         # convert to min_vel event list
-        min_vel_event_list, _ = _segmented_stride_list_to_min_vel_single_sensor(
-            segmented_event_list, target_stride_type="min_vel"
+        min_vel_event_list, _ = _stride_list_to_min_vel_single_sensor(
+            segmented_event_list, source_stride_type=self.input_stride_type, target_stride_type="min_vel"
         )
 
         output_order = [c for c in ["start", "end", "ic", "tc", "min_vel", "pre_ic"] if c in min_vel_event_list.columns]
@@ -156,7 +159,7 @@ class _EventDetectionMixin:
         # We enforce consistency again here, as a valid segmented stride list does not necessarily result in a valid
         # min_vel stride list
         min_vel_event_list, _ = enforce_stride_list_consistency(
-            min_vel_event_list[output_order], stride_type="min_vel", check_stride_list=False
+            min_vel_event_list[output_order], input_stride_type="min_vel", check_stride_list=False
         )
 
         return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
