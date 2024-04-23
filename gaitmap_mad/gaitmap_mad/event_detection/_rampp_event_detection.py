@@ -225,7 +225,7 @@ def _find_all_events(
         if "ic" in events:
             gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
             acc_sec = acc_pa[start:end]
-            gyr_grad = np.gradient(gyr_ml[start:end])
+            gyr_grad = np.gradient(gyr_ml_filtered[start:end])
             ic_events.append(start + _detect_ic(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region))
         if "tc" in events:
             tc_events.append(start + _detect_tc(gyr_ml[start:end]))
