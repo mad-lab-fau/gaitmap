@@ -8,6 +8,13 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.4.0] - 2024-04-23
+
+### Fixed
+
+- Fixed a bug in the filtered rampp event detection. Replaced gyr_ml to gyr_ml_filtered so that we look for the gradient on the filtered signal.
+  (https://github.com/mad-lab-fau/gaitmap/pull/66)
+
 ## [2.4.0] - 2024-04-19
 
 ### Added
