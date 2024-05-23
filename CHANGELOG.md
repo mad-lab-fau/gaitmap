@@ -8,7 +8,11 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
-## [Unreleased] - 
+## [2.5.0] - 2024-05-23
+
+### Changed
+
+Looser version constrains
 
 ### Fixed
 

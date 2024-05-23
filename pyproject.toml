@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gaitmap"
-version = "2.4.0"
+version = "2.5.0"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 license = "MIT"
 readme = "README.md"
@@ -37,9 +37,9 @@ scikit-learn = ">=1.0.1"
 # We restrict it to 0.14.6 for now, as later versions don't seem to work on Linux
 # This version of pomegranate does not support Python 3.10, unfortunately
 pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
-tpcp = "^0.32.0"
-pingouin = {version = "^0.5.3", optional = true}
-pooch = "^1.7.0"
+tpcp = ">=0.32.0"
+pingouin = {version = ">=0.5.3", optional = true}
+pooch = ">=1.7.0"
 
 [tool.poetry.extras]
 hmm = ["pomegranate"]
