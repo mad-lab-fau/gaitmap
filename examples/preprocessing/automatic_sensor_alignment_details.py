@@ -28,7 +28,8 @@ from gaitmap.utils.consts import SF_ACC, SF_GYR
 
 example_dataset = get_healthy_example_imu_data_stair_up()
 sampling_rate_hz = 204.8
-# for simplicity we will only look at one foot in this example. However, all functions work the same way on both feet.
+# %%
+# For simplicity, we will only look at one foot in this example. However, all functions work the same way on both feet.
 sensor = "right_sensor"
 
 # %%
@@ -127,12 +128,13 @@ fig.tight_layout()
 #
 # However, the used PCA implementation will define the sign of this main component based on the distribution of your
 # input data which does not necessarily fit the expected forward direction.
+# While we normalize the PCA components to ensure that the first component always points into the positive x-direction,
+# it is not guaranteed that this is the right direction for the current sensor alignment.
 # Therefore, we cannot rely on the sign of the principal components and only use it to find the sagittal plane.
 # But we will still miss the actual forward direction.
-# Hence we still might require a final 180 deg flip around the z-axis.
-# Therefore we will need to add an additionally processing step to reliably detect the actual forward direction,
-# which will be
-# demonstrated in the following sections.
+# Hence, we still might require a final 180 deg flip around the z-axis.
+# Therefore, we will need to add an additionally processing step to reliably detect the actual forward direction,
+# which will be demonstrated in the following sections.
 
 from gaitmap.preprocessing.sensor_alignment import PcaAlignment
 
@@ -166,11 +168,12 @@ axs[0, 2].set_title("Acceleration - PCA aligned")
 axs[1, 2].set_title("Gyroscope - PCA aligned")
 
 plt.tight_layout()
+plt.show()
 
 # %%
-# Visualize the process of the PCA alignment. We can clearly see that the PCA alignment found the desired
-# sagittal plane but with an 180deg misalignment, which still must be addressed in the last step of the presented
-# pipeline.
+# Visualize the process of the PCA alignment.
+# We can clearly see that the PCA alignment found the desired sagittal plane but with an 180deg misalignment, as we
+# know, that for the right sensor, the medio-lateral axis should correspond to -X in this configuration.
 
 fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -220,8 +223,8 @@ axs[0].text(200, -450, "Sensor Y", c="r")
 axs[0].arrow(
     0.0,
     0.0,
-    pca_alignment.pca_[sensor].components_[0][0] * 500,
-    pca_alignment.pca_[sensor].components_[0][1] * 500,
+    pca_alignment.normalized_pca_components_[sensor][0][0] * 500,
+    pca_alignment.normalized_pca_components_[sensor][0][1] * 500,
     head_width=25,
     head_length=25,
     linewidth=2,
@@ -231,8 +234,8 @@ axs[0].arrow(
 axs[0].arrow(
     0.0,
     0.0,
-    pca_alignment.pca_[sensor].components_[1][0] * 500,
-    pca_alignment.pca_[sensor].components_[1][1] * 500,
+    pca_alignment.normalized_pca_components_[sensor][1][0] * 500,
+    pca_alignment.normalized_pca_components_[sensor][1][1] * 500,
     head_width=25,
     head_length=25,
     linewidth=2,
@@ -248,6 +251,7 @@ axs[0].set_title("Before Alignment")
 axs[1].set_title("After PCA Alignment")
 
 plt.tight_layout()
+plt.show()
 
 # %%
 # Check the resulting rotation object
@@ -328,6 +332,7 @@ axs[0, 2].set_title("Acceleration - forward aligned")
 axs[1, 2].set_title("Gyroscope - forward aligned")
 
 fig.tight_layout()
+plt.show()
 
 # %%
 # Check the resulting rotation object

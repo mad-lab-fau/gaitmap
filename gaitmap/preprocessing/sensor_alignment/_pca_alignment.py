@@ -13,7 +13,7 @@ from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-from gaitmap.utils.rotations import rotate_dataset
+from gaitmap.utils.rotations import find_signed_3d_angle, rotate_dataset
 
 # TODO: Move `right_handed_cord` to general utils package
 
@@ -43,14 +43,24 @@ def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_
     pca = PCA(n_components=2)
     pca = pca.fit(dataset[pca_plane_axis])
 
+    pca_components = pca.components_.copy()
+    # To follow the coordinate system convention, we ensure that the second component is positive 90 deg rotation from
+    # the first component
+    angle = np.rad2deg(find_signed_3d_angle(pca_components[1], pca_components[0], [0, 0, 1]))
+    if angle < 0:
+        pca_components[1] *= -1
+    # To make the output of this alignment deteministic, we always ensure that the first component is positive
+    if pca_components[0, 0] < 0:
+        pca_components *= -1
+
     # define new coordinate system
     # target axis will correspond to the pca component with highest explained_variance_
-    pca_main_component_axis = np.array([pca.components_[0][0], pca.components_[0][1], 0])
+    pca_main_component_axis = np.array([pca_components[0, 0], pca_components[0, 1], 0])
 
     target_axis_helper = {"x": None, "y": None}
 
     if target_axis.lower() not in target_axis_helper:
-        raise ValueError(f"Invalid target aixs! Axis must be one of {target_axis_helper.keys()}")
+        raise ValueError(f"Invalid target axis! Axis must be one of {target_axis_helper.keys()}")
 
     target_axis_helper[target_axis.lower()] = pca_main_component_axis
 
@@ -63,6 +73,7 @@ def align_pca_2d_single_sensor(dataset: SensorData, target_axis: str, pca_plane_
         "aligned_data": rotate_dataset(dataset, r),
         "rotation": r,
         "pca": pca,
+        "normalized_pca_components": pca_components,
     }
 
 
@@ -94,6 +105,11 @@ class PcaAlignment(BaseSensorAlignment):
         The :class:`~scipy.spatial.transform.Rotation` object tranforming the original data to the aligned data
     pca_
         :class:`~sklearn.decomposition.PCA` object after fitting
+    normalized_pca_components_
+        These are the PCA componts, but aligned to the coordinate system convention.
+        I.e. the first component is always positive and the second component is positive 90 deg rotation from the first
+        (i.e. they form a right handed coordinate system).
+        These normalized components can be used to estimate the rotation of the sensor frame.
 
     Other Parameters
     ----------------
@@ -132,6 +148,7 @@ class PcaAlignment(BaseSensorAlignment):
 
     rotation_: Union[Rotation, dict[_Hashable, Rotation]]
     pca_: Union[PCA, dict[_Hashable, PCA]]
+    normalized_pca_components_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
 
     target_axis: str
     pca_plane_axis: Sequence[str]
