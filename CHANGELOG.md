@@ -8,6 +8,21 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.5.1] - 2024-05-27
+
+### Fixed
+The package updates in 2.5.0 broke some things. These are now fixed.
+
+- For the parameter errors, the order of the output parameters has changed slightly, as they are now sorted to avoid 
+  future breaking changes, based on changes in the sor policy in pandas
+- The matches for the stride matching are now sorted to avoid future breaking changes, based on changes in the sor 
+  policy in scipy sparse arrays
+- The `PCAAlignment` is now more robust by enforcing a direction of the first principal component.
+  The method also has a new attribute `normalized_pca_components_` that hold the components after this adjustment.
+  This change might result in different results for the PCA step of the alignment.
+  However, in combination with the forward direction alignment, the results should be identical to the previous version.
+   
+
 ## [2.5.0] - 2024-05-23
 
 ### Changed
