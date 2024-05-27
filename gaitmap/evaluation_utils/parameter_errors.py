@@ -245,9 +245,9 @@ def calculate_aggregated_parameter_errors(
     icc                       0.256198   0.328814
     icc_q05                  -0.710000  -0.670000
     icc_q95                   0.920000   0.940000
-    n_common                  4.000000   4.000000
-    n_additional_reference    0.000000   0.000000
     n_additional_predicted    0.000000   0.000000
+    n_additional_reference    0.000000   0.000000
+    n_common                  4.000000   4.000000
 
     >>> pd.set_option("display.max_columns", None)
     >>> pd.set_option("display.width", 0)
@@ -486,7 +486,7 @@ def _align_parameters(reference_parameter, predicted_parameter, id_column):
                 "n_additional_reference": len(reference_parameter_correct[para].dropna()) - common,
                 "n_additional_predicted": len(predicted_parameter_correct[para].dropna()) - common,
             }
-        meta_error_dict[sensor] = pd.DataFrame(common_rows_per_parameter)
+        meta_error_dict[sensor] = pd.DataFrame(common_rows_per_parameter).sort_index()
 
         if max_common == 0:
             raise ValidationError(err_msg_start + "common entries are found between predicted and reference!")
@@ -567,7 +567,7 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
     assert data.index.is_unique
 
     paras = data.columns.get_level_values("parameter").unique()
-    data = data.stack("error_type").reset_index()
+    data = data.stack("error_type", future_stack=True).reset_index()
     coefs: dict[str, pd.Series] = {}
     for para in paras:
         try:
