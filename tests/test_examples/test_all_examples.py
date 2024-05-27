@@ -100,7 +100,7 @@ def test_sensor_alignment_compact(snapshot) -> None:
 
     # just check first 1000 rows to make sure that snapshot stays in a kB range
     for sensor in ["left_sensor", "right_sensor"]:
-        snapshot.assert_match(forward_aligned_data[sensor].iloc[:1000], sensor)
+        snapshot.assert_match(forward_aligned_data[sensor].iloc[:1000].rename_axis(columns=None), sensor)
 
 
 def test_temporal_parameters(snapshot) -> None:
