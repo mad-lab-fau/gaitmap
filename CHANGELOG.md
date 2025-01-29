@@ -8,7 +8,11 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.5.1] - 2025-01-29
+
 ## [2.5.1] - 2024-05-27
+- Removed scipy deprecation of `cumtrapz` function (https://github.com/mad-lab-fau/gaitmap/pull/71)
+
 
 ### Fixed
 The package updates in 2.5.0 broke some things. These are now fixed.
