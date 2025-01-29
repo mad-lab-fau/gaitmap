@@ -181,11 +181,11 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
         # shift zupts to fit to the padded acc data!
         zupts_padded = self.zupts_ + 1
 
-        velocity = cumtrapz(acc_data_padded, axis=0, initial=0) / self.sampling_rate_hz
+        velocity = cumulative_trapezoid(acc_data_padded, axis=0, initial=0) / self.sampling_rate_hz
         drift_model = self._estimate_piece_wise_linear_drift_model(velocity, zupts_padded)
         velocity -= drift_model
 
-        position = cumtrapz(velocity, axis=0, initial=0) / self.sampling_rate_hz
+        position = cumulative_trapezoid(velocity, axis=0, initial=0) / self.sampling_rate_hz
 
         if self.level_assumption is True:
             position[:, -1] -= self._estimate_piece_wise_linear_drift_model(position[:, -1], zupts_padded)
