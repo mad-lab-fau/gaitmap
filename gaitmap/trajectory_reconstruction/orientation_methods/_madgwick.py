@@ -151,6 +151,69 @@ class MadgwickAHRS(BaseOrientationMethod):
         self.orientation_object_ = Rotation.from_quat(rots)
         return self
 
+def _madgwick_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, beta):
+    q = np.copy(initial_orientation)
+    qdot = rate_of_change_from_gyro(gyro, q)
+
+    # Note that we change the order of q components here as we use a different quaternion definition.
+    q1, q2, q3, q0 = q
+
+    if beta > 0.0 and not np.all(acc == 0.0):
+        acc = acc / np.sqrt(np.sum(acc**2))
+        ax, ay, az = acc
+        
+        mag = mag / np.sqrt(np.sum(mag**2))
+        mx, my, mz = mag
+
+        # Auxiliary variables to avoid repeated arithmetic
+        _2q0mx = 2.0 * q0 * mx
+        _2q0my = 2.0 * q0 * my
+        _2q0mz = 2.0 * q0 * mz
+        _2q1mx = 2.0 * q1 * mx
+        _2q0 = 2.0 * q0
+        _2q1 = 2.0 * q1
+        _2q2 = 2.0 * q2
+        _2q3 = 2.0 * q3
+        _2q0q2 = 2.0 * q0 * q2
+        _2q2q3 = 2.0 * q2 * q3
+        q0q0 = q0 * q0
+        q0q1 = q0 * q1
+        q0q2 = q0 * q2
+        q0q3 = q0 * q3
+        q1q1 = q1 * q1
+        q1q2 = q1 * q2
+        q1q3 = q1 * q3
+        q2q2 = q2 * q2
+        q2q3 = q2 * q3
+        q3q3 = q3 * q3
+
+        # Gradient decent algorithm corrective step
+        hx = mx * q0q0 - _2q0my * q3 + _2q0mz * q2 + mx * q1q1 + _2q1 * my * q2 + _2q1 * mz * q3 - mx * q2q2 - mx * q3q3
+        hy = _2q0mx * q3 + my * q0q0 - _2q0mz * q1 + _2q1mx * q2 - my * q1q1 + my * q2q2 + _2q2 * mz * q3 - my * q3q3
+        _2bx = np.sqrt(hx * hx + hy * hy)
+        _2bz = -_2q0mx * q2 + _2q0my * q1 + mz * q0q0 + _2q1mx * q3 - mz * q1q1 + _2q2 * my * q3 - mz * q2q2 + mz * q3q3
+        _4bx = 2.0 * _2bx
+        _4bz = 2.0 * _2bz
+
+        s0 = -_2q2 * (2.0 * q1q3 - _2q0q2 - ax) + _2q1 * (2.0 * q0q1 + _2q2q3 - ay) - _2bz * q2 * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q3 + _2bz * q1) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q2 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz)
+        s1 = _2q3 * (2.0 * q1q3 - _2q0q2 - ax) + _2q0 * (2.0 * q0q1 + _2q2q3 - ay) - 4.0 * q1 * (1 - 2.0 * q1q1 - 2.0 * q2q2 - az) + _2bz * q3 * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz)
+        s2 = -_2q0 * (2.0 * q1q3 - _2q0q2 - ax) + _2q3 * (2.0 * q0q1 + _2q2q3 - ay) - 4.0 * q2 * (1 - 2.0 * q1q1 - 2.0 * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz)
+        s3 = _2q1 * (2.0 * q1q3 - _2q0q2 - ax) + _2q2 * (2.0 * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5 - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5 - q1q1 - q2q2) - mz)
+
+        # Switch the component order back
+        s = np.array([s1, s2, s3, s0])
+        mag_s = np.sqrt(np.sum(s**2))
+        if mag_s != 0.0:
+            s /= np.sqrt(np.sum(s**2))
+
+        # Apply feedback step
+        qdot -= beta * s
+
+    # Integrate rate of change of quaternion to yield quaternion
+    q = q + qdot / sampling_rate_hz
+    q /= np.sqrt(np.sum(q**2))
+
+    return q
 
 @njit()
 def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):

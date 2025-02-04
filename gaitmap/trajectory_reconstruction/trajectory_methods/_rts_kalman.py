@@ -17,7 +17,7 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
     rts_kalman_update_series,
     simple_navigation_equations,
 )
-from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR, SF_MAG
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
 
@@ -242,12 +242,17 @@ class RtsKalman(BaseTrajectoryMethod):
 
         gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy()
+        
+        mag_data = None
+        if SF_MAG[0] in data.columns:
+            mag_data = data[SF_MAG].to_numpy()
 
         parameters = SimpleZuptParameter(level_walking=self.level_walking)
 
         states, covariances = rts_kalman_update_series(
             acc_data,
             gyro_data,
+            mag_data,
             initial_orientation,
             sampling_rate_hz,
             meas_noise,
@@ -257,6 +262,7 @@ class RtsKalman(BaseTrajectoryMethod):
             forward_pass_func=self._forward_pass,
             forward_pass_dependencies=self._prepare_forward_pass_dependencies(),
         )
+        
         self.position_ = pd.DataFrame(states[0], columns=GF_POS)
         self.position_.index.name = "sample"
         self.velocity_ = pd.DataFrame(states[1], columns=GF_VEL)
@@ -380,8 +386,11 @@ class MadgwickRtsKalman(RtsKalman):
             )
         ),
         madgwick_beta: float = 0.2,
+        mag = None,
     ) -> None:
         self.madgwick_beta = madgwick_beta
+        
+        self.mag = mag
         super().__init__(
             initial_orientation=initial_orientation,
             zupt_variance=zupt_variance,
@@ -394,5 +403,5 @@ class MadgwickRtsKalman(RtsKalman):
 
     def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:
         return ForwardPassDependencies(
-            motion_update_func=madgwick_motion_update, motion_update_func_parameters=(self.madgwick_beta,)
+            motion_update_func=madgwick_motion_update, motion_update_func_parameters=(self.madgwick_beta, )
         )
