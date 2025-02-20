@@ -5,7 +5,7 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert
 from pandas._testing import assert_frame_equal
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import SF_ACC, SF_COLS, SF_GYR
+from gaitmap.utils.consts import SF_ACC, SF_COLS, SF_GYR, SF_MAG
 from gaitmap.utils.datatype_helper import MultiSensorData, get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.rotations import (
@@ -177,6 +177,15 @@ class TestRotateDataset:
         rotated_data = self.single_func(self.sample_sensor_data, cyclic_rotation)
 
         _compare_cyclic(self.sample_sensor_data, rotated_data)
+
+    def test_rotation_also_works_with_mag(self, cyclic_rotation) -> None:
+        """Test if rotation is correctly applied to gyr and acc of single sensor data."""
+        sample_data = self.sample_sensor_data.copy()
+        sample_data[SF_MAG] = sample_data[SF_ACC] + 6
+        rotated_data = self.single_func(sample_data, cyclic_rotation)
+
+        _compare_cyclic(sample_data, rotated_data)
+        assert set(SF_MAG).issubset(rotated_data.columns)
 
     def test_rotate_dataset_single(self, cyclic_rotation) -> None:
         """Rotate a single dataset with `rotate_dataset`.
