@@ -17,7 +17,7 @@ from gaitmap.utils.consts import (
     SF_COLS,
     SF_GYR,
     SF_MAG,
-    TRAJ_TYPE_COLS,
+    TRAJ_TYPE_COLS, SF_COLS_WITH_MAG, BF_COLS_WITH_MAG,
 )
 from gaitmap.utils.datatype_helper import (
     get_multi_sensor_names,
@@ -96,18 +96,18 @@ class TestIsSingleSensorDataset:
     @pytest.mark.parametrize(
         ("cols", "frame_valid", "col_check_valid"),
         [
-            (SF_COLS, "sensor", "all"),
-            (BF_COLS, "body", "all"),
+            (SF_COLS_WITH_MAG, "sensor", "all"),
+            (BF_COLS_WITH_MAG, "body", "all"),
             (BF_GYR, "body", "gyr"),
             (BF_ACC, "body", "acc"),
             (BF_MAG, "body", "mag"),
             ([*BF_ACC, *BF_MAG], "body", "acc_mag"),
-            ([*BF_ACC, *BF_GYR], "body", "acc_gyr"),
+            (BF_COLS, "body", "acc_gyr"),
             (SF_GYR, "sensor", "gyr"),
             (SF_ACC, "sensor", "acc"),
             (SF_MAG, "sensor", "mag"),
             ([*SF_ACC, *SF_MAG], "sensor", "acc_mag"),
-            ([*SF_ACC, *SF_GYR], "sensor", "acc_gyr"),
+            (SF_COLS, "sensor", "acc_gyr"),
         ],
     )
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame) -> None:
@@ -151,18 +151,18 @@ class TestIsMultiSensorDataset:
     @pytest.mark.parametrize(
         ("cols", "frame_valid", "col_check_valid"),
         [
-            (SF_COLS, "sensor", "all"),
-            (BF_COLS, "body", "all"),
+            (SF_COLS_WITH_MAG, "sensor", "all"),
+            (BF_COLS_WITH_MAG, "body", "all"),
             (BF_GYR, "body", "gyr"),
             (BF_ACC, "body", "acc"),
             (BF_MAG, "body", "mag"),
             ([*BF_ACC, *BF_MAG], "body", "acc_mag"),
-            ([*BF_ACC, *BF_GYR], "body", "acc_gyr"),
+            (BF_COLS, "body", "acc_gyr"),
             (SF_GYR, "sensor", "gyr"),
             (SF_ACC, "sensor", "acc"),
             (SF_MAG, "sensor", "mag"),
             ([*SF_ACC, *SF_MAG], "sensor", "acc_mag"),
-            ([*SF_ACC, *SF_GYR], "sensor", "acc_gyr"),
+            (SF_COLS, "sensor", "acc_gyr"),
         ],
     )
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame) -> None:

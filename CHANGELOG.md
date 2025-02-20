@@ -10,8 +10,8 @@ project.
 
 ## [2.6.0] - Unreleased
 
-- Dataset checks can now optionally check magnetometer data
-- Dataset rotations can now rotate magnetometer data
+- Dataset checks can now optionally check magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
+- Dataset rotations can now rotate magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
 
 ## [2.5.2] - 2025-01-19
 
