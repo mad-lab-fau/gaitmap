@@ -4,7 +4,7 @@ import pytest
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod
-from gaitmap.utils.consts import SF_COLS
+from gaitmap.utils.consts import SF_COLS_WITH_MAG
 from gaitmap.utils.datatype_helper import is_single_sensor_orientation_list
 
 
@@ -36,8 +36,13 @@ class TestOrientationMethodMixin:
         """
         fs = 100
 
-        sensor_data = np.repeat(np.array([0, 0, 0, *axis_to_rotate])[None, :], fs, axis=0) * np.rad2deg(np.pi)
-        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+        # We use the rotation axis as fake acc measurement
+        acc = axis_to_rotate
+        # We use any other axis as fake mag measurement
+        mag = axis_to_rotate[::-1]
+
+        sensor_data = np.repeat(np.array([0, 0, 0, *axis_to_rotate, *mag])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS_WITH_MAG)
         test = self.init_algo_class()
 
         test.estimate(sensor_data, sampling_rate_hz=fs)
@@ -49,16 +54,16 @@ class TestOrientationMethodMixin:
     def test_idiot_update(self) -> None:
         test = self.init_algo_class()
         fs = 10
-        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
-        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS_WITH_MAG)
         test.estimate(sensor_data, sampling_rate_hz=fs)
         np.testing.assert_array_equal(test.orientation_.iloc[-1], test.initial_orientation)
 
     def test_output_formats(self) -> None:
         test = self.init_algo_class()
         fs = 10
-        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
-        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS)
+        sensor_data = np.repeat(np.array([0, 0, 0, 0, 0, 0, 0, 0, 0])[None, :], fs, axis=0) * np.rad2deg(np.pi)
+        sensor_data = pd.DataFrame(sensor_data, columns=SF_COLS_WITH_MAG)
         test.estimate(sensor_data, sampling_rate_hz=fs)
 
         assert isinstance(test.orientation_object_, Rotation)
