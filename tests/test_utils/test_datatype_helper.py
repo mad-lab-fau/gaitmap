@@ -8,6 +8,7 @@ from pandas._testing import assert_frame_equal
 from gaitmap.utils.consts import (
     BF_ACC,
     BF_COLS,
+    BF_COLS_WITH_MAG,
     BF_GYR,
     BF_MAG,
     GF_ORI,
@@ -15,9 +16,10 @@ from gaitmap.utils.consts import (
     GF_VEL,
     SF_ACC,
     SF_COLS,
+    SF_COLS_WITH_MAG,
     SF_GYR,
     SF_MAG,
-    TRAJ_TYPE_COLS, SF_COLS_WITH_MAG, BF_COLS_WITH_MAG,
+    TRAJ_TYPE_COLS,
 )
 from gaitmap.utils.datatype_helper import (
     get_multi_sensor_names,
