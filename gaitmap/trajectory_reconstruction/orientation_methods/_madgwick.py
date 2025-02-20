@@ -206,9 +206,9 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
         # Switch the component order back
         s = np.array([s1, s2, s3, s0])
-        mag_s = np.sqrt(np.sum(s**2))
-        if mag_s != 0.0:
-            s /= np.sqrt(np.sum(s**2))
+        norm_s = np.sqrt(np.sum(s**2))
+        if norm_s != 0.0:
+            s /= norm_s
 
         # Apply feedback step
         qdot -= beta * s
@@ -298,9 +298,9 @@ def _madgwick_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, 
 
         # Switch the component order back
         s = np.array([s1, s2, s3, s0])
-        mag_s = np.sqrt(np.sum(s**2))
-        if mag_s != 0.0:
-            s /= np.sqrt(np.sum(s**2))
+        norm_s = np.sqrt(np.sum(s**2))
+        if norm_s != 0.0:
+            s /= norm_s
 
         # Apply feedback step
         qdot -= beta * s
