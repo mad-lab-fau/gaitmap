@@ -12,6 +12,8 @@ project.
 
 - Dataset checks can now optionally check magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
 - Dataset rotations can now rotate magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
+- Added an option to the madgwick algorithm to use the algorithm version that also uses the magnetometer for correction.
+  (https://github.com/mad-lab-fau/gaitmap/pull/73)
 
 ## [2.5.2] - 2025-01-19
 
