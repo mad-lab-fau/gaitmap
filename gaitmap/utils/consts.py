@@ -6,15 +6,19 @@ import numpy as np
 SF_GYR = ["gyr_x", "gyr_y", "gyr_z"]
 #: The default names of the Accelerometer columns in the sensor frame
 SF_ACC = ["acc_x", "acc_y", "acc_z"]
+#: The default names of the Magnetometer columns in the sensor frame
+SF_MAG = ["mag_x", "mag_y", "mag_z"]
 #: The default names of all columns in the sensor frame
-SF_COLS = [*SF_ACC, *SF_GYR]
+SF_COLS = [*SF_ACC, *SF_GYR, *SF_MAG]
 
 #: The default names of the Gyroscope columns in the body frame
 BF_GYR = ["gyr_pa", "gyr_ml", "gyr_si"]
 #: The default names of the Accelerometer columns in the body frame
 BF_ACC = ["acc_pa", "acc_ml", "acc_si"]
+#: The default names of the Magnetometer columns in the body frame
+BF_MAG = ["mag_pa", "mag_ml", "mag_si"]
 #: The default names of all columns in the body frame
-BF_COLS = [*BF_ACC, *BF_GYR]
+BF_COLS = [*BF_ACC, *BF_GYR, *BF_MAG]
 
 #: The minimal required columns for a stride list
 SL_COLS = ["start", "end"]
