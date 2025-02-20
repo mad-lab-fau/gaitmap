@@ -15,7 +15,8 @@
                         0.0
                     ]
                 },
-                "memory": null
+                "memory": null,
+                "use_magnetometer": false
             }
         },
         "pos_method": {
