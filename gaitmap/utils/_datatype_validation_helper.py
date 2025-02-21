@@ -7,7 +7,7 @@ import pandas as pd
 from typing_extensions import Literal
 
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
+from gaitmap.utils.consts import BF_ACC, BF_GYR, BF_MAG, SF_ACC, SF_GYR, SF_MAG
 from gaitmap.utils.exceptions import ValidationError
 
 _ALLOWED_FRAMES = ["any", "body", "sensor"]
@@ -17,21 +17,25 @@ _ALLOWED_TRAJ_LIST_TYPES = Literal["stride", "roi", "gs", "any_roi"]  # pylint: 
 
 
 def _get_expected_dataset_cols(
-    frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True
+    frame: Literal["sensor", "body"], check_acc: bool = True, check_gyr: bool = True, check_mag: bool = False
 ) -> list:
     expected_cols = []
     if frame == "sensor":
         acc = SF_ACC
         gyr = SF_GYR
+        mag = SF_MAG
     elif frame == "body":
         acc = BF_ACC
         gyr = BF_GYR
+        mag = BF_MAG
     else:
         raise ValueError('`frame must be one of ["sensor", "body"]')
     if check_acc is True:
         expected_cols.extend(acc)
     if check_gyr is True:
         expected_cols.extend(gyr)
+    if check_mag is True:
+        expected_cols.extend(mag)
     return expected_cols
 
 

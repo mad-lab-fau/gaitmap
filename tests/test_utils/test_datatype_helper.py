@@ -8,13 +8,17 @@ from pandas._testing import assert_frame_equal
 from gaitmap.utils.consts import (
     BF_ACC,
     BF_COLS,
+    BF_COLS_WITH_MAG,
     BF_GYR,
+    BF_MAG,
     GF_ORI,
     GF_POS,
     GF_VEL,
     SF_ACC,
     SF_COLS,
+    SF_COLS_WITH_MAG,
     SF_GYR,
+    SF_MAG,
     TRAJ_TYPE_COLS,
 )
 from gaitmap.utils.datatype_helper import (
@@ -47,7 +51,15 @@ def _create_test_multiindex():
     return pd.MultiIndex.from_product([list("abc"), list("123")])
 
 
-@pytest.fixture(params=(("both", True, True), ("acc", True, False), ("gyr", False, True)))
+@pytest.fixture(
+    params=(
+        ("all", True, True, True),
+        ("acc", True, False, False),
+        ("gyr", False, True, False),
+        ("acc_gyr", True, True, False),
+        ("acc_mag", True, False, True),
+    )
+)
 def combinations(request):
     return request.param
 
@@ -86,23 +98,29 @@ class TestIsSingleSensorDataset:
     @pytest.mark.parametrize(
         ("cols", "frame_valid", "col_check_valid"),
         [
-            (SF_COLS, "sensor", "both"),
-            (BF_COLS, "body", "both"),
+            (SF_COLS_WITH_MAG, "sensor", "all"),
+            (BF_COLS_WITH_MAG, "body", "all"),
             (BF_GYR, "body", "gyr"),
             (BF_ACC, "body", "acc"),
+            (BF_MAG, "body", "mag"),
+            ([*BF_ACC, *BF_MAG], "body", "acc_mag"),
+            (BF_COLS, "body", "acc_gyr"),
             (SF_GYR, "sensor", "gyr"),
             (SF_ACC, "sensor", "acc"),
+            (SF_MAG, "sensor", "mag"),
+            ([*SF_ACC, *SF_MAG], "sensor", "acc_mag"),
+            (SF_COLS, "sensor", "acc_gyr"),
         ],
     )
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame) -> None:
         """Test all possible combinations of inputs."""
-        col_check, check_acc, check_gyro = combinations
+        col_check, check_acc, check_gyro, check_mag = combinations
         output = is_single_sensor_data(
-            pd.DataFrame(columns=cols), check_acc=check_acc, check_gyr=check_gyro, frame=frame
+            pd.DataFrame(columns=cols), check_acc=check_acc, check_gyr=check_gyro, check_mag=check_mag, frame=frame
         )
 
         valid_frame = frame in (frame_valid, "any")
-        valid_cols = col_check_valid in (col_check, "both")
+        valid_cols = col_check_valid in (col_check, "all") or col_check in col_check_valid
         expected_outcome = valid_cols and valid_frame
 
         assert output == expected_outcome
@@ -135,26 +153,33 @@ class TestIsMultiSensorDataset:
     @pytest.mark.parametrize(
         ("cols", "frame_valid", "col_check_valid"),
         [
-            (SF_COLS, "sensor", "both"),
-            (BF_COLS, "body", "both"),
+            (SF_COLS_WITH_MAG, "sensor", "all"),
+            (BF_COLS_WITH_MAG, "body", "all"),
             (BF_GYR, "body", "gyr"),
             (BF_ACC, "body", "acc"),
+            (BF_MAG, "body", "mag"),
+            ([*BF_ACC, *BF_MAG], "body", "acc_mag"),
+            (BF_COLS, "body", "acc_gyr"),
             (SF_GYR, "sensor", "gyr"),
             (SF_ACC, "sensor", "acc"),
+            (SF_MAG, "sensor", "mag"),
+            ([*SF_ACC, *SF_MAG], "sensor", "acc_mag"),
+            (SF_COLS, "sensor", "acc_gyr"),
         ],
     )
     def test_correct_columns(self, cols, frame_valid, col_check_valid, combinations, frame) -> None:
         """Test all possible combinations of inputs."""
-        col_check, check_acc, check_gyro = combinations
+        col_check, check_acc, check_gyro, check_mag = combinations
         output = is_multi_sensor_data(
             pd.DataFrame([[*range(len(cols) * 2)]], columns=pd.MultiIndex.from_product((("a", "b"), cols))),
             check_acc=check_acc,
             check_gyr=check_gyro,
+            check_mag=check_mag,
             frame=frame,
         )
 
         valid_frame = frame in (frame_valid, "any")
-        valid_cols = col_check_valid in (col_check, "both")
+        valid_cols = col_check_valid in (col_check, "all") or col_check in col_check_valid
         expected_outcome = valid_cols and valid_frame
 
         assert output == expected_outcome

@@ -75,6 +75,7 @@ def is_single_sensor_data(
     data: SingleSensorData,
     check_acc: bool = True,
     check_gyr: bool = True,
+    check_mag: bool = False,
     frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> Optional[bool]:
@@ -101,6 +102,9 @@ def is_single_sensor_data(
         If the existence of the correct acc columns should be checked
     check_gyr
         If the existence of the correct gyr columns should be checked
+    check_mag
+        If the existence of the correct mag columns should be checked
+        For legacy reasons, this is set to False by default.
     frame
         The frame the dataset is expected to be in.
         This changes which columns are checked for.
@@ -126,12 +130,14 @@ def is_single_sensor_data(
             _assert_has_columns(
                 data,
                 [
-                    _get_expected_dataset_cols("sensor", check_acc=check_acc, check_gyr=check_gyr),
-                    _get_expected_dataset_cols("body", check_acc=check_acc, check_gyr=check_gyr),
+                    _get_expected_dataset_cols("sensor", check_acc=check_acc, check_gyr=check_gyr, check_mag=check_mag),
+                    _get_expected_dataset_cols("body", check_acc=check_acc, check_gyr=check_gyr, check_mag=check_mag),
                 ],
             )
         else:
-            _assert_has_columns(data, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr)])
+            _assert_has_columns(
+                data, [_get_expected_dataset_cols(frame, check_acc=check_acc, check_gyr=check_gyr, check_mag=check_mag)]
+            )
 
     except ValidationError as e:
         if raise_exception is True:
@@ -147,6 +153,7 @@ def is_multi_sensor_data(
     data: MultiSensorData,
     check_acc: bool = True,
     check_gyr: bool = True,
+    check_mag: bool = False,
     frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
 ) -> bool:
@@ -172,6 +179,9 @@ def is_multi_sensor_data(
         If the existence of the correct acc columns should be checked
     check_gyr
         If the existence of the correct gyr columns should be checked
+    check_mag
+        If the existence of the correct mag columns should be checked.
+        For legacy reasons, this is set to False by default.
     frame
         The frame the dataset is expected to be in.
         This changes which columns are checked for.
@@ -202,7 +212,14 @@ def is_multi_sensor_data(
 
     try:
         for k in get_multi_sensor_names(data):
-            is_single_sensor_data(data[k], check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+            is_single_sensor_data(
+                data[k],
+                check_acc=check_acc,
+                check_gyr=check_gyr,
+                check_mag=check_mag,
+                frame=frame,
+                raise_exception=True,
+            )
     except ValidationError as e:
         if raise_exception is True:
             raise ValidationError(
@@ -214,7 +231,11 @@ def is_multi_sensor_data(
 
 
 def is_sensor_data(
-    data: SensorData, check_acc: bool = True, check_gyr: bool = True, frame: _ALLOWED_FRAMES_TYPE = "any"
+    data: SensorData,
+    check_acc: bool = True,
+    check_gyr: bool = True,
+    check_mag: bool = False,
+    frame: _ALLOWED_FRAMES_TYPE = "any",
 ) -> Literal["single", "multi"]:
     """Check if an object is valid multi-sensor or single-sensor data.
 
@@ -231,6 +252,10 @@ def is_sensor_data(
         If the existence of the correct acc columns should be checked
     check_gyr
         If the existence of the correct gyr columns should be checked
+    check_mag
+        If the existence of the correct mag columns should be checked
+        For legacy reasons, this is set to False by default.
+        In case your algorithm requires the magnetic field, set this to True.
     frame
         The frame the dataset is expected to be in.
         This changes which columns are checked for.
@@ -251,14 +276,18 @@ def is_sensor_data(
 
     """
     try:
-        is_single_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        is_single_sensor_data(
+            data, check_acc=check_acc, check_gyr=check_gyr, check_mag=check_mag, frame=frame, raise_exception=True
+        )
     except ValidationError as e:
         single_error = e
     else:
         return "single"
 
     try:
-        is_multi_sensor_data(data, check_acc=check_acc, check_gyr=check_gyr, frame=frame, raise_exception=True)
+        is_multi_sensor_data(
+            data, check_acc=check_acc, check_gyr=check_gyr, check_mag=check_mag, frame=frame, raise_exception=True
+        )
     except ValidationError as e:
         multi_error = e
     else:

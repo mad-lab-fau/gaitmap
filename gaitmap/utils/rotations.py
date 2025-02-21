@@ -10,7 +10,7 @@ import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR, SF_MAG
 from gaitmap.utils.datatype_helper import (
     SensorData,
     SingleSensorData,
@@ -71,6 +71,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
     """
     if rotation.single is False:
         raise ValueError("Only single rotations are allowed!")
+    has_mag = is_single_sensor_data(data, frame="sensor", check_mag=True)
 
     tol = 10e-9
     rot_matrix = rotation.as_matrix().squeeze()
@@ -89,8 +90,10 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
         return data
 
     orig_col_order = data.columns
-    for sensor in ["acc", "gyr"]:
-        cols = np.array({"acc": SF_ACC, "gyr": SF_GYR}[sensor])
+    sensors = ["acc", "gyr"] + (["mag"] if has_mag else [])
+    rots = {"acc": SF_ACC, "gyr": SF_GYR, "mag": SF_MAG}
+    for sensor in sensors:
+        cols = np.array(rots[sensor])
         rename = {}
         mirror = []
         # We basically iterate over the rotation matrix and find which axis is transformed to which other axis.
@@ -108,12 +111,15 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
 
 
 def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> SingleSensorData:
-    """Rotate the data of a single sensor with acc and gyro."""
+    """Rotate the data of a single sensor with acc, gyro and mag."""
+    has_mag = is_single_sensor_data(data, frame="sensor", check_mag=True)
     data = data.copy()
     if rotation is None:
         return data
     data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
     data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy())
+    if has_mag:
+        data[SF_MAG] = rotation.apply(data[SF_MAG].to_numpy())
     return data
 
 
