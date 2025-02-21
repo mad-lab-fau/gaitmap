@@ -334,6 +334,9 @@ class MadgwickRtsKalman(RtsKalman):
         A high value should only be used if the sensor is moved slowly.
         A value of 0 is identical to just the Gyro Integration (i.e. identical to the
         :class:`~gaitmap.trajectory_reconstruction.RtsKalman`).
+    use_magnetometer
+        Flag to control if the magnetometer should be used in the Madgwick filter.
+        If True, the data is expected to have the `mag_x, mag_y, mag_z` columns.
 
     Attributes
     ----------
