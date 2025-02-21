@@ -28,10 +28,6 @@ from gaitmap.trajectory_reconstruction import MadgwickRtsKalman, RtsKalman
 imu_data = get_magnetometer_l_path_data().iloc[:100000]
 sampling_frequency_hz = 400
 
-imu_data.reset_index(drop=True).to_csv(
-    "/home/arne/Documents/repos/work/gaitmap-github/example_data/aligned_data_with_mag_l_walks.csv"
-)
-
 # %%
 # Selecting and Configuring Algorithms
 # ------------------------------------
