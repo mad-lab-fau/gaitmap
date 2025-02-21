@@ -16,6 +16,7 @@ authors = [
     "Raul C. Sîmpetru <raul.simpetru@fau.de>",
     "Dominik Prossel <dominik.prossel@fau.de>",
     "Liv Herzer <liv.herzer@fau.de>",
+    "Max Stahlke <maximilian.stahlke@iis.fraunhofer.de>",
     "Felix Kluge <felix.kluge@fau.de>"
 ]
 packages = [
