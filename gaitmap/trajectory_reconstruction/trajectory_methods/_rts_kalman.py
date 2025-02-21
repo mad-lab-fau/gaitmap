@@ -13,11 +13,12 @@ from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs im
     ForwardPassDependencies,
     SimpleZuptParameter,
     default_rts_kalman_forward_pass,
+    madgwick_mag_motion_update,
     madgwick_motion_update,
     rts_kalman_update_series,
     simple_navigation_equations,
 )
-from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GF_POS, GF_VEL, SF_ACC, SF_GYR, SF_MAG
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList, is_single_sensor_data
 from gaitmap.zupt_detection import NormZuptDetector
 
@@ -240,14 +241,14 @@ class RtsKalman(BaseTrajectoryMethod):
         zupts = zupt_detector.per_sample_zupts_
         self.zupts_ = zupt_detector.zupts_
 
-        gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
-        acc_data = data[SF_ACC].to_numpy()
+        acc_data, gyro_data, mag_data = self._prepare_data()
 
         parameters = SimpleZuptParameter(level_walking=self.level_walking)
 
         states, covariances = rts_kalman_update_series(
             acc_data,
             gyro_data,
+            mag_data,
             initial_orientation,
             sampling_rate_hz,
             meas_noise,
@@ -286,6 +287,11 @@ class RtsKalman(BaseTrajectoryMethod):
         This should be overwritten by subclasses, that need custom internal functions/parameters.
         """
         return ForwardPassDependencies(motion_update_func=simple_navigation_equations, motion_update_func_parameters=())
+
+    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy())
+        acc_data = self.data[SF_ACC].to_numpy()
+        return acc_data, gyro_data, None
 
 
 class MadgwickRtsKalman(RtsKalman):
@@ -364,6 +370,7 @@ class MadgwickRtsKalman(RtsKalman):
     """
 
     madgwick_beta: float
+    use_magnetometer: bool
 
     def __init__(
         self,
@@ -380,8 +387,10 @@ class MadgwickRtsKalman(RtsKalman):
             )
         ),
         madgwick_beta: float = 0.2,
+        use_magnetometer: bool = False,
     ) -> None:
         self.madgwick_beta = madgwick_beta
+        self.use_magnetometer = use_magnetometer
         super().__init__(
             initial_orientation=initial_orientation,
             zupt_variance=zupt_variance,
@@ -393,6 +402,17 @@ class MadgwickRtsKalman(RtsKalman):
         )
 
     def _prepare_forward_pass_dependencies(self) -> ForwardPassDependencies:
+        # This is kind of the wrong place for this check, but it is simpler then completely changing the structure
         return ForwardPassDependencies(
-            motion_update_func=madgwick_motion_update, motion_update_func_parameters=(self.madgwick_beta,)
+            motion_update_func=madgwick_mag_motion_update if self.use_magnetometer else madgwick_motion_update,
+            motion_update_func_parameters=(self.madgwick_beta,),
         )
+
+    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+        gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy())
+        acc_data = self.data[SF_ACC].to_numpy()
+        if self.use_magnetometer is False:
+            return acc_data, gyro_data, None
+        is_single_sensor_data(self.data, frame="sensor", raise_exception=True, check_mag=True)
+        mag_data = self.data[SF_MAG].to_numpy()
+        return acc_data, gyro_data, mag_data
