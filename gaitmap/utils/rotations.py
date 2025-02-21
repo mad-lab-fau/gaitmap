@@ -10,7 +10,7 @@ import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
-from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR
+from gaitmap.utils.consts import GRAV_VEC, SF_ACC, SF_GYR, SF_MAG
 from gaitmap.utils.datatype_helper import (
     SensorData,
     SingleSensorData,
@@ -114,6 +114,9 @@ def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Sing
         return data
     data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
     data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy())
+    if SF_MAG[0] in data.columns:
+       data[SF_MAG] = rotation.apply(data[SF_MAG].to_numpy())
+    
     return data
 
 
