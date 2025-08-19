@@ -41,7 +41,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         If you pass a array, remember that the order of elements must be x, y, z, w.
     use_magnetometer
         If the magnetometer data should be used to correct the orientation.
-        Obvisouly, this requires a magnetometer to be present in the data.
+        Obviously, this requires a magnetometer to be present in the data.
         If True, the version of the Madgwick algorithm that uses the magnetometer data will be used.
     memory
         An optional `joblib.Memory` object that can be provided to cache the calls to madgwick series.
