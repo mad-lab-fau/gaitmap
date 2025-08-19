@@ -331,19 +331,19 @@ def _find_all_events_for_ic_stride(
     ic_events = []
     tc_events = []
     min_vel_events = []
+    gyr_grad = np.gradient(gyr_ml_filtered)
     for _index, stride in stride_list.iterrows():
         start = stride["start"]
         end = stride["end"]
         if "ic" in events:
-            # to get the ic event we use a search window between the start of the stride and part of it
+            # We pass the entire signal to the function because we need to be able to look back to the previous stride
             ic_events.append(
                 _detect_ic_for_ic_stride(
                     start,
                     end,
                     gyr_ml_filtered,
                     acc_pa,
-                    # TODO: Move outside loop
-                    np.gradient(gyr_ml_filtered),
+                    gyr_grad,
                     ic_search_region,
                 )
             )
