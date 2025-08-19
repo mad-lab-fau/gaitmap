@@ -124,8 +124,14 @@ def test_rampp_event_detection(snapshot) -> None:
     snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right")
 
     # For this simple case the results should be identical
-    assert_frame_equal(ed.min_vel_event_list_["left_sensor"], edfilt.min_vel_event_list_["left_sensor"])
-    assert_frame_equal(ed.min_vel_event_list_["right_sensor"], edfilt.min_vel_event_list_["right_sensor"])
+    assert_frame_equal(
+        ed.min_vel_event_list_["left_sensor"][["ic", "min_vel"]],
+        edfilt.min_vel_event_list_["left_sensor"][["ic", "min_vel"]],
+    )
+    assert_frame_equal(
+        ed.min_vel_event_list_["right_sensor"][["ic", "min_vel"]],
+        edfilt.min_vel_event_list_["right_sensor"][["ic", "min_vel"]],
+    )
 
 
 def test_herzer_event_detection(snapshot) -> None:

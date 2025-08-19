@@ -298,7 +298,7 @@ class TestEventDetectionRampp:
 
     def test_sign_change_for_detect_tc_for_ic_stride(self):
         """Test correct handling of signal that does or does not provide a change of the sign in case of "ic" input_stride_type."""
-        # with sign change
+        # with sign change (edgecase, where the sign change is exactly at the point of the maximum)
         signal1 = np.concatenate([np.ones(10) * -1, np.ones(10), np.ones(10) * -1, np.ones(10)])
         assert _detect_tc_for_ic_stride(signal1) == 9
 

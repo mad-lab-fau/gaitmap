@@ -39,20 +39,27 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
     def test_is_identical_to_normal_rampp(
         self, healthy_example_imu_data, healthy_example_stride_borders, snapshot
     ) -> None:
-        """Test if the output is the same as normal Rampp for lax filter parameters."""
+        """Test if the output is the same as normal Rampp for lax filter parameters.
+
+        Note that we only expect this for the IC events. TC events will always differ slightly.
+        """
         data = coordinate_conversion.convert_to_fbf(
             healthy_example_imu_data, left=["left_sensor"], right=["right_sensor"]
         )
 
-        ed = self.algorithm_class()
+        ed = self.algorithm_class(ic_lowpass_filter=ButterworthFilter(1, 100))
         ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
         rampp_ed = RamppEventDetection()
         rampp_ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         for sensor in ("left_sensor", "right_sensor"):
             assert_frame_equal(
-                ed.annotated_original_event_list_[sensor], rampp_ed.annotated_original_event_list_[sensor]
+                ed.annotated_original_event_list_[sensor][["ic", "min_vel"]],
+                rampp_ed.annotated_original_event_list_[sensor][["ic", "min_vel"]],
             )
+            assert (
+                ed.annotated_original_event_list_[sensor]["tc"] - rampp_ed.annotated_original_event_list_[sensor]["tc"]
+            ).max() <= 1
 
     @pytest.mark.parametrize("filter_paras", [(3, 5), (2, 10)])
     def test_correct_arguments_are_passed(

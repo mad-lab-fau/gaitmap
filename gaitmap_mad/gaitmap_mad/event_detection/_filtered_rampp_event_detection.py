@@ -31,7 +31,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     ic_lowpass_filter
         An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
-        applied to the gyr_ml data before the IC is detected.
+        applied to the gyr_ml data before the IC and TC is detected.
         While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
@@ -84,11 +84,13 @@ class FilteredRamppEventDetection(RamppEventDetection):
 
     Notes
     -----
-    Due to attachment methods used for foot-worn IMUs, the sensor might experience bounce and vibrate at the time of
-    the heel strike (IC) which leads to high frequency artifacts in the gyr_ml signal.
+    Due to attachment methods used for foot-worn IMUs, the sensor might experience bounces and vibrations at the time of
+    the initial contact (IC) which leads to high frequency artifacts in the gyr_ml signal.
     This can lead to an inaccurate IC detection, as it relies on the identification of extrema in the signal.
     To resolve this issue, this event detection method applies a low-pass filter to remove high frequency artifacts.
-    Note, that the lowpass filter is only used for the IC detection and not the detection of other events.
+    Similaraly, when the sensor is attached loosly, there can be unexpected peaks during the mid-swing phase of the gait
+    cycle, which can lead to an inaccurate detection of the terminal contact (TC) event.
+    Note, that the lowpass filter is only used for the IC and TC detection and not the detection of other events.
     Other than that, the implementation is identical to the normal Rampp event detection (
     :class:`~gaitmap.event_detection.RamppEventDetection`).
 

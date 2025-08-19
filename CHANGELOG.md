@@ -10,6 +10,22 @@ project.
 
 ## [2.6.0] - Unreleased
 
+### Scientfic Changes
+
+- The TC detection within FilteredRampp event detection now uses the filtered gyro signal instead of the raw gyro 
+  signal.
+  We saw in a couple of patients that they had a lot of high frequency noise in the gyro signal, which affected the
+  TC detection.
+  For existing cases, this should change the position of the TC event slightly (approximately 1-2 samples).
+  (https://github.com/mad-lab-fau/gaitmap/pull/60)
+
+### Added
+
+- Both variants of the Rampp event detection now support either IC-IC strides or "segmented" strides as inputs.
+  This allows the use of strides that are pre-segmented by other algorithms or by a reference system as input to the
+  rest of the pipeline.
+  The algorithm still searches for a proper IC in the input data within a search window around the provided IC.
+  (https://github.com/mad-lab-fau/gaitmap/pull/60)
 - Dataset checks can now optionally check magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
 - Dataset rotations can now rotate magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
 - Added an option to the madgwick algorithm to use the algorithm version that also uses the magnetometer for correction.
