@@ -336,13 +336,15 @@ class MadgwickRtsKalman(RtsKalman):
         :class:`~gaitmap.trajectory_reconstruction.RtsKalman`).
     use_magnetometer
         Flag to control if the magnetometer should be used in the Madgwick filter.
+        Note, that the rest of the algorithm does not change based on this parameter.
+        The Kalman update steps and the error propagation still only consider the accelerometer and gyroscope data.
         If True, the data is expected to have the `mag_x, mag_y, mag_z` columns.
 
     Attributes
     ----------
     orientation_
         The rotations as a *SingleSensorOrientationList*, including the initial orientation.
-        This means the there are len(data) + 1 orientations.
+        This means there are len(data) + 1 orientations.
     orientation_object_
         The orientations as a single scipy Rotation object
     position_
