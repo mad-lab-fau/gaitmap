@@ -482,7 +482,16 @@ def _match_label_lists(
 
     if one_to_one is False:
         # p = np.inf is used to select the Chebyshev distance
-        keys = list(zip(*right_tree.sparse_distance_matrix(left_tree, tolerance, p=np.inf).keys()))
+        keys = list(
+            zip(
+                # We force sort the keys here to make sure the order is deterministic, even if the storage order of
+                # sparse array might not be.
+                *sorted(
+                    right_tree.sparse_distance_matrix(left_tree, tolerance, p=np.inf, output_type="dict").keys(),
+                    key=lambda x: x[1],
+                )
+            )
+        )
         # All values are returned that have a valid match
         return (np.array([]), np.array([])) if len(keys) == 0 else (np.array(keys[1]), np.array(keys[0]))
 

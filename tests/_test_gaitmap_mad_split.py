@@ -21,10 +21,12 @@ def _gaitmap_mad_sys_modifier():
     # entry to None.
 
     # This import will force gaitmap_mad to be in sys.modules.
+    import gaitmap_mad
 
     sys.modules["gaitmap_mad"] = None
     yield
-    sys.modules.pop("gaitmap_mad")
+    sys.modules.pop("gaitmap_mad", None)
+    import gaitmap_mad  # noqa: F401, F811
 
     # We just go overboard to be save and reimport all gaitmap modules after the cleanup.
     modules_to_reload = []
@@ -38,13 +40,12 @@ def _gaitmap_mad_sys_modifier():
 
 @pytest.fixture(scope="module")
 def _gaitmap_mad_change_version():
+    sys.modules.pop("gaitmap_mad", None)
     import gaitmap_mad
 
-    real_version = gaitmap_mad.__version__
     gaitmap_mad.__version__ = "0.0.0"
     yield
-    gaitmap_mad.__version__ = real_version
-    importlib.reload(gaitmap_mad)
+    sys.modules.pop("gaitmap_mad")
 
 
 def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier) -> None:
@@ -60,15 +61,24 @@ def test_raises_error_gaitmap_mad_not_installed(_gaitmap_mad_sys_modifier) -> No
     assert "gaitmap.stride_segmentation" in str(e.value)
 
 
+def test_error_not_raised_when_importing_ori_methods(_gaitmap_mad_sys_modifier) -> None:
+    # First we need to remove gaitmap_mad from sys.modules, so that it is not imported.
+    # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap.trajectory_reconstruction.orientation_methods", None)
+    sys.modules.pop("gaitmap.trajectory_reconstruction", None)
+    from gaitmap.trajectory_reconstruction import MadgwickAHRS  # noqa: F401
+
+
 def test_gaitmap_mad_version_mismatch(_gaitmap_mad_change_version) -> None:
     # We need to make sure that this is a fresh import:
     sys.modules.pop("gaitmap.stride_segmentation", None)
-    with pytest.raises(AssertionError):
+    with pytest.raises(ImportError):
         from gaitmap.stride_segmentation import BarthDtw  # noqa: F401
 
 
 def test_raises_no_error_gaitmap_mad_installed() -> None:
     # We need to make sure that this is a fresh import:
+    sys.modules.pop("gaitmap_mad", None)
     sys.modules.pop("gaitmap.stride_segmentation", None)
     from gaitmap.stride_segmentation import BarthDtw  # noqa: F401
 

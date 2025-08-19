@@ -38,6 +38,7 @@ BRIAN = pooch.create(
         "position_sample.csv": "12cf9b837f51a01c1b5caf3e24d767307cf5d6619a372baf627481ff2c1e2703",
         "stride_borders_sample.csv": "6b93f875b7369bc9f6edd5842771dba79aef4e5922f7542786900852029ca914",
         "stride_events_sample.csv": "9fa47ac00ebe96fb6dc8447c49cf2ae1cf9559300101700a6875f094e4d5c274",
+        "aligned_data_with_mag_l_walks.csv": "b767c307e2a5545e1e54f740c2b67dce0ad0ef56dddc09ed00ccc5b07cceeb76",
     },
     # The name of an environment variable that *can* overwrite the path
     env="GAITMAP_DATA_DIR",
@@ -54,6 +55,19 @@ def _get_data(filename: str) -> str:
 
     # checks if file is already in local cache folder, otherwise downloads it from github; hashes are checked
     return BRIAN.fetch(filename)
+
+
+def get_magnetometer_l_path_data():
+    """Get example IMU data from a healthy subject doing L-shape repeats.
+
+    The sampling rate is 400 Hz
+    """
+    test_data_path = _get_data("aligned_data_with_mag_l_walks.csv")
+    data = pd.read_csv(test_data_path, header=[0], index_col=0)
+
+    # Get index in seconds
+    data.index /= 400
+    return data
 
 
 def get_healthy_example_imu_data():

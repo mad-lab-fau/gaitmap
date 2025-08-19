@@ -411,7 +411,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             self.model, feature_data, expected_columns=self.data_columns, algorithm=self.algo_predict
         )
         self.hidden_state_sequence_ = self.feature_transform.inverse_transform_state_sequence(
-            self.hidden_state_sequence_feature_space_, sampling_rate_hz=sampling_rate_hz
+            self.hidden_state_sequence_feature_space_, data=data
         )
         return self
 

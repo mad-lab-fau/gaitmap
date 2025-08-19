@@ -289,7 +289,7 @@ def _find_all_events_for_segmented_stride(
         if "ic" in events:
             gyr_ml_filtered_sec = gyr_ml_filtered[start:end]
             acc_sec = acc_pa[start:end]
-            gyr_grad = np.gradient(gyr_ml[start:end])
+            gyr_grad = np.gradient(gyr_ml_filtered[start:end])
             ic_events.append(
                 start + _detect_ic_for_segmented_stride(gyr_ml_filtered_sec, acc_sec, gyr_grad, ic_search_region)
             )
@@ -342,7 +342,8 @@ def _find_all_events_for_ic_stride(
                     end,
                     gyr_ml_filtered,
                     acc_pa,
-                    np.gradient(gyr_ml),
+                    # TODO: Move outside loop
+                    np.gradient(gyr_ml_filtered),
                     ic_search_region,
                 )
             )

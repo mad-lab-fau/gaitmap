@@ -25,7 +25,7 @@ from gaitmap.utils.datatype_helper import (
     get_multi_sensor_names,
     set_correct_index,
 )
-from gaitmap.utils.rotations import get_gravity_rotation, rotate_dataset_series
+from gaitmap.utils.rotations import get_gravity_rotation
 
 
 class _TrajectoryReconstructionWrapperMixin:
@@ -137,10 +137,7 @@ class _TrajectoryReconstructionWrapperMixin:
             }
         for (r_id, i_region), stride_list in zip(integration_regions.iterrows(), stride_list_list):
             i_start, i_end = (int(i_region["start"]), int(i_region["end"]))
-            i_orientation, i_velocity, i_position = self._estimate_region(data, i_start, i_end, stride_list)
-            orientation[r_id] = pd.DataFrame(i_orientation.as_quat(), columns=GF_ORI)
-            velocity[r_id] = pd.DataFrame(i_velocity, columns=GF_VEL)
-            position[r_id] = pd.DataFrame(i_position, columns=GF_POS)
+            orientation[r_id], velocity[r_id], position[r_id] = self._estimate_region(data, i_start, i_end, stride_list)
         orientation_df = pd.concat(orientation)
         orientation_df.index = orientation_df.index.rename(full_index)
         velocity_df = pd.concat(velocity)
@@ -161,11 +158,11 @@ class _TrajectoryReconstructionWrapperMixin:
             assert self.pos_method is not None
             # Apply the orientation method
             ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
-            orientation = ori_method.estimate(
+            ori_method.estimate(
                 stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
-            ).orientation_object_
-
-            rotated_stride_data = rotate_dataset_series(stride_data, orientation[:-1])
+            )
+            orientation = ori_method.orientation_
+            rotated_stride_data = ori_method.rotated_data_
             # Apply the Position method
             pos_method = self.pos_method.clone().estimate(
                 rotated_stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
@@ -179,7 +176,7 @@ class _TrajectoryReconstructionWrapperMixin:
             trajectory_method = trajectory_method.estimate(
                 stride_data, sampling_rate_hz=self.sampling_rate_hz, stride_event_list=stride_event_list
             )
-            orientation = trajectory_method.orientation_object_
+            orientation = trajectory_method.orientation_
             velocity = trajectory_method.velocity_
             position = trajectory_method.position_
         return orientation, velocity, position

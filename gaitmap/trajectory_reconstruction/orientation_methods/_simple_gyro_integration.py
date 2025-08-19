@@ -33,6 +33,9 @@ class SimpleGyroIntegration(BaseOrientationMethod):
         This means the there are len(data) + 1 orientations.
     orientation_object_
         The orientations as a single scipy Rotation object
+    rotated_data_
+        The rotated data after applying the estimated orientation to the data.
+        The first sample of the data remain unrotated (initial orientation).
 
     Other Parameters
     ----------------
@@ -73,11 +76,6 @@ class SimpleGyroIntegration(BaseOrientationMethod):
 
     initial_orientation: Union[np.ndarray, Rotation]
     memory: Optional[Memory]
-
-    orientation_: Rotation
-
-    data: SingleSensorData
-    sampling_rate_hz: float
 
     def __init__(
         self,

@@ -1,7 +1,7 @@
 """This tests the BaseAlgorithm and fundamental functionality."""
 
 from inspect import Parameter, signature
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import pytest
 from tpcp import clone, get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
@@ -59,13 +59,13 @@ def create_test_class(action_method_name, params=None, private_params=None, acti
         },
     ]
 )
-def example_test_class_initialised(request) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
+def example_test_class_initialised(request) -> tuple[BaseAlgorithm, dict[str, Any]]:
     test_instance = create_test_class(**request.param)
     return test_instance, request.param
 
 
 @pytest.fixture()
-def example_test_class_after_action(example_test_class_initialised) -> Tuple[BaseAlgorithm, Dict[str, Any]]:
+def example_test_class_after_action(example_test_class_initialised) -> tuple[BaseAlgorithm, dict[str, Any]]:
     test_instance, params = example_test_class_initialised
     action_params = {
         **params["attributes"],

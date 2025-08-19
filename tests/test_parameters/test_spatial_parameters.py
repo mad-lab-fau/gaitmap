@@ -177,6 +177,7 @@ class TestSpatialParameterCalculation:
     parameters = [
         "stride_length",
         "gait_velocity",
+        "max_orientation_change",
         "ic_angle",
         "tc_angle",
         "turning_angle",
@@ -252,7 +253,7 @@ class TestSpatialParameterCalculation:
             sampling_rate_hz=100,
         )
 
-        ori_only_parameters = ["ic_angle", "tc_angle", "turning_angle"]
+        ori_only_parameters = ["max_orientation_change", "ic_angle", "tc_angle", "turning_angle"]
 
         assert set(t.parameters_.columns) == set(ori_only_parameters)
 

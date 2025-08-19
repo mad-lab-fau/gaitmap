@@ -22,6 +22,7 @@ from gaitmap.utils.datatype_helper import (
     StrideList,
     VelocityList,
 )
+from gaitmap.utils.rotations import rotate_dataset_series
 
 BaseType = TypeVar("BaseType", bound="_BaseSerializable")  # pylint: disable=invalid-name
 
@@ -229,12 +230,20 @@ class BaseOrientationMethod(BaseAlgorithm):
     _action_methods = ("estimate",)
     orientation_object_: Rotation
 
+    data: SingleSensorData
+    sampling_rate_hz: float
+
     @property
     def orientation_(self) -> SingleSensorOrientationList:
         """Orientations as pd.DataFrame."""
         df = pd.DataFrame(self.orientation_object_.as_quat(), columns=GF_ORI)
         df.index.name = "sample"
         return df
+
+    @property
+    def rotated_data_(self) -> SingleSensorData:
+        """Rotated data."""
+        return rotate_dataset_series(self.data, self.orientation_object_[:-1])
 
     def estimate(
         self,

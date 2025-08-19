@@ -8,4 +8,4 @@ library.
 Note, that we only support using the exact same version of the gaitmap library.
 """
 
-__version__ = "2.3.0"
+__version__ = "2.5.2"

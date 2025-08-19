@@ -32,7 +32,7 @@ Other Python helpers to spawn multiple processes will of course work as well.
 """
 
 from pprint import pprint
-from typing import Any, Dict
+from typing import Any
 
 # %%
 # Load some example data
@@ -70,7 +70,7 @@ pprint(list(parameter_grid))
 # This could be further optimized by using a read-only shared memory object for the data.
 
 
-def run(dtw: BarthDtw, parameter: Dict[str, Any]) -> BarthDtw:
+def run(dtw: BarthDtw, parameter: dict[str, Any]) -> BarthDtw:
     # For this run, change the parameters on the dtw object
     dtw = dtw.set_params(**parameter)
     dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)

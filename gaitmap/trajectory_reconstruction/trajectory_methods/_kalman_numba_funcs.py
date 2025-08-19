@@ -5,7 +5,7 @@ from typing import Any, Callable, NamedTuple
 import numpy as np
 from numba import njit
 
-from gaitmap.trajectory_reconstruction.orientation_methods._madgwick import _madgwick_update
+from gaitmap.trajectory_reconstruction.orientation_methods._madgwick import _madgwick_update, _madgwick_update_mag
 from gaitmap.utils.consts import GRAV_VEC
 from gaitmap.utils.fast_quaternion_math import multiply, quat_from_rotvec, rotate_vector
 
@@ -27,6 +27,7 @@ class ForwardPassDependencies(NamedTuple):
 def rts_kalman_update_series(
     acc,
     gyro,
+    mag,
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
@@ -40,6 +41,7 @@ def rts_kalman_update_series(
     return _rts_kalman_update_series(
         acc,
         gyro,
+        mag,
         initial_orientation,
         sampling_rate_hz,
         meas_noise,
@@ -58,7 +60,7 @@ def cross_product_matrix(vec):
 
 
 @njit()
-def simple_navigation_equations(acc, gyro, orientation, position, velocity, sampling_rate_hz, _):
+def simple_navigation_equations(acc, gyro, _, orientation, position, velocity, sampling_rate_hz, __):
     """Calculate the next state using simple navigation equations."""
     sigma = gyro / sampling_rate_hz
     r = quat_from_rotvec(sigma)
@@ -71,7 +73,7 @@ def simple_navigation_equations(acc, gyro, orientation, position, velocity, samp
 
 
 @njit()
-def madgwick_motion_update(acc, gyro, orientation, position, velocity, sampling_rate_hz, paras):
+def madgwick_motion_update(acc, gyro, _, orientation, position, velocity, sampling_rate_hz, paras):
     """Calculate the next state using the Madgwick filter for orientation estimation."""
     beta = paras[0]
     new_orientation = _madgwick_update(gyro, acc, orientation, sampling_rate_hz, beta)
@@ -83,9 +85,22 @@ def madgwick_motion_update(acc, gyro, orientation, position, velocity, sampling_
 
 
 @njit()
+def madgwick_mag_motion_update(acc, gyro, mag, orientation, position, velocity, sampling_rate_hz, paras):
+    """Calculate the next state using the Madgwick filter for orientation estimation."""
+    beta = paras[0]
+    new_orientation = _madgwick_update_mag(gyro, acc, mag, orientation, sampling_rate_hz, beta)
+
+    rotated_acc = rotate_vector(new_orientation, acc)
+    new_position = position + velocity / sampling_rate_hz + 0.5 * (rotated_acc - GRAV_VEC) / sampling_rate_hz**2
+    new_velocity = velocity + (rotated_acc - GRAV_VEC) / sampling_rate_hz
+    return new_position, new_velocity, new_orientation
+
+
+@njit()
 def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # noqa: PLR0915
     accel,
     gyro,
+    mag,
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
@@ -160,13 +175,14 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # n
         meas_func[3] = 1
 
     for i, zupt in enumerate(zupts):
-        acc = np.ascontiguousarray(accel[i])
-        omega = np.ascontiguousarray(gyro[i])
-
+        a = np.ascontiguousarray(accel[i])
+        w = np.ascontiguousarray(gyro[i])
+        m = np.zeros(3) if mag is None else np.ascontiguousarray(mag[i])
         # calculate the new nominal position, velocity and orientation by integrating the acc and gyro measurement
         position, velocity, orientation = dependencies.motion_update_func(
-            acc,
-            omega,
+            a,
+            w,
+            m,
             orientations[i],
             positions[i],
             velocities[i],
@@ -178,7 +194,7 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # n
         orientations[i + 1, :] = orientation
 
         # predict the new error state, based on the old error state and the new nominal orientation
-        rotated_acc = rotate_vector(orientation, acc)
+        rotated_acc = rotate_vector(orientation, a)
         transition_matrix[3:6, 6:] = -cross_product_matrix(rotated_acc) / sampling_rate_hz
         state_transitions[i, :, :] = transition_matrix
 
@@ -287,6 +303,7 @@ def _rts_kalman_correction_pass(positions, velocities, orientations, corrected_e
 def _rts_kalman_update_series(
     acc,
     gyro,
+    mag,
     initial_orientation,
     sampling_rate_hz,
     meas_noise,
@@ -299,6 +316,7 @@ def _rts_kalman_update_series(
     forward_eskf_results, forward_nominal_states = forward_pass_func(
         acc,
         gyro,
+        mag,
         initial_orientation,
         sampling_rate_hz,
         meas_noise,

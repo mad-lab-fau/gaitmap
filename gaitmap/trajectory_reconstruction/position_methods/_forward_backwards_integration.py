@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid
 from tpcp import cf
 from typing_extensions import Self
 
@@ -149,11 +149,11 @@ class ForwardBackwardIntegration(BasePositionMethod):
         # Add an implicit 0 to the beginning of the acc data
         padded_acc = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
         velocity = self._forward_backward_integration(padded_acc)
-        position_xy = cumtrapz(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
+        position_xy = cumulative_trapezoid(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
         if self.level_assumption is True:
             position_z = self._forward_backward_integration(velocity[:, [2]])
         else:
-            position_z = cumtrapz(velocity[:, [2]], axis=0, initial=0) / self.sampling_rate_hz
+            position_z = cumulative_trapezoid(velocity[:, [2]], axis=0, initial=0) / self.sampling_rate_hz
         position = np.hstack((position_xy, position_z))
 
         self.velocity_ = pd.DataFrame(velocity, columns=GF_VEL)
@@ -171,9 +171,9 @@ class ForwardBackwardIntegration(BasePositionMethod):
 
     def _forward_backward_integration(self, data: np.ndarray) -> np.ndarray:
         # TODO: different steepness and turning point for velocity and position?
-        integral_forward = cumtrapz(data, axis=0, initial=0) / self.sampling_rate_hz
+        integral_forward = cumulative_trapezoid(data, axis=0, initial=0) / self.sampling_rate_hz
         # for backward integration, we flip the signal and inverse the time by using a negative sampling rate.
-        integral_backward = cumtrapz(data[::-1], axis=0, initial=0) / -self.sampling_rate_hz
+        integral_backward = cumulative_trapezoid(data[::-1], axis=0, initial=0) / -self.sampling_rate_hz
         weights = self._sigmoid_weight_function(integral_forward.shape[0])
         combined = (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
         return combined

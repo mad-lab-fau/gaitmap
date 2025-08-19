@@ -8,6 +8,68 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [2.6.0] - Unreleased
+
+- Dataset checks can now optionally check magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
+- Dataset rotations can now rotate magnetometer data (https://github.com/mad-lab-fau/gaitmap/pull/73)
+- Added an option to the madgwick algorithm to use the algorithm version that also uses the magnetometer for correction.
+  This option can be activated in the `MadgwickAHRS` or `MadgwickRtsKalman` algorithm by setting the `use_magnetometer`
+  to `True`. (https://github.com/mad-lab-fau/gaitmap/pull/73)
+
+## [2.5.2] - 2025-01-19
+
+- Removed scipy deprecation of `cumtrapz` function (https://github.com/mad-lab-fau/gaitmap/pull/71)
+
+## [2.5.1] - 2024-05-27
+
+### Fixed
+The package updates in 2.5.0 broke some things. These are now fixed.
+
+- For the parameter errors, the order of the output parameters has changed slightly, as they are now sorted to avoid 
+  future breaking changes, based on changes in the sor policy in pandas
+- The matches for the stride matching are now sorted to avoid future breaking changes, based on changes in the sor 
+  policy in scipy sparse arrays
+- The `PCAAlignment` is now more robust by enforcing a direction of the first principal component.
+  The method also has a new attribute `normalized_pca_components_` that hold the components after this adjustment.
+  This change might result in different results for the PCA step of the alignment.
+  However, in combination with the forward direction alignment, the results should be identical to the previous version.
+   
+
+## [2.5.0] - 2024-05-23
+
+### Changed
+
+Looser version constrains
+
+### Fixed
+
+- Fixed a bug in the filtered rampp event detection. Replaced gyr_ml to gyr_ml_filtered so that we look for the gradient on the filtered signal.
+  (https://github.com/mad-lab-fau/gaitmap/pull/66)
+
+## [2.4.0] - 2024-04-19
+
+### Added
+
+- All orientation and trajectory methods now have a new parameter `rotated_data_` that provides the input data rotated
+  to the world frame based on the calculated orientation.
+  (https://github.com/mad-lab-fau/gaitmap/pull/64)
+- The Spatial Parameter Calculation now also calculates the "Range of Motion" (i.e. the angle change of the sensor in
+  the sagittal plane) (https://github.com/mad-lab-fau/gaitmap/pull/54)
+
+### Fixed
+
+- Fixed a bug that when using `merge_interval` with empty input of shape (0, 2), the output was not empty.
+  (https://github.com/mad-lab-fau/gaitmap/pull/61)
+- Fixed a bug that an error was raised when importing from the TrajectoryReconstruction module without gaitmap_mad 
+  installed (https://github.com/mad-lab-fau/gaitmap/pull/63)
+
+### Changed
+
+- Changed resampling function in inverse feature transform of HMM. 
+  Resampling of state sequence is now also possible if the `target_sample_rate` is not a multiple of the HMM 
+  sampling rate, e.g. `target_sample_rate=200`,  `sample_rate=52.1`  (https://github.com/mad-lab-fau/gaitmap/pull/62)
+- Dropped Python 3.8 support! (https://github.com/mad-lab-fau/gaitmap/pull/64)
+
 ## [2.3.0] - 2023-08-03
 
 ### Changed

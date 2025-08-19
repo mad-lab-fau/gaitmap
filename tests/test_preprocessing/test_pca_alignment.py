@@ -69,10 +69,10 @@ class TestPcaAlignment:
         """Test if value error is raised correctly if invalid axis for the search plane are defined."""
         data = healthy_example_imu_data
 
-        with pytest.raises(ValueError, match=r".*Invalid target aixs *"):
+        with pytest.raises(ValueError, match=r".*Invalid target axis *"):
             PcaAlignment(target_axis="z", pca_plane_axis=("gyr_x", "gyr_y")).align(data)
 
-        with pytest.raises(ValueError, match=r".*Invalid target aixs *"):
+        with pytest.raises(ValueError, match=r".*Invalid target axis *"):
             PcaAlignment(target_axis="a", pca_plane_axis=("gyr_x", "gyr_y")).align(data)
 
     @pytest.mark.parametrize(

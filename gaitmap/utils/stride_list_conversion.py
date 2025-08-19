@@ -1,6 +1,5 @@
 """A couple of utils to convert stride lists into different formats."""
 
-
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
