@@ -1,6 +1,6 @@
 """Feature transformation class for HMM."""
 
-from typing import List, NoReturn, Optional
+from typing import NoReturn, Optional
 
 import numpy as np
 import pandas as pd
@@ -158,8 +158,8 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     # TODO: Find a way to expose the internal objects instead of exposing just parameters.
     sampling_rate_feature_space_hz: float
     low_pass_filter: Optional[BaseFilter]
-    axes: List[str]
-    features: List[str]
+    axes: list[str]
+    features: list[str]
     window_size_s: float
     standardization: bool
 
@@ -167,8 +167,8 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         self,
         sampling_rate_feature_space_hz: float = 51.2,
         low_pass_filter: Optional[BaseFilter] = cf(ButterworthFilter(cutoff_freq_hz=10.0, order=4)),
-        axes: List[str] = cf(["gyr_ml"]),
-        features: List[str] = cf(["raw", "gradient"]),
+        axes: list[str] = cf(["gyr_ml"]),
+        features: list[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
         standardization: bool = True,
     ) -> None:

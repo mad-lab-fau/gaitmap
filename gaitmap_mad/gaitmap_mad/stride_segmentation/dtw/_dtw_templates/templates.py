@@ -1,7 +1,8 @@
 """Dtw template base classes and helper."""
 
+from collections.abc import Iterable, Sequence
 from importlib.resources import open_text
-from typing import Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -134,7 +135,7 @@ class TrainableTemplateMixin:
         data_sequences: Iterable[SingleSensorData],
         sampling_rate_hz: Optional[float] = None,
         *,
-        columns: Optional[List[_Hashable]] = None,
+        columns: Optional[list[_Hashable]] = None,
         **_,
     ) -> Self:
         """Optimize or recreate the template from data sequences."""
@@ -296,7 +297,7 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
         data_sequences: Iterable[SingleSensorData],
         sampling_rate_hz: Optional[float] = None,
         *,
-        columns: Optional[List[_Hashable]] = None,
+        columns: Optional[list[_Hashable]] = None,
         **_,
     ):
         """Create a template from multiple data sequences.
@@ -347,8 +348,8 @@ def _create_interpolated_dtw_template(
     sampling_rate_hz: float,
     kind: str = "linear",
     n_samples: Optional[int] = None,
-    columns: Optional[List[_Hashable]] = None,
-) -> Tuple[pd.DataFrame, float]:
+    columns: Optional[list[_Hashable]] = None,
+) -> tuple[pd.DataFrame, float]:
     expected_col_order = columns
     arrays = []
     for df in signal_sequences:

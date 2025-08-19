@@ -1,7 +1,8 @@
 """Calculate spatial parameters algorithm by Kanzler et al. 2015 and Rampp et al. 2014."""
 
 import warnings
-from typing import Dict, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -153,8 +154,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     calculate_only: Optional[Sequence[ParamterNames]]
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]
-    sole_angle_course_: Optional[Union[pd.Series, Dict[_Hashable, pd.Series]]]
+    parameters_: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]
+    sole_angle_course_: Optional[Union[pd.Series, dict[_Hashable, pd.Series]]]
 
     stride_event_list: StrideList
     positions: Optional[PositionList]
@@ -170,7 +171,7 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
+    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}

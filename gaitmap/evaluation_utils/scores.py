@@ -1,7 +1,7 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
 import warnings
-from typing import Dict, Union, overload
+from typing import Union, overload
 
 import pandas as pd
 from typing_extensions import Literal, TypedDict
@@ -18,8 +18,8 @@ class _ScoresDict(TypedDict):
 
 @overload
 def recall_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]: ...
+    matches_df: dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> dict[_Hashable, float]: ...
 
 
 @overload
@@ -78,8 +78,8 @@ def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 @overload
 def precision_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]: ...
+    matches_df: dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> dict[_Hashable, float]: ...
 
 
 @overload
@@ -140,8 +140,8 @@ def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"
 
 @overload
 def f1_score(
-    matches_df: Dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[_Hashable, float]: ...
+    matches_df: dict[_Hashable, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> dict[_Hashable, float]: ...
 
 
 @overload
@@ -203,8 +203,8 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 @overload
 def precision_recall_f1_score(
-    matches_df: Dict[str, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
-) -> Dict[str, _ScoresDict]: ...
+    matches_df: dict[str, pd.DataFrame], *, zero_division: Literal["warn", 0, 1] = "warn"
+) -> dict[str, _ScoresDict]: ...
 
 
 @overload
@@ -273,8 +273,8 @@ def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1
 
 
 def _get_match_type_dfs(
-    match_results: Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]],
-) -> Union[Dict[_Hashable, Dict[str, pd.DataFrame]], Dict[str, pd.DataFrame]]:
+    match_results: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
+) -> Union[dict[_Hashable, dict[str, pd.DataFrame]], dict[str, pd.DataFrame]]:
     is_not_dict = not isinstance(match_results, dict)
     if is_not_dict:
         match_results = {"__dummy__": match_results}

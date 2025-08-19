@@ -1,7 +1,7 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
 
 from copy import deepcopy
-from typing import Dict, Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import pandas as pd
 from tpcp import get_action_method
@@ -127,7 +127,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
     action_method: Optional[str]
 
     instances_per_roi_: Union[
-        Dict[_Hashable, StrideSegmentationAlgorithm], Dict[_Hashable, Dict[_Hashable, StrideSegmentationAlgorithm]]
+        dict[_Hashable, StrideSegmentationAlgorithm], dict[_Hashable, dict[_Hashable, StrideSegmentationAlgorithm]]
     ]
     stride_list_: StrideList
 
@@ -184,8 +184,8 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
         if self._multi_roi:
             # Apply the segmentation to a single dataset in case a multi - sensor roi list is provided
-            results_dict: Dict[
-                _Hashable, Dict[str, Union[pd.DataFrame, Dict[_Hashable, StrideSegmentationAlgorithm]]]
+            results_dict: dict[
+                _Hashable, dict[str, Union[pd.DataFrame, dict[_Hashable, StrideSegmentationAlgorithm]]]
             ] = {}
             for sensor, roi in self.regions_of_interest.items():
                 sensor_data = self.data[sensor]
@@ -209,7 +209,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         rois: SingleSensorRegionsOfInterestList,
         sensor_name: Optional[_Hashable] = None,
         **kwargs,
-    ) -> Dict[str, Union[pd.DataFrame, Dict[_Hashable, StrideSegmentationAlgorithm]]]:
+    ) -> dict[str, Union[pd.DataFrame, dict[_Hashable, StrideSegmentationAlgorithm]]]:
         """Call the the segmentation algorithm for each region of interest and store the instance."""
         rois = rois.reset_index()
         index_col = ROI_ID_COLS[get_single_sensor_regions_of_interest_types(rois)]
@@ -246,7 +246,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         combined_stride_list = self._merge_stride_lists(combined_stride_list, index_col)
         return {"stride_list": combined_stride_list, "instances_per_roi": instances_per_roi}
 
-    def _merge_stride_lists(self, stride_lists: Dict[_Hashable, StrideList], index_name: str) -> StrideList:
+    def _merge_stride_lists(self, stride_lists: dict[_Hashable, StrideList], index_name: str) -> StrideList:
         """Merge either single or multisensor stride lists.
 
         The roi id (the dict key in the input), will be a column in the final output dataframe.

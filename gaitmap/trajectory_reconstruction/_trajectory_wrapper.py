@@ -1,7 +1,8 @@
 """A helper class for common utilities TrajectoryReconstructionWrapper classes."""
 
 import warnings
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -87,7 +88,7 @@ class _TrajectoryReconstructionWrapperMixin:
         self,
         data,
         integration_regions,
-        stride_list_list: Optional[Union[Dict[str, List[SingleSensorStrideList]], List[SingleSensorStrideList]]],
+        stride_list_list: Optional[Union[dict[str, list[SingleSensorStrideList]], list[SingleSensorStrideList]]],
         dataset_type: Literal["single", "multi"],
     ) -> Self:
         """Actual estimation method.
@@ -98,7 +99,7 @@ class _TrajectoryReconstructionWrapperMixin:
         if dataset_type == "single":
             results = self._estimate_single_sensor(data, integration_regions, stride_list_list)
         else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
+            results_dict: dict[_Hashable, dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._estimate_single_sensor(
                     data[sensor], integration_regions[sensor], stride_list_list[sensor] if stride_list_list else None
@@ -111,8 +112,8 @@ class _TrajectoryReconstructionWrapperMixin:
         self,
         data: SingleSensorData,
         integration_regions: SingleSensorRegionsOfInterestList,
-        stride_list_list: Optional[List[SingleSensorStrideList]],
-    ) -> Dict[str, pd.DataFrame]:
+        stride_list_list: Optional[list[SingleSensorStrideList]],
+    ) -> dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = (*self._expected_integration_region_index, "sample")
         orientation = {}
@@ -150,7 +151,7 @@ class _TrajectoryReconstructionWrapperMixin:
 
     def _estimate_region(
         self, data: SingleSensorData, start: int, end: int, stride_event_list: SingleSensorStrideList
-    ) -> Tuple[Rotation, pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[Rotation, pd.DataFrame, pd.DataFrame]:
         stride_data = data.iloc[start:end].copy()
         initial_orientation = self._calculate_initial_orientation(data, start)
 

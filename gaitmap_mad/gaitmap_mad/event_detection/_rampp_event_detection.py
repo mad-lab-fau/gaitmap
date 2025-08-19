@@ -1,6 +1,6 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
-from typing import Callable, Dict, Optional, Tuple, Union, cast
+from typing import Callable, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -172,17 +172,17 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     """
 
-    ic_search_region_ms: Tuple[float, float]
+    ic_search_region_ms: tuple[float, float]
     min_vel_search_win_size_ms: float
     input_stride_type: Literal["segmented", "ic"]
 
     def __init__(
         self,
-        ic_search_region_ms: Tuple[float, float] = (80, 50),
+        ic_search_region_ms: tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[Tuple[str, ...]] = None,
+        detect_only: Optional[tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.ic_search_region_ms = ic_search_region_ms
@@ -202,9 +202,9 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         """
         return _find_all_events
 
-    def _get_detect_kwargs(self) -> Dict[str, Union[Tuple[int, int], int]]:
+    def _get_detect_kwargs(self) -> dict[str, Union[tuple[int, int], int]]:
         ic_search_region = cast(
-            Tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+            tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )
         if all(v == 0 for v in ic_search_region):
             raise ValueError(
@@ -223,13 +223,13 @@ def _find_all_events(
     gyr: pd.DataFrame,
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
-    events: Tuple[str, ...],
-    ic_search_region: Tuple[float, float],
+    events: tuple[str, ...],
+    ic_search_region: tuple[float, float],
     min_vel_search_win_size: int,
     sampling_rate_hz: float,
     gyr_ic_lowpass_filter: Optional[BaseFilter],
     input_stride_type: Literal["segmented", "ic"],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by checking the stride type and calling the relevant method."""
     if input_stride_type == "ic":
         return _find_all_events_for_ic_stride(
@@ -259,12 +259,12 @@ def _find_all_events_for_segmented_stride(
     gyr: pd.DataFrame,
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
-    events: Tuple[str, ...],
-    ic_search_region: Tuple[float, float],
+    events: tuple[str, ...],
+    ic_search_region: tuple[float, float],
     min_vel_search_win_size: int,
     sampling_rate_hz: float,
     gyr_ic_lowpass_filter: Optional[BaseFilter],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"]
 
@@ -309,12 +309,12 @@ def _find_all_events_for_ic_stride(
     gyr: pd.DataFrame,
     acc: pd.DataFrame,
     stride_list: pd.DataFrame,
-    events: Tuple[str, ...],
-    ic_search_region: Tuple[float, float],
+    events: tuple[str, ...],
+    ic_search_region: tuple[float, float],
     min_vel_search_win_size: int,
     sampling_rate_hz: float,
     gyr_ic_lowpass_filter: Optional[BaseFilter],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
     gyr_ml = gyr["gyr_ml"]
     if "ic" in events or "tc" in events:
@@ -366,7 +366,7 @@ def _detect_ic_for_ic_stride(
     gyr_ml: np.ndarray,
     acc_pa_inv: np.ndarray,
     gyr_ml_grad: np.ndarray,
-    ic_search_region: Tuple[float, float],
+    ic_search_region: tuple[float, float],
 ) -> float:
     """Find the ic.
 
@@ -421,7 +421,7 @@ def _detect_tc_for_ic_stride(gyr_ml: np.ndarray) -> float:
 
 
 def _detect_ic_for_segmented_stride(
-    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: Tuple[float, float]
+    gyr_ml: np.ndarray, acc_pa_inv: np.ndarray, gyr_ml_grad: np.ndarray, ic_search_region: tuple[float, float]
 ) -> float:
     """Find the ic.
 

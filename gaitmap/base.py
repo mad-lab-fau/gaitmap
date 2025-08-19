@@ -2,7 +2,7 @@
 
 import json
 import warnings
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -114,27 +114,27 @@ def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
 
 class _BaseSerializable(tpcp.BaseTpcpObject):
     @classmethod
-    def _get_subclasses(cls: Type[Self]):
+    def _get_subclasses(cls: type[Self]):
         for subclass in cls.__subclasses__():
             yield from subclass._get_subclasses()
             yield subclass
 
     @classmethod
-    def _find_subclass(cls: Type[Self], name: str) -> Type[Self]:
+    def _find_subclass(cls: type[Self], name: str) -> type[Self]:
         for subclass in _BaseSerializable._get_subclasses():
             if subclass.__name__ == name:
                 return subclass
         raise ValueError(f"No algorithm class with name {name} exists")
 
     @classmethod
-    def _from_json_dict(cls: Type[Self], json_dict: Dict) -> Self:
+    def _from_json_dict(cls: type[Self], json_dict: dict) -> Self:
         params = json_dict["params"]
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         instance = cls(**input_data)
         return instance
 
-    def _to_json_dict(self) -> Dict[str, Any]:
-        json_dict: Dict[str, Union[str, Dict[str, Any]]] = {
+    def _to_json_dict(self) -> dict[str, Any]:
+        json_dict: dict[str, Union[str, dict[str, Any]]] = {
             "_gaitmap_obj": self.__class__.__name__,
             "params": self.get_params(deep=False),
         }
@@ -154,7 +154,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         return json.dumps(final_dict, indent=4, cls=_CustomEncoder)
 
     @classmethod
-    def from_json(cls: Type[Self], json_str: str) -> Self:
+    def from_json(cls: type[Self], json_str: str) -> Self:
         """Import an gaitmap object from its json representation.
 
         For details have a look at the this :ref:`example <algo_serialize>`.

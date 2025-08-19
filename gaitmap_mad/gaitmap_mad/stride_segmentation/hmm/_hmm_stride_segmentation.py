@@ -3,7 +3,7 @@
 from contextlib import suppress
 from importlib.resources import open_text
 from pathlib import Path
-from typing import Dict, Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -42,9 +42,12 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
 
     def __new__(cls):
         # try to load models
-        with open_text(
-            "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
-        ) as test_data, Path(test_data.name).open(encoding="utf8") as f:
+        with (
+            open_text(
+                "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
+            ) as test_data,
+            Path(test_data.name).open(encoding="utf8") as f,
+        ):
             model_json = f.read()
         return RothSegmentationHmm.from_json(model_json)
 
@@ -126,9 +129,9 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     data: Union[np.ndarray, SensorData]
     sampling_rate_hz: float
 
-    matches_start_end_: Union[np.ndarray, Dict[str, np.ndarray]]
-    hidden_state_sequence_: Union[np.ndarray, Dict[str, np.ndarray]]
-    result_model_: Union[BaseSegmentationHmmT, Dict[str, BaseSegmentationHmmT]]
+    matches_start_end_: Union[np.ndarray, dict[str, np.ndarray]]
+    hidden_state_sequence_: Union[np.ndarray, dict[str, np.ndarray]]
+    result_model_: Union[BaseSegmentationHmmT, dict[str, BaseSegmentationHmmT]]
 
     def __init__(
         self,
@@ -142,7 +145,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         self.model = model
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
@@ -150,7 +153,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         return self._format_stride_list(start_ends)
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, Dict[_Hashable, np.ndarray]]:
+    def matches_start_end_original_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
         """Return the starts and end directly from the hidden state sequence.
 
         This will not be effected by potential changes of the postprocessing.

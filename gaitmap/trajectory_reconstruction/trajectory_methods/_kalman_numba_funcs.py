@@ -1,6 +1,6 @@
 """Helper functions for the RTS Kalman filter."""
 
-from typing import Any, Callable, NamedTuple, Tuple
+from typing import Any, Callable, NamedTuple
 
 import numpy as np
 from numba import njit
@@ -21,7 +21,7 @@ class ForwardPassDependencies(NamedTuple):
 
     motion_update_func: Callable
     # This needs to be a tuple and not a dict, as numba can not process dicts
-    motion_update_func_parameters: Tuple
+    motion_update_func_parameters: tuple
 
 
 def rts_kalman_update_series(
@@ -32,7 +32,7 @@ def rts_kalman_update_series(
     meas_noise,
     process_noise,
     zupts,
-    parameters: Tuple[Any, ...],
+    parameters: tuple[Any, ...],
     forward_pass_func: Callable,
     forward_pass_dependencies: ForwardPassDependencies,
 ):
@@ -292,7 +292,7 @@ def _rts_kalman_update_series(
     meas_noise,
     process_noise,
     zupts,
-    parameters: Tuple[Any, ...],
+    parameters: tuple[Any, ...],
     forward_pass_func: Callable,
     forward_pass_dependencies: ForwardPassDependencies,
 ):

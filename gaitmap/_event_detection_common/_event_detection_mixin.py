@@ -1,7 +1,7 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
 import warnings
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -31,10 +31,10 @@ from gaitmap.utils.stride_list_conversion import (
 class _EventDetectionMixin:
     memory: Optional[Memory]
     enforce_consistency: bool
-    detect_only: Optional[Tuple[str, ...]]
+    detect_only: Optional[tuple[str, ...]]
 
-    min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-    annotated_original_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    min_vel_event_list_: Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]
+    annotated_original_event_list_: Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]
 
     data: SensorData
     sampling_rate_hz: float
@@ -45,7 +45,7 @@ class _EventDetectionMixin:
         self,
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[Tuple[str, ...]] = None,
+        detect_only: Optional[tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.memory = memory
@@ -89,7 +89,7 @@ class _EventDetectionMixin:
         if dataset_type == "single":
             results = self._detect_single_dataset(data, stride_list, detect_kwargs=detect_kwargs, memory=self.memory)
         else:
-            results_dict: Dict[_Hashable, Dict[str, pd.DataFrame]] = {}
+            results_dict: dict[_Hashable, dict[str, pd.DataFrame]] = {}
             for sensor in get_multi_sensor_names(data):
                 results_dict[sensor] = self._detect_single_dataset(
                     data[sensor],
@@ -108,9 +108,9 @@ class _EventDetectionMixin:
         self,
         data: pd.DataFrame,
         stride_list: pd.DataFrame,
-        detect_kwargs: Dict[str, Any],
+        detect_kwargs: dict[str, Any],
         memory: Memory,
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """Detect gait events for a single sensor data set and put into correct output stride list."""
         if memory is None:
             memory = Memory(None)
@@ -168,7 +168,7 @@ class _EventDetectionMixin:
             "annotated_original_event_list": annotated_original_event_list,
         }
 
-    def segmented_event_list_(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
+    def segmented_event_list_(self) -> Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]:
         warnings.deprecated(
             "`segmented_event_list_` is deprecated and will be removed in a future version. "
             "Use `annotated_original_event_list_` instead.",
@@ -182,7 +182,7 @@ class _EventDetectionMixin:
         """
         raise NotImplementedError()
 
-    def _get_detect_kwargs(self) -> Dict[str, Any]:
+    def _get_detect_kwargs(self) -> dict[str, Any]:
         """Return a dictionary of keyword arguments that should be passed to the detect method.
 
         This is a separate method to make it easy to overwrite by a subclass.

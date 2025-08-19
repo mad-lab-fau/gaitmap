@@ -1,6 +1,7 @@
 """A set of helper functions to evaluate the output of a stride segmentation against ground truth."""
 
-from typing import Dict, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -26,7 +27,7 @@ def evaluate_segmented_stride_list(
     one_to_one: bool = True,
     stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
+) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
     """Find True Positives, False Positives and True Negatives by comparing a segmented stride list with ground truth.
 
     This compares a segmented stride list with a ground truth segmented stride list and returns True Positives,
@@ -148,7 +149,7 @@ def _evaluate_stride_list(
     one_to_one: bool = True,
     stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
+) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
     segmented_stride_list_type = is_stride_list(segmented_stride_list)
     ground_truth_type = is_stride_list(ground_truth)
 
@@ -195,7 +196,7 @@ def match_stride_lists(
     one_to_one: bool = True,
     postfix_a: str = "_a",
     postfix_b: str = "_b",
-) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
+) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
     """Find matching strides in two stride lists with a certain tolerance.
 
     This function will find matching strides in two stride lists as long as all selected columns/event of a stride
@@ -319,7 +320,7 @@ def _match_stride_lists(
     one_to_one: bool = True,
     postfix_a: str = "_a",
     postfix_b: str = "_b",
-) -> Union[pd.DataFrame, Dict[_Hashable, pd.DataFrame]]:
+) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
     if postfix_a == postfix_b:
         raise ValueError("The postfix for the left and the right stride list must be different.")
 
@@ -420,7 +421,7 @@ def _match_single_stride_lists(
 
 def _match_label_lists(
     list_left: np.ndarray, list_right: np.ndarray, tolerance: Union[int, float], one_to_one: bool
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Find matches in two lists based on the distance between their vectors.
 
     Parameters

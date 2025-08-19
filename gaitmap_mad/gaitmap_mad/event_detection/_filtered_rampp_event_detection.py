@@ -1,6 +1,6 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from joblib import Memory
 from tpcp import cf
@@ -102,12 +102,12 @@ class FilteredRamppEventDetection(RamppEventDetection):
 
     def __init__(
         self,
-        ic_search_region_ms: Tuple[float, float] = (80, 50),
+        ic_search_region_ms: tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[Tuple[str, ...]] = None,
+        detect_only: Optional[tuple[str, ...]] = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.ic_lowpass_filter = ic_lowpass_filter
@@ -121,6 +121,6 @@ class FilteredRamppEventDetection(RamppEventDetection):
             input_stride_type=input_stride_type,
         )
 
-    def _get_detect_kwargs(self) -> Dict:
+    def _get_detect_kwargs(self) -> dict:
         parent_kwargs = super()._get_detect_kwargs()
         return {**parent_kwargs, "gyr_ic_lowpass_filter": self.ic_lowpass_filter}

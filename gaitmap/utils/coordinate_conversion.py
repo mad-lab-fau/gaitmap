@@ -4,7 +4,7 @@ Definitions can be found in the :ref:`coordinate_systems` guide.
 """
 
 import warnings
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 
@@ -82,8 +82,8 @@ def convert_right_foot_to_fbf(data: SingleSensorData):
 
 def convert_to_fbf(
     data: MultiSensorData,
-    left: Optional[List[str]] = None,
-    right: Optional[List[str]] = None,
+    left: Optional[list[str]] = None,
+    right: Optional[list[str]] = None,
     right_like: Optional[str] = None,
     left_like: Optional[str] = None,
 ):

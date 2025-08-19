@@ -1,6 +1,7 @@
 """Transformers that scale data to certain data ranges."""
 
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 from tpcp import OptimizableParameter, Parameter
@@ -390,11 +391,11 @@ class MinMaxScaler(BaseTransformer):
 
     """
 
-    out_range: Parameter[Tuple[float, float]]
+    out_range: Parameter[tuple[float, float]]
 
     def __init__(
         self,
-        out_range: Tuple[float, float] = (0, 1.0),
+        out_range: tuple[float, float] = (0, 1.0),
     ) -> None:
         self.out_range = out_range
 
@@ -420,13 +421,13 @@ class MinMaxScaler(BaseTransformer):
         self.transformed_data_ = self._transform(data, data_range)
         return self
 
-    def _calc_data_range(self, data: SensorData) -> Tuple[float, float]:
+    def _calc_data_range(self, data: SensorData) -> tuple[float, float]:
         is_single_sensor_data(data, check_gyr=False, check_acc=False, raise_exception=True)
         # We calculate the global min and max over all rows and columns!
         data = data.to_numpy()
         return float(np.nanmin(data)), float(np.nanmax(data))
 
-    def _transform(self, data: SingleSensorData, data_range: Tuple[float, float]) -> SingleSensorData:
+    def _transform(self, data: SingleSensorData, data_range: tuple[float, float]) -> SingleSensorData:
         data = data.copy()
         feature_range = self.out_range
         data_min, data_max = data_range
@@ -483,12 +484,12 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
     """
 
-    data_range: OptimizableParameter[Optional[Tuple[float, float]]]
+    data_range: OptimizableParameter[Optional[tuple[float, float]]]
 
     def __init__(
         self,
-        out_range: Tuple[float, float] = (0, 1.0),
-        data_range: Optional[Tuple[float, float]] = None,
+        out_range: tuple[float, float] = (0, 1.0),
+        data_range: Optional[tuple[float, float]] = None,
     ) -> None:
         self.data_range = data_range
         super().__init__(out_range=out_range)
