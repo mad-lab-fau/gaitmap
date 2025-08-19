@@ -1,5 +1,6 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
+import warnings
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -33,7 +34,7 @@ class _EventDetectionMixin:
     detect_only: Optional[Tuple[str, ...]]
 
     min_vel_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
-    segmented_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
+    annotated_original_event_list_: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]
 
     data: SensorData
     sampling_rate_hz: float
@@ -129,29 +130,29 @@ class _EventDetectionMixin:
         )
 
         # build first dict / df based on segment start and end
-        segmented_event_list = {
+        annotated_original_event_list = {
             "s_id": stride_list.index,
             "start": stride_list["start"],
             "end": stride_list["end"],
         }
         for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel)):
             if event in events:
-                segmented_event_list[event] = event_list
-        segmented_event_list = pd.DataFrame(segmented_event_list).set_index("s_id")
+                annotated_original_event_list[event] = event_list
+        annotated_original_event_list = pd.DataFrame(annotated_original_event_list).set_index("s_id")
         if self.enforce_consistency:
             # check for consistency, remove inconsistent strides
-            segmented_event_list, _ = enforce_stride_list_consistency(
-                segmented_event_list, input_stride_type=self.input_stride_type, check_stride_list=False
+            annotated_original_event_list, _ = enforce_stride_list_consistency(
+                annotated_original_event_list, input_stride_type=self.input_stride_type, check_stride_list=False
             )
 
         if "min_vel" not in events or self.enforce_consistency is False:
             # do not set min_vel_event_list_ if consistency is not enforced as it would be completely scrambled
             # and can not be used for anything anyway
-            return {"segmented_event_list": segmented_event_list}
+            return {"annotated_original_event_list": annotated_original_event_list}
 
         # convert to min_vel event list
         min_vel_event_list, _ = _stride_list_to_min_vel_single_sensor(
-            segmented_event_list, source_stride_type=self.input_stride_type, target_stride_type="min_vel"
+            annotated_original_event_list, source_stride_type=self.input_stride_type, target_stride_type="min_vel"
         )
 
         output_order = [c for c in ["start", "end", "ic", "tc", "min_vel", "pre_ic"] if c in min_vel_event_list.columns]
@@ -162,7 +163,17 @@ class _EventDetectionMixin:
             min_vel_event_list[output_order], input_stride_type="min_vel", check_stride_list=False
         )
 
-        return {"min_vel_event_list": min_vel_event_list, "segmented_event_list": segmented_event_list}
+        return {
+            "min_vel_event_list": min_vel_event_list,
+            "annotated_original_event_list": annotated_original_event_list,
+        }
+
+    def segmented_event_list_(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
+        warnings.deprecated(
+            "`segmented_event_list_` is deprecated and will be removed in a future version. "
+            "Use `annotated_original_event_list_` instead.",
+        )
+        return self.annotated_original_event_list_
 
     def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.

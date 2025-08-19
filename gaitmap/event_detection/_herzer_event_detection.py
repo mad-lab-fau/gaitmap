@@ -56,7 +56,8 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
     input_stride_type
-        The stride list type that should be either "ic", or "segmented".
+        Only segmented strides are supported by this method.
+        Hence, this parameter is set to "segmented" by default and changing it will raise an error.
 
     Attributes
     ----------
@@ -67,7 +68,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         corresponds to the min_vel sample of the subsequent stride.
         Strides for which no valid events could be found are removed.
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
-    segmented_event_list_ : A stride list or dictionary with such values
+    annotated_original_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.
@@ -91,7 +92,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     >>> event_detection = HerzerEventDetection()
     >>> event_detection.detect(data=data, stride_list=stride_list, sampling_rate_hz=204.8)
-    >>> event_detection.segmented_event_list_
+    >>> event_detection.annotated_original_event_list_
           start    end       ic       tc  min_vel
     s_id
     0     48304  48558  48382.0  48304.0  48479.0
@@ -146,15 +147,15 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     the stride list.
     This function should NOT be used, since the detection of the min_vel gait events has not been validated
     for stair ambulation.
-    Please refer to the `segmented_event_list_` instead.
+    Please refer to the `annotated_original_event_list_` instead.
 
     The :class:`~gaitmap.event_detection.HerzerEventDetection` includes a consistency check that is enabled by default.
     The gait events within one stride provided by the `stride_list` must occur in the expected order.
     Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
     If you wish to disable this consistency check, set `enforce_consistency` to False.
-    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `segmented_event_list_` to get
-    all detected events for the exact stride list that was used as input.
+    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `annotated_original_event_list_`
+    to get all detected events for the exact stride list that was used as input.
     Note, that this list might contain NaN for some events.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in

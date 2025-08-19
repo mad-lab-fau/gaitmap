@@ -21,12 +21,10 @@ def _gaitmap_mad_sys_modifier():
     # entry to None.
 
     # This import will force gaitmap_mad to be in sys.modules.
-    import gaitmap_mad  # noqa: F401
 
     sys.modules["gaitmap_mad"] = None
     yield
     sys.modules.pop("gaitmap_mad")
-    import gaitmap_mad  # noqa: F401
 
     # We just go overboard to be save and reimport all gaitmap modules after the cleanup.
     modules_to_reload = []

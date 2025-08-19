@@ -50,7 +50,9 @@ class TestEventDetectionRamppFiltered(TestEventDetectionRampp):
         rampp_ed.detect(data, healthy_example_stride_borders, sampling_rate_hz=204.8)
 
         for sensor in ("left_sensor", "right_sensor"):
-            assert_frame_equal(ed.segmented_event_list_[sensor], rampp_ed.segmented_event_list_[sensor])
+            assert_frame_equal(
+                ed.annotated_original_event_list_[sensor], rampp_ed.annotated_original_event_list_[sensor]
+            )
 
     @pytest.mark.parametrize("filter_paras", [(3, 5), (2, 10)])
     def test_correct_arguments_are_passed(

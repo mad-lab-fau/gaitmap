@@ -52,8 +52,8 @@ class TestEventDetectionHerzer:
 
         snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "left", check_dtype=False)
         snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "right", check_dtype=False)
-        snapshot.assert_match(ed.segmented_event_list_["left_sensor"], "left_segmented", check_dtype=False)
-        snapshot.assert_match(ed.segmented_event_list_["right_sensor"], "right_segmented", check_dtype=False)
+        snapshot.assert_match(ed.annotated_original_event_list_["left_sensor"], "left_segmented", check_dtype=False)
+        snapshot.assert_match(ed.annotated_original_event_list_["right_sensor"], "right_segmented", check_dtype=False)
 
     @pytest.mark.parametrize(("var1", "output"), [(True, 2), (False, 0)])
     def test_postprocessing(self, healthy_example_imu_data, healthy_example_stride_borders, var1, output) -> None:
@@ -105,7 +105,7 @@ class TestEventDetectionHerzer:
         ed.detect(data_dict, stride_list_dict, sampling_rate_hz=204.8)
 
         assert list(datatype_helper.get_multi_sensor_names(ed.min_vel_event_list_)) == dict_keys
-        assert list(datatype_helper.get_multi_sensor_names(ed.segmented_event_list_)) == dict_keys
+        assert list(datatype_helper.get_multi_sensor_names(ed.annotated_original_event_list_)) == dict_keys
 
     def test_equal_output_dict_df(self, healthy_example_imu_data, healthy_example_stride_borders) -> None:
         """Test if output is similar for input dicts or regular multisensor data sets."""
@@ -157,8 +157,8 @@ class TestEventDetectionHerzer:
         ed.detect(data_left, stride_list_left, sampling_rate_hz=204.8)
         # per default min_vel_event_list_ has 6 columns
         assert_array_equal(np.array(ed.min_vel_event_list_.shape[1]), 6)
-        # per default segmented_event_list_ has 5 columns
-        assert_array_equal(np.array(ed.segmented_event_list_.shape[1]), 5)
+        # per default annotated_original_event_list_ has 5 columns
+        assert_array_equal(np.array(ed.annotated_original_event_list_.shape[1]), 5)
 
     def test_correct_s_id(self, healthy_example_imu_data, healthy_example_stride_borders) -> None:
         """Test if the s_id from the stride list is correctly transferred to the output of event detection."""
@@ -172,13 +172,13 @@ class TestEventDetectionHerzer:
 
         # Check that all of the old stride ids are still in the new one
         assert np.all(ed.min_vel_event_list_.index.isin(stride_list_left["s_id"]))
-        assert np.all(ed.segmented_event_list_.index.isin(stride_list_left["s_id"]))
+        assert np.all(ed.annotated_original_event_list_.index.isin(stride_list_left["s_id"]))
         # The new start should be inside the old stride
         combined = pd.merge(ed.min_vel_event_list_, stride_list_left, on="s_id")
         assert np.all(combined["min_vel"] < combined["end_y"])
         assert np.all(combined["min_vel"] > combined["start_y"])
         # The new starts and ends should be identical to the old ones
-        combined = pd.merge(ed.segmented_event_list_, stride_list_left, on="s_id")
+        combined = pd.merge(ed.annotated_original_event_list_, stride_list_left, on="s_id")
         assert np.all(combined["start_x"] == combined["start_y"])
         assert np.all(combined["end_x"] == combined["end_y"])
 
@@ -225,4 +225,4 @@ class TestEventDetectionHerzer:
         else:
             assert hasattr(ed, "min_vel_event_list_") is False
 
-        assert set(ed.segmented_event_list_.columns) == {"start", "end", *detect_only}
+        assert set(ed.annotated_original_event_list_.columns) == {"start", "end", *detect_only}

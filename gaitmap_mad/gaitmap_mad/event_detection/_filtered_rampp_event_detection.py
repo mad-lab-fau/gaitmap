@@ -44,7 +44,15 @@ class FilteredRamppEventDetection(RamppEventDetection):
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
     input_stride_type
-        The stride_list_type that should be either "ic" or "segmented".
+        The stride list type that should be either "ic", or "segmented".
+        "Segmented" means that the stride list that is provided by the Stride Segmentation method in this package.
+        The start and the end of the stride are defined by the minimum in the gyr_ml signal right before the toe-off.
+        "ic" means that the stride list is defined by the initial contact of the foot with the ground.
+        Stride segmentation methods that focus on the acc, and reference stride lists from mocap data usually provide
+        "ic" stride lists.
+        Even in case of "ic" stride type, we will re-detect the initial contact event accoridng to the defintions of
+        the algorithm by considering a search region (10% stride time back, 20% stride time forward) around the initial
+        contact provided as stride start.
 
     Attributes
     ----------
@@ -57,7 +65,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
         The 's_id' index is selected according to which segmented stride the pre-ic belongs to.
 
-    segmented_event_list_ : A stride list or dictionary with such values
+    annotated_original_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.

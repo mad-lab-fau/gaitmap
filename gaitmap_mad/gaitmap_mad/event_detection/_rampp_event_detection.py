@@ -42,6 +42,14 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
     input_stride_type
         The stride list type that should be either "ic", or "segmented".
+        "Segmented" means that the stride list that is provided by the Stride Segmentation method in this package.
+        The start and the end of the stride are defined by the minimum in the gyr_ml signal right before the toe-off.
+        "ic" means that the stride list is defined by the initial contact of the foot with the ground.
+        Stride segmentation methods that focus on the acc, and reference stride lists from mocap data usually provide
+        "ic" stride lists.
+        Even in case of "ic" stride type, we will re-detect the initial contact event accoridng to the defintions of
+        the algorithm by considering a search region (10% stride time back, 20% stride time forward) around the initial
+        contact provided as stride start.
 
     Attributes
     ----------
@@ -54,7 +62,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         Additional strides might have been removed due to the conversion from segmented or ic to min_vel strides.
         The 's_id' index is selected according to which segmented stride the pre-ic belongs to.
 
-    segmented_event_list_ : A stride list or dictionary with such values
+    annotated_original_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.
@@ -126,15 +134,21 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     the stride list.
 
     The :class:`~gaitmap.event_detection.RamppEventDetection` includes a consistency check that is enabled by default.
-    The gait events within one stride provided by the `stride_list` must occur in the expected order. For example,
-    in case of "segmented" input stride type, the expected order is ["tc", "ic", "min_vel"] whereas the expected order
-    for "ic" input stride type is ["ic", "min_vel", "tc"]
+    The gait events within one stride provided by the `stride_list` must occur in the expected order.
+    For example, in case of "segmented" input stride type, the expected order is ["tc", "ic", "min_vel"] whereas the
+    expected order for "ic" input stride type is ["ic", "min_vel", "tc"].
     Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
     If you wish to disable this consistency check, set `enforce_consistency` to False.
-    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `segmented_event_list_` to get
-    all detected events for the exact stride list that was used as input.
+    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `annotated_original_event_list_`
+    to get all detected events for the exact stride list that was used as input.
     Note, that this list might contain NaN for some events.
+
+    For the "ic" input stride type, it might happen that the detected `ic` is actually detected slightly before the
+    original start of the stride.
+    This is because the algorithm looks for the `ic` in a search region that starts before the actual stride.
+    This is not problematic, as we do not consider the original start/end values for the rest of the processing,
+    but might be supprising at first glance.
 
     Furthermore, during the conversion from the stride list to the "min_vel" stride list, breaks in
     continuous gait sequences ( with continuous subsequent strides according to the `stride_list`) are detected and the
@@ -184,7 +198,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
     def _select_all_event_detection_method(self) -> Callable:
         """Select the function to calculate the all events.
 
-        This is separate method to make it easy to overwrite by a subclass.
+        This is a separate method to make it easy to overwrite by a subclass.
         """
         return _find_all_events
 
@@ -317,7 +331,6 @@ def _find_all_events_for_ic_stride(
     ic_events = []
     tc_events = []
     min_vel_events = []
-    _is_initial_stride = False
     for _index, stride in stride_list.iterrows():
         start = stride["start"]
         end = stride["end"]
@@ -335,7 +348,7 @@ def _find_all_events_for_ic_stride(
             )
 
         if "tc" in events:
-            # use the filtered signal here because for some patients there is a lot of noise around ic
+            # use the filtered signal here because for some patients, there is a lot of noise around ic
             tc_events.append(start + _detect_tc_for_ic_stride(gyr_ml_filtered[start:end]))
         if "min_vel" in events:
             min_vel_events.append(start + _detect_min_vel_gyr_energy(gyr[start:end], min_vel_search_win_size))
@@ -357,6 +370,11 @@ def _detect_ic_for_ic_stride(
 ) -> float:
     """Find the ic.
 
+    For strides that start at an initial contact, we pass the entire signal to this function (and not just the values
+    per stride).
+    The reason for this is that we need to be able to "look back" to the previous stride to find the refined IC value.
+    At the moment, we hardcode how far we look back to the previous stride to 10% of the stride duration.
+
     Note, that this implementation expects the inverted signal of acc_pa compared to the normal bodyframe definition
     in gaitmap.
     This is because the algorithm was originally developed considering a different coordinate system.
@@ -368,7 +386,7 @@ def _detect_ic_for_ic_stride(
     # and 0.2 of the stance phase
     # of the current stride
     gyr_ml_sec = gyr_ml[start:end]
-    search_region = start - ic_search_region[0], start + int(0.2 * gyr_ml_sec.shape[0])
+    search_region = np.clip(start - int(0.1 * gyr_ml_sec.shape[0]), 0, None), start + int(0.2 * gyr_ml_sec.shape[0])
     if search_region[1] - search_region[0] < 0:
         return np.nan
     # alternative:
