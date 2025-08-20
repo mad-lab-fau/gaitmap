@@ -50,7 +50,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         "ic" means that the stride list is defined by the initial contact of the foot with the ground.
         Stride segmentation methods that focus on the acc, and reference stride lists from mocap data usually provide
         "ic" stride lists.
-        Even in case of "ic" stride type, we will re-detect the initial contact event accoridng to the defintions of
+        Even in case of "ic" stride type, we will re-detect the initial contact event according to the definitions of
         the algorithm by considering a search region (10% stride time back, 20% stride time forward) around the initial
         contact provided as stride start.
 
@@ -88,7 +88,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
     the initial contact (IC) which leads to high frequency artifacts in the gyr_ml signal.
     This can lead to an inaccurate IC detection, as it relies on the identification of extrema in the signal.
     To resolve this issue, this event detection method applies a low-pass filter to remove high frequency artifacts.
-    Similaraly, when the sensor is attached loosly, there can be unexpected peaks during the mid-swing phase of the gait
+    Similarly, when the sensor is attached loosely, there can be unexpected peaks during the mid-swing phase of the gait
     cycle, which can lead to an inaccurate detection of the terminal contact (TC) event.
     Note, that the lowpass filter is only used for the IC and TC detection and not the detection of other events.
     Other than that, the implementation is identical to the normal Rampp event detection (

@@ -10,7 +10,7 @@ project.
 
 ## [2.6.0] - Unreleased
 
-### Scientfic Changes
+### Scientific Changes
 
 - The TC detection within FilteredRampp event detection now uses the filtered gyro signal instead of the raw gyro 
   signal.

@@ -168,10 +168,14 @@ class _EventDetectionMixin:
             "annotated_original_event_list": annotated_original_event_list,
         }
 
+    @property
     def segmented_event_list_(self) -> Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]:
         warnings.deprecated(
             "`segmented_event_list_` is deprecated and will be removed in a future version. "
+        warnings.warn(
+            "`segmented_event_list_` is deprecated and will be removed in a future version. "
             "Use `annotated_original_event_list_` instead.",
+            DeprecationWarning,
         )
         return self.annotated_original_event_list_
 
