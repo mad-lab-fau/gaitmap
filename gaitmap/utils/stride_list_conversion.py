@@ -16,8 +16,12 @@ from gaitmap.utils.datatype_helper import (
 )
 
 
-def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: Literal["min_vel", "ic"]) -> StrideList:
-    """Convert a segmented stride list with detected events into other types of stride lists.
+def convert_stride_list(
+    stride_list: StrideList,
+    target_stride_type: Literal["min_vel", "ic"],
+    source_stride_type: Literal["segmented", "ic"] = "segmented",
+) -> StrideList:
+    """Convert a stride list with detected events into other types of stride lists.
 
     During the conversion some strides might be removed.
     For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.
@@ -28,6 +32,8 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
         Stride list to be converted
     target_stride_type
         The stride list type that should be converted to
+    source_stride_type
+        The stride list type that should be converted from
 
     Returns
     -------
@@ -37,17 +43,23 @@ def convert_segmented_stride_list(stride_list: StrideList, target_stride_type: L
     """
     stride_list_type = is_stride_list(stride_list, stride_type="segmented")
     if stride_list_type == "single":
-        return _segmented_stride_list_to_min_vel_single_sensor(stride_list, target_stride_type=target_stride_type)[0]
+        return _stride_list_to_min_vel_single_sensor(
+            stride_list, target_stride_type=target_stride_type, source_stride_type=source_stride_type
+        )[0]
     return {
-        k: _segmented_stride_list_to_min_vel_single_sensor(v, target_stride_type=target_stride_type)[0]
+        k: _stride_list_to_min_vel_single_sensor(
+            v, target_stride_type=target_stride_type, source_stride_type=source_stride_type
+        )[0]
         for k, v in stride_list.items()
     }
 
 
-def _segmented_stride_list_to_min_vel_single_sensor(
-    stride_list: SingleSensorStrideList, target_stride_type: Literal["min_vel", "ic"]
+def _stride_list_to_min_vel_single_sensor(
+    stride_list: SingleSensorStrideList,
+    target_stride_type: Literal["min_vel", "ic"],
+    source_stride_type: Literal["segmented", "ic"],
 ) -> tuple[SingleSensorStrideList, SingleSensorStrideList]:
-    """Convert a segmented stride list with detected events into other types of stride lists.
+    """Convert a stride list with detected events into other types of stride lists.
 
     During the conversion some strides might be removed.
     For more information about the different types of stride lists see the :ref:`stride list guide <stride_list_guide>`.
@@ -86,7 +98,8 @@ def _segmented_stride_list_to_min_vel_single_sensor(
             converted_stride_list["pre_ic"] = converted_stride_list["ic"]
             # ic of each stride is the ic in the subsequent segmented stride
             converted_stride_list["ic"] = converted_stride_list["ic"].shift(-1)
-        if "tc" in converted_stride_list.columns:
+        if "tc" in converted_stride_list.columns and source_stride_type == "segmented":
+            # do not shift if source_stride_type is "ic"
             # tc of each stride is the tc in the subsequent segmented stride
             converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
@@ -111,7 +124,7 @@ def _segmented_stride_list_to_min_vel_single_sensor(
 
 def enforce_stride_list_consistency(
     stride_list: SingleSensorStrideList,
-    stride_type=Literal["segmented", "min_vel", "ic"],
+    input_stride_type=Literal["segmented", "min_vel", "ic"],
     check_stride_list: bool = True,
 ) -> tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Exclude those strides where the gait events do not match the expected order or contain NaN.
@@ -128,7 +141,7 @@ def enforce_stride_list_consistency(
     ----------
     stride_list
         A single sensor stride list in a Dataframe format
-    stride_type
+    input_stride_type
         Indicate which types of strides are expected to be in the stride list.
         This changes the expected columns and order of events.
     check_stride_list
@@ -146,9 +159,8 @@ def enforce_stride_list_consistency(
 
     """
     if check_stride_list is True:
-        is_single_sensor_stride_list(stride_list, stride_type=stride_type, raise_exception=True)
-    order = SL_EVENT_ORDER[stride_type]
-
+        is_single_sensor_stride_list(stride_list, stride_type=input_stride_type, raise_exception=True)
+    order = SL_EVENT_ORDER[input_stride_type]
     order = [c for c in order if c in stride_list.columns]
 
     if len(order) == 0:

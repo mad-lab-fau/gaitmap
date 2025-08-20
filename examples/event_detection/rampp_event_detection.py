@@ -84,10 +84,10 @@ print(f"Gait events for {len(min_vel_events_left)} min_vel strides were detected
 min_vel_events_left.head()
 
 # %%
-# As a secondary output we get the `segmented_event_list_`, which holds the same event information than the
+# As a secondary output we get the `annotated_original_event_list_`, which holds the same event information than the
 # `min_vel_event_list_`, but the start and the end of each stride are unchanged compared to the input.
 # This also means that no strides are removed due to the conversion step explained below.
-segmented_events_left = ed.segmented_event_list_["left_sensor"]
+segmented_events_left = ed.annotated_original_event_list_["left_sensor"]
 print(f"Gait events for {len(segmented_events_left)} segmented strides were detected.")
 segmented_events_left.head()
 
@@ -231,7 +231,7 @@ fig.show()
 # This is required due to the shift of stride borders between the `stride_list` and the `min_vel_event_list_`.
 # Thus, the dropped first segmented stride of a continuous sequence only provides a pre_ic and a min_vel sample for
 # the first stride in the `min_vel_event_list_`.
-# Therefore, the `min_vel_event_list_` list has one stride less than the `segmented_event_list_`.
+# Therefore, the `min_vel_event_list_` list has one stride less than the `annotated_original_event_list_`.
 from gaitmap.event_detection import RamppEventDetection
 
 ed2 = RamppEventDetection()
@@ -334,7 +334,7 @@ edfilt = edfilt.detect(data=bf_data, stride_list=stride_list, sampling_rate_hz=s
 min_vel_events_left = edfilt.min_vel_event_list_["left_sensor"]
 print(f"Gait events for {len(min_vel_events_left)} min_vel strides using the filtered version were detected.")
 min_vel_events_left.head()
-segmented_events_left = edfilt.segmented_event_list_["left_sensor"]
+segmented_events_left = edfilt.annotated_original_event_list_["left_sensor"]
 print(f"Gait events for {len(segmented_events_left)} segmented strides using the filtered version were detected.")
 segmented_events_left.head()
 fig, (ax1, ax2) = plt.subplots(2, sharex=True, figsize=(10, 5))

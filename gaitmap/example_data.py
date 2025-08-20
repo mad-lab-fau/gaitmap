@@ -83,6 +83,19 @@ def get_healthy_example_imu_data():
     return data
 
 
+def get_healthy_example_imu_data_ic_stride():
+    """Get example IMU data from a healthy subject doing a 4x10 gait test.
+
+    The sampling rate is 102.4 Hz
+    """
+    test_data_path = _get_data("imu_sample_ic_stride.csv")
+    data = pd.read_csv(test_data_path, header=[0, 1], index_col=0)
+
+    # Get index in seconds
+    data.index /= 102.4
+    return data
+
+
 def get_ms_example_imu_data():
     """Get example IMU data from a MS subject performing a longer uninterrupted walking sequence.
 
@@ -118,6 +131,24 @@ def get_healthy_example_stride_borders():
     The stride borders are hand labeled at the gyr_ml minima before the toe-off.
     """
     test_data_path = _get_data("stride_borders_sample.csv")
+    data = pd.read_csv(test_data_path, header=0)
+
+    # Convert to dict with sensor name as key.
+    # Sensor name here is derived from the foot. In the real pipeline that would be provided to the algo.
+    data["sensor"] = data["foot"] + "_sensor"
+    data = data.set_index("sensor")
+    data = data.groupby(level=0)
+    data = {k: v.reset_index(drop=True) for k, v in data}
+
+    return data
+
+
+def get_healthy_example_stride_borders_ic_stride():
+    """Get hand labeled stride borders for :func:`get_healthy_example_imu_data_ic_stride`.
+
+    The stride borders are obtained from mocap where each stride starts with initial contact.
+    """
+    test_data_path = _get_data("stride_borders_sample_ic_stride.csv")
     data = pd.read_csv(test_data_path, header=0)
 
     # Convert to dict with sensor name as key.

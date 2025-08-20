@@ -4,6 +4,7 @@ from typing import Optional
 
 from joblib import Memory
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
@@ -30,7 +31,7 @@ class FilteredRamppEventDetection(RamppEventDetection):
         The size of the sliding window for finding the minimum gyroscope energy in ms.
     ic_lowpass_filter
         An instance of a Filter-transform (e.g. :class:`~gaitmap.data_transform.ButterworthFilter`) that will be
-        applied to the gyr_ml data before the IC is detected.
+        applied to the gyr_ml data before the IC and TC is detected.
         While not enforced, this should be a lowpass filter to ensure that the results are as expected.
     memory
         An optional `joblib.Memory` object that can be provided to cache the detection of all events.
@@ -42,6 +43,16 @@ class FilteredRamppEventDetection(RamppEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
+    input_stride_type
+        The stride list type that should be either "ic", or "segmented".
+        "Segmented" means that the stride list that is provided by the Stride Segmentation method in this package.
+        The start and the end of the stride are defined by the minimum in the gyr_ml signal right before the toe-off.
+        "ic" means that the stride list is defined by the initial contact of the foot with the ground.
+        Stride segmentation methods that focus on the acc, and reference stride lists from mocap data usually provide
+        "ic" stride lists.
+        Even in case of "ic" stride type, we will re-detect the initial contact event according to the definitions of
+        the algorithm by considering a search region (10% stride time back, 20% stride time forward) around the initial
+        contact provided as stride start.
 
     Attributes
     ----------
@@ -54,11 +65,14 @@ class FilteredRamppEventDetection(RamppEventDetection):
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
         The 's_id' index is selected according to which segmented stride the pre-ic belongs to.
 
-    segmented_event_list_ : A stride list or dictionary with such values
+    annotated_original_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.
         Strides for which no valid events could be found are removed.
+
+    segmented_event_list_ : A stride list or dictionary with such values
+        Deprecated, use `annotated_original_event_list_` instead.
 
     Other Parameters
     ----------------
@@ -73,11 +87,13 @@ class FilteredRamppEventDetection(RamppEventDetection):
 
     Notes
     -----
-    Due to attachment methods used for foot-worn IMUs, the sensor might experience bounce and vibrate at the time of
-    the heel strike (IC) which leads to high frequency artifacts in the gyr_ml signal.
+    Due to attachment methods used for foot-worn IMUs, the sensor might experience bounces and vibrations at the time of
+    the initial contact (IC) which leads to high frequency artifacts in the gyr_ml signal.
     This can lead to an inaccurate IC detection, as it relies on the identification of extrema in the signal.
     To resolve this issue, this event detection method applies a low-pass filter to remove high frequency artifacts.
-    Note, that the lowpass filter is only used for the IC detection and not the detection of other events.
+    Similarly, when the sensor is attached loosely, there can be unexpected peaks during the mid-swing phase of the gait
+    cycle, which can lead to an inaccurate detection of the terminal contact (TC) event.
+    Note, that the lowpass filter is only used for the IC and TC detection and not the detection of other events.
     Other than that, the implementation is identical to the normal Rampp event detection (
     :class:`~gaitmap.event_detection.RamppEventDetection`).
 
@@ -97,14 +113,17 @@ class FilteredRamppEventDetection(RamppEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[tuple[str, ...]] = None,
-    ) -> None:
+        input_stride_type: Literal["segmented", "ic"] = "segmented",
+    ):
         self.ic_lowpass_filter = ic_lowpass_filter
+        self.input_stride_type = input_stride_type
         super().__init__(
             memory=memory,
             enforce_consistency=enforce_consistency,
             ic_search_region_ms=ic_search_region_ms,
             min_vel_search_win_size_ms=min_vel_search_win_size_ms,
             detect_only=detect_only,
+            input_stride_type=input_stride_type,
         )
 
     def _get_detect_kwargs(self) -> dict:

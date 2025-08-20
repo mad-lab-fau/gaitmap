@@ -7,6 +7,7 @@ import pandas as pd
 from joblib import Memory
 from scipy import signal
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
@@ -54,7 +55,9 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         By default, all events ("ic", "tc", "min_vel") are detected.
         If `min_vel` is not detected, the `min_vel_event_list_` output will not be available.
         If "ic" is not detected, the `pre_ic` will also not be available in the output.
-
+    input_stride_type
+        Only segmented strides are supported by this method.
+        Hence, this parameter is set to "segmented" by default and changing it will raise an error.
 
     Attributes
     ----------
@@ -65,11 +68,13 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         corresponds to the min_vel sample of the subsequent stride.
         Strides for which no valid events could be found are removed.
         Additional strides might have been removed due to the conversion from segmented to min_vel strides.
-    segmented_event_list_ : A stride list or dictionary with such values
+    annotated_original_event_list_ : A stride list or dictionary with such values
         The result of the `detect` method holding all temporal gait events and start / end of all strides.
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.
         Strides for which no valid events could be found are removed.
+    segmented_event_list_ :
+        Deprecated, use `annotated_original_event_list_` instead.
 
 
     Other Parameters
@@ -89,7 +94,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     >>> event_detection = HerzerEventDetection()
     >>> event_detection.detect(data=data, stride_list=stride_list, sampling_rate_hz=204.8)
-    >>> event_detection.segmented_event_list_
+    >>> event_detection.annotated_original_event_list_
           start    end       ic       tc  min_vel
     s_id
     0     48304  48558  48382.0  48304.0  48479.0
@@ -132,6 +137,9 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         The window size can be adjusted via the `min_vel_search_win_size_ms` parameter.
         This approach is identical to [1]_.
 
+    The :func:`~gaitmap.event_detection.HerzerEventDetection.detect` method is implemented only for "segmented" stride
+    type
+
     The :func:`~gaitmap.event_detection.HerzerEventDetection.detect` method provides a stride list `min_vel_event_list`
     with the gait events mentioned above and additionally `start` and `end` of each stride, which are aligned to the
     `min_vel` samples.
@@ -141,15 +149,15 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     the stride list.
     This function should NOT be used, since the detection of the min_vel gait events has not been validated
     for stair ambulation.
-    Please refer to the `segmented_event_list_` instead.
+    Please refer to the `annotated_original_event_list_` instead.
 
     The :class:`~gaitmap.event_detection.HerzerEventDetection` includes a consistency check that is enabled by default.
     The gait events within one stride provided by the `stride_list` must occur in the expected order.
     Any stride where the gait events are detected in a different order or are not detected at all is dropped!
     For more infos on this see :func:`~gaitmap.utils.stride_list_conversion.enforce_stride_list_consistency`.
     If you wish to disable this consistency check, set `enforce_consistency` to False.
-    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `segmented_event_list_` to get
-    all detected events for the exact stride list that was used as input.
+    In this case, the attribute `min_vel_event_list_` will not be set, but you can use `annotated_original_event_list_`
+    to get all detected events for the exact stride list that was used as input.
     Note, that this list might contain NaN for some events.
 
     Furthermore, during the conversion from the segmented stride list to the "min_vel" stride list, breaks in
@@ -188,6 +196,7 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     ic_lowpass_filter: BaseFilter
     memory: Optional[Memory]
     enforce_consistency: bool
+    input_stride_type: Literal["segmented"]
 
     def __init__(
         self,
@@ -198,12 +207,18 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
         memory: Optional[Memory] = None,
         enforce_consistency: bool = True,
         detect_only: Optional[tuple[str, ...]] = None,
-    ) -> None:
+        input_stride_type: Literal["segmented"] = "segmented",
+    ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
         self.mid_swing_peak_prominence = mid_swing_peak_prominence
         self.mid_swing_n_considered_peaks = mid_swing_n_considered_peaks
         self.ic_lowpass_filter = ic_lowpass_filter
-        super().__init__(memory=memory, enforce_consistency=enforce_consistency, detect_only=detect_only)
+        super().__init__(
+            memory=memory,
+            enforce_consistency=enforce_consistency,
+            detect_only=detect_only,
+            input_stride_type=input_stride_type,
+        )
 
     def _get_detect_kwargs(self) -> dict[str, int]:
         min_vel_search_win_size = int(self.min_vel_search_win_size_ms / 1000 * self.sampling_rate_hz)
@@ -234,8 +249,11 @@ def _find_all_events(
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
+    input_stride_type: Literal["segmented"],
 ) -> tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
     """Find events in provided data by looping over single strides."""
+    if input_stride_type != "segmented":
+        raise NotImplementedError("This method support only segmented stride type")
     gyr_ml = gyr["gyr_ml"].to_numpy()
     gyr = gyr.to_numpy()
     # inverting acc, as this algorithm was developed assuming a flipped axis like the original Rampp algorithm

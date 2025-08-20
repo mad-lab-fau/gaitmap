@@ -11,10 +11,12 @@ from tpcp import BaseTpcpObject
 
 from gaitmap.example_data import (
     get_healthy_example_imu_data,
+    get_healthy_example_imu_data_ic_stride,
     get_healthy_example_mocap_data,
     get_healthy_example_orientation,
     get_healthy_example_position,
     get_healthy_example_stride_borders,
+    get_healthy_example_stride_borders_ic_stride,
     get_healthy_example_stride_events,
     get_ms_example_imu_data,
 )
@@ -33,8 +35,10 @@ def reset_random_seed() -> None:
 
 
 healthy_example_imu_data = pytest.fixture()(get_healthy_example_imu_data)
+healthy_example_imu_data_ic_stride = pytest.fixture()(get_healthy_example_imu_data_ic_stride)
 ms_example_imu_data = pytest.fixture()(get_ms_example_imu_data)
 healthy_example_stride_borders = pytest.fixture()(get_healthy_example_stride_borders)
+healthy_example_stride_borders_ic_stride = pytest.fixture()(get_healthy_example_stride_borders_ic_stride)
 healthy_example_mocap_data = pytest.fixture()(get_healthy_example_mocap_data)
 healthy_example_stride_events = pytest.fixture()(get_healthy_example_stride_events)
 healthy_example_orientation = pytest.fixture()(get_healthy_example_orientation)
