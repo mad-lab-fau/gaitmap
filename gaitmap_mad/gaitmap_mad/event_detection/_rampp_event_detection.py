@@ -47,7 +47,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         "ic" means that the stride list is defined by the initial contact of the foot with the ground.
         Stride segmentation methods that focus on the acc, and reference stride lists from mocap data usually provide
         "ic" stride lists.
-        Even in case of "ic" stride type, we will re-detect the initial contact event accoridng to the defintions of
+        Even in case of "ic" stride type, we will re-detect the initial contact event according to the definitions of
         the algorithm by considering a search region (10% stride time back, 20% stride time forward) around the initial
         contact provided as stride start.
 
