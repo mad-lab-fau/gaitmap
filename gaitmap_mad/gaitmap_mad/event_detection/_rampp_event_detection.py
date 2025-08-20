@@ -67,6 +67,8 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         This version of the results has the same stride borders than the input `stride_list` and has additional columns
         for all the detected events.
         Strides for which no valid events could be found are removed.
+    segmented_event_list_ : A stride list or dictionary with such values
+        Deprecated, use `annotated_original_event_list_` instead.
 
 
     Other Parameters

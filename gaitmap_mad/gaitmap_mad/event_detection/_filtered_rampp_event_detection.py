@@ -71,6 +71,9 @@ class FilteredRamppEventDetection(RamppEventDetection):
         for all the detected events.
         Strides for which no valid events could be found are removed.
 
+    segmented_event_list_ : A stride list or dictionary with such values
+        Deprecated, use `annotated_original_event_list_` instead.
+
     Other Parameters
     ----------------
     data
