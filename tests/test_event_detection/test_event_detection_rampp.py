@@ -110,7 +110,27 @@ class TestEventDetectionRampp:
             ) as mock:
                 ed.detect(data_left, stride_list_left, sampling_rate_hz=102.4)
 
-            assert mock.call_count == output
+@pytest.mark.parametrize(("var1", "output"), ((True, 2), (False, 0)))
+def test_postprocessing_ic_stride(
+    self, healthy_example_imu_data_ic_stride, healthy_example_stride_borders_ic_stride, var1, output
+):
+    """Test postprocessing for "ic" input_stride_type."""
+    data_left = healthy_example_imu_data_ic_stride["left_sensor"]
+    data_left.columns = BF_COLS
+    # only use the first entry of the stride list
+    stride_list_left = healthy_example_stride_borders_ic_stride["left_sensor"].iloc[0:1]
+
+    def mock_func(event_list, *args, **kwargs):
+        return event_list, None
+
+    ed = self.algorithm_class(input_stride_type="ic", enforce_consistency=var1)
+    with patch(
+        "gaitmap._event_detection_common._event_detection_mixin.enforce_stride_list_consistency",
+        side_effect=mock_func,
+    ) as mock:
+        ed.detect(data_left, stride_list_left, sampling_rate_hz=102.4)
+
+    assert mock.call_count == output
 
     @pytest.mark.parametrize(("enforce_consistency", "output"), ((False, False), (True, True)))
     def test_disable_min_vel_event_list_segmented_stride(
