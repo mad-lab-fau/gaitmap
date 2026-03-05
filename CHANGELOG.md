@@ -8,7 +8,7 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
-## [2.6.0] - Unreleased
+## [2.6.0] - 2026-03-05
 
 ### Scientific Changes
 
