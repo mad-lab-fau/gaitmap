@@ -27,7 +27,7 @@ dependencies = [
     "numpy>=1.20,<2",
     "joblib>=1.2.0",
     "scikit-learn>=1.0.1",
-    "tpcp>=0.32.0,<1",
+    "tpcp>=2.1.2",
     "pooch>=1.7.0",
 ]
 

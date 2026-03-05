@@ -32,6 +32,11 @@ project.
   This option can be activated in the `MadgwickAHRS` or `MadgwickRtsKalman` algorithm by setting the `use_magnetometer`
   to `True`. (https://github.com/mad-lab-fau/gaitmap/pull/73)
 
+### Changed
+
+- Updated the tpcp-based examples to use the current tpcp result key naming (e.g. `agg__...`, `debug__...`,
+  `param__...`) and refreshed the associated regression snapshots.
+
 ## [2.5.2] - 2025-01-19
 
 - Removed scipy deprecation of `cumtrapz` function (https://github.com/mad-lab-fau/gaitmap/pull/71)
