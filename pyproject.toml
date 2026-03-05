@@ -34,10 +34,12 @@ dependencies = [
 [project.optional-dependencies]
 hmm = [
     "pomegranate>=0.14.2,<=0.14.6; python_version < '3.10'",
+    "numpy<2; python_version < '3.10'",
 ]
 stats = ["pingouin>=0.5.3"]
 all = [
     "pomegranate>=0.14.2,<=0.14.6; python_version < '3.10'",
+    "numpy<2; python_version < '3.10'",
     "pingouin>=0.5.3",
 ]
 
