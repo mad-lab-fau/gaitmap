@@ -576,9 +576,12 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
             with warnings.catch_warnings():
                 if scoring_errors == "ignore":
                     warnings.simplefilter("ignore")
-                icc, ci95 = pg.intraclass_corr(
+                icc_result = pg.intraclass_corr(
                     data, ratings=para, raters="error_type", targets=_ID_COL_NAME, nan_policy="omit"
-                ).loc[0, ["ICC", "CI95%"]]
+                ).loc[0]
+                # pingouin renamed the confidence interval column from `CI95%` to `CI95` in newer releases.
+                ci95_column = "CI95%" if "CI95%" in icc_result.index else "CI95"
+                icc, ci95 = icc_result[["ICC", ci95_column]]
             coefs[para] = pd.Series({"icc": icc, "icc_q05": ci95[0], "icc_q95": ci95[1]})
         except AssertionError as e:
             if scoring_errors == "raise":
