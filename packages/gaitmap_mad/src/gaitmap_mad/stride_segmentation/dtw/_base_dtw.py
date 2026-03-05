@@ -733,7 +733,7 @@ def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, 
     cum_sum = np.full((l1 + 1, l2 + 1, 2), np.inf)
     cum_sum[0, :] = 0.0
     # All counter values are set to 0
-    cum_sum[0:] = 0
+    cum_sum[:, :, 1] = 0
 
     for i in range(l1):
         for j in range(l2):
