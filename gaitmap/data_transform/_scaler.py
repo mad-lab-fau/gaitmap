@@ -211,6 +211,8 @@ class AbsMaxScaler(BaseTransformer):
 
         y = x * out_max / max(abs(x))
 
+    If all values in the input are zero, the input is returned unchanged.
+
     Note that the maximum over **all** columns is calculated.
     I.e. Only a single global scaling factor is applied to all the columns.
 
@@ -263,6 +265,8 @@ class AbsMaxScaler(BaseTransformer):
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
         data = data.copy()
+        if absmax == 0:
+            return data
         data *= self.out_max / absmax
         return data
 
@@ -289,6 +293,8 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
     .. code-block::
 
         y = x * out_max / data_max
+
+    If `data_max` is 0 (e.g. all-zero training data), the input is returned unchanged.
 
     Parameters
     ----------

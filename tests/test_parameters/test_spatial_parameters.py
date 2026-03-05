@@ -7,6 +7,7 @@ from gaitmap.base import BaseType
 from gaitmap.parameters import SpatialParameterCalculation
 from gaitmap.parameters._spatial_parameters import (
     _calc_arc_length,
+    _calc_max_sensor_lift,
     _calc_stride_length,
     _calc_turning_angle,
     _compute_sole_angle_course,
@@ -121,6 +122,13 @@ class TestIndividualParameter:
 
     def test_arc_length(self, single_sensor_position_list_with_index, single_sensor_arc_length) -> None:
         assert_series_equal(_calc_arc_length(single_sensor_position_list_with_index), single_sensor_arc_length)
+
+    def test_max_sensor_lift(self, single_sensor_position_list_with_index) -> None:
+        expected = pd.Series([0, 0, 2], index=[0, 1, 2])
+        expected.index.name = "s_id"
+        expected.name = "pos_z"
+
+        assert_series_equal(_calc_max_sensor_lift(single_sensor_position_list_with_index), expected)
 
     def test_turning_angle(self, single_sensor_orientation_list_with_index, single_sensor_turning_angle) -> None:
         assert_series_equal(

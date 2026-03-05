@@ -471,7 +471,9 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
 
 
 def _calc_max_sensor_lift(positions: SingleSensorPositionList) -> pd.Series:
-    return positions["pos_z"].groupby(level="s_id").max()
+    pos_z = positions["pos_z"]
+    baseline = pos_z.groupby(level="s_id").transform("first")
+    return (pos_z - baseline).groupby(level="s_id").max()
 
 
 def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Series:

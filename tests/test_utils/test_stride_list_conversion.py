@@ -96,6 +96,12 @@ class TestEnforceStrideListConsistency:
         except ValidationError as e:
             pytest.fail(str(e))
 
+    def test_input_stride_type_has_no_default(self) -> None:
+        event_list = self._create_example_stride_list("segmented")
+
+        with pytest.raises(TypeError):
+            enforce_stride_list_consistency(event_list)
+
 
 class TestConvertSegmentedStrideList:
     def _create_example_stride_list_with_pause(self):

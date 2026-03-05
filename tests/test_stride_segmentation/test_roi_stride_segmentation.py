@@ -258,6 +258,16 @@ class TestCombinedStridelist:
                     if r[1]["roi_id"] == stride[1]["roi_id"]:
                         assert stride[1]["start"] >= r[1]["start"]
 
+    def test_empty_roi_returns_empty_stride_list(self) -> None:
+        roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
+        data = pd.DataFrame(np.ones(27))
+        roi = pd.DataFrame(columns=["roi_id", "start", "end"])
+
+        roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
+
+        assert roi_seg.stride_list_.empty
+        assert roi_seg.stride_list_.index.name == "s_id"
+
 
 @pytest.mark.parametrize("action_method", [None, "segment", "secondary_segment"])
 def test_alternative_action_method(action_method) -> None:

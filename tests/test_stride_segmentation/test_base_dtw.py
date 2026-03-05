@@ -150,6 +150,16 @@ class TestIOErrors(DtwTestBase):
 
         assert "sampling_rate_hz" in str(e)
 
+    def test_template_constrain_without_template_sampling_rate_and_no_resample(self) -> None:
+        template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=None)
+        data = np.array([*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2])
+        dtw = self.init_dtw(template=template, max_template_stretch_ms=3, resample_template=False)
+
+        with pytest.raises(ValueError) as e:
+            dtw.segment(data=data, sampling_rate_hz=100)
+
+        assert "sampling_rate_hz" in str(e)
+
     def test_constrains_correct_sampling_rate_used(self) -> None:
         template_sampling_rate = 100
         signal_sampling_rate = 10
@@ -236,6 +246,27 @@ class TestSimpleSegment(DtwTestBase):
         np.testing.assert_array_equal(dtw.costs_, [0.0, 0.0])
 
         np.testing.assert_array_equal(dtw.data, sequence)
+
+    def test_costs_are_masked_after_postprocessing(self) -> None:
+        sequence = 2 * [*np.ones(5) * 2, 0, 1.0, 0, *np.ones(5) * 2]
+
+        template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
+        dtw = self.init_dtw(template=template, find_matches_method="min_under_thres")
+
+        def _mock_postprocess(self, data, paths, cost, matches_start_end, to_keep, acc_cost_mat, memory):
+            to_keep = to_keep.copy()
+            to_keep[0] = False
+            return matches_start_end, to_keep
+
+        with patch.object(BaseDtw, "_postprocess_matches", _mock_postprocess):
+            dtw = dtw.segment(
+                np.array(sequence),
+                sampling_rate_hz=100.0,
+            )
+
+        assert len(dtw.matches_start_end_) == 1
+        assert len(dtw.paths_) == 1
+        assert len(dtw.costs_) == 1
 
 
 class TestMultiDimensionalArrayInputs(DtwTestBase):

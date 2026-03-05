@@ -13,7 +13,11 @@ from gaitmap.event_detection import RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.event_detection._rampp_event_detection import _detect_tc_for_ic_stride, _detect_tc_for_segmented_stride
+from gaitmap_mad.event_detection._rampp_event_detection import (
+    _detect_ic_for_ic_stride,
+    _detect_tc_for_ic_stride,
+    _detect_tc_for_segmented_stride,
+)
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 
@@ -325,6 +329,16 @@ class TestEventDetectionRampp:
         # without sign change
         signal2 = np.ones(10)
         assert np.isnan(_detect_tc_for_ic_stride(signal2))
+
+    def test_detect_ic_for_ic_stride_warns_on_invalid_search_region(self):
+        gyr_ml = np.array([0.1, 0.2])
+        acc_pa_inv = np.array([0.1, 0.2])
+        gyr_ml_grad = np.gradient(gyr_ml)
+
+        with pytest.warns(UserWarning, match="IC detection failed"):
+            ic = _detect_ic_for_ic_stride(1, 1, gyr_ml, acc_pa_inv, gyr_ml_grad, ic_search_region=(1, 1))
+
+        assert np.isnan(ic)
 
     @pytest.mark.parametrize(
         "detect_only",

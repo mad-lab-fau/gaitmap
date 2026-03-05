@@ -197,6 +197,11 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         zupts_initial_ori = (
             self.zupt_detector_orientation_init.clone().detect(data, sampling_rate_hz=sampling_rate_hz).zupts_
         )
+        if len(zupts_initial_ori) == 0:
+            raise ValueError(
+                "No initial zupt region detected for orientation initialization. "
+                "Check the input data or relax the zupt detector thresholds."
+            )
         # only consider the very first static moment
         start, end = zupts_initial_ori.to_numpy()[0]
         first_static_acc_vec = data[SF_ACC].iloc[start:end].median().to_numpy()
