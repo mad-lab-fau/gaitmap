@@ -36,6 +36,8 @@ project.
 
 - Updated the tpcp-based examples to use the current tpcp result key naming (e.g. `agg__...`, `debug__...`,
   `param__...`) and refreshed the associated regression snapshots.
+- Increased the supported upper bounds for NumPy and Pandas to the latest Python 3.9-compatible releases
+  (`numpy<2.1`, `pandas<2.4`).
 
 ## [2.5.2] - 2025-01-19
 

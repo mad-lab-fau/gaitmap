@@ -19,12 +19,12 @@ authors = [
     { name = "Felix Kluge", email = "felix.kluge@fau.de" },
 ]
 dependencies = [
-    "pandas>=2,<2.3",
+    "pandas>=2,<2.4",
     "scipy>=1.6.1",
     "typing_extensions>=4.1.1",
     "numba>=0.55",
     "numba>=0.55.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "numpy>=1.20,<2",
+    "numpy>=1.20,<2.1",
     "joblib>=1.2.0",
     "scikit-learn>=1.0.1",
     "tpcp>=2.1.2",
