@@ -114,7 +114,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         The sole angle is assumed to be 0 during midstance.
         The IC and TC angles are simply the sole angles at the respective time points.
     Max. Sensor Lift
-        The maximal relative height (relative to the height at midstance) the sensor reaches during the stride.
+        The maximal relative height the sensor reaches during the stride.
+        We calculate this value relative to the first sample in each stride (i.e. `max(pos_z - pos_z[start])`).
+        This makes the parameter robust against absolute vertical offsets that can occur with continuous integration
+        methods such as :class:`~gaitmap.trajectory_reconstruction.RtsKalman`.
         Note that this is not equivalent to the actual foot lift/toe clearance.
         These values can be estimated, if the postion of the sensor on the foot is known.
     Max. Lateral Excursion
@@ -471,7 +474,14 @@ def _compute_sole_angle_course(orientations: pd.DataFrame) -> pd.Series:
 
 
 def _calc_max_sensor_lift(positions: SingleSensorPositionList) -> pd.Series:
-    return positions["pos_z"].groupby(level="s_id").max()
+    """Calculate the maximal vertical excursion relative to the stride start sample.
+
+    Using a relative baseline instead of absolute `pos_z` keeps this parameter stable for trajectory methods that
+    can have a non-zero vertical offset per stride.
+    """
+    pos_z = positions["pos_z"]
+    baseline = pos_z.groupby(level="s_id").transform("first")
+    return (pos_z - baseline).groupby(level="s_id").max()
 
 
 def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Series:

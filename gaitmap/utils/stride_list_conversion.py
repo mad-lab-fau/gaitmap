@@ -124,7 +124,7 @@ def _stride_list_to_min_vel_single_sensor(
 
 def enforce_stride_list_consistency(
     stride_list: SingleSensorStrideList,
-    input_stride_type=Literal["segmented", "min_vel", "ic"],
+    input_stride_type: Literal["segmented", "min_vel", "ic"],
     check_stride_list: bool = True,
 ) -> tuple[SingleSensorStrideList, SingleSensorStrideList]:
     """Exclude those strides where the gait events do not match the expected order or contain NaN.

@@ -126,6 +126,15 @@ class TestAbsMaxScaler:
         assert t.transformed_data_.abs().to_numpy().max() == pytest.approx(out_max, rel=1e-3)
         assert_frame_equal(t.transformed_data_, data / np.max(np.abs(data.to_numpy())) * out_max)
 
+    def test_transform_all_zero_input(self) -> None:
+        t = AbsMaxScaler(out_max=2)
+        data = pd.DataFrame(np.zeros((4, 3)))
+
+        t.transform(data)
+
+        assert id(t.data) == id(data)
+        assert_frame_equal(t.transformed_data_, data)
+
 
 class TestTrainableAbsMaxScaler:
     @pytest.mark.parametrize("out_max", [2, 3, 0.3])
@@ -152,6 +161,17 @@ class TestTrainableAbsMaxScaler:
         t = TrainableAbsMaxScaler()
         with pytest.raises(ValueError):
             t.transform(pd.DataFrame(np.random.rand(10, 10)))
+
+    def test_transform_all_zero_training_data(self) -> None:
+        t = TrainableAbsMaxScaler(out_max=2)
+        train_data = pd.DataFrame(np.zeros((5, 3)))
+        test_data = pd.DataFrame(np.zeros((3, 3)))
+
+        t.self_optimize([train_data])
+        t.transform(test_data)
+
+        assert id(t.data) == id(test_data)
+        assert_frame_equal(t.transformed_data_, test_data)
 
 
 class TestMinMaxScaler:

@@ -98,3 +98,19 @@ class TestForwardDirectionSignAlignment:
         for sensor in get_multi_sensor_names(data):
             assert_almost_equal(data[sensor].to_numpy(), fwdsa.aligned_data_[sensor].to_numpy())
             assert_almost_equal(np.rad2deg(fwdsa.rotation_[sensor].as_euler("zxy")), np.array([180.0, 0.0, 0.0]))
+
+    def test_error_if_no_initial_zupt_detected(self, healthy_example_imu_data) -> None:
+        class _NoZuptDetector:
+            def clone(self):
+                return self
+
+            def detect(self, data, sampling_rate_hz):
+                self.zupts_ = pd.DataFrame(columns=["start", "end"])
+                return self
+
+        data = healthy_example_imu_data["left_sensor"]
+        fwdsa = ForwardDirectionSignAlignment()
+        fwdsa.zupt_detector_orientation_init = _NoZuptDetector()
+
+        with pytest.raises(ValueError, match="No initial zupt"):
+            fwdsa.align(data, sampling_rate_hz=204.8)

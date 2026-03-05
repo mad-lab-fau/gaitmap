@@ -1,5 +1,6 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
+import warnings
 from typing import Callable, Optional, Union, cast
 
 import numpy as np
@@ -312,15 +313,25 @@ def _detect_ic_for_ic_stride(
     # of the current stride
     gyr_ml_sec = gyr_ml[start:end]
     search_region = np.clip(start - int(0.1 * gyr_ml_sec.shape[0]), 0, None), start + int(0.2 * gyr_ml_sec.shape[0])
-    if search_region[1] - search_region[0] < 0:
+    if search_region[1] - search_region[0] <= 0:
+        warnings.warn("IC detection failed for a stride due to an invalid search region. Returning NaN.")
         return np.nan
     # alternative:
-    refined_search_region_start = int(search_region[0] + np.argmin(gyr_ml_grad[slice(*search_region)]))
-    refined_search_region_end = int(
-        refined_search_region_start + np.argmax(gyr_ml_grad[refined_search_region_start : search_region[1]])
-    )
+    gyr_grad_search_region = gyr_ml_grad[slice(*search_region)]
+    if len(gyr_grad_search_region) == 0:
+        warnings.warn("IC detection failed for a stride due to an empty gyr search region. Returning NaN.")
+        return np.nan
 
-    if refined_search_region_end - refined_search_region_start < 0:
+    refined_search_region_start = int(search_region[0] + np.argmin(gyr_grad_search_region))
+    refined_search_window = gyr_ml_grad[refined_search_region_start : search_region[1]]
+    if len(refined_search_window) == 0:
+        warnings.warn("IC detection failed for a stride due to an empty refined search region. Returning NaN.")
+        return np.nan
+
+    refined_search_region_end = int(refined_search_region_start + np.argmax(refined_search_window))
+
+    if refined_search_region_end - refined_search_region_start <= 0:
+        warnings.warn("IC detection failed for a stride due to an invalid refined search region. Returning NaN.")
         return np.nan
 
     # Find heel strike candidate in search region based on gyr
@@ -335,7 +346,12 @@ def _detect_ic_for_ic_stride(
     acc_search_region_end = int(
         np.min(np.array([start + gyr_ml_sec.shape[0], heel_strike_candidate + ic_search_region[1]]))
     )
-    return int(acc_search_region_start + np.argmin(acc_pa_inv[acc_search_region_start:acc_search_region_end]))
+    acc_search_window = acc_pa_inv[acc_search_region_start:acc_search_region_end]
+    if len(acc_search_window) == 0:
+        warnings.warn("IC detection failed for a stride due to an empty acc search region. Returning NaN.")
+        return np.nan
+
+    return int(acc_search_region_start + np.argmin(acc_search_window))
 
 
 def _detect_tc_for_ic_stride(gyr_ml: np.ndarray) -> int:

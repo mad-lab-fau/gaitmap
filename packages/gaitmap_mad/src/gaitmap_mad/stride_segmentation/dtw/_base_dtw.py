@@ -466,6 +466,7 @@ class BaseDtw(BaseAlgorithm):
                 memory=memory,
             )
             matches_start_end_ = matches_start_end_[to_keep]
+            costs_ = costs_[to_keep]
             self._post_postprocess_check(matches_start_end_)
             paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
         return {
@@ -677,19 +678,19 @@ class BaseDtw(BaseAlgorithm):
         _max_template_stretch = self.max_template_stretch_ms
         _max_signal_stretch = self.max_signal_stretch_ms
         template_sampling_rate = getattr(template, "sampling_rate_hz", None)
-        if _max_signal_stretch and template_sampling_rate is None:
+        if self.resample_template is False and _max_template_stretch is not None and not template_sampling_rate:
             raise ValueError(
-                "To use the local warping constraint for the template, a `sampling_rate_hz` must be specified for "
-                "the template."
+                "To use `max_template_stretch_ms` with `resample_template=False`, a `sampling_rate_hz` must be "
+                "specified for the template."
             )
 
         if _max_template_stretch is None:
             _max_template_stretch = np.inf
         else:
             # Use the correct template sampling rate
-            sampling_rate = self.sampling_rate_hz
+            sampling_rate: float = self.sampling_rate_hz
             if self.resample_template is False:
-                sampling_rate = template_sampling_rate
+                sampling_rate = float(template_sampling_rate)
             _max_template_stretch = np.round(_max_template_stretch / 1000 * sampling_rate)
         if _max_signal_stretch is None:
             _max_signal_stretch = np.inf
