@@ -374,12 +374,11 @@ class ParallelTransformer(BaseTransformer, TrainableTransformerMixin):
                 raise TypeError(f"{message}\n Got `{k}`")
             if not isinstance(k[1], BaseTransformer):
                 raise TypeError(
-                    f"{message}\n However, in `{k}` the second value is not a transformer instance. "
-                    f"Got {type(k[1])}"
+                    f"{message}\n However, in `{k}` the second value is not a transformer instance. Got {type(k[1])}"
                 )
             try:
                 str(k[0])
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ValueError(
                     f"{message}\n However, in `{k}` the name is not convertible to a string (see error above)"
                 ) from e

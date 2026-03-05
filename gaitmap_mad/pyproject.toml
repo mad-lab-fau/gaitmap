@@ -1,21 +1,21 @@
-[tool.poetry]
+[project]
 name = "gaitmap_mad"
 version = "2.5.2"
 description = "Specific algorithm implementaions by the mad_lab"
 license = "AGPL-3.0"
 readme = "README.md"
-homepage = "https://github.com/mad-lab-fau/gaitmap"
-repository = "https://github.com/mad-lab-fau/gaitmap"
+requires-python = ">=3.9,<4.0"
 authors = [
-    "Arne Küderle <arne.kuederle@fau.de>",
-    "Martin Ullrich <martin.ullrich@fau.de>",
-    "Nils Roth <nils.roth@fau.de>",
-    "Moradi, Hamid <hamid.moradi@fau.de>"
+    { name = "Arne Kuederle", email = "arne.kuederle@fau.de" },
+    { name = "Martin Ullrich", email = "martin.ullrich@fau.de" },
+    { name = "Nils Roth", email = "nils.roth@fau.de" },
+    { name = "Moradi, Hamid", email = "hamid.moradi@fau.de" },
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+[project.urls]
+Homepage = "https://github.com/mad-lab-fau/gaitmap"
+Repository = "https://github.com/mad-lab-fau/gaitmap"
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

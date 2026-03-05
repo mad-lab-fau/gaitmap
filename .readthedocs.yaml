@@ -15,8 +15,8 @@ build:
     python: "3.9"
   jobs:
     post_create_environment:
-      - pip install poetry
+      - asdf plugin add uv
+      - asdf install uv latest
+      - asdf global uv latest
     post_install:
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --all-extras
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry run pip install ./gaitmap_mad --upgrade
-
+      - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --all-extras --group dev --link-mode=copy

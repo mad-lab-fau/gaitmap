@@ -34,7 +34,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
     ...     "py",
     ...     {"module": "tty", "fullname": "setraw"},
     ...     package="tty",
-    ...     url_fmt="http://hg.python.org/cpython/file/" "{revision}/Lib/{package}/{path}#L{lineno}",
+    ...     url_fmt="http://hg.python.org/cpython/file/{revision}/Lib/{package}/{path}#L{lineno}",
     ...     revision="xxxx",
     ... )
     'http://hg.python.org/cpython/file/xxxx/Lib/tty/tty.py#L18'

@@ -7,23 +7,24 @@ and learn about programing methods used in development of this project.
 If you are looking for a higher level overview over the guiding ideas and structure of this project, please visit the
 [Project Structure document](project_structure.md).
 
-## Project Setup and Poetry
+## Project Setup and uv
 
-*gaitmap* only supports Python 3.8 and newer.
-First, install a compatible version of Python.
-If you do not want to modify your system installation of Python you can use [conda](https://docs.conda.io/en/latest/)
-or [pyenv](https://github.com/pyenv/pyenv).
-However, there are some issues with using conda.
-Please, check the [trouble shooting guide](#trouble-shooting) below.
+*gaitmap* only supports Python 3.9 and newer.
+Install [uv](https://docs.astral.sh/uv/) first.
 
-*gaitmap* uses [poetry](https://python-poetry.org) to manage its dependencies.
-First install poetry `>=1.2`.
-Once you installed poetry, run the following commands to initialize a virtual env and install all development
+*gaitmap* uses uv for Python management, dependency resolution, and project execution.
+Run the following commands to initialize a local Python and install all development
 dependencies:
 
 ```bash
-poetry env use "path/to/python/you/want/to/use"
-poetry install --all-extras
+# Install and pin the recommended Python version
+uv python install 3.9
+
+# For Python 3.9 (and if you need to work on hmm)
+uv sync --group dev --all-extras
+
+# For Python >=3.10 (you can not work on hmm stuff with this)
+uv sync --group dev --extra stats
 ```
 This will create a new folder called `.venv` inside your project dir.
 It contains the python interpreter and all site packages.
@@ -37,40 +38,40 @@ For PyCharm you can find information about this
 To add new dependencies:
 
 ```bash
-poetry add <package name>
+uv add <package name>
 
 # Or in case of a dev dependency
-poetry add --dev <package name>
+uv add --group dev <package name>
 ```
 
-For more commands see the [official documentation](https://python-poetry.org/docs/cli/).
+For more commands see the [official uv documentation](https://docs.astral.sh/uv/).
 
 To update dependencies after the `pyproject.toml` file was changed (It is a good idea to run this after a `git pull`):
 ```bash
-poetry install --no-root
+uv sync --group dev --all-extras
 
 # or (see differences below)
-poetry update
+uv lock --upgrade
 ```
 
-Running `poetry install` will only install packages that are not yet installed. `poetry update` will also check, if 
-newer versions of already installed packages exist.
+Running `uv sync` will install packages according to `uv.lock`. Running `uv lock --upgrade` refreshes the lock file and
+updates dependency versions.
 
 ## Tools we are using
 
 To make it easier to run commandline tasks we use [poethepoet](https://github.com/nat-n/poethepoet) to provide a 
 cross-platform cli for common tasks.
-All commands need to be executed in the `venv` created by poetry.
+All commands need to be executed in the `venv` created by uv.
 
 To list the available tasks, run:
 
 ```bash
-$ poetry run poe
+$ uv run poe
 ...
 CONFIGURED TASKS
   format            
-  lint              Lint all files with Prospector.
-  check             Check all potential format and linting issues.
+  lint              Lint all files with ruff.
+  ci_check          Check all potential format and linting issues.
   test              Run Pytest with coverage.
   docs              Build the html docs using Sphinx.
   register_jupyter  Register the gaitmap environment as a Jupyter kernel for testing.
@@ -81,10 +82,10 @@ CONFIGURED TASKS
 
 To run one of the commands execute (e.g. the `test` command):
 ```bash
-poetry run poe test
+uv run poe test
 ```
 
-**Protip**: If you installed poethepoet globally, you can skip the `poetry run` part at the beginning.
+**Protip**: You can run all project tools through `uv run ...` and avoid manual environment activation.
 
 ### Formatting and Linting
 
@@ -102,13 +103,13 @@ To make your live easier, you should also set your IDE tools to support the nump
 To run formatting you can use
 
 ```bash
-poetry run poe format
+uv run poe format
 ```
 
 and for linting you can run
 
 ```bash
-poetry run poe lint
+uv run poe lint
 ```
 
 Tou should run this as often as possible!
@@ -220,7 +221,7 @@ For more information see `tests/_regression_utils.py` or
 
 While all automated tests should go in the test folder, it might be helpful to create some external test script from 
 time to time.
-For this you can simply install the package locally (using `poetry install`) and even get a Jupyter kernel with all
+For this you can simply install the package locally (using `uv sync --group dev --all-extras`) and even get a Jupyter kernel with all
 dependencies installed (see [IDE Config](#Configure-your-IDE)).
 
  
@@ -247,7 +248,7 @@ settings->Build,Excecution,Deployment->Console->Python Console in the Starting S
 #### Trouble Shooting
 If you encounter any issues with the PyCharm interpreter, i.e., submodules are not found, this might help:
 1. Delete the `.idea` folder in the project root and restart PyCharm.
-2. Delete the gaitmap poetry environment and reinstall with `poetry install --all-extras`. 
+2. Delete the gaitmap `.venv` and reinstall with `uv sync --group dev --all-extras`.
 
 ### Jupyter Lab/Notebooks
 
@@ -256,9 +257,9 @@ prototype your scientific code.
 To set up a Jupyter environment that has gaitmap and all dependencies installed, run the following commands:
 
 ```
-# poetry install including root!
-poetry install
-poetry run poe register_ipykernel
+# uv sync including root!
+uv sync --group dev --all-extras
+uv run poe register_jupyter
 ``` 
 
 After this you can start Jupyter as always, but select "gaitmap" as a kernel when you want to run a notebook.
@@ -387,43 +388,18 @@ Remember, to rebase this temporary dev branch onto master from time to time.
 (trouble-shooting)=
 
 
-### `poetry not found` when using `zsh` as shell
+### `uv not found` when using `zsh` as shell
 
-If you have trouble installing `poetry` while using `zsh` as your shell, check this [issue](https://github.com/python-poetry/poetry/issues/507)
+If you have trouble with `uv` not being available in your shell, make sure your PATH is updated according to the
+[uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-### Installation issues while using `conda`
-
-.. note:: This might be outdated! If you run into any issues, please check google :)
-
-Setting up `poetry` with `conda` as the main Python version can be a little tricky.
-First, make sure that you installed poetry in the [recommended way](https://python-poetry.org/docs/#installation) using 
-the PowerShell command.
-
-Then you have 2 options to start using poetry for this package:
-
-1. Using a `conda env` instead of `venv`
-    - Create a new conda env (using the required Python version for this project).
-    - Activate the environment.
-    - Run `poetry install --no-root`. Poetry will 
-    [detect that you are already using a conda env](https://github.com/python-poetry/poetry/pull/1432) and will use it, 
-    instead of creating a new one.
-    - After running the poetry install command you should be able to use poetry without activating the conda env again.
-    - Setup your IDE to use the conda env you created
-2. Using `conda` python and a `venv`
-    - This only works, if your conda **base** env has a Python version supported by the project (>= 3.7)
-    - Activate the base env
-    - Run `poetry install --no-root`. Poetry will create a new venv in the folder `.venv`, because it detects and
-        handles the conda base env 
-        [different than other envs](https://github.com/maksbotan/poetry/blob/b1058fc2304ea3e2377af357264abd0e1a791a6a/poetry/utils/env.py#L295).
-    - Everything else should work like you are not using conda
-    
-### Warning/Error about outdated/missing dependencies in the lock file when running `install` or `update`
+### Warning/Error about outdated/missing dependencies in the lock file when running `sync`
 
 This happens when the `pyproject.toml` file was changed either by a git update or by manual editing.
 To resolve this issue, run the following and then rerun the command you wanted to run:
 
 ```bash
-poetry update --lock
+uv lock
 ``` 
 
 This will synchronise the lock file with the packages listed in `pyproject.toml` 

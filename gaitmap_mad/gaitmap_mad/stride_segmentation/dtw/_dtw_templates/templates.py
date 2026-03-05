@@ -118,7 +118,7 @@ class BarthOriginalTemplate(BaseDtwTemplate):
         """
         with open_text(
             "gaitmap_mad.stride_segmentation.dtw._dtw_templates",
-            cast(str, self.template_file_name),
+            cast("str", self.template_file_name),
         ) as test_data:
             data = pd.read_csv(test_data, header=0)
         template = data

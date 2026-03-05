@@ -206,7 +206,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
 
     def _get_detect_kwargs(self) -> dict[str, Union[tuple[int, int], int]]:
         ic_search_region = cast(
-            tuple[int, int], tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
+            "tuple[int, int]", tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )
         if all(v == 0 for v in ic_search_region):
             raise ValueError(

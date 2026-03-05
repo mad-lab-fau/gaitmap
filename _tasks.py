@@ -38,16 +38,19 @@ def update_version_strings(file_path, new_version) -> None:
 
 
 def update_version(version) -> None:
-    subprocess.run(["poetry", "version", version], shell=False, check=True)
+    subprocess.run(["uv", "version", version, "--frozen"], shell=False, check=True)
     new_version = (
-        subprocess.run(["poetry", "version"], shell=False, check=True, capture_output=True)
+        subprocess.run(["uv", "version", "--short"], shell=False, check=True, capture_output=True)
         .stdout.decode()
         .strip()
-        .split(" ", 1)[1]
     )
     update_version_strings(HERE / "gaitmap/__init__.py", new_version)
     # Update the gaitmap_mad version as well
-    subprocess.run(["poetry", "version", new_version], shell=False, check=True, cwd=HERE / "gaitmap_mad")
+    subprocess.run(
+        ["uv", "version", new_version, "--project", str(HERE / "gaitmap_mad"), "--frozen"],
+        shell=False,
+        check=True,
+    )
     update_version_strings(HERE / "gaitmap_mad/gaitmap_mad/__init__.py", new_version)
 
 
@@ -58,10 +61,16 @@ def task_update_version() -> None:
 def task_bump_all_dev() -> None:
     """Bump all dev dependencies."""
     pyproject = toml.load(HERE.joinpath("pyproject.toml"))
-    try:
-        dev_dependencies = pyproject["tool"]["poetry"]["dev-dependencies"]
-    except KeyError:
-        dev_dependencies = pyproject["tool"]["poetry"]["group"]["dev"]["dependencies"]
-    dev_deps = dev_dependencies.keys()
-    new_dev_deps = [f"{dep}@latest" for dep in dev_deps]
-    subprocess.run(["poetry", "add", "--group", "dev", *new_dev_deps], shell=False, check=True)
+    dev_dependencies = pyproject["dependency-groups"]["dev"]
+    new_dev_deps = []
+
+    for dep in dev_dependencies:
+        dep_name_match = re.match(r"[A-Za-z0-9_.-]+", dep)
+        if dep_name_match is None:
+            continue
+        dep_name = dep_name_match.group(0)
+        if dep_name == "gaitmap-mad":
+            continue
+        new_dev_deps.append(f"{dep_name}@latest")
+
+    subprocess.run(["uv", "add", "--group", "dev", *new_dev_deps], shell=False, check=True)

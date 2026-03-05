@@ -6,11 +6,11 @@ from gaitmap.zupt_detection._moving_window_zupt_detector import AredZuptDetector
 from gaitmap.zupt_detection._stride_event_zupt_detector import StrideEventZuptDetector
 
 __all__ = [
-    "NormZuptDetector",
-    "ShoeZuptDetector",
     "AredZuptDetector",
-    "StrideEventZuptDetector",
     "ComboZuptDetector",
+    "NormZuptDetector",
     "PerSampleZuptDetectorMixin",
     "RegionZuptDetectorMixin",
+    "ShoeZuptDetector",
+    "StrideEventZuptDetector",
 ]

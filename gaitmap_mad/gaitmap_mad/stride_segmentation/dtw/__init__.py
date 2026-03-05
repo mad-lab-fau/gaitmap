@@ -16,14 +16,14 @@ from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
 )
 
 __all__ = [
-    "BaseDtw",
     "BarthDtw",
-    "ConstrainedBarthDtw",
-    "find_matches_find_peaks",
-    "find_matches_min_under_threshold",
     "BarthOriginalTemplate",
+    "BaseDtw",
     "BaseDtwTemplate",
+    "ConstrainedBarthDtw",
     "DtwTemplate",
     "InterpolatedDtwTemplate",
     "TrainableTemplateMixin",
+    "find_matches_find_peaks",
+    "find_matches_min_under_threshold",
 ]

@@ -1,15 +1,19 @@
 """Helper functions to handle the gaitmap/gaitmap_mad split."""
 
-from importlib.util import find_spec
+from importlib import import_module
 
 import gaitmap
+from gaitmap.utils.exceptions import GaitmapMadImportError
 
 
 def patch_gaitmap_mad_import(_gaitmap_mad_modules, current_module_name):
     """Check if the gaitmap_mad module is available and return a patched getattr method if not."""
-    if find_spec("gaitmap_mad"):
-        import gaitmap_mad  # pylint: disable=import-outside-toplevel
+    try:
+        gaitmap_mad = import_module("gaitmap_mad")
+    except ImportError:
+        gaitmap_mad = None
 
+    if gaitmap_mad is not None:
         if (gm_version := gaitmap_mad.__version__) != (g_version := gaitmap.__version__):
             raise ImportError(
                 "We only support using the exact same version of `gaitmap` and `gaitmap_mad`. "
@@ -18,7 +22,6 @@ def patch_gaitmap_mad_import(_gaitmap_mad_modules, current_module_name):
                 "`gaitmap_mad` when you updated `gaitmap`)."
             )
         return None
-    from gaitmap.utils.exceptions import GaitmapMadImportError  # pylint: disable=import-outside-toplevel
 
     def new_getattr(name: str):
         if name in _gaitmap_mad_modules:

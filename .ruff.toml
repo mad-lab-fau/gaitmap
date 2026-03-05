@@ -92,30 +92,24 @@ ignore = [
     "RET504",
     # Abstract raise into inner function
     "TRY301",
-    # df as varaible name
-    "PD901",
     # melt over stack
     "PD013",
     # No Any annotations
     "ANN401",
-    # Self annotation
-    "ANN101",
     # To many arguments
     "PLR0913",
     # Class attribute shadows builtin
     "A003",
-    # No typing for `cls`
-    "ANN102",
     # Ignore because of formatting
     "ISC001",
     # Use type-checking block
-    "TCH001",
-    "TCH002",
-    "TCH003",
+    "TC001",
+    "TC002",
+    "TC003",
     # No stacklevel
     "B028",
     # Overwriting loop variable
-    "PLW2901"
+    "PLW2901",
 
 ]
 

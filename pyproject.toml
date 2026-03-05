@@ -1,69 +1,73 @@
-[tool.poetry]
+[project]
 name = "gaitmap"
 version = "2.5.2"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/mad-lab-fau/gaitmap"
-repository = "https://github.com/mad-lab-fau/gaitmap"
+requires-python = ">=3.9,<4.0"
 authors = [
-    "Arne Küderle <arne.kuederle@fau.de>",
-    "Martin Ullrich <martin.ullrich@fau.de>",
-    "Nils Roth <nils.roth@fau.de>",
-    "Malte Ollenschläger <Malte.Ollenschlaeger@fau.de>",
-    "Alzhraa Ahmed <alzhraa.ahmed@fau.de>",
-    "Moradi, Hamid <hamid.moradi@fau.de>",
-    "Raul C. Sîmpetru <raul.simpetru@fau.de>",
-    "Dominik Prossel <dominik.prossel@fau.de>",
-    "Liv Herzer <liv.herzer@fau.de>",
-    "Max Stahlke <maximilian.stahlke@iis.fraunhofer.de>",
-    "Felix Kluge <felix.kluge@fau.de>"
+    { name = "Arne Kuederle", email = "arne.kuederle@fau.de" },
+    { name = "Martin Ullrich", email = "martin.ullrich@fau.de" },
+    { name = "Nils Roth", email = "nils.roth@fau.de" },
+    { name = "Malte Ollenschlaeger", email = "Malte.Ollenschlaeger@fau.de" },
+    { name = "Alzhraa Ahmed", email = "alzhraa.ahmed@fau.de" },
+    { name = "Moradi, Hamid", email = "hamid.moradi@fau.de" },
+    { name = "Raul C. Simpetru", email = "raul.simpetru@fau.de" },
+    { name = "Dominik Prossel", email = "dominik.prossel@fau.de" },
+    { name = "Liv Herzer", email = "liv.herzer@fau.de" },
+    { name = "Max Stahlke", email = "maximilian.stahlke@iis.fraunhofer.de" },
+    { name = "Felix Kluge", email = "felix.kluge@fau.de" },
 ]
-packages = [
-  { include = "gaitmap" },
+dependencies = [
+    "pandas>=2,<2.3",
+    "scipy>=1.6.1",
+    "typing_extensions>=4.1.1",
+    "numba>=0.55",
+    "numba>=0.55.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "numpy>=1.20,<2",
+    "joblib>=1.2.0",
+    "scikit-learn>=1.0.1",
+    "tpcp>=0.32.0,<1",
+    "pooch>=1.7.0",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9.0,<4.0"
-pandas = ">=2"
-scipy = ">=1.6.1"
-typing_extensions = ">=4.1.1"
-numba =  [
-    {version = ">=0.55"},
-    {version = ">=0.55.2", markers = "sys_platform == 'darwin' and platform_machine == 'arm64'"}
+[project.optional-dependencies]
+hmm = [
+    "pomegranate>=0.14.2,<=0.14.6; python_version < '3.10'",
 ]
-numpy = ">=1.20"
-joblib = ">=1.2.0"
-scikit-learn = ">=1.0.1"
-# We restrict it to 0.14.6 for now, as later versions don't seem to work on Linux
-# This version of pomegranate does not support Python 3.10, unfortunately
-pomegranate = {version = ">=0.14.2,<=0.14.6", python = "<3.10", optional = true}
-tpcp = ">=0.32.0"
-pingouin = {version = ">=0.5.3", optional = true}
-pooch = ">=1.7.0"
+stats = ["pingouin>=0.5.3"]
+all = [
+    "pomegranate>=0.14.2,<=0.14.6; python_version < '3.10'",
+    "pingouin>=0.5.3",
+]
 
-[tool.poetry.extras]
-hmm = ["pomegranate"]
-stats = ["pingouin"]
-all = ["pomegranate", "pingouin"]
+[project.urls]
+Homepage = "https://github.com/mad-lab-fau/gaitmap"
+Repository = "https://github.com/mad-lab-fau/gaitmap"
 
-[tool.poetry.group.dev.dependencies]
-poethepoet = "^0.18.1"
-pytest = "^7.2.1"
-pytest-cov = "^4.0.0"
-coverage = "^7.0.5"
-ipykernel = "^6.20.2"
-IPython = "^8.8.0"
-ipympl = "^0.9.2"
-memory_profiler = "^0.61.0"
-toml = "^0.10.2"
-gaitmap-mad = {path = "gaitmap_mad", develop = true}
-sphinx-gallery = "^0.11.1"
-pydata-sphinx-theme = "^0.14.0"
-numpydoc = "^1.5.0"
-Sphinx = "^6.1.3"
-ruff = "^0.3.4"
-myst-parser = "^1.0.0"
+[dependency-groups]
+dev = [
+    "poethepoet>=0.37.0,<0.42.0; python_version < '3.10'",
+    "poethepoet>=0.42.1; python_version >= '3.10'",
+    "pytest>=7.2.1,<8",
+    "pytest-cov>=4.0.0,<5",
+    "coverage>=7.0.5,<8",
+    "ipykernel>=6.20.2,<7",
+    "ipython>=8.8.0,<9",
+    "ipympl>=0.9.2,<0.10",
+    "memory-profiler>=0.61.0,<0.62",
+    "toml>=0.10.2,<0.11",
+    "sphinx-gallery>=0.11.1,<0.12",
+    "pydata-sphinx-theme>=0.14.0,<0.15",
+    "numpydoc>=1.5.0,<2",
+    "sphinx>=6.1.3,<7",
+    "ruff>=0.15.4",
+    "myst-parser>=1.0.0,<2",
+    "gaitmap-mad",
+]
+
+[tool.uv.sources]
+gaitmap-mad = { path = "gaitmap_mad", editable = true }
 
 [tool.poe.tasks]
 _format = "ruff format ."
@@ -76,15 +80,14 @@ _lint_ci = "ruff check gaitmap gaitmap_mad --output-format=github"
 _check_format = "ruff format . --check"
 ci_check = { sequence = ["_check_format", "_lint_ci"], help = "Check all potential format and linting issues." }
 test = { cmd = "pytest --cov=gaitmap --cov-report=term-missing --cov-report=xml", help = "Run Pytest with coverage." }
-docs = { "script" = "_tasks:task_docs()",  help = "Build the html docs using Sphinx." }
-docs_clean = { "script" = "_tasks:task_docs(clean=True)",  help = "Remove all old build files and build a clean version of the docs." }
+docs = { "script" = "_tasks:task_docs()", help = "Build the html docs using Sphinx." }
+docs_clean = { "script" = "_tasks:task_docs(clean=True)", help = "Remove all old build files and build a clean version of the docs." }
 docs_linkcheck = { "script" = "_tasks:task_docs(builder='linkcheck')", help = "Check all links in the built html docs." }
 docs_preview = { cmd = "python -m http.server --directory docs/_build/html", help = "Preview the built html docs." }
-register_jupyter = { "script" = "_tasks:task_register_ipykernel()",  help = "Register the gaitmap environment as a Jupyter kernel for testing." }
+register_jupyter = { cmd = "python -m ipykernel install --user --name gaitmap", help = "Register the gaitmap environment as a Jupyter kernel for testing." }
 version = { "script" = "_tasks:task_update_version()", help = "Bump version in all relevant places." }
-bump_dev = { script = "_tasks:task_bump_all_dev()", help= "Update all dev dependencies to their @latest version."}
+bump_dev = { script = "_tasks:task_bump_all_dev()", help = "Update all dev dependencies to their @latest version." }
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
+requires = ["hatchling"]
+build-backend = "hatchling.build"

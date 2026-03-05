@@ -9,9 +9,9 @@ from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
 )
 
 __all__ = [
-    "DtwTemplate",
     "BarthOriginalTemplate",
-    "InterpolatedDtwTemplate",
     "BaseDtwTemplate",
+    "DtwTemplate",
+    "InterpolatedDtwTemplate",
     "TrainableTemplateMixin",
 ]

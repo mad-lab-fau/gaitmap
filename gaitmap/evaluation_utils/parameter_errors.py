@@ -1,6 +1,7 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
 import warnings
+from importlib import import_module
 from typing import Literal, Union
 
 import numpy as np
@@ -550,7 +551,7 @@ def _calculate_error_stats(
 def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"]):
     """Calculate the intraclass correlation coefficient using pingouin."""
     try:
-        import pingouin as pg  # pylint: disable=import-outside-toplevel
+        pg = import_module("pingouin")
     except ImportError as e:
         if scoring_errors == "warn":
             warnings.warn(

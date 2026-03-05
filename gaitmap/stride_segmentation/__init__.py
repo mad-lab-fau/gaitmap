@@ -42,14 +42,14 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
 
 __all__ = [
     "BarthDtw",
-    "ConstrainedBarthDtw",
+    "BarthOriginalTemplate",
     "BaseDtw",
     "BaseDtwTemplate",
-    "InterpolatedDtwTemplate",
+    "ConstrainedBarthDtw",
     "DtwTemplate",
-    "BarthOriginalTemplate",
-    "TrainableTemplateMixin",
+    "InterpolatedDtwTemplate",
     "RoiStrideSegmentation",
+    "TrainableTemplateMixin",
     "find_matches_find_peaks",
     "find_matches_min_under_threshold",
 ]
