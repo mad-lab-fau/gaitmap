@@ -39,10 +39,10 @@ def test_constrained_barth_dtw_example(snapshot) -> None:
     assert len(dtw.matches_start_end_["left_sensor"]) == 74
     snapshot.assert_match(dtw.matches_start_end_["left_sensor"], "dtw")
 
-    assert len(cdtw.matches_start_end_["left_sensor"]) == 75
+    assert len(cdtw.matches_start_end_["left_sensor"]) == 74
     snapshot.assert_match(cdtw.matches_start_end_["left_sensor"], "cdtw")
 
-    assert len(default_cdtw.matches_start_end_["left_sensor"]) == 75
+    assert len(default_cdtw.matches_start_end_["left_sensor"]) == 74
     snapshot.assert_match(default_cdtw.matches_start_end_["left_sensor"], "default_cdtw")
 
 

@@ -12,6 +12,13 @@ project.
 
 ### Scientific Changes
 
+- Fixed a constrained subsequence DTW initialization bug where the full 3D state tensor was zeroed instead of only the
+  counter layer (`cum_sum[:, :, 1]`). This removes spurious short constrained matches (e.g. a `(15, 18)` false
+  positive in the constrained Barth example) and restores expected permissive-constraint behavior. On real-world data,
+  the effect is small: for `stride_segmentation.sensor_position_comparison_instep` on local
+  `SensorPositionComparison2019Segmentation`, precision improves by approximately 0.5% with unchanged recall.
+  (Issue: https://github.com/mad-lab-fau/gaitmap/issues/76, PR: https://github.com/mad-lab-fau/gaitmap/pull/78)
+
 - The TC detection within FilteredRampp event detection now uses the filtered gyro signal instead of the raw gyro 
   signal.
   We saw in a couple of patients that they had a lot of high frequency noise in the gyro signal, which affected the
