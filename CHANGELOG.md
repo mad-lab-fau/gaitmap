@@ -45,6 +45,10 @@ project.
 
 - Fixed Python 3.9 installs that include HMM extras by constraining NumPy to `<2` for those extras to avoid the
   `pomegranate` binary compatibility crash with NumPy 2.x.
+- Fixed multiple edge-case failures across stride/event pipelines, including DTW `costs_` postprocessing consistency,
+  template-stretch constraint validation, Rampp IC short-stride handling, empty-ROI stride merging, all-zero AbsMax
+  scaling, missing-initial-ZUPT alignment handling, and max sensor lift being relative to stride start.
+  (https://github.com/mad-lab-fau/gaitmap/pull/77)
 
 ### Development
 
