@@ -20,6 +20,12 @@ resolution-markers = [
     "(python_full_version < '3.10' and platform_machine != 'arm64') or (python_full_version < '3.10' and sys_platform != 'darwin')",
 ]
 
+[manifest]
+members = [
+    "gaitmap",
+    "gaitmap-mad",
+]
+
 [[package]]
 name = "accessible-pygments"
 version = "0.0.5"
@@ -1054,11 +1060,13 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "numpy", marker = "python_full_version < '3.10'" },
     { name = "pingouin", version = "0.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pingouin", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pomegranate", marker = "python_full_version < '3.10'" },
 ]
 hmm = [
+    { name = "numpy", marker = "python_full_version < '3.10'" },
     { name = "pomegranate", marker = "python_full_version < '3.10'" },
 ]
 stats = [
@@ -1096,6 +1104,8 @@ requires-dist = [
     { name = "numba", specifier = ">=0.55" },
     { name = "numba", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = ">=0.55.2" },
     { name = "numpy", specifier = ">=1.20,<2" },
+    { name = "numpy", marker = "python_full_version < '3.10' and extra == 'all'", specifier = "<2" },
+    { name = "numpy", marker = "python_full_version < '3.10' and extra == 'hmm'", specifier = "<2" },
     { name = "pandas", specifier = ">=2,<2.3" },
     { name = "pingouin", marker = "extra == 'all'", specifier = ">=0.5.3" },
     { name = "pingouin", marker = "extra == 'stats'", specifier = ">=0.5.3" },

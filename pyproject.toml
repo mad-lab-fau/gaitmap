@@ -67,7 +67,10 @@ dev = [
 ]
 
 [tool.uv.sources]
-gaitmap-mad = { path = "gaitmap_mad", editable = true }
+gaitmap-mad = { workspace = true }
+
+[tool.uv.workspace]
+members = ["gaitmap_mad"]
 
 [tool.poe.tasks]
 _format = "ruff format ."

@@ -51,7 +51,7 @@ def update_version(version) -> None:
         shell=False,
         check=True,
     )
-    update_version_strings(HERE / "gaitmap_mad/gaitmap_mad/__init__.py", new_version)
+    update_version_strings(HERE / "gaitmap_mad/src/gaitmap_mad/__init__.py", new_version)
 
 
 def task_update_version() -> None:
