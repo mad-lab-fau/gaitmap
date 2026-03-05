@@ -25,6 +25,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+
 from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.utils.array_handling import iterate_region_data
 
@@ -211,12 +212,12 @@ results_df
 # The mean score is the primary parameter used to select the best parameter combi (if `return_optimized` is True).
 # All other values performance values are just there to provide further inside.
 
-results_df[["mean_test_precision", "mean_test_recall", "mean_test_f1_score"]]
+results_df[["mean__test__agg__precision", "mean__test__agg__recall", "mean__test__agg__f1_score"]]
 
 # %%
 # For even more insight, you can inspect the scores per datapoint:
 
-results_df.filter(like="test_single")
+results_df.filter(like="test__single")
 
 # %%
 # If `return_optimized` was set to True (or the name of a score), a final optimization is performed using the best

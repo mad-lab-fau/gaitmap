@@ -1103,10 +1103,10 @@ requires-dist = [
     { name = "joblib", specifier = ">=1.2.0" },
     { name = "numba", specifier = ">=0.55" },
     { name = "numba", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = ">=0.55.2" },
-    { name = "numpy", specifier = ">=1.20,<2" },
+    { name = "numpy", specifier = ">=1.20,<2.1" },
     { name = "numpy", marker = "python_full_version < '3.10' and extra == 'all'", specifier = "<2" },
     { name = "numpy", marker = "python_full_version < '3.10' and extra == 'hmm'", specifier = "<2" },
-    { name = "pandas", specifier = ">=2,<2.3" },
+    { name = "pandas", specifier = ">=2,<2.4" },
     { name = "pingouin", marker = "extra == 'all'", specifier = ">=0.5.3" },
     { name = "pingouin", marker = "extra == 'stats'", specifier = ">=0.5.3" },
     { name = "pomegranate", marker = "python_full_version < '3.10' and extra == 'all'", specifier = ">=0.14.2,<=0.14.6" },
@@ -1114,7 +1114,7 @@ requires-dist = [
     { name = "pooch", specifier = ">=1.7.0" },
     { name = "scikit-learn", specifier = ">=1.0.1" },
     { name = "scipy", specifier = ">=1.6.1" },
-    { name = "tpcp", specifier = ">=0.32.0,<1" },
+    { name = "tpcp", specifier = ">=2.1.2" },
     { name = "typing-extensions", specifier = ">=4.1.1" },
 ]
 provides-extras = ["hmm", "stats", "all"]
@@ -4009,7 +4009,7 @@ wheels = [
 
 [[package]]
 name = "tpcp"
-version = "0.34.1"
+version = "2.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "joblib" },
@@ -4021,9 +4021,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/38/1e889d315c9b38aca9e3f5b29c5a2c62e0e78d764da819d6cd99866a2298/tpcp-0.34.1.tar.gz", hash = "sha256:f4411c1cd4cd7db6c50182e172cf6770ec65a9d9be07d440a7b2e810f640b0a5", size = 86279, upload-time = "2024-07-02T15:16:12.82Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/5d/e2942f74f75c53f8e1dc99202bf0cde6da297c2ea75dad0a296a0efe7242/tpcp-2.1.2.tar.gz", hash = "sha256:06165b9d0aa67f66b2e41e9a1369414086021857722d5f0f65c1784a8ceb7f84", size = 87317, upload-time = "2026-02-21T13:55:55.817Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/e7/5189a8e1539d800dfee6dd3d0b996db5fdddb0e534e9af0e6ba30d1c3f33/tpcp-0.34.1-py3-none-any.whl", hash = "sha256:95513c9b3ed7f56ff6d79212cb3b90cbf00f08a1a504840d962a914a6cf823bc", size = 95142, upload-time = "2024-07-02T15:16:08.227Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/f1/782cc7392cf92aee4a739813551abd29b31203373936d5fdce0828a183c7/tpcp-2.1.2-py3-none-any.whl", hash = "sha256:4089a17ae22bbfa1fd4d9aface8bbc69251e9e51ed38e8be1cca337e060f5894", size = 100977, upload-time = "2026-02-21T13:55:54.779Z" },
 ]
 
 [[package]]

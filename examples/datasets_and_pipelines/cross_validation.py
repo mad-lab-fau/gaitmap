@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
 
+
 from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.stride_segmentation import (
@@ -174,7 +175,7 @@ result_df
 #
 # The main output are the test set performance values.
 # Each row corresponds to performance in respective fold.
-performance = result_df[["test_precision", "test_recall", "test_f1_score"]]
+performance = result_df[["test__agg__precision", "test__agg__recall", "test__agg__f1_score"]]
 performance
 
 # %%
@@ -192,7 +193,7 @@ generalization_performance
 # Inspecting this list can help to identify potential issues with certain parts of your dataset.
 # To link the performance values to a specific datapoint, you can look at the `test_data_labels` field.
 single_performance = result_df[
-    ["test_single_precision", "test_single_recall", "test_single_f1_score", "test_data_labels"]
+    ["test__single__precision", "test__single__recall", "test__single__f1_score", "test__data_labels"]
 ]
 single_performance
 
@@ -203,13 +204,13 @@ single_performance
 # set.
 train_performance = result_df[
     [
-        "train_precision",
-        "train_recall",
-        "train_f1_score",
-        "train_single_precision",
-        "train_single_recall",
-        "train_single_f1_score",
-        "train_data_labels",
+        "train__agg__precision",
+        "train__agg__recall",
+        "train__agg__f1_score",
+        "train__single__precision",
+        "train__single__recall",
+        "train__single__f1_score",
+        "train__data_labels",
     ]
 ]
 train_performance
@@ -217,7 +218,7 @@ train_performance
 # %%
 # The final level of debug information is provided via the timings (note the long runtime in fold 0 can be explained
 # by the jit-compiler used in `BarthDtw`) ...
-timings = result_df[["score_time", "optimize_time"]]
+timings = result_df[["debug__score_time", "debug__optimize_time"]]
 timings
 
 # %%

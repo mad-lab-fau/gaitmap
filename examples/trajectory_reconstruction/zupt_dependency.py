@@ -21,6 +21,7 @@ This is also a great example of how to use the `tpcp` optimization methods in co
 
 import pandas as pd
 
+
 # %%
 # The Data
 # --------
@@ -161,7 +162,7 @@ print(gs.best_score_)
 import matplotlib.pyplot as plt
 
 result_df = pd.DataFrame(results)
-plt.plot(result_df["param_zupt_method__inactive_signal_threshold"], result_df["score"].abs())
+plt.plot(result_df["param__zupt_method__inactive_signal_threshold"], result_df["agg__score"].abs())
 plt.xlabel("inactive_signal_threshold")
 plt.ylabel("abs(score)")
 plt.yscale("log")
