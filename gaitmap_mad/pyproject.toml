@@ -17,5 +17,5 @@ Homepage = "https://github.com/mad-lab-fau/gaitmap"
 Repository = "https://github.com/mad-lab-fau/gaitmap"
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.10.8,<0.11.0"]
+build-backend = "uv_build"

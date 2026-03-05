@@ -85,7 +85,7 @@ To run one of the commands execute (e.g. the `test` command):
 uv run poe test
 ```
 
-**Protip**: You can run all project tools through `uv run ...` and avoid manual environment activation.
+**Protip**: If you installed poethepoet globally, you can skip the `uv run` part at the beginning.
 
 ### Formatting and Linting
 
