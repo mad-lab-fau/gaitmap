@@ -37,7 +37,7 @@ This means you never need to import directly from the `gaitmap_mad` package.
 As a developer
 --------------
 
-As a developer, simply clone the repo and run `poetry install` in the top-level directory.
+As a developer, simply clone the repo and run `uv sync --group dev --all-extras` in the top-level directory.
 The dependencies are set up in a way, that `gaitmap_mad` is installed as a development dependency of `gaitmap`.
 This means all changes that you make to `gaitmap_mad` are immediately available in `gaitmap` and vice versa.
 

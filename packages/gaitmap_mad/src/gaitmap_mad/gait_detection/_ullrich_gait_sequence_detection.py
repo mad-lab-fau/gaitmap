@@ -460,7 +460,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         gait_sequences_merged.index.name = "gs_id"
         gait_sequences_merged = gait_sequences_merged.reset_index()
 
-        return {sensor_name: gait_sequences_merged for sensor_name in sensor_names}
+        return dict.fromkeys(sensor_names, gait_sequences_merged)
 
     def _add_symmetric_margin_to_start_end_list(self, gait_sequences_start_end, sig_length) -> np.ndarray:
         """Add a symmetrical margin to start and end of the gait sequences."""

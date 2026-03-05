@@ -80,7 +80,7 @@ To get started, you should follow these steps:
    This will create your own copy of the repository, that you can work on.
 2. Clone your fork to your local machine.
 3. Set up your local environment and IDE (see :ref:`development guide <dev_guide>`).
-4. Test your setup by running the tests once (`poetry run poe test`). They should all pass. If not, please let us know
+4. Test your setup by running the tests once (`uv run poe test`). They should all pass. If not, please let us know
    by opening an issue on Github.
 5. Read through the guides on :ref:`project and algorithm structure <proj_struct>` and :ref:`development <dev_guide>`.
    If you don't understand something or find outdated information, please let us know by opening an issue on Github.
@@ -94,4 +94,3 @@ To get started, you should follow these steps:
 9. Ask for a review **early**, even if your implementation is not finished yet.
    This way we can prevent you wasting time on implementing something that we don't want to merge.
    We prefer, multiple review cycles over a single big one at the end.
-

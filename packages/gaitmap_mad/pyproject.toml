@@ -1,0 +1,21 @@
+[project]
+name = "gaitmap_mad"
+version = "2.5.2"
+description = "Specific algorithm implementaions by the mad_lab"
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+authors = [
+    { name = "Arne Kuederle", email = "arne.kuederle@fau.de" },
+    { name = "Martin Ullrich", email = "martin.ullrich@fau.de" },
+    { name = "Nils Roth", email = "nils.roth@fau.de" },
+    { name = "Moradi, Hamid", email = "hamid.moradi@fau.de" },
+]
+
+[project.urls]
+Homepage = "https://github.com/mad-lab-fau/gaitmap"
+Repository = "https://github.com/mad-lab-fau/gaitmap"
+
+[build-system]
+requires = ["uv_build>=0.10.8,<0.11.0"]
+build-backend = "uv_build"

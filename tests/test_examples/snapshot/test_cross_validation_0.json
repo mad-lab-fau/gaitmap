@@ -6,145 +6,145 @@
                 "type":"integer"
             },
             {
-                "name":"train_data_labels",
+                "name":"train__data_labels",
                 "type":"string"
             },
             {
-                "name":"test_data_labels",
+                "name":"test__data_labels",
                 "type":"string"
             },
             {
-                "name":"test_precision",
+                "name":"test__single__precision",
+                "type":"string"
+            },
+            {
+                "name":"test__single__recall",
+                "type":"string"
+            },
+            {
+                "name":"test__single__f1_score",
+                "type":"string"
+            },
+            {
+                "name":"test__agg__precision",
                 "type":"number"
             },
             {
-                "name":"test_recall",
+                "name":"test__agg__recall",
                 "type":"number"
             },
             {
-                "name":"test_f1_score",
+                "name":"test__agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"test_single_precision",
+                "name":"train__single__precision",
                 "type":"string"
             },
             {
-                "name":"test_single_recall",
+                "name":"train__single__recall",
                 "type":"string"
             },
             {
-                "name":"test_single_f1_score",
+                "name":"train__single__f1_score",
                 "type":"string"
             },
             {
-                "name":"train_precision",
+                "name":"train__agg__precision",
                 "type":"number"
             },
             {
-                "name":"train_recall",
+                "name":"train__agg__recall",
                 "type":"number"
             },
             {
-                "name":"train_f1_score",
+                "name":"train__agg__f1_score",
                 "type":"number"
-            },
-            {
-                "name":"train_single_precision",
-                "type":"string"
-            },
-            {
-                "name":"train_single_recall",
-                "type":"string"
-            },
-            {
-                "name":"train_single_f1_score",
-                "type":"string"
             }
         ],
         "primaryKey":[
             "index"
         ],
-        "pandas_version":"0.20.0"
+        "pandas_version":"1.4.0"
     },
     "data":[
         {
             "index":0,
-            "train_data_labels":[
+            "train__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "test_data_labels":[
+            "test__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "test_precision":1.0,
-            "test_recall":1.0,
-            "test_f1_score":1.0,
-            "test_single_precision":[
+            "test__single__precision":[
                 1.0
             ],
-            "test_single_recall":[
+            "test__single__recall":[
                 1.0
             ],
-            "test_single_f1_score":[
+            "test__single__f1_score":[
                 1.0
             ],
-            "train_precision":1.0,
-            "train_recall":0.9,
-            "train_f1_score":0.9473684211,
-            "train_single_precision":[
+            "test__agg__precision":1.0,
+            "test__agg__recall":1.0,
+            "test__agg__f1_score":1.0,
+            "train__single__precision":[
                 1.0
             ],
-            "train_single_recall":[
+            "train__single__recall":[
                 0.9
             ],
-            "train_single_f1_score":[
+            "train__single__f1_score":[
                 0.9473684211
-            ]
+            ],
+            "train__agg__precision":1.0,
+            "train__agg__recall":0.9,
+            "train__agg__f1_score":0.9473684211
         },
         {
             "index":1,
-            "train_data_labels":[
+            "train__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "test_data_labels":[
+            "test__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "test_precision":1.0,
-            "test_recall":0.8666666667,
-            "test_f1_score":0.9285714286,
-            "test_single_precision":[
+            "test__single__precision":[
                 1.0
             ],
-            "test_single_recall":[
+            "test__single__recall":[
                 0.8666666667
             ],
-            "test_single_f1_score":[
+            "test__single__f1_score":[
                 0.9285714286
             ],
-            "train_precision":1.0,
-            "train_recall":1.0,
-            "train_f1_score":1.0,
-            "train_single_precision":[
+            "test__agg__precision":1.0,
+            "test__agg__recall":0.8666666667,
+            "test__agg__f1_score":0.9285714286,
+            "train__single__precision":[
                 1.0
             ],
-            "train_single_recall":[
+            "train__single__recall":[
                 1.0
             ],
-            "train_single_f1_score":[
+            "train__single__f1_score":[
                 1.0
-            ]
+            ],
+            "train__agg__precision":1.0,
+            "train__agg__recall":1.0,
+            "train__agg__f1_score":1.0
         }
     ]
 }

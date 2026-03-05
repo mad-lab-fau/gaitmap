@@ -106,9 +106,9 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
     model.bake(verbose=False)
 
     if assert_correct:
-        assert custom_hash(model) == custom_hash(
-            orig_model
-        ), "Cloning the provided HMM model failed! Please open an issue on github with an example."
+        assert custom_hash(model) == custom_hash(orig_model), (
+            "Cloning the provided HMM model failed! Please open an issue on github with an example."
+        )
 
     return model
 
@@ -632,7 +632,7 @@ def predict(
     data = np.ascontiguousarray(data.to_numpy())
     try:
         labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         if not model_params_are_finite(model):
             raise ValueError(
                 "Prediction failed! (See error above.). "

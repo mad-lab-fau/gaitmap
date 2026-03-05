@@ -48,7 +48,7 @@ If you want to install the latest version from Github, you can use the following
 # For gaitmap
 pip install "git+https://github.com/mad-lab-fau/gaitmap.git" --upgrade
 # For gaitmap_mad
-pip install "git+https://github.com/mad-lab-fau/gaitmap.git#subdirectory=gaitmap_mad"
+pip install "git+https://github.com/mad-lab-fau/gaitmap.git#subdirectory=packages/gaitmap_mad"
 ```
 
 Note, that we don't guarantee that the latest version on Github is stable.
@@ -185,32 +185,32 @@ If you need to use *gaitmap_mad* in a closed source project, please contact us f
 The [Development Guides](https://gaitmap.readthedocs.io/en/latest/source/development/index.html#development) have detailed information for all new developers.
 
 Here some quick references
-Install Python >=3.8 and [poetry](https://python-poetry.org).
+Install Python >=3.9 and [uv](https://docs.astral.sh/uv/).
 Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
 git clone https://github.com/mad-lab-fau/gaitmap.git
-# For Python 3.8 and 3.9 (and if you need to work on hmm)
-poetry install --all-extras
+# For Python 3.9 (and if you need to work on hmm)
+uv sync --group dev --all-extras
 # For Python >=3.10 (you can not work on hmm stuff with this)
-poetry install -E stats
+uv sync --group dev --extra stats
 ```
 
-Warning: Building the docs currently only works in 3.8 and 3.9 with all extras installed.
+Warning: Building the docs currently only works in 3.9 with all extras installed.
 
 Note, that you don't need to care about the `gaitmap_mad` subpackage.
 All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode
-when running `poetry install`.
+when running `uv sync --group dev ...`.
 
 To run any of the tools required for the development workflow, use the poe commands:
 
 ```bash
-poetry run poe
+uv run poe
 ...
 CONFIGURED TASKS
   format            
-  lint              Lint all files with Prospector.
-  check             Check all potential format and linting issues.
+  lint              Lint all files with ruff.
+  ci_check          Check all potential format and linting issues.
   test              Run Pytest with coverage.
   docs              Build the html docs using Sphinx.
   register_jupyter  Register the gaitmap environment as a Jupyter kernel for testing.

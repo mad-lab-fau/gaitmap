@@ -212,7 +212,10 @@ def test_grid_search(snapshot) -> None:
     from examples.datasets_and_pipelines.gridsearch import results, segmented_stride_list
 
     snapshot.assert_match(segmented_stride_list, check_dtype=False)
-    snapshot.assert_match(pd.DataFrame(results).drop("score_time", axis=1), check_dtype=False)
+    result_df = pd.DataFrame(results).drop("debug__score_time", axis=1)
+    int_cols = result_df.select_dtypes(include=["int", "int32", "int64"]).columns
+    result_df[int_cols] = result_df[int_cols].astype("int64")
+    snapshot.assert_match(result_df, check_dtype=False)
 
 
 def test_optimizable_pipelines(snapshot) -> None:
@@ -226,18 +229,27 @@ def test_optimizable_pipelines(snapshot) -> None:
 def test_cross_validation(snapshot) -> None:
     from examples.datasets_and_pipelines.cross_validation import result_df
 
-    result_df = result_df.drop(["score_time", "optimize_time", "optimizer"], axis=1)
+    result_df = result_df.drop(["debug__score_time", "debug__optimize_time", "optimizer"], axis=1)
     snapshot.assert_match(result_df, check_dtype=False)
 
 
 def test_gridsearch_cv(snapshot) -> None:
     from examples.datasets_and_pipelines.gridsearch_cv import cached_results, results_df
 
-    ignore_cols = ["mean_score_time", "mean_optimize_time", "std_optimize_time", "std_score_time"]
+    ignore_cols = [
+        "mean__debug__score_time",
+        "mean__debug__optimize_time",
+        "std__debug__score_time",
+        "std__debug__optimize_time",
+    ]
 
     results_df = results_df.drop(ignore_cols, axis=1)
+    int_cols = results_df.select_dtypes(include=["int", "int32", "int64"]).columns
+    results_df[int_cols] = results_df[int_cols].astype("int64")
     cached_results = pd.DataFrame(cached_results)
     cached_results = cached_results.drop(ignore_cols, axis=1)
+    cached_int_cols = cached_results.select_dtypes(include=["int", "int32", "int64"]).columns
+    cached_results[cached_int_cols] = cached_results[cached_int_cols].astype("int64")
     pd.testing.assert_frame_equal(cached_results, results_df)
 
     snapshot.assert_match(results_df, check_dtype=False)

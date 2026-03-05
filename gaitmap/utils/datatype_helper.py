@@ -553,7 +553,8 @@ def get_single_sensor_regions_of_interest_types(roi_list: SingleSensorRegionsOfI
             "column or in the index"
         )
     region_type = cast(
-        Literal["roi", "gs"], list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])]
+        "Literal['roi', 'gs']",
+        list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])],
     )
     return region_type
 
@@ -761,7 +762,7 @@ def get_single_sensor_trajectory_list_types(
             f"{list(valid_index_dict.values())} either as a column or in the index"
         )
     list_type = cast(
-        Literal["roi", "gs", "stride"],
+        "Literal['roi', 'gs', 'stride']",
         list(valid_index_dict.keys())[list(valid_index_dict.values()).index(matched_index_col[0])],
     )
     return list_type

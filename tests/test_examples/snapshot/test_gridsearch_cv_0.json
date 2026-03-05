@@ -6,27 +6,27 @@
                 "type":"integer"
             },
             {
-                "name":"split0_test_data_labels",
+                "name":"split0__test__data_labels",
                 "type":"string"
             },
             {
-                "name":"split1_test_data_labels",
+                "name":"split1__test__data_labels",
                 "type":"string"
             },
             {
-                "name":"split0_train_data_labels",
+                "name":"split0__train__data_labels",
                 "type":"string"
             },
             {
-                "name":"split1_train_data_labels",
+                "name":"split1__train__data_labels",
                 "type":"string"
             },
             {
-                "name":"param_max_cost",
+                "name":"param__max_cost",
                 "type":"string"
             },
             {
-                "name":"param_n_train_strides",
+                "name":"param__n_train_strides",
                 "type":"string"
             },
             {
@@ -34,87 +34,87 @@
                 "type":"string"
             },
             {
-                "name":"split0_test_precision",
+                "name":"split0__test__agg__precision",
                 "type":"number"
             },
             {
-                "name":"split1_test_precision",
+                "name":"split1__test__agg__precision",
                 "type":"number"
             },
             {
-                "name":"mean_test_precision",
+                "name":"mean__test__agg__precision",
                 "type":"number"
             },
             {
-                "name":"std_test_precision",
+                "name":"std__test__agg__precision",
                 "type":"number"
             },
             {
-                "name":"rank_test_precision",
+                "name":"rank__test__agg__precision",
                 "type":"integer"
             },
             {
-                "name":"split0_test_recall",
+                "name":"split0__test__agg__recall",
                 "type":"number"
             },
             {
-                "name":"split1_test_recall",
+                "name":"split1__test__agg__recall",
                 "type":"number"
             },
             {
-                "name":"mean_test_recall",
+                "name":"mean__test__agg__recall",
                 "type":"number"
             },
             {
-                "name":"std_test_recall",
+                "name":"std__test__agg__recall",
                 "type":"number"
             },
             {
-                "name":"rank_test_recall",
+                "name":"rank__test__agg__recall",
                 "type":"integer"
             },
             {
-                "name":"split0_test_f1_score",
+                "name":"split0__test__agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"split1_test_f1_score",
+                "name":"split1__test__agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"mean_test_f1_score",
+                "name":"mean__test__agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"std_test_f1_score",
+                "name":"std__test__agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"rank_test_f1_score",
+                "name":"rank__test__agg__f1_score",
                 "type":"integer"
             },
             {
-                "name":"split0_test_single_precision",
+                "name":"split0__test__single__precision",
                 "type":"string"
             },
             {
-                "name":"split1_test_single_precision",
+                "name":"split1__test__single__precision",
                 "type":"string"
             },
             {
-                "name":"split0_test_single_recall",
+                "name":"split0__test__single__recall",
                 "type":"string"
             },
             {
-                "name":"split1_test_single_recall",
+                "name":"split1__test__single__recall",
                 "type":"string"
             },
             {
-                "name":"split0_test_single_f1_score",
+                "name":"split0__test__single__f1_score",
                 "type":"string"
             },
             {
-                "name":"split1_test_single_f1_score",
+                "name":"split1__test__single__f1_score",
                 "type":"string"
             }
         ],
@@ -126,265 +126,265 @@
     "data":[
         {
             "index":0,
-            "split0_test_data_labels":[
+            "split0__test__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "split1_test_data_labels":[
+            "split1__test__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split0_train_data_labels":[
+            "split0__train__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split1_train_data_labels":[
+            "split1__train__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "param_max_cost":3,
-            "param_n_train_strides":null,
+            "param__max_cost":3,
+            "param__n_train_strides":null,
             "params":{
                 "max_cost":3,
                 "n_train_strides":null
             },
-            "split0_test_precision":1.0,
-            "split1_test_precision":1.0,
-            "mean_test_precision":1.0,
-            "std_test_precision":0.0,
-            "rank_test_precision":1,
-            "split0_test_recall":1.0,
-            "split1_test_recall":0.8666666667,
-            "mean_test_recall":0.9333333333,
-            "std_test_recall":0.0666666667,
-            "rank_test_recall":3,
-            "split0_test_f1_score":1.0,
-            "split1_test_f1_score":0.9285714286,
-            "mean_test_f1_score":0.9642857143,
-            "std_test_f1_score":0.0357142857,
-            "rank_test_f1_score":3,
-            "split0_test_single_precision":[
+            "split0__test__agg__precision":1.0,
+            "split1__test__agg__precision":1.0,
+            "mean__test__agg__precision":1.0,
+            "std__test__agg__precision":0.0,
+            "rank__test__agg__precision":1,
+            "split0__test__agg__recall":1.0,
+            "split1__test__agg__recall":0.8666666667,
+            "mean__test__agg__recall":0.9333333333,
+            "std__test__agg__recall":0.0666666667,
+            "rank__test__agg__recall":3,
+            "split0__test__agg__f1_score":1.0,
+            "split1__test__agg__f1_score":0.9285714286,
+            "mean__test__agg__f1_score":0.9642857143,
+            "std__test__agg__f1_score":0.0357142857,
+            "rank__test__agg__f1_score":3,
+            "split0__test__single__precision":[
                 1.0
             ],
-            "split1_test_single_precision":[
+            "split1__test__single__precision":[
                 1.0
             ],
-            "split0_test_single_recall":[
+            "split0__test__single__recall":[
                 1.0
             ],
-            "split1_test_single_recall":[
+            "split1__test__single__recall":[
                 0.8666666667
             ],
-            "split0_test_single_f1_score":[
+            "split0__test__single__f1_score":[
                 1.0
             ],
-            "split1_test_single_f1_score":[
+            "split1__test__single__f1_score":[
                 0.9285714286
             ]
         },
         {
             "index":1,
-            "split0_test_data_labels":[
+            "split0__test__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "split1_test_data_labels":[
+            "split1__test__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split0_train_data_labels":[
+            "split0__train__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split1_train_data_labels":[
+            "split1__train__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "param_max_cost":3,
-            "param_n_train_strides":1,
+            "param__max_cost":3,
+            "param__n_train_strides":1,
             "params":{
                 "max_cost":3,
                 "n_train_strides":1
             },
-            "split0_test_precision":1.0,
-            "split1_test_precision":1.0,
-            "mean_test_precision":1.0,
-            "std_test_precision":0.0,
-            "rank_test_precision":1,
-            "split0_test_recall":1.0,
-            "split1_test_recall":0.8666666667,
-            "mean_test_recall":0.9333333333,
-            "std_test_recall":0.0666666667,
-            "rank_test_recall":3,
-            "split0_test_f1_score":1.0,
-            "split1_test_f1_score":0.9285714286,
-            "mean_test_f1_score":0.9642857143,
-            "std_test_f1_score":0.0357142857,
-            "rank_test_f1_score":3,
-            "split0_test_single_precision":[
+            "split0__test__agg__precision":1.0,
+            "split1__test__agg__precision":1.0,
+            "mean__test__agg__precision":1.0,
+            "std__test__agg__precision":0.0,
+            "rank__test__agg__precision":1,
+            "split0__test__agg__recall":1.0,
+            "split1__test__agg__recall":0.8666666667,
+            "mean__test__agg__recall":0.9333333333,
+            "std__test__agg__recall":0.0666666667,
+            "rank__test__agg__recall":3,
+            "split0__test__agg__f1_score":1.0,
+            "split1__test__agg__f1_score":0.9285714286,
+            "mean__test__agg__f1_score":0.9642857143,
+            "std__test__agg__f1_score":0.0357142857,
+            "rank__test__agg__f1_score":3,
+            "split0__test__single__precision":[
                 1.0
             ],
-            "split1_test_single_precision":[
+            "split1__test__single__precision":[
                 1.0
             ],
-            "split0_test_single_recall":[
+            "split0__test__single__recall":[
                 1.0
             ],
-            "split1_test_single_recall":[
+            "split1__test__single__recall":[
                 0.8666666667
             ],
-            "split0_test_single_f1_score":[
+            "split0__test__single__f1_score":[
                 1.0
             ],
-            "split1_test_single_f1_score":[
+            "split1__test__single__f1_score":[
                 0.9285714286
             ]
         },
         {
             "index":2,
-            "split0_test_data_labels":[
+            "split0__test__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "split1_test_data_labels":[
+            "split1__test__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split0_train_data_labels":[
+            "split0__train__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split1_train_data_labels":[
+            "split1__train__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "param_max_cost":5,
-            "param_n_train_strides":null,
+            "param__max_cost":5,
+            "param__n_train_strides":null,
             "params":{
                 "max_cost":5,
                 "n_train_strides":null
             },
-            "split0_test_precision":1.0,
-            "split1_test_precision":1.0,
-            "mean_test_precision":1.0,
-            "std_test_precision":0.0,
-            "rank_test_precision":1,
-            "split0_test_recall":1.0,
-            "split1_test_recall":0.9333333333,
-            "mean_test_recall":0.9666666667,
-            "std_test_recall":0.0333333333,
-            "rank_test_recall":1,
-            "split0_test_f1_score":1.0,
-            "split1_test_f1_score":0.9655172414,
-            "mean_test_f1_score":0.9827586207,
-            "std_test_f1_score":0.0172413793,
-            "rank_test_f1_score":1,
-            "split0_test_single_precision":[
+            "split0__test__agg__precision":1.0,
+            "split1__test__agg__precision":1.0,
+            "mean__test__agg__precision":1.0,
+            "std__test__agg__precision":0.0,
+            "rank__test__agg__precision":1,
+            "split0__test__agg__recall":1.0,
+            "split1__test__agg__recall":0.9333333333,
+            "mean__test__agg__recall":0.9666666667,
+            "std__test__agg__recall":0.0333333333,
+            "rank__test__agg__recall":1,
+            "split0__test__agg__f1_score":1.0,
+            "split1__test__agg__f1_score":0.9655172414,
+            "mean__test__agg__f1_score":0.9827586207,
+            "std__test__agg__f1_score":0.0172413793,
+            "rank__test__agg__f1_score":1,
+            "split0__test__single__precision":[
                 1.0
             ],
-            "split1_test_single_precision":[
+            "split1__test__single__precision":[
                 1.0
             ],
-            "split0_test_single_recall":[
+            "split0__test__single__recall":[
                 1.0
             ],
-            "split1_test_single_recall":[
+            "split1__test__single__recall":[
                 0.9333333333
             ],
-            "split0_test_single_f1_score":[
+            "split0__test__single__f1_score":[
                 1.0
             ],
-            "split1_test_single_f1_score":[
+            "split1__test__single__f1_score":[
                 0.9655172414
             ]
         },
         {
             "index":3,
-            "split0_test_data_labels":[
+            "split0__test__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "split1_test_data_labels":[
+            "split1__test__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split0_train_data_labels":[
+            "split0__train__data_labels":[
                 [
                     "test",
                     "right"
                 ]
             ],
-            "split1_train_data_labels":[
+            "split1__train__data_labels":[
                 [
                     "test",
                     "left"
                 ]
             ],
-            "param_max_cost":5,
-            "param_n_train_strides":1,
+            "param__max_cost":5,
+            "param__n_train_strides":1,
             "params":{
                 "max_cost":5,
                 "n_train_strides":1
             },
-            "split0_test_precision":1.0,
-            "split1_test_precision":0.9655172414,
-            "mean_test_precision":0.9827586207,
-            "std_test_precision":0.0172413793,
-            "rank_test_precision":4,
-            "split0_test_recall":1.0,
-            "split1_test_recall":0.9333333333,
-            "mean_test_recall":0.9666666667,
-            "std_test_recall":0.0333333333,
-            "rank_test_recall":1,
-            "split0_test_f1_score":1.0,
-            "split1_test_f1_score":0.9491525424,
-            "mean_test_f1_score":0.9745762712,
-            "std_test_f1_score":0.0254237288,
-            "rank_test_f1_score":2,
-            "split0_test_single_precision":[
+            "split0__test__agg__precision":1.0,
+            "split1__test__agg__precision":0.9655172414,
+            "mean__test__agg__precision":0.9827586207,
+            "std__test__agg__precision":0.0172413793,
+            "rank__test__agg__precision":4,
+            "split0__test__agg__recall":1.0,
+            "split1__test__agg__recall":0.9333333333,
+            "mean__test__agg__recall":0.9666666667,
+            "std__test__agg__recall":0.0333333333,
+            "rank__test__agg__recall":1,
+            "split0__test__agg__f1_score":1.0,
+            "split1__test__agg__f1_score":0.9491525424,
+            "mean__test__agg__f1_score":0.9745762712,
+            "std__test__agg__f1_score":0.0254237288,
+            "rank__test__agg__f1_score":2,
+            "split0__test__single__precision":[
                 1.0
             ],
-            "split1_test_single_precision":[
+            "split1__test__single__precision":[
                 0.9655172414
             ],
-            "split0_test_single_recall":[
+            "split0__test__single__recall":[
                 1.0
             ],
-            "split1_test_single_recall":[
+            "split1__test__single__recall":[
                 0.9333333333
             ],
-            "split0_test_single_f1_score":[
+            "split0__test__single__f1_score":[
                 1.0
             ],
-            "split1_test_single_f1_score":[
+            "split1__test__single__f1_score":[
                 0.9491525424
             ]
         }

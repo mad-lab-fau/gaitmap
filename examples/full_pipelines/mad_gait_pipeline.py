@@ -121,7 +121,7 @@ spatial_paras = spatial_paras.calculate(
 import matplotlib.pyplot as plt
 
 print(
-    f"The following number of strides were identified and parameterized for each sensor: {({k: len(v) for k, v in ed.min_vel_event_list_.items()})}"
+    f"The following number of strides were identified and parameterized for each sensor: { ({k: len(v) for k, v in ed.min_vel_event_list_.items()}) }"
 )
 
 # %%

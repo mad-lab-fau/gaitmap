@@ -61,7 +61,7 @@ individual modules/folders (e.g. Stride-Segmentation, Event Detection, Orientati
 Each algorithm should than be implemented in a separate file unless multiple algorithms are really tightly coupled 
 e.g. the scaler methods: `gaitmap/data_transform/_scaler.py`.
 If an algorithm requires large amount of code and multiple classes/functions, it can be refactored into its own
-submodule (for example see `gaitmap_mad/gaitmap_mad/stride_segmentation/hmm`)
+submodule (for example see `packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/hmm`)
 
 ### Import Paths
 To ensure that users can use short import path, we discourage the import from the python files directly.
@@ -92,12 +92,12 @@ In case multiple functions from an external package are used, import this packag
 Some algorithms require specific dependencies, that are ot required by anything else.
 In this case, they should be made optional dependencies of gaitmap to reduce the number of dependencies for users.
 To make this possible, the algorithm should be implemented in a separate submodule 
-(e.g. `gaitmap_mad/gaitmap_mad/stride_segmentation/hmm`), that is not imported anywhere else in the library.
+(e.g. `packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/hmm`), that is not imported anywhere else in the library.
 
 In case, where only a few methods from a different library are required, it might also be feasible to just copy the
 required methods into the submodule and add a comment to the source of the code.
 Make sure to check the license of the original code and provide sufficient attribution.
-One example of this can be found in `gaitmap_mad/stride_segmentation/dtw/_vendored_tslearn.py`.
+One example of this can be found in `packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_vendored_tslearn.py`.
 
 ### Helper Functions and Utils
 

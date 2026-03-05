@@ -6,39 +6,39 @@
                 "type":"integer"
             },
             {
-                "name":"precision",
+                "name":"agg__precision",
                 "type":"number"
             },
             {
-                "name":"rank_precision",
+                "name":"rank__agg__precision",
                 "type":"integer"
             },
             {
-                "name":"recall",
+                "name":"agg__recall",
                 "type":"number"
             },
             {
-                "name":"rank_recall",
+                "name":"rank__agg__recall",
                 "type":"integer"
             },
             {
-                "name":"f1_score",
+                "name":"agg__f1_score",
                 "type":"number"
             },
             {
-                "name":"rank_f1_score",
+                "name":"rank__agg__f1_score",
                 "type":"integer"
             },
             {
-                "name":"single_precision",
+                "name":"single__precision",
                 "type":"string"
             },
             {
-                "name":"single_recall",
+                "name":"single__recall",
                 "type":"string"
             },
             {
-                "name":"single_f1_score",
+                "name":"single__f1_score",
                 "type":"string"
             },
             {
@@ -46,7 +46,7 @@
                 "type":"string"
             },
             {
-                "name":"param_max_cost",
+                "name":"param__max_cost",
                 "type":"string"
             },
             {
@@ -62,21 +62,21 @@
     "data":[
         {
             "index":0,
-            "precision":1.0,
-            "rank_precision":1,
-            "recall":0.2547619048,
-            "rank_recall":2,
-            "f1_score":0.3932926829,
-            "rank_f1_score":2,
-            "single_precision":[
+            "agg__precision":1.0,
+            "rank__agg__precision":1,
+            "agg__recall":0.2547619048,
+            "rank__agg__recall":2,
+            "agg__f1_score":0.3932926829,
+            "rank__agg__f1_score":2,
+            "single__precision":[
                 1.0,
                 1.0
             ],
-            "single_recall":[
+            "single__recall":[
                 0.1428571429,
                 0.3666666667
             ],
-            "single_f1_score":[
+            "single__f1_score":[
                 0.25,
                 0.5365853659
             ],
@@ -90,28 +90,28 @@
                     "right"
                 ]
             ],
-            "param_max_cost":3,
+            "param__max_cost":3,
             "params":{
                 "max_cost":3
             }
         },
         {
             "index":1,
-            "precision":0.9827586207,
-            "rank_precision":2,
-            "recall":0.9666666667,
-            "rank_recall":1,
-            "f1_score":0.9745762712,
-            "rank_f1_score":1,
-            "single_precision":[
+            "agg__precision":0.9827586207,
+            "rank__agg__precision":2,
+            "agg__recall":0.9666666667,
+            "rank__agg__recall":1,
+            "agg__f1_score":0.9745762712,
+            "rank__agg__f1_score":1,
+            "single__precision":[
                 1.0,
                 0.9655172414
             ],
-            "single_recall":[
+            "single__recall":[
                 1.0,
                 0.9333333333
             ],
-            "single_f1_score":[
+            "single__f1_score":[
                 1.0,
                 0.9491525424
             ],
@@ -125,7 +125,7 @@
                     "right"
                 ]
             ],
-            "param_max_cost":5,
+            "param__max_cost":5,
             "params":{
                 "max_cost":5
             }

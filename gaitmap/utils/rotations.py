@@ -137,7 +137,7 @@ def _rotate_or_flip_dataset(
 
     rotation_dict = rotation
     if not isinstance(rotation_dict, dict):
-        rotation_dict = {k: rotation for k in get_multi_sensor_names(dataset)}
+        rotation_dict = dict.fromkeys(get_multi_sensor_names(dataset), rotation)
 
     if isinstance(dataset, dict):
         rotated_dataset = {**dataset}

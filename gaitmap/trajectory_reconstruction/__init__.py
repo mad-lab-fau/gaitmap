@@ -20,12 +20,12 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
     from gaitmap_mad.trajectory_reconstruction.position_methods import PieceWiseLinearDedriftedIntegration
 
 __all__ = [
-    "MadgwickAHRS",
-    "SimpleGyroIntegration",
     "ForwardBackwardIntegration",
-    "RtsKalman",
+    "MadgwickAHRS",
     "MadgwickRtsKalman",
-    "StrideLevelTrajectory",
-    "RegionLevelTrajectory",
     "PieceWiseLinearDedriftedIntegration",
+    "RegionLevelTrajectory",
+    "RtsKalman",
+    "SimpleGyroIntegration",
+    "StrideLevelTrajectory",
 ]

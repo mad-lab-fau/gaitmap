@@ -24,11 +24,11 @@ if multiprocessing.parent_process() is None:
     )
 
 __all__ = [
-    "RothHmmFeatureTransformer",
-    "HmmStrideSegmentation",
-    "SimpleHmm",
-    "BaseSegmentationHmm",
-    "RothSegmentationHmm",
-    "PreTrainedRothSegmentationModel",
     "BaseHmmFeatureTransformer",
+    "BaseSegmentationHmm",
+    "HmmStrideSegmentation",
+    "PreTrainedRothSegmentationModel",
+    "RothHmmFeatureTransformer",
+    "RothSegmentationHmm",
+    "SimpleHmm",
 ]

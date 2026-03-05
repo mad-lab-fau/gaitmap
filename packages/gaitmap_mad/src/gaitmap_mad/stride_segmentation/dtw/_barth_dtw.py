@@ -1,6 +1,7 @@
 """The msDTW based stride segmentation algorithm by Barth et al 2013."""
 
 import warnings
+from importlib import import_module
 from typing import NoReturn, Optional, Union
 
 import numpy as np
@@ -238,8 +239,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
     ) -> tuple[np.ndarray, np.ndarray]:
         # Apply snap to minimum
         if self.snap_to_min_win_ms:
-            # Late import to avoid circular import
-            from gaitmap.stride_segmentation._utils import snap_to_min  # pylint: disable=import-outside-toplevel
+            snap_to_min = import_module("gaitmap.stride_segmentation._utils").snap_to_min
 
             matches_start_end = snap_to_min(
                 data[self.snap_to_min_axis].to_numpy(),

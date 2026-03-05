@@ -2,4 +2,4 @@
 
 from gaitmap.trajectory_reconstruction.trajectory_methods._rts_kalman import MadgwickRtsKalman, RtsKalman
 
-__all__ = ["RtsKalman", "MadgwickRtsKalman"]
+__all__ = ["MadgwickRtsKalman", "RtsKalman"]

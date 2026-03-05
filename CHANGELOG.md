@@ -32,6 +32,27 @@ project.
   This option can be activated in the `MadgwickAHRS` or `MadgwickRtsKalman` algorithm by setting the `use_magnetometer`
   to `True`. (https://github.com/mad-lab-fau/gaitmap/pull/73)
 
+### Changed
+
+- Updated the tpcp-based examples to use the current tpcp result key naming (e.g. `agg__...`, `debug__...`,
+  `param__...`) and refreshed the associated regression snapshots.
+- Increased the supported base-package upper bounds for NumPy and Pandas to the latest Python 3.9-compatible releases
+  (`numpy<2.1`, `pandas<2.4`).
+- Installing `gaitmap_mad` directly from this repository now requires the updated subdirectory path
+  `#subdirectory=packages/gaitmap_mad`.
+
+### Fixed
+
+- Fixed Python 3.9 installs that include HMM extras by constraining NumPy to `<2` for those extras to avoid the
+  `pomegranate` binary compatibility crash with NumPy 2.x.
+
+### Development
+
+- Migrated repository development tooling from Poetry to uv (dependency management, lockfile handling, and task
+  execution).
+- Switched `gaitmap_mad` packaging to uv's `uv_build` backend and moved it to a workspace `src` layout under
+  `packages/gaitmap_mad`.
+
 ## [2.5.2] - 2025-01-19
 
 - Removed scipy deprecation of `cumtrapz` function (https://github.com/mad-lab-fau/gaitmap/pull/71)
