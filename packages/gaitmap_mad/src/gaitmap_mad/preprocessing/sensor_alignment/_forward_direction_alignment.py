@@ -228,10 +228,11 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
             "z": "zxy",
         }
         # apply inverse of rotations around rotation_axis to ignore this component from the ori_method
+        rotation_axis_angles = ori_method.orientation_object_.as_euler(rotation_order[self.rotation_axis])[:, [0]]
         forward_vel_fix_heading = pd.DataFrame(
             Rotation.from_euler(
                 self.rotation_axis.lower(),
-                ori_method.orientation_object_.as_euler(rotation_order[self.rotation_axis])[:, 0],
+                rotation_axis_angles,
             )
             .inv()
             .apply(pos_method.velocity_),
