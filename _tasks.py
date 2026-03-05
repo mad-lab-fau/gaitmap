@@ -47,11 +47,11 @@ def update_version(version) -> None:
     update_version_strings(HERE / "gaitmap/__init__.py", new_version)
     # Update the gaitmap_mad version as well
     subprocess.run(
-        ["uv", "version", new_version, "--project", str(HERE / "gaitmap_mad"), "--frozen"],
+        ["uv", "version", new_version, "--project", str(HERE / "packages/gaitmap_mad"), "--frozen"],
         shell=False,
         check=True,
     )
-    update_version_strings(HERE / "gaitmap_mad/src/gaitmap_mad/__init__.py", new_version)
+    update_version_strings(HERE / "packages/gaitmap_mad/src/gaitmap_mad/__init__.py", new_version)
 
 
 def task_update_version() -> None:

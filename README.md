@@ -48,7 +48,7 @@ If you want to install the latest version from Github, you can use the following
 # For gaitmap
 pip install "git+https://github.com/mad-lab-fau/gaitmap.git" --upgrade
 # For gaitmap_mad
-pip install "git+https://github.com/mad-lab-fau/gaitmap.git#subdirectory=gaitmap_mad"
+pip install "git+https://github.com/mad-lab-fau/gaitmap.git#subdirectory=packages/gaitmap_mad"
 ```
 
 Note, that we don't guarantee that the latest version on Github is stable.

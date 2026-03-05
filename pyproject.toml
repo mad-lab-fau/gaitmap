@@ -70,7 +70,7 @@ dev = [
 gaitmap-mad = { workspace = true }
 
 [tool.uv.workspace]
-members = ["gaitmap_mad"]
+members = ["packages/*"]
 
 [tool.poe.tasks]
 _format = "ruff format ."
@@ -78,8 +78,8 @@ _auto_fix = "ruff check . --fix-only --show-fixes --exit-zero"
 _auto_fix_unsafe = "ruff check . --fix-only --show-fixes --exit-zero --unsafe-fixes"
 format = ["_auto_fix", "_format"]
 format_unsafe = ["_auto_fix_unsafe", "_format"]
-lint = { cmd = "ruff check gaitmap gaitmap_mad --fix", help = "Lint all files with ruff." }
-_lint_ci = "ruff check gaitmap gaitmap_mad --output-format=github"
+lint = { cmd = "ruff check gaitmap packages/gaitmap_mad --fix", help = "Lint all files with ruff." }
+_lint_ci = "ruff check gaitmap packages/gaitmap_mad --output-format=github"
 _check_format = "ruff format . --check"
 ci_check = { sequence = ["_check_format", "_lint_ci"], help = "Check all potential format and linting issues." }
 test = { cmd = "pytest --cov=gaitmap --cov-report=term-missing --cov-report=xml", help = "Run Pytest with coverage." }

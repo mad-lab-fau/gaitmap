@@ -230,7 +230,7 @@ dependencies installed (see [IDE Config](#Configure-your-IDE)).
 
 ### Pycharm
 
-**gaitmap_mad**: Add the outer `gaitmap_mad` folder as source folder.
+**gaitmap_mad**: Add the outer `packages/gaitmap_mad` folder as source folder.
 
 **Test runner**: Set the default testrunner to `pytest`.
 

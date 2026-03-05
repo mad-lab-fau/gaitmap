@@ -39,6 +39,6 @@ jobs:
         with:
           python-version: "3.10"
       - name: Build package
-        run: uv build gaitmap_mad --out-dir gaitmap_mad/dist
+        run: uv build packages/gaitmap_mad --out-dir packages/gaitmap_mad/dist
       - name: Publish package distributions to PyPI
-        run: uv publish --trusted-publishing always gaitmap_mad/dist/*
+        run: uv publish --trusted-publishing always packages/gaitmap_mad/dist/*
