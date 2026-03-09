@@ -6,6 +6,7 @@ from tpcp import cf
 from typing_extensions import Literal
 
 from gaitmap.base import _BaseSerializable
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import RothHmmFeatureTransformer
 
 
 def _default_modules() -> tuple["HmmSubModelConfig", ...]:
@@ -131,3 +132,43 @@ class CompositeHmmConfig(_BaseSerializable):
     def get_module_role(self, module_name: str) -> str:
         """Return the configured role of a named module."""
         return self.get_module(module_name).role
+
+
+class RothHmmConfig(_BaseSerializable):
+    """Serializable configuration bundle for `RothSegmentationHmm`."""
+
+    model_config: CompositeHmmConfig
+    feature_transform: RothHmmFeatureTransformer
+    algo_predict: Literal["viterbi", "map"]
+    algo_train: Literal["viterbi", "baum-welch"]
+    stop_threshold: float
+    max_iterations: int
+    initialization: Literal["labels", "fully-connected"]
+    verbose: bool
+    n_jobs: int
+    name: str
+
+    def __init__(
+        self,
+        model_config: CompositeHmmConfig = cf(CompositeHmmConfig()),
+        feature_transform: RothHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
+        *,
+        algo_predict: Literal["viterbi", "map"] = "viterbi",
+        algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
+        stop_threshold: float = 1e-9,
+        max_iterations: int = 1,
+        initialization: Literal["labels", "fully-connected"] = "labels",
+        verbose: bool = True,
+        n_jobs: int = 1,
+        name: str = "segmentation_model",
+    ) -> None:
+        self.model_config = model_config
+        self.feature_transform = feature_transform
+        self.algo_predict = algo_predict
+        self.algo_train = algo_train
+        self.stop_threshold = stop_threshold
+        self.max_iterations = max_iterations
+        self.initialization = initialization
+        self.verbose = verbose
+        self.n_jobs = n_jobs
+        self.name = name

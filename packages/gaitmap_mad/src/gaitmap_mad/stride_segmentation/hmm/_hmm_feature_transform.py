@@ -38,7 +38,7 @@ class BaseHmmFeatureTransformer(BaseTransformer):
     This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransformer`
     is not sufficient for your use case, when using :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`.
 
-    In this case implement a custom subclass and pass it to the `feature_transform` parameter of
+    In this case implement a custom subclass and pass it via `RothHmmConfig.feature_transform` to
     `RothSegmentationHmm`.
     Note, that you need to implement the `transform` and `inverse_transform_state_sequence` methods.
     """
@@ -184,6 +184,18 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     def n_features(self) -> int:
         """Get the number of features in the transformed data."""
         return len(self.axes) * len(self.features)
+
+    @property
+    def transformed_feature_columns(self) -> tuple[str, ...]:
+        """Return the expected feature-space column order for the configured axes/features."""
+        feature_prefixes = {
+            "raw": "",
+            "gradient": "__gradient",
+            "mean": "__mean",
+            "std": "__std",
+            "var": "__var",
+        }
+        return tuple(f"{feature}{feature_prefixes[feature]}__{axis}" for feature in self.features for axis in self.axes)
 
     def transform(
         self,

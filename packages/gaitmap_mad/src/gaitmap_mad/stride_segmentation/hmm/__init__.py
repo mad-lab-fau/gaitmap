@@ -4,7 +4,7 @@ import multiprocessing
 import warnings
 
 from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend
-from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
+from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
@@ -52,6 +52,7 @@ __all__ = [
     "HmmSubModelState",
     "PomegranateHmmBackend",
     "PreTrainedRothSegmentationModel",
+    "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
     "SimpleHmm",

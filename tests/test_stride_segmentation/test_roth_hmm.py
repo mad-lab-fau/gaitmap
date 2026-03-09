@@ -27,9 +27,10 @@ from gaitmap_mad.stride_segmentation.hmm import (
     CompositeHmmConfig,
     HMMState,
     HmmStrideSegmentation,
-    PomegranateHmmBackend,
     HmmSubModelConfig,
+    PomegranateHmmBackend,
     PreTrainedRothSegmentationModel,
+    RothHmmConfig,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
     SimpleHmm,
@@ -67,6 +68,16 @@ def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, 
                 max_iterations=10,
                 architecture="left-right-strict",
             ),
+        )
+    )
+
+
+def _create_roth_hmm_config(*, stride_n_states=20, stride_n_gmm_components=6, transition_n_gmm_components=3):
+    return RothHmmConfig(
+        model_config=_create_roth_model_config(
+            stride_n_states=stride_n_states,
+            stride_n_gmm_components=stride_n_gmm_components,
+            transition_n_gmm_components=transition_n_gmm_components,
         )
     )
 
@@ -412,9 +423,9 @@ class TestRothSegmentationHmm:
             [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))],
         )
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
         assert instance is trained_instance
@@ -423,15 +434,24 @@ class TestRothSegmentationHmm:
             assert isinstance(v, History)
         assert set(history.keys()) == {"stride", "transition", "self"}
 
+    def test_serialization_excludes_backend(self) -> None:
+        instance = RothSegmentationHmm(hmm_config=_create_roth_hmm_config())
+
+        payload = json.loads(instance.to_json())
+        restored = RothSegmentationHmm.from_json(instance.to_json())
+
+        assert set(payload["params"]) == {"hmm_config", "model"}
+        assert isinstance(restored.backend, PomegranateHmmBackend)
+
     def test_short_strides_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
             [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]}))],
         )
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(stride_n_states=5, stride_n_gmm_components=3)
+            hmm_config=_create_roth_hmm_config(stride_n_states=5, stride_n_gmm_components=3)
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
@@ -443,8 +463,8 @@ class TestRothSegmentationHmm:
         labels = [
             _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}), "stair_stride")
         ]
-        instance = RothSegmentationHmm(model_config=_create_roth_model_config()).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+        instance = RothSegmentationHmm(hmm_config=_create_roth_hmm_config()).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -478,8 +498,8 @@ class TestRothSegmentationHmm:
                 ),
             )
         )
-        instance = RothSegmentationHmm(model_config=config).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+        instance = RothSegmentationHmm(hmm_config=RothHmmConfig(model_config=config)).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
 
         with pytest.raises(ValueError) as exc:
@@ -498,11 +518,11 @@ class TestRothSegmentationHmm:
             ],
         )
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(
+            hmm_config=_create_roth_hmm_config(
                 stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
             )
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
@@ -525,11 +545,11 @@ class TestRothSegmentationHmm:
         )
 
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(
+            hmm_config=_create_roth_hmm_config(
                 stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
             )
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
 
         with pytest.warns(UserWarning) as w, pytest.raises(ValueError) as e:
@@ -549,18 +569,18 @@ class TestRothSegmentationHmm:
             ],
         )
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(
+            hmm_config=_create_roth_hmm_config(
                 stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
             )
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
-        hash_model_config = custom_hash(instance.model_config)
+        hash_model_config = custom_hash(instance.hmm_config)
         hash_model = custom_hash(instance.model)
 
         instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert hash_model_config == custom_hash(instance.model_config)
+        assert hash_model_config == custom_hash(instance.hmm_config)
         assert hash_model != custom_hash(instance.model)
 
     def test_pretrained_model_is_migrated_to_hmm_state(self) -> None:
@@ -597,9 +617,9 @@ class TestRothSegmentationHmm:
             _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))
         ]
         instance = RothSegmentationHmm(
-            model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
         ).set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         captured_model = {}
         original_converter = backend_module.pomegranate_model_to_hmm_state

@@ -84,7 +84,7 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
-from gaitmap.stride_segmentation.hmm import CompositeHmmConfig, HmmSubModelConfig
+from gaitmap.stride_segmentation.hmm import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 
 model_config = CompositeHmmConfig(
     modules=(
@@ -124,16 +124,17 @@ model_config = CompositeHmmConfig(
 from gaitmap.stride_segmentation.hmm import PomegranateHmmBackend, RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
-    model_config=model_config,
-    feature_transform=feature_transform,
+    hmm_config=RothHmmConfig(
+        model_config=model_config,
+        feature_transform=feature_transform,
+        algo_predict="viterbi",
+        algo_train="baum-welch",
+        stop_threshold=1e-9,
+        max_iterations=1,
+        initialization="labels",
+        name="segmentation_model",
+    ),
     backend=PomegranateHmmBackend(),
-    algo_predict="viterbi",
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=1,
-    initialization="labels",
-    verbose=True,
-    name="segmentation_model",
 )
 
 # %%

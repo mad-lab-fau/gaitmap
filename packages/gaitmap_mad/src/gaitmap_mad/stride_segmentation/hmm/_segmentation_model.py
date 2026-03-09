@@ -18,11 +18,8 @@ from gaitmap.utils.datatype_helper import (
     SingleSensorRegionsOfInterestList,
 )
 from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend
-from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
-from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
-    BaseHmmFeatureTransformer,
-    RothHmmFeatureTransformer,
-)
+from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
+from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import RothHmmFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
@@ -284,58 +281,14 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     Parameters
     ----------
-    model_config
-        The configuration of the named HMM submodules that are trained and combined into the final model.
-        One module is interpreted as the implicit transition model and all remaining modules are expected to be covered
-        by typed input regions during optimization.
-    feature_transform
-        An instance of a :class:`~gaitmap.stride_segmentation.hmm.FeatureTransformHMM` that can transform the data
-        (and the labeled stride list) into the feature space required by the HMM.
-        If you want to use custome feature extraction,
-    algo_train
-        The algorithm to use for training the HMM.
-    algo_predict
-        The algorithm to use for prediction with the HMM.
-    stop_threshold
-        The loss threshold to stop the optimization.
-        Note, that is the threshold for the "combined" training of the final model.
-        This is less important, as we recommend to train the combined model only for a single iteration anyway.
-        If you want to adjust the stop threshold for the individual submodels, do so via the corresponding entries in
-        `model_config.modules`.
-    max_iterations
-        The maximum number of iterations to perform during the optimization.
-        Note, that this is the value for the "combined" training of the final model.
-        We recommend keeping this value at 1, as the combined model training only adjusts the transition matrix.
-        If you want to adjust the max iterations for the individual submodels, do so via the corresponding entries in
-        `model_config.modules`.
-    initialization
-        The initialization method to use for the HMM during optimization.
-        `fully-connected` assumes that all states are reachable from any other state with the same probability.
-        `labels` will derive the allowed transitions and probabilities from the given labels.
-        In both cases, distributions will be derived from the data during optimization.
-        We recommend using `labels` here, as this is kind of the default mode we expect these segmentation models to be
-        used.
-        If you select `fully-connected`, you might want to increase the `max_iterations` parameter to allow the model to
-        actually be trained.
-    verbose
-        If True, print additional information during optimization.
-    n_jobs
-        The number of parallel jobs to use during optimization.
-        If set to -1, all available cores will be used.
-    name
-        The name of the final compiled model.
+    hmm_config
+        Serializable configuration bundle containing the HMM submodel topology, feature extraction parameters, and
+        training/prediction settings.
     model
         The serialized trained HMM state.
         This can be set to `None` initially.
         A trained state will then be created during the optimization step.
-        If you want to use a pre-trained model, you can set this parameter to the respective model.
-        However, we recommend to ideally export this entire class instead of just the model to make sure that things
-        like the feature transform are also exported/stored.
-    data_columns
-        The expected columns of the input data in feature space.
-        This will be automatically set based on the feature transform output during the optimization step.
-        This does not affect the output, but is used as a sanity check to ensure that valid input data is provided
-        and that the column order is correct.
+        If you want to use a pre-trained model, you can set this parameter to the respective model state.
     backend
         Backend implementation that provides the backend-specific HMM primitives used for prediction and the final
         combined-model training step.
@@ -371,18 +324,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     """
 
-    model_config: CompositeHmmConfig
-    feature_transform: BaseHmmFeatureTransformer
-    algo_predict: Literal["viterbi", "baum-welch"]
-    algo_train: Literal["viterbi", "baum-welch"]
-    stop_threshold: float
-    max_iterations: int
-    initialization: Literal["labels", "fully-connected"]
-    verbose: bool
-    n_jobs: int
-    name: Optional[str]
+    hmm_config: RothHmmConfig
     model: OptiPara[Optional[HMMState]]
-    data_columns: OptiPara[Optional[tuple[str, ...]]]
     backend: BaseHmmBackend
 
     feature_space_data_: pd.DataFrame
@@ -391,7 +334,20 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     @classmethod
     def _from_json_dict(cls, json_dict: dict) -> Self:
         params = json_dict["params"].copy()
-        if "model_config" not in params and {"stride_model", "transition_model"} <= set(params):
+        if "hmm_config" not in params and "model_config" in params:
+            params["hmm_config"] = RothHmmConfig(
+                model_config=params.pop("model_config"),
+                feature_transform=params.pop("feature_transform", RothHmmFeatureTransformer()),
+                algo_predict=params.pop("algo_predict", "viterbi"),
+                algo_train=params.pop("algo_train", "baum-welch"),
+                stop_threshold=params.pop("stop_threshold", 1e-9),
+                max_iterations=params.pop("max_iterations", 1),
+                initialization=params.pop("initialization", "labels"),
+                verbose=params.pop("verbose", True),
+                n_jobs=params.pop("n_jobs", 1),
+                name=params.pop("name", "segmentation_model"),
+            )
+        if "hmm_config" not in params and {"stride_model", "transition_model"} <= set(params):
             # TODO: Remove this compatibility shim once legacy serialized Roth models have been migrated.
             warnings.warn(
                 "Loading a legacy RothSegmentationHmm serialization with raw pomegranate models. "
@@ -408,33 +364,44 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                 if isinstance(transition_model, SimpleHmm)
                 else transition_model["params"]
             )
-            params["model_config"] = CompositeHmmConfig(
-                modules=(
-                    HmmSubModelConfig(
-                        name="transition",
-                        role="transition",
-                        n_states=transition_params["n_states"],
-                        n_gmm_components=transition_params["n_gmm_components"],
-                        architecture=transition_params["architecture"],
-                        algo_train=transition_params["algo_train"],
-                        stop_threshold=transition_params["stop_threshold"],
-                        max_iterations=transition_params["max_iterations"],
-                        verbose=transition_params.get("verbose", True),
-                        n_jobs=transition_params.get("n_jobs", 1),
-                    ),
-                    HmmSubModelConfig(
-                        name="stride",
-                        role="stride",
-                        n_states=stride_params["n_states"],
-                        n_gmm_components=stride_params["n_gmm_components"],
-                        architecture=stride_params["architecture"],
-                        algo_train=stride_params["algo_train"],
-                        stop_threshold=stride_params["stop_threshold"],
-                        max_iterations=stride_params["max_iterations"],
-                        verbose=stride_params.get("verbose", True),
-                        n_jobs=stride_params.get("n_jobs", 1),
-                    ),
-                )
+            params["hmm_config"] = RothHmmConfig(
+                model_config=CompositeHmmConfig(
+                    modules=(
+                        HmmSubModelConfig(
+                            name="transition",
+                            role="transition",
+                            n_states=transition_params["n_states"],
+                            n_gmm_components=transition_params["n_gmm_components"],
+                            architecture=transition_params["architecture"],
+                            algo_train=transition_params["algo_train"],
+                            stop_threshold=transition_params["stop_threshold"],
+                            max_iterations=transition_params["max_iterations"],
+                            verbose=transition_params.get("verbose", True),
+                            n_jobs=transition_params.get("n_jobs", 1),
+                        ),
+                        HmmSubModelConfig(
+                            name="stride",
+                            role="stride",
+                            n_states=stride_params["n_states"],
+                            n_gmm_components=stride_params["n_gmm_components"],
+                            architecture=stride_params["architecture"],
+                            algo_train=stride_params["algo_train"],
+                            stop_threshold=stride_params["stop_threshold"],
+                            max_iterations=stride_params["max_iterations"],
+                            verbose=stride_params.get("verbose", True),
+                            n_jobs=stride_params.get("n_jobs", 1),
+                        ),
+                    )
+                ),
+                feature_transform=params.pop("feature_transform", RothHmmFeatureTransformer()),
+                algo_predict=params.pop("algo_predict", "viterbi"),
+                algo_train=params.pop("algo_train", "baum-welch"),
+                stop_threshold=params.pop("stop_threshold", 1e-9),
+                max_iterations=params.pop("max_iterations", 1),
+                initialization=params.pop("initialization", "labels"),
+                verbose=params.pop("verbose", True),
+                n_jobs=params.pop("n_jobs", 1),
+                name=params.pop("name", "segmentation_model"),
             )
             legacy_submodels = []
             if getattr(transition_model, "model", None) is not None:
@@ -472,36 +439,68 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         return cls(**input_data)
 
+    def _to_json_dict(self) -> dict[str, Any]:
+        return {
+            "_gaitmap_obj": self.__class__.__name__,
+            "params": {
+                "hmm_config": self.hmm_config,
+                "model": self.model,
+            },
+        }
+
     def __init__(
         self,
-        model_config: CompositeHmmConfig = cf(CompositeHmmConfig()),
-        feature_transform: RothHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
-        *,
-        algo_predict: Literal["viterbi", "map"] = "viterbi",
-        algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
-        stop_threshold: float = 1e-9,
-        max_iterations: int = 1,
-        initialization: Literal["labels", "fully-connected"] = "labels",
-        verbose: bool = True,
-        n_jobs: int = 1,
-        name: str = "segmentation_model",
+        hmm_config: RothHmmConfig = cf(RothHmmConfig()),
         model: Optional[HMMState] = None,
-        data_columns: Optional[tuple[str, ...]] = None,
         backend: BaseHmmBackend = cf(PomegranateHmmBackend()),
     ) -> None:
-        self.model_config = model_config
-        self.feature_transform = feature_transform
-        self.algo_predict = algo_predict
-        self.algo_train = algo_train
-        self.stop_threshold = stop_threshold
-        self.max_iterations = max_iterations
-        self.initialization = initialization
-        self.verbose = verbose
-        self.n_jobs = n_jobs
-        self.name = name
+        self.hmm_config = hmm_config
         self.model = model
-        self.data_columns = data_columns
         self.backend = backend
+
+    @property
+    def model_config(self) -> CompositeHmmConfig:
+        return self.hmm_config.model_config
+
+    @property
+    def feature_transform(self) -> RothHmmFeatureTransformer:
+        return self.hmm_config.feature_transform
+
+    @property
+    def algo_predict(self) -> Literal["viterbi", "map"]:
+        return self.hmm_config.algo_predict
+
+    @property
+    def algo_train(self) -> Literal["viterbi", "baum-welch"]:
+        return self.hmm_config.algo_train
+
+    @property
+    def stop_threshold(self) -> float:
+        return self.hmm_config.stop_threshold
+
+    @property
+    def max_iterations(self) -> int:
+        return self.hmm_config.max_iterations
+
+    @property
+    def initialization(self) -> Literal["labels", "fully-connected"]:
+        return self.hmm_config.initialization
+
+    @property
+    def verbose(self) -> bool:
+        return self.hmm_config.verbose
+
+    @property
+    def n_jobs(self) -> int:
+        return self.hmm_config.n_jobs
+
+    @property
+    def name(self) -> str:
+        return self.hmm_config.name
+
+    @property
+    def data_columns(self) -> tuple[str, ...]:
+        return self.feature_transform.transformed_feature_columns
 
     @property
     def n_states(self) -> int:
@@ -726,7 +725,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             self.algo_predict,
         )
 
-        self.data_columns = tuple(data_sequence_feature_space[0].columns)
         self.model, history = self.backend.finalize_model(
             trained_models=trained_models,
             labels_train_sequence=labels_train_sequence,
