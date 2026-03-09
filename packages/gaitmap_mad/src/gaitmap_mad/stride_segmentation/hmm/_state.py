@@ -227,7 +227,11 @@ def _state_to_distribution(state: EmissionState) -> pg.Distribution:
 
 
 def pomegranate_model_to_flat_hmm_state(model: pgHMM) -> FlatHmmState:
-    """Convert a pomegranate HMM into a serializable flat state."""
+    """Convert a pomegranate HMM into a serializable flat state.
+
+    The canonical state only stores emitting states. `pomegranate`'s silent
+    start/end nodes are folded into explicit `start_probs`/`end_probs`.
+    """
     dense_transition_matrix = model.dense_transition_matrix()
     graph_state = HmmGraphState(
         transition_probs=np.asarray(dense_transition_matrix[:-2, :-2], dtype=float),

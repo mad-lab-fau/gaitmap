@@ -594,6 +594,16 @@ class TestRothSegmentationHmm:
         assert len(model.model.submodels) == 2
         assert isinstance(model.backend, PomegranateHmmBackend)
 
+    def test_pretrained_model_migration_removes_silent_backend_states(self) -> None:
+        model = PreTrainedRothSegmentationModel()
+        compiled = model.model.compiled
+
+        assert compiled.graph.transition_probs.shape == (len(compiled.state_names), len(compiled.state_names))
+        assert compiled.graph.start_probs.shape == (len(compiled.state_names),)
+        assert compiled.graph.end_probs.shape == (len(compiled.state_names),)
+        assert len(compiled.emissions) == len(compiled.state_names)
+        assert all(name not in {"start", "end"} for name in compiled.state_names)
+
     def test_pretrained_model_roundtrip_matches_legacy_hidden_states(self, healthy_example_imu_data) -> None:
         raw_model = _load_raw_pretrained_pomegranate_model()
         model = PreTrainedRothSegmentationModel()
