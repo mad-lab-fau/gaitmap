@@ -31,7 +31,6 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _DataToShortError,
-    _HackyClonableHMMFix,
     convert_region_list_to_transition_list,
     get_train_data_sequences_regions,
     get_train_data_sequences_transitions,
@@ -270,7 +269,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         raise NotImplementedError
 
 
-class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
+class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
     """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
     This model uses individually trained HMM submodules that are combined into one final segmentation HMM.

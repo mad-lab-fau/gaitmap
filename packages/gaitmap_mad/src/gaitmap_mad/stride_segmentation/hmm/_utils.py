@@ -119,6 +119,15 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
     return model
 
 
+def _is_serialized_hmm_state(value: Any) -> bool:
+    return (
+        hasattr(value, "compiled")
+        and hasattr(value, "trained_with")
+        and callable(getattr(value, "to_json", None))
+        and callable(getattr(type(value), "from_json", None))
+    )
+
+
 class _HackyClonableHMMFix(BaseTpcpObject):
     """A hacky implementation to ensure that HMM parameters are actually cloned, when cloning the algorithm.
 
@@ -130,15 +139,6 @@ class _HackyClonableHMMFix(BaseTpcpObject):
     For more information see the `_clone_model` function.
 
     """
-
-    @staticmethod
-    def _is_serialized_hmm_state(value: Any) -> bool:
-        return (
-            hasattr(value, "compiled")
-            and hasattr(value, "trained_with")
-            and callable(getattr(value, "to_json", None))
-            and callable(getattr(type(value), "from_json", None))
-        )
 
     @classmethod
     def __clone_param__(cls, param_name: str, value: Any) -> Any:
@@ -152,7 +152,7 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         """
         if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
-        if cls._is_serialized_hmm_state(value):
+        if _is_serialized_hmm_state(value):
             return type(value).from_json(value.to_json())
         return super().__clone_param__(param_name, value)
 
@@ -163,7 +163,7 @@ class ShortenedHMMPrint(BaseTpcpObject):
     def __repr_parameter__(self, name: str, value: Any) -> str:
         """Representation with specific care for HMM models."""
         if name == "model":
-            if self._is_serialized_hmm_state(value):
+            if _is_serialized_hmm_state(value):
                 n_states = len(value.compiled.state_names) if getattr(value, "compiled", None) is not None else "?"
                 backend = getattr(getattr(value, "trained_with", None), "backend_id", "?")
                 return f"{name}=HMMState[backend={backend}, states={n_states}](...)"
