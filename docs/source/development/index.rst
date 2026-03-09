@@ -11,4 +11,3 @@ Development
     project_structure
     development_guide
     caching_guide
-    hmm_backend_refactor
