@@ -1039,7 +1039,7 @@ wheels = [
 
 [[package]]
 name = "gaitmap"
-version = "2.5.2"
+version = "2.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "joblib" },
@@ -1142,7 +1142,7 @@ dev = [
 
 [[package]]
 name = "gaitmap-mad"
-version = "2.5.2"
+version = "2.6.0"
 source = { editable = "packages/gaitmap_mad" }
 
 [[package]]
@@ -4009,7 +4009,7 @@ wheels = [
 
 [[package]]
 name = "tpcp"
-version = "2.1.2"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "joblib" },
@@ -4021,9 +4021,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/01/5d/e2942f74f75c53f8e1dc99202bf0cde6da297c2ea75dad0a296a0efe7242/tpcp-2.1.2.tar.gz", hash = "sha256:06165b9d0aa67f66b2e41e9a1369414086021857722d5f0f65c1784a8ceb7f84", size = 87317, upload-time = "2026-02-21T13:55:55.817Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/d3/6558ed4bc4ccf0a0fd3dad10f36c9a1d1de8ff6dc340a7127a92b8fc3e80/tpcp-2.2.0.tar.gz", hash = "sha256:eee274272d7a88c24fbde5a6adaf274806993ebe3242eeaab47b52cad5bda8b6", size = 93915, upload-time = "2026-03-09T10:07:59.432Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/f1/782cc7392cf92aee4a739813551abd29b31203373936d5fdce0828a183c7/tpcp-2.1.2-py3-none-any.whl", hash = "sha256:4089a17ae22bbfa1fd4d9aface8bbc69251e9e51ed38e8be1cca337e060f5894", size = 100977, upload-time = "2026-02-21T13:55:54.779Z" },
+    { url = "https://files.pythonhosted.org/packages/80/f2/8619c9898e03191ddc3770a554a8504ff52690e2417350aeadf49005a382/tpcp-2.2.0-py3-none-any.whl", hash = "sha256:610091c6a07b3d81123398ad0ccea80c22ff39e05e32858c407a83305cf54cb1", size = 111592, upload-time = "2026-03-09T10:07:58.151Z" },
 ]
 
 [[package]]
