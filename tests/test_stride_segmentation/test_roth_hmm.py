@@ -33,6 +33,7 @@ from gaitmap_mad.stride_segmentation.hmm import (
     RothHmmConfig,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
+    ScipyHmmInferenceBackend,
     SimpleHmm,
 )
 from gaitmap_mad.stride_segmentation.hmm import _backend as backend_module
@@ -611,6 +612,20 @@ class TestRothSegmentationHmm:
 
         assert_array_equal(raw_sequence, roundtrip_sequence)
 
+    def test_pretrained_model_scipy_backend_matches_pomegranate_hidden_states(self, healthy_example_imu_data) -> None:
+        model = PreTrainedRothSegmentationModel()
+        scipy_model = model.clone().set_params(backend=ScipyHmmInferenceBackend())
+        data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+
+        pomegranate_result = model.predict(data, sampling_rate_hz=100)
+        scipy_result = scipy_model.predict(data, sampling_rate_hz=100)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, scipy_result.hidden_state_sequence_)
+        assert_array_equal(
+            pomegranate_result.hidden_state_sequence_feature_space_,
+            scipy_result.hidden_state_sequence_feature_space_,
+        )
+
     def test_trained_model_roundtrip_matches_original_hidden_states(self) -> None:
         data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
         region_list_sequence = [
@@ -652,6 +667,28 @@ class TestRothSegmentationHmm:
         assert instance.model.trained_with.backend_id == "pomegranate-legacy"
         assert instance.model.trained_with.backend_version is not None
 
+    def test_trained_model_scipy_backend_matches_pomegranate_hidden_states(self) -> None:
+        data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        region_list_sequence = [
+            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))
+        ]
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
+        )
+        instance.self_optimize(data_sequence, region_list_sequence, sampling_rate_hz=100)
+
+        scipy_instance = instance.clone().set_params(backend=ScipyHmmInferenceBackend())
+        pomegranate_result = instance.predict(data_sequence[0], sampling_rate_hz=100)
+        scipy_result = scipy_instance.predict(data_sequence[0], sampling_rate_hz=100)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, scipy_result.hidden_state_sequence_)
+        assert_array_equal(
+            pomegranate_result.hidden_state_sequence_feature_space_,
+            scipy_result.hidden_state_sequence_feature_space_,
+        )
+
 
 class TestHmmStrideSegmentation:
     def test_segment_with_single_dataset(self, healthy_example_imu_data) -> None:
@@ -668,6 +705,20 @@ class TestHmmStrideSegmentation:
         assert isinstance(result.matches_start_end_original_, np.ndarray)
         assert isinstance(result.hidden_state_sequence_, np.ndarray)
         assert result.hidden_state_sequence_ is result.result_model_.hidden_state_sequence_
+
+    def test_pretrained_scipy_backend_matches_pomegranate_segmentation(self, healthy_example_imu_data) -> None:
+        data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+        pomegranate_result = HmmStrideSegmentation(model=PreTrainedRothSegmentationModel()).segment(data, 204.8)
+        scipy_result = HmmStrideSegmentation(
+            model=PreTrainedRothSegmentationModel().set_params(backend=ScipyHmmInferenceBackend())
+        ).segment(data, 204.8)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, scipy_result.hidden_state_sequence_)
+        assert_array_equal(pomegranate_result.matches_start_end_, scipy_result.matches_start_end_)
+        assert_array_equal(
+            pomegranate_result.matches_start_end_original_,
+            scipy_result.matches_start_end_original_,
+        )
 
     def test_segment_with_multi_dataset(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")

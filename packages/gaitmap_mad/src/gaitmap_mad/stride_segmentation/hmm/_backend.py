@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import pomegranate as pg
 from pomegranate.hmm import History
+from scipy.special import logsumexp
+from scipy.stats import multivariate_normal
 
 from gaitmap.base import _BaseSerializable
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
@@ -16,6 +18,8 @@ from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
     CrossModuleTransition,
+    GaussianEmissionState,
+    GaussianMixtureEmissionState,
     HMMState,
     HmmSubModelState,
     hmm_state_to_pomegranate_model,
@@ -24,6 +28,7 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
 )
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _clone_model,
+    _DataToShortError,
     add_transition,
     check_history_for_training_failure,
     create_transition_matrix_fully_connected,
@@ -278,3 +283,150 @@ class PomegranateHmmBackend(BaseHmmBackend):
         model.bake()
         model.freeze_distributions()
         return _clone_model(model, assert_correct=False)
+
+
+def _prepare_predict_data(data: pd.DataFrame, expected_columns: tuple[str, ...], n_states: int) -> np.ndarray:
+    try:
+        data = data[list(expected_columns)]
+    except KeyError as e:
+        raise ValueError(
+            "The provided feature data is expected to have the following columns:\n\n"
+            f"{expected_columns}\n\n"
+            "But it only has the following columns:\n\n"
+            f"{data.columns}"
+        ) from e
+
+    if len(data) < n_states:
+        raise _DataToShortError(
+            "The provided feature data is expected to have at least as many samples as the number of states "
+            f"of the model ({n_states}). "
+            f"But it only has {len(data)} samples."
+        )
+    return np.ascontiguousarray(data.to_numpy())
+
+
+def _log_emission_probabilities(model: HMMState, observations: np.ndarray) -> np.ndarray:
+    log_emissions = np.empty((len(observations), len(model.compiled.emissions)), dtype=float)
+    for state_idx, emission in enumerate(model.compiled.emissions):
+        if isinstance(emission, GaussianEmissionState):
+            log_emissions[:, state_idx] = multivariate_normal.logpdf(
+                observations,
+                mean=emission.mean,
+                cov=emission.covariance,
+                allow_singular=True,
+            )
+            continue
+        if isinstance(emission, GaussianMixtureEmissionState):
+            component_log_probs = np.column_stack([
+                multivariate_normal.logpdf(
+                    observations,
+                    mean=component.mean,
+                    cov=component.covariance,
+                    allow_singular=True,
+                )
+                for component in emission.components
+            ])
+            with np.errstate(divide="ignore"):
+                log_weights = np.log(np.asarray(emission.weights, dtype=float))
+            log_emissions[:, state_idx] = logsumexp(component_log_probs + log_weights, axis=1)
+            continue
+        raise TypeError(f"Unsupported serialized emission state `{type(emission).__name__}`.")
+    return log_emissions
+
+
+def _viterbi_decode(model: HMMState, log_emissions: np.ndarray) -> np.ndarray:
+    with np.errstate(divide="ignore"):
+        transition_log_probs = np.log(np.asarray(model.compiled.graph.transition_probs, dtype=float))
+        start_log_probs = np.log(np.asarray(model.compiled.graph.start_probs, dtype=float))
+
+    n_samples, n_states = log_emissions.shape
+    dp = np.full((n_samples, n_states), -np.inf, dtype=float)
+    pointers = np.zeros((n_samples, n_states), dtype=int)
+
+    dp[0] = start_log_probs + log_emissions[0]
+    for sample_idx in range(1, n_samples):
+        scores = dp[sample_idx - 1][:, None] + transition_log_probs
+        pointers[sample_idx] = np.argmax(scores, axis=0)
+        dp[sample_idx] = scores[pointers[sample_idx], np.arange(n_states)] + log_emissions[sample_idx]
+
+    # Match the behavior of `pomegranate 0.14`'s `model.predict(..., algorithm="viterbi")`,
+    # which returns a path that later gets trimmed to `path[1:-1]` in our compatibility wrapper.
+    last_state = int(np.argmax(dp[-1]))
+    path = np.zeros(n_samples, dtype=int)
+    path[-1] = last_state
+    for sample_idx in range(n_samples - 1, 0, -1):
+        path[sample_idx - 1] = pointers[sample_idx, path[sample_idx]]
+    return path[:-1]
+
+
+def _map_decode(model: HMMState, log_emissions: np.ndarray) -> np.ndarray:
+    with np.errstate(divide="ignore"):
+        transition_log_probs = np.log(np.asarray(model.compiled.graph.transition_probs, dtype=float))
+        start_log_probs = np.log(np.asarray(model.compiled.graph.start_probs, dtype=float))
+        end_log_probs = np.log(np.asarray(model.compiled.graph.end_probs, dtype=float))
+
+    n_samples, n_states = log_emissions.shape
+    forward = np.full((n_samples, n_states), -np.inf, dtype=float)
+    backward = np.full((n_samples, n_states), -np.inf, dtype=float)
+
+    forward[0] = start_log_probs + log_emissions[0]
+    for sample_idx in range(1, n_samples):
+        forward[sample_idx] = log_emissions[sample_idx] + logsumexp(
+            forward[sample_idx - 1][:, None] + transition_log_probs,
+            axis=0,
+        )
+
+    backward[-1] = end_log_probs
+    for sample_idx in range(n_samples - 2, -1, -1):
+        backward[sample_idx] = logsumexp(
+            transition_log_probs + log_emissions[sample_idx + 1][None, :] + backward[sample_idx + 1][None, :],
+            axis=1,
+        )
+
+    posterior = forward + backward
+    return np.argmax(posterior, axis=1)
+
+
+class ScipyHmmInferenceBackend(BaseHmmBackend):
+    """SciPy-based inference-only backend operating directly on `HMMState`."""
+
+    def __init__(self, backend_id: str = "scipy-inference") -> None:
+        super().__init__(backend_id=backend_id)
+
+    def create_submodel(self, config: HmmSubModelConfig) -> SimpleHmm:
+        raise NotImplementedError("ScipyHmmInferenceBackend is inference-only and can not create trainable submodels.")
+
+    def finalize_model(
+        self,
+        *,
+        trained_models: dict[str, SimpleHmm],
+        labels_train_sequence: list[np.ndarray],
+        data_sequence_feature_space: list[pd.DataFrame],
+        data_columns: tuple[str, ...],
+        model_config: CompositeHmmConfig,
+        module_offsets: dict[str, int],
+        initialization: Literal["labels", "fully-connected"],
+        algo_train: Literal["viterbi", "baum-welch"],
+        stop_threshold: float,
+        max_iterations: int,
+        verbose: bool,
+        n_jobs: int,
+        name: str,
+    ) -> tuple[HMMState, History]:
+        raise NotImplementedError("ScipyHmmInferenceBackend is inference-only and can not finalize/train models.")
+
+    def predict(
+        self,
+        model: HMMState,
+        data: pd.DataFrame,
+        *,
+        expected_columns: tuple[str, ...],
+        algorithm: Literal["viterbi", "map"],
+        verbose: bool,
+    ) -> np.ndarray:
+        del verbose
+        observations = _prepare_predict_data(data, expected_columns, len(model.compiled.state_names))
+        log_emissions = _log_emission_probabilities(model, observations)
+        if algorithm == "viterbi":
+            return _viterbi_decode(model, log_emissions)
+        return _map_decode(model, log_emissions)

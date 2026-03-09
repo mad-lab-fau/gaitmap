@@ -28,6 +28,7 @@ _gaitmap_mad_modules = {
     "SimpleHmm",
     "RothHmmConfig",
     "RothSegmentationHmm",
+    "ScipyHmmInferenceBackend",
     "PreTrainedRothSegmentationModel",
     "BaseSegmentationHmm",
 }
@@ -54,6 +55,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         RothHmmConfig,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
+        ScipyHmmInferenceBackend,
         SimpleHmm,
     )
 
@@ -78,5 +80,6 @@ __all__ = [
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
+    "ScipyHmmInferenceBackend",
     "SimpleHmm",
 ]

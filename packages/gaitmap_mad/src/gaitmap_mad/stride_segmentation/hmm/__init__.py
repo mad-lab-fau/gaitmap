@@ -3,7 +3,7 @@
 import multiprocessing
 import warnings
 
-from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend, ScipyHmmInferenceBackend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
@@ -55,5 +55,6 @@ __all__ = [
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
+    "ScipyHmmInferenceBackend",
     "SimpleHmm",
 ]
