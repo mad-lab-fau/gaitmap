@@ -131,6 +131,15 @@ class _HackyClonableHMMFix(BaseTpcpObject):
 
     """
 
+    @staticmethod
+    def _is_serialized_hmm_state(value: Any) -> bool:
+        return (
+            hasattr(value, "compiled")
+            and hasattr(value, "trained_with")
+            and callable(getattr(value, "to_json", None))
+            and callable(getattr(type(value), "from_json", None))
+        )
+
     @classmethod
     def __clone_param__(cls, param_name: str, value: Any) -> Any:
         """Overwrite cloning for HMM models.
@@ -143,6 +152,8 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         """
         if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
+        if cls._is_serialized_hmm_state(value):
+            return type(value).from_json(value.to_json())
         return super().__clone_param__(param_name, value)
 
 
@@ -152,6 +163,10 @@ class ShortenedHMMPrint(BaseTpcpObject):
     def __repr_parameter__(self, name: str, value: Any) -> str:
         """Representation with specific care for HMM models."""
         if name == "model":
+            if self._is_serialized_hmm_state(value):
+                n_states = len(value.compiled.state_names) if getattr(value, "compiled", None) is not None else "?"
+                backend = getattr(getattr(value, "trained_with", None), "backend_id", "?")
+                return f"{name}=HMMState[backend={backend}, states={n_states}](...)"
             if isinstance(value, pg.HiddenMarkovModel):
                 return f"{name}=HiddenMarkovModel[name={value.name}](...)"
             if isinstance(value, CloneFactory) and isinstance(value.default_value, pg.HiddenMarkovModel):

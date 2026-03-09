@@ -1,6 +1,6 @@
 """Segmentation _model base classes and helper."""
 
-import copy
+import warnings
 from collections.abc import Sequence
 from typing import Any, Literal, Optional
 
@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import pomegranate as pg
 import tpcp
-from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
 from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
@@ -18,28 +17,27 @@ from gaitmap.utils.datatype_helper import (
     SingleSensorData,
     SingleSensorRegionsOfInterestList,
 )
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
 )
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
+from gaitmap_mad.stride_segmentation.hmm._state import (
+    BackendInfo,
+    HMMState,
+    HmmSubModelState,
+    pomegranate_model_to_flat_hmm_state,
+    pomegranate_model_to_hmm_state,
+)
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
-    _clone_model,
     _DataToShortError,
     _HackyClonableHMMFix,
-    add_transition,
-    check_history_for_training_failure,
     convert_region_list_to_transition_list,
-    create_transition_matrix_fully_connected,
-    extract_transitions_starts_stops_from_hidden_state_sequence,
-    fix_model_names,
-    get_model_distributions,
     get_train_data_sequences_regions,
     get_train_data_sequences_transitions,
-    labels_to_strings,
-    predict,
     validate_trainable_region_list,
 )
 
@@ -109,20 +107,6 @@ def create_fully_labeled_hidden_state_sequences(
     return labels_train_sequence
 
 
-def _create_simple_hmm_from_config(config: HmmSubModelConfig) -> SimpleHmm:
-    return SimpleHmm(
-        n_states=config.n_states,
-        n_gmm_components=config.n_gmm_components,
-        architecture=config.architecture,
-        algo_train=config.algo_train,
-        stop_threshold=config.stop_threshold,
-        max_iterations=config.max_iterations,
-        verbose=config.verbose,
-        n_jobs=config.n_jobs,
-        name=config.name,
-    )
-
-
 def _get_training_sequences_for_module(
     module_config: HmmSubModelConfig,
     model_config: CompositeHmmConfig,
@@ -155,15 +139,6 @@ def _get_training_sequences_for_module(
             "transformation."
         )
     return train_sequence, init_state_labels
-
-
-def _collect_trained_module_distributions(
-    modules: tuple[HmmSubModelConfig, ...], trained_models: dict[str, SimpleHmm]
-) -> list[Any]:
-    distributions = []
-    for module in modules:
-        distributions.extend(get_model_distributions(trained_models[module.name].model))
-    return distributions
 
 
 def _predict_labeled_training_sequences(
@@ -348,11 +323,11 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         The number of parallel jobs to use during optimization.
         If set to -1, all available cores will be used.
     name
-        The name of the final pomegranate model.
+        The name of the final compiled model.
     model
-        The actual pomegranate HMM model.
+        The serialized trained HMM state.
         This can be set to `None` initially.
-        A model will then be created during the optimization step.
+        A trained state will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
         However, we recommend to ideally export this entire class instead of just the model to make sure that things
         like the feature transform are also exported/stored.
@@ -361,6 +336,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         This will be automatically set based on the feature transform output during the optimization step.
         This does not affect the output, but is used as a sanity check to ensure that valid input data is provided
         and that the column order is correct.
+    backend
+        Backend implementation that provides the backend-specific HMM primitives used for prediction and the final
+        combined-model training step.
 
     Attributes
     ----------
@@ -382,8 +360,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     Notes
     -----
-    The final model is still stored as a raw `pomegranate` HMM in this step of the refactor.
-    The `model_config` only replaces the dedicated submodel constructor inputs.
+    The public trained-model parameter is stored as a serializable `HMMState`.
+    The default backend in this refactor step is `PomegranateHmmBackend`.
 
     References
     ----------
@@ -403,8 +381,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     verbose: bool
     n_jobs: int
     name: Optional[str]
-    model: OptiPara[Optional[pgHMM]]
+    model: OptiPara[Optional[HMMState]]
     data_columns: OptiPara[Optional[tuple[str, ...]]]
+    backend: BaseHmmBackend
 
     feature_space_data_: pd.DataFrame
     hidden_state_sequence_feature_space_: np.ndarray
@@ -414,6 +393,11 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         params = json_dict["params"].copy()
         if "model_config" not in params and {"stride_model", "transition_model"} <= set(params):
             # TODO: Remove this compatibility shim once legacy serialized Roth models have been migrated.
+            warnings.warn(
+                "Loading a legacy RothSegmentationHmm serialization with raw pomegranate models. "
+                "The model is migrated to the new HMMState representation during loading.",
+                UserWarning,
+            )
             stride_model = params.pop("stride_model")
             transition_model = params.pop("transition_model")
             stride_params = (
@@ -452,6 +436,39 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                     ),
                 )
             )
+            legacy_submodels = []
+            if getattr(transition_model, "model", None) is not None:
+                legacy_submodels.append(
+                    HmmSubModelState(
+                        name="transition",
+                        role="transition",
+                        model=pomegranate_model_to_flat_hmm_state(transition_model.model),
+                    )
+                )
+            if getattr(stride_model, "model", None) is not None:
+                legacy_submodels.append(
+                    HmmSubModelState(
+                        name="stride",
+                        role="stride",
+                        model=pomegranate_model_to_flat_hmm_state(stride_model.model),
+                    )
+                )
+            if params.get("model") is not None:
+                params["model"] = pomegranate_model_to_hmm_state(
+                    params["model"],
+                    submodels=tuple(legacy_submodels),
+                    backend_info=BackendInfo(backend_id="pomegranate-legacy-migrated"),
+                )
+        elif isinstance(params.get("model"), pg.HiddenMarkovModel):
+            warnings.warn(
+                "Loading a RothSegmentationHmm with a raw pomegranate model parameter. "
+                "The model is migrated to the new HMMState representation during loading.",
+                UserWarning,
+            )
+            params["model"] = pomegranate_model_to_hmm_state(
+                params["model"],
+                backend_info=BackendInfo(backend_id="pomegranate-legacy-migrated"),
+            )
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         return cls(**input_data)
 
@@ -468,8 +485,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "segmentation_model",
-        model: Optional[pgHMM] = None,
+        model: Optional[HMMState] = None,
         data_columns: Optional[tuple[str, ...]] = None,
+        backend: BaseHmmBackend = cf(PomegranateHmmBackend()),
     ) -> None:
         self.model_config = model_config
         self.feature_transform = feature_transform
@@ -483,6 +501,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         self.name = name
         self.model = model
         self.data_columns = data_columns
+        self.backend = backend
 
     @property
     def n_states(self) -> int:
@@ -553,9 +572,12 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         feature_data = feature_data[0]
         self.feature_space_data_ = feature_data
 
-        # pomegranate always adds a label for the start- and end-state, which can be ignored here!
-        self.hidden_state_sequence_feature_space_ = predict(
-            self.model, feature_data, expected_columns=self.data_columns, algorithm=self.algo_predict
+        self.hidden_state_sequence_feature_space_ = self.backend.predict(
+            self.model,
+            feature_data,
+            expected_columns=self.data_columns,
+            algorithm=self.algo_predict,
+            verbose=self.verbose,
         )
         self.hidden_state_sequence_ = self.feature_transform.inverse_transform_state_sequence(
             self.hidden_state_sequence_feature_space_, data=data
@@ -687,16 +709,11 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                 region_list_feature_space,
             )
 
-            trained_model, history = _create_simple_hmm_from_config(module_config).self_optimize_with_info(
+            trained_model, history = self.backend.create_submodel(module_config).self_optimize_with_info(
                 train_sequence, init_state_labels
             )
             trained_models[module_name] = trained_model
             histories[module_name] = history
-
-        # For model combination actually only the transition probabilities will be updated, while keeping the already
-        # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
-        # number of transitions will be counted.
-        distributions = _collect_trained_module_distributions(self.model_config.modules, trained_models)
 
         # predict hidden state labels for complete walking bouts
         module_offsets = self._module_offsets
@@ -709,98 +726,22 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             self.algo_predict,
         )
 
-        # Now that we have a fully labeled dataset, we use our already fitted distributions as input for the new model
-        if self.initialization == "fully-connected":
-            trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(self.n_states)
-
-            new_model = pg.HiddenMarkovModel.from_matrix(
-                transition_probabilities=copy.deepcopy(trans_mat),
-                distributions=copy.deepcopy(distributions),
-                starts=start_probs,
-                ends=None,
-                state_names=None,
-                verbose=self.verbose,
-            )
-
-        elif self.initialization == "labels":
-            trans_mat = np.zeros((self.n_states, self.n_states))
-            for module_config in self.model_config.modules:
-                module_name = module_config.name
-                module_transition_matrix = trained_models[module_name].model.dense_transition_matrix()[:-2, :-2]
-                offset = module_offsets[module_name]
-                trans_mat[
-                    offset : offset + module_config.n_states,
-                    offset : offset + module_config.n_states,
-                ] = module_transition_matrix
-
-            # find missing transitions from labels
-            transitions, starts, ends = extract_transitions_starts_stops_from_hidden_state_sequence(
-                labels_train_sequence
-            )
-
-            start_probs = np.zeros(self.n_states)
-            start_probs[starts] = 1.0
-            end_probs = np.zeros(self.n_states)
-            end_probs[ends] = 1.0
-
-            new_model = pg.HiddenMarkovModel.from_matrix(
-                transition_probabilities=copy.deepcopy(trans_mat),
-                distributions=copy.deepcopy(distributions),
-                starts=start_probs,
-                ends=None,
-                state_names=None,
-                verbose=self.verbose,
-            )
-
-            existing_transitions = {(start.name, end.name) for start, end in new_model.graph.edges()}
-            missing_transitions = transitions - existing_transitions
-            # Add missing transitions which will "connect" transition-hmm and stride-hmm
-            # We initialize with a very small probability, so that the model can learn the correct values in the next
-            # step.
-            # Note: We sort the transitions to enforce consistent order and reproducibility.
-            for trans in sorted(missing_transitions):
-                add_transition(new_model, trans, 0.1)
-        else:
-            # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
-            raise RuntimeError()
-        # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order
-        # like s0, s1, s10, s2 usw..)
-        new_model = fix_model_names(new_model)
-        new_model.bake()
-
-        # make sure we do not change our distributions anymore!
-        new_model.freeze_distributions()
-
-        # We clone the model here, as this changes the order of edges to be sorted somehow...
-        new_model = _clone_model(new_model, assert_correct=False)
-
-        # convert labels to state-names
-        labels_train_sequence_str = labels_to_strings(labels_train_sequence)
-
         self.data_columns = tuple(data_sequence_feature_space[0].columns)
-
-        # make sure data is in an pomegranate compatible format!
-        data_train_sequence = [
-            np.ascontiguousarray(feature_data[list(self.data_columns)].to_numpy().copy())
-            for feature_data in data_sequence_feature_space
-        ]
-
-        _, history = new_model.fit(
-            sequences=np.array(data_train_sequence, dtype=object),
-            labels=np.array(labels_train_sequence_str, dtype=object).copy(),
-            algorithm=self.algo_train,
+        self.model, history = self.backend.finalize_model(
+            trained_models=trained_models,
+            labels_train_sequence=labels_train_sequence,
+            data_sequence_feature_space=data_sequence_feature_space,
+            data_columns=self.data_columns,
+            model_config=self.model_config,
+            module_offsets=module_offsets,
+            initialization=self.initialization,
+            algo_train=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
-            return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
-            multiple_check_input=False,
+            name=self.name,
         )
-        check_history_for_training_failure(history)
-
-        new_model.name = self.name
-
-        self.model = new_model
 
         histories["self"] = history
         return self, histories

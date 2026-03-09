@@ -121,11 +121,12 @@ model_config = CompositeHmmConfig(
 # invoke the training process.
 # Again, all configurable parameters are exposed for demonstration purpose.
 # These parameters should again work for most usecases.
-from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
+from gaitmap.stride_segmentation.hmm import PomegranateHmmBackend, RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
     model_config=model_config,
     feature_transform=feature_transform,
+    backend=PomegranateHmmBackend(),
     algo_predict="viterbi",
     algo_train="baum-welch",
     stop_threshold=1e-9,
@@ -174,16 +175,19 @@ segmentation_model = segmentation_model.self_optimize(
 # Inspecting the Results
 # --------------------------------------
 #
-# Now all internal models which were initialized as "None" should be populated by pomegranate models.
-# We can now have a look at the final transition matrix or the trained distributions (GMMs).
+# Now the trained model is stored as a serializable HMM state.
+# We can now have a look at the final transition matrix, the backend provenance, or one of the trained emission
+# distributions.
 # You could now either use the model to predict stride borders on an unseen sequence or save it to a json file for later
 # use.
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(segmentation_model.model.dense_transition_matrix()[0:-2, 0:-2])
+print(segmentation_model.model.trained_with)
 
-print(segmentation_model.model.states[10])
+print(segmentation_model.model.compiled.graph.transition_probs)
+
+print(segmentation_model.model.compiled.emissions[10])
 
 # %%
 # Applying the Model to a Sequence

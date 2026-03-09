@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -11,6 +13,7 @@ from pomegranate import GeneralMixtureModel
 from pomegranate.hmm import History
 from tpcp._hash import custom_hash
 
+from gaitmap.base import _custom_deserialize
 from gaitmap.data_transform import SlidingWindowMean
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_to_fbf
@@ -22,14 +25,19 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap_mad.stride_segmentation.hmm import (
     CompositeHmmConfig,
+    HMMState,
     HmmStrideSegmentation,
+    PomegranateHmmBackend,
     HmmSubModelConfig,
     PreTrainedRothSegmentationModel,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
     SimpleHmm,
 )
+from gaitmap_mad.stride_segmentation.hmm import _backend as backend_module
 from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_hmm
+from gaitmap_mad.stride_segmentation.hmm._state import hmm_state_to_pomegranate_model, pomegranate_model_to_hmm_state
+from gaitmap_mad.stride_segmentation.hmm._utils import predict
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
@@ -68,6 +76,15 @@ def _stride_list_to_region_list(stride_list: pd.DataFrame, region_type: str = "s
     region_list.insert(0, "roi_id", np.arange(len(region_list)))
     region_list["type"] = region_type
     return region_list.set_index("roi_id")
+
+
+def _load_raw_pretrained_pomegranate_model():
+    raw = json.loads(
+        Path(
+            "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/hmm/_pre_trained_models/fallriskpd_at_lab_model.json"
+        ).read_text()
+    )
+    return _custom_deserialize(raw["params"]["model"])
 
 
 class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
@@ -401,6 +418,7 @@ class TestRothSegmentationHmm:
         )
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
         assert instance is trained_instance
+        assert isinstance(instance.model, HMMState)
         for v in history.values():
             assert isinstance(v, History)
         assert set(history.keys()) == {"stride", "transition", "self"}
@@ -544,6 +562,75 @@ class TestRothSegmentationHmm:
 
         assert hash_model_config == custom_hash(instance.model_config)
         assert hash_model != custom_hash(instance.model)
+
+    def test_pretrained_model_is_migrated_to_hmm_state(self) -> None:
+        with pytest.warns(UserWarning, match="migrated to the new HMMState representation"):
+            model = PreTrainedRothSegmentationModel()
+
+        assert isinstance(model.model, HMMState)
+        assert model.model.trained_with.backend_id == "pomegranate-legacy-migrated"
+        assert model.model.trained_with.backend_version is not None
+        assert len(model.model.submodels) == 2
+        assert isinstance(model.backend, PomegranateHmmBackend)
+
+    def test_pretrained_model_roundtrip_matches_legacy_hidden_states(self, healthy_example_imu_data) -> None:
+        raw_model = _load_raw_pretrained_pomegranate_model()
+        model = PreTrainedRothSegmentationModel()
+        runtime_model = hmm_state_to_pomegranate_model(model.model)
+        data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+        feature_data, _ = model._transform([data], None, sampling_rate_hz=100)
+        feature_data = feature_data[0]
+
+        raw_sequence = predict(raw_model, feature_data, expected_columns=model.data_columns, algorithm=model.algo_predict)
+        roundtrip_sequence = predict(
+            runtime_model,
+            feature_data,
+            expected_columns=model.data_columns,
+            algorithm=model.algo_predict,
+        )
+
+        assert_array_equal(raw_sequence, roundtrip_sequence)
+
+    def test_trained_model_roundtrip_matches_original_hidden_states(self) -> None:
+        data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        region_list_sequence = [
+            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))
+        ]
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+        )
+        captured_model = {}
+        original_converter = backend_module.pomegranate_model_to_hmm_state
+
+        def _capture_and_convert(model, *args, **kwargs):
+            captured_model["raw_model"] = model
+            return original_converter(model, *args, **kwargs)
+
+        with patch.object(backend_module, "pomegranate_model_to_hmm_state", side_effect=_capture_and_convert):
+            instance.self_optimize(data_sequence, region_list_sequence, sampling_rate_hz=100)
+
+        runtime_model = hmm_state_to_pomegranate_model(instance.model)
+        feature_data, _ = instance._transform(data_sequence, None, sampling_rate_hz=100)
+        feature_data = feature_data[0]
+
+        raw_sequence = predict(
+            captured_model["raw_model"],
+            feature_data,
+            expected_columns=instance.data_columns,
+            algorithm=instance.algo_predict,
+        )
+        roundtrip_sequence = predict(
+            runtime_model,
+            feature_data,
+            expected_columns=instance.data_columns,
+            algorithm=instance.algo_predict,
+        )
+
+        assert_array_equal(raw_sequence, roundtrip_sequence)
+        assert instance.model.trained_with.backend_id == "pomegranate-legacy"
+        assert instance.model.trained_with.backend_version is not None
 
 
 class TestHmmStrideSegmentation:
