@@ -17,7 +17,6 @@ from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import (
     SingleSensorData,
     SingleSensorRegionsOfInterestList,
-    SingleSensorStrideList,
 )
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
@@ -45,15 +44,39 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
 )
 
 
-def create_fully_labeled_gait_sequences(
+def create_fully_labeled_hidden_state_sequences(
     data_train_sequence: Sequence[pd.DataFrame],
     region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
     module_models: dict[str, SimpleHmm],
-    module_offsets: dict[str, int],
+    state_offsets: dict[str, int],
     transition_model_name: str,
     algo_predict: Literal["viterbi", "map"],
 ):
-    """Create fully labeled gait sequences from typed regions and trained submodels."""
+    """Create fully labeled hidden-state sequences from typed regions and trained submodels.
+
+    Parameters
+    ----------
+    data_train_sequence
+        Sequence of feature-space datasets.
+    region_list_sequence
+        Sequence of typed region lists with `start`, `end`, and `type`.
+        `type` values are expected to refer to the configured explicit module names.
+        Regions covered by no explicit module are treated as belonging to the implicit transition module.
+    module_models
+        Trained per-module models keyed by module name.
+    state_offsets
+        State-index offsets of each module in the combined final model.
+    transition_model_name
+        Name of the module that models the implicit transition regions.
+    algo_predict
+        Prediction algorithm used to create state labels from the trained submodels.
+
+    Returns
+    -------
+    list of np.ndarray
+        Fully labeled hidden-state sequences aligned with `data_train_sequence`.
+
+    """
     labels_train_sequence = []
 
     transition_model = module_models[transition_model_name]
@@ -76,7 +99,7 @@ def create_fully_labeled_gait_sequences(
             try:
                 labels_train[start:end] = (
                     region_model.predict_hidden_state_sequence(region_data_train, algorithm=algo_predict)
-                    + module_offsets[region_type]
+                    + state_offsets[region_type]
                 )
             except _DataToShortError:
                 continue
@@ -97,6 +120,67 @@ def _create_simple_hmm_from_config(config: HmmSubModelConfig) -> SimpleHmm:
         verbose=config.verbose,
         n_jobs=config.n_jobs,
         name=config.name,
+    )
+
+
+def _get_training_sequences_for_module(
+    module_config: HmmSubModelConfig,
+    model_config: CompositeHmmConfig,
+    data_sequence_feature_space: list[pd.DataFrame],
+    region_list_feature_space: list[SingleSensorRegionsOfInterestList],
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    module_name = module_config.name
+    if module_name == model_config.transition_model_name:
+        train_sequence, init_state_labels = get_train_data_sequences_transitions(
+            data_sequence_feature_space, region_list_feature_space, module_config.n_states
+        )
+        if len(train_sequence) == 0:
+            raise ValueError(
+                "The configured transition module did not receive any trainable data. "
+                "Either no implicit transition regions were found or all transition regions became too short after "
+                "feature transformation."
+            )
+        return train_sequence, init_state_labels
+
+    train_sequence, init_state_labels = get_train_data_sequences_regions(
+        data_sequence_feature_space,
+        region_list_feature_space,
+        region_type=module_name,
+        n_states=module_config.n_states,
+    )
+    if len(train_sequence) == 0:
+        raise ValueError(
+            f"The configured submodule `{module_name}` did not receive any trainable regions. "
+            "Ensure that the region lists contain this type and that the regions remain long enough after feature "
+            "transformation."
+        )
+    return train_sequence, init_state_labels
+
+
+def _collect_trained_module_distributions(
+    modules: tuple[HmmSubModelConfig, ...], trained_models: dict[str, SimpleHmm]
+) -> list[Any]:
+    distributions = []
+    for module in modules:
+        distributions.extend(get_model_distributions(trained_models[module.name].model))
+    return distributions
+
+
+def _predict_labeled_training_sequences(
+    data_sequence_feature_space: list[pd.DataFrame],
+    region_list_feature_space: list[SingleSensorRegionsOfInterestList],
+    trained_models: dict[str, SimpleHmm],
+    module_offsets: dict[str, int],
+    transition_model_name: str,
+    algo_predict: Literal["viterbi", "map"],
+) -> list[np.ndarray]:
+    return create_fully_labeled_hidden_state_sequences(
+        data_sequence_feature_space,
+        region_list_feature_space,
+        trained_models,
+        module_offsets,
+        transition_model_name,
+        algo_predict,
     )
 
 
@@ -217,10 +301,11 @@ class BaseSegmentationHmm(_BaseSerializable):
 class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
     """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
-    This model differentiates between strides and transitions.
-    Both data sections are modeled by individual HMMs and are trained separately.
-    A final model is created by combining the transition matrices of the two models and allowing for transitions between
-    these higher level states at the start or end of a stride.
+    This model uses individually trained HMM submodules that are combined into one final segmentation HMM.
+    One submodule is reserved for the implicit transition regions, while all other submodules are trained on explicit
+    typed regions.
+    A final model is created by combining the transition matrices of the trained submodules and allowing transitions
+    between the higher-level states where they occur in the labeled data.
 
     Parameters
     ----------
@@ -328,17 +413,20 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     def _from_json_dict(cls, json_dict: dict) -> Self:
         params = json_dict["params"].copy()
         if "model_config" not in params and {"stride_model", "transition_model"} <= set(params):
+            # TODO: Remove this compatibility shim once legacy serialized Roth models have been migrated.
             stride_model = params.pop("stride_model")
             transition_model = params.pop("transition_model")
-            stride_params = stride_model.get_params(deep=False) if isinstance(stride_model, SimpleHmm) else stride_model["params"]
+            stride_params = (
+                stride_model.get_params(deep=False) if isinstance(stride_model, SimpleHmm) else stride_model["params"]
+            )
             transition_params = (
                 transition_model.get_params(deep=False)
                 if isinstance(transition_model, SimpleHmm)
                 else transition_model["params"]
             )
             params["model_config"] = CompositeHmmConfig(
-                modules={
-                    "transition": HmmSubModelConfig(
+                modules=(
+                    HmmSubModelConfig(
                         name="transition",
                         role="transition",
                         n_states=transition_params["n_states"],
@@ -350,7 +438,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                         verbose=transition_params.get("verbose", True),
                         n_jobs=transition_params.get("n_jobs", 1),
                     ),
-                    "stride": HmmSubModelConfig(
+                    HmmSubModelConfig(
                         name="stride",
                         role="stride",
                         n_states=stride_params["n_states"],
@@ -362,7 +450,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
                         verbose=stride_params.get("verbose", True),
                         n_jobs=stride_params.get("n_jobs", 1),
                     ),
-                }
+                )
             )
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         return cls(**input_data)
@@ -399,15 +487,15 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     @property
     def n_states(self) -> int:
         """Return the number of states of the final model."""
-        return sum(module.n_states for module in self.model_config.modules.values())
+        return sum(module.n_states for module in self.model_config.modules)
 
     @property
-    def module_offsets(self) -> dict[str, int]:
+    def _module_offsets(self) -> dict[str, int]:
         """Return the state offsets of each configured submodule in the combined model."""
         offsets = {}
         current_offset = 0
-        for name, module in self.model_config.modules.items():
-            offsets[name] = current_offset
+        for module in self.model_config.modules:
+            offsets[module.name] = current_offset
             current_offset += module.n_states
         return offsets
 
@@ -415,17 +503,17 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     def stride_states(self) -> list[int]:
         """Return the ids of all stride-like states."""
         stride_states = []
-        for name, module in self.model_config.modules.items():
+        for module in self.model_config.modules:
             if module.role != "stride":
                 continue
-            stride_states.extend((np.arange(module.n_states) + self.module_offsets[name]).tolist())
+            stride_states.extend((np.arange(module.n_states) + self._module_offsets[module.name]).tolist())
         return stride_states
 
     @property
     def transition_states(self) -> list[int]:
         """Return the ids of the transition states."""
         transition_module = self.model_config.transition_model
-        transition_offset = self.module_offsets[self.model_config.transition_model_name]
+        transition_offset = self._module_offsets[self.model_config.transition_model_name]
         return (np.arange(transition_module.n_states) + transition_offset).tolist()
 
     def predict(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
@@ -506,19 +594,23 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
-        This will first apply the feature transformation to the given data and then train the HMM model in three steps:
+        This will first apply the feature transformation to the given data and then train the HMM model in three
+        stages:
 
-        1. Train the stride model on the stride data
-        2. Train the transition model on the transition data
-        3. Assemble the final model by combining the stride and transition model and train it for a couple further
-           iterations
+        1. Train each explicit typed-region submodule on its corresponding training regions.
+        2. Train the implicit transition module on all uncovered regions between explicit regions.
+        3. Assemble the final model by combining all trained submodules and train it for a couple further iterations.
 
         Parameters
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
         region_list_sequence
-            Sequence of typed region lists with `start`, `end`, and `type`.
+            Sequence of typed region lists. Each list must have `start`, `end`, and `type` columns and a valid ROI/GS
+            id column or index (`roi_id`/`gs_id`).
+            `type` must only contain names of explicit modules configured in `model_config`.
+            Regions must not overlap. Samples not covered by an explicit region are treated as the implicit transition
+            region.
             The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
@@ -541,15 +633,19 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
-        The dictionary returned as second parameter contains the training history for each of the three models (
-        stride-model, transition-model, and the combined final model "self").
+        The dictionary returned as second parameter contains the training history for each trained submodule and the
+        combined final model `"self"`.
 
         Parameters
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
         region_list_sequence
-            Sequence of typed region lists with `start`, `end`, and `type`.
+            Sequence of typed region lists. Each list must have `start`, `end`, and `type` columns and a valid ROI/GS
+            id column or index (`roi_id`/`gs_id`).
+            `type` must only contain names of explicit modules configured in `model_config`.
+            Regions must not overlap. Samples not covered by an explicit region are treated as the implicit transition
+            region.
             The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
@@ -559,7 +655,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         self
             The trained model instance.
         history
-            Dictionary containing the training history for each of the three models
+            Dictionary containing the training history for each trained submodule and the final combined model.
 
         """
         if self.initialization not in ["labels", "fully-connected"]:
@@ -582,18 +678,14 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         trained_models: dict[str, SimpleHmm] = {}
         histories: dict[str, History] = {}
-        for module_name, module_config in self.model_config.modules.items():
-            if module_name == self.model_config.transition_model_name:
-                train_sequence, init_state_labels = get_train_data_sequences_transitions(
-                    data_sequence_feature_space, region_list_feature_space, module_config.n_states
-                )
-            else:
-                train_sequence, init_state_labels = get_train_data_sequences_regions(
-                    data_sequence_feature_space,
-                    region_list_feature_space,
-                    region_type=module_name,
-                    n_states=module_config.n_states,
-                )
+        for module_config in self.model_config.modules:
+            module_name = module_config.name
+            train_sequence, init_state_labels = _get_training_sequences_for_module(
+                module_config,
+                self.model_config,
+                data_sequence_feature_space,
+                region_list_feature_space,
+            )
 
             trained_model, history = _create_simple_hmm_from_config(module_config).self_optimize_with_info(
                 train_sequence, init_state_labels
@@ -604,13 +696,11 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         # For model combination actually only the transition probabilities will be updated, while keeping the already
         # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
         # number of transitions will be counted.
-        distributions = []
-        for module_name in self.model_config.modules:
-            distributions.extend(get_model_distributions(trained_models[module_name].model))
+        distributions = _collect_trained_module_distributions(self.model_config.modules, trained_models)
 
         # predict hidden state labels for complete walking bouts
-        module_offsets = self.module_offsets
-        labels_train_sequence = create_fully_labeled_gait_sequences(
+        module_offsets = self._module_offsets
+        labels_train_sequence = _predict_labeled_training_sequences(
             data_sequence_feature_space,
             region_list_feature_space,
             trained_models,
@@ -634,7 +724,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         elif self.initialization == "labels":
             trans_mat = np.zeros((self.n_states, self.n_states))
-            for module_name, module_config in self.model_config.modules.items():
+            for module_config in self.model_config.modules:
+                module_name = module_config.name
                 module_transition_matrix = trained_models[module_name].model.dense_transition_matrix()[:-2, :-2]
                 offset = module_offsets[module_name]
                 trans_mat[

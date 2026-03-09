@@ -1,13 +1,12 @@
 from unittest.mock import patch
 
-import pytest
-
-pytest.importorskip("pomegranate")
-
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
+
+pytest.importorskip("pomegranate")
+
 from pomegranate import GeneralMixtureModel
 from pomegranate.hmm import History
 from tpcp._hash import custom_hash
@@ -20,6 +19,7 @@ from gaitmap.utils.datatype_helper import (
     is_multi_sensor_stride_list,
     is_single_sensor_stride_list,
 )
+from gaitmap.utils.exceptions import ValidationError
 from gaitmap_mad.stride_segmentation.hmm import (
     CompositeHmmConfig,
     HmmStrideSegmentation,
@@ -38,8 +38,8 @@ np.random.seed(1)
 
 def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, transition_n_gmm_components=3):
     return CompositeHmmConfig(
-        modules={
-            "transition": HmmSubModelConfig(
+        modules=(
+            HmmSubModelConfig(
                 name="transition",
                 role="transition",
                 n_states=5,
@@ -49,7 +49,7 @@ def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, 
                 max_iterations=10,
                 architecture="left-right-loose",
             ),
-            "stride": HmmSubModelConfig(
+            HmmSubModelConfig(
                 name="stride",
                 role="stride",
                 n_states=stride_n_states,
@@ -59,7 +59,7 @@ def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, 
                 max_iterations=10,
                 architecture="left-right-strict",
             ),
-        }
+        )
     )
 
 
@@ -377,9 +377,10 @@ class TestRothSegmentationHmm:
         assert "No trained model for prediction available!" in str(e.value)
 
     def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [
-            _stride_list_to_region_list(pd.DataFrame({"start": [0], "end": [100]}))
-        ]
+        data, labels = (
+            [pd.DataFrame(np.random.rand(100, 3))],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0], "end": [100]}))],
+        )
 
         with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
             instance = RothSegmentationHmm()
@@ -393,7 +394,9 @@ class TestRothSegmentationHmm:
             [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
             [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))],
         )
-        instance = RothSegmentationHmm(model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)).set_params(
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
         )
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
@@ -407,7 +410,9 @@ class TestRothSegmentationHmm:
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
             [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]}))],
         )
-        instance = RothSegmentationHmm(model_config=_create_roth_model_config(stride_n_states=5, stride_n_gmm_components=3)).set_params(
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(stride_n_states=5, stride_n_gmm_components=3)
+        ).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
         )
         with pytest.warns(UserWarning) as w:
@@ -415,10 +420,64 @@ class TestRothSegmentationHmm:
 
         assert any("regions of type `stride`" in str(warning.message) for warning in w)
 
+    def test_unknown_region_type_raises_error(self) -> None:
+        data = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        labels = [
+            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}), "stair_stride")
+        ]
+        instance = RothSegmentationHmm(model_config=_create_roth_model_config()).set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+        )
+
+        with pytest.raises(ValidationError) as exc:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "unknown region types" in str(exc.value)
+
+    def test_missing_configured_module_data_raises_error(self) -> None:
+        data = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        labels = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}), "stride")]
+        config = CompositeHmmConfig(
+            modules=(
+                HmmSubModelConfig(
+                    name="transition",
+                    role="transition",
+                    n_states=5,
+                    n_gmm_components=3,
+                    architecture="left-right-loose",
+                ),
+                HmmSubModelConfig(
+                    name="stride",
+                    role="stride",
+                    n_states=3,
+                    n_gmm_components=3,
+                ),
+                HmmSubModelConfig(
+                    name="stair_stride",
+                    role="stride",
+                    n_states=3,
+                    n_gmm_components=3,
+                ),
+            )
+        )
+        instance = RothSegmentationHmm(model_config=config).set_params(
+            feature_transform__sampling_rate_feature_space_hz=100,
+        )
+
+        with pytest.raises(ValueError) as exc:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "stair_stride" in str(exc.value)
+        assert "did not receive any trainable regions" in str(exc.value)
+
     def test_short_transitions_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
         instance = RothSegmentationHmm(
             model_config=_create_roth_model_config(
@@ -440,7 +499,11 @@ class TestRothSegmentationHmm:
         # So we use it to test, that the error is raised.
         data, labels = (
             [pd.DataFrame(np.random.rand(200, 6), columns=BF_COLS)],
-            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
 
         instance = RothSegmentationHmm(
@@ -461,7 +524,11 @@ class TestRothSegmentationHmm:
         """Training should modify the final fused model while leaving the config untouched."""
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
         instance = RothSegmentationHmm(
             model_config=_create_roth_model_config(

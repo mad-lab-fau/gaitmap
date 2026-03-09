@@ -5,7 +5,7 @@ SegmentationModel Training
 ==========================
 
 This example illustrates how a Hidden Markov Model (HMM) implemented by the
-:class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm` can be trained from IMU data and presegmented stride lists.
+:class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm` can be trained from IMU data and typed region lists.
 The used implementation is based on the work of Roth et al [1]_
 
 .. [1] Roth, N., Küderle, A., Ullrich, M., Gladow, T., Marxreiter F., Klucken, J., Eskofier, B. & Kluge F. (2021).
@@ -87,8 +87,8 @@ feature_transform = RothHmmFeatureTransformer(
 from gaitmap.stride_segmentation.hmm import CompositeHmmConfig, HmmSubModelConfig
 
 model_config = CompositeHmmConfig(
-    modules={
-        "transition": HmmSubModelConfig(
+    modules=(
+        HmmSubModelConfig(
             name="transition",
             role="transition",
             n_states=5,
@@ -99,7 +99,7 @@ model_config = CompositeHmmConfig(
             architecture="left-right-loose",
             verbose=True,
         ),
-        "stride": HmmSubModelConfig(
+        HmmSubModelConfig(
             name="stride",
             role="stride",
             n_states=20,
@@ -110,7 +110,7 @@ model_config = CompositeHmmConfig(
             architecture="left-right-strict",
             verbose=True,
         ),
-    }
+    )
 )
 
 # %%
@@ -143,12 +143,18 @@ segmentation_model = RothSegmentationHmm(
 # convention!).
 # The main input format for the training process are gait sequences which include transitions as well as valid strides.
 # To train on multiple sequences, we can just feed a list of gaitsequences into the model for training.
-# For each gait sequence we also need to have a valid stride list. In this example we handle the data from the left and
-# right foot as separate gait sequences and add them to a simple list.
-# We have to do the same for the stride lists.
+# For each gait sequence we also need typed training regions with `start`, `end`, and `type`.
+# In this example the stride regions are all of type `"stride"` and transitions are defined implicitly as everything
+# not covered by a region.
+# We handle the data from the left and right foot as separate gait sequences and add them to a simple list.
 
 data_train_sequence = [bf_data["left_sensor"], bf_data["right_sensor"]]
-stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
+region_list_sequence = []
+for sensor in ["left_sensor", "right_sensor"]:
+    region_list = stride_list[sensor][["start", "end"]].copy()
+    region_list.insert(0, "roi_id", np.arange(len(region_list)))
+    region_list["type"] = "stride"
+    region_list_sequence.append(region_list.set_index("roi_id"))
 
 # %%
 # Training
@@ -161,7 +167,7 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 # finally combine them to a flatted segmentation model.
 
 segmentation_model = segmentation_model.self_optimize(
-    data_train_sequence, stride_list_sequence, sampling_rate_hz=sampling_rate_hz
+    data_train_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz
 )
 
 # %%

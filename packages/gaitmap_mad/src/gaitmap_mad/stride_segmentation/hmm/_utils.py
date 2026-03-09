@@ -528,13 +528,11 @@ def validate_trainable_region_list(
                 f"Expected only the following explicit region types: {list(explicit_region_types)}"
             )
         normalized_region_list = normalized_region_list.sort_values(["start", "end"]).reset_index(drop=True)
-        previous_end = None
-        for start, end in normalized_region_list[["start", "end"]].to_numpy():
-            if end <= start:
-                raise ValidationError("All regions must satisfy `end > start`.")
-            if previous_end is not None and start < previous_end:
-                raise ValidationError("The region list must not contain overlapping regions.")
-            previous_end = end
+        regions = normalized_region_list[["start", "end"]].to_numpy()
+        if np.any(regions[:, 1] <= regions[:, 0]):
+            raise ValidationError("All regions must satisfy `end > start`.")
+        if len(regions) > 1 and np.any(regions[1:, 0] < regions[:-1, 1]):
+            raise ValidationError("The region list must not contain overlapping regions.")
     except ValidationError as e:
         raise ValidationError(
             "The passed object does not seem to be a valid typed region list for HMM training. "
@@ -577,7 +575,8 @@ def get_train_data_sequences_transitions(
 
     for data, region_list in zip(data_train_sequence, region_list_sequence):
         # for each transition, get data and create some naive labels for initialization
-        for start, end in convert_region_list_to_transition_list(region_list, data.shape[0])[["start", "end"]].to_numpy():
+        transition_regions = convert_region_list_to_transition_list(region_list, data.shape[0])
+        for start, end in transition_regions[["start", "end"]].to_numpy():
             # append extracted sequences and corresponding label set to results list
             try:
                 labels = create_equidistant_label_sequence(end - start, n_states).astype("int64")

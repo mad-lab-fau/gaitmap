@@ -1,15 +1,16 @@
 """Configuration objects for composite HMM segmentation models."""
 
-from typing import Literal
+from typing import Union
 
 from tpcp import cf
+from typing_extensions import Literal
 
 from gaitmap.base import _BaseSerializable
 
 
-def _default_modules() -> dict[str, "HmmSubModelConfig"]:
-    return {
-        "transition": HmmSubModelConfig(
+def _default_modules() -> tuple["HmmSubModelConfig", ...]:
+    return (
+        HmmSubModelConfig(
             name="transition",
             role="transition",
             n_states=5,
@@ -19,7 +20,7 @@ def _default_modules() -> dict[str, "HmmSubModelConfig"]:
             stop_threshold=1e-9,
             max_iterations=10,
         ),
-        "stride": HmmSubModelConfig(
+        HmmSubModelConfig(
             name="stride",
             role="stride",
             n_states=20,
@@ -29,14 +30,14 @@ def _default_modules() -> dict[str, "HmmSubModelConfig"]:
             stop_threshold=1e-9,
             max_iterations=10,
         ),
-    }
+    )
 
 
 class HmmSubModelConfig(_BaseSerializable):
     """Configuration of a single trainable HMM submodule."""
 
     name: str
-    role: Literal["transition", "stride", "other"]
+    role: Union[Literal["transition", "stride"], str]
     n_states: int
     n_gmm_components: int
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
@@ -49,7 +50,7 @@ class HmmSubModelConfig(_BaseSerializable):
     def __init__(
         self,
         name: str,
-        role: Literal["transition", "stride", "other"],
+        role: Union[Literal["transition", "stride"], str],
         n_states: int,
         n_gmm_components: int,
         *,
@@ -71,21 +72,16 @@ class HmmSubModelConfig(_BaseSerializable):
         self.verbose = verbose
         self.n_jobs = n_jobs
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, HmmSubModelConfig):
-            return False
-        return self.get_params(deep=False) == other.get_params(deep=False)
-
 
 class CompositeHmmConfig(_BaseSerializable):
     """Configuration of a composite HMM with named submodules."""
 
-    modules: dict[str, HmmSubModelConfig]
+    modules: tuple[HmmSubModelConfig, ...]
     transition_model_name: str
 
     def __init__(
         self,
-        modules: dict[str, HmmSubModelConfig] = cf(_default_modules()),
+        modules: tuple[HmmSubModelConfig, ...] = cf(_default_modules()),
         *,
         transition_model_name: str = "transition",
     ) -> None:
@@ -93,16 +89,45 @@ class CompositeHmmConfig(_BaseSerializable):
         self.transition_model_name = transition_model_name
 
     @property
+    def _module_configs_by_name(self) -> dict[str, HmmSubModelConfig]:
+        modules_by_name = {module.name: module for module in self.modules}
+        if len(modules_by_name) != len(self.modules):
+            raise ValueError("All configured HMM submodule names must be unique.")
+        return modules_by_name
+
+    def get_module(self, module_name: str) -> HmmSubModelConfig:
+        """Return the config of a single named submodule."""
+        try:
+            return self._module_configs_by_name[module_name]
+        except KeyError as e:
+            raise ValueError(f"No HMM submodule with the name `{module_name}` exists in the model config.") from e
+
+    @property
     def explicit_region_model_names(self) -> tuple[str, ...]:
-        """Return all module names except the implicit transition module."""
-        return tuple(name for name in self.modules if name != self.transition_model_name)
+        """Return all explicit region model names except the implicit transition module."""
+        return tuple(module.name for module in self.modules if module.name != self.transition_model_name)
 
     @property
     def transition_model(self) -> HmmSubModelConfig:
         """Return the configuration of the implicit transition module."""
-        return self.modules[self.transition_model_name]
+        transition_model = self.get_module(self.transition_model_name)
+        if transition_model.role != "transition":
+            raise ValueError(
+                "The configured transition model is expected to have the role `transition`, "
+                f"but `{transition_model.name}` has the role `{transition_model.role}`."
+            )
+        return transition_model
 
     @property
     def stride_model_names(self) -> tuple[str, ...]:
-        """Return module names that should be interpreted as stride-like states."""
-        return tuple(name for name, module in self.modules.items() if module.role == "stride")
+        """Return the names of all modules that should be interpreted as stride-like states."""
+        return tuple(module.name for module in self.modules if module.role == "stride")
+
+    @property
+    def custom_model_names(self) -> tuple[str, ...]:
+        """Return the names of all modules with custom non-built-in roles."""
+        return tuple(module.name for module in self.modules if module.role not in {"transition", "stride"})
+
+    def get_module_role(self, module_name: str) -> str:
+        """Return the configured role of a named module."""
+        return self.get_module(module_name).role
