@@ -84,28 +84,33 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
-from gaitmap.stride_segmentation.hmm import SimpleHmm
+from gaitmap.stride_segmentation.hmm import CompositeHmmConfig, HmmSubModelConfig
 
-stride_model = SimpleHmm(
-    n_states=20,
-    n_gmm_components=6,
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=5,
-    architecture="left-right-strict",
-    verbose=True,
-    name="stride_model",
-)
-
-transition_model = SimpleHmm(
-    n_states=5,
-    n_gmm_components=3,
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=5,
-    architecture="left-right-loose",
-    verbose=True,
-    name="transition_model",
+model_config = CompositeHmmConfig(
+    modules={
+        "transition": HmmSubModelConfig(
+            name="transition",
+            role="transition",
+            n_states=5,
+            n_gmm_components=3,
+            algo_train="baum-welch",
+            stop_threshold=1e-9,
+            max_iterations=5,
+            architecture="left-right-loose",
+            verbose=True,
+        ),
+        "stride": HmmSubModelConfig(
+            name="stride",
+            role="stride",
+            n_states=20,
+            n_gmm_components=6,
+            algo_train="baum-welch",
+            stop_threshold=1e-9,
+            max_iterations=5,
+            architecture="left-right-strict",
+            verbose=True,
+        ),
+    }
 )
 
 # %%
@@ -119,8 +124,7 @@ transition_model = SimpleHmm(
 from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
-    stride_model=stride_model,
-    transition_model=transition_model,
+    model_config=model_config,
     feature_transform=feature_transform,
     algo_predict="viterbi",
     algo_train="baum-welch",

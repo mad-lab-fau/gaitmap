@@ -21,7 +21,9 @@ from gaitmap.utils.datatype_helper import (
     is_single_sensor_stride_list,
 )
 from gaitmap_mad.stride_segmentation.hmm import (
+    CompositeHmmConfig,
     HmmStrideSegmentation,
+    HmmSubModelConfig,
     PreTrainedRothSegmentationModel,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
@@ -32,6 +34,40 @@ from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
 np.random.seed(1)
+
+
+def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, transition_n_gmm_components=3):
+    return CompositeHmmConfig(
+        modules={
+            "transition": HmmSubModelConfig(
+                name="transition",
+                role="transition",
+                n_states=5,
+                n_gmm_components=transition_n_gmm_components,
+                algo_train="baum-welch",
+                stop_threshold=1e-9,
+                max_iterations=10,
+                architecture="left-right-loose",
+            ),
+            "stride": HmmSubModelConfig(
+                name="stride",
+                role="stride",
+                n_states=stride_n_states,
+                n_gmm_components=stride_n_gmm_components,
+                algo_train="baum-welch",
+                stop_threshold=1e-9,
+                max_iterations=10,
+                architecture="left-right-strict",
+            ),
+        }
+    )
+
+
+def _stride_list_to_region_list(stride_list: pd.DataFrame, region_type: str = "stride") -> pd.DataFrame:
+    region_list = stride_list[["start", "end"]].copy()
+    region_list.insert(0, "roi_id", np.arange(len(region_list)))
+    region_list["type"] = region_type
+    return region_list.set_index("roi_id")
 
 
 class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
@@ -341,7 +377,9 @@ class TestRothSegmentationHmm:
         assert "No trained model for prediction available!" in str(e.value)
 
     def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.DataFrame({"start": [0], "end": [100]})]
+        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [
+            _stride_list_to_region_list(pd.DataFrame({"start": [0], "end": [100]}))
+        ]
 
         with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
             instance = RothSegmentationHmm()
@@ -353,50 +391,46 @@ class TestRothSegmentationHmm:
     def test_self_optimize_with_info_returns_history(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))],
         )
-        instance = RothSegmentationHmm().set_params(
+        instance = RothSegmentationHmm(model_config=_create_roth_model_config(stride_n_states=3, stride_n_gmm_components=3)).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=3,
-            stride_model__n_gmm_components=3,
         )
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
         assert instance is trained_instance
         for v in history.values():
             assert isinstance(v, History)
-        assert set(history.keys()) == {"stride_model", "transition_model", "self"}
+        assert set(history.keys()) == {"stride", "transition", "self"}
 
     def test_short_strides_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]}))],
         )
-        instance = RothSegmentationHmm().set_params(
+        instance = RothSegmentationHmm(model_config=_create_roth_model_config(stride_n_states=5, stride_n_gmm_components=3)).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=5,
-            stride_model__n_gmm_components=3,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert "1 strides (out of 4)" in str(w[0].message)
+        assert any("regions of type `stride`" in str(warning.message) for warning in w)
 
     def test_short_transitions_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
         )
-        instance = RothSegmentationHmm().set_params(
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        # The first warning is the warning about negative improvements during training
-        assert "1 transitions (out of 3)" in str(w[1].message)
+        assert any("1 transitions (out of 3)" in str(warning.message) for warning in w)
 
     def test_strange_inputs_trigger_nan_error(self) -> None:
         # XXXX: We test the skip at the moment because it is not deteministic...
@@ -406,14 +440,15 @@ class TestRothSegmentationHmm:
         # So we use it to test, that the error is raised.
         data, labels = (
             [pd.DataFrame(np.random.rand(200, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
         )
 
-        instance = RothSegmentationHmm().set_params(
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
         )
 
         with pytest.warns(UserWarning) as w, pytest.raises(ValueError) as e:
@@ -422,27 +457,25 @@ class TestRothSegmentationHmm:
         assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
 
-    def test_training_updates_all_models(self) -> None:
-        """Training should modify the stride, the transition model and the model itself."""
+    def test_training_updates_final_model(self) -> None:
+        """Training should modify the final fused model while leaving the config untouched."""
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]}))],
         )
-        instance = RothSegmentationHmm().set_params(
+        instance = RothSegmentationHmm(
+            model_config=_create_roth_model_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
             feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
         )
-        # We can not properly test this, so we get the hash before and after and compare them.
-        hash_stride_model = custom_hash(instance.stride_model)
-        hash_transition_model = custom_hash(instance.transition_model)
+        hash_model_config = custom_hash(instance.model_config)
         hash_model = custom_hash(instance.model)
 
         instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert hash_stride_model != custom_hash(instance.stride_model)
-        assert hash_transition_model != custom_hash(instance.transition_model)
+        assert hash_model_config == custom_hash(instance.model_config)
         assert hash_model != custom_hash(instance.model)
 
 

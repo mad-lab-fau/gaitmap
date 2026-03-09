@@ -11,7 +11,13 @@ from pomegranate.hmm import History
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import (
+    SingleSensorData,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+    is_single_sensor_regions_of_interest_list,
+)
+from gaitmap.utils.exceptions import ValidationError
 
 
 def _add_transition(model, a, b, probability, pseudocount, group) -> None:
@@ -499,8 +505,64 @@ def convert_stride_list_to_transition_list(
     )
 
 
+def validate_trainable_region_list(
+    region_list: SingleSensorRegionsOfInterestList, explicit_region_types: tuple[str, ...]
+) -> SingleSensorRegionsOfInterestList:
+    """Validate and normalize a typed region list for HMM training.
+
+    The passed region list must be a valid ROI list with an additional `type` column.
+    The `type` values must map to the explicit region modules of the HMM config.
+    Regions must not overlap.
+    """
+    try:
+        is_single_sensor_regions_of_interest_list(region_list, region_type="any", raise_exception=True)
+        normalized_region_list = region_list.reset_index()
+        if "type" not in normalized_region_list.columns:
+            raise ValidationError("The region list is expected to have a `type` column.")
+        if normalized_region_list["type"].isna().any():
+            raise ValidationError("The `type` column of the region list is not allowed to contain missing values.")
+        invalid_types = sorted(set(normalized_region_list["type"]) - set(explicit_region_types))
+        if invalid_types:
+            raise ValidationError(
+                f"The region list contains unknown region types {invalid_types}. "
+                f"Expected only the following explicit region types: {list(explicit_region_types)}"
+            )
+        normalized_region_list = normalized_region_list.sort_values(["start", "end"]).reset_index(drop=True)
+        previous_end = None
+        for start, end in normalized_region_list[["start", "end"]].to_numpy():
+            if end <= start:
+                raise ValidationError("All regions must satisfy `end > start`.")
+            if previous_end is not None and start < previous_end:
+                raise ValidationError("The region list must not contain overlapping regions.")
+            previous_end = end
+    except ValidationError as e:
+        raise ValidationError(
+            "The passed object does not seem to be a valid typed region list for HMM training. "
+            f"The validation failed with the following error:\n\n{e!s}"
+        ) from e
+    return normalized_region_list
+
+
+def convert_region_list_to_transition_list(
+    region_list: SingleSensorRegionsOfInterestList, last_end: int
+) -> SingleSensorRegionsOfInterestList:
+    """Return the implicit transition regions, i.e. everything not covered by explicit regions."""
+    regions = region_list[["start", "end"]].sort_values(["start", "end"]).to_numpy()
+    transition_regions = []
+    current_start = 0
+    for start, end in regions:
+        if start > current_start:
+            transition_regions.append((current_start, start))
+        current_start = end
+    if current_start < last_end:
+        transition_regions.append((current_start, last_end))
+    return pd.DataFrame(transition_regions, columns=["start", "end"])
+
+
 def get_train_data_sequences_transitions(
-    data_train_sequence: list[SingleSensorData], stride_list_sequence: list[SingleSensorStrideList], n_states: int
+    data_train_sequence: list[SingleSensorData],
+    region_list_sequence: list[SingleSensorRegionsOfInterestList],
+    n_states: int,
 ) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Extract Transition Training set.
 
@@ -513,11 +575,9 @@ def get_train_data_sequences_transitions(
 
     n_too_short_transitions = 0
 
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
+    for data, region_list in zip(data_train_sequence, region_list_sequence):
         # for each transition, get data and create some naive labels for initialization
-        for start, end in convert_stride_list_to_transition_list(stride_list, data.shape[0])[
-            ["start", "end"]
-        ].to_numpy():
+        for start, end in convert_region_list_to_transition_list(region_list, data.shape[0])[["start", "end"]].to_numpy():
             # append extracted sequences and corresponding label set to results list
             try:
                 labels = create_equidistant_label_sequence(end - start, n_states).astype("int64")
@@ -531,7 +591,7 @@ def get_train_data_sequences_transitions(
         warnings.warn(
             f"{n_too_short_transitions} transitions (out of "
             f"{len(trans_labels_train_sequence) + n_too_short_transitions}) were ignored, because they were shorter "
-            "than the expected number of transition states ({n_states}). "
+            f"than the expected number of transition states ({n_states}). "
             "This warning can usually be ignored, if the number of remaining transitions is still large "
             "enough to train a model."
         )
@@ -539,40 +599,42 @@ def get_train_data_sequences_transitions(
     return trans_data_train_sequence, trans_labels_train_sequence
 
 
-def get_train_data_sequences_strides(
-    data_train_sequence: list[SingleSensorData], stride_list_sequence: list[SingleSensorStrideList], n_states: int
+def get_train_data_sequences_regions(
+    data_train_sequence: list[SingleSensorData],
+    region_list_sequence: list[SingleSensorRegionsOfInterestList],
+    region_type: str,
+    n_states: int,
 ) -> tuple[list[np.ndarray], list[np.ndarray]]:
-    """Extract Transition Training set.
+    """Extract training sequences for one explicit region type.
 
-    - data_train_sequence: list of datasets in feature space
-    - stride_list_sequence: list of gaitmap stride-lists
-    - n_states: number of labels.
+    The region list is expected to have `start`, `end`, and `type` columns.
     """
-    stride_data_train_sequence = []
-    stride_labels_train_sequence = []
+    region_data_train_sequence = []
+    region_labels_train_sequence = []
 
-    n_too_short_strides = 0
+    n_too_short_regions = 0
 
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
-        # extract strides directly from stride_list
-        for start, end in stride_list[["start", "end"]].to_numpy():
+    for data, region_list in zip(data_train_sequence, region_list_sequence):
+        matching_regions = region_list[region_list["type"] == region_type]
+        for start, end in matching_regions[["start", "end"]].to_numpy():
             try:
                 labels = create_equidistant_label_sequence(end - start, n_states).astype("int64")
             except ValueError:
-                n_too_short_strides += 1
+                n_too_short_regions += 1
                 continue
-            stride_labels_train_sequence.append(labels)
-            stride_data_train_sequence.append(data[start:end])
+            region_labels_train_sequence.append(labels)
+            region_data_train_sequence.append(data[start:end])
 
-    if n_too_short_strides > 0:
+    if n_too_short_regions > 0:
         warnings.warn(
-            f"{n_too_short_strides} strides (out of {len(stride_data_train_sequence) + n_too_short_strides}) "
-            f"were ignored, because they were shorter than the expected number of stride states ({n_states}). "
-            "This warning can usually be ignored, if the number of remaining strides is still large "
+            f"{n_too_short_regions} regions of type `{region_type}` "
+            f"(out of {len(region_data_train_sequence) + n_too_short_regions}) were ignored, because they were "
+            f"shorter than the expected number of hidden states ({n_states}). "
+            "This warning can usually be ignored, if the number of remaining regions is still large "
             "enough to train a model."
         )
 
-    return stride_data_train_sequence, stride_labels_train_sequence
+    return region_data_train_sequence, region_labels_train_sequence
 
 
 class _DataToShortError(ValueError):

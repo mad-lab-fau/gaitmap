@@ -3,6 +3,7 @@
 import multiprocessing
 import warnings
 
+from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
@@ -24,9 +25,11 @@ if multiprocessing.parent_process() is None:
     )
 
 __all__ = [
+    "CompositeHmmConfig",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
     "HmmStrideSegmentation",
+    "HmmSubModelConfig",
     "PreTrainedRothSegmentationModel",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",

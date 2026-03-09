@@ -7,13 +7,19 @@ from typing import Any, Literal, Optional
 import numpy as np
 import pandas as pd
 import pomegranate as pg
+import tpcp
 from pomegranate import HiddenMarkovModel as pgHMM
 from pomegranate.hmm import History
 from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
-from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
+from gaitmap.utils.datatype_helper import (
+    SingleSensorData,
+    SingleSensorRegionsOfInterestList,
+    SingleSensorStrideList,
+)
+from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
@@ -26,39 +32,35 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     _HackyClonableHMMFix,
     add_transition,
     check_history_for_training_failure,
-    convert_stride_list_to_transition_list,
+    convert_region_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
     fix_model_names,
     get_model_distributions,
-    get_train_data_sequences_strides,
+    get_train_data_sequences_regions,
     get_train_data_sequences_transitions,
     labels_to_strings,
     predict,
+    validate_trainable_region_list,
 )
 
 
 def create_fully_labeled_gait_sequences(
-    data_train_sequence, stride_list_sequence, transition_model, stride_model, algo_predict
+    data_train_sequence: Sequence[pd.DataFrame],
+    region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
+    module_models: dict[str, SimpleHmm],
+    module_offsets: dict[str, int],
+    transition_model_name: str,
+    algo_predict: Literal["viterbi", "map"],
 ):
-    """Create fully labeled gait sequence.
-
-    To find the "actual" hidden-state labels for "labeled-training" with the given training data set, we will again
-    split everything into strides and transitions based on our initial stride borders and then predict the labels with
-    the respective already learned models.
-
-    To rephrase it again: We want to create a fully labeled dataset with already optimal hidden-state labels, but as
-    these lables are hidden, we need to predict them with our already trained models...
-    """
+    """Create fully labeled gait sequences from typed regions and trained submodels."""
     labels_train_sequence = []
 
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
+    transition_model = module_models[transition_model_name]
+    for data, region_list in zip(data_train_sequence, region_list_sequence):
         labels_train = np.zeros(len(data))
 
-        # predict hidden-state sequence for each transition using "transition model"
-        transition_start_end_list = convert_stride_list_to_transition_list(stride_list, data.shape[0])
-
-        # for each transition, get data and create some naive labels for initialization
+        transition_start_end_list = convert_region_list_to_transition_list(region_list, data.shape[0])
         for start, end in transition_start_end_list[["start", "end"]].to_numpy():
             transition_data_train = data[start:end]
             try:
@@ -66,25 +68,55 @@ def create_fully_labeled_gait_sequences(
                     transition_data_train, algorithm=algo_predict
                 )
             except _DataToShortError:
-                # This happens if a transition is too short to be predicted by the transition model
                 continue
 
-        # predict hidden-state sequence for each stride using "stride model"
-        for start, end in stride_list[["start", "end"]].to_numpy():
-            stride_data_train = data[start:end]
+        for start, end, region_type in region_list[["start", "end", "type"]].to_numpy():
+            region_model = module_models[region_type]
+            region_data_train = data[start:end]
             try:
                 labels_train[start:end] = (
-                    stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                    + transition_model.n_states
+                    region_model.predict_hidden_state_sequence(region_data_train, algorithm=algo_predict)
+                    + module_offsets[region_type]
                 )
             except _DataToShortError:
-                # This happens if a stride is too short to be predicted by the stride model
                 continue
 
-        # append cleaned sequences to train_sequence
         labels_train_sequence.append(labels_train)
 
     return labels_train_sequence
+
+
+def _create_simple_hmm_from_config(config: HmmSubModelConfig) -> SimpleHmm:
+    return SimpleHmm(
+        n_states=config.n_states,
+        n_gmm_components=config.n_gmm_components,
+        architecture=config.architecture,
+        algo_train=config.algo_train,
+        stop_threshold=config.stop_threshold,
+        max_iterations=config.max_iterations,
+        verbose=config.verbose,
+        n_jobs=config.n_jobs,
+        name=config.name,
+    )
+
+
+def _coerce_region_list_input(
+    region_list: pd.DataFrame, explicit_region_model_names: tuple[str, ...]
+) -> SingleSensorRegionsOfInterestList:
+    """Normalize legacy stride-list input to the new typed-region format when possible."""
+    if "type" in region_list.reset_index().columns:
+        return region_list
+    if len(explicit_region_model_names) != 1:
+        raise ValueError(
+            "The provided training regions do not contain a `type` column. "
+            "Automatic conversion from the legacy stride-list format is only possible when exactly one explicit "
+            f"region module exists. Got explicit modules: {list(explicit_region_model_names)}"
+        )
+    coerced_region_list = region_list.reset_index().copy()
+    if not {"roi_id", "gs_id"} & set(coerced_region_list.columns):
+        coerced_region_list.insert(0, "roi_id", np.arange(len(coerced_region_list)))
+    coerced_region_list["type"] = explicit_region_model_names[0]
+    return coerced_region_list
 
 
 class BaseSegmentationHmm(_BaseSerializable):
@@ -128,7 +160,7 @@ class BaseSegmentationHmm(_BaseSerializable):
     def self_optimize(
         self,
         data_sequence: Sequence[SingleSensorData],
-        stride_list_sequence: Sequence[SingleSensorStrideList],
+        region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
         sampling_rate_hz: float,
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
@@ -137,9 +169,9 @@ class BaseSegmentationHmm(_BaseSerializable):
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
-        stride_list_sequence
-            Sequence of gaitmap stride lists.
-            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        region_list_sequence
+            Sequence of typed region lists.
+            The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
 
@@ -154,7 +186,7 @@ class BaseSegmentationHmm(_BaseSerializable):
     def self_optimize_with_info(
         self,
         data_sequence: Sequence[SingleSensorData],
-        stride_list_sequence: Sequence[SingleSensorStrideList],
+        region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
         sampling_rate_hz: float,
     ) -> tuple[Self, Any]:
         """Create and train the HMM model based on the given data and labels.
@@ -165,9 +197,9 @@ class BaseSegmentationHmm(_BaseSerializable):
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
-        stride_list_sequence
-            Sequence of gaitmap stride lists.
-            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        region_list_sequence
+            Sequence of typed region lists.
+            The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
 
@@ -192,12 +224,10 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     Parameters
     ----------
-    stride_model
-        The (untrained) hmm representing the strides in the data.
-        This will be updated during the optimization step (see notes).
-    transition_model
-        The (untrained) hmm representing the transitions in the data.
-        This will be updated during the optimization step (see notes).
+    model_config
+        The configuration of the named HMM submodules that are trained and combined into the final model.
+        One module is interpreted as the implicit transition model and all remaining modules are expected to be covered
+        by typed input regions during optimization.
     feature_transform
         An instance of a :class:`~gaitmap.stride_segmentation.hmm.FeatureTransformHMM` that can transform the data
         (and the labeled stride list) into the feature space required by the HMM.
@@ -210,16 +240,14 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         The loss threshold to stop the optimization.
         Note, that is the threshold for the "combined" training of the final model.
         This is less important, as we recommend to train the combined model only for a single iteration anyway.
-        If you want to adjust the stop threshold for the individual models, you can do so by adjusting the respective
-        parameters of the stride and transition model (`stride_model.stop_threshold` and
-        `transition_model.stop_threshold`).
+        If you want to adjust the stop threshold for the individual submodels, do so via the corresponding entries in
+        `model_config.modules`.
     max_iterations
         The maximum number of iterations to perform during the optimization.
         Note, that this is the value for the "combined" training of the final model.
         We recommend keeping this value at 1, as the combined model training only adjusts the transition matrix.
-        If you want to adjust the max iterations for the individual models, you can do so by adjusting the respective
-        parameters of the stride and transition model (`stride_model.max_iterations` and
-        `transition_model.max_iterations`).
+        If you want to adjust the max iterations for the individual submodels, do so via the corresponding entries in
+        `model_config.modules`.
     initialization
         The initialization method to use for the HMM during optimization.
         `fully-connected` assumes that all states are reachable from any other state with the same probability.
@@ -269,10 +297,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     Notes
     -----
-    Note, that we are also store the trained stride and transition model during the optimization step.
-    These are not required for prediction, as all there information is also contained in the fused model.
-    However, inspecting the trained models might provide further inside into possible training issues.
-    As the models are generally small, this should not impact RAM (or disk usage during export) in a relevant way.
+    The final model is still stored as a raw `pomegranate` HMM in this step of the refactor.
+    The `model_config` only replaces the dedicated submodel constructor inputs.
 
     References
     ----------
@@ -282,12 +308,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
     """
 
-    stride_model: SimpleHmm
-    stride_model__model: OptiPara
-    stride_model__data_columns: OptiPara
-    transition_model: SimpleHmm
-    transition_model__model: OptiPara
-    transition_model__data_columns: OptiPara
+    model_config: CompositeHmmConfig
     feature_transform: BaseHmmFeatureTransformer
     algo_predict: Literal["viterbi", "baum-welch"]
     algo_train: Literal["viterbi", "baum-welch"]
@@ -303,30 +324,52 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     feature_space_data_: pd.DataFrame
     hidden_state_sequence_feature_space_: np.ndarray
 
+    @classmethod
+    def _from_json_dict(cls, json_dict: dict) -> Self:
+        params = json_dict["params"].copy()
+        if "model_config" not in params and {"stride_model", "transition_model"} <= set(params):
+            stride_model = params.pop("stride_model")
+            transition_model = params.pop("transition_model")
+            stride_params = stride_model.get_params(deep=False) if isinstance(stride_model, SimpleHmm) else stride_model["params"]
+            transition_params = (
+                transition_model.get_params(deep=False)
+                if isinstance(transition_model, SimpleHmm)
+                else transition_model["params"]
+            )
+            params["model_config"] = CompositeHmmConfig(
+                modules={
+                    "transition": HmmSubModelConfig(
+                        name="transition",
+                        role="transition",
+                        n_states=transition_params["n_states"],
+                        n_gmm_components=transition_params["n_gmm_components"],
+                        architecture=transition_params["architecture"],
+                        algo_train=transition_params["algo_train"],
+                        stop_threshold=transition_params["stop_threshold"],
+                        max_iterations=transition_params["max_iterations"],
+                        verbose=transition_params.get("verbose", True),
+                        n_jobs=transition_params.get("n_jobs", 1),
+                    ),
+                    "stride": HmmSubModelConfig(
+                        name="stride",
+                        role="stride",
+                        n_states=stride_params["n_states"],
+                        n_gmm_components=stride_params["n_gmm_components"],
+                        architecture=stride_params["architecture"],
+                        algo_train=stride_params["algo_train"],
+                        stop_threshold=stride_params["stop_threshold"],
+                        max_iterations=stride_params["max_iterations"],
+                        verbose=stride_params.get("verbose", True),
+                        n_jobs=stride_params.get("n_jobs", 1),
+                    ),
+                }
+            )
+        input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
+        return cls(**input_data)
+
     def __init__(
         self,
-        stride_model: SimpleHmm = cf(
-            SimpleHmm(
-                n_states=20,
-                n_gmm_components=6,
-                algo_train="baum-welch",
-                stop_threshold=1e-9,
-                max_iterations=10,
-                architecture="left-right-strict",
-                name="stride_model",
-            )
-        ),
-        transition_model: SimpleHmm = cf(
-            SimpleHmm(
-                n_states=5,
-                n_gmm_components=3,
-                algo_train="baum-welch",
-                stop_threshold=1e-9,
-                max_iterations=10,
-                architecture="left-right-loose",
-                name="transition_model",
-            )
-        ),
+        model_config: CompositeHmmConfig = cf(CompositeHmmConfig()),
         feature_transform: RothHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
         *,
         algo_predict: Literal["viterbi", "map"] = "viterbi",
@@ -340,8 +383,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         model: Optional[pgHMM] = None,
         data_columns: Optional[tuple[str, ...]] = None,
     ) -> None:
-        self.stride_model = stride_model
-        self.transition_model = transition_model
+        self.model_config = model_config
         self.feature_transform = feature_transform
         self.algo_predict = algo_predict
         self.algo_train = algo_train
@@ -357,17 +399,34 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     @property
     def n_states(self) -> int:
         """Return the number of states of the final model."""
-        return self.transition_model.n_states + self.stride_model.n_states
+        return sum(module.n_states for module in self.model_config.modules.values())
+
+    @property
+    def module_offsets(self) -> dict[str, int]:
+        """Return the state offsets of each configured submodule in the combined model."""
+        offsets = {}
+        current_offset = 0
+        for name, module in self.model_config.modules.items():
+            offsets[name] = current_offset
+            current_offset += module.n_states
+        return offsets
 
     @property
     def stride_states(self) -> list[int]:
-        """Return the ids of the stride states."""
-        return (np.arange(self.stride_model.n_states) + self.transition_model.n_states).tolist()
+        """Return the ids of all stride-like states."""
+        stride_states = []
+        for name, module in self.model_config.modules.items():
+            if module.role != "stride":
+                continue
+            stride_states.extend((np.arange(module.n_states) + self.module_offsets[name]).tolist())
+        return stride_states
 
     @property
     def transition_states(self) -> list[int]:
         """Return the ids of the transition states."""
-        return np.arange(self.transition_model.n_states).tolist()
+        transition_module = self.model_config.transition_model
+        transition_offset = self.module_offsets[self.model_config.transition_model_name]
+        return (np.arange(transition_module.n_states) + transition_offset).tolist()
 
     def predict(self, data: SingleSensorData, sampling_rate_hz: float) -> Self:
         """Perform prediction based on given data and given model.
@@ -418,7 +477,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     def _transform(
         self,
         data_sequence: Sequence[pd.DataFrame],
-        stride_list_sequence: Optional[Sequence[pd.DataFrame]],
+        region_list_sequence: Optional[Sequence[pd.DataFrame]],
         sampling_rate_hz: float,
     ):
         """Perform feature transformation."""
@@ -429,20 +488,20 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             for dataset in data_sequence
         ]
 
-        stride_list_feature_space = None
-        if stride_list_sequence:
-            stride_list_feature_space = [
+        region_list_feature_space = None
+        if region_list_sequence:
+            region_list_feature_space = [
                 feature_transform.transform(
-                    roi_list=stride_list, sampling_rate_hz=sampling_rate_hz
+                    roi_list=region_list, sampling_rate_hz=sampling_rate_hz
                 ).transformed_roi_list_
-                for stride_list in stride_list_sequence
+                for region_list in region_list_sequence
             ]
-        return data_sequence_feature_space, stride_list_feature_space
+        return data_sequence_feature_space, region_list_feature_space
 
     def self_optimize(
         self,
         data_sequence: Sequence[SingleSensorData],
-        stride_list_sequence: Sequence[SingleSensorStrideList],
+        region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
         sampling_rate_hz: float,
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
@@ -458,9 +517,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
-        stride_list_sequence
-            Sequence of gaitmap stride lists.
-            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        region_list_sequence
+            Sequence of typed region lists with `start`, `end`, and `type`.
+            The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
 
@@ -470,15 +529,15 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             The trained model instance.
 
         """
-        return self.self_optimize_with_info(data_sequence, stride_list_sequence, sampling_rate_hz=sampling_rate_hz)[0]
+        return self.self_optimize_with_info(data_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz)[0]
 
     @make_optimize_safe
     def self_optimize_with_info(
         self,
         data_sequence: Sequence[SingleSensorData],
-        stride_list_sequence: Sequence[SingleSensorStrideList],
+        region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
         sampling_rate_hz: float,
-    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], History]]:
+    ) -> tuple[Self, dict[str, History]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -489,9 +548,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         ----------
         data_sequence
             Sequence of gaitmap sensordata objects.
-        stride_list_sequence
-            Sequence of gaitmap stride lists.
-            The number of stride lists must match the number of sensordata objects (i.e. they must belong together).
+        region_list_sequence
+            Sequence of typed region lists with `start`, `end`, and `type`.
+            The number of region lists must match the number of sensordata objects (i.e. they must belong together).
         sampling_rate_hz
             Sampling frequency of the data.
 
@@ -506,48 +565,57 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         if self.initialization not in ["labels", "fully-connected"]:
             raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
 
+        validated_region_list_sequence = [
+            validate_trainable_region_list(
+                _coerce_region_list_input(region_list, self.model_config.explicit_region_model_names),
+                self.model_config.explicit_region_model_names,
+            )
+            for region_list in region_list_sequence
+        ]
+
         # perform feature transformation
-        data_sequence_feature_space, stride_list_feature_space = self._transform(
-            data_sequence, stride_list_sequence, sampling_rate_hz
+        data_sequence_feature_space, region_list_feature_space = self._transform(
+            data_sequence, validated_region_list_sequence, sampling_rate_hz
         )
+        if region_list_feature_space is None:
+            raise RuntimeError("The feature transform did not produce region lists for optimization.")
 
-        # train sub stride model
-        strides_sequence, init_stride_state_labels = get_train_data_sequences_strides(
-            data_sequence_feature_space, stride_list_feature_space, self.stride_model.n_states
-        )
+        trained_models: dict[str, SimpleHmm] = {}
+        histories: dict[str, History] = {}
+        for module_name, module_config in self.model_config.modules.items():
+            if module_name == self.model_config.transition_model_name:
+                train_sequence, init_state_labels = get_train_data_sequences_transitions(
+                    data_sequence_feature_space, region_list_feature_space, module_config.n_states
+                )
+            else:
+                train_sequence, init_state_labels = get_train_data_sequences_regions(
+                    data_sequence_feature_space,
+                    region_list_feature_space,
+                    region_type=module_name,
+                    n_states=module_config.n_states,
+                )
 
-        stride_model_trained, stride_model_history = self.stride_model.self_optimize_with_info(
-            strides_sequence, init_stride_state_labels
-        )
-
-        # train sub transition _model
-        transition_sequence, init_trans_state_labels = get_train_data_sequences_transitions(
-            data_sequence_feature_space, stride_list_feature_space, self.transition_model.n_states
-        )
-
-        transition_model_trained, transition_model_history = self.transition_model.self_optimize_with_info(
-            transition_sequence, init_trans_state_labels
-        )
+            trained_model, history = _create_simple_hmm_from_config(module_config).self_optimize_with_info(
+                train_sequence, init_state_labels
+            )
+            trained_models[module_name] = trained_model
+            histories[module_name] = history
 
         # For model combination actually only the transition probabilities will be updated, while keeping the already
         # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
         # number of transitions will be counted.
-
-        # some initialization stuff...
-        n_states_transition = transition_model_trained.n_states
-        n_states_stride = stride_model_trained.n_states
-
-        # extract fitted distributions from both separate trained models
-        distributions = get_model_distributions(transition_model_trained.model) + get_model_distributions(
-            stride_model_trained.model
-        )
+        distributions = []
+        for module_name in self.model_config.modules:
+            distributions.extend(get_model_distributions(trained_models[module_name].model))
 
         # predict hidden state labels for complete walking bouts
+        module_offsets = self.module_offsets
         labels_train_sequence = create_fully_labeled_gait_sequences(
             data_sequence_feature_space,
-            stride_list_feature_space,
-            transition_model_trained,
-            stride_model_trained,
+            region_list_feature_space,
+            trained_models,
+            module_offsets,
+            self.model_config.transition_model_name,
             self.algo_predict,
         )
 
@@ -565,18 +633,14 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             )
 
         elif self.initialization == "labels":
-            # combine already trained transition matrices -> zero pad "stride" transition matrix to the left
-            trans_mat_stride = stride_model_trained.model.dense_transition_matrix()[:-2, :-2]
-            transmat_stride = np.pad(
-                trans_mat_stride, [(n_states_transition, 0), (n_states_transition, 0)], mode="constant"
-            )
-
-            # zero-pad "transition" transition matrix to the right
-            trans_mat_transition = transition_model_trained.model.dense_transition_matrix()[:-2, :-2]
-            transmat_trans = np.pad(trans_mat_transition, [(0, n_states_stride), (0, n_states_stride)], mode="constant")
-
-            # after correct zero padding we can combine both transition matrices just by "adding" them together!
-            trans_mat = transmat_trans + transmat_stride
+            trans_mat = np.zeros((self.n_states, self.n_states))
+            for module_name, module_config in self.model_config.modules.items():
+                module_transition_matrix = trained_models[module_name].model.dense_transition_matrix()[:-2, :-2]
+                offset = module_offsets[module_name]
+                trans_mat[
+                    offset : offset + module_config.n_states,
+                    offset : offset + module_config.n_states,
+                ] = module_transition_matrix
 
             # find missing transitions from labels
             transitions, starts, ends = extract_transitions_starts_stops_from_hidden_state_sequence(
@@ -647,7 +711,5 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         self.model = new_model
 
-        return (
-            self,
-            {"self": history, "transition_model": transition_model_history, "stride_model": stride_model_history},
-        )
+        histories["self"] = history
+        return self, histories
