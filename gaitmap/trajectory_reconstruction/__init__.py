@@ -6,7 +6,7 @@ to make applying these methods to the default gaitmap datasets easier.
 
 from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
 from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
-from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS, SimpleGyroIntegration
+from gaitmap.trajectory_reconstruction.orientation_methods import MadgwickAHRS, MahonyAHRS, SimpleGyroIntegration
 from gaitmap.trajectory_reconstruction.position_methods._forward_backwards_integration import ForwardBackwardIntegration
 from gaitmap.trajectory_reconstruction.trajectory_methods import MadgwickRtsKalman, RtsKalman
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
@@ -23,6 +23,7 @@ __all__ = [
     "ForwardBackwardIntegration",
     "MadgwickAHRS",
     "MadgwickRtsKalman",
+    "MahonyAHRS",
     "PieceWiseLinearDedriftedIntegration",
     "RegionLevelTrajectory",
     "RtsKalman",

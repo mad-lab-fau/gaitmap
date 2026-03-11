@@ -42,6 +42,7 @@ Orientation Estimation Methods
 
     SimpleGyroIntegration
     MadgwickAHRS
+    MahonyAHRS
 
 Position Estimation Methods
 ---------------------------
