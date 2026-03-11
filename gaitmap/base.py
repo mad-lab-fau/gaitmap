@@ -2,8 +2,8 @@
 
 import json
 import warnings
-from io import StringIO
 from importlib import import_module
+from io import StringIO
 from typing import Any, Optional, TypeVar, Union
 
 import numpy as np

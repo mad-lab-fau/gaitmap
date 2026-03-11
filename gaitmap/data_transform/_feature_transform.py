@@ -59,6 +59,13 @@ class Resample(BaseTransformer):
     ) -> None:
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
+    def _resample_roi_list(self, roi_list: SingleSensorRegionsOfInterestList) -> SingleSensorRegionsOfInterestList:
+        out = roi_list.copy()
+        rescaled = (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round()
+        for col in ["start", "end"]:
+            out[col] = rescaled[col].astype(out[col].dtype)
+        return out
+
     def transform(
         self,
         data: Optional[SingleSensorData] = None,
@@ -115,11 +122,7 @@ class Resample(BaseTransformer):
             self.transformed_data_ = data_resampled
         if roi_list is not None:
             self.roi_list = roi_list
-            out = roi_list.copy()
-            rescaled = (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round()
-            for col in ["start", "end"]:
-                out[col] = rescaled[col].astype(out[col].dtype)
-            self.transformed_roi_list_ = out
+            self.transformed_roi_list_ = self._resample_roi_list(roi_list)
         return self
 
 
