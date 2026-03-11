@@ -24,13 +24,11 @@ _gaitmap_mad_modules = {
     "HmmGraphState",
     "HmmSubModelConfig",
     "HmmSubModelState",
-    "PomegranateHmmBackend",
-    "SimpleHmm",
     "RothHmmConfig",
     "RothSegmentationHmm",
-    "ScipyHmmInferenceBackend",
     "PreTrainedRothSegmentationModel",
     "BaseSegmentationHmm",
+    "get_default_hmm_backend",
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
@@ -50,13 +48,11 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         HmmStrideSegmentation,
         HmmSubModelConfig,
         HmmSubModelState,
-        PomegranateHmmBackend,
         PreTrainedRothSegmentationModel,
         RothHmmConfig,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
-        ScipyHmmInferenceBackend,
-        SimpleHmm,
+        get_default_hmm_backend,
     )
 
 
@@ -75,11 +71,9 @@ __all__ = [
     "HmmStrideSegmentation",
     "HmmSubModelConfig",
     "HmmSubModelState",
-    "PomegranateHmmBackend",
     "PreTrainedRothSegmentationModel",
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
-    "ScipyHmmInferenceBackend",
-    "SimpleHmm",
+    "get_default_hmm_backend",
 ]

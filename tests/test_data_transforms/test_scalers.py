@@ -35,7 +35,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     def set_algo_class(self, request) -> None:
         self.algorithm_class = request.param
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:10]
         data_left.columns = BF_COLS

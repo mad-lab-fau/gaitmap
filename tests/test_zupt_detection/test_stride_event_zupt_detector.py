@@ -12,7 +12,7 @@ class TestMetaFunctionalityStrideEventZuptDetector(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = StrideEventZuptDetector
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:10]
         return StrideEventZuptDetector().detect(

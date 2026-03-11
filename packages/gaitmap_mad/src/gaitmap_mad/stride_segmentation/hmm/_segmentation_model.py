@@ -1,14 +1,14 @@
 """Segmentation _model base classes and helper."""
 
-import warnings
+from __future__ import annotations
+
+# ruff: noqa: UP045
 from collections.abc import Sequence
 from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import pomegranate as pg
 import tpcp
-from pomegranate.hmm import History
 from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
 
@@ -17,19 +17,12 @@ from gaitmap.utils.datatype_helper import (
     SingleSensorData,
     SingleSensorRegionsOfInterestList,
 )
-from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTrainableHmm, get_default_hmm_backend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import RothHmmFeatureTransformer
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
-from gaitmap_mad.stride_segmentation.hmm._state import (
-    BackendInfo,
-    HMMState,
-    HmmSubModelState,
-    pomegranate_model_to_flat_hmm_state,
-    pomegranate_model_to_hmm_state,
-)
+from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint
+from gaitmap_mad.stride_segmentation.hmm._state import HMMState
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    ShortenedHMMPrint,
     _DataToShortError,
     convert_region_list_to_transition_list,
     get_train_data_sequences_regions,
@@ -37,11 +30,13 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     validate_trainable_region_list,
 )
 
+DEFAULT_HMM_BACKEND = get_default_hmm_backend()
+
 
 def create_fully_labeled_hidden_state_sequences(
     data_train_sequence: Sequence[pd.DataFrame],
     region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
-    module_models: dict[str, SimpleHmm],
+    module_models: dict[str, Any],
     state_offsets: dict[str, int],
     transition_model_name: str,
     algo_predict: Literal["viterbi", "map"],
@@ -140,7 +135,7 @@ def _get_training_sequences_for_module(
 def _predict_labeled_training_sequences(
     data_sequence_feature_space: list[pd.DataFrame],
     region_list_feature_space: list[SingleSensorRegionsOfInterestList],
-    trained_models: dict[str, SimpleHmm],
+    trained_models: dict[str, Any],
     module_offsets: dict[str, int],
     transition_model_name: str,
     algo_predict: Literal["viterbi", "map"],
@@ -313,7 +308,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
     Notes
     -----
     The public trained-model parameter is stored as a serializable `HMMState`.
-    The default backend in this refactor step is `PomegranateHmmBackend`.
+    The default backend depends on the installed optional HMM runtimes.
 
     References
     ----------
@@ -346,95 +341,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
                 n_jobs=params.pop("n_jobs", 1),
                 name=params.pop("name", "segmentation_model"),
             )
-        if "hmm_config" not in params and {"stride_model", "transition_model"} <= set(params):
-            # TODO: Remove this compatibility shim once legacy serialized Roth models have been migrated.
-            warnings.warn(
-                "Loading a legacy RothSegmentationHmm serialization with raw pomegranate models. "
-                "The model is migrated to the new HMMState representation during loading.",
-                UserWarning,
-            )
-            stride_model = params.pop("stride_model")
-            transition_model = params.pop("transition_model")
-            stride_params = (
-                stride_model.get_params(deep=False) if isinstance(stride_model, SimpleHmm) else stride_model["params"]
-            )
-            transition_params = (
-                transition_model.get_params(deep=False)
-                if isinstance(transition_model, SimpleHmm)
-                else transition_model["params"]
-            )
-            params["hmm_config"] = RothHmmConfig(
-                model_config=CompositeHmmConfig(
-                    modules=(
-                        HmmSubModelConfig(
-                            name="transition",
-                            role="transition",
-                            n_states=transition_params["n_states"],
-                            n_gmm_components=transition_params["n_gmm_components"],
-                            architecture=transition_params["architecture"],
-                            algo_train=transition_params["algo_train"],
-                            stop_threshold=transition_params["stop_threshold"],
-                            max_iterations=transition_params["max_iterations"],
-                            verbose=transition_params.get("verbose", True),
-                            n_jobs=transition_params.get("n_jobs", 1),
-                        ),
-                        HmmSubModelConfig(
-                            name="stride",
-                            role="stride",
-                            n_states=stride_params["n_states"],
-                            n_gmm_components=stride_params["n_gmm_components"],
-                            architecture=stride_params["architecture"],
-                            algo_train=stride_params["algo_train"],
-                            stop_threshold=stride_params["stop_threshold"],
-                            max_iterations=stride_params["max_iterations"],
-                            verbose=stride_params.get("verbose", True),
-                            n_jobs=stride_params.get("n_jobs", 1),
-                        ),
-                    )
-                ),
-                feature_transform=params.pop("feature_transform", RothHmmFeatureTransformer()),
-                algo_predict=params.pop("algo_predict", "viterbi"),
-                algo_train=params.pop("algo_train", "baum-welch"),
-                stop_threshold=params.pop("stop_threshold", 1e-9),
-                max_iterations=params.pop("max_iterations", 1),
-                initialization=params.pop("initialization", "labels"),
-                verbose=params.pop("verbose", True),
-                n_jobs=params.pop("n_jobs", 1),
-                name=params.pop("name", "segmentation_model"),
-            )
-            legacy_submodels = []
-            if getattr(transition_model, "model", None) is not None:
-                legacy_submodels.append(
-                    HmmSubModelState(
-                        name="transition",
-                        role="transition",
-                        model=pomegranate_model_to_flat_hmm_state(transition_model.model),
-                    )
-                )
-            if getattr(stride_model, "model", None) is not None:
-                legacy_submodels.append(
-                    HmmSubModelState(
-                        name="stride",
-                        role="stride",
-                        model=pomegranate_model_to_flat_hmm_state(stride_model.model),
-                    )
-                )
-            if params.get("model") is not None:
-                params["model"] = pomegranate_model_to_hmm_state(
-                    params["model"],
-                    submodels=tuple(legacy_submodels),
-                    backend_info=BackendInfo(backend_id="pomegranate-legacy-migrated"),
-                )
-        elif isinstance(params.get("model"), pg.HiddenMarkovModel):
-            warnings.warn(
-                "Loading a RothSegmentationHmm with a raw pomegranate model parameter. "
-                "The model is migrated to the new HMMState representation during loading.",
-                UserWarning,
-            )
-            params["model"] = pomegranate_model_to_hmm_state(
-                params["model"],
-                backend_info=BackendInfo(backend_id="pomegranate-legacy-migrated"),
-            )
         input_data = {k: params[k] for k in tpcp.get_param_names(cls) if k in params}
         return cls(**input_data)
 
@@ -451,7 +357,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         self,
         hmm_config: RothHmmConfig = cf(RothHmmConfig()),
         model: Optional[HMMState] = None,
-        backend: BaseHmmBackend = cf(PomegranateHmmBackend()),
+        backend: BaseHmmBackend = cf(DEFAULT_HMM_BACKEND),
     ) -> None:
         self.hmm_config = hmm_config
         self.model = model
@@ -649,7 +555,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         data_sequence: Sequence[SingleSensorData],
         region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
         sampling_rate_hz: float,
-    ) -> tuple[Self, dict[str, History]]:
+    ) -> tuple[Self, dict[str, Any]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -696,8 +602,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         if region_list_feature_space is None:
             raise RuntimeError("The feature transform did not produce region lists for optimization.")
 
-        trained_models: dict[str, SimpleHmm] = {}
-        histories: dict[str, History] = {}
+        trained_models: dict[str, BaseTrainableHmm] = {}
+        histories: dict[str, Any] = {}
         for module_config in self.model_config.modules:
             module_name = module_config.name
             train_sequence, init_state_labels = _get_training_sequences_for_module(

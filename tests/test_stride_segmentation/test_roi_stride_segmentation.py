@@ -23,7 +23,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     algorithm_class = RoiStrideSegmentation
     __test__ = True
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self) -> RoiStrideSegmentation:
         # We use a simple dtw to create the instance
         template = DtwTemplate(data=pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)

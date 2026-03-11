@@ -21,7 +21,7 @@ from tests.test_stride_segmentation.test_base_dtw import (
 class MetaTestConfig:
     algorithm_class = BarthDtw
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self) -> BaseType:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
         dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)

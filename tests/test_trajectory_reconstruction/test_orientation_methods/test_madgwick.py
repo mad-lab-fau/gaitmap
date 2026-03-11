@@ -17,7 +17,7 @@ from tests.test_trajectory_reconstruction.test_orientation_methods.test_ori_meth
 class MetaTestConfig:
     algorithm_class = MadgwickAHRS
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = MadgwickAHRS()
         position.estimate(healthy_example_imu_data["left_sensor"].iloc[:10], sampling_rate_hz=1)

@@ -16,7 +16,7 @@ from gaitmap.utils.exceptions import ValidationError
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_stride_list():
     stride_events_list = pd.DataFrame(columns=["s_id", "ic", "tc", "pre_ic", "gsd_id", "min_vel", "start", "end"])
     stride_events_list["s_id"] = [0, 1, 2]
@@ -28,14 +28,14 @@ def single_sensor_stride_list():
     return stride_events_list
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_stride_time():
     out = pd.Series([2, 2, 2], index=[0, 1, 2])
     out.index.name = "s_id"
     return out
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_position_list():
     position_list = pd.DataFrame(columns=["s_id", "sample", "pos_x", "pos_y", "pos_z"])
     position_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
@@ -46,31 +46,31 @@ def single_sensor_position_list():
     return position_list
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_position_list_with_index(single_sensor_position_list):
     return single_sensor_position_list.set_index(["s_id", "sample"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_stride_length():
     out = pd.Series([2, np.sqrt(8), 0], index=[0, 1, 2])
     out.index.name = "s_id"
     return out
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_arc_length():
     out = pd.Series([2, 2 * np.sqrt(2), 2], index=[0, 1, 2])
     out.index.name = "s_id"
     return out
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_gait_speed(single_sensor_stride_length, single_sensor_stride_time):
     return single_sensor_stride_length / single_sensor_stride_time
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_orientation_list():
     orientation_list = pd.DataFrame(columns=["s_id", "sample", "q_x", "q_y", "q_z", "q_w"])
     orientation_list["s_id"] = [0, 0, 0, 1, 1, 1, 2, 2, 2]
@@ -82,19 +82,19 @@ def single_sensor_orientation_list():
     return orientation_list
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_orientation_list_with_index(single_sensor_orientation_list):
     return single_sensor_orientation_list.set_index(["s_id", "sample"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_turning_angle():
     out = pd.Series([0.0, 90, -90], index=[0, 1, 2])
     out.index.name = "s_id"
     return out
 
 
-@pytest.fixture()
+@pytest.fixture
 def single_sensor_sole_angle_course():
     index = [0, 0, 0, 1, 1, 1, 2, 2, 2]
     sample = [0, 1, 2, 0, 1, 2, 0, 1, 2]
@@ -107,7 +107,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     algorithm_class = SpatialParameterCalculation
     __test__ = True
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(
         self, single_sensor_stride_list, single_sensor_position_list, single_sensor_orientation_list
     ) -> BaseType:

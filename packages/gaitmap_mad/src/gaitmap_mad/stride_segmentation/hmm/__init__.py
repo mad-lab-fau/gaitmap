@@ -3,7 +3,7 @@
 import multiprocessing
 import warnings
 
-from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend, ScipyHmmInferenceBackend
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTrainableHmm, get_default_hmm_backend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
@@ -14,7 +14,6 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
     PreTrainedRothSegmentationModel,
 )
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
     CrossModuleTransition,
@@ -34,12 +33,12 @@ if multiprocessing.parent_process() is None:
         "Monitor the changelog before upgrading to newer versions when using HMMs.",
         UserWarning,
     )
-
 __all__ = [
     "BackendInfo",
     "BaseHmmBackend",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "BaseTrainableHmm",
     "CompositeHmmConfig",
     "CrossModuleTransition",
     "FlatHmmState",
@@ -50,11 +49,9 @@ __all__ = [
     "HmmStrideSegmentation",
     "HmmSubModelConfig",
     "HmmSubModelState",
-    "PomegranateHmmBackend",
     "PreTrainedRothSegmentationModel",
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
-    "ScipyHmmInferenceBackend",
-    "SimpleHmm",
+    "get_default_hmm_backend",
 ]

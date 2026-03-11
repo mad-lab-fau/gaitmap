@@ -121,7 +121,7 @@ model_config = CompositeHmmConfig(
 # invoke the training process.
 # Again, all configurable parameters are exposed for demonstration purpose.
 # These parameters should again work for most usecases.
-from gaitmap.stride_segmentation.hmm import PomegranateHmmBackend, RothSegmentationHmm
+from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
     hmm_config=RothHmmConfig(
@@ -134,7 +134,6 @@ segmentation_model = RothSegmentationHmm(
         initialization="labels",
         name="segmentation_model",
     ),
-    backend=PomegranateHmmBackend(),
 )
 
 # %%
@@ -198,18 +197,22 @@ print(segmentation_model.model.compiled.emissions[10])
 # We will also plot the results to see how well the model performs.
 from gaitmap.stride_segmentation.hmm import HmmStrideSegmentation
 
-hmm = HmmStrideSegmentation(segmentation_model).segment(bf_data, sampling_rate_hz=sampling_rate_hz)
+# Note: We are using a high snap_to_min_win_ms here to get consistent output agaisnt all HMM backends.
+#       They have slight inconsitencies in some edge cases and we want to make sure this example provides the same results for consistent snapshots.
+hmm = HmmStrideSegmentation(segmentation_model, snap_to_min_win_ms=300).segment(
+    bf_data, sampling_rate_hz=sampling_rate_hz
+)
 hmm.stride_list_
 
 # %%
 # Plotting the Results
 # --------------------
-sensor = "left_sensor"
+sensor = "right_sensor"
 
 fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(10, 5))
 axs[0].set_title("gaitmap Body Frame Dataset")
 axs[0].plot(bf_data.reset_index(drop=True)[sensor]["gyr_ml"])
-for start, end in hmm.stride_list_["left_sensor"].to_numpy():
+for start, end in hmm.stride_list_[sensor].to_numpy():
     axs[0].axvline(start, c="r")
     axs[0].axvline(end, c="r")
     axs[0].axvspan(start, end, alpha=0.2)

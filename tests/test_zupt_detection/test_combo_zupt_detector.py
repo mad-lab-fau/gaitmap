@@ -15,7 +15,7 @@ class TestMetaFunctionalityComboZuptDetector(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = ComboZuptDetector
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:500]
         return ComboZuptDetector([("a", NormZuptDetector()), ("b", NormZuptDetector())]).detect(
