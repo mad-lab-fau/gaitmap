@@ -14,7 +14,7 @@ from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 class MetaTestConfig:
     algorithm_class = ForwardDirectionSignAlignment
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> BaseType:
         fdsa = ForwardDirectionSignAlignment()
         fdsa.align(healthy_example_imu_data["left_sensor"].iloc[:1000], sampling_rate_hz=204.8)

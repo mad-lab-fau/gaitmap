@@ -27,7 +27,7 @@ def _min_vel_stride_list():
     return stride_events_list, temporal_parameters
 
 
-@pytest.fixture()
+@pytest.fixture
 def min_vel_stride_list():
     return _min_vel_stride_list()
 
@@ -55,7 +55,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     algorithm_class = TemporalParameterCalculation
     __test__ = True
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, min_vel_stride_list) -> BaseType:
         stride_events_list, _ = min_vel_stride_list
         t = TemporalParameterCalculation()
@@ -67,11 +67,11 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 class TestTemporalParameterCalculation:
     """Test temporal parameters calculation."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def stride_list(self, stride_list_type):
         if stride_list_type == "min_vel":
             return _min_vel_stride_list()
-        elif stride_list_type == "ic":
+        if stride_list_type == "ic":
             return ic_stride_list()
         return None
 

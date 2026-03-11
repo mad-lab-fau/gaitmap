@@ -16,7 +16,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     algorithm_class = StrideLevelTrajectory
     __test__ = True
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         trajectory = StrideLevelTrajectory()
         trajectory.estimate(

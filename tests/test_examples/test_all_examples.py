@@ -5,6 +5,10 @@ from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_ACC
+from tests._hmm_test_helpers import (
+    load_pretrained_inference_stride_list_snapshot,
+    require_trainable_hmm_backend,
+)
 from tests.conftest import compare_algo_objects
 
 # This is needed to avoid plots to open
@@ -263,27 +267,23 @@ def test_multi_process() -> None:
     """
 
 
-def test_roth_hmm_stride_segmentation(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
+def test_roth_hmm_stride_segmentation() -> None:
     from examples.stride_segmentation.roth_hmm_stride_segmentation import hmm_seg
 
-    snapshot.assert_match(hmm_seg.stride_list_["left_sensor"], "left_sensor")
-    snapshot.assert_match(hmm_seg.stride_list_["right_sensor"], "right_sensor")
+    assert_frame_equal(
+        hmm_seg.stride_list_["left_sensor"], load_pretrained_inference_stride_list_snapshot("left_sensor")
+    )
+    assert_frame_equal(
+        hmm_seg.stride_list_["right_sensor"], load_pretrained_inference_stride_list_snapshot("right_sensor")
+    )
 
 
 def test_segmentation_hmm_training(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
+    require_trainable_hmm_backend()
     from examples.stride_segmentation.segmentation_hmm_training import hmm
 
-    # XXX: For some sad reason the training does not seem to be deterministic accross different machines.
-    #      Therefore, we will just check that the model will still find the same strides for now.
-    # snapshot.assert_match(segmentation_model.model.to_json())
-    snapshot.assert_match(hmm.stride_list_["left_sensor"], "left_sensor")
-    snapshot.assert_match(hmm.stride_list_["right_sensor"], "right_sensor")
+    for sensor in ["left_sensor", "right_sensor"]:
+        snapshot.assert_match(hmm.stride_list_[sensor], sensor)
 
 
 def test_zupt_dependency() -> None:

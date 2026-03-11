@@ -17,7 +17,7 @@ class TestMetaFunctionalityNormZuptDetector(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = NormZuptDetector
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:500]
         return NormZuptDetector().detect(data_left, sampling_rate_hz=204.8)
@@ -27,7 +27,7 @@ class TestMetaFunctionalityShoeZuptDetector(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = ShoeZuptDetector
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:500]
         return ShoeZuptDetector().detect(data_left, sampling_rate_hz=204.8)
@@ -37,7 +37,7 @@ class TestMetaFunctionalityAredZuptDetector(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = AredZuptDetector
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data):
         data_left = healthy_example_imu_data["left_sensor"].iloc[:500]
         return AredZuptDetector().detect(data_left, sampling_rate_hz=204.8)

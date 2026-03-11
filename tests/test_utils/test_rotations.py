@@ -25,7 +25,7 @@ from gaitmap.utils.rotations import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def cyclic_rotation():
     """Rotation that turns x to y, y to z, and z to x."""
     return rotation_from_angle(np.array([0, 0, 1.0]), np.pi / 2) * rotation_from_angle(np.array([1, 0, 0.0]), np.pi / 2)

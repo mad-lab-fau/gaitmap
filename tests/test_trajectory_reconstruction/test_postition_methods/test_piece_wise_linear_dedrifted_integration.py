@@ -16,7 +16,7 @@ from tests.test_trajectory_reconstruction.test_postition_methods.test_pos_method
 class MetaTestConfig:
     algorithm_class = PieceWiseLinearDedriftedIntegration
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         position = PieceWiseLinearDedriftedIntegration()
         # Get enough samples from the signal to ensure a ZUPT

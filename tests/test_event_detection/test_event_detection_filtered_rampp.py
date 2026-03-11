@@ -14,7 +14,7 @@ from tests.test_event_detection.test_event_detection_rampp import TestEventDetec
 class MetaTestConfig:
     algorithm_class = FilteredRamppEventDetection
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS

@@ -19,7 +19,7 @@ class TestMetaFunctionalityRtsKalman(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = RtsKalman
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         kalman_filter = RtsKalman()
         kalman_filter.estimate(healthy_example_imu_data["left_sensor"].iloc[:15], sampling_rate_hz=100)
@@ -30,7 +30,7 @@ class TestMetaFunctionalityMadgwickRtsKalman(TestAlgorithmMixin):
     __test__ = True
     algorithm_class = MadgwickRtsKalman
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_events) -> BaseType:
         kalman_filter = MadgwickRtsKalman()
         kalman_filter.estimate(healthy_example_imu_data["left_sensor"].iloc[:15], sampling_rate_hz=100)

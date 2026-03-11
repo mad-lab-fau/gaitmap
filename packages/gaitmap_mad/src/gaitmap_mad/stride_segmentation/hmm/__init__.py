@@ -3,6 +3,8 @@
 import multiprocessing
 import warnings
 
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTrainableHmm, get_default_hmm_backend
+from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
@@ -12,7 +14,16 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
     PreTrainedRothSegmentationModel,
 )
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
+from gaitmap_mad.stride_segmentation.hmm._state import (
+    BackendInfo,
+    CrossModuleTransition,
+    FlatHmmState,
+    GaussianEmissionState,
+    GaussianMixtureEmissionState,
+    HmmGraphState,
+    HMMState,
+    HmmSubModelState,
+)
 
 if multiprocessing.parent_process() is None:
     warnings.warn(
@@ -22,13 +33,25 @@ if multiprocessing.parent_process() is None:
         "Monitor the changelog before upgrading to newer versions when using HMMs.",
         UserWarning,
     )
-
 __all__ = [
+    "BackendInfo",
+    "BaseHmmBackend",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "BaseTrainableHmm",
+    "CompositeHmmConfig",
+    "CrossModuleTransition",
+    "FlatHmmState",
+    "GaussianEmissionState",
+    "GaussianMixtureEmissionState",
+    "HMMState",
+    "HmmGraphState",
     "HmmStrideSegmentation",
+    "HmmSubModelConfig",
+    "HmmSubModelState",
     "PreTrainedRothSegmentationModel",
+    "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
-    "SimpleHmm",
+    "get_default_hmm_backend",
 ]

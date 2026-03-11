@@ -55,10 +55,13 @@ from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 
 roth_hmm_model = PreTrainedRothSegmentationModel()
 
-print(f"Number of states, stride-model: {roth_hmm_model.stride_model.n_states:d}")
-print(f"Number of states, transition-model: {roth_hmm_model.transition_model.n_states:d}")
+stride_model = roth_hmm_model.model_config.get_module("stride")
+transition_model = roth_hmm_model.model_config.transition_model
+
+print(f"Number of states, stride-model: {stride_model.n_states:d}")
+print(f"Number of states, transition-model: {transition_model.n_states:d}")
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
-print(f"Transition matrix:\n{roth_hmm_model.model.dense_transition_matrix()[0:-2, 0:-2]}")
+print(f"Transition matrix:\n{roth_hmm_model.model.compiled.graph.transition_probs}")
 
 # %%
 # Predicting hidden states / Stride borders

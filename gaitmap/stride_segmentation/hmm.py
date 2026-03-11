@@ -1,6 +1,6 @@
 """Hidden-Markov based stride segmentation developed by Roth et al..
 
-All HMM implementations are based on pomegranate [1]_.
+The default training and inference backend is currently based on pomegranate [1]_.
 
 .. [1] Schreiber, J. (2018). Pomegranate: fast and flexible probabilistic modeling in python.
    Journal of Machine Learning Research, 18(164), 1-6.
@@ -10,34 +10,70 @@ All HMM implementations are based on pomegranate [1]_.
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
+    "BackendInfo",
+    "BaseHmmBackend",
+    "CompositeHmmConfig",
     "BaseHmmFeatureTransformer",
+    "CrossModuleTransition",
+    "FlatHmmState",
+    "GaussianEmissionState",
+    "GaussianMixtureEmissionState",
+    "HMMState",
     "RothHmmFeatureTransformer",
     "HmmStrideSegmentation",
-    "SimpleHmm",
+    "HmmGraphState",
+    "HmmSubModelConfig",
+    "HmmSubModelState",
+    "RothHmmConfig",
     "RothSegmentationHmm",
     "PreTrainedRothSegmentationModel",
     "BaseSegmentationHmm",
+    "get_default_hmm_backend",
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
     del __getattr__
     from gaitmap_mad.stride_segmentation.hmm import (
+        BackendInfo,
+        BaseHmmBackend,
         BaseHmmFeatureTransformer,
         BaseSegmentationHmm,
+        CompositeHmmConfig,
+        CrossModuleTransition,
+        FlatHmmState,
+        GaussianEmissionState,
+        GaussianMixtureEmissionState,
+        HmmGraphState,
+        HMMState,
         HmmStrideSegmentation,
+        HmmSubModelConfig,
+        HmmSubModelState,
         PreTrainedRothSegmentationModel,
+        RothHmmConfig,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
-        SimpleHmm,
+        get_default_hmm_backend,
     )
 
 
 __all__ = [
+    "BackendInfo",
+    "BaseHmmBackend",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "CompositeHmmConfig",
+    "CrossModuleTransition",
+    "FlatHmmState",
+    "GaussianEmissionState",
+    "GaussianMixtureEmissionState",
+    "HMMState",
+    "HmmGraphState",
     "HmmStrideSegmentation",
+    "HmmSubModelConfig",
+    "HmmSubModelState",
     "PreTrainedRothSegmentationModel",
+    "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
-    "SimpleHmm",
+    "get_default_hmm_backend",
 ]

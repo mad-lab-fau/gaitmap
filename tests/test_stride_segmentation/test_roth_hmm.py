@@ -1,15 +1,24 @@
-from unittest.mock import patch
-
-import pytest
-
-pytest.importorskip("pomegranate")
+import json
+from importlib import import_module
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
+from gaitmap_mad.stride_segmentation.hmm import (
+    CompositeHmmConfig,
+    HMMState,
+    HmmStrideSegmentation,
+    HmmSubModelConfig,
+    PreTrainedRothSegmentationModel,
+    RothHmmConfig,
+    RothHmmFeatureTransformer,
+    RothSegmentationHmm,
+    get_default_hmm_backend,
+)
+from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
 from numpy.testing import assert_almost_equal, assert_array_equal
-from pomegranate import GeneralMixtureModel
-from pomegranate.hmm import History
+from pandas.testing import assert_frame_equal
 from tpcp._hash import custom_hash
 
 from gaitmap.data_transform import SlidingWindowMean
@@ -20,18 +29,137 @@ from gaitmap.utils.datatype_helper import (
     is_multi_sensor_stride_list,
     is_single_sensor_stride_list,
 )
-from gaitmap_mad.stride_segmentation.hmm import (
-    HmmStrideSegmentation,
-    PreTrainedRothSegmentationModel,
-    RothHmmFeatureTransformer,
-    RothSegmentationHmm,
-    SimpleHmm,
+from gaitmap.utils.exceptions import ValidationError
+from tests._hmm_test_helpers import (
+    import_legacy_hmm_backend,
+    load_pretrained_inference_stride_list_snapshot,
 )
-from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_hmm
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
 np.random.seed(1)
+
+try:
+    PomegranateLegacyHmmBackend = import_module(
+        "gaitmap_mad.stride_segmentation.hmm.legacy"
+    ).PomegranateLegacyHmmBackend
+except ImportError:
+    PomegranateLegacyHmmBackend = None
+
+try:
+    PomegranateModernHmmBackend = import_module(
+        "gaitmap_mad.stride_segmentation.hmm.modern"
+    ).PomegranateModernHmmBackend
+except ImportError:
+    PomegranateModernHmmBackend = None
+
+
+def _require_legacy_backend():
+    import_legacy_hmm_backend()
+    backend_module = import_module("gaitmap_mad.stride_segmentation.hmm.legacy._backend")
+    return SimpleNamespace(
+        backend_class=backend_module.PomegranateLegacyHmmBackend,
+        initialize_hmm=backend_module.initialize_hmm,
+    )
+
+
+def _default_backend_type():
+    return type(get_default_hmm_backend())
+
+
+def _runtime_inference_backend_params():
+    params = [pytest.param(ScipyHmmInferenceBackend(), id="scipy")]
+    if PomegranateModernHmmBackend is not None:
+        params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
+    return params
+
+
+def _trainable_backend_params():
+    params = []
+    if PomegranateLegacyHmmBackend is not None:
+        params.append(pytest.param(PomegranateLegacyHmmBackend(), id="pomegranate-legacy"))
+    if PomegranateModernHmmBackend is not None:
+        params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
+    if not params:
+        params.append(
+            pytest.param(
+                None, id="no-trainable-backend", marks=pytest.mark.skip(reason="requires a trainable HMM backend")
+            )
+        )
+    return params
+
+
+def _create_roth_model_config(*, stride_n_states=20, stride_n_gmm_components=6, transition_n_gmm_components=3):
+    return CompositeHmmConfig(
+        modules=(
+            HmmSubModelConfig(
+                name="transition",
+                role="transition",
+                n_states=5,
+                n_gmm_components=transition_n_gmm_components,
+                algo_train="baum-welch",
+                stop_threshold=1e-9,
+                max_iterations=10,
+                architecture="left-right-loose",
+            ),
+            HmmSubModelConfig(
+                name="stride",
+                role="stride",
+                n_states=stride_n_states,
+                n_gmm_components=stride_n_gmm_components,
+                algo_train="baum-welch",
+                stop_threshold=1e-9,
+                max_iterations=10,
+                architecture="left-right-strict",
+            ),
+        )
+    )
+
+
+def _create_roth_hmm_config(*, stride_n_states=20, stride_n_gmm_components=6, transition_n_gmm_components=3):
+    return RothHmmConfig(
+        model_config=_create_roth_model_config(
+            stride_n_states=stride_n_states,
+            stride_n_gmm_components=stride_n_gmm_components,
+            transition_n_gmm_components=transition_n_gmm_components,
+        )
+    )
+
+
+def _stride_list_to_region_list(stride_list: pd.DataFrame, region_type: str = "stride") -> pd.DataFrame:
+    region_list = stride_list[["start", "end"]].copy()
+    region_list.insert(0, "roi_id", np.arange(len(region_list)))
+    region_list["type"] = region_type
+    return region_list.set_index("roi_id")
+
+
+def _new_trainable_hmm(
+    backend,
+    *,
+    n_states: int = 5,
+    n_gmm_components: int = 3,
+    architecture: str = "left-right-strict",
+    algo_train: str = "baum-welch",
+    stop_threshold: float = 1e-9,
+    max_iterations: int = int(1e8),
+    verbose: bool = True,
+    n_jobs: int = 1,
+    name: str = "my_model",
+):
+    return backend.create_submodel(
+        HmmSubModelConfig(
+            name=name,
+            role="stride",
+            n_states=n_states,
+            n_gmm_components=n_gmm_components,
+            architecture=architecture,
+            algo_train=algo_train,
+            stop_threshold=stop_threshold,
+            max_iterations=max_iterations,
+            verbose=verbose,
+            n_jobs=n_jobs,
+        )
+    )
 
 
 class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
@@ -39,7 +167,7 @@ class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
 
     algorithm_class = RothSegmentationHmm
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> RothSegmentationHmm:
         hmm = PreTrainedRothSegmentationModel()
         hmm.predict(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
@@ -51,7 +179,7 @@ class TestMetaFunctionalityHmmStrideSegmentation(TestAlgorithmMixin):
 
     algorithm_class = HmmStrideSegmentation
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> HmmStrideSegmentation:
         hmm = HmmStrideSegmentation()
         hmm.segment(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
@@ -63,7 +191,7 @@ class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
 
     algorithm_class = RothHmmFeatureTransformer
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(
         self, healthy_example_imu_data, healthy_example_stride_borders
     ) -> RothHmmFeatureTransformer:
@@ -74,19 +202,6 @@ class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
             sampling_rate_hz=100,
         )
         return transform
-
-
-class TestMetaFunctionalitySimpleHMM(TestAlgorithmMixin):
-    __test__ = True
-
-    algorithm_class = SimpleHmm
-
-    @pytest.fixture()
-    def valid_instance(self, after_action_instance):
-        return SimpleHmm(n_states=5, n_gmm_components=3)
-
-    def test_empty_init(self) -> None:
-        pytest.skip()
 
 
 class TestRothHmmFeatureTransform:
@@ -172,39 +287,15 @@ class TestRothHmmFeatureTransform:
         assert transform.sampling_rate_hz == 100
 
 
-class TestSimpleModel:
-    def test_error_on_different_number_data_and_labels(self) -> None:
+class TestTrainableHmmBackends:
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_error_on_different_number_data_and_labels(self, backend) -> None:
         with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
+            _new_trainable_hmm(backend).self_optimize(
                 [np.random.rand(100, 3)], [np.random.rand(100), np.random.rand(100)]
             )
 
         assert "The given training sequence and initial training labels" in str(e.value)
-
-    def test_error_if_datasequence_shorter_nstates(self) -> None:
-        with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
-                [np.random.rand(100, 3), np.random.rand(3, 3)], [np.random.rand(100), np.random.rand(3)]
-            )
-
-        assert "Invalid training sequence!" in str(e.value)
-
-    def test_error_on_different_length_data_and_labels(self) -> None:
-        with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
-                [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.rand(99))]
-            )
-
-        assert "a different number of samples" in str(e.value)
-
-    def test_invalid_label_sequence(self) -> None:
-        n_states = 5
-        with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=n_states, n_gmm_components=3).self_optimize(
-                [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.full(100, n_states + 1))]
-            )
-
-        assert "Invalid label sequence" in str(e.value)
 
     @pytest.mark.parametrize(
         "data",
@@ -214,45 +305,32 @@ class TestSimpleModel:
         ],
     )
     @pytest.mark.parametrize("n_gmm_components", [1, 3])
-    # We test one value with n_states > 10, as this should trigger a sorting bug in pomegranate that we are handling
-    # explicitly
     @pytest.mark.parametrize("n_states", [5, 12])
-    def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states) -> None:
-        model = SimpleHmm(n_states=n_states, n_gmm_components=n_gmm_components, max_iterations=1)
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states, backend) -> None:
+        model = _new_trainable_hmm(
+            backend,
+            n_states=n_states,
+            n_gmm_components=n_gmm_components,
+            max_iterations=1,
+        )
         model.self_optimize([data], [pd.Series(np.tile(np.arange(n_states), int(np.ceil(100 / n_states)))[:100])])
 
         assert list(model.data_columns) == data.columns.tolist()
-        # -2 because of the start and end state
-        assert len(model.model.states) - 2 == n_states == model.n_states
-        # Test that each state has 3 gmm components
-        for state in model.model.states:
-            if state.name not in ["None-start", "None-end"]:
-                if n_gmm_components == 1:
-                    dists = [state.distribution]
-                else:
-                    assert isinstance(state.distribution, GeneralMixtureModel)
-                    assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
-                    dists = state.distribution.distributions
-                assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
+        prediction = model.predict_hidden_state_sequence(data)
+        assert len(prediction) == len(data)
+        assert set(prediction).issubset(set(range(n_states)))
 
-    def test_model_exists_warning(self) -> None:
-        model = SimpleHmm(n_states=5, n_gmm_components=3)
-        model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
-        with pytest.warns(UserWarning) as e:
-            model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
-
-        assert "Model already exists" in str(e[0].message)
-
-    def test_predict_rasies_error_without_optimize(self) -> None:
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_predict_raises_error_without_optimize(self, backend) -> None:
         with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=5, n_gmm_components=3).predict_hidden_state_sequence(
-                pd.DataFrame(np.random.rand(100, 3))
-            )
+            _new_trainable_hmm(backend).predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)))
 
-        assert "You need to train the HMM before calling `predict_hidden_state_sequence`" in str(e.value)
+        assert "Call `self_optimize` first" in str(e.value) or "You need to train the HMM" in str(e.value)
 
-    def test_predict_raises_error_on_invalid_columns(self) -> None:
-        model = SimpleHmm(n_states=5, n_gmm_components=3)
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_predict_raises_error_on_invalid_columns(self, backend) -> None:
+        model = _new_trainable_hmm(backend)
         col_names = ["feature1", "feature2", "feature3"]
         invalid_col_names = ["feature1", "feature2", "feature4"]
         model.self_optimize(
@@ -265,17 +343,29 @@ class TestSimpleModel:
         assert str(tuple(col_names)) in str(e.value)
 
     @pytest.mark.parametrize("algorithm", ["viterbi", "map"])
-    def test_predict(self, algorithm) -> None:
-        model = SimpleHmm(n_states=5, n_gmm_components=3)
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_predict(self, algorithm, backend) -> None:
+        model = _new_trainable_hmm(backend)
         model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
         pred = model.predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)), algorithm=algorithm)
         assert len(pred) == 100
         assert set(pred) == set(range(5))
 
+    @pytest.mark.parametrize("backend", _trainable_backend_params())
+    def test_self_optimize_with_info_returns_history(self, backend) -> None:
+        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
+        instance = _new_trainable_hmm(backend)
+        trained_instance, history = instance.self_optimize_with_info(data, labels)
+        assert instance is trained_instance
+        assert history is not None
+
+
+class TestLegacyBackendHelpers:
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
     def test_different_architectures(self, architecture) -> None:
+        legacy = _require_legacy_backend()
         # We test initialization directly, otherwise training will modify the transition matrizes
-        model = initialize_hmm(
+        model = legacy.initialize_hmm(
             [np.random.rand(100, 3)],
             [np.random.choice(5, 100)],
             n_states=5,
@@ -307,31 +397,6 @@ class TestSimpleModel:
             expected[:5, 6] = 1 / 2
         assert_almost_equal(transition_matrix, expected)
 
-    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-
-        with patch.object(SimpleHmm, "self_optimize_with_info") as mock:
-            instance = SimpleHmm(n_states=5, n_gmm_components=3)
-            mock.return_value = (instance, None)
-            instance.self_optimize(data, labels)
-
-            mock.assert_called_once_with(data, labels)
-
-    def test_self_optimize_with_info_returns_history(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-        instance = SimpleHmm(n_states=5, n_gmm_components=3)
-        trained_instance, history = instance.self_optimize_with_info(data, labels)
-        assert instance is trained_instance
-        assert isinstance(history, History)
-
-    def test_invalid_architecture_raises_error(self) -> None:
-        with pytest.raises(ValueError) as e:
-            SimpleHmm(n_states=5, n_gmm_components=3, architecture="invalid").self_optimize(
-                [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-            )
-
-        assert "Invalid architecture" in str(e.value)
-
 
 class TestRothSegmentationHmm:
     def test_predict_without_model_raises_error(self) -> None:
@@ -340,63 +405,117 @@ class TestRothSegmentationHmm:
 
         assert "No trained model for prediction available!" in str(e.value)
 
-    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.DataFrame({"start": [0], "end": [100]})]
-
-        with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
-            instance = RothSegmentationHmm()
-            mock.return_value = (instance, None)
-            instance.self_optimize(data, labels, sampling_rate_hz=100)
-
-            mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
-
     def test_self_optimize_with_info_returns_history(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))],
         )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=3,
-            stride_model__n_gmm_components=3,
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
         assert instance is trained_instance
+        assert isinstance(instance.model, HMMState)
         for v in history.values():
-            assert isinstance(v, History)
-        assert set(history.keys()) == {"stride_model", "transition_model", "self"}
+            assert v is not None
+        assert set(history.keys()) == {"stride", "transition", "self"}
+
+    def test_serialization_excludes_backend(self) -> None:
+        instance = RothSegmentationHmm(hmm_config=_create_roth_hmm_config())
+
+        payload = json.loads(instance.to_json())
+        restored = RothSegmentationHmm.from_json(instance.to_json())
+
+        assert set(payload["params"]) == {"hmm_config", "model"}
+        assert isinstance(restored.backend, _default_backend_type())
 
     def test_short_strides_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]})],
+            [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]}))],
         )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=5,
-            stride_model__n_gmm_components=3,
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(stride_n_states=5, stride_n_gmm_components=3)
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert "1 strides (out of 4)" in str(w[0].message)
+        assert any("regions of type `stride`" in str(warning.message) for warning in w)
+
+    def test_unknown_region_type_raises_error(self) -> None:
+        data = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        labels = [
+            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}), "stair_stride")
+        ]
+        instance = RothSegmentationHmm(hmm_config=_create_roth_hmm_config()).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
+        )
+
+        with pytest.raises(ValidationError) as exc:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "unknown region types" in str(exc.value)
+
+    def test_missing_configured_module_data_raises_error(self) -> None:
+        data = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        labels = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}), "stride")]
+        config = CompositeHmmConfig(
+            modules=(
+                HmmSubModelConfig(
+                    name="transition",
+                    role="transition",
+                    n_states=5,
+                    n_gmm_components=3,
+                    architecture="left-right-loose",
+                ),
+                HmmSubModelConfig(
+                    name="stride",
+                    role="stride",
+                    n_states=3,
+                    n_gmm_components=3,
+                ),
+                HmmSubModelConfig(
+                    name="stair_stride",
+                    role="stride",
+                    n_states=3,
+                    n_gmm_components=3,
+                ),
+            )
+        )
+        instance = RothSegmentationHmm(hmm_config=RothHmmConfig(model_config=config)).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
+        )
+
+        with pytest.raises(ValueError) as exc:
+            instance.self_optimize(data, labels, sampling_rate_hz=100)
+
+        assert "stair_stride" in str(exc.value)
+        assert "did not receive any trainable regions" in str(exc.value)
 
     def test_short_transitions_raise_warning(self) -> None:
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        # The first warning is the warning about negative improvements during training
-        assert "1 transitions (out of 3)" in str(w[1].message)
+        assert any("1 transitions (out of 3)" in str(warning.message) for warning in w)
 
     def test_strange_inputs_trigger_nan_error(self) -> None:
         # XXXX: We test the skip at the moment because it is not deteministic...
@@ -406,14 +525,19 @@ class TestRothSegmentationHmm:
         # So we use it to test, that the error is raised.
         data, labels = (
             [pd.DataFrame(np.random.rand(200, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
 
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
 
         with pytest.warns(UserWarning) as w, pytest.raises(ValueError) as e:
@@ -422,28 +546,161 @@ class TestRothSegmentationHmm:
         assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
         assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
 
-    def test_training_updates_all_models(self) -> None:
-        """Training should modify the stride, the transition model and the model itself."""
+    def test_training_updates_final_model(self) -> None:
+        """Training should modify the final fused model while leaving the config untouched."""
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
+            [
+                _stride_list_to_region_list(
+                    pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})
+                )
+            ],
         )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(
+                stride_n_states=5, stride_n_gmm_components=3, transition_n_gmm_components=3
+            )
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
-        # We can not properly test this, so we get the hash before and after and compare them.
-        hash_stride_model = custom_hash(instance.stride_model)
-        hash_transition_model = custom_hash(instance.transition_model)
+        hash_model_config = custom_hash(instance.hmm_config)
         hash_model = custom_hash(instance.model)
 
         instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        assert hash_stride_model != custom_hash(instance.stride_model)
-        assert hash_transition_model != custom_hash(instance.transition_model)
+        assert hash_model_config == custom_hash(instance.hmm_config)
         assert hash_model != custom_hash(instance.model)
+
+    def test_pretrained_model_is_migrated_to_hmm_state(self) -> None:
+        model = PreTrainedRothSegmentationModel()
+
+        assert isinstance(model.model, HMMState)
+        assert model.model.trained_with.backend_id == "pomegranate-legacy-migrated"
+        assert model.model.trained_with.backend_version is not None
+        assert len(model.model.submodels) == 2
+        assert isinstance(model.backend, _default_backend_type())
+
+    def test_pretrained_model_migration_removes_silent_backend_states(self) -> None:
+        model = PreTrainedRothSegmentationModel()
+        compiled = model.model.compiled
+
+        assert compiled.graph.transition_probs.shape == (len(compiled.state_names), len(compiled.state_names))
+        assert compiled.graph.start_probs.shape == (len(compiled.state_names),)
+        assert compiled.graph.end_probs.shape == (len(compiled.state_names),)
+        assert len(compiled.emissions) == len(compiled.state_names)
+        assert all(name not in {"start", "end"} for name in compiled.state_names)
+
+    @pytest.mark.parametrize("algorithm", ["map", "viterbi"])
+    @pytest.mark.parametrize("sensor", ["left_sensor", "right_sensor"])
+    def test_pretrained_scipy_backend_matches_legacy_backend_for_all_decoders(
+        self, healthy_example_imu_data, sensor, algorithm
+    ) -> None:
+        legacy = _require_legacy_backend()
+        model = PreTrainedRothSegmentationModel()
+
+        if sensor == "left_sensor":
+            data = convert_left_foot_to_fbf(healthy_example_imu_data[sensor])
+        else:
+            data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")[sensor]
+
+        feature_data, _ = model._transform([data], None, sampling_rate_hz=100)
+        feature_data = feature_data[0]
+
+        legacy_result = legacy.backend_class().predict(
+            model.model,
+            feature_data,
+            expected_columns=model.data_columns,
+            algorithm=algorithm,
+            verbose=model.verbose,
+        )
+        scipy_result = ScipyHmmInferenceBackend().predict(
+            model.model,
+            feature_data,
+            expected_columns=model.data_columns,
+            algorithm=algorithm,
+            verbose=model.verbose,
+        )
+
+        assert_array_equal(legacy_result, scipy_result)
+
+    def test_pretrained_inference_regression_uses_shared_snapshot(self, healthy_example_imu_data) -> None:
+        data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")
+        backends = [ScipyHmmInferenceBackend()]
+        if PomegranateLegacyHmmBackend is not None:
+            backends.append(PomegranateLegacyHmmBackend())
+        if PomegranateModernHmmBackend is not None:
+            backends.append(PomegranateModernHmmBackend())
+
+        for backend in backends:
+            result = HmmStrideSegmentation(
+                model=PreTrainedRothSegmentationModel().set_params(backend=backend),
+                snap_to_min_win_ms=300,
+                snap_to_min_axis="gyr_ml",
+            ).segment(data, 204.8)
+            for sensor in ["left_sensor", "right_sensor"]:
+                expected = load_pretrained_inference_stride_list_snapshot(sensor)
+                assert_frame_equal(result.stride_list_[sensor], expected)
+
+    @pytest.mark.parametrize("inference_backend", _runtime_inference_backend_params())
+    def test_pretrained_inference_backend_matches_pomegranate_hidden_states(
+        self, healthy_example_imu_data, inference_backend
+    ) -> None:
+        model = PreTrainedRothSegmentationModel()
+        comparison_model = model.clone().set_params(backend=inference_backend)
+        data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+
+        pomegranate_result = model.predict(data, sampling_rate_hz=100)
+        comparison_result = comparison_model.predict(data, sampling_rate_hz=100)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, comparison_result.hidden_state_sequence_)
+        assert_array_equal(
+            pomegranate_result.hidden_state_sequence_feature_space_,
+            comparison_result.hidden_state_sequence_feature_space_,
+        )
+
+    def test_trained_model_json_roundtrip_preserves_hidden_states(self) -> None:
+        data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        region_list_sequence = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))]
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
+        )
+        instance.self_optimize(data_sequence, region_list_sequence, sampling_rate_hz=100)
+        restored = RothSegmentationHmm.from_json(instance.to_json())
+
+        original_result = instance.predict(data_sequence[0], sampling_rate_hz=100)
+        restored_result = restored.predict(data_sequence[0], sampling_rate_hz=100)
+
+        assert_array_equal(original_result.hidden_state_sequence_, restored_result.hidden_state_sequence_)
+        assert_array_equal(
+            original_result.hidden_state_sequence_feature_space_,
+            restored_result.hidden_state_sequence_feature_space_,
+        )
+        assert instance.model.trained_with.backend_id.startswith("pomegranate-")
+        assert instance.model.trained_with.backend_version is not None
+        assert isinstance(restored.backend, _default_backend_type())
+
+    @pytest.mark.parametrize("inference_backend", _runtime_inference_backend_params())
+    def test_trained_inference_backend_matches_pomegranate_hidden_states(self, inference_backend) -> None:
+        data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
+        region_list_sequence = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))]
+        instance = RothSegmentationHmm(
+            hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
+        ).set_params(
+            hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
+        )
+        instance.self_optimize(data_sequence, region_list_sequence, sampling_rate_hz=100)
+
+        comparison_instance = instance.clone().set_params(backend=inference_backend)
+        pomegranate_result = instance.predict(data_sequence[0], sampling_rate_hz=100)
+        comparison_result = comparison_instance.predict(data_sequence[0], sampling_rate_hz=100)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, comparison_result.hidden_state_sequence_)
+        assert_array_equal(
+            pomegranate_result.hidden_state_sequence_feature_space_,
+            comparison_result.hidden_state_sequence_feature_space_,
+        )
 
 
 class TestHmmStrideSegmentation:
@@ -461,6 +718,23 @@ class TestHmmStrideSegmentation:
         assert isinstance(result.matches_start_end_original_, np.ndarray)
         assert isinstance(result.hidden_state_sequence_, np.ndarray)
         assert result.hidden_state_sequence_ is result.result_model_.hidden_state_sequence_
+
+    @pytest.mark.parametrize("inference_backend", _runtime_inference_backend_params())
+    def test_pretrained_inference_backend_matches_pomegranate_segmentation(
+        self, healthy_example_imu_data, inference_backend
+    ) -> None:
+        data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+        pomegranate_result = HmmStrideSegmentation(model=PreTrainedRothSegmentationModel()).segment(data, 204.8)
+        comparison_result = HmmStrideSegmentation(
+            model=PreTrainedRothSegmentationModel().set_params(backend=inference_backend)
+        ).segment(data, 204.8)
+
+        assert_array_equal(pomegranate_result.hidden_state_sequence_, comparison_result.hidden_state_sequence_)
+        assert_array_equal(pomegranate_result.matches_start_end_, comparison_result.matches_start_end_)
+        assert_array_equal(
+            pomegranate_result.matches_start_end_original_,
+            comparison_result.matches_start_end_original_,
+        )
 
     def test_segment_with_multi_dataset(self, healthy_example_imu_data) -> None:
         data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")

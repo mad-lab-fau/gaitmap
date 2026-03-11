@@ -4,6 +4,11 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from gaitmap_mad.event_detection._rampp_event_detection import (
+    _detect_ic_for_ic_stride,
+    _detect_tc_for_ic_stride,
+    _detect_tc_for_segmented_stride,
+)
 from numpy.testing import assert_array_equal
 from pandas._testing import assert_frame_equal
 
@@ -13,11 +18,6 @@ from gaitmap.event_detection import RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.event_detection._rampp_event_detection import (
-    _detect_ic_for_ic_stride,
-    _detect_tc_for_ic_stride,
-    _detect_tc_for_segmented_stride,
-)
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 
@@ -33,7 +33,7 @@ common_arguments = pytest.mark.parametrize(
 class MetaTestConfig:
     algorithm_class = RamppEventDetection
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseType:
         data_left = healthy_example_imu_data["left_sensor"]
         data_left.columns = BF_COLS

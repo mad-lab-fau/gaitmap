@@ -5,7 +5,7 @@ SegmentationModel Training
 ==========================
 
 This example illustrates how a Hidden Markov Model (HMM) implemented by the
-:class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm` can be trained from IMU data and presegmented stride lists.
+:class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm` can be trained from IMU data and typed region lists.
 The used implementation is based on the work of Roth et al [1]_
 
 .. [1] Roth, N., Küderle, A., Ullrich, M., Gladow, T., Marxreiter F., Klucken, J., Eskofier, B. & Kluge F. (2021).
@@ -84,28 +84,33 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
-from gaitmap.stride_segmentation.hmm import SimpleHmm
+from gaitmap.stride_segmentation.hmm import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 
-stride_model = SimpleHmm(
-    n_states=20,
-    n_gmm_components=6,
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=5,
-    architecture="left-right-strict",
-    verbose=True,
-    name="stride_model",
-)
-
-transition_model = SimpleHmm(
-    n_states=5,
-    n_gmm_components=3,
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=5,
-    architecture="left-right-loose",
-    verbose=True,
-    name="transition_model",
+model_config = CompositeHmmConfig(
+    modules=(
+        HmmSubModelConfig(
+            name="transition",
+            role="transition",
+            n_states=5,
+            n_gmm_components=3,
+            algo_train="baum-welch",
+            stop_threshold=1e-9,
+            max_iterations=5,
+            architecture="left-right-loose",
+            verbose=True,
+        ),
+        HmmSubModelConfig(
+            name="stride",
+            role="stride",
+            n_states=20,
+            n_gmm_components=6,
+            algo_train="baum-welch",
+            stop_threshold=1e-9,
+            max_iterations=5,
+            architecture="left-right-strict",
+            verbose=True,
+        ),
+    )
 )
 
 # %%
@@ -119,16 +124,16 @@ transition_model = SimpleHmm(
 from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
-    stride_model=stride_model,
-    transition_model=transition_model,
-    feature_transform=feature_transform,
-    algo_predict="viterbi",
-    algo_train="baum-welch",
-    stop_threshold=1e-9,
-    max_iterations=1,
-    initialization="labels",
-    verbose=True,
-    name="segmentation_model",
+    hmm_config=RothHmmConfig(
+        model_config=model_config,
+        feature_transform=feature_transform,
+        algo_predict="viterbi",
+        algo_train="baum-welch",
+        stop_threshold=1e-9,
+        max_iterations=1,
+        initialization="labels",
+        name="segmentation_model",
+    ),
 )
 
 # %%
@@ -139,12 +144,18 @@ segmentation_model = RothSegmentationHmm(
 # convention!).
 # The main input format for the training process are gait sequences which include transitions as well as valid strides.
 # To train on multiple sequences, we can just feed a list of gaitsequences into the model for training.
-# For each gait sequence we also need to have a valid stride list. In this example we handle the data from the left and
-# right foot as separate gait sequences and add them to a simple list.
-# We have to do the same for the stride lists.
+# For each gait sequence we also need typed training regions with `start`, `end`, and `type`.
+# In this example the stride regions are all of type `"stride"` and transitions are defined implicitly as everything
+# not covered by a region.
+# We handle the data from the left and right foot as separate gait sequences and add them to a simple list.
 
 data_train_sequence = [bf_data["left_sensor"], bf_data["right_sensor"]]
-stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
+region_list_sequence = []
+for sensor in ["left_sensor", "right_sensor"]:
+    region_list = stride_list[sensor][["start", "end"]].copy()
+    region_list.insert(0, "roi_id", np.arange(len(region_list)))
+    region_list["type"] = "stride"
+    region_list_sequence.append(region_list.set_index("roi_id"))
 
 # %%
 # Training
@@ -157,23 +168,26 @@ stride_list_sequence = [stride_list["left_sensor"], stride_list["right_sensor"]]
 # finally combine them to a flatted segmentation model.
 
 segmentation_model = segmentation_model.self_optimize(
-    data_train_sequence, stride_list_sequence, sampling_rate_hz=sampling_rate_hz
+    data_train_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz
 )
 
 # %%
 # Inspecting the Results
 # --------------------------------------
 #
-# Now all internal models which were initialized as "None" should be populated by pomegranate models.
-# We can now have a look at the final transition matrix or the trained distributions (GMMs).
+# Now the trained model is stored as a serializable HMM state.
+# We can now have a look at the final transition matrix, the backend provenance, or one of the trained emission
+# distributions.
 # You could now either use the model to predict stride borders on an unseen sequence or save it to a json file for later
 # use.
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(segmentation_model.model.dense_transition_matrix()[0:-2, 0:-2])
+print(segmentation_model.model.trained_with)
 
-print(segmentation_model.model.states[10])
+print(segmentation_model.model.compiled.graph.transition_probs)
+
+print(segmentation_model.model.compiled.emissions[10])
 
 # %%
 # Applying the Model to a Sequence
@@ -183,18 +197,22 @@ print(segmentation_model.model.states[10])
 # We will also plot the results to see how well the model performs.
 from gaitmap.stride_segmentation.hmm import HmmStrideSegmentation
 
-hmm = HmmStrideSegmentation(segmentation_model).segment(bf_data, sampling_rate_hz=sampling_rate_hz)
+# Note: We are using a high snap_to_min_win_ms here to get consistent output agaisnt all HMM backends.
+#       They have slight inconsitencies in some edge cases and we want to make sure this example provides the same results for consistent snapshots.
+hmm = HmmStrideSegmentation(segmentation_model, snap_to_min_win_ms=300).segment(
+    bf_data, sampling_rate_hz=sampling_rate_hz
+)
 hmm.stride_list_
 
 # %%
 # Plotting the Results
 # --------------------
-sensor = "left_sensor"
+sensor = "right_sensor"
 
 fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(10, 5))
 axs[0].set_title("gaitmap Body Frame Dataset")
 axs[0].plot(bf_data.reset_index(drop=True)[sensor]["gyr_ml"])
-for start, end in hmm.stride_list_["left_sensor"].to_numpy():
+for start, end in hmm.stride_list_[sensor].to_numpy():
     axs[0].axvline(start, c="r")
     axs[0].axvline(end, c="r")
     axs[0].axvspan(start, end, alpha=0.2)

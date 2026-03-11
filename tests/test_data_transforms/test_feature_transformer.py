@@ -30,7 +30,7 @@ class TestMetaFunctionalityResample(TestAlgorithmMixin):
 
     algorithm_class = Resample
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> Resample:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:1000]
         data_left.columns = BF_COLS
@@ -50,7 +50,7 @@ class TestMetaFunctionalityRollingTransforms(TestAlgorithmMixin):
     def set_algo_class(self, request) -> None:
         self.algorithm_class, self.algo_params, _ = request.param
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseTransformer:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:1000]
         data_left.columns = BF_COLS

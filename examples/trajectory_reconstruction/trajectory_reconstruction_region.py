@@ -28,7 +28,7 @@ from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 imu_data = get_healthy_example_imu_data()
 dummy_regions_list = pd.DataFrame([[0, len(imu_data["left_sensor"])]], columns=["start", "end"]).rename_axis("gs_id")
-dummy_regions_list = {k: dummy_regions_list for k in get_multi_sensor_names(imu_data)}
+dummy_regions_list = dict.fromkeys(get_multi_sensor_names(imu_data), dummy_regions_list)
 dummy_regions_list["left_sensor"]
 
 
