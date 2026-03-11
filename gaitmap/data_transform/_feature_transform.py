@@ -116,9 +116,9 @@ class Resample(BaseTransformer):
         if roi_list is not None:
             self.roi_list = roi_list
             out = roi_list.copy()
-            out.loc[:, ["start", "end"]] = (
-                roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz
-            ).round()
+            rescaled = (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round()
+            for col in ["start", "end"]:
+                out[col] = rescaled[col].astype(out[col].dtype)
             self.transformed_roi_list_ = out
         return self
 

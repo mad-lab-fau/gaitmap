@@ -93,7 +93,7 @@ class TestPositionMethodNoGravityMixin:
         fs = 204.8
 
         strides = healthy_example_stride_events["left_sensor"]
-        start, end = int(strides.iloc[:1]["start"]), int(strides.iloc[:1]["end"])
+        start, end = int(strides.iloc[0]["start"]), int(strides.iloc[0]["end"])
         data = healthy_example_imu_data["left_sensor"].iloc[start:end]
         orientation = SimpleGyroIntegration().estimate(data, sampling_rate_hz=fs).orientation_object_
         data = rotate_dataset_series(data, orientation[:-1])

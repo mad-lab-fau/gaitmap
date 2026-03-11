@@ -2,6 +2,7 @@
 
 import json
 import warnings
+from io import StringIO
 from importlib import import_module
 from typing import Any, Optional, TypeVar, Union
 
@@ -100,7 +101,7 @@ def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
             return np.array(json_obj["array"])
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
-            return pd.read_json(json_obj["df"], orient="split", typ=typ)
+            return pd.read_json(StringIO(json_obj["df"]), orient="split", typ=typ)
         if json_obj["_obj_type"] == "HiddenMarkovModel":
             hidden_markov_model = _import_hidden_markov_model()
             with np.errstate(divide="ignore"):

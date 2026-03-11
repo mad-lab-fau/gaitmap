@@ -250,6 +250,8 @@ def test_gridsearch_cv(snapshot) -> None:
     cached_results = cached_results.drop(ignore_cols, axis=1)
     cached_int_cols = cached_results.select_dtypes(include=["int", "int32", "int64"]).columns
     cached_results[cached_int_cols] = cached_results[cached_int_cols].astype("int64")
+    results_df = results_df.astype(object).mask(results_df.isna(), np.nan)
+    cached_results = cached_results.astype(object).mask(cached_results.isna(), np.nan)
     pd.testing.assert_frame_equal(cached_results, results_df)
 
     snapshot.assert_match(results_df, check_dtype=False)

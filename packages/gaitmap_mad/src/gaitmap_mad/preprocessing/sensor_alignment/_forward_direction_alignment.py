@@ -240,7 +240,7 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
                 rotation_axis_angles,
             )
             .inv()
-            .apply(pos_method.velocity_),
+            .apply(pos_method.velocity_.to_numpy(copy=True)),
             columns=pos_method.velocity_.columns,
         )["vel_" + self.forward_direction.lower()]
 

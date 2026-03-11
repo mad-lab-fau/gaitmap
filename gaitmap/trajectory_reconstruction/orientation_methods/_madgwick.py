@@ -145,10 +145,10 @@ class MadgwickAHRS(BaseOrientationMethod):
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
-        gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
-        acc_data = data[SF_ACC].to_numpy()
+        gyro_data = np.deg2rad(data[SF_GYR].to_numpy(copy=True))
+        acc_data = data[SF_ACC].to_numpy(copy=True)
         if self.use_magnetometer:
-            mag_data = data[SF_MAG].to_numpy()
+            mag_data = data[SF_MAG].to_numpy(copy=True)
             madgwick_update_series = memory.cache(_madgwick_update_series_mag)
             rots = madgwick_update_series(
                 gyro=gyro_data,

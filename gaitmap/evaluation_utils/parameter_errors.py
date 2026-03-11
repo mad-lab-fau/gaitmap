@@ -432,7 +432,7 @@ def calculate_aggregated_parameter_errors(
     )
 
     # And we need to sum up the common rows stats
-    common_rows_stats = pd.concat(common_rows_stats, axis=1).groupby(level=1, axis=1).sum()
+    common_rows_stats = pd.concat(common_rows_stats, axis=1).T.groupby(level=1).sum().T
     return pd.concat([_calculate_error_stats(combined_errors, scoring_errors=scoring_errors), common_rows_stats])
 
 

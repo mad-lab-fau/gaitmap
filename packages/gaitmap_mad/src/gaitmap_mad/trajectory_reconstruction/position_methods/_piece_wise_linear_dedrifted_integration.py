@@ -168,7 +168,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
         is_single_sensor_data(self.data, check_gyr=False, frame="sensor", raise_exception=True)
 
-        acc_data = data[SF_ACC].to_numpy()
+        acc_data = data[SF_ACC].to_numpy(copy=True)
         if self.gravity is not None:
             acc_data -= self.gravity
 
