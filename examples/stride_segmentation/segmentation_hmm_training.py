@@ -121,7 +121,7 @@ model_config = CompositeHmmConfig(
 # invoke the training process.
 # Again, all configurable parameters are exposed for demonstration purpose.
 # These parameters should again work for most usecases.
-from gaitmap.stride_segmentation.hmm import PomegranateHmmBackend, RothSegmentationHmm
+from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
     hmm_config=RothHmmConfig(
@@ -134,7 +134,6 @@ segmentation_model = RothSegmentationHmm(
         initialization="labels",
         name="segmentation_model",
     ),
-    backend=PomegranateHmmBackend(),
 )
 
 # %%

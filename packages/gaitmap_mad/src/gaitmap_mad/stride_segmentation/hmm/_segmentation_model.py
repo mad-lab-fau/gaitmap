@@ -308,7 +308,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
     Notes
     -----
     The public trained-model parameter is stored as a serializable `HMMState`.
-    The default backend in this refactor step is `PomegranateHmmBackend`.
+    The default backend depends on the installed optional HMM runtimes.
 
     References
     ----------

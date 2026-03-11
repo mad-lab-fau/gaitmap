@@ -113,8 +113,8 @@ def initialize_hmm(
     return model
 
 
-class SimpleHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
-    """Wrap all required information to train a legacy flat HMM.
+class _LegacyTrainableHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
+    """Internal wrapper used to train a legacy flat HMM.
 
     This is a thin wrapper around the legacy `pomegranate.HiddenMarkovModel` class and delegates training and
     inference to that runtime.
@@ -273,8 +273,8 @@ class SimpleHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
         return self, history
 
 
-def _create_simple_hmm_from_config(config: HmmSubModelConfig) -> SimpleHmm:
-    return SimpleHmm(
+def _create_trainable_hmm_from_config(config: HmmSubModelConfig) -> _LegacyTrainableHmm:
+    return _LegacyTrainableHmm(
         n_states=config.n_states,
         n_gmm_components=config.n_gmm_components,
         architecture=config.architecture,
@@ -300,7 +300,7 @@ class PomegranateLegacyHmmBackend(BaseHmmBackend):
         super().__init__(backend_id=backend_id)
 
     def create_submodel(self, config: HmmSubModelConfig) -> BaseTrainableHmm:
-        return _create_simple_hmm_from_config(config)
+        return _create_trainable_hmm_from_config(config)
 
     def predict(
         self,
