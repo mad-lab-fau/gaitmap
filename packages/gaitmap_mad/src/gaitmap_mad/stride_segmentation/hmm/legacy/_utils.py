@@ -17,9 +17,11 @@ try:
     from pomegranate.hmm import History
 except (ImportError, AttributeError):
     History = Any
-from tpcp import BaseTpcpObject, CloneFactory
+from tpcp import BaseTpcpObject
 from tpcp._hash import custom_hash
 
+from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint as ShortenedHMMPrint  # noqa: F401
+from gaitmap_mad.stride_segmentation.hmm._repr_utils import is_serialized_hmm_state
 from gaitmap_mad.stride_segmentation.hmm._utils import _DataToShortError, cluster_data_by_labels
 
 
@@ -71,15 +73,6 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
     return model
 
 
-def _is_serialized_hmm_state(value: Any) -> bool:
-    return (
-        hasattr(value, "compiled")
-        and hasattr(value, "trained_with")
-        and callable(getattr(value, "to_json", None))
-        and callable(getattr(type(value), "from_json", None))
-    )
-
-
 class _HackyClonableHMMFix(BaseTpcpObject):
     """Mixin that teaches `tpcp.clone` how to clone legacy pomegranate HMMs."""
 
@@ -87,25 +80,9 @@ class _HackyClonableHMMFix(BaseTpcpObject):
     def __clone_param__(cls, param_name: str, value: Any) -> Any:
         if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
-        if _is_serialized_hmm_state(value):
+        if is_serialized_hmm_state(value):
             return type(value).from_json(value.to_json())
         return super().__clone_param__(param_name, value)
-
-
-class ShortenedHMMPrint(BaseTpcpObject):
-    """Mixin class to better format HMM models when printing them."""
-
-    def __repr_parameter__(self, name: str, value: Any) -> str:
-        if name == "model":
-            if _is_serialized_hmm_state(value):
-                n_states = len(value.compiled.state_names) if getattr(value, "compiled", None) is not None else "?"
-                backend = getattr(getattr(value, "trained_with", None), "backend_id", "?")
-                return f"{name}=HMMState[backend={backend}, states={n_states}](...)"
-            if isinstance(value, pg.HiddenMarkovModel):
-                return f"{name}=HiddenMarkovModel[name={value.name}](...)"
-            if isinstance(value, CloneFactory) and isinstance(value.default_value, pg.HiddenMarkovModel):
-                return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
-        return super().__repr_parameter__(name, value)
 
 
 def gmms_from_samples(

@@ -1,44 +1,27 @@
 import importlib
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-import gaitmap_mad.stride_segmentation.hmm as hmm_module
 from gaitmap_mad.stride_segmentation.hmm import _backend_base as backend_base
-from gaitmap_mad.stride_segmentation.hmm import _segmentation_model as segmentation_model_module
-from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend
-from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
-from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
 
 
-@pytest.fixture(autouse=True)
-def _restore_segmentation_model():
-    yield
-    importlib.reload(segmentation_model_module)
-    importlib.reload(hmm_module)
-    gaitmap_hmm_module = sys.modules.get("gaitmap.stride_segmentation.hmm")
-    if gaitmap_hmm_module is not None:
-        importlib.reload(gaitmap_hmm_module)
-
-
-class _FakeLegacyBackend(PomegranateLegacyHmmBackend):
+class _FakeLegacyBackend(backend_base.BaseHmmBackend):
     def __init__(self) -> None:
         backend_base.BaseHmmBackend.__init__(self, backend_id="pomegranate-legacy")
 
 
-class _FakeModernBackend(PomegranateModernHmmBackend):
+class _FakeModernBackend(backend_base.BaseHmmBackend):
     def __init__(self) -> None:
         backend_base.BaseHmmBackend.__init__(self, backend_id="pomegranate-modern")
         self.inference_implementation = "native"
 
 
-class _FakeScipyBackend(ScipyHmmInferenceBackend):
+class _FakeScipyBackend(backend_base.BaseHmmBackend):
     def __init__(self) -> None:
         backend_base.BaseHmmBackend.__init__(self, backend_id="scipy-inference")
 
 
-def _reload_segmentation_model(monkeypatch, *, modern_available: bool, legacy_available: bool):
+def _get_default_backend(monkeypatch, *, modern_available: bool, legacy_available: bool):
     def _fake_import_module(module_name: str):
         if module_name == "gaitmap_mad.stride_segmentation.hmm.modern":
             if not modern_available:
@@ -53,30 +36,25 @@ def _reload_segmentation_model(monkeypatch, *, modern_available: bool, legacy_av
         return importlib.import_module(module_name)
 
     monkeypatch.setattr(backend_base, "import_module", _fake_import_module)
-    segmentation_model = importlib.reload(segmentation_model_module)
-    importlib.reload(hmm_module)
-    return segmentation_model
+    return backend_base.get_default_hmm_backend()
 
 
 def test_default_backend_without_pomegranate(monkeypatch) -> None:
-    segmentation_model = _reload_segmentation_model(monkeypatch, modern_available=False, legacy_available=False)
+    backend = _get_default_backend(monkeypatch, modern_available=False, legacy_available=False)
 
-    assert isinstance(segmentation_model.DEFAULT_HMM_BACKEND, ScipyHmmInferenceBackend)
-    assert isinstance(segmentation_model.RothSegmentationHmm().backend, ScipyHmmInferenceBackend)
+    assert isinstance(backend, _FakeScipyBackend)
 
 
 def test_default_backend_with_legacy_pomegranate(monkeypatch) -> None:
-    segmentation_model = _reload_segmentation_model(monkeypatch, modern_available=False, legacy_available=True)
+    backend = _get_default_backend(monkeypatch, modern_available=False, legacy_available=True)
 
-    assert isinstance(segmentation_model.DEFAULT_HMM_BACKEND, PomegranateLegacyHmmBackend)
-    assert isinstance(segmentation_model.RothSegmentationHmm().backend, PomegranateLegacyHmmBackend)
+    assert isinstance(backend, _FakeLegacyBackend)
 
 
 def test_default_backend_with_modern_pomegranate(monkeypatch) -> None:
-    segmentation_model = _reload_segmentation_model(monkeypatch, modern_available=True, legacy_available=True)
+    backend = _get_default_backend(monkeypatch, modern_available=True, legacy_available=True)
 
-    assert isinstance(segmentation_model.DEFAULT_HMM_BACKEND, PomegranateModernHmmBackend)
-    assert isinstance(segmentation_model.RothSegmentationHmm().backend, PomegranateModernHmmBackend)
+    assert isinstance(backend, _FakeModernBackend)
 
 
 def test_packaged_pretrained_model_uses_migrated_state_format() -> None:

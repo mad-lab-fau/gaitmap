@@ -1,4 +1,5 @@
 import json
+from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -6,13 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
-
-try:
-    from pomegranate.hmm import DenseHMM
-except (ImportError, AttributeError):
-    DenseHMM = None
-
-pytest.importorskip("pomegranate")
+from pandas.testing import assert_frame_equal
 
 from gaitmap_mad.stride_segmentation.hmm import (
     CompositeHmmConfig,
@@ -23,18 +18,10 @@ from gaitmap_mad.stride_segmentation.hmm import (
     RothHmmConfig,
     RothHmmFeatureTransformer,
     RothSegmentationHmm,
+    get_default_hmm_backend,
 )
 from gaitmap_mad.stride_segmentation.hmm._utils import estimate_sequence_boundary_probs
-from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend
-from gaitmap_mad.stride_segmentation.hmm.legacy import _backend as backend_module
-from gaitmap_mad.stride_segmentation.hmm.legacy._backend import initialize_hmm
-from gaitmap_mad.stride_segmentation.hmm.legacy._state import (
-    hmm_state_to_pomegranate_model,
-)
-from gaitmap_mad.stride_segmentation.hmm.legacy._utils import predict
-from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
 from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
-from pomegranate.hmm import History
 from tpcp._hash import custom_hash
 
 from gaitmap.data_transform import SlidingWindowMean
@@ -46,30 +33,65 @@ from gaitmap.utils.datatype_helper import (
     is_single_sensor_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
+from tests._hmm_test_helpers import (
+    import_legacy_hmm_backend,
+    import_modern_hmm_backend,
+    load_pretrained_inference_stride_list_snapshot,
+)
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
 np.random.seed(1)
 
+try:
+    PomegranateLegacyHmmBackend = import_module(
+        "gaitmap_mad.stride_segmentation.hmm.legacy"
+    ).PomegranateLegacyHmmBackend
+except ImportError:
+    PomegranateLegacyHmmBackend = None
+
+try:
+    PomegranateModernHmmBackend = import_module(
+        "gaitmap_mad.stride_segmentation.hmm.modern"
+    ).PomegranateModernHmmBackend
+except ImportError:
+    PomegranateModernHmmBackend = None
+
+
+def _require_legacy_backend():
+    import_legacy_hmm_backend()
+    backend_module = import_module("gaitmap_mad.stride_segmentation.hmm.legacy._backend")
+    state_module = import_module("gaitmap_mad.stride_segmentation.hmm.legacy._state")
+    utils_module = import_module("gaitmap_mad.stride_segmentation.hmm.legacy._utils")
+    return SimpleNamespace(
+        backend_module=backend_module,
+        backend_class=backend_module.PomegranateLegacyHmmBackend,
+        initialize_hmm=backend_module.initialize_hmm,
+        hmm_state_to_pomegranate_model=state_module.hmm_state_to_pomegranate_model,
+        predict=utils_module.predict,
+    )
+
+
+def _default_backend_type():
+    return type(get_default_hmm_backend())
+
 
 def _runtime_inference_backend_params():
     params = [pytest.param(ScipyHmmInferenceBackend(), id="scipy")]
-    if DenseHMM is not None:
+    if PomegranateModernHmmBackend is not None:
         params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
-    else:
-        params.append(
-            pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x"))
-        )
     return params
 
 
 def _trainable_backend_params():
-    params = [pytest.param(PomegranateLegacyHmmBackend(), id="pomegranate-legacy")]
-    if DenseHMM is not None:
+    params = []
+    if PomegranateLegacyHmmBackend is not None:
+        params.append(pytest.param(PomegranateLegacyHmmBackend(), id="pomegranate-legacy"))
+    if PomegranateModernHmmBackend is not None:
         params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
-    else:
+    if not params:
         params.append(
-            pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x"))
+            pytest.param(None, id="no-trainable-backend", marks=pytest.mark.skip(reason="requires a trainable HMM backend"))
         )
     return params
 
@@ -348,8 +370,9 @@ class TestTrainableHmmBackends:
 class TestLegacyBackendHelpers:
     @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
     def test_different_architectures(self, architecture) -> None:
+        legacy = _require_legacy_backend()
         # We test initialization directly, otherwise training will modify the transition matrizes
-        model = initialize_hmm(
+        model = legacy.initialize_hmm(
             [np.random.rand(100, 3)],
             [np.random.choice(5, 100)],
             n_states=5,
@@ -393,7 +416,8 @@ class TestRothSegmentationHmm:
         assert_array_equal(end_probs, np.array([0.0, 0.0, 1.0]))
 
     def test_legacy_combined_model_uses_global_end_probabilities(self) -> None:
-        backend = backend_module.PomegranateLegacyHmmBackend()
+        legacy = _require_legacy_backend()
+        backend = legacy.backend_class()
         model_config = CompositeHmmConfig(
             modules=(
                 HmmSubModelConfig(
@@ -415,7 +439,7 @@ class TestRothSegmentationHmm:
         module_offsets = {"transition": 0, "stride": 2}
         trained_models = {
             "transition": SimpleNamespace(
-                model=initialize_hmm(
+                model=legacy.initialize_hmm(
                     [np.random.rand(12, 1)],
                     [np.tile(np.arange(2), 6)],
                     n_states=2,
@@ -425,7 +449,7 @@ class TestRothSegmentationHmm:
                 )
             ),
             "stride": SimpleNamespace(
-                model=initialize_hmm(
+                model=legacy.initialize_hmm(
                     [np.random.rand(12, 1)],
                     [np.tile(np.arange(2), 6)],
                     n_states=2,
@@ -446,7 +470,7 @@ class TestRothSegmentationHmm:
             distributions=[
                 distribution
                 for model in trained_models.values()
-                for distribution in backend_module.get_model_distributions(model.model)
+                for distribution in legacy.backend_module.get_model_distributions(model.model)
             ],
             model_config=model_config,
             module_offsets=module_offsets,
@@ -494,7 +518,7 @@ class TestRothSegmentationHmm:
         assert instance is trained_instance
         assert isinstance(instance.model, HMMState)
         for v in history.values():
-            assert isinstance(v, History)
+            assert v is not None
         assert set(history.keys()) == {"stride", "transition", "self"}
 
     def test_serialization_excludes_backend(self) -> None:
@@ -504,7 +528,7 @@ class TestRothSegmentationHmm:
         restored = RothSegmentationHmm.from_json(instance.to_json())
 
         assert set(payload["params"]) == {"hmm_config", "model"}
-        assert isinstance(restored.backend, PomegranateLegacyHmmBackend)
+        assert isinstance(restored.backend, _default_backend_type())
 
     def test_short_strides_raise_warning(self) -> None:
         data, labels = (
@@ -653,7 +677,7 @@ class TestRothSegmentationHmm:
         assert model.model.trained_with.backend_id == "pomegranate-legacy-migrated"
         assert model.model.trained_with.backend_version is not None
         assert len(model.model.submodels) == 2
-        assert isinstance(model.backend, PomegranateLegacyHmmBackend)
+        assert isinstance(model.backend, _default_backend_type())
 
     def test_pretrained_model_migration_removes_silent_backend_states(self) -> None:
         model = PreTrainedRothSegmentationModel()
@@ -664,6 +688,57 @@ class TestRothSegmentationHmm:
         assert compiled.graph.end_probs.shape == (len(compiled.state_names),)
         assert len(compiled.emissions) == len(compiled.state_names)
         assert all(name not in {"start", "end"} for name in compiled.state_names)
+
+    @pytest.mark.parametrize("algorithm", ["map", "viterbi"])
+    @pytest.mark.parametrize("sensor", ["left_sensor", "right_sensor"])
+    def test_pretrained_scipy_backend_matches_legacy_backend_for_all_decoders(
+        self, healthy_example_imu_data, sensor, algorithm
+    ) -> None:
+        legacy = _require_legacy_backend()
+        model = PreTrainedRothSegmentationModel()
+
+        if sensor == "left_sensor":
+            data = convert_left_foot_to_fbf(healthy_example_imu_data[sensor])
+        else:
+            data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")[sensor]
+
+        feature_data, _ = model._transform([data], None, sampling_rate_hz=100)
+        feature_data = feature_data[0]
+
+        legacy_result = legacy.backend_class().predict(
+            model.model,
+            feature_data,
+            expected_columns=model.data_columns,
+            algorithm=algorithm,
+            verbose=model.verbose,
+        )
+        scipy_result = ScipyHmmInferenceBackend().predict(
+            model.model,
+            feature_data,
+            expected_columns=model.data_columns,
+            algorithm=algorithm,
+            verbose=model.verbose,
+        )
+
+        assert_array_equal(legacy_result, scipy_result)
+
+    def test_pretrained_inference_regression_uses_shared_snapshot(self, healthy_example_imu_data) -> None:
+        data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")
+        backends = [ScipyHmmInferenceBackend()]
+        if PomegranateLegacyHmmBackend is not None:
+            backends.append(PomegranateLegacyHmmBackend())
+        if PomegranateModernHmmBackend is not None:
+            backends.append(PomegranateModernHmmBackend())
+
+        for backend in backends:
+            result = HmmStrideSegmentation(
+                model=PreTrainedRothSegmentationModel().set_params(backend=backend),
+                snap_to_min_win_ms=300,
+                snap_to_min_axis="gyr_ml",
+            ).segment(data, 204.8)
+            for sensor in ["left_sensor", "right_sensor"]:
+                expected = load_pretrained_inference_stride_list_snapshot(sensor)
+                assert_frame_equal(result.stride_list_[sensor], expected)
 
     @pytest.mark.parametrize("inference_backend", _runtime_inference_backend_params())
     def test_pretrained_inference_backend_matches_pomegranate_hidden_states(
@@ -683,6 +758,7 @@ class TestRothSegmentationHmm:
         )
 
     def test_trained_model_roundtrip_matches_original_hidden_states(self) -> None:
+        legacy = _require_legacy_backend()
         data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
         region_list_sequence = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))]
         instance = RothSegmentationHmm(
@@ -691,26 +767,26 @@ class TestRothSegmentationHmm:
             hmm_config__feature_transform__sampling_rate_feature_space_hz=100,
         )
         captured_model = {}
-        original_converter = backend_module.pomegranate_model_to_hmm_state
+        original_converter = legacy.backend_module.pomegranate_model_to_hmm_state
 
         def _capture_and_convert(model, *args, **kwargs):
             captured_model["raw_model"] = model
             return original_converter(model, *args, **kwargs)
 
-        with patch.object(backend_module, "pomegranate_model_to_hmm_state", side_effect=_capture_and_convert):
+        with patch.object(legacy.backend_module, "pomegranate_model_to_hmm_state", side_effect=_capture_and_convert):
             instance.self_optimize(data_sequence, region_list_sequence, sampling_rate_hz=100)
 
-        runtime_model = hmm_state_to_pomegranate_model(instance.model)
+        runtime_model = legacy.hmm_state_to_pomegranate_model(instance.model)
         feature_data, _ = instance._transform(data_sequence, None, sampling_rate_hz=100)
         feature_data = feature_data[0]
 
-        raw_sequence = predict(
+        raw_sequence = legacy.predict(
             captured_model["raw_model"],
             feature_data,
             expected_columns=instance.data_columns,
             algorithm=instance.algo_predict,
         )
-        roundtrip_sequence = predict(
+        roundtrip_sequence = legacy.predict(
             runtime_model,
             feature_data,
             expected_columns=instance.data_columns,

@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 from tpcp import clone, get_action_method, get_action_methods_names, get_action_params, get_results, is_action_applied
-from tpcp._hash import custom_hash
 
 from gaitmap.base import BaseAlgorithm
 from tests.conftest import _get_params_without_nested_class
@@ -201,8 +200,10 @@ def test_nested_clone() -> None:
 
 
 def test_clone_pomegranate() -> None:
-    pytest.importorskip("pomegranate")
     from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 
     hmm_model = PreTrainedRothSegmentationModel()
-    assert custom_hash(clone(hmm_model)) == custom_hash(hmm_model)
+    cloned = clone(hmm_model)
+
+    assert cloned is not hmm_model
+    assert cloned.to_json() == hmm_model.to_json()

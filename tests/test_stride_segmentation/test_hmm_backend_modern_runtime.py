@@ -3,10 +3,7 @@
 import numpy as np
 import pytest
 
-try:
-    from pomegranate.hmm import DenseHMM
-except (ImportError, AttributeError):
-    DenseHMM = None
+pytest.importorskip("gaitmap_mad.stride_segmentation.hmm.modern")
 from gaitmap_mad.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 from gaitmap_mad.stride_segmentation.hmm._backend_common import prepare_predict_data
 from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
@@ -14,9 +11,6 @@ from gaitmap_mad.stride_segmentation.hmm.scipy._utils import log_emission_probab
 
 from gaitmap.example_data import get_healthy_example_imu_data
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
-
-pytestmark = pytest.mark.skipif(DenseHMM is None, reason="requires pomegranate 1.x")
-
 
 def _viterbi_decode_with_end_probs(model, log_emissions: np.ndarray) -> np.ndarray:
     with np.errstate(divide="ignore"):
