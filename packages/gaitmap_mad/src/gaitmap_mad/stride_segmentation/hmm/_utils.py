@@ -319,7 +319,10 @@ def fix_model_names(model):
     """
     for state in model.states:
         if state.name[0] == "s":
-            state_number = int(state.name[1:])
+            try:
+                state_number = int(state.name[1:])
+            except ValueError:
+                continue
             # replace state numbers >= 10 by characters form the ascii-table :)
             if state_number >= 10:
                 state.name = "s" + chr(87 + state_number)
@@ -446,6 +449,29 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
     ends = np.unique(ends).astype("int64")
 
     return transitions, starts, ends
+
+
+def estimate_sequence_boundary_probs(
+    hidden_state_sequence: list[np.ndarray], n_states: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Estimate start and end probabilities from sequence boundary counts."""
+    if n_states <= 0:
+        raise ValueError("`n_states` must be positive.")
+
+    start_counts = np.zeros(n_states, dtype=float)
+    end_counts = np.zeros(n_states, dtype=float)
+    for labels in hidden_state_sequence:
+        start_counts[int(labels[0])] += 1.0
+        end_counts[int(labels[-1])] += 1.0
+
+    start_total = start_counts.sum()
+    end_total = end_counts.sum()
+    if start_total <= 0 or end_total <= 0:
+        raise ValueError(
+            "At least one non-empty hidden-state sequence is required to estimate boundary probabilities."
+        )
+
+    return start_counts / start_total, end_counts / end_total
 
 
 def create_equidistant_label_sequence(n_labels: int, n_states: int) -> np.ndarray:

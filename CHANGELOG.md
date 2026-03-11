@@ -8,6 +8,15 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## [Unreleased]
+
+### Scientific Changes
+
+- Fixed the legacy `pomegranate 0.14` fused HMM path to preserve sequence-end semantics when composing the final model.
+  The fused model now estimates global end probabilities from labeled sequence endings and normalizes them together
+  with outgoing transitions instead of dropping terminal probabilities during composition. This can slightly shift
+  decoded stride boundaries near sequence tails. (Issue: https://github.com/mad-lab-fau/gaitmap/issues/80)
+
 ## [2.6.0] - 2026-03-05
 
 ### Scientific Changes
