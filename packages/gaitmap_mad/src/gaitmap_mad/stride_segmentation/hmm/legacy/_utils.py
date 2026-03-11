@@ -8,23 +8,39 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-
-try:
-    import pomegranate as pg
-except ImportError:  # pragma: no cover - exercised in environments without pomegranate
-    pg = None
-try:
-    from pomegranate.hmm import History
-except (ImportError, AttributeError):
-    History = Any
-from tpcp import BaseTpcpObject
+import pomegranate as pg
+from pomegranate.hmm import History
+from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
-from gaitmap_mad.stride_segmentation.hmm import _repr_utils
-from gaitmap_mad.stride_segmentation.hmm._repr_utils import is_serialized_hmm_state
 from gaitmap_mad.stride_segmentation.hmm._utils import _DataToShortError, cluster_data_by_labels
 
-ShortenedHMMPrint = _repr_utils.ShortenedHMMPrint
+if getattr(pg, "HiddenMarkovModel", None) is None:
+    raise ImportError("The legacy HMM backend requires `pomegranate 0.x` with `HiddenMarkovModel` support.")
+
+
+def is_serialized_hmm_state(value: Any) -> bool:
+    return (
+        hasattr(value, "compiled")
+        and hasattr(value, "trained_with")
+        and callable(getattr(value, "to_json", None))
+        and callable(getattr(type(value), "from_json", None))
+    )
+
+
+class ShortenedHMMPrint(BaseTpcpObject):
+    """Mixin class to better format legacy HMM models when printing them."""
+
+    def __repr_parameter__(self, name: str, value: Any) -> str:
+        if name == "model" and isinstance(value, pg.HiddenMarkovModel):
+            return f"{name}=HiddenMarkovModel[name={value.name}](...)"
+        if (
+            name == "model"
+            and isinstance(value, CloneFactory)
+            and isinstance(value.default_value, pg.HiddenMarkovModel)
+        ):
+            return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
+        return super().__repr_parameter__(name, value)
 
 
 def _add_transition(model, a, b, probability, pseudocount, group) -> None:
@@ -80,8 +96,7 @@ class _HackyClonableHMMFix(BaseTpcpObject):
 
     @classmethod
     def __clone_param__(cls, param_name: str, value: Any) -> Any:
-        legacy_hmm = getattr(pg, "HiddenMarkovModel", None) if pg is not None else None
-        if legacy_hmm is not None and isinstance(value, legacy_hmm):
+        if isinstance(value, pg.HiddenMarkovModel):
             return _clone_model(value)
         if is_serialized_hmm_state(value):
             return type(value).from_json(value.to_json())

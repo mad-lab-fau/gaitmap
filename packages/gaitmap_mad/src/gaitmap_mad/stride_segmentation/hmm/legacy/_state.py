@@ -6,11 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 import numpy as np
-
-try:
-    import pomegranate as pg
-except ImportError:  # pragma: no cover - exercised in environments without pomegranate
-    pg = None
+import pomegranate as pg
 
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
@@ -35,7 +31,7 @@ def _get_pomegranate_version() -> str | None:
 
 def _require_legacy_pomegranate():
     legacy_hmm = getattr(pg, "HiddenMarkovModel", None)
-    if pg is None or legacy_hmm is None:
+    if legacy_hmm is None:
         raise ImportError("The legacy HMM backend requires pomegranate 0.x with `HiddenMarkovModel` support.")
     return pg
 

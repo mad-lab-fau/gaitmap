@@ -20,7 +20,6 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTrainableHmm, get_default_hmm_backend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import RothHmmFeatureTransformer
-from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint
 from gaitmap_mad.stride_segmentation.hmm._state import HMMState
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _DataToShortError,
@@ -264,7 +263,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         raise NotImplementedError
 
 
-class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
+class RothSegmentationHmm(BaseSegmentationHmm):
     """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
     This model uses individually trained HMM submodules that are combined into one final segmentation HMM.
@@ -324,6 +323,13 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
 
     feature_space_data_: pd.DataFrame
     hidden_state_sequence_feature_space_: np.ndarray
+
+    def __repr_parameter__(self, name: str, value: Any) -> str:
+        if name == "model" and isinstance(value, HMMState):
+            n_states = len(value.compiled.state_names) if getattr(value, "compiled", None) is not None else "?"
+            backend = getattr(getattr(value, "trained_with", None), "backend_id", "?")
+            return f"{name}=HMMState[backend={backend}, states={n_states}](...)"
+        return super().__repr_parameter__(name, value)
 
     @classmethod
     def _from_json_dict(cls, json_dict: dict) -> Self:

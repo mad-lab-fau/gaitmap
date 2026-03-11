@@ -9,15 +9,7 @@ from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
-
-try:
-    import pomegranate as pg
-except ImportError:  # pragma: no cover - exercised in environments without pomegranate
-    pg = None
-try:
-    from pomegranate.hmm import History
-except (ImportError, AttributeError):
-    History = Any
+import pomegranate as pg
 from tpcp import OptiPara, make_optimize_safe
 from typing_extensions import Self
 
@@ -41,6 +33,7 @@ from gaitmap_mad.stride_segmentation.hmm.legacy._state import (
     pomegranate_model_to_hmm_state,
 )
 from gaitmap_mad.stride_segmentation.hmm.legacy._utils import (
+    History,
     ShortenedHMMPrint,
     _clone_model,
     _HackyClonableHMMFix,
@@ -62,7 +55,7 @@ def _get_pomegranate_version() -> str | None:
 
 def _require_legacy_pomegranate():
     legacy_hmm = getattr(pg, "HiddenMarkovModel", None)
-    if pg is None or legacy_hmm is None:
+    if legacy_hmm is None:
         raise ImportError("The legacy HMM backend requires pomegranate 0.x with `HiddenMarkovModel` support.")
     return pg
 
