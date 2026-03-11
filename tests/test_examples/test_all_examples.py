@@ -174,11 +174,11 @@ def test_region_trajectory_reconstruction(snapshot) -> None:
 
 
 def test_mahony_orientation_example(snapshot) -> None:
-    from examples.trajectory_reconstruction.mahony_orientation import orientation, rotated_data
+    from examples.trajectory_reconstruction.mahony_orientation import orientation_comparison, rotated_data_comparison
 
-    snapshot.assert_match(orientation.tail(20), "orientation")
-    rotated_data.columns.name = None
-    snapshot.assert_match(rotated_data.tail(20), "rotated_data")
+    snapshot.assert_match(orientation_comparison.tail(20), "orientation")
+    rotated_data_comparison.columns.name = None
+    snapshot.assert_match(rotated_data_comparison.tail(20), "rotated_data")
 
 
 def test_mad_pipeline(snapshot) -> None:
