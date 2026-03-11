@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import warnings
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -155,9 +155,9 @@ class _LegacyTrainableHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPr
     max_iterations: int
     verbose: bool
     n_jobs: int
-    name: str | None
-    model: OptiPara[Any | None]
-    data_columns: OptiPara[tuple[str, ...] | None]
+    name: Optional[str]  # noqa: UP045
+    model: OptiPara[Optional[Any]]  # noqa: UP045
+    data_columns: OptiPara[Optional[tuple[str, ...]]]  # noqa: UP045
 
     def __init__(
         self,
@@ -171,8 +171,8 @@ class _LegacyTrainableHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPr
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
-        model: Any | None = None,
-        data_columns: tuple[str, ...] | None = None,
+        model: Optional[Any] = None,  # noqa: UP045
+        data_columns: Optional[tuple[str, ...]] = None,  # noqa: UP045
     ) -> None:
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
