@@ -12,6 +12,10 @@ project.
 
 ### Scientific Changes
 
+- Repaired the shipped pretrained Roth HMM artifact so its compiled global `end_probs` now represent the intended
+  sequence semantics: uniform stopping probability across the five transition states and zero stopping probability
+  within stride states. This removes the invalid all-zero terminal distribution from the serialized model and aligns
+  backend-agnostic inference with the intended model semantics.
 - Fixed the legacy `pomegranate 0.14` fused HMM path to preserve sequence-end semantics when composing the final model.
   The fused model now estimates global end probabilities from labeled sequence endings and normalizes them together
   with outgoing transitions instead of dropping terminal probabilities during composition. This can slightly shift
