@@ -25,9 +25,9 @@ jobs:
       - name: Install dependencies (all extras)
         if: ${{ matrix.python-version == '3.9' }}
         run: uv sync --group dev --all-extras
-      - name: Install dependencies (stats extra)
+      - name: Install dependencies (stats + hmm extras)
         if: ${{ matrix.python-version != '3.9' }}
-        run: uv sync --group dev --extra stats
+        run: uv sync --group dev --extra stats --extra hmm
       - name: Testing
         run: uv run poe test
       - name: Upload coverage reports to Codecov
