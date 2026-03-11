@@ -79,7 +79,7 @@ class TestSimpleRotations(TestOrientationMethodMixin):
         assert _rotation_angle_to_identity(ori_with_correction) < _rotation_angle_to_identity(ori_without_correction)
 
     def test_integral_term_is_sampling_rate_invariant(self) -> None:
-        """The integral correction should model continuous-time integration and not depend on the sampling rate."""
+        # Mahony's integral correction represents a continuous-time integral and should not change with the sample rate.
         total_time_s = 4.0
         orientations = []
         for sampling_rate_hz in [50, 100, 200]:
