@@ -64,51 +64,61 @@ def _stabilize_covariance(covariance: Any, covariance_type: str, min_cov: Any) -
     return torch.maximum(stabilized, min_cov)
 
 
-def _patch_distribution_numerics(distribution: Any) -> None:
-    if getattr(distribution, "_gaitmap_min_cov_patch", False):
-        return
-    if hasattr(distribution, "distributions"):
-        for child in distribution.distributions:
-            _patch_distribution_numerics(child)
-    if not hasattr(distribution, "covs") or not hasattr(distribution, "from_summaries"):
-        return
+def _iter_child_distributions(distribution: Any) -> tuple[Any, ...]:
+    return tuple(getattr(distribution, "distributions", ()))
 
-    original_reset_cache = distribution._reset_cache
 
-    def _reset_cache_with_stable_covariance(self) -> Any:
+def _supports_numerics_patch(distribution: Any) -> bool:
+    return hasattr(distribution, "covs") and hasattr(distribution, "from_summaries")
+
+
+def _resolve_min_cov(distribution: Any) -> Any:
+    if distribution.min_cov is None:
+        return _MODERN_MIN_COVARIANCE
+    return distribution.min_cov
+
+
+def _covariances_from_summaries(distribution: Any, min_cov: Any) -> Any:
+    if distribution.covariance_type == "full":
+        v = distribution._xw_sum.unsqueeze(0) * distribution._xw_sum.unsqueeze(1)
+        covs = distribution._xxw_sum / distribution._w_sum - v / distribution._w_sum**2.0
+        covs = 0.5 * (covs + covs.transpose(-1, -2))
+        if min_cov is not None:
+            covs = covs + min_cov * torch.eye(covs.shape[-1], dtype=covs.dtype, device=covs.device)
+        return covs
+    if distribution.covariance_type in ["diag", "sphere"]:
+        covs = distribution._xxw_sum / distribution._w_sum - distribution._xw_sum**2.0 / distribution._w_sum**2.0
+        if distribution.covariance_type == "sphere":
+            covs = covs.mean(dim=-1)
+        if min_cov is not None:
+            covs = torch.maximum(covs, min_cov)
+        return covs
+    raise ValueError(f"Unsupported covariance type `{distribution.covariance_type}`.")
+
+
+def _reset_cache_with_stable_covariance(original_reset_cache: Any) -> Any:
+    def _patched(self) -> Any:
         if getattr(self, "_initialized", False):
-            min_cov = _MODERN_MIN_COVARIANCE if self.min_cov is None else self.min_cov
+            min_cov = _resolve_min_cov(self)
             with torch.no_grad():
                 self.covs.copy_(_stabilize_covariance(self.covs, self.covariance_type, min_cov))
         return original_reset_cache()
 
-    def _from_summaries_with_min_cov(self) -> Any:
+    return _patched
+
+
+def _from_summaries_with_min_cov() -> Any:
+    def _patched(self) -> Any:
         # Mirror the upstream PR #1143 fix that applies `min_cov` during the
         # Normal M-step. Current releases store `min_cov` but do not use it.
         if self.frozen is True:
             return None
 
         means = self._xw_sum / self._w_sum
-        min_cov = (
-            None
-            if self.min_cov is None
-            else torch.as_tensor(self.min_cov, dtype=self.covs.dtype, device=self.covs.device)
-        )
-
-        if self.covariance_type == "full":
-            v = self._xw_sum.unsqueeze(0) * self._xw_sum.unsqueeze(1)
-            covs = self._xxw_sum / self._w_sum - v / self._w_sum**2.0
-            covs = 0.5 * (covs + covs.transpose(-1, -2))
-            if min_cov is not None:
-                covs = covs + min_cov * torch.eye(covs.shape[-1], dtype=covs.dtype, device=covs.device)
-        elif self.covariance_type in ["diag", "sphere"]:
-            covs = self._xxw_sum / self._w_sum - self._xw_sum**2.0 / self._w_sum**2.0
-            if self.covariance_type == "sphere":
-                covs = covs.mean(dim=-1)
-            if min_cov is not None:
-                covs = torch.maximum(covs, min_cov)
-        else:  # pragma: no cover - mirrors pomegranate's supported covariance types
-            raise ValueError(f"Unsupported covariance type `{self.covariance_type}`.")
+        min_cov = None
+        if self.min_cov is not None:
+            min_cov = torch.as_tensor(self.min_cov, dtype=self.covs.dtype, device=self.covs.device)
+        covs = _covariances_from_summaries(self, min_cov)
 
         if not torch.isfinite(means).all() or not torch.isfinite(covs).all():
             self._reset_cache()
@@ -119,8 +129,19 @@ def _patch_distribution_numerics(distribution: Any) -> None:
         self._reset_cache()
         return None
 
-    distribution._reset_cache = MethodType(_reset_cache_with_stable_covariance, distribution)
-    distribution.from_summaries = MethodType(_from_summaries_with_min_cov, distribution)
+    return _patched
+
+
+def _patch_distribution_numerics(distribution: Any) -> None:
+    if getattr(distribution, "_gaitmap_min_cov_patch", False):
+        return
+    for child in _iter_child_distributions(distribution):
+        _patch_distribution_numerics(child)
+    if not _supports_numerics_patch(distribution):
+        return
+
+    distribution._reset_cache = MethodType(_reset_cache_with_stable_covariance(distribution._reset_cache), distribution)
+    distribution.from_summaries = MethodType(_from_summaries_with_min_cov(), distribution)
     distribution._gaitmap_min_cov_patch = True
 
 

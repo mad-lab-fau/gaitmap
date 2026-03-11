@@ -20,9 +20,11 @@ except (ImportError, AttributeError):
 from tpcp import BaseTpcpObject
 from tpcp._hash import custom_hash
 
-from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint as ShortenedHMMPrint
+from gaitmap_mad.stride_segmentation.hmm import _repr_utils
 from gaitmap_mad.stride_segmentation.hmm._repr_utils import is_serialized_hmm_state
 from gaitmap_mad.stride_segmentation.hmm._utils import _DataToShortError, cluster_data_by_labels
+
+ShortenedHMMPrint = _repr_utils.ShortenedHMMPrint
 
 
 def _add_transition(model, a, b, probability, pseudocount, group) -> None:
