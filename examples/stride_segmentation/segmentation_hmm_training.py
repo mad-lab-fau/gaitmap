@@ -199,7 +199,9 @@ from gaitmap.stride_segmentation.hmm import HmmStrideSegmentation
 
 # Note: We are using a high snap_to_min_win_ms here to get consistent output agaisnt all HMM backends.
 #       They have slight inconsitencies in some edge cases and we want to make sure this example provides the same results for consistent snapshots.
-hmm = HmmStrideSegmentation(segmentation_model, snap_to_min_win_ms=300).segment(bf_data, sampling_rate_hz=sampling_rate_hz)
+hmm = HmmStrideSegmentation(segmentation_model, snap_to_min_win_ms=300).segment(
+    bf_data, sampling_rate_hz=sampling_rate_hz
+)
 hmm.stride_list_
 
 # %%

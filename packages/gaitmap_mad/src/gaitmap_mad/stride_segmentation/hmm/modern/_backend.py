@@ -8,7 +8,6 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 import torch
-from pomegranate.hmm import DenseHMM
 
 from gaitmap_mad.stride_segmentation.hmm._backend_base import BaseHmmBackend, BaseTrainableHmm
 from gaitmap_mad.stride_segmentation.hmm._backend_common import (

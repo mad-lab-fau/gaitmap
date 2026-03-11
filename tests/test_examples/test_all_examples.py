@@ -270,7 +270,9 @@ def test_multi_process() -> None:
 def test_roth_hmm_stride_segmentation() -> None:
     from examples.stride_segmentation.roth_hmm_stride_segmentation import hmm_seg
 
-    assert_frame_equal(hmm_seg.stride_list_["left_sensor"], load_pretrained_inference_stride_list_snapshot("left_sensor"))
+    assert_frame_equal(
+        hmm_seg.stride_list_["left_sensor"], load_pretrained_inference_stride_list_snapshot("left_sensor")
+    )
     assert_frame_equal(
         hmm_seg.stride_list_["right_sensor"], load_pretrained_inference_stride_list_snapshot("right_sensor")
     )

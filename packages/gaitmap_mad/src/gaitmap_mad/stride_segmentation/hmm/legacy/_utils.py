@@ -20,7 +20,7 @@ except (ImportError, AttributeError):
 from tpcp import BaseTpcpObject
 from tpcp._hash import custom_hash
 
-from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint as ShortenedHMMPrint  # noqa: F401
+from gaitmap_mad.stride_segmentation.hmm._repr_utils import ShortenedHMMPrint as ShortenedHMMPrint
 from gaitmap_mad.stride_segmentation.hmm._repr_utils import is_serialized_hmm_state
 from gaitmap_mad.stride_segmentation.hmm._utils import _DataToShortError, cluster_data_by_labels
 
