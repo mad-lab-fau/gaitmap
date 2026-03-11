@@ -16,7 +16,7 @@ class TestCachingMixin:
     algorithm_class = None
     __test__ = False
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self) -> BaseType:
         pass
 

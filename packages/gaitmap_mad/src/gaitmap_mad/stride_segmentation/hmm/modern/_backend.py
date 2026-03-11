@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+
 try:
     from pomegranate.hmm import DenseHMM
 except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
@@ -23,7 +24,13 @@ from gaitmap_mad.stride_segmentation.hmm._backend_common import (
     prepare_predict_data,
 )
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig
-from gaitmap_mad.stride_segmentation.hmm._state import BackendInfo, FlatHmmState, HmmGraphState, HMMState, HmmSubModelState
+from gaitmap_mad.stride_segmentation.hmm._state import (
+    BackendInfo,
+    FlatHmmState,
+    HmmGraphState,
+    HMMState,
+    HmmSubModelState,
+)
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     create_state_names,
     create_transition_matrix_fully_connected,
@@ -95,9 +102,7 @@ class PomegranateModernTrainableHmm(BaseTrainableHmm):
         labels_sequence: list[np.ndarray],
     ) -> tuple[PomegranateModernTrainableHmm, PomegranateModernHistory]:
         if self.config.algo_train != "baum-welch":
-            raise NotImplementedError(
-                "The modern pomegranate backend currently only supports `baum-welch` training."
-            )
+            raise NotImplementedError("The modern pomegranate backend currently only supports `baum-welch` training.")
         if len(data_sequence) != len(labels_sequence):
             raise ValueError(
                 "The given training sequence and initial training labels do not match in their number of individual "

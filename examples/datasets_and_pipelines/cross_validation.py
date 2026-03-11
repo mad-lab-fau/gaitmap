@@ -30,7 +30,6 @@ import numpy as np
 import pandas as pd
 from tpcp import CloneFactory, Dataset, OptimizableParameter, OptimizablePipeline, Parameter
 
-
 from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.example_data import get_healthy_example_imu_data, get_healthy_example_stride_borders
 from gaitmap.stride_segmentation import (

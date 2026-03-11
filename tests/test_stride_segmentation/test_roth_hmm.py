@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
+
 try:
     from pomegranate.hmm import DenseHMM
 except (ImportError, AttributeError):
@@ -13,6 +14,26 @@ except (ImportError, AttributeError):
 
 pytest.importorskip("pomegranate")
 
+from gaitmap_mad.stride_segmentation.hmm import (
+    CompositeHmmConfig,
+    HMMState,
+    HmmStrideSegmentation,
+    HmmSubModelConfig,
+    PreTrainedRothSegmentationModel,
+    RothHmmConfig,
+    RothHmmFeatureTransformer,
+    RothSegmentationHmm,
+)
+from gaitmap_mad.stride_segmentation.hmm._utils import estimate_sequence_boundary_probs
+from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend
+from gaitmap_mad.stride_segmentation.hmm.legacy import _backend as backend_module
+from gaitmap_mad.stride_segmentation.hmm.legacy._backend import initialize_hmm
+from gaitmap_mad.stride_segmentation.hmm.legacy._state import (
+    hmm_state_to_pomegranate_model,
+)
+from gaitmap_mad.stride_segmentation.hmm.legacy._utils import predict
+from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
+from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
 from pomegranate.hmm import History
 from tpcp._hash import custom_hash
 
@@ -25,27 +46,6 @@ from gaitmap.utils.datatype_helper import (
     is_single_sensor_stride_list,
 )
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.stride_segmentation.hmm import (
-    CompositeHmmConfig,
-    HMMState,
-    HmmStrideSegmentation,
-    HmmSubModelConfig,
-    PreTrainedRothSegmentationModel,
-    RothHmmConfig,
-    RothHmmFeatureTransformer,
-    RothSegmentationHmm,
-)
-from gaitmap_mad.stride_segmentation.hmm.legacy import _backend as backend_module
-from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend
-from gaitmap_mad.stride_segmentation.hmm.legacy._backend import initialize_hmm
-from gaitmap_mad.stride_segmentation.hmm.legacy._state import (
-    hmm_state_to_pomegranate_model,
-    pomegranate_model_to_hmm_state,
-)
-from gaitmap_mad.stride_segmentation.hmm.legacy._utils import predict
-from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
-from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
-from gaitmap_mad.stride_segmentation.hmm._utils import estimate_sequence_boundary_probs
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
@@ -57,7 +57,9 @@ def _runtime_inference_backend_params():
     if DenseHMM is not None:
         params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
     else:
-        params.append(pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x")))
+        params.append(
+            pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x"))
+        )
     return params
 
 
@@ -66,7 +68,9 @@ def _trainable_backend_params():
     if DenseHMM is not None:
         params.append(pytest.param(PomegranateModernHmmBackend(), id="pomegranate-modern"))
     else:
-        params.append(pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x")))
+        params.append(
+            pytest.param(None, id="pomegranate-modern", marks=pytest.mark.skip(reason="requires pomegranate 1.x"))
+        )
     return params
 
 
@@ -148,7 +152,7 @@ class TestMetaFunctionalityRothSegmentationHmm(TestAlgorithmMixin):
 
     algorithm_class = RothSegmentationHmm
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> RothSegmentationHmm:
         hmm = PreTrainedRothSegmentationModel()
         hmm.predict(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
@@ -160,7 +164,7 @@ class TestMetaFunctionalityHmmStrideSegmentation(TestAlgorithmMixin):
 
     algorithm_class = HmmStrideSegmentation
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> HmmStrideSegmentation:
         hmm = HmmStrideSegmentation()
         hmm.segment(convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"]), sampling_rate_hz=100)
@@ -172,7 +176,7 @@ class TestMetaFunctionalityRothHMMFeatureTransformer(TestAlgorithmMixin):
 
     algorithm_class = RothHmmFeatureTransformer
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(
         self, healthy_example_imu_data, healthy_example_stride_borders
     ) -> RothHmmFeatureTransformer:
@@ -305,9 +309,7 @@ class TestTrainableHmmBackends:
     @pytest.mark.parametrize("backend", _trainable_backend_params())
     def test_predict_raises_error_without_optimize(self, backend) -> None:
         with pytest.raises(ValueError) as e:
-            _new_trainable_hmm(backend).predict_hidden_state_sequence(
-                pd.DataFrame(np.random.rand(100, 3))
-            )
+            _new_trainable_hmm(backend).predict_hidden_state_sequence(pd.DataFrame(np.random.rand(100, 3)))
 
         assert "Call `self_optimize` first" in str(e.value) or "You need to train the HMM" in str(e.value)
 
@@ -682,9 +684,7 @@ class TestRothSegmentationHmm:
 
     def test_trained_model_roundtrip_matches_original_hidden_states(self) -> None:
         data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
-        region_list_sequence = [
-            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))
-        ]
+        region_list_sequence = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))]
         instance = RothSegmentationHmm(
             hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
         ).set_params(
@@ -724,9 +724,7 @@ class TestRothSegmentationHmm:
     @pytest.mark.parametrize("inference_backend", _runtime_inference_backend_params())
     def test_trained_inference_backend_matches_pomegranate_hidden_states(self, inference_backend) -> None:
         data_sequence = [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)]
-        region_list_sequence = [
-            _stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))
-        ]
+        region_list_sequence = [_stride_list_to_region_list(pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]}))]
         instance = RothSegmentationHmm(
             hmm_config=_create_roth_hmm_config(stride_n_states=3, stride_n_gmm_components=3)
         ).set_params(

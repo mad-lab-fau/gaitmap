@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 import numpy as np
+
 try:
     import pomegranate as pg
 except ImportError:  # pragma: no cover - exercised in environments without pomegranate
@@ -18,8 +19,8 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
     FlatHmmState,
     GaussianEmissionState,
     GaussianMixtureEmissionState,
-    HMMState,
     HmmGraphState,
+    HMMState,
     HmmSubModelState,
 )
 from gaitmap_mad.stride_segmentation.hmm.legacy._utils import add_transition

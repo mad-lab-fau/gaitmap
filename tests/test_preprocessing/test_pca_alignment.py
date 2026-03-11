@@ -15,7 +15,7 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
     algorithm_class = PcaAlignment
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data) -> PcaAlignment:
         pcaa = PcaAlignment()
         pcaa.align(healthy_example_imu_data["left_sensor"].iloc[:10])

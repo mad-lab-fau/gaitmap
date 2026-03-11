@@ -36,9 +36,9 @@ if multiprocessing.parent_process() is None:
 __all__ = [
     "BackendInfo",
     "BaseHmmBackend",
-    "BaseTrainableHmm",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "BaseTrainableHmm",
     "CompositeHmmConfig",
     "CrossModuleTransition",
     "FlatHmmState",

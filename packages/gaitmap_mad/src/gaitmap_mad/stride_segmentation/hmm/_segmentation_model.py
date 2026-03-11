@@ -21,7 +21,6 @@ from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTra
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import RothHmmFeatureTransformer
 from gaitmap_mad.stride_segmentation.hmm._state import HMMState
-from gaitmap_mad.stride_segmentation.hmm.legacy._utils import ShortenedHMMPrint
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _DataToShortError,
     convert_region_list_to_transition_list,
@@ -29,6 +28,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     get_train_data_sequences_transitions,
     validate_trainable_region_list,
 )
+from gaitmap_mad.stride_segmentation.hmm.legacy._utils import ShortenedHMMPrint
 
 DEFAULT_HMM_BACKEND = get_default_hmm_backend()
 

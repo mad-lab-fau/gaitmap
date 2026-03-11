@@ -15,11 +15,11 @@ class TestAlgorithmMixin:
     algorithm_class = None
     __test__ = False
 
-    @pytest.fixture()
+    @pytest.fixture
     def valid_instance(self, after_action_instance):
         return after_action_instance
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self) -> BaseType:
         pass
 

@@ -15,8 +15,8 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
     FlatHmmState,
     GaussianEmissionState,
     GaussianMixtureEmissionState,
-    HMMState,
     HmmGraphState,
+    HMMState,
 )
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     cluster_data_by_labels,

@@ -5,10 +5,11 @@ from __future__ import annotations
 import copy
 import warnings
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+
 try:
     import pomegranate as pg
 except ImportError:  # pragma: no cover - exercised in environments without pomegranate
@@ -154,9 +155,9 @@ class _LegacyTrainableHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPr
     max_iterations: int
     verbose: bool
     n_jobs: int
-    name: Optional[str]
-    model: OptiPara[Optional[Any]]
-    data_columns: OptiPara[Optional[tuple[str, ...]]]
+    name: str | None
+    model: OptiPara[Any | None]
+    data_columns: OptiPara[tuple[str, ...] | None]
 
     def __init__(
         self,
@@ -170,8 +171,8 @@ class _LegacyTrainableHmm(BaseTrainableHmm, _HackyClonableHMMFix, ShortenedHMMPr
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
-        model: Optional[Any] = None,
-        data_columns: Optional[tuple[str, ...]] = None,
+        model: Any | None = None,
+        data_columns: tuple[str, ...] | None = None,
     ) -> None:
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -411,7 +412,9 @@ class PomegranateLegacyHmmBackend(BaseHmmBackend):
             for module in model_config.modules:
                 module_transition_matrix = trained_models[module.name].model.dense_transition_matrix()[:-2, :-2]
                 offset = module_offsets[module.name]
-                trans_mat[offset : offset + module.n_states, offset : offset + module.n_states] = module_transition_matrix
+                trans_mat[offset : offset + module.n_states, offset : offset + module.n_states] = (
+                    module_transition_matrix
+                )
 
             transitions, _, _ = extract_transitions_starts_stops_from_hidden_state_sequence(labels_train_sequence)
             start_probs, end_probs = estimate_sequence_boundary_probs(labels_train_sequence, n_states)

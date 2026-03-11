@@ -3,7 +3,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from gaitmap_mad.stride_segmentation.hmm import _backend_base as backend_base
 from gaitmap_mad.stride_segmentation.hmm import _segmentation_model as segmentation_model_module
 from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Literal, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 import pandas as pd

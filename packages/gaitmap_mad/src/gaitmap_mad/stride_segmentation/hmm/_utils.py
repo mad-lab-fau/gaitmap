@@ -107,9 +107,7 @@ def estimate_sequence_boundary_probs(
     start_total = start_counts.sum()
     end_total = end_counts.sum()
     if start_total <= 0 or end_total <= 0:
-        raise ValueError(
-            "At least one non-empty hidden-state sequence is required to estimate boundary probabilities."
-        )
+        raise ValueError("At least one non-empty hidden-state sequence is required to estimate boundary probabilities.")
 
     return start_counts / start_total, end_counts / end_total
 

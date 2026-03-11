@@ -64,7 +64,7 @@ def example_test_class_initialised(request) -> tuple[BaseAlgorithm, dict[str, An
     return test_instance, request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def example_test_class_after_action(example_test_class_initialised) -> tuple[BaseAlgorithm, dict[str, Any]]:
     test_instance, params = example_test_class_initialised
     action_params = {

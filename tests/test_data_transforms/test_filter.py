@@ -17,7 +17,7 @@ class TestButterworthMetaFunctionality(TestAlgorithmMixin):
     def test_empty_init(self) -> None:
         pytest.skip()
 
-    @pytest.fixture()
+    @pytest.fixture
     def after_action_instance(self, healthy_example_imu_data, healthy_example_stride_borders) -> BaseFilter:
         data_left = healthy_example_imu_data["left_sensor"].iloc[:100]
         data_left.columns = BF_COLS

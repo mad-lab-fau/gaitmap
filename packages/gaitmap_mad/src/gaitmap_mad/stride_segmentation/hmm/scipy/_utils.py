@@ -26,15 +26,17 @@ def log_emission_probabilities(model: HMMState, observations: np.ndarray) -> np.
             )
             continue
         if isinstance(emission, GaussianMixtureEmissionState):
-            component_log_probs = np.column_stack([
-                multivariate_normal.logpdf(
-                    observations,
-                    mean=component.mean,
-                    cov=component.covariance,
-                    allow_singular=True,
-                )
-                for component in emission.components
-            ])
+            component_log_probs = np.column_stack(
+                [
+                    multivariate_normal.logpdf(
+                        observations,
+                        mean=component.mean,
+                        cov=component.covariance,
+                        allow_singular=True,
+                    )
+                    for component in emission.components
+                ]
+            )
             with np.errstate(divide="ignore"):
                 log_weights = np.log(np.asarray(emission.weights, dtype=float))
             log_emissions[:, state_idx] = logsumexp(component_log_probs + log_weights, axis=1)

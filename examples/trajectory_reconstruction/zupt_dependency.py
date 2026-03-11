@@ -21,7 +21,6 @@ This is also a great example of how to use the `tpcp` optimization methods in co
 
 import pandas as pd
 
-
 # %%
 # The Data
 # --------

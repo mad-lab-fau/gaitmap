@@ -6,6 +6,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 import numpy as np
+
 try:
     from pomegranate.distributions import Normal
 except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
@@ -25,8 +26,8 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
     FlatHmmState,
     GaussianEmissionState,
     GaussianMixtureEmissionState,
-    HMMState,
     HmmGraphState,
+    HMMState,
     HmmSubModelState,
 )
 from gaitmap_mad.stride_segmentation.hmm._utils import create_state_names

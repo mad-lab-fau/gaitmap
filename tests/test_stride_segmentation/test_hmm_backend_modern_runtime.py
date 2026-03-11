@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 try:
     from pomegranate.hmm import DenseHMM
 except (ImportError, AttributeError):

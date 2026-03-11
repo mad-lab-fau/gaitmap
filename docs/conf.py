@@ -219,8 +219,7 @@ def get_nested_attr(obj, attr):
     new_obj = getattr(obj, attrs[0])
     if len(attrs) == 1:
         return new_obj
-    else:
-        return get_nested_attr(new_obj, attrs[1])
+    return get_nested_attr(new_obj, attrs[1])
 
 
 linkcode_resolve = make_linkcode_resolve(
