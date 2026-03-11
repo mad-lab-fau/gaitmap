@@ -1,8 +1,10 @@
 import importlib
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import gaitmap_mad.stride_segmentation.hmm as hmm_module
 from gaitmap_mad.stride_segmentation.hmm import _backend_base as backend_base
 from gaitmap_mad.stride_segmentation.hmm import _segmentation_model as segmentation_model_module
 from gaitmap_mad.stride_segmentation.hmm.legacy import PomegranateLegacyHmmBackend
@@ -14,6 +16,10 @@ from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
 def _restore_segmentation_model():
     yield
     importlib.reload(segmentation_model_module)
+    importlib.reload(hmm_module)
+    gaitmap_hmm_module = sys.modules.get("gaitmap.stride_segmentation.hmm")
+    if gaitmap_hmm_module is not None:
+        importlib.reload(gaitmap_hmm_module)
 
 
 class _FakeLegacyBackend(PomegranateLegacyHmmBackend):
@@ -47,7 +53,9 @@ def _reload_segmentation_model(monkeypatch, *, modern_available: bool, legacy_av
         return importlib.import_module(module_name)
 
     monkeypatch.setattr(backend_base, "import_module", _fake_import_module)
-    return importlib.reload(segmentation_model_module)
+    segmentation_model = importlib.reload(segmentation_model_module)
+    importlib.reload(hmm_module)
+    return segmentation_model
 
 
 def test_default_backend_without_pomegranate(monkeypatch) -> None:
