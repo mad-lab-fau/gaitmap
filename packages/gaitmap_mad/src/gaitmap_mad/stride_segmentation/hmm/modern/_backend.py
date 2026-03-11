@@ -7,15 +7,8 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-
-try:
-    from pomegranate.hmm import DenseHMM
-except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
-    DenseHMM = None
-try:
-    import torch
-except ImportError:  # pragma: no cover - exercised in environments without torch
-    torch = None
+import torch
+from pomegranate.hmm import DenseHMM
 
 from gaitmap_mad.stride_segmentation.hmm._backend_base import BaseHmmBackend, BaseTrainableHmm
 from gaitmap_mad.stride_segmentation.hmm._backend_common import (
@@ -146,17 +139,6 @@ class PomegranateModernHmmBackend(BaseHmmBackend):
         *,
         inference_implementation: Literal["canonical", "native"] = "native",
     ) -> None:
-        if DenseHMM is None:
-            raise ImportError(
-                "Failed to initialize `PomegranateModernHmmBackend`. "
-                "This backend requires `pomegranate 1.x` with `DenseHMM` support. "
-                f"Installed version: {_get_pomegranate_version() or 'not installed'}."
-            )
-        if torch is None:
-            raise ImportError(
-                "Failed to initialize `PomegranateModernHmmBackend`. "
-                "This backend requires `torch` because native `pomegranate 1.x` inference and training run on PyTorch."
-            )
         super().__init__(backend_id=backend_id)
         self.inference_implementation = inference_implementation
 

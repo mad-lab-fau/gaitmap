@@ -6,8 +6,8 @@ from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_ACC
 from tests._hmm_test_helpers import (
-    import_legacy_hmm_backend,
     load_pretrained_inference_stride_list_snapshot,
+    require_trainable_hmm_backend,
 )
 from tests.conftest import compare_algo_objects
 
@@ -276,21 +276,12 @@ def test_roth_hmm_stride_segmentation() -> None:
     )
 
 
-def test_segmentation_hmm_training() -> None:
-    import_legacy_hmm_backend()
+def test_segmentation_hmm_training(snapshot) -> None:
+    require_trainable_hmm_backend()
     from examples.stride_segmentation.segmentation_hmm_training import hmm
 
-    # Training is not deterministic enough for an exact snapshot across machines/backends.
-    # We keep it anchored to the same pretrained inference reference and allow small boundary drift.
     for sensor in ["left_sensor", "right_sensor"]:
-        expected = load_pretrained_inference_stride_list_snapshot(sensor)
-        actual = hmm.stride_list_[sensor]
-        expected_duration = expected["end"] - expected["start"]
-        actual_duration = actual["end"] - actual["start"]
-
-        assert abs(len(actual) - len(expected)) <= 1
-        assert abs(actual_duration.median() - expected_duration.median()) <= 20
-        assert abs(actual["end"].iloc[-1] - expected["end"].iloc[-1]) <= 50
+        snapshot.assert_match(hmm.stride_list_[sensor], sensor)
 
 
 def test_zupt_dependency() -> None:

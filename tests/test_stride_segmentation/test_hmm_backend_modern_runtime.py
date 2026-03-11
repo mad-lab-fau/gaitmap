@@ -4,13 +4,17 @@ import numpy as np
 import pytest
 
 pytest.importorskip("gaitmap_mad.stride_segmentation.hmm.modern")
+import torch
 from gaitmap_mad.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 from gaitmap_mad.stride_segmentation.hmm._backend_common import prepare_predict_data
+from gaitmap_mad.stride_segmentation.hmm._state import FlatHmmState, GaussianEmissionState, HmmGraphState
 from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
+from gaitmap_mad.stride_segmentation.hmm.modern._state import flat_hmm_state_to_pomegranate_modern_model
 from gaitmap_mad.stride_segmentation.hmm.scipy._utils import log_emission_probabilities
 
 from gaitmap.example_data import get_healthy_example_imu_data
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
+
 
 def _viterbi_decode_with_end_probs(model, log_emissions: np.ndarray) -> np.ndarray:
     with np.errstate(divide="ignore"):
@@ -87,6 +91,36 @@ def test_modern_native_viterbi_matches_full_length_end_probability_decode() -> N
     log_emissions = log_emission_probabilities(model.model, observations)
     expected_native = _viterbi_decode_with_end_probs(model.model, log_emissions)
 
-    assert len(native) == len(canonical) + 1
+    assert len(native) == len(canonical)
     np.testing.assert_array_equal(native, expected_native)
-    assert not np.array_equal(canonical, native[:-1])
+    np.testing.assert_array_equal(canonical, expected_native)
+
+
+def test_modern_runtime_model_uses_float64_for_training() -> None:
+    """Modern runtime models should train without dtype mismatches on float64 data."""
+    state = FlatHmmState(
+        graph=HmmGraphState(
+            transition_probs=np.array([[0.9, 0.1], [0.2, 0.8]], dtype=np.float64),
+            start_probs=np.array([1.0, 0.0], dtype=np.float64),
+            end_probs=np.array([0.0, 1.0], dtype=np.float64),
+        ),
+        emissions=(
+            GaussianEmissionState(
+                mean=np.array([0.0], dtype=np.float64),
+                covariance=np.array([[1.0]], dtype=np.float64),
+            ),
+            GaussianEmissionState(
+                mean=np.array([1.0], dtype=np.float64),
+                covariance=np.array([[1.0]], dtype=np.float64),
+            ),
+        ),
+        state_names=("s0", "s1"),
+        name="dtype_regression",
+    )
+    runtime_model = flat_hmm_state_to_pomegranate_modern_model(state)
+    training_data = np.array([[[0.1], [0.2], [1.1]]], dtype=np.float64)
+    priors = np.array([[[1.0, 0.0], [1.0, 0.0], [0.0, 1.0]]], dtype=np.float64)
+
+    assert runtime_model.dtype == torch.float64
+
+    runtime_model.fit(training_data, priors=priors)

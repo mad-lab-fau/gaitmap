@@ -3,22 +3,15 @@
 from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
+from types import MethodType
 from typing import Any
 
 import numpy as np
-
-try:
-    from pomegranate.distributions import Normal
-except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
-    Normal = None
-try:
-    from pomegranate.gmm import GeneralMixtureModel
-except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
-    GeneralMixtureModel = None
-try:
-    from pomegranate.hmm import DenseHMM
-except (ImportError, AttributeError):  # pragma: no cover - exercised in environments without modern pomegranate
-    DenseHMM = None
+import torch
+from pomegranate._utils import _update_parameter
+from pomegranate.distributions import Normal
+from pomegranate.gmm import GeneralMixtureModel
+from pomegranate.hmm import DenseHMM
 
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
@@ -41,8 +34,6 @@ def _get_pomegranate_version() -> str | None:
 
 
 def _require_modern_pomegranate() -> tuple[Any, Any, Any]:
-    if DenseHMM is None or Normal is None or GeneralMixtureModel is None:
-        raise ImportError("The modern HMM backend requires pomegranate 1.x with `DenseHMM` support.")
     return DenseHMM, Normal, GeneralMixtureModel
 
 
@@ -50,6 +41,87 @@ def _parameter_to_numpy(parameter: Any) -> np.ndarray:
     if hasattr(parameter, "detach"):
         return parameter.detach().cpu().numpy()
     return np.asarray(parameter, dtype=float)
+
+
+# Compatibility shim for pomegranate < the upstream fixes from PR #1143:
+# https://github.com/jmschrei/pomegranate/pull/1143
+_MODERN_MIN_COVARIANCE = 1e-6
+
+
+def _stabilize_covariance(covariance: Any, covariance_type: str, min_cov: Any) -> Any:
+    min_cov = torch.as_tensor(min_cov, dtype=covariance.dtype, device=covariance.device)
+    if covariance_type == "full":
+        if not torch.isfinite(covariance).all():
+            return min_cov * torch.eye(covariance.shape[-1], dtype=covariance.dtype, device=covariance.device)
+        stabilized = 0.5 * (covariance + covariance.transpose(-1, -2))
+        min_eigenvalue = torch.linalg.eigvalsh(stabilized).min()
+        if not torch.isfinite(min_eigenvalue) or min_eigenvalue < min_cov:
+            stabilized = stabilized + (min_cov - min_eigenvalue + min_cov) * torch.eye(
+                stabilized.shape[-1], dtype=stabilized.dtype, device=stabilized.device
+            )
+        return stabilized
+    stabilized = torch.nan_to_num(covariance, nan=min_cov.item(), posinf=min_cov.item(), neginf=min_cov.item())
+    return torch.maximum(stabilized, min_cov)
+
+
+def _patch_distribution_numerics(distribution: Any) -> None:
+    if getattr(distribution, "_gaitmap_min_cov_patch", False):
+        return
+    if hasattr(distribution, "distributions"):
+        for child in distribution.distributions:
+            _patch_distribution_numerics(child)
+    if not hasattr(distribution, "covs") or not hasattr(distribution, "from_summaries"):
+        return
+
+    original_reset_cache = distribution._reset_cache
+
+    def _reset_cache_with_stable_covariance(self) -> Any:
+        if getattr(self, "_initialized", False):
+            min_cov = _MODERN_MIN_COVARIANCE if self.min_cov is None else self.min_cov
+            with torch.no_grad():
+                self.covs.copy_(_stabilize_covariance(self.covs, self.covariance_type, min_cov))
+        return original_reset_cache()
+
+    def _from_summaries_with_min_cov(self) -> Any:
+        # Mirror the upstream PR #1143 fix that applies `min_cov` during the
+        # Normal M-step. Current releases store `min_cov` but do not use it.
+        if self.frozen is True:
+            return None
+
+        means = self._xw_sum / self._w_sum
+        min_cov = (
+            None
+            if self.min_cov is None
+            else torch.as_tensor(self.min_cov, dtype=self.covs.dtype, device=self.covs.device)
+        )
+
+        if self.covariance_type == "full":
+            v = self._xw_sum.unsqueeze(0) * self._xw_sum.unsqueeze(1)
+            covs = self._xxw_sum / self._w_sum - v / self._w_sum**2.0
+            covs = 0.5 * (covs + covs.transpose(-1, -2))
+            if min_cov is not None:
+                covs = covs + min_cov * torch.eye(covs.shape[-1], dtype=covs.dtype, device=covs.device)
+        elif self.covariance_type in ["diag", "sphere"]:
+            covs = self._xxw_sum / self._w_sum - self._xw_sum**2.0 / self._w_sum**2.0
+            if self.covariance_type == "sphere":
+                covs = covs.mean(dim=-1)
+            if min_cov is not None:
+                covs = torch.maximum(covs, min_cov)
+        else:  # pragma: no cover - mirrors pomegranate's supported covariance types
+            raise ValueError(f"Unsupported covariance type `{self.covariance_type}`.")
+
+        if not torch.isfinite(means).all() or not torch.isfinite(covs).all():
+            self._reset_cache()
+            return None
+
+        _update_parameter(self.means, means, self.inertia)
+        _update_parameter(self.covs, covs, self.inertia)
+        self._reset_cache()
+        return None
+
+    distribution._reset_cache = MethodType(_reset_cache_with_stable_covariance, distribution)
+    distribution.from_summaries = MethodType(_from_summaries_with_min_cov, distribution)
+    distribution._gaitmap_min_cov_patch = True
 
 
 def _modern_distribution_to_state(distribution: Any) -> EmissionState:
@@ -79,6 +151,7 @@ def _state_to_modern_distribution(state: EmissionState) -> Any:
             means=np.asarray(state.mean, dtype=float),
             covs=np.asarray(state.covariance, dtype=float),
             covariance_type=state.covariance_type,
+            min_cov=_MODERN_MIN_COVARIANCE,
             frozen=state.frozen,
         )
     if isinstance(state, GaussianMixtureEmissionState):
@@ -132,6 +205,11 @@ def flat_hmm_state_to_pomegranate_modern_model(
     )
     if state.name is not None:
         model.name = state.name
+    # PR #1143 also fixes dtype propagation in the runtime model. Until that is
+    # released, cast the constructed DenseHMM explicitly to float64 here.
+    model = model.to(torch.float64)
+    for distribution in model.distributions:
+        _patch_distribution_numerics(distribution)
     return model
 
 

@@ -82,22 +82,22 @@ def to_training_arrays(
     for data in data_sequence:
         if isinstance(data, pd.DataFrame):
             columns = data.columns if data_columns is None else list(data_columns)
-            arrays.append(np.ascontiguousarray(data[columns].to_numpy().copy()))
+            arrays.append(np.ascontiguousarray(data[columns].to_numpy(dtype=np.float64, copy=True)))
             continue
-        arrays.append(np.ascontiguousarray(data.copy()))
+        arrays.append(np.ascontiguousarray(np.asarray(data, dtype=np.float64).copy()))
     return arrays
 
 
 def to_modern_input(data_sequence: list[np.ndarray]) -> list[np.ndarray]:
     """Normalize training arrays to the dtype expected by modern pomegranate."""
-    return [sequence.astype(float, copy=False) for sequence in data_sequence]
+    return [sequence.astype(np.float64, copy=False) for sequence in data_sequence]
 
 
 def labels_to_priors(labels_sequence: list[np.ndarray], n_states: int) -> list[np.ndarray]:
     """Convert hard labels into one-hot prior matrices for modern pomegranate."""
     priors = []
     for labels in labels_sequence:
-        one_hot = np.zeros((len(labels), n_states), dtype=float)
+        one_hot = np.zeros((len(labels), n_states), dtype=np.float64)
         one_hot[np.arange(len(labels)), labels.astype(int)] = 1.0
         priors.append(one_hot)
     return priors
@@ -131,12 +131,12 @@ def create_initial_graph_state(
         transition_matrix, start_probs, end_probs = create_transition_matrix_left_right(n_states, self_transition=False)
     elif architecture == "left-right-loose":
         transition_matrix, _, _ = create_transition_matrix_left_right(n_states, self_transition=True)
-        start_probs = np.ones(n_states).astype(float)
-        end_probs = np.ones(n_states).astype(float)
+        start_probs = np.ones(n_states, dtype=np.float64)
+        end_probs = np.ones(n_states, dtype=np.float64)
     else:
         transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
     transition_matrix, end_probs = normalize_transition_and_end_probs(transition_matrix, end_probs)
-    start_probs = np.asarray(start_probs, dtype=float)
+    start_probs = np.asarray(start_probs, dtype=np.float64)
     start_probs /= start_probs.sum()
     return HmmGraphState(transition_probs=transition_matrix, start_probs=start_probs, end_probs=end_probs)
 
