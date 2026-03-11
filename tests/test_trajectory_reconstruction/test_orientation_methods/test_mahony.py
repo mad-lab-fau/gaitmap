@@ -20,6 +20,13 @@ def _rotation_angle_to_identity(quat):
     return 2 * np.arccos(np.clip(np.abs(quat[3]), -1.0, 1.0))
 
 
+def _rotation_angle_between(quat_a, quat_b):
+    quat_a = np.asarray(quat_a, dtype=float)
+    quat_b = np.asarray(quat_b, dtype=float)
+    dot = np.clip(np.abs(np.dot(quat_a, quat_b)), -1.0, 1.0)
+    return 2 * np.arccos(dot)
+
+
 class MetaTestConfig:
     algorithm_class = MahonyAHRS
 
@@ -70,6 +77,28 @@ class TestSimpleRotations(TestOrientationMethodMixin):
             )
 
         assert _rotation_angle_to_identity(ori_with_correction) < _rotation_angle_to_identity(ori_without_correction)
+
+    def test_integral_term_is_sampling_rate_invariant(self) -> None:
+        """The integral correction should model continuous-time integration and not depend on the sampling rate."""
+        total_time_s = 4.0
+        orientations = []
+        for sampling_rate_hz in [50, 100, 200]:
+            orientation = np.array([0, 0, 0, 1.0])
+            integral_error = np.zeros(3)
+            for _i in range(int(total_time_s * sampling_rate_hz)):
+                orientation, integral_error = _mahony_update(
+                    np.array([0.1, 0.0, 0.0]),
+                    np.array([0, 0.0, 1.0]),
+                    initial_orientation=orientation,
+                    sampling_rate_hz=sampling_rate_hz,
+                    kp=0.0,
+                    ki=0.1,
+                    integral_error=integral_error,
+                )
+            orientations.append(orientation)
+
+        assert _rotation_angle_between(orientations[0], orientations[1]) < 1e-3
+        assert _rotation_angle_between(orientations[1], orientations[2]) < 1e-3
 
 
 class TestSimpleRotationsWithMag(TestOrientationMethodMixin):

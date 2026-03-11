@@ -199,7 +199,7 @@ def _mahony_update(gyro, acc, initial_orientation, sampling_rate_hz, kp, ki, int
         error = np.array([ay * vz - az * vy, az * vx - ax * vz, ax * vy - ay * vx])
 
         if ki > 0.0:
-            integral_error += error
+            integral_error += error / sampling_rate_hz
         else:
             integral_error[:] = 0.0
 
@@ -268,7 +268,7 @@ def _mahony_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, kp
         )
 
         if ki > 0.0:
-            integral_error += error
+            integral_error += error / sampling_rate_hz
         else:
             integral_error[:] = 0.0
 
