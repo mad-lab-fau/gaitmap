@@ -173,6 +173,14 @@ def test_region_trajectory_reconstruction(snapshot) -> None:
     snapshot.assert_match(trajectory_per_stride.orientation_["left_sensor"].loc[4].tail(20))
 
 
+def test_mahony_orientation_example(snapshot) -> None:
+    from examples.trajectory_reconstruction.mahony_orientation import orientation_comparison, rotated_data_comparison
+
+    snapshot.assert_match(orientation_comparison.tail(20), "orientation")
+    rotated_data_comparison.columns.name = None
+    snapshot.assert_match(rotated_data_comparison.tail(20), "rotated_data")
+
+
 def test_mad_pipeline(snapshot) -> None:
     from examples.full_pipelines.mad_gait_pipeline import ed, spatial_paras, temporal_paras
 

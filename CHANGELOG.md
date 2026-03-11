@@ -8,6 +8,13 @@ For more information see the
 [Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
 project.
 
+## Unreleased
+
+### Added
+
+- Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
+  heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
+
 ## [2.6.0] - 2026-03-05
 
 ### Scientific Changes
