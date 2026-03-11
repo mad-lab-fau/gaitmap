@@ -116,10 +116,11 @@ def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Sing
     data = data.copy()
     if rotation is None:
         return data
-    data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy())
-    data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy())
+    # `dataset[key]` can expose read-only NumPy views with pandas >= 3 when working on MultiIndex-backed sensor data.
+    data[SF_GYR] = rotation.apply(data[SF_GYR].to_numpy(copy=True))
+    data[SF_ACC] = rotation.apply(data[SF_ACC].to_numpy(copy=True))
     if has_mag:
-        data[SF_MAG] = rotation.apply(data[SF_MAG].to_numpy())
+        data[SF_MAG] = rotation.apply(data[SF_MAG].to_numpy(copy=True))
     return data
 
 

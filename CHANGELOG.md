@@ -52,6 +52,8 @@ project.
 
 - Fixed Python 3.9 installs that include HMM extras by constraining NumPy to `<2` for those extras to avoid the
   `pomegranate` binary compatibility crash with NumPy 2.x.
+- Added split dependency resolution so Python 3.9/3.10 stay on the pandas 2 / NumPy 1.x line while Python 3.11+
+  supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
 - Fixed multiple edge-case failures across stride/event pipelines, including DTW `costs_` postprocessing consistency,
   template-stretch constraint validation, Rampp IC short-stride handling, empty-ROI stride merging, all-zero AbsMax
   scaling, missing-initial-ZUPT alignment handling, and max sensor lift being relative to stride start.

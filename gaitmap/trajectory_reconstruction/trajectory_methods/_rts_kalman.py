@@ -289,8 +289,8 @@ class RtsKalman(BaseTrajectoryMethod):
         return ForwardPassDependencies(motion_update_func=simple_navigation_equations, motion_update_func_parameters=())
 
     def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-        gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy())
-        acc_data = self.data[SF_ACC].to_numpy()
+        gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy(copy=True))
+        acc_data = self.data[SF_ACC].to_numpy(copy=True)
         return acc_data, gyro_data, None
 
 
