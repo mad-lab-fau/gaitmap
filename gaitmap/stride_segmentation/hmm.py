@@ -7,6 +7,9 @@ The default training and inference backend is currently based on pomegranate [1]
 
 """
 
+from importlib import import_module
+from typing import TYPE_CHECKING
+
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
@@ -24,13 +27,16 @@ _gaitmap_mad_modules = {
     "HmmGraphState",
     "HmmSubModelConfig",
     "HmmSubModelState",
+    "PomegranateLegacyHmmBackend",
     "PomegranateHmmBackend",
+    "PomegranateModernHmmBackend",
     "SimpleHmm",
     "RothHmmConfig",
     "RothSegmentationHmm",
     "ScipyHmmInferenceBackend",
     "PreTrainedRothSegmentationModel",
     "BaseSegmentationHmm",
+    "get_default_hmm_backend",
 }
 
 if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__)):
@@ -50,14 +56,35 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         HmmStrideSegmentation,
         HmmSubModelConfig,
         HmmSubModelState,
-        PomegranateHmmBackend,
         PreTrainedRothSegmentationModel,
         RothHmmConfig,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
-        ScipyHmmInferenceBackend,
-        SimpleHmm,
+        get_default_hmm_backend,
     )
+
+    if TYPE_CHECKING:
+        from gaitmap_mad.stride_segmentation.hmm.legacy import (
+            PomegranateLegacyHmmBackend,
+        )
+        from gaitmap_mad.stride_segmentation.hmm.legacy import (
+            PomegranateLegacyHmmBackend as PomegranateHmmBackend,
+        )
+        from gaitmap_mad.stride_segmentation.hmm.legacy import SimpleHmm
+        from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
+        from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
+
+    def __getattr__(name: str):
+        if name in {
+            "PomegranateLegacyHmmBackend",
+            "PomegranateHmmBackend",
+            "PomegranateModernHmmBackend",
+            "ScipyHmmInferenceBackend",
+        }:
+            return getattr(import_module("gaitmap_mad.stride_segmentation.hmm"), name)
+        if name == "SimpleHmm":
+            return import_module("gaitmap_mad.stride_segmentation.hmm.legacy").SimpleHmm
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [
@@ -76,10 +103,13 @@ __all__ = [
     "HmmSubModelConfig",
     "HmmSubModelState",
     "PomegranateHmmBackend",
+    "PomegranateLegacyHmmBackend",
+    "PomegranateModernHmmBackend",
     "PreTrainedRothSegmentationModel",
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
     "ScipyHmmInferenceBackend",
     "SimpleHmm",
+    "get_default_hmm_backend",
 ]

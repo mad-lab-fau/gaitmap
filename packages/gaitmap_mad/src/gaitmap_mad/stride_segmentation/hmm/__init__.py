@@ -2,8 +2,10 @@
 
 import multiprocessing
 import warnings
+from importlib import import_module
+from typing import TYPE_CHECKING
 
-from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, PomegranateHmmBackend, ScipyHmmInferenceBackend
+from gaitmap_mad.stride_segmentation.hmm._backend import BaseHmmBackend, BaseTrainableHmm, get_default_hmm_backend
 from gaitmap_mad.stride_segmentation.hmm._config import CompositeHmmConfig, HmmSubModelConfig, RothHmmConfig
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
@@ -14,7 +16,6 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
     PreTrainedRothSegmentationModel,
 )
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
-from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._state import (
     BackendInfo,
     CrossModuleTransition,
@@ -26,6 +27,17 @@ from gaitmap_mad.stride_segmentation.hmm._state import (
     HmmSubModelState,
 )
 
+if TYPE_CHECKING:
+    from gaitmap_mad.stride_segmentation.hmm.legacy import (
+        PomegranateLegacyHmmBackend,
+    )
+    from gaitmap_mad.stride_segmentation.hmm.legacy import (
+        PomegranateLegacyHmmBackend as PomegranateHmmBackend,
+    )
+    from gaitmap_mad.stride_segmentation.hmm.legacy import SimpleHmm
+    from gaitmap_mad.stride_segmentation.hmm.modern import PomegranateModernHmmBackend
+    from gaitmap_mad.stride_segmentation.hmm.scipy import ScipyHmmInferenceBackend
+
 if multiprocessing.parent_process() is None:
     warnings.warn(
         "The hmm support in gaitmap is still quite experimental and you might run into some rough edges. "
@@ -35,9 +47,23 @@ if multiprocessing.parent_process() is None:
         UserWarning,
     )
 
+
+def __getattr__(name: str):
+    if name in {
+        "PomegranateLegacyHmmBackend",
+        "PomegranateHmmBackend",
+        "PomegranateModernHmmBackend",
+        "ScipyHmmInferenceBackend",
+    }:
+        return getattr(import_module("gaitmap_mad.stride_segmentation.hmm._backend"), name)
+    if name == "SimpleHmm":
+        return import_module("gaitmap_mad.stride_segmentation.hmm.legacy").SimpleHmm
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 __all__ = [
     "BackendInfo",
     "BaseHmmBackend",
+    "BaseTrainableHmm",
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
     "CompositeHmmConfig",
@@ -51,10 +77,13 @@ __all__ = [
     "HmmSubModelConfig",
     "HmmSubModelState",
     "PomegranateHmmBackend",
+    "PomegranateLegacyHmmBackend",
+    "PomegranateModernHmmBackend",
     "PreTrainedRothSegmentationModel",
     "RothHmmConfig",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
     "ScipyHmmInferenceBackend",
     "SimpleHmm",
+    "get_default_hmm_backend",
 ]
