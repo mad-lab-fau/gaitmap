@@ -43,14 +43,17 @@ def _hint_tuples(item):
 
 
 def _import_hidden_markov_model():
-    return import_module("pomegranate.hmm").HiddenMarkovModel
+    try:
+        return import_module("pomegranate.hmm").HiddenMarkovModel
+    except (ImportError, AttributeError):
+        return None
 
 
 class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # noqa: C901, PLR0911
+    def default(self, o):  # noqa: PLR0911
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
@@ -63,11 +66,7 @@ class _CustomEncoder(json.JSONEncoder):
             return {"_obj_type": "DataFrame", "df": o.to_json(orient="split")}
         if isinstance(o, pd.Series):
             return {"_obj_type": "Series", "df": o.to_json(orient="split")}
-        try:
-            hidden_markov_model = _import_hidden_markov_model()
-        except ImportError:
-            hidden_markov_model = None
-
+        hidden_markov_model = _import_hidden_markov_model()
         if hidden_markov_model is not None and isinstance(o, hidden_markov_model):
             warnings.warn(
                 "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
@@ -103,6 +102,11 @@ def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
         if json_obj["_obj_type"] == "HiddenMarkovModel":
             hidden_markov_model = _import_hidden_markov_model()
+            if hidden_markov_model is None:
+                raise ImportError(
+                    "Loading serialized `pomegranate.hmm.HiddenMarkovModel` objects requires legacy "
+                    "`pomegranate 0.x` with `HiddenMarkovModel` support."
+                )
             with np.errstate(divide="ignore"):
                 # Sometimes probabilities are zero which can lead to warnings when the log-probabilities are
                 # calculated.

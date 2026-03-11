@@ -80,7 +80,8 @@ class _HackyClonableHMMFix(BaseTpcpObject):
 
     @classmethod
     def __clone_param__(cls, param_name: str, value: Any) -> Any:
-        if isinstance(value, pg.HiddenMarkovModel):
+        legacy_hmm = getattr(pg, "HiddenMarkovModel", None) if pg is not None else None
+        if legacy_hmm is not None and isinstance(value, legacy_hmm):
             return _clone_model(value)
         if is_serialized_hmm_state(value):
             return type(value).from_json(value.to_json())

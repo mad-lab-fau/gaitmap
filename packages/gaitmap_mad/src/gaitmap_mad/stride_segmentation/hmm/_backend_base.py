@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 import pandas as pd
+from tpcp import make_optimize_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
@@ -37,6 +38,14 @@ class BaseTrainableHmm(_BaseSerializable):
         labels_sequence: Sequence[np.ndarray],
     ) -> HmmTrainingResult[Self]:
         raise NotImplementedError
+
+    @make_optimize_safe
+    def self_optimize(
+        self,
+        data_sequence: Sequence[pd.DataFrame | np.ndarray],
+        labels_sequence: Sequence[np.ndarray],
+    ) -> Self:
+        return self.self_optimize_with_info(data_sequence, labels_sequence)[0]
 
 
 class BaseHmmBackend(_BaseSerializable):
