@@ -2,7 +2,6 @@
 
 import json
 import warnings
-from importlib import import_module
 from typing import Any, Optional, TypeVar, Union
 
 import numpy as np
@@ -42,13 +41,6 @@ def _hint_tuples(item):
     return item
 
 
-def _import_hidden_markov_model():
-    try:
-        return import_module("pomegranate.hmm").HiddenMarkovModel
-    except (ImportError, AttributeError):
-        return None
-
-
 class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
@@ -66,15 +58,6 @@ class _CustomEncoder(json.JSONEncoder):
             return {"_obj_type": "DataFrame", "df": o.to_json(orient="split")}
         if isinstance(o, pd.Series):
             return {"_obj_type": "Series", "df": o.to_json(orient="split")}
-        hidden_markov_model = _import_hidden_markov_model()
-        if hidden_markov_model is not None and isinstance(o, hidden_markov_model):
-            warnings.warn(
-                "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
-                "round-trips. I.e. sometimes values (in particular weightings of distributions) might change "
-                "slightly in the re-imported model due to rounding issue. "
-                "This is a limitation of the underlying pomegrante library."
-            )
-            return {"_obj_type": "HiddenMarkovModel", "hmm": json.loads(o.to_json())}
         if o is tpcp.NOTHING:
             return {"_obj_type": "EmptyDefault"}
         if isinstance(o, Memory):
@@ -100,18 +83,6 @@ def _custom_deserialize(json_obj):  # pylint: disable=too-many-return-statements
         if json_obj["_obj_type"] in ["Series", "DataFrame"]:
             typ = "series" if json_obj["_obj_type"] == "Series" else "frame"
             return pd.read_json(json_obj["df"], orient="split", typ=typ)
-        if json_obj["_obj_type"] == "HiddenMarkovModel":
-            hidden_markov_model = _import_hidden_markov_model()
-            if hidden_markov_model is None:
-                raise ImportError(
-                    "Loading serialized `pomegranate.hmm.HiddenMarkovModel` objects requires legacy "
-                    "`pomegranate 0.x` with `HiddenMarkovModel` support."
-                )
-            with np.errstate(divide="ignore"):
-                # Sometimes probabilities are zero which can lead to warnings when the log-probabilities are
-                # calculated.
-                # We ignore these warnings here to avoid clutter in the output.
-                return hidden_markov_model.from_dict(json_obj["hmm"])
         if json_obj["_obj_type"] == "EmptyDefault":
             return tpcp.NOTHING
         if json_obj["_obj_type"] == "Tuple":
