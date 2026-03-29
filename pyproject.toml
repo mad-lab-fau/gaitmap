@@ -82,8 +82,8 @@ _auto_fix = "ruff check . --fix-only --show-fixes --exit-zero"
 _auto_fix_unsafe = "ruff check . --fix-only --show-fixes --exit-zero --unsafe-fixes"
 format = ["_auto_fix", "_format"]
 format_unsafe = ["_auto_fix_unsafe", "_format"]
-lint = { cmd = "ruff check gaitmap packages/gaitmap_mad --fix", help = "Lint all files with ruff." }
-_lint_ci = "ruff check gaitmap packages/gaitmap_mad --output-format=github"
+lint = { cmd = "ruff check src/gaitmap packages/gaitmap_mad --fix", help = "Lint all files with ruff." }
+_lint_ci = "ruff check src/gaitmap packages/gaitmap_mad --output-format=github"
 _check_format = "ruff format . --check"
 ci_check = { sequence = ["_check_format", "_lint_ci"], help = "Check all potential format and linting issues." }
 test = { cmd = "pytest --cov=gaitmap --cov-report=term-missing --cov-report=xml", help = "Run Pytest with coverage." }
@@ -96,5 +96,6 @@ version = { "script" = "_tasks:task_update_version()", help = "Bump version in a
 bump_dev = { script = "_tasks:task_bump_all_dev()", help = "Update all dev dependencies to their @latest version." }
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.10.8,<0.11.0"]
+build-backend = "uv_build"
+

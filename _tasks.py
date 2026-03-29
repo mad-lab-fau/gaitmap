@@ -44,7 +44,7 @@ def update_version(version) -> None:
         .stdout.decode()
         .strip()
     )
-    update_version_strings(HERE / "gaitmap/__init__.py", new_version)
+    update_version_strings(HERE / "src/gaitmap/__init__.py", new_version)
     # Update the gaitmap_mad version as well
     subprocess.run(
         ["uv", "version", new_version, "--project", str(HERE / "packages/gaitmap_mad"), "--frozen"],

@@ -121,7 +121,7 @@ model_config = CompositeHmmConfig(
 # invoke the training process.
 # Again, all configurable parameters are exposed for demonstration purpose.
 # These parameters should again work for most usecases.
-from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
+from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel, RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
     hmm_config=RothHmmConfig(
@@ -167,9 +167,16 @@ for sensor in ["left_sensor", "right_sensor"]:
 # The model will internally perform the feature transformation of the dataset, train the individual sub models and
 # finally combine them to a flatted segmentation model.
 
-segmentation_model = segmentation_model.self_optimize(
-    data_train_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz
-)
+if segmentation_model.backend.backend_id == "scipy-inference":
+    print(
+        "Skipping HMM training because the current environment only provides the "
+        "SciPy inference backend. Falling back to the packaged pre-trained model."
+    )
+    segmentation_model = PreTrainedRothSegmentationModel()
+else:
+    segmentation_model = segmentation_model.self_optimize(
+        data_train_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz
+    )
 
 # %%
 # Inspecting the Results
