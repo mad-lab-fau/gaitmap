@@ -69,17 +69,17 @@ copyright = f"2020 - {datetime.now().year}, MaD-Lab FAU, Digital Health and Gait
 
 # -- Copy the README and Changelog and fix image path --------------------------------------
 HERE = Path(__file__).parent
-with (HERE.parent / "README.md").open() as f:
+with (HERE.parent / "README.md").open(encoding="utf8") as f:
     out = f.read()
 out = out.replace("./docs/_static/logo/gaitmap_logo_with_text.png", "./_static/logo/gaitmap_logo_with_text.png")
-with (HERE / "README.md").open("w+") as f:
+with (HERE / "README.md").open("w+", encoding="utf8") as f:
     f.write(out)
 
-with (HERE.parent / "CHANGELOG.md").open() as f:
+with (HERE.parent / "CHANGELOG.md").open(encoding="utf8") as f:
     out = f.read()
 out = replace_gitlab_links(OLD_URL, out)
 out = convert_github_links(URL, out)
-with (HERE / "CHANGELOG.md").open("w+") as f:
+with (HERE / "CHANGELOG.md").open("w+", encoding="utf8") as f:
     f.write(out)
 
 # -- General configuration ---------------------------------------------------
@@ -192,7 +192,9 @@ sphinx_gallery_conf = {
     # 'default_thumb_file': 'fig/logo.png',
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
-    "filename_pattern": re.escape(os.sep),
+    "filename_pattern": (
+        re.escape(os.sep) if sys.version_info >= (3, 10) else r"^(?!.*segmentation_hmm_training\.py$)"
+    ),
     "remove_config_comments": True,
     "show_memory": True,
     "subsection_order": ExplicitOrder(

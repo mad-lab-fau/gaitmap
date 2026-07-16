@@ -198,11 +198,3 @@ def test_nested_clone() -> None:
 
     for k, v in params.items():
         assert cloned_params[k] == v
-
-
-def test_clone_pomegranate() -> None:
-    pytest.importorskip("pomegranate")
-    from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
-
-    hmm_model = PreTrainedRothSegmentationModel()
-    assert custom_hash(clone(hmm_model)) == custom_hash(hmm_model)

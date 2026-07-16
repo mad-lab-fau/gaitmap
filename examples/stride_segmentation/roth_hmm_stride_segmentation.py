@@ -51,14 +51,13 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # It is generated based on manually segmented strides from healthy participants and PD patients.
 # We can load the model a look at some of its parameters
 
-from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
+from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
-roth_hmm_model = PreTrainedRothSegmentationModel()
+roth_hmm_model = RothSegmentationHmm.from_pretrained()
 
-print(f"Number of states, stride-model: {roth_hmm_model.stride_model.n_states:d}")
-print(f"Number of states, transition-model: {roth_hmm_model.transition_model.n_states:d}")
+print(f"Number of states: {roth_hmm_model.model.n_states:d}")
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
-print(f"Transition matrix:\n{roth_hmm_model.model.dense_transition_matrix()[0:-2, 0:-2]}")
+print(f"Transition matrix:\n{roth_hmm_model.model.transition_probabilities}")
 
 # %%
 # Predicting hidden states / Stride borders

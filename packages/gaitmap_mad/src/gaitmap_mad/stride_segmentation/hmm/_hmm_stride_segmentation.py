@@ -1,9 +1,8 @@
-"""HMM based stride segmentation by Roth et al. 2021."""
+"""Turn Roth HMM state predictions into gaitmap stride lists."""
+
+from __future__ import annotations
 
 from contextlib import suppress
-from importlib.resources import open_text
-from pathlib import Path
-from typing import Generic, Optional, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -15,265 +14,148 @@ from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
-from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
+from gaitmap_mad.stride_segmentation.hmm._roth_model import RothSegmentationHmm
 
 
-class PreTrainedRothSegmentationModel(RothSegmentationHmm):
-    """Load a pre-trained stride segmentation HMM.
+class HmmStrideSegmentation(BaseStrideSegmentation):
+    """Segment strides from the hidden states predicted by a Roth HMM.
 
-    Notes
-    -----
-    This model was trained on the pre-visit @lab recordings of the first 28 participants of the fallrisk-pd study.
-    According to [1]_ the expected performance on unseen data under lab conditions is around 96% F1 score and under
-    real-world conditions ca. 92% F1 score.
-
-    The model is only for level walking and was only trained on PD data (so it might not generalize well to other
-    conditions).
-
-    Recommended use for general segmentation of straight strides.
-    But, the model will probably also segment turning strides as it only considers the `gyr_ml` data.
-    If only straight strides are desired, strides should be filtered based on turning angle after parameter estimation.
-
-    .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-           free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
-           https://doi.org/10.1186/s12984-021-00883-7
-
-    """
-
-    def __new__(cls):
-        # try to load models
-        with (
-            open_text(
-                "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
-            ) as test_data,
-            Path(test_data.name).open(encoding="utf8") as f,
-        ):
-            model_json = f.read()
-        return RothSegmentationHmm.from_json(model_json)
-
-
-BaseSegmentationHmmT = TypeVar("BaseSegmentationHmmT", bound=BaseSegmentationHmm)
-
-
-class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT]):
-    """Segment strides using a pre-trained Hidden Markov Model.
-
-    This method does not care about the implementation details of the HMM used.
-    As long as it is a valid subclass of BaseSegmentationHmm, it can be used here.
-    On top of the segmentation, this class implements a postprocessing step that snaps the minima in the raw signals
-    and contains convenience methods that ensure that outputs conform to the expected gaitmap formats.
-
-    Note, that this class only supports prediction.
-    To train your own HMM, use the `self_optimize` method on the model that you were planning to use here.
-
-    This is based on the work of Roth et al. 2021 [1]_ and the implementation is using done with `pomegranate` [2]_.
+    The wrapped model owns feature extraction and HMM inference. This class only
+    converts the predicted stride-state sequence into stride borders and applies
+    the optional signal-domain border refinement.
 
     Parameters
     ----------
     model
-        The HMM class need a valid pre-trained model to segment strides
+        A fitted Roth HMM. The bundled FallRiskPD model is used by default.
     snap_to_min_win_ms
-        The size of the window in seconds used to search local minima during the post processing of the stride borders.
-        If this is set to None, this postprocessing step is skipped.
-        Refer to the Notes section for more details.
+        Search window for snapping predicted borders to local minima. Set to
+        ``None`` to keep the borders derived directly from the state sequence.
     snap_to_min_axis
-        The axis of the data used to search for minima during the processing of the stride borders.
-        The axis label must match one of the axis label in the data.
-        Refer to the Notes section for more details.
+        Signal axis used for border refinement.
 
     Attributes
     ----------
-    matches_start_end_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        The start (column 1) and end (column 2) of each detected stride.
-    stride_list_ : A stride list or dictionary with such values
-        The same output as `matches_start_end_`, but as properly formatted pandas DataFrame that can be used as input to
-        other algorithms.
-        If `snap_to_min` is `True`, the start and end value might not match to the output of `hidden_state_sequence_`.
-        Refer to `matches_start_end_original_` for the unmodified start and end values.
-    matches_start_end_original_ : 2D array of shape (n_detected_strides x 2) or dictionary with such values
-        Identical to `matches_start_end_` if `snap_to_min` is equal to `False`.
-        Otherwise, it returns the start and end values before the snapping is applied.
-    hidden_state_sequence_ : List of length n_detected_strides or dictionary with such values
-        The cost value associated with each stride.
+    matches_start_end_
+        Refined stride borders as an array or one array per sensor.
+    stride_list_
+        Refined stride borders in gaitmap stride-list format.
+    matches_start_end_original_
+        Stride borders derived directly from the hidden states.
+    hidden_state_sequence_
+        Predicted hidden states at the input sampling rate.
     result_model_
-        The copy of the model used for the segmentation with all the result parameters attached.
-
+        Fitted model clone carrying the inference results, or one clone per sensor.
 
     Other Parameters
     ----------------
     data
-        The data passed to the `segment` method.
+        Single- or multi-sensor data passed to :meth:`segment`.
     sampling_rate_hz
-        The sampling rate of the data
-
-    Notes
-    -----
-    Post Processing
-        This algorithm uses an optional post-processing step that "snaps" the stride borders to the closest local
-        minimum in the raw data.
-        However, this assumes that the start and the end of each match is marked by a clear minimum in one axis of the
-        raw data.
-
-    .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
-       free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
-       https://doi.org/10.1186/s12984-021-00883-7
-    .. [2] J. Schreiber, “Pomegranate: Fast and flexible probabilistic modeling in python,” Journal of Machine Learning
-       Research, vol. 18, no. 164, pp. 1-6, 2018.
+        Sampling rate of the input data.
 
     """
 
-    snap_to_min_win_ms: Optional[float]
+    model: RothSegmentationHmm
+    snap_to_min_win_ms: float | None
     snap_to_min_axis: str
-    model: BaseSegmentationHmmT
 
-    data: Union[np.ndarray, SensorData]
+    data: SensorData
     sampling_rate_hz: float
 
-    matches_start_end_: Union[np.ndarray, dict[str, np.ndarray]]
-    hidden_state_sequence_: Union[np.ndarray, dict[str, np.ndarray]]
-    result_model_: Union[BaseSegmentationHmmT, dict[str, BaseSegmentationHmmT]]
+    matches_start_end_: np.ndarray | dict[str, np.ndarray]
+    hidden_state_sequence_: np.ndarray | dict[str, np.ndarray]
+    result_model_: RothSegmentationHmm | dict[str, RothSegmentationHmm]
 
     def __init__(
         self,
-        model: BaseSegmentationHmmT = cf(PreTrainedRothSegmentationModel()),
+        model: RothSegmentationHmm = cf(RothSegmentationHmm.from_pretrained()),
         *,
-        snap_to_min_win_ms: Optional[float] = 100,
+        snap_to_min_win_ms: float | None = 100,
         snap_to_min_axis: str = "gyr_ml",
     ) -> None:
+        self.model = model
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
-        self.model = model
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
-        """Return start and end of each match as pd.DataFrame."""
-        start_ends = self.matches_start_end_
-        if isinstance(start_ends, dict):
-            return {k: self._format_stride_list(v) for k, v in start_ends.items()}
-        return self._format_stride_list(start_ends)
+    def stride_list_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
+        """Return the detected stride borders in gaitmap format."""
+        if isinstance(self.matches_start_end_, dict):
+            return {sensor: self._format_stride_list(matches) for sensor, matches in self.matches_start_end_.items()}
+        return self._format_stride_list(self.matches_start_end_)
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
-        """Return the starts and end directly from the hidden state sequence.
-
-        This will not be effected by potential changes of the postprocessing.
-        """
-        stride_start_state = self.model.stride_states[0]
-        stride_end_state = self.model.stride_states[-1]
+    def matches_start_end_original_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
+        """Return stride borders before signal-domain refinement."""
         if isinstance(self.hidden_state_sequence_, dict):
             return {
-                s: self._hidden_states_to_matches_start_end(hidden_states, stride_start_state, stride_end_state)
-                for s, hidden_states in self.hidden_state_sequence_.items()
+                sensor: self._hidden_states_to_matches_start_end(states)
+                for sensor, states in self.hidden_state_sequence_.items()
             }
-
-        return self._hidden_states_to_matches_start_end(
-            self.hidden_state_sequence_, stride_start_state, stride_end_state
-        )
-
-    @staticmethod
-    def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
-        if len(array) == 0:
-            array = None
-        as_df = pd.DataFrame(array, columns=["start", "end"])
-        # Add the s_id
-        as_df.index.name = "s_id"
-        return as_df
+        return self._hidden_states_to_matches_start_end(self.hidden_state_sequence_)
 
     @make_action_safe
     def segment(self, data: SensorData, sampling_rate_hz: float, **_) -> Self:
-        """Find matches by predicting a hidden state sequence using a pre-trained Hidden Markov Model.
-
-        Parameters
-        ----------
-        data : array, single-sensor dataframe, or multi-sensor dataset
-            The input data.
-            For details on the required datatypes review the class docstring.
-        sampling_rate_hz
-            The sampling rate of the data signal. This will be used to convert all parameters provided in seconds into
-            a number of samples and it will be used to perform the required feature transformation`.
-
-        Returns
-        -------
-        self
-            The class instance with all result attributes populated
-
-        """
+        """Segment a single- or multi-sensor dataset."""
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
 
-        dataset_type = is_sensor_data(data, check_gyr=False, check_acc=False)
-
-        if dataset_type == "single":
-            # Single sensor: easy
-            results = self._segment_single_dataset(data, sampling_rate_hz=sampling_rate_hz)
-        else:  # Multisensor
-            result_dict = {
-                sensor: self._segment_single_dataset(data[sensor], sampling_rate_hz=sampling_rate_hz)
-                for sensor in get_multi_sensor_names(data)
-            }
-            results = invert_result_dictionary(result_dict)
+        if is_sensor_data(data, check_gyr=False, check_acc=False) == "single":
+            results = self._segment_single_dataset(data, sampling_rate_hz)
+        else:
+            results = invert_result_dictionary(
+                {
+                    sensor: self._segment_single_dataset(data[sensor], sampling_rate_hz)
+                    for sensor in get_multi_sensor_names(data)
+                }
+            )
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
-    def _segment_single_dataset(self, dataset, *, sampling_rate_hz: float):
-        """Perform Stride Segmentation for a single dataset."""
-        model: BaseSegmentationHmm = self.model.clone()
-        model = model.predict(dataset, sampling_rate_hz=sampling_rate_hz)
-        state_sequence = model.hidden_state_sequence_
-        stride_start_state = self.model.stride_states[0]
-        stride_end_state = self.model.stride_states[-1]
-        matches_start_end = self._hidden_states_to_matches_start_end(
-            state_sequence, stride_start_state, stride_end_state
-        )
+    def _segment_single_dataset(self, data: pd.DataFrame, sampling_rate_hz: float) -> dict:
+        model = self.model.clone().predict(data, sampling_rate_hz=sampling_rate_hz)
+        matches = self._hidden_states_to_matches_start_end(model.hidden_state_sequence_)
         return {
-            "matches_start_end": self._postprocess_matches(dataset, matches_start_end),
-            "hidden_state_sequence": state_sequence,
+            "matches_start_end": self._postprocess_matches(data, matches, sampling_rate_hz),
+            "hidden_state_sequence": model.hidden_state_sequence_,
             "result_model_": model,
         }
 
-    def _hidden_states_to_matches_start_end(
-        self, hidden_states_predicted: np.ndarray, stride_start_state, stride_end_state
-    ):
-        """Convert a hidden state sequence to a list of potential borders."""
-        # find rising edge of stride start state sequence
-        # +1 required as diff returns one element less than the input
-        matches_starts = (
-            np.argwhere(np.diff((hidden_states_predicted == stride_start_state).astype("int64")) > 0).flatten() + 1
-        )
+    def _hidden_states_to_matches_start_end(self, states: np.ndarray) -> np.ndarray:
+        stride_start_state, *_, stride_end_state = self.model.stride_states
+        if len(states) == 0:
+            return np.empty((0, 2), dtype=int)
 
-        # find falling edge of stride end state sequence
-        matches_ends = (
-            np.argwhere(np.diff((hidden_states_predicted == stride_end_state).astype("int64")) < 0).flatten() + 1
-        )
+        starts = np.flatnonzero(np.diff((states == stride_start_state).astype(np.int8)) > 0) + 1
+        ends = np.flatnonzero(np.diff((states == stride_end_state).astype(np.int8)) < 0) + 1
+        if states[0] == stride_start_state:
+            starts = np.concatenate(([0], starts))
+        if states[-1] == stride_end_state:
+            ends = np.append(ends, len(states))
 
-        # Special case, when the last state is a stride end state
-        if hidden_states_predicted[-1] == stride_end_state:
-            matches_ends = np.append(matches_ends, len(hidden_states_predicted))
-        if hidden_states_predicted[0] == stride_start_state:
-            matches_starts = np.concatenate([[0], matches_starts])
-
-        # For each start, find the next end
-        # if no end is found (as it is the end of the signal), we remove the start
-        matches_start_end = []
-        for start in matches_starts:
+        matches = []
+        for start in starts:
             with suppress(IndexError):
-                matches_start_end.append([start, matches_ends[matches_ends > start][0]])
+                matches.append((start, ends[ends > start][0]))
 
-        # If multiple starts with the same end are found, we remove all but the first
-        matches_start_end = np.array(matches_start_end)
-        if len(matches_start_end) > 0:
-            _, idx = np.unique(matches_start_end[:, 1], return_index=True)
-            matches_start_end = matches_start_end[np.sort(idx)]
+        if not matches:
+            return np.empty((0, 2), dtype=int)
+        matches_array = np.asarray(matches)
+        _, unique_end_indices = np.unique(matches_array[:, 1], return_index=True)
+        return matches_array[np.sort(unique_end_indices)]
 
-        return matches_start_end
+    def _postprocess_matches(self, data: pd.DataFrame, matches: np.ndarray, sampling_rate_hz: float) -> np.ndarray:
+        if self.snap_to_min_win_ms is None or len(matches) == 0:
+            return matches
+        return snap_to_min(
+            data[self.snap_to_min_axis].to_numpy(),
+            matches,
+            snap_to_min_win_samples=int(self.snap_to_min_win_ms / 1000 * sampling_rate_hz),
+        )
 
-    def _postprocess_matches(self, data, matches_start_end) -> np.ndarray:
-        """Perform postprocessing step by snapping the stride border candidates to minima within the given data."""
-        if self.snap_to_min_win_ms and len(matches_start_end) > 0:
-            matches_start_end = snap_to_min(
-                data[self.snap_to_min_axis].to_numpy(),
-                matches_start_end,
-                snap_to_min_win_samples=int(self.snap_to_min_win_ms / 1000 * self.sampling_rate_hz),
-            )
-
-        return matches_start_end
+    @staticmethod
+    def _format_stride_list(matches: np.ndarray) -> pd.DataFrame:
+        stride_list = pd.DataFrame(matches if len(matches) else None, columns=["start", "end"])
+        stride_list.index.name = "s_id"
+        return stride_list

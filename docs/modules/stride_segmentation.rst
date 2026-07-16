@@ -48,8 +48,10 @@ HMM Stride Segmentation
 
     HmmStrideSegmentation
     RothSegmentationHmm
-    BaseSegmentationHmm
-    SimpleHmm
+    HmmModel
+    ScipyHmmInference
+    PomegranateHmmInference
+    PomegranateHmmTrainer
+    LegacyPomegranateHmmInference
     RothHmmFeatureTransformer
-    PreTrainedRothSegmentationModel
     BaseHmmFeatureTransformer

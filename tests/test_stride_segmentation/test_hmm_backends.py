@@ -1,0 +1,218 @@
+"""Tests for interchangeable HMM inference and training implementations."""
+
+import hashlib
+import importlib.util
+import json
+import sys
+from importlib.resources import files
+
+import numpy as np
+import pandas as pd
+import pytest
+from tpcp import clone
+
+from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+from gaitmap.stride_segmentation.hmm import (
+    HmmModel,
+    HmmStrideSegmentation,
+    LegacyPomegranateHmmInference,
+    PomegranateHmmInference,
+    PomegranateHmmTrainer,
+    RothSegmentationHmm,
+    ScipyHmmInference,
+)
+from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_right_foot_to_fbf
+
+requires_modern_pomegranate = pytest.mark.skipif(
+    sys.version_info < (3, 10) or importlib.util.find_spec("pomegranate") is None,
+    reason="The torch-based pomegranate backend requires Python 3.10 or newer and the `hmm` extra.",
+)
+requires_legacy_pomegranate = pytest.mark.skipif(
+    sys.version_info >= (3, 10) or importlib.util.find_spec("pomegranate") is None,
+    reason="The legacy pomegranate backend requires Python 3.9 and the `hmm` extra.",
+)
+requires_python_39 = pytest.mark.skipif(
+    sys.version_info >= (3, 10), reason="This compatibility boundary only exists on Python 3.9."
+)
+
+
+def _state_sequence_digest(state_sequence: np.ndarray) -> str:
+    return hashlib.sha256(state_sequence.astype("<i8", copy=False).tobytes()).hexdigest()
+
+
+def test_bundled_pretrained_model_is_the_unmodified_legacy_export() -> None:
+    """The public compatibility fixture must not require an in-place format migration."""
+    model_json = (
+        files("gaitmap_mad.stride_segmentation.hmm._pre_trained_models")
+        .joinpath("fallriskpd_at_lab_model.json")
+        .read_bytes()
+    )
+
+    assert hashlib.sha256(model_json).hexdigest() == "58f06c6dcadd67a4be9256a360473869f5f3958abbcf152a4ad6e2dfcb1c7cca"
+    assert RothSegmentationHmm.from_legacy_json(model_json.decode("utf8")).model is not None
+
+
+def test_pretrained_scipy_inference_matches_legacy_hidden_states(healthy_example_imu_data) -> None:
+    """The dependency-free decoder must reproduce the shipped legacy model exactly."""
+    data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+
+    result = RothSegmentationHmm.from_pretrained().predict(data, sampling_rate_hz=204.8)
+
+    assert _state_sequence_digest(result.hidden_state_sequence_feature_space_) == (
+        "99f4611c46f9e10e07d93ede37eccdab8d6290b0249335c72aca22faf748f885"
+    )
+    assert _state_sequence_digest(result.hidden_state_sequence_) == (
+        "88b2000ddf28f8444e89bfed2b953c62b3b1a557212453fff589d6a9f44a9ad9"
+    )
+
+
+@requires_legacy_pomegranate
+def test_pretrained_legacy_backend_matches_legacy_hidden_states(healthy_example_imu_data) -> None:
+    """Python 3.9 can explicitly select the old pomegranate decoder."""
+    data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    result = (
+        RothSegmentationHmm.from_pretrained()
+        .set_params(inference_backend=LegacyPomegranateHmmInference())
+        .predict(data, sampling_rate_hz=204.8)
+    )
+    assert _state_sequence_digest(result.hidden_state_sequence_) == (
+        "88b2000ddf28f8444e89bfed2b953c62b3b1a557212453fff589d6a9f44a9ad9"
+    )
+
+
+@requires_python_39
+def test_modern_backends_have_an_explicit_python_39_boundary() -> None:
+    """Python 3.9 users should get an actionable compatibility error."""
+    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
+        PomegranateHmmInference().predict(RothSegmentationHmm.from_pretrained().model, pd.DataFrame())
+    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
+        PomegranateHmmTrainer().fit([], [], stride_states=())
+    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
+        RothSegmentationHmm().self_optimize(
+            [pd.DataFrame({"gyr_ml": np.zeros(400)})],
+            [pd.DataFrame({"start": [100], "end": [300]})],
+            sampling_rate_hz=204.8,
+        )
+
+
+def test_pretrained_scipy_inference_matches_legacy_stride_list(healthy_example_imu_data) -> None:
+    """The public segmenter must preserve the legacy postprocessed stride borders."""
+    data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+
+    result = HmmStrideSegmentation(model=RothSegmentationHmm.from_pretrained()).segment(data, sampling_rate_hz=204.8)
+
+    assert _state_sequence_digest(result.stride_list_.to_numpy()) == (
+        "14c5eafe48e0b640ebe4c841ed37f6d071b78c3dfd194cce6565447be23de526"
+    )
+
+
+def test_compiled_model_clone_and_json_roundtrip_preserve_inference(healthy_example_imu_data) -> None:
+    """Compiled artifacts must remain portable plain-data tpcp parameters."""
+    data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    fitted_model = RothSegmentationHmm.from_pretrained().model
+    assert fitted_model is not None
+
+    for model in (clone(fitted_model), HmmModel.from_json(fitted_model.to_json())):
+        result = RothSegmentationHmm(model=model).predict(data, sampling_rate_hz=204.8)
+        assert _state_sequence_digest(result.hidden_state_sequence_) == (
+            "88b2000ddf28f8444e89bfed2b953c62b3b1a557212453fff589d6a9f44a9ad9"
+        )
+
+
+@requires_modern_pomegranate
+def test_pomegranate_training_compiles_to_scipy_inference_model() -> None:
+    """The trainable backend must return a portable model usable by another backend."""
+    rng = np.random.default_rng(42)
+    labels = np.repeat(np.arange(3), 30)
+    samples = np.column_stack((labels * 5, labels * -3)) + rng.normal(scale=0.2, size=(len(labels), 2))
+    data = pd.DataFrame(samples, columns=["feature_a", "feature_b"])
+
+    model = PomegranateHmmTrainer(n_gmm_components=1, max_iterations=2).fit([data], [labels], stride_states=(1, 2))
+    predicted = ScipyHmmInference().predict(model, data)
+
+    assert model.data_columns == ("feature_a", "feature_b")
+    assert np.mean(predicted == labels) > 0.95
+    assert np.mean(PomegranateHmmInference().predict(model, data) == labels) > 0.95
+
+
+@requires_modern_pomegranate
+def test_roth_model_trains_and_segments_with_modern_pomegranate(
+    healthy_example_imu_data, healthy_example_stride_borders
+) -> None:
+    """Roth's public optimization path must train a model consumable by segmentation."""
+    data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    training = PomegranateHmmTrainer(n_gmm_components=1, max_iterations=1)
+    model = RothSegmentationHmm(training_backend=training).self_optimize(
+        [data], [healthy_example_stride_borders["left_sensor"]], sampling_rate_hz=204.8
+    )
+
+    test_data = convert_right_foot_to_fbf(healthy_example_imu_data["right_sensor"])
+    result = HmmStrideSegmentation(model=model).segment(test_data, sampling_rate_hz=204.8)
+    ground_truth = healthy_example_stride_borders["right_sensor"].set_index("s_id")
+    matches = evaluate_segmented_stride_list(
+        segmented_stride_list=result.stride_list_, ground_truth=ground_truth, tolerance=0.2
+    )
+
+    assert model.model is not None
+    assert model.model.stride_states == tuple(range(5, 25))
+    assert precision_recall_f1_score(matches)["f1_score"] > 0.9
+
+
+@requires_modern_pomegranate
+@pytest.mark.parametrize("labels", [np.array([], dtype=int), np.array([[0, 1]])])
+def test_pomegranate_training_rejects_invalid_label_shapes(labels) -> None:
+    """Training validation should fail before entering pomegranate internals."""
+    data = pd.DataFrame(np.empty((labels.size, 1)), columns=["feature"])
+    with pytest.raises(ValueError, match="non-empty.*one-dimensional"):
+        PomegranateHmmTrainer(n_gmm_components=1).fit([data], [labels], stride_states=())
+
+
+@requires_modern_pomegranate
+def test_legacy_json_loads_into_every_inference_backend() -> None:
+    """Old pomegranate JSON must migrate once into the shared compiled model."""
+    distribution = lambda mean: {
+        "class": "Distribution",
+        "name": "MultivariateGaussianDistribution",
+        "parameters": [[mean], [[0.1]]],
+        "frozen": False,
+    }
+    legacy_json = json.dumps(
+        {
+            "_gaitmap_obj": "RothSegmentationHmm",
+            "params": {
+                "data_columns": ["feature"],
+                "feature_transform": {
+                    "_gaitmap_obj": "RothHmmFeatureTransformer",
+                    "params": {"axes": ["gyr_ml"], "features": ["raw"], "standardization": True},
+                },
+                "transition_model": {"params": {"n_states": 1}},
+                "stride_model": {"params": {"n_states": 1}},
+                "model": {
+                    "_obj_type": "HiddenMarkovModel",
+                    "hmm": {
+                        "states": [
+                            {"name": "s0", "distribution": distribution(0)},
+                            {"name": "s1", "distribution": distribution(5)},
+                            {"name": "None-start", "distribution": None},
+                            {"name": "None-end", "distribution": None},
+                        ],
+                        "start_index": 2,
+                        "end_index": 3,
+                        "edges": [
+                            [2, 0, 1.0, 1.0, None],
+                            [0, 0, 0.8, 1.0, None],
+                            [0, 1, 0.2, 1.0, None],
+                            [1, 1, 1.0, 1.0, None],
+                        ],
+                    },
+                },
+            },
+        }
+    )
+    loaded = RothSegmentationHmm.from_legacy_json(legacy_json)
+    data = pd.DataFrame({"feature": [0.0] * 10 + [5.0] * 10})
+
+    for backend in (ScipyHmmInference(), PomegranateHmmInference()):
+        states = backend.predict(loaded.model, data)
+        assert set(states) <= {0, 1}
+        assert len(states) >= len(data) - 1
