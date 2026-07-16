@@ -307,3 +307,5 @@ $RECYCLE.BIN/
 
 # Just a folder for local tests
 _debug_test
+# roborev snapshots
+/.roborev/
