@@ -47,6 +47,13 @@ def test_left_right_hmm_rejects_unknown_boundary_modes(argument, value) -> None:
         HmmModel.left_right(2, n_gmm_components=1, **{argument: value})
 
 
+@pytest.mark.parametrize("component_count", [1.5, np.inf])
+def test_left_right_hmm_rejects_non_integer_component_counts(component_count) -> None:
+    """Convenience construction applies the same component validation as matrix construction."""
+    with pytest.raises(ValueError, match="integer-valued"):
+        HmmModel.left_right(2, n_gmm_components=component_count)
+
+
 def test_matrix_topology_supports_arbitrary_reachable_state_graphs() -> None:
     """Custom domains can define graphs without implementing another HMM class."""
     model = HmmModel.from_matrix(

@@ -108,8 +108,14 @@ class HmmModel(_BaseSerializable):
         ends: Literal["last", "all"] = "last",
     ) -> HmmModel:
         """Construct an unfitted left-right HMM definition."""
-        if n_states <= 0 or n_gmm_components <= 0:
-            raise ValueError("The number of states and GMM components must be positive.")
+        try:
+            component_count = float(n_gmm_components)
+        except (TypeError, ValueError) as e:
+            raise ValueError("The GMM-component count must be a finite, positive, integer-valued number.") from e
+        if not np.isfinite(component_count) or component_count <= 0 or component_count != np.floor(component_count):
+            raise ValueError("The GMM-component count must be a finite, positive, integer-valued number.")
+        if n_states <= 0:
+            raise ValueError("The number of states must be positive.")
         if starts not in ("first", "all"):
             raise ValueError("`starts` must be either 'first' or 'all'.")
         if ends not in ("last", "all"):
@@ -124,7 +130,7 @@ class HmmModel(_BaseSerializable):
             allowed_transitions=allowed_transitions,
             allowed_starts=allowed_starts,
             allowed_ends=allowed_ends,
-            n_gmm_components=np.full(n_states, n_gmm_components, dtype=int),
+            n_gmm_components=np.full(n_states, int(component_count), dtype=int),
             state_ids=tuple((f"state_{state}",) for state in range(n_states)),
             state_groups={},
         )
