@@ -240,6 +240,37 @@ def test_composite_hmm_rejects_invalid_region_contracts(regions, error) -> None:
         )
 
 
+def test_stride_segmentation_emits_types_for_multiple_selected_state_groups() -> None:
+    """One generic segmenter can expose walking and running bouts without a domain-specific subclass."""
+    fitted_model = HmmModel.from_parameters(
+        transition_probabilities=np.array([[0.8, 0.1, 0.1], [0.2, 0.8, 0.0], [0.2, 0.0, 0.8]]),
+        start_probabilities=np.array([1.0, 0.0, 0.0]),
+        end_probabilities=np.zeros(3),
+        means=np.array([[[0.0]], [[5.0]], [[10.0]]]),
+        covariances=np.array([[[[0.1]]], [[[0.1]]], [[[0.1]]]]),
+        weights=np.ones((3, 1)),
+        n_gmm_components=np.ones(3, dtype=int),
+        data_columns=("raw__gyr_ml",),
+        state_groups={"walking": (1,), "running": (2,)},
+    )
+    feature_transform = RothHmmFeatureTransformer(
+        sampling_rate_feature_space_hz=20,
+        low_pass_filter=None,
+        axes=["gyr_ml"],
+        features=["raw"],
+        standardization=False,
+    )
+    data = pd.DataFrame({"gyr_ml": np.repeat([0.0, 5.0, 0.0, 10.0, 0.0], 5)})
+    model = CompositeHmm(model=fitted_model, feature_transform=feature_transform)
+
+    result = HmmStrideSegmentation(
+        model=model, segment_state_groups=("walking", "running"), snap_to_min_win_ms=None
+    ).segment(data, sampling_rate_hz=20)
+
+    assert tuple(result.stride_list_.columns) == ("start", "end", "type")
+    assert result.stride_list_["type"].tolist() == ["walking", "running"]
+
+
 @requires_modern_pomegranate
 def test_roth_model_trains_and_segments_with_modern_pomegranate(
     healthy_example_imu_data, healthy_example_stride_borders, monkeypatch

@@ -14,11 +14,12 @@ from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap_mad.stride_segmentation.hmm._composite_model import CompositeHmm
 from gaitmap_mad.stride_segmentation.hmm._roth_model import RothSegmentationHmm
 
 
 class HmmStrideSegmentation(BaseStrideSegmentation):
-    """Segment strides from the hidden states predicted by a Roth HMM.
+    """Segment regions from named HMM state groups.
 
     The wrapped model owns feature extraction and HMM inference. This class only
     converts the predicted stride-state sequence into stride borders and applies
@@ -27,7 +28,10 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
     Parameters
     ----------
     model
-        A fitted Roth HMM. The bundled FallRiskPD model is used by default.
+        Any fitted composite HMM. The bundled Roth model is used by default.
+    segment_state_groups
+        Named state groups to convert to segments. Selecting multiple groups
+        adds their names as a ``type`` column to the output.
     snap_to_min_win_ms
         Search window for snapping predicted borders to local minima. Set to
         ``None`` to keep the borders derived directly from the state sequence.
@@ -56,25 +60,28 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
 
     """
 
-    model: RothSegmentationHmm
+    model: CompositeHmm
+    segment_state_groups: tuple[str, ...]
     snap_to_min_win_ms: float | None
     snap_to_min_axis: str
 
     data: SensorData
     sampling_rate_hz: float
 
-    matches_start_end_: np.ndarray | dict[str, np.ndarray]
+    matches_start_end_: pd.DataFrame | dict[str, pd.DataFrame]
     hidden_state_sequence_: np.ndarray | dict[str, np.ndarray]
-    result_model_: RothSegmentationHmm | dict[str, RothSegmentationHmm]
+    result_model_: CompositeHmm | dict[str, CompositeHmm]
 
     def __init__(
         self,
-        model: RothSegmentationHmm = cf(RothSegmentationHmm.from_pretrained()),
+        model: CompositeHmm = cf(RothSegmentationHmm.from_pretrained()),
         *,
+        segment_state_groups: tuple[str, ...] = ("stride",),
         snap_to_min_win_ms: float | None = 100,
         snap_to_min_axis: str = "gyr_ml",
     ) -> None:
         self.model = model
+        self.segment_state_groups = segment_state_groups
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
 
@@ -86,7 +93,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         return self._format_stride_list(self.matches_start_end_)
 
     @property
-    def matches_start_end_original_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
+    def matches_start_end_original_(self) -> pd.DataFrame | dict[_Hashable, pd.DataFrame]:
         """Return stride borders before signal-domain refinement."""
         if isinstance(self.hidden_state_sequence_, dict):
             return {
@@ -122,8 +129,26 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
             "result_model_": model,
         }
 
-    def _hidden_states_to_matches_start_end(self, states: np.ndarray) -> np.ndarray:
-        stride_start_state, *_, stride_end_state = self.model.stride_states
+    def _hidden_states_to_matches_start_end(self, states: np.ndarray) -> pd.DataFrame:
+        if not self.segment_state_groups:
+            raise ValueError("At least one segment state group must be selected.")
+        matches = []
+        typed = len(self.segment_state_groups) > 1
+        for group in self.segment_state_groups:
+            group_matches = self._group_states_to_matches(states, self.model.model.state_indices(group))
+            frame = pd.DataFrame(group_matches, columns=["start", "end"])
+            if typed:
+                frame["type"] = group
+            matches.append(frame)
+        if not matches:
+            return pd.DataFrame(columns=["start", "end"])
+        return pd.concat(matches, ignore_index=True).sort_values(["start", "end"]).reset_index(drop=True)
+
+    @staticmethod
+    def _group_states_to_matches(states: np.ndarray, group_states: tuple[int, ...]) -> np.ndarray:
+        if not group_states:
+            raise ValueError("Segment state groups must contain at least one state.")
+        stride_start_state, stride_end_state = group_states[0], group_states[-1]
         if len(states) == 0:
             return np.empty((0, 2), dtype=int)
 
@@ -145,17 +170,19 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         _, unique_end_indices = np.unique(matches_array[:, 1], return_index=True)
         return matches_array[np.sort(unique_end_indices)]
 
-    def _postprocess_matches(self, data: pd.DataFrame, matches: np.ndarray, sampling_rate_hz: float) -> np.ndarray:
+    def _postprocess_matches(self, data: pd.DataFrame, matches: pd.DataFrame, sampling_rate_hz: float) -> pd.DataFrame:
         if self.snap_to_min_win_ms is None or len(matches) == 0:
             return matches
-        return snap_to_min(
+        result = matches.copy()
+        result.loc[:, ["start", "end"]] = snap_to_min(
             data[self.snap_to_min_axis].to_numpy(),
-            matches,
+            matches[["start", "end"]].to_numpy(),
             snap_to_min_win_samples=int(self.snap_to_min_win_ms / 1000 * sampling_rate_hz),
         )
+        return result
 
     @staticmethod
-    def _format_stride_list(matches: np.ndarray) -> pd.DataFrame:
-        stride_list = pd.DataFrame(matches if len(matches) else None, columns=["start", "end"])
+    def _format_stride_list(matches: pd.DataFrame) -> pd.DataFrame:
+        stride_list = matches.copy()
         stride_list.index.name = "s_id"
         return stride_list
