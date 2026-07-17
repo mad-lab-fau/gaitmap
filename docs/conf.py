@@ -193,7 +193,9 @@ sphinx_gallery_conf = {
     "backreferences_dir": "modules/generated/backreferences",
     "doc_module": ("gaitmap",),
     "filename_pattern": (
-        re.escape(os.sep) if sys.version_info >= (3, 10) else r"^(?!.*segmentation_hmm_training\.py$)"
+        re.escape(os.sep)
+        if sys.version_info >= (3, 10)
+        else r"^(?!.*(?:segmentation_hmm_training|composite_hmm_training)\.py$)"
     ),
     "remove_config_comments": True,
     "show_memory": True,

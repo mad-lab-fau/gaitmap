@@ -5,6 +5,7 @@ import sys
 import matplotlib
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
@@ -15,12 +16,13 @@ from tests.conftest import compare_algo_objects
 matplotlib.use("Agg")
 
 
-def test_hmm_training_example_only_executes_on_supported_python(monkeypatch) -> None:
+@pytest.mark.parametrize("example_name", ["segmentation_hmm_training.py", "composite_hmm_training.py"])
+def test_hmm_training_examples_only_execute_on_supported_python(monkeypatch, example_name) -> None:
     """The documentation must render, but not run, modern-only training on Python 3.9."""
     monkeypatch.chdir("docs")
     from docs.conf import sphinx_gallery_conf
 
-    example_path = os.path.join("examples", "stride_segmentation", "segmentation_hmm_training.py")
+    example_path = os.path.join("examples", "stride_segmentation", example_name)
     is_selected = re.search(sphinx_gallery_conf["filename_pattern"], example_path) is not None
 
     assert is_selected is (sys.version_info >= (3, 10))
