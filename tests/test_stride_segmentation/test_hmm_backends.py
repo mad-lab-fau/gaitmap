@@ -13,11 +13,13 @@ from tpcp import clone
 
 from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
 from gaitmap.stride_segmentation.hmm import (
+    CompositeHmm,
     HmmModel,
     HmmStrideSegmentation,
     LegacyPomegranateHmmInference,
     PomegranateHmmInference,
     PomegranateHmmTrainer,
+    RothHmmFeatureTransformer,
     RothSegmentationHmm,
     ScipyHmmInference,
 )
@@ -172,12 +174,87 @@ def test_transition_training_preserves_fitted_emissions_exactly() -> None:
 
 
 @requires_modern_pomegranate
+def test_composite_hmm_trains_any_number_of_named_parts_from_complete_regions() -> None:
+    """Generic orchestration supports activity models without domain-specific training code."""
+    part_names = ("transition", "walking", "stairs", "running")
+    topology = HmmModel.compose(
+        parts={name: HmmModel.left_right(1, n_gmm_components=1) for name in part_names},
+        routes={
+            "transition": ("walking", "stairs", "running"),
+            "walking": ("transition",),
+            "stairs": ("transition",),
+            "running": ("transition",),
+        },
+        starts=("transition",),
+        ends=("transition",),
+    )
+    region_names = ["transition", "walking", "transition", "stairs", "transition", "running", "transition"]
+    regions = pd.DataFrame(
+        {
+            "start": np.arange(0, 140, 20),
+            "end": np.arange(20, 160, 20),
+            "model": region_names,
+        }
+    )
+    means = {"transition": 0.0, "walking": 3.0, "stairs": 6.0, "running": 9.0}
+    rng = np.random.default_rng(4)
+    data = pd.DataFrame({"gyr_ml": np.concatenate([rng.normal(means[name], 0.1, 20) for name in region_names])})
+    feature_transform = RothHmmFeatureTransformer(
+        sampling_rate_feature_space_hz=20,
+        low_pass_filter=None,
+        axes=["gyr_ml"],
+        features=["raw"],
+        standardization=False,
+    )
+
+    trained = CompositeHmm(model=topology, feature_transform=feature_transform).self_optimize(
+        [data], [regions], sampling_rate_hz=20
+    )
+
+    assert trained.model.is_fitted
+    assert tuple(trained.model.state_groups) == part_names
+    np.testing.assert_allclose(trained.model.means[:, 0, 0], [0.0, 3.0, 6.0, 9.0], atol=0.1)
+
+
+@pytest.mark.parametrize(
+    ("regions", "error"),
+    [
+        (pd.DataFrame({"start": [0, 3], "end": [2, 4], "model": ["a", "b"]}), "no gaps"),
+        (pd.DataFrame({"start": [0, 1], "end": [2, 4], "model": ["a", "b"]}), "non-overlapping"),
+        (pd.DataFrame({"start": [0], "end": [4], "model": ["unknown"]}), "unknown model parts"),
+        (pd.DataFrame({"start": [0], "end": [4]}), "missing required columns"),
+    ],
+)
+def test_composite_hmm_rejects_invalid_region_contracts(regions, error) -> None:
+    """Generic training never guesses how gaps, overlaps, or unknown semantic labels should be handled."""
+    topology = HmmModel.compose(
+        parts={"a": HmmModel.left_right(1, n_gmm_components=1), "b": HmmModel.left_right(1, n_gmm_components=1)},
+        routes={"a": ("b",)},
+        starts=("a",),
+        ends=("b",),
+    )
+
+    with pytest.raises(ValueError, match=error):
+        CompositeHmm(model=topology).self_optimize(
+            [pd.DataFrame({"gyr_ml": np.arange(4)})], [regions], sampling_rate_hz=204.8
+        )
+
+
+@requires_modern_pomegranate
 def test_roth_model_trains_and_segments_with_modern_pomegranate(
-    healthy_example_imu_data, healthy_example_stride_borders
+    healthy_example_imu_data, healthy_example_stride_borders, monkeypatch
 ) -> None:
     """Roth's public optimization path must train a model consumable by segmentation."""
     data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
     training = PomegranateHmmTrainer(max_iterations=1)
+    fit_calls = []
+    fit = PomegranateHmmTrainer.fit
+
+    def record_fit(self, *args, **kwargs):
+        fit_calls.append(kwargs.get("train", "all"))
+        return fit(self, *args, **kwargs)
+
+    monkeypatch.setattr(PomegranateHmmTrainer, "fit", record_fit)
     model = RothSegmentationHmm(training_backend=training).self_optimize(
         [data], [healthy_example_stride_borders["left_sensor"]], sampling_rate_hz=204.8
     )
@@ -191,6 +268,7 @@ def test_roth_model_trains_and_segments_with_modern_pomegranate(
 
     assert model.model is not None
     assert model.model.stride_states == tuple(range(5, 25))
+    assert fit_calls == ["all", "all", "transitions"]
     assert precision_recall_f1_score(matches)["f1_score"] > 0.9
 
 

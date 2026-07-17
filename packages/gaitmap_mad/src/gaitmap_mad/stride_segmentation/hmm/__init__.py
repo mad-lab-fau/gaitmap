@@ -1,5 +1,6 @@
 """Roth et al. HMM based stride segmentation."""
 
+from gaitmap_mad.stride_segmentation.hmm._composite_model import CompositeHmm
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
@@ -16,6 +17,7 @@ from gaitmap_mad.stride_segmentation.hmm._scipy_inference import ScipyHmmInferen
 
 __all__ = [
     "BaseHmmFeatureTransformer",
+    "CompositeHmm",
     "HmmModel",
     "HmmStrideSegmentation",
     "LegacyPomegranateHmmInference",
