@@ -223,6 +223,7 @@ def test_composite_hmm_trains_any_number_of_named_parts_from_complete_regions() 
         (pd.DataFrame({"start": [0, 1], "end": [2, 4], "model": ["a", "b"]}), "non-overlapping"),
         (pd.DataFrame({"start": [0], "end": [4], "model": ["unknown"]}), "unknown model parts"),
         (pd.DataFrame({"start": [0], "end": [4]}), "missing required columns"),
+        (pd.DataFrame({"start": [0.0], "end": [3.5], "model": ["a"]}), "integer sample indices"),
     ],
 )
 def test_composite_hmm_rejects_invalid_region_contracts(regions, error) -> None:
@@ -237,6 +238,24 @@ def test_composite_hmm_rejects_invalid_region_contracts(regions, error) -> None:
     with pytest.raises(ValueError, match=error):
         CompositeHmm(model=topology).self_optimize(
             [pd.DataFrame({"gyr_ml": np.arange(4)})], [regions], sampling_rate_hz=204.8
+        )
+
+
+def test_composite_orchestration_rejects_parts_without_an_ordered_initialization_path() -> None:
+    """Arbitrary graphs require caller-supplied labels through the atomic trainer."""
+    reverse_part = HmmModel.from_matrix(
+        allowed_transitions=np.array([[1, 0], [1, 1]], dtype=bool),
+        allowed_starts=np.array([0, 1], dtype=bool),
+        allowed_ends=np.array([1, 0], dtype=bool),
+        n_gmm_components=np.ones(2),
+    )
+    topology = HmmModel.compose(parts={"reverse": reverse_part}, routes={}, starts=("reverse",), ends=("reverse",))
+
+    with pytest.raises(ValueError, match="ordered initialization"):
+        CompositeHmm(model=topology).self_optimize(
+            [pd.DataFrame({"gyr_ml": np.arange(4)})],
+            [pd.DataFrame({"start": [0], "end": [4], "model": ["reverse"]})],
+            sampling_rate_hz=204.8,
         )
 
 
@@ -269,6 +288,46 @@ def test_stride_segmentation_emits_types_for_multiple_selected_state_groups() ->
 
     assert tuple(result.stride_list_.columns) == ("start", "end", "type")
     assert result.stride_list_["type"].tolist() == ["walking", "running"]
+
+
+def test_segmentation_uses_contiguous_membership_in_the_complete_state_group() -> None:
+    """Segments may enter or leave through any state and split whenever group membership ends."""
+    fitted_model = HmmModel.from_parameters(
+        transition_probabilities=np.full((4, 4), 0.25),
+        start_probabilities=np.full(4, 0.25),
+        end_probabilities=np.zeros(4),
+        means=np.arange(4, dtype=float)[:, None, None],
+        covariances=np.repeat(np.array([[[[0.01]]]]), 4, axis=0),
+        weights=np.ones((4, 1)),
+        n_gmm_components=np.ones(4, dtype=int),
+        data_columns=("raw__gyr_ml",),
+        state_groups={"activity": (1, 2)},
+    )
+    feature_transform = RothHmmFeatureTransformer(
+        sampling_rate_feature_space_hz=20,
+        low_pass_filter=None,
+        axes=["gyr_ml"],
+        features=["raw"],
+        standardization=False,
+    )
+    data = pd.DataFrame({"gyr_ml": np.repeat([0.0, 2.0, 0.0, 1.0, 3.0, 2.0], 5)})
+
+    result = HmmStrideSegmentation(
+        model=CompositeHmm(model=fitted_model, feature_transform=feature_transform),
+        segment_state_groups=("activity",),
+        segment_group_mode="membership",
+        snap_to_min_win_ms=None,
+    ).segment(data, sampling_rate_hz=20)
+
+    np.testing.assert_array_equal(result.stride_list_.to_numpy(), [[5, 10], [16, 21], [26, 30]])
+
+
+def test_roth_default_topology_accepts_strides_at_recording_boundaries() -> None:
+    """Stride annotations may start at zero or end at the final sample."""
+    model = RothSegmentationHmm().model
+
+    assert model.allowed_starts[model.state_indices("stride")[0]]
+    assert model.allowed_ends[model.state_indices("stride")[-1]]
 
 
 @requires_modern_pomegranate

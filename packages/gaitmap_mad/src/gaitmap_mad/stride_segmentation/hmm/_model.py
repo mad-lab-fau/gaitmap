@@ -110,6 +110,10 @@ class HmmModel(_BaseSerializable):
         """Construct an unfitted left-right HMM definition."""
         if n_states <= 0 or n_gmm_components <= 0:
             raise ValueError("The number of states and GMM components must be positive.")
+        if starts not in ("first", "all"):
+            raise ValueError("`starts` must be either 'first' or 'all'.")
+        if ends not in ("last", "all"):
+            raise ValueError("`ends` must be either 'last' or 'all'.")
         allowed_transitions = np.eye(n_states, dtype=bool)
         allowed_transitions[np.arange(n_states - 1), np.arange(1, n_states)] = True
         if cycle:
@@ -126,7 +130,7 @@ class HmmModel(_BaseSerializable):
         )
 
     @classmethod
-    def from_matrix(
+    def from_matrix(  # noqa: C901, PLR0912
         cls,
         *,
         allowed_transitions: np.ndarray,
@@ -144,11 +148,22 @@ class HmmModel(_BaseSerializable):
         n_states = len(transitions)
         starts = np.asarray(allowed_starts, dtype=bool)
         ends = np.asarray(allowed_ends, dtype=bool)
-        component_counts = np.asarray(n_gmm_components, dtype=int)
-        if starts.shape != (n_states,) or ends.shape != (n_states,) or component_counts.shape != (n_states,):
+        raw_component_counts = np.asarray(n_gmm_components)
+        if starts.shape != (n_states,) or ends.shape != (n_states,) or raw_component_counts.shape != (n_states,):
             raise ValueError("Start, end, and GMM-component definitions must contain one value per state.")
-        if not np.any(starts) or np.any(component_counts <= 0):
-            raise ValueError("At least one start state and a positive GMM-component count per state are required.")
+        try:
+            numeric_component_counts = raw_component_counts.astype(float)
+        except (TypeError, ValueError) as e:
+            raise ValueError("GMM-component counts must be finite, positive, integer-valued numbers.") from e
+        if (
+            np.any(~np.isfinite(numeric_component_counts))
+            or np.any(numeric_component_counts <= 0)
+            or np.any(numeric_component_counts != np.floor(numeric_component_counts))
+        ):
+            raise ValueError("GMM-component counts must be finite, positive, integer-valued numbers.")
+        component_counts = numeric_component_counts.astype(int)
+        if not np.any(starts) or not np.any(ends):
+            raise ValueError("At least one start state and one end state are required.")
 
         identities = state_ids or tuple((f"state_{state}",) for state in range(n_states))
         if len(identities) != n_states or len(set(identities)) != n_states:
@@ -167,6 +182,15 @@ class HmmModel(_BaseSerializable):
         if not np.all(reachable):
             raise ValueError(f"States {tuple(np.flatnonzero(~reachable))} are unreachable from every allowed start.")
 
+        can_reach_end = ends.copy()
+        while True:
+            expanded = can_reach_end | np.any(transitions[:, can_reach_end], axis=1)
+            if np.array_equal(expanded, can_reach_end):
+                break
+            can_reach_end = expanded
+        if not np.all(can_reach_end):
+            raise ValueError(f"States {tuple(np.flatnonzero(~can_reach_end))} cannot reach an allowed end.")
+
         return cls(
             allowed_transitions=transitions,
             allowed_starts=starts,
@@ -177,7 +201,7 @@ class HmmModel(_BaseSerializable):
         )
 
     @classmethod
-    def compose(
+    def compose(  # noqa: C901
         cls,
         parts: dict[str, HmmModel],
         *,
@@ -188,6 +212,8 @@ class HmmModel(_BaseSerializable):
         """Compose named HMMs through routes from source exits to target entries."""
         if not parts:
             raise ValueError("At least one named HMM is required for composition.")
+        if invalid_names := tuple(name for name in parts if "." in name):
+            raise ValueError(f"Composition part names must not contain dots: {invalid_names}.")
         fitted_parts = [part.is_fitted for part in parts.values()]
         if any(fitted_parts) and not all(fitted_parts):
             raise ValueError("Composition requires either all fitted or all unfitted model parts.")
@@ -266,6 +292,20 @@ class HmmModel(_BaseSerializable):
             composition=self.composition,
         )
 
+    def set_params(self, **params):
+        """Set tpcp parameters and recompile flattened composition metadata when required."""
+        result = super().set_params(**params)
+        if self.composition is not None and any(name.startswith("composition__") for name in params):
+            composition = self.composition
+            rebuilt = type(self).compose(
+                dict(composition.parts),
+                routes=dict(composition.routes),
+                starts=composition.starts,
+                ends=composition.ends,
+            )
+            self.__dict__.update(rebuilt.__dict__)
+        return result
+
     def with_parameters(
         self,
         *,
@@ -298,7 +338,7 @@ class HmmModel(_BaseSerializable):
         )
 
     @staticmethod
-    def _compose_fitted_parameters(
+    def _compose_fitted_parameters(  # noqa: C901
         parts: dict[str, HmmModel],
         routes: dict[str, tuple[str, ...]],
         starts: tuple[str, ...],
@@ -319,6 +359,13 @@ class HmmModel(_BaseSerializable):
         covariances = np.zeros((n_states, max_components, n_features, n_features))
         weights = np.zeros((n_states, max_components))
 
+        def normalized_entries(name: str) -> np.ndarray:
+            probabilities = parts[name].start_probabilities
+            total = probabilities.sum()
+            if not np.all(np.isfinite(probabilities)) or not np.isfinite(total) or total <= 0:
+                raise ValueError(f"Fitted model part {name!r} must have positive entry probability mass.")
+            return probabilities / total
+
         for name, part in parts.items():
             offset = offsets[name]
             part_slice = slice(offset, offset + part.n_states)
@@ -329,7 +376,7 @@ class HmmModel(_BaseSerializable):
 
         for name in starts:
             part = parts[name]
-            entry_probabilities = part.start_probabilities / part.start_probabilities.sum()
+            entry_probabilities = normalized_entries(name)
             offset = offsets[name]
             start_probabilities[offset : offset + part.n_states] = entry_probabilities / len(starts)
 
@@ -348,7 +395,7 @@ class HmmModel(_BaseSerializable):
                     end_probabilities[source_slice] += part.end_probabilities * route_share
                     continue
                 target_part = parts[target]
-                entry_probabilities = target_part.start_probabilities / target_part.start_probabilities.sum()
+                entry_probabilities = normalized_entries(target)
                 target_offset = offsets[target]
                 target_slice = slice(target_offset, target_offset + target_part.n_states)
                 transitions[source_slice, target_slice] += (

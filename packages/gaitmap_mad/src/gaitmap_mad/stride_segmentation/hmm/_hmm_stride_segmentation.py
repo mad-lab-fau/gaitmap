@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -32,6 +32,10 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
     segment_state_groups
         Named state groups to convert to segments. Selecting multiple groups
         adds their names as a ``type`` column to the output.
+    segment_group_mode
+        ``"start_end"`` uses the first and last state of each ordered group as
+        segment borders. ``"membership"`` emits every contiguous run in any
+        state belonging to the group.
     snap_to_min_win_ms
         Search window for snapping predicted borders to local minima. Set to
         ``None`` to keep the borders derived directly from the state sequence.
@@ -62,6 +66,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
 
     model: CompositeHmm
     segment_state_groups: tuple[str, ...]
+    segment_group_mode: Literal["start_end", "membership"]
     snap_to_min_win_ms: float | None
     snap_to_min_axis: str
 
@@ -77,11 +82,13 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         model: CompositeHmm = cf(RothSegmentationHmm.from_pretrained()),
         *,
         segment_state_groups: tuple[str, ...] = ("stride",),
+        segment_group_mode: Literal["start_end", "membership"] = "start_end",
         snap_to_min_win_ms: float | None = 100,
         snap_to_min_axis: str = "gyr_ml",
     ) -> None:
         self.model = model
         self.segment_state_groups = segment_state_groups
+        self.segment_group_mode = segment_group_mode
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
 
@@ -135,7 +142,9 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         matches = []
         typed = len(self.segment_state_groups) > 1
         for group in self.segment_state_groups:
-            group_matches = self._group_states_to_matches(states, self.model.model.state_indices(group))
+            group_matches = self._group_states_to_matches(
+                states, self.model.model.state_indices(group), self.segment_group_mode
+            )
             frame = pd.DataFrame(group_matches, columns=["start", "end"])
             if typed:
                 frame["type"] = group
@@ -145,25 +154,35 @@ class HmmStrideSegmentation(BaseStrideSegmentation):
         return pd.concat(matches, ignore_index=True).sort_values(["start", "end"]).reset_index(drop=True)
 
     @staticmethod
-    def _group_states_to_matches(states: np.ndarray, group_states: tuple[int, ...]) -> np.ndarray:
+    def _group_states_to_matches(
+        states: np.ndarray,
+        group_states: tuple[int, ...],
+        mode: Literal["start_end", "membership"],
+    ) -> np.ndarray:
         if not group_states:
             raise ValueError("Segment state groups must contain at least one state.")
-        stride_start_state, stride_end_state = group_states[0], group_states[-1]
         if len(states) == 0:
             return np.empty((0, 2), dtype=int)
+        if mode == "membership":
+            membership = np.isin(states, group_states).astype(np.int8)
+            boundaries = np.diff(np.pad(membership, (1, 1)))
+            return np.column_stack((np.flatnonzero(boundaries == 1), np.flatnonzero(boundaries == -1)))
+        if mode != "start_end":
+            raise ValueError("`segment_group_mode` must be either 'start_end' or 'membership'.")
 
-        starts = np.flatnonzero(np.diff((states == stride_start_state).astype(np.int8)) > 0) + 1
-        ends = np.flatnonzero(np.diff((states == stride_end_state).astype(np.int8)) < 0) + 1
-        if states[0] == stride_start_state:
+        start_state, end_state = group_states[0], group_states[-1]
+        starts = np.flatnonzero(np.diff((states == start_state).astype(np.int8)) > 0) + 1
+        ends = np.flatnonzero(np.diff((states == end_state).astype(np.int8)) < 0) + 1
+        if states[0] == start_state:
             starts = np.concatenate(([0], starts))
-        if states[-1] == stride_end_state:
+        if states[-1] == end_state:
             ends = np.append(ends, len(states))
 
         matches = []
         for start in starts:
-            with suppress(IndexError):
-                matches.append((start, ends[ends > start][0]))
-
+            following_ends = ends[ends > start]
+            if len(following_ends):
+                matches.append((start, following_ends[0]))
         if not matches:
             return np.empty((0, 2), dtype=int)
         matches_array = np.asarray(matches)

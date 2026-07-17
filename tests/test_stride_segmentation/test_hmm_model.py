@@ -40,6 +40,13 @@ def test_left_right_hmm_is_a_complete_unfitted_model_definition() -> None:
     np.testing.assert_array_equal(model.n_gmm_components, [2, 2, 2])
 
 
+@pytest.mark.parametrize(("argument", "value"), [("starts", "last"), ("ends", "first")])
+def test_left_right_hmm_rejects_unknown_boundary_modes(argument, value) -> None:
+    """Typos in topology modes must not silently select the default."""
+    with pytest.raises(ValueError, match=argument):
+        HmmModel.left_right(2, n_gmm_components=1, **{argument: value})
+
+
 def test_matrix_topology_supports_arbitrary_reachable_state_graphs() -> None:
     """Custom domains can define graphs without implementing another HMM class."""
     model = HmmModel.from_matrix(
@@ -62,6 +69,7 @@ def test_matrix_topology_supports_arbitrary_reachable_state_graphs() -> None:
         (np.ones((2, 3)), np.ones(2), "square matrix"),
         (np.eye(2), np.ones(1), "one value per state"),
         (np.eye(2), np.ones(2), "unreachable"),
+        (np.ones((2, 2)), np.array([1.5, 1]), "integer-valued"),
     ],
 )
 def test_matrix_topology_rejects_incomplete_or_unreachable_definitions(transitions, components, error) -> None:
@@ -72,6 +80,17 @@ def test_matrix_topology_rejects_incomplete_or_unreachable_definitions(transitio
             allowed_starts=np.array([1, 0]),
             allowed_ends=np.array([0, 1]),
             n_gmm_components=components,
+        )
+
+
+def test_matrix_topology_requires_every_state_to_reach_an_end() -> None:
+    """A topology accepted for training has a legal completion from every state."""
+    with pytest.raises(ValueError, match="reach an allowed end"):
+        HmmModel.from_matrix(
+            allowed_transitions=np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]]),
+            allowed_starts=np.array([1, 0, 1]),
+            allowed_ends=np.array([0, 1, 0]),
+            n_gmm_components=np.ones(3),
         )
 
 
@@ -110,6 +129,31 @@ def test_composition_flattens_any_number_of_named_models_without_losing_identity
     assert not model.allowed_transitions[3, 4]
 
 
+def test_nested_tpcp_updates_recompile_a_composite_topology() -> None:
+    """Changing a named part never leaves cached flattened arrays stale."""
+    model = HmmModel.compose(
+        parts={"a": HmmModel.left_right(1, n_gmm_components=1), "b": HmmModel.left_right(1, n_gmm_components=1)},
+        routes={"a": ("b",)},
+        starts=("a",),
+        ends=("b",),
+    )
+
+    model.set_params(composition__parts__a__n_gmm_components=np.array([3]))
+
+    np.testing.assert_array_equal(model.n_gmm_components, [3, 1])
+
+
+def test_composition_rejects_ambiguous_part_names() -> None:
+    """Dots remain reserved for generated hierarchical group names."""
+    with pytest.raises(ValueError, match="must not contain dots"):
+        HmmModel.compose(
+            parts={"activity.walk": HmmModel.left_right(1, n_gmm_components=1)},
+            routes={},
+            starts=("activity.walk",),
+            ends=("activity.walk",),
+        )
+
+
 def test_composition_lifts_fitted_exit_mass_into_macro_routes() -> None:
     """Fitted submodels compose without losing emissions or probability mass."""
     model = HmmModel.compose(
@@ -129,3 +173,18 @@ def test_composition_lifts_fitted_exit_mass_into_macro_routes() -> None:
     np.testing.assert_allclose(model.means[:, 0, 0], [0.0, 5.0])
     np.testing.assert_allclose(model.transition_probabilities.sum(axis=1) + model.end_probabilities, 1.0)
     assert all(not part.is_fitted for _, part in model.composition.parts)
+
+
+def test_fitted_composition_rejects_route_targets_without_entry_mass() -> None:
+    """Invalid fitted entry distributions fail instead of producing NaNs."""
+    source = _fitted_one_state_model(mean=0.0, self_transition=0.8, end=0.2)
+    target = _fitted_one_state_model(mean=5.0, self_transition=1.0, end=0.0)
+    target.parameters.start_probabilities[:] = 0
+
+    with pytest.raises(ValueError, match="positive entry probability"):
+        HmmModel.compose(
+            parts={"source": source, "target": target},
+            routes={"source": ("target",)},
+            starts=("source",),
+            ends=("target",),
+        )

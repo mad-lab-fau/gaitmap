@@ -20,10 +20,25 @@ from gaitmap_mad.stride_segmentation.hmm._pomegranate_backend import Pomegranate
 from gaitmap_mad.stride_segmentation.hmm._scipy_inference import ScipyHmmInference
 
 
-def _equidistant_labels(length: int, n_states: int) -> np.ndarray:
+def _ordered_initialization_labels(length: int, topology: HmmModel) -> np.ndarray:
+    n_states = topology.n_states
     if length < n_states:
         raise ValueError(f"A labelled region with {length} samples is too short for {n_states} HMM states.")
     return np.minimum(np.arange(length) * n_states // length, n_states - 1)
+
+
+def _validate_ordered_initialization(topology: HmmModel) -> None:
+    states = np.arange(topology.n_states)
+    if (
+        not topology.allowed_starts[0]
+        or not topology.allowed_ends[-1]
+        or not np.all(topology.allowed_transitions[states, states])
+        or not np.all(topology.allowed_transitions[states[:-1], states[1:]])
+    ):
+        raise ValueError(
+            "CompositeHmm requires every part to provide an ordered initialization path from its first to last state. "
+            "Use the atomic trainer with caller-supplied labels for arbitrary state graphs."
+        )
 
 
 class CompositeHmm(BaseAlgorithm):
@@ -84,7 +99,7 @@ class CompositeHmm(BaseAlgorithm):
         """Fit each named part, compose them, then adjust the final routing probabilities."""
         return self._self_optimize_composite(data_sequence, region_list_sequence, sampling_rate_hz=sampling_rate_hz)
 
-    def _self_optimize_composite(
+    def _self_optimize_composite(  # noqa: C901
         self,
         data_sequence: Sequence[SingleSensorData],
         region_list_sequence: Sequence[SingleSensorRegionsOfInterestList],
@@ -97,18 +112,20 @@ class CompositeHmm(BaseAlgorithm):
             raise ValueError("Composite training requires a model created with `HmmModel.compose()`.")
 
         part_topologies = dict(self.model.composition.parts)
+        for topology in part_topologies.values():
+            _validate_ordered_initialization(topology)
         transformed_data = []
         transformed_regions = []
         for data, regions in zip(data_sequence, region_list_sequence):
-            self._validate_regions(regions, len(data), set(part_topologies))
+            regions = self._validate_regions(regions, len(data), set(part_topologies))
             transformed = self.feature_transform.clone().transform(
                 data, roi_list=regions, sampling_rate_hz=sampling_rate_hz
             )
-            self._validate_regions(
+            feature_regions = self._validate_regions(
                 transformed.transformed_roi_list_, len(transformed.transformed_data_), set(part_topologies)
             )
             transformed_data.append(transformed.transformed_data_)
-            transformed_regions.append(transformed.transformed_roi_list_)
+            transformed_regions.append(feature_regions)
 
         fitted_parts = {}
         for name, topology in part_topologies.items():
@@ -117,7 +134,7 @@ class CompositeHmm(BaseAlgorithm):
             for data, regions in zip(transformed_data, transformed_regions):
                 for start, end in regions.loc[regions["model"] == name, ["start", "end"]].to_numpy(dtype=int):
                     observations.append(data.iloc[start:end])
-                    labels.append(_equidistant_labels(end - start, topology.n_states))
+                    labels.append(_ordered_initialization_labels(end - start, topology))
             if not observations:
                 raise ValueError(f"No training region was labelled for model part {name!r}.")
             fitted_parts[name] = self.training_backend.fit(topology, observations, labels)
@@ -143,17 +160,27 @@ class CompositeHmm(BaseAlgorithm):
         return self
 
     @staticmethod
-    def _validate_regions(regions: pd.DataFrame, n_samples: int, model_names: set[str]) -> None:
+    def _validate_regions(regions: pd.DataFrame, n_samples: int, model_names: set[str]) -> pd.DataFrame:
         missing_columns = {"start", "end", "model"} - set(regions.columns)
         if missing_columns:
             raise ValueError(f"Region tables are missing required columns: {tuple(sorted(missing_columns))}.")
         if len(regions) == 0:
             raise ValueError("Region tables must be non-empty and cover the complete training sequence.")
 
-        borders = regions[["start", "end"]].to_numpy(dtype=int)
+        try:
+            numeric_borders = regions[["start", "end"]].to_numpy(dtype=float)
+        except (TypeError, ValueError) as e:
+            raise ValueError("Region boundaries must be finite integer sample indices.") from e
+        if np.any(~np.isfinite(numeric_borders)) or np.any(numeric_borders != np.floor(numeric_borders)):
+            raise ValueError("Region boundaries must be finite integer sample indices.")
+        borders = numeric_borders.astype(int)
         if borders[0, 0] != 0 or borders[-1, 1] != n_samples or np.any(borders[:, 1] <= borders[:, 0]):
             raise ValueError("Regions must be positive-length and cover the complete training sequence.")
         if np.any(borders[1:, 0] != borders[:-1, 1]):
             raise ValueError("Regions must be sorted, non-overlapping, and have no gaps.")
         if unknown := set(regions["model"]) - model_names:
             raise ValueError(f"Region tables reference unknown model parts: {tuple(sorted(unknown))}.")
+        normalized = regions.copy()
+        normalized["start"] = borders[:, 0]
+        normalized["end"] = borders[:, 1]
+        return normalized

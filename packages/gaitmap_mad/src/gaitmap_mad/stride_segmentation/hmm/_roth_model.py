@@ -29,8 +29,8 @@ def _default_roth_topology() -> HmmModel:
             "stride": HmmModel.left_right(n_states=20, n_gmm_components=3, cycle=True),
         },
         routes={"transition": ("stride",), "stride": ("transition", "stride")},
-        starts=("transition",),
-        ends=("transition",),
+        starts=("transition", "stride"),
+        ends=("transition", "stride"),
     )
 
 
