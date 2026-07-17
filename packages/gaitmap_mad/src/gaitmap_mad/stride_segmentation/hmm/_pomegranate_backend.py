@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -80,8 +81,6 @@ class PomegranateHmmTrainer(_BaseSerializable):
 
     Parameters
     ----------
-    n_gmm_components
-        Number of Gaussian components used for every hidden state.
     max_iterations
         Maximum pomegranate transition-training iterations.
     stop_threshold
@@ -93,7 +92,6 @@ class PomegranateHmmTrainer(_BaseSerializable):
 
     """
 
-    n_gmm_components: int
     max_iterations: int
     stop_threshold: float
     covariance_regularization: float
@@ -101,14 +99,12 @@ class PomegranateHmmTrainer(_BaseSerializable):
 
     def __init__(
         self,
-        n_gmm_components: int = 3,
         *,
         max_iterations: int = 10,
         stop_threshold: float = 1e-3,
         covariance_regularization: float = 1e-6,
         random_state: int = 0,
     ) -> None:
-        self.n_gmm_components = n_gmm_components
         self.max_iterations = max_iterations
         self.stop_threshold = stop_threshold
         self.covariance_regularization = covariance_regularization
@@ -116,13 +112,16 @@ class PomegranateHmmTrainer(_BaseSerializable):
 
     def fit(
         self,
+        topology: HmmModel,
         data_sequences: Sequence[pd.DataFrame],
         state_sequences: Sequence[np.ndarray],
         *,
-        stride_states: tuple[int, ...],
+        train: Literal["all", "transitions"] = "all",
     ) -> HmmModel:
-        """Fit labeled sequences and return backend-neutral parameters."""
+        """Fit one complete HMM topology and return backend-neutral parameters."""
         _ensure_modern_python()
+        if train not in ("all", "transitions"):
+            raise ValueError("`train` must be either 'all' or 'transitions'.")
         try:
             from pomegranate.distributions import Normal  # noqa: PLC0415
             from pomegranate.gmm import GeneralMixtureModel  # noqa: PLC0415
@@ -132,19 +131,35 @@ class PomegranateHmmTrainer(_BaseSerializable):
                 "PomegranateHmmTrainer requires pomegranate 1.x. Install gaitmap with the `hmm` extra."
             ) from e
 
-        data, labels, columns, n_states = self._validate_training_data(data_sequences, state_sequences)
+        data, labels, columns = self._validate_training_data(data_sequences, state_sequences, topology.n_states)
+        if train == "transitions":
+            if not topology.is_fitted:
+                raise ValueError("Transition-only training requires a fitted HMM model.")
+            if columns != topology.data_columns:
+                raise ValueError(f"Expected feature columns {topology.data_columns}, but received {columns}.")
+            transitions, starts, ends = self._initial_probabilities(labels, topology)
+            return topology.with_parameters(
+                transition_probabilities=transitions,
+                start_probabilities=starts,
+                end_probabilities=ends,
+                means=topology.means,
+                covariances=topology.covariances,
+                weights=topology.weights,
+                data_columns=topology.data_columns,
+            )
+
         distributions = []
-        for state in range(n_states):
+        for state in range(topology.n_states):
             state_data = np.concatenate(
                 [sequence[state_labels == state] for sequence, state_labels in zip(data, labels)]
             )
-            if len(state_data) < self.n_gmm_components:
+            n_components = int(topology.n_gmm_components[state])
+            if len(state_data) < n_components:
                 raise ValueError(
-                    f"State {state} has {len(state_data)} samples, but {self.n_gmm_components} GMM components "
-                    "were requested."
+                    f"State {state} has {len(state_data)} samples, but {n_components} GMM components were requested."
                 )
             fitted_gmm = GaussianMixture(
-                n_components=self.n_gmm_components,
+                n_components=n_components,
                 covariance_type="full",
                 reg_covar=self.covariance_regularization,
                 random_state=self.random_state,
@@ -163,7 +178,7 @@ class PomegranateHmmTrainer(_BaseSerializable):
                 GeneralMixtureModel(normals, priors=fitted_gmm.weights_.astype(np.float32), frozen=True)
             )
 
-        transitions, starts, ends = self._initial_probabilities(labels, n_states)
+        transitions, starts, ends = self._initial_probabilities(labels, topology)
         model = DenseHMM(
             distributions=distributions,
             edges=transitions,
@@ -173,14 +188,14 @@ class PomegranateHmmTrainer(_BaseSerializable):
             tol=self.stop_threshold,
             random_state=self.random_state,
         )
-        priors = [np.eye(n_states, dtype=np.float32)[state_sequence] for state_sequence in labels]
+        priors = [np.eye(topology.n_states, dtype=np.float32)[state_sequence] for state_sequence in labels]
         model.fit([sequence.astype(np.float32) for sequence in data], priors=priors)
-        return self._compile_model(model, columns, stride_states)
+        return self._compile_model(model, columns, topology)
 
     @staticmethod
     def _validate_training_data(
-        data_sequences: Sequence[pd.DataFrame], state_sequences: Sequence[np.ndarray]
-    ) -> tuple[list[np.ndarray], list[np.ndarray], tuple[str, ...], int]:
+        data_sequences: Sequence[pd.DataFrame], state_sequences: Sequence[np.ndarray], n_states: int
+    ) -> tuple[list[np.ndarray], list[np.ndarray], tuple[str, ...]]:
         if not data_sequences or len(data_sequences) != len(state_sequences):
             raise ValueError("Training data and state labels must contain the same non-zero number of sequences.")
         columns = tuple(data_sequences[0].columns)
@@ -198,19 +213,28 @@ class PomegranateHmmTrainer(_BaseSerializable):
             labels.append(np.ascontiguousarray(state_sequence))
 
         unique_states = np.unique(np.concatenate(labels))
-        if not np.array_equal(unique_states, np.arange(len(unique_states))):
-            raise ValueError("State labels must be consecutive integers starting at zero.")
-        return data, labels, columns, len(unique_states)
+        if not np.array_equal(unique_states, np.arange(n_states)):
+            raise ValueError("State labels must cover every topology state using consecutive integers from zero.")
+        return data, labels, columns
 
     @staticmethod
-    def _initial_probabilities(labels: list[np.ndarray], n_states: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        transitions = np.zeros((n_states, n_states), dtype=np.float32)
-        starts = np.zeros(n_states, dtype=np.float32)
-        ends = np.zeros(n_states, dtype=np.float32)
+    def _initial_probabilities(
+        labels: list[np.ndarray], topology: HmmModel
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        transitions = np.zeros((topology.n_states, topology.n_states), dtype=np.float32)
+        starts = np.zeros(topology.n_states, dtype=np.float32)
+        ends = np.zeros(topology.n_states, dtype=np.float32)
         for sequence in labels:
             starts[sequence[0]] += 1
             ends[sequence[-1]] += 1
             np.add.at(transitions, (sequence[:-1], sequence[1:]), 1)
+
+        if np.any(transitions[~topology.allowed_transitions]):
+            raise ValueError("State labels contain transitions forbidden by the HMM topology.")
+        if np.any(starts[~topology.allowed_starts]):
+            raise ValueError("State labels start in a state forbidden by the HMM topology.")
+        if np.any(ends[~topology.allowed_ends]):
+            raise ValueError("State labels end in a state forbidden by the HMM topology.")
 
         row_totals = transitions.sum(axis=1) + ends
         if np.any(row_totals == 0):
@@ -218,7 +242,7 @@ class PomegranateHmmTrainer(_BaseSerializable):
         return transitions / row_totals[:, None], starts / starts.sum(), ends / row_totals
 
     @staticmethod
-    def _compile_model(model, columns: tuple[str, ...], stride_states: tuple[int, ...]) -> HmmModel:
+    def _compile_model(model, columns: tuple[str, ...], topology: HmmModel) -> HmmModel:
         def as_numpy(value) -> np.ndarray:
             return value.detach().cpu().numpy().copy()
 
@@ -235,16 +259,14 @@ class PomegranateHmmTrainer(_BaseSerializable):
                 means[state, component] = as_numpy(normal.means)
                 covariances[state, component] = as_numpy(normal.covs)
 
-        return HmmModel.from_parameters(
+        return topology.with_parameters(
             transition_probabilities=np.exp(as_numpy(model.edges)),
             start_probabilities=np.exp(as_numpy(model.starts)),
             end_probabilities=np.exp(as_numpy(model.ends)),
             means=means,
             covariances=covariances,
             weights=weights,
-            n_gmm_components=n_components,
             data_columns=columns,
-            state_groups={"stride": stride_states},
         )
 
 

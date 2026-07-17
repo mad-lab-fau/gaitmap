@@ -215,6 +215,37 @@ class HmmModel(_BaseSerializable):
             composition=self.composition,
         )
 
+    def with_parameters(
+        self,
+        *,
+        transition_probabilities: np.ndarray,
+        start_probabilities: np.ndarray,
+        end_probabilities: np.ndarray,
+        means: np.ndarray,
+        covariances: np.ndarray,
+        weights: np.ndarray,
+        data_columns: tuple[str, ...],
+    ) -> HmmModel:
+        """Return this topology with fitted backend-neutral parameters."""
+        return HmmModel(
+            allowed_transitions=self.allowed_transitions,
+            allowed_starts=self.allowed_starts,
+            allowed_ends=self.allowed_ends,
+            n_gmm_components=self.n_gmm_components,
+            state_ids=self.state_ids,
+            state_groups=self.state_groups,
+            composition=self.composition,
+            parameters=HmmParameters(
+                transition_probabilities=transition_probabilities,
+                start_probabilities=start_probabilities,
+                end_probabilities=end_probabilities,
+                means=means,
+                covariances=covariances,
+                weights=weights,
+                data_columns=data_columns,
+            ),
+        )
+
     @staticmethod
     def _compose_fitted_parameters(
         parts: dict[str, HmmModel],

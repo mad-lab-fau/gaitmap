@@ -24,14 +24,29 @@ from gaitmap_mad.stride_segmentation.hmm._pomegranate_backend import Pomegranate
 from gaitmap_mad.stride_segmentation.hmm._scipy_inference import ScipyHmmInference
 
 
-def _equidistant_state_labels(length: int, n_states: int, offset: int = 0) -> np.ndarray:
-    if length < n_states:
-        raise ValueError(f"A labeled region with {length} samples is too short for {n_states} HMM states.")
-    return np.minimum(np.arange(length) * n_states // length, n_states - 1) + offset
+def _default_roth_topology() -> HmmModel:
+    return HmmModel.compose(
+        parts={
+            "transition": HmmModel.left_right(n_states=5, n_gmm_components=3),
+            "stride": HmmModel.left_right(n_states=20, n_gmm_components=3, cycle=True),
+        },
+        routes={"transition": ("stride",), "stride": ("transition",)},
+        starts=("transition",),
+        ends=("transition",),
+    )
+
+
+def _equidistant_state_labels(length: int, states: tuple[int, ...]) -> np.ndarray:
+    if length < len(states):
+        raise ValueError(f"A labeled region with {length} samples is too short for {len(states)} HMM states.")
+    return np.asarray(states)[np.minimum(np.arange(length) * len(states) // length, len(states) - 1)]
 
 
 def _create_roth_state_labels(
-    n_samples: int, stride_list: SingleSensorStrideList, n_transition_states: int, n_stride_states: int
+    n_samples: int,
+    stride_list: SingleSensorStrideList,
+    transition_states: tuple[int, ...],
+    stride_states: tuple[int, ...],
 ) -> np.ndarray:
     labels = np.empty(n_samples, dtype=int)
     cursor = 0
@@ -39,11 +54,11 @@ def _create_roth_state_labels(
         if start < cursor or end <= start or end > n_samples:
             raise ValueError("Stride borders must be sorted, non-overlapping, and contained in the training data.")
         if start > cursor:
-            labels[cursor:start] = _equidistant_state_labels(start - cursor, n_transition_states)
-        labels[start:end] = _equidistant_state_labels(end - start, n_stride_states, n_transition_states)
+            labels[cursor:start] = _equidistant_state_labels(start - cursor, transition_states)
+        labels[start:end] = _equidistant_state_labels(end - start, stride_states)
         cursor = end
     if cursor < n_samples:
-        labels[cursor:] = _equidistant_state_labels(n_samples - cursor, n_transition_states)
+        labels[cursor:] = _equidistant_state_labels(n_samples - cursor, transition_states)
     return labels
 
 
@@ -94,7 +109,7 @@ class RothSegmentationHmm(BaseAlgorithm):
 
     def __init__(
         self,
-        model: HmmModel | None = None,
+        model: HmmModel | None = cf(_default_roth_topology()),
         feature_transform: BaseHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
         inference_backend: ScipyHmmInference = cf(ScipyHmmInference()),
         training_backend: PomegranateHmmTrainer = cf(PomegranateHmmTrainer()),
@@ -195,6 +210,10 @@ class RothSegmentationHmm(BaseAlgorithm):
 
         feature_data = []
         state_sequences = []
+        if self.model is None:
+            raise ValueError("Training requires an unfitted HMM topology.")
+        transition_states = self.model.state_indices("transition")
+        stride_states = self.model.state_indices("stride")
         for data, stride_list in zip(data_sequence, stride_list_sequence):
             transformed = self.feature_transform.clone().transform(
                 data, roi_list=stride_list, sampling_rate_hz=sampling_rate_hz
@@ -204,10 +223,10 @@ class RothSegmentationHmm(BaseAlgorithm):
                 _create_roth_state_labels(
                     len(transformed.transformed_data_),
                     transformed.transformed_roi_list_,
-                    n_transition_states=5,
-                    n_stride_states=20,
+                    transition_states=transition_states,
+                    stride_states=stride_states,
                 )
             )
 
-        self.model = self.training_backend.fit(feature_data, state_sequences, stride_states=tuple(range(5, 25)))
+        self.model = self.training_backend.fit(self.model, feature_data, state_sequences)
         return self

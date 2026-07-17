@@ -83,11 +83,11 @@ def test_pretrained_legacy_backend_matches_legacy_hidden_states(healthy_example_
 @requires_python_39
 def test_modern_backends_have_an_explicit_python_39_boundary() -> None:
     """Python 3.9 users should get an actionable compatibility error."""
-    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
+    with pytest.raises(RuntimeError, match=r"Python 3\.10 or newer"):
         PomegranateHmmInference().predict(RothSegmentationHmm.from_pretrained().model, pd.DataFrame())
-    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
-        PomegranateHmmTrainer().fit([], [], stride_states=())
-    with pytest.raises(RuntimeError, match="Python 3.10 or newer"):
+    with pytest.raises(RuntimeError, match=r"Python 3\.10 or newer"):
+        PomegranateHmmTrainer().fit(HmmModel.left_right(1, n_gmm_components=1), [], [])
+    with pytest.raises(RuntimeError, match=r"Python 3\.10 or newer"):
         RothSegmentationHmm().self_optimize(
             [pd.DataFrame({"gyr_ml": np.zeros(400)})],
             [pd.DataFrame({"start": [100], "end": [300]})],
@@ -127,12 +127,48 @@ def test_pomegranate_training_compiles_to_scipy_inference_model() -> None:
     samples = np.column_stack((labels * 5, labels * -3)) + rng.normal(scale=0.2, size=(len(labels), 2))
     data = pd.DataFrame(samples, columns=["feature_a", "feature_b"])
 
-    model = PomegranateHmmTrainer(n_gmm_components=1, max_iterations=2).fit([data], [labels], stride_states=(1, 2))
+    topology = HmmModel.compose(
+        parts={
+            "background": HmmModel.left_right(n_states=1, n_gmm_components=1),
+            "event": HmmModel.left_right(n_states=2, n_gmm_components=1),
+        },
+        routes={"background": ("event",)},
+        starts=("background",),
+        ends=("event",),
+    )
+    model = PomegranateHmmTrainer(max_iterations=2).fit(topology, [data], [labels])
     predicted = ScipyHmmInference().predict(model, data)
 
     assert model.data_columns == ("feature_a", "feature_b")
+    assert model.state_ids == topology.state_ids
+    assert model.state_groups == topology.state_groups
     assert np.mean(predicted == labels) > 0.95
     assert np.mean(PomegranateHmmInference().predict(model, data) == labels) > 0.95
+
+
+@requires_modern_pomegranate
+def test_transition_training_preserves_fitted_emissions_exactly() -> None:
+    """Final composite adjustment changes probabilities but never refits submodel emissions."""
+    model = HmmModel.from_parameters(
+        transition_probabilities=np.array([[0.9, 0.1], [0.0, 0.8]]),
+        start_probabilities=np.array([1.0, 0.0]),
+        end_probabilities=np.array([0.0, 0.2]),
+        means=np.array([[[0.0]], [[5.0]]]),
+        covariances=np.array([[[[0.1]]], [[[0.2]]]]),
+        weights=np.ones((2, 1)),
+        n_gmm_components=np.ones(2, dtype=int),
+        data_columns=("feature",),
+    )
+    labels = np.array([0, 0, 1, 1])
+    data = pd.DataFrame({"feature": [0.0, 0.1, 4.9, 5.0]})
+
+    adjusted = PomegranateHmmTrainer().fit(model, [data], [labels], train="transitions")
+
+    np.testing.assert_array_equal(adjusted.means, model.means)
+    np.testing.assert_array_equal(adjusted.covariances, model.covariances)
+    np.testing.assert_array_equal(adjusted.weights, model.weights)
+    np.testing.assert_allclose(adjusted.transition_probabilities, [[0.5, 0.5], [0.0, 0.5]])
+    np.testing.assert_allclose(adjusted.end_probabilities, [0.0, 0.5])
 
 
 @requires_modern_pomegranate
@@ -141,7 +177,7 @@ def test_roth_model_trains_and_segments_with_modern_pomegranate(
 ) -> None:
     """Roth's public optimization path must train a model consumable by segmentation."""
     data = convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
-    training = PomegranateHmmTrainer(n_gmm_components=1, max_iterations=1)
+    training = PomegranateHmmTrainer(max_iterations=1)
     model = RothSegmentationHmm(training_backend=training).self_optimize(
         [data], [healthy_example_stride_borders["left_sensor"]], sampling_rate_hz=204.8
     )
@@ -163,19 +199,22 @@ def test_roth_model_trains_and_segments_with_modern_pomegranate(
 def test_pomegranate_training_rejects_invalid_label_shapes(labels) -> None:
     """Training validation should fail before entering pomegranate internals."""
     data = pd.DataFrame(np.empty((labels.size, 1)), columns=["feature"])
-    with pytest.raises(ValueError, match="non-empty.*one-dimensional"):
-        PomegranateHmmTrainer(n_gmm_components=1).fit([data], [labels], stride_states=())
+    with pytest.raises(ValueError, match=r"non-empty.*one-dimensional"):
+        PomegranateHmmTrainer().fit(HmmModel.left_right(1, n_gmm_components=1), [data], [labels])
 
 
 @requires_modern_pomegranate
 def test_legacy_json_loads_into_every_inference_backend() -> None:
     """Old pomegranate JSON must migrate once into the shared compiled model."""
-    distribution = lambda mean: {
-        "class": "Distribution",
-        "name": "MultivariateGaussianDistribution",
-        "parameters": [[mean], [[0.1]]],
-        "frozen": False,
-    }
+
+    def distribution(mean):
+        return {
+            "class": "Distribution",
+            "name": "MultivariateGaussianDistribution",
+            "parameters": [[mean], [[0.1]]],
+            "frozen": False,
+        }
+
     legacy_json = json.dumps(
         {
             "_gaitmap_obj": "RothSegmentationHmm",
