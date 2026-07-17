@@ -34,7 +34,7 @@ def _hint_tuples(item):
     Modified based on: https://stackoverflow.com/questions/15721363/preserve-python-tuples-with-json
     """
     if isinstance(item, tuple):
-        return {"_obj_type": "Tuple", "tuple": item}
+        return {"_obj_type": "Tuple", "tuple": [_hint_tuples(value) for value in item]}
     if isinstance(item, list):
         return [_hint_tuples(e) for e in item]
     if isinstance(item, dict):
@@ -48,7 +48,7 @@ class _CustomEncoder(json.JSONEncoder):
 
     def default(self, o):  # noqa: PLR0911
         if isinstance(o, _BaseSerializable):
-            return o._to_json_dict()
+            return _hint_tuples(o._to_json_dict())
         if isinstance(o, Rotation):
             return {"_obj_type": "Rotation", "quat": o.as_quat().tolist()}
         if isinstance(o, np.generic):

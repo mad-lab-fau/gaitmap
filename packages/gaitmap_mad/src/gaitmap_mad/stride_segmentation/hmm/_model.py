@@ -1,18 +1,42 @@
-"""Backend-neutral representation of a fitted hidden Markov model."""
+"""Backend-neutral hidden Markov model definitions and fitted parameters."""
 
 from __future__ import annotations
 
+from typing import Literal, Optional
+
 import numpy as np
+from tpcp import OptiPara
 
 from gaitmap.base import _BaseSerializable
 
+StateId = tuple[str, ...]
 
-class HmmModel(_BaseSerializable):
-    """Parameters required to decode a Gaussian-mixture hidden Markov model.
 
-    Parameters are stored as plain NumPy arrays so fitted models can be cloned,
-    hashed, and serialized without importing the library used for training.
-    """
+class HmmComposition(_BaseSerializable):
+    """The named parts and routes used to construct a composite HMM."""
+
+    _composite_params = ("parts",)
+
+    parts: list[tuple[str, HmmModel]]
+    routes: list[tuple[str, tuple[str, ...]]]
+    starts: tuple[str, ...]
+    ends: tuple[str, ...]
+
+    def __init__(
+        self,
+        parts: list[tuple[str, HmmModel]],
+        routes: list[tuple[str, tuple[str, ...]]],
+        starts: tuple[str, ...],
+        ends: tuple[str, ...],
+    ) -> None:
+        self.parts = parts
+        self.routes = routes
+        self.starts = starts
+        self.ends = ends
+
+
+class HmmParameters(_BaseSerializable):
+    """Numerical parameters learned for an :class:`HmmModel` topology."""
 
     transition_probabilities: np.ndarray
     start_probabilities: np.ndarray
@@ -20,9 +44,7 @@ class HmmModel(_BaseSerializable):
     means: np.ndarray
     covariances: np.ndarray
     weights: np.ndarray
-    n_components: np.ndarray
     data_columns: tuple[str, ...]
-    stride_states: tuple[int, ...]
 
     def __init__(
         self,
@@ -32,9 +54,7 @@ class HmmModel(_BaseSerializable):
         means: np.ndarray,
         covariances: np.ndarray,
         weights: np.ndarray,
-        n_components: np.ndarray,
         data_columns: tuple[str, ...],
-        stride_states: tuple[int, ...],
     ) -> None:
         self.transition_probabilities = transition_probabilities
         self.start_probabilities = start_probabilities
@@ -42,14 +62,325 @@ class HmmModel(_BaseSerializable):
         self.means = means
         self.covariances = covariances
         self.weights = weights
-        self.n_components = n_components
         self.data_columns = data_columns
-        self.stride_states = stride_states
+
+
+class HmmModel(_BaseSerializable):
+    """An HMM topology with optional backend-neutral fitted parameters."""
+
+    allowed_transitions: np.ndarray
+    allowed_starts: np.ndarray
+    allowed_ends: np.ndarray
+    n_gmm_components: np.ndarray
+    state_ids: tuple[StateId, ...]
+    state_groups: dict[str, tuple[StateId, ...]]
+    composition: HmmComposition | None
+    parameters: OptiPara[Optional[HmmParameters]]  # noqa: UP045
+
+    def __init__(
+        self,
+        allowed_transitions: np.ndarray,
+        allowed_starts: np.ndarray,
+        allowed_ends: np.ndarray,
+        n_gmm_components: np.ndarray,
+        state_ids: tuple[StateId, ...],
+        state_groups: dict[str, tuple[StateId, ...]],
+        composition: HmmComposition | None = None,
+        parameters: HmmParameters | None = None,
+    ) -> None:
+        self.allowed_transitions = allowed_transitions
+        self.allowed_starts = allowed_starts
+        self.allowed_ends = allowed_ends
+        self.n_gmm_components = n_gmm_components
+        self.state_ids = state_ids
+        self.state_groups = state_groups
+        self.composition = composition
+        self.parameters = parameters
+
+    @classmethod
+    def left_right(
+        cls,
+        n_states: int,
+        *,
+        n_gmm_components: int,
+        cycle: bool = False,
+        starts: Literal["first", "all"] = "first",
+        ends: Literal["last", "all"] = "last",
+    ) -> HmmModel:
+        """Construct an unfitted left-right HMM definition."""
+        if n_states <= 0 or n_gmm_components <= 0:
+            raise ValueError("The number of states and GMM components must be positive.")
+        allowed_transitions = np.eye(n_states, dtype=bool)
+        allowed_transitions[np.arange(n_states - 1), np.arange(1, n_states)] = True
+        if cycle:
+            allowed_transitions[-1, 0] = True
+        allowed_starts = np.ones(n_states, dtype=bool) if starts == "all" else np.arange(n_states) == 0
+        allowed_ends = np.ones(n_states, dtype=bool) if ends == "all" else np.arange(n_states) == n_states - 1
+        return cls(
+            allowed_transitions=allowed_transitions,
+            allowed_starts=allowed_starts,
+            allowed_ends=allowed_ends,
+            n_gmm_components=np.full(n_states, n_gmm_components, dtype=int),
+            state_ids=tuple((f"state_{state}",) for state in range(n_states)),
+            state_groups={},
+        )
+
+    @classmethod
+    def compose(
+        cls,
+        parts: dict[str, HmmModel],
+        *,
+        routes: dict[str, tuple[str, ...]],
+        starts: tuple[str, ...],
+        ends: tuple[str, ...],
+    ) -> HmmModel:
+        """Compose named HMMs through routes from source exits to target entries."""
+        if not parts:
+            raise ValueError("At least one named HMM is required for composition.")
+        fitted_parts = [part.is_fitted for part in parts.values()]
+        if any(fitted_parts) and not all(fitted_parts):
+            raise ValueError("Composition requires either all fitted or all unfitted model parts.")
+
+        names = set(parts)
+        referenced_names = {*starts, *ends, *routes}
+        referenced_names.update(target for targets in routes.values() for target in targets)
+        if unknown := referenced_names - names:
+            raise ValueError(f"Composition references unknown model parts: {tuple(sorted(unknown))}.")
+
+        offsets = {}
+        next_offset = 0
+        for name, part in parts.items():
+            offsets[name] = next_offset
+            next_offset += part.n_states
+
+        allowed_transitions = np.zeros((next_offset, next_offset), dtype=bool)
+        allowed_starts = np.zeros(next_offset, dtype=bool)
+        allowed_ends = np.zeros(next_offset, dtype=bool)
+        state_ids = []
+        state_groups = {}
+        component_counts = []
+        for name, part in parts.items():
+            offset = offsets[name]
+            part_slice = slice(offset, offset + part.n_states)
+            allowed_transitions[part_slice, part_slice] = part.allowed_transitions
+            if name in starts:
+                allowed_starts[part_slice] = part.allowed_starts
+            if name in ends:
+                allowed_ends[part_slice] = part.allowed_ends
+
+            prefixed_ids = tuple((name, *state_id) for state_id in part.state_ids)
+            state_ids.extend(prefixed_ids)
+            state_groups[name] = prefixed_ids
+            state_groups.update(
+                {
+                    f"{name}.{group}": tuple((name, *state_id) for state_id in group_states)
+                    for group, group_states in part.state_groups.items()
+                }
+            )
+            component_counts.append(part.n_gmm_components)
+
+        for source, targets in routes.items():
+            source_offset = offsets[source]
+            source_exits = np.flatnonzero(parts[source].allowed_ends) + source_offset
+            for target in targets:
+                target_offset = offsets[target]
+                target_entries = np.flatnonzero(parts[target].allowed_starts) + target_offset
+                allowed_transitions[np.ix_(source_exits, target_entries)] = True
+
+        parameters = cls._compose_fitted_parameters(parts, routes, starts, ends, offsets) if all(fitted_parts) else None
+        return cls(
+            allowed_transitions=allowed_transitions,
+            allowed_starts=allowed_starts,
+            allowed_ends=allowed_ends,
+            n_gmm_components=np.concatenate(component_counts),
+            state_ids=tuple(state_ids),
+            state_groups=state_groups,
+            composition=HmmComposition(
+                [(name, part._without_parameters()) for name, part in parts.items()],
+                list(routes.items()),
+                starts,
+                ends,
+            ),
+            parameters=parameters,
+        )
+
+    def _without_parameters(self) -> HmmModel:
+        return HmmModel(
+            allowed_transitions=self.allowed_transitions,
+            allowed_starts=self.allowed_starts,
+            allowed_ends=self.allowed_ends,
+            n_gmm_components=self.n_gmm_components,
+            state_ids=self.state_ids,
+            state_groups=self.state_groups,
+            composition=self.composition,
+        )
+
+    @staticmethod
+    def _compose_fitted_parameters(
+        parts: dict[str, HmmModel],
+        routes: dict[str, tuple[str, ...]],
+        starts: tuple[str, ...],
+        ends: tuple[str, ...],
+        offsets: dict[str, int],
+    ) -> HmmParameters:
+        data_columns = {part.data_columns for part in parts.values()}
+        if len(data_columns) != 1:
+            raise ValueError("All fitted model parts must use identical feature columns.")
+
+        n_states = sum(part.n_states for part in parts.values())
+        n_features = len(next(iter(data_columns)))
+        max_components = max(int(part.n_gmm_components.max()) for part in parts.values())
+        transitions = np.zeros((n_states, n_states))
+        start_probabilities = np.zeros(n_states)
+        end_probabilities = np.zeros(n_states)
+        means = np.zeros((n_states, max_components, n_features))
+        covariances = np.zeros((n_states, max_components, n_features, n_features))
+        weights = np.zeros((n_states, max_components))
+
+        for name, part in parts.items():
+            offset = offsets[name]
+            part_slice = slice(offset, offset + part.n_states)
+            transitions[part_slice, part_slice] = part.transition_probabilities
+            means[part_slice, : part.means.shape[1]] = part.means
+            covariances[part_slice, : part.covariances.shape[1]] = part.covariances
+            weights[part_slice, : part.weights.shape[1]] = part.weights
+
+        for name in starts:
+            part = parts[name]
+            entry_probabilities = part.start_probabilities / part.start_probabilities.sum()
+            offset = offsets[name]
+            start_probabilities[offset : offset + part.n_states] = entry_probabilities / len(starts)
+
+        for source, part in parts.items():
+            destinations = [*routes.get(source, ()), *([None] if source in ends else [])]
+            if not destinations and np.any(part.end_probabilities):
+                raise ValueError(f"Fitted model part {source!r} has exit mass but no route or global end.")
+            if not destinations:
+                continue
+
+            source_offset = offsets[source]
+            source_slice = slice(source_offset, source_offset + part.n_states)
+            route_share = 1 / len(destinations)
+            for target in destinations:
+                if target is None:
+                    end_probabilities[source_slice] += part.end_probabilities * route_share
+                    continue
+                target_part = parts[target]
+                entry_probabilities = target_part.start_probabilities / target_part.start_probabilities.sum()
+                target_offset = offsets[target]
+                target_slice = slice(target_offset, target_offset + target_part.n_states)
+                transitions[source_slice, target_slice] += (
+                    np.outer(part.end_probabilities, entry_probabilities) * route_share
+                )
+
+        return HmmParameters(
+            transition_probabilities=transitions,
+            start_probabilities=start_probabilities,
+            end_probabilities=end_probabilities,
+            means=means,
+            covariances=covariances,
+            weights=weights,
+            data_columns=next(iter(data_columns)),
+        )
+
+    @classmethod
+    def from_parameters(
+        cls,
+        *,
+        transition_probabilities: np.ndarray,
+        start_probabilities: np.ndarray,
+        end_probabilities: np.ndarray,
+        means: np.ndarray,
+        covariances: np.ndarray,
+        weights: np.ndarray,
+        n_gmm_components: np.ndarray,
+        data_columns: tuple[str, ...],
+        state_groups: dict[str, tuple[int, ...]] | None = None,
+    ) -> HmmModel:
+        """Construct a fitted model from compiled numerical parameters."""
+        state_ids = tuple((f"state_{state}",) for state in range(len(start_probabilities)))
+        groups = {name: tuple(state_ids[state] for state in states) for name, states in (state_groups or {}).items()}
+        return cls(
+            allowed_transitions=transition_probabilities > 0,
+            allowed_starts=start_probabilities > 0,
+            allowed_ends=end_probabilities > 0,
+            n_gmm_components=n_gmm_components,
+            state_ids=state_ids,
+            state_groups=groups,
+            parameters=HmmParameters(
+                transition_probabilities=transition_probabilities,
+                start_probabilities=start_probabilities,
+                end_probabilities=end_probabilities,
+                means=means,
+                covariances=covariances,
+                weights=weights,
+                data_columns=data_columns,
+            ),
+        )
+
+    @property
+    def is_fitted(self) -> bool:
+        """Whether numerical parameters are available for inference."""
+        return self.parameters is not None
 
     @property
     def n_states(self) -> int:
         """Number of hidden states."""
-        return len(self.start_probabilities)
+        return len(self.state_ids)
+
+    def states(self, group: str) -> tuple[StateId, ...]:
+        """Return the stable identities belonging to a named state group."""
+        try:
+            return self.state_groups[group]
+        except KeyError as e:
+            raise KeyError(f"Unknown state group {group!r}. Available groups: {tuple(self.state_groups)}") from e
+
+    def state_indices(self, group: str) -> tuple[int, ...]:
+        """Return compiled integer positions belonging to a named state group."""
+        positions = {state_id: position for position, state_id in enumerate(self.state_ids)}
+        return tuple(positions[state_id] for state_id in self.states(group))
+
+    @property
+    def stride_states(self) -> tuple[int, ...]:
+        """Return the compiled positions of the legacy ``stride`` group."""
+        return self.state_indices("stride")
+
+    def _require_parameters(self) -> HmmParameters:
+        if self.parameters is None:
+            raise ValueError("The HMM is not fitted. Train it or load fitted parameters before inference.")
+        return self.parameters
+
+    @property
+    def transition_probabilities(self) -> np.ndarray:
+        return self._require_parameters().transition_probabilities
+
+    @property
+    def start_probabilities(self) -> np.ndarray:
+        return self._require_parameters().start_probabilities
+
+    @property
+    def end_probabilities(self) -> np.ndarray:
+        return self._require_parameters().end_probabilities
+
+    @property
+    def means(self) -> np.ndarray:
+        return self._require_parameters().means
+
+    @property
+    def covariances(self) -> np.ndarray:
+        return self._require_parameters().covariances
+
+    @property
+    def weights(self) -> np.ndarray:
+        return self._require_parameters().weights
+
+    @property
+    def n_components(self) -> np.ndarray:
+        return self.n_gmm_components
+
+    @property
+    def data_columns(self) -> tuple[str, ...]:
+        return self._require_parameters().data_columns
 
     @classmethod
     def from_legacy_pomegranate(
@@ -97,14 +428,14 @@ class HmmModel(_BaseSerializable):
             elif source in state_index and target in state_index:
                 transitions[state_index[source], state_index[target]] = probability
 
-        return cls(
+        return cls.from_parameters(
             transition_probabilities=transitions,
             start_probabilities=starts,
             end_probabilities=ends,
             means=means,
             covariances=covariances,
             weights=weights,
-            n_components=n_components,
+            n_gmm_components=n_components,
             data_columns=data_columns,
-            stride_states=stride_states,
+            state_groups={"stride": stride_states},
         )

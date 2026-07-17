@@ -235,16 +235,16 @@ class PomegranateHmmTrainer(_BaseSerializable):
                 means[state, component] = as_numpy(normal.means)
                 covariances[state, component] = as_numpy(normal.covs)
 
-        return HmmModel(
+        return HmmModel.from_parameters(
             transition_probabilities=np.exp(as_numpy(model.edges)),
             start_probabilities=np.exp(as_numpy(model.starts)),
             end_probabilities=np.exp(as_numpy(model.ends)),
             means=means,
             covariances=covariances,
             weights=weights,
-            n_components=n_components,
+            n_gmm_components=n_components,
             data_columns=columns,
-            stride_states=stride_states,
+            state_groups={"stride": stride_states},
         )
 
 
