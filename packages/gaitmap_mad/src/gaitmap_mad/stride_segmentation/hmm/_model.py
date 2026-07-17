@@ -116,13 +116,64 @@ class HmmModel(_BaseSerializable):
             allowed_transitions[-1, 0] = True
         allowed_starts = np.ones(n_states, dtype=bool) if starts == "all" else np.arange(n_states) == 0
         allowed_ends = np.ones(n_states, dtype=bool) if ends == "all" else np.arange(n_states) == n_states - 1
-        return cls(
+        return cls.from_matrix(
             allowed_transitions=allowed_transitions,
             allowed_starts=allowed_starts,
             allowed_ends=allowed_ends,
             n_gmm_components=np.full(n_states, n_gmm_components, dtype=int),
             state_ids=tuple((f"state_{state}",) for state in range(n_states)),
             state_groups={},
+        )
+
+    @classmethod
+    def from_matrix(
+        cls,
+        *,
+        allowed_transitions: np.ndarray,
+        allowed_starts: np.ndarray,
+        allowed_ends: np.ndarray,
+        n_gmm_components: np.ndarray,
+        state_ids: tuple[StateId, ...] | None = None,
+        state_groups: dict[str, tuple[StateId, ...]] | None = None,
+    ) -> HmmModel:
+        """Construct a validated unfitted HMM from an arbitrary state graph."""
+        transitions = np.asarray(allowed_transitions, dtype=bool)
+        if transitions.ndim != 2 or transitions.shape[0] != transitions.shape[1] or transitions.shape[0] == 0:
+            raise ValueError("`allowed_transitions` must be a non-empty square matrix.")
+
+        n_states = len(transitions)
+        starts = np.asarray(allowed_starts, dtype=bool)
+        ends = np.asarray(allowed_ends, dtype=bool)
+        component_counts = np.asarray(n_gmm_components, dtype=int)
+        if starts.shape != (n_states,) or ends.shape != (n_states,) or component_counts.shape != (n_states,):
+            raise ValueError("Start, end, and GMM-component definitions must contain one value per state.")
+        if not np.any(starts) or np.any(component_counts <= 0):
+            raise ValueError("At least one start state and a positive GMM-component count per state are required.")
+
+        identities = state_ids or tuple((f"state_{state}",) for state in range(n_states))
+        if len(identities) != n_states or len(set(identities)) != n_states:
+            raise ValueError("State identities must be unique and contain one path per state.")
+        groups = state_groups or {}
+        unknown_group_states = {state for states in groups.values() for state in states} - set(identities)
+        if unknown_group_states:
+            raise ValueError(f"State groups reference unknown identities: {tuple(sorted(unknown_group_states))}.")
+
+        reachable = starts.copy()
+        while True:
+            expanded = reachable | np.any(transitions[reachable], axis=0)
+            if np.array_equal(expanded, reachable):
+                break
+            reachable = expanded
+        if not np.all(reachable):
+            raise ValueError(f"States {tuple(np.flatnonzero(~reachable))} are unreachable from every allowed start.")
+
+        return cls(
+            allowed_transitions=transitions,
+            allowed_starts=starts,
+            allowed_ends=ends,
+            n_gmm_components=component_counts,
+            state_ids=identities,
+            state_groups=groups,
         )
 
     @classmethod

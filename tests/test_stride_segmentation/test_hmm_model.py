@@ -1,6 +1,7 @@
 """Behavioral tests for backend-neutral HMM definitions and fitted parameters."""
 
 import numpy as np
+import pytest
 
 from gaitmap.stride_segmentation.hmm import HmmModel
 
@@ -37,6 +38,41 @@ def test_left_right_hmm_is_a_complete_unfitted_model_definition() -> None:
     np.testing.assert_array_equal(model.allowed_starts, [True, False, False])
     np.testing.assert_array_equal(model.allowed_ends, [False, False, True])
     np.testing.assert_array_equal(model.n_gmm_components, [2, 2, 2])
+
+
+def test_matrix_topology_supports_arbitrary_reachable_state_graphs() -> None:
+    """Custom domains can define graphs without implementing another HMM class."""
+    model = HmmModel.from_matrix(
+        allowed_transitions=np.array([[1, 1, 0], [0, 1, 1], [1, 0, 1]], dtype=bool),
+        allowed_starts=np.array([1, 0, 0], dtype=bool),
+        allowed_ends=np.array([0, 0, 1], dtype=bool),
+        n_gmm_components=np.array([1, 2, 1]),
+        state_ids=(("idle",), ("ascending",), ("descending",)),
+        state_groups={"stairs": (("ascending",), ("descending",))},
+    )
+
+    assert model.state_ids == (("idle",), ("ascending",), ("descending",))
+    assert model.state_indices("stairs") == (1, 2)
+    assert not model.is_fitted
+
+
+@pytest.mark.parametrize(
+    ("transitions", "components", "error"),
+    [
+        (np.ones((2, 3)), np.ones(2), "square matrix"),
+        (np.eye(2), np.ones(1), "one value per state"),
+        (np.eye(2), np.ones(2), "unreachable"),
+    ],
+)
+def test_matrix_topology_rejects_incomplete_or_unreachable_definitions(transitions, components, error) -> None:
+    """Invalid graphs fail while they still carry useful topology context."""
+    with pytest.raises(ValueError, match=error):
+        HmmModel.from_matrix(
+            allowed_transitions=transitions,
+            allowed_starts=np.array([1, 0]),
+            allowed_ends=np.array([0, 1]),
+            n_gmm_components=components,
+        )
 
 
 def test_composition_flattens_any_number_of_named_models_without_losing_identity() -> None:
