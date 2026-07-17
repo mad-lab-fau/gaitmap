@@ -33,14 +33,14 @@ stride_list_sequence = [stride_lists["left_sensor"], stride_lists["right_sensor"
 # %%
 # Configure and train
 # -------------------
-# Feature extraction, training, and inference are independent parameters. The
-# defaults reproduce the Roth feature space, use pomegranate 1.x for supervised
-# fitting, and use SciPy for portable inference.
+# Feature extraction, topology, training, and inference are independent
+# parameters. The default ``model`` is an unfitted Roth topology. Its state
+# counts, routes, and per-state mixture sizes can be replaced with any
+# ``HmmModel`` composition without changing the trainer.
 from gaitmap.stride_segmentation.hmm import PomegranateHmmTrainer, RothSegmentationHmm
 
 segmentation_model = RothSegmentationHmm(
     training_backend=PomegranateHmmTrainer(
-        n_gmm_components=3,
         max_iterations=10,
         covariance_regularization=1e-6,
         random_state=0,

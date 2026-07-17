@@ -47,6 +47,7 @@ HMM Stride Segmentation
    :template: class.rst
 
     HmmStrideSegmentation
+    CompositeHmm
     RothSegmentationHmm
     HmmModel
     ScipyHmmInference

@@ -55,6 +55,10 @@ from gaitmap.stride_segmentation.hmm import RothSegmentationHmm
 
 roth_hmm_model = RothSegmentationHmm.from_pretrained()
 
+# ``from_legacy_json`` accepts the same untouched pomegranate 0.14 JSON format
+# for custom historical models. Once loaded, those models can use any supported
+# inference backend just like the bundled model.
+
 print(f"Number of states: {roth_hmm_model.model.n_states:d}")
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 print(f"Transition matrix:\n{roth_hmm_model.model.transition_probabilities}")
@@ -106,7 +110,7 @@ axs[0].set_ylabel("gyr-ml [deg/s]")
 
 axs[1].set_title("Predicted Hidden State Sequence")
 axs[1].plot(hmm_seg.hidden_state_sequence_[sensor])
-for start, end in hmm_seg.matches_start_end_original_[sensor]:
+for start, end in hmm_seg.matches_start_end_original_[sensor].to_numpy():
     axs[1].axvline(start, c="g")
     axs[1].axvline(end, c="g")
     axs[1].axvspan(start, end, alpha=0.2)

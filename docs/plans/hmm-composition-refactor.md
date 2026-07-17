@@ -203,36 +203,36 @@ fixed by this plan.
 
 ## TDD implementation slices
 
-- [ ] `HmmModel` represents a validated unfitted left-right topology and becomes
+- [x] `HmmModel` represents a validated unfitted left-right topology and becomes
       fitted without changing state identity or topology.
-- [ ] Matrix construction rejects invalid dimensions, unreachable states, and
+- [x] Matrix construction rejects invalid dimensions, unreachable states, and
       emission definitions that do not cover every state.
-- [ ] N-way composition deterministically namespaces states, creates groups,
+- [x] N-way composition deterministically namespaces states, creates groups,
       and expands entry-to-exit routes.
-- [ ] Composition of fitted models preserves emissions and produces normalized
+- [x] Composition of fitted models preserves emissions and produces normalized
       backend-neutral combined probabilities.
-- [ ] Atomic pomegranate training accepts an `HmmModel` and implements
+- [x] Atomic pomegranate training accepts an `HmmModel` and implements
       `train="all"`.
-- [ ] Transition-only fitting preserves emission arrays exactly.
-- [ ] SciPy and modern pomegranate decode the same fitted model abstraction.
-- [ ] `CompositeHmm` trains three or more named parts from complete labelled
+- [x] Transition-only fitting preserves emission arrays exactly.
+- [x] SciPy and modern pomegranate decode the same fitted model abstraction.
+- [x] `CompositeHmm` trains three or more named parts from complete labelled
       regions and produces a fitted combined model.
-- [ ] Invalid, incomplete, overlapping, or unknown-labelled region tables fail
+- [x] Invalid, incomplete, overlapping, or unknown-labelled region tables fail
       with actionable errors.
-- [ ] `RothSegmentationHmm` converts stride borders into the generic region
+- [x] `RothSegmentationHmm` converts stride borders into the generic region
       contract and follows the same independent-fit/compose/final-fit path.
-- [ ] Custom Roth topologies derive state counts and stride groups from their
+- [x] Custom Roth topologies derive state counts and stride groups from their
       model definition rather than constants.
-- [ ] Untouched historical JSON loads through the public legacy adapter and
+- [x] Untouched historical JSON loads through the public legacy adapter and
       reproduces exact SciPy hidden states and stride borders.
-- [ ] Legacy-loaded and newly trained models run through all supported inference
+- [x] Legacy-loaded and newly trained models run through all supported inference
       adapters.
-- [ ] `HmmStrideSegmentation` supports a generic segmentation-HMM and typed
+- [x] `HmmStrideSegmentation` supports a generic segmentation-HMM and typed
       output for multiple segment groups.
-- [ ] Examples and generated interface documentation cover pretrained
+- [x] Examples and generated interface documentation cover pretrained
       inference, legacy custom files, custom Roth training, and multi-part
       composite training.
-- [ ] Delete the flat hard-coded 5/20-state training path and all superseded
+- [x] Delete the flat hard-coded 5/20-state training path and all superseded
       model/conversion code.
 
 Each item is implemented as an individual red-green-refactor slice. Tests target
