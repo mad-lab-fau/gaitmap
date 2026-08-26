@@ -106,7 +106,7 @@ def align_dataset_to_gravity(
 def _get_static_acc_vector(
     data: pd.DataFrame, window_length: int, static_signal_th: float, metric: METRIC_FUNCTION_NAMES = "median"
 ) -> np.ndarray:
-    """Extract the mean accelerometer vector describing the static position of the sensor."""
+    """Extract the median accelerometer vector describing the static position of the sensor."""
     # find static windows within the gyro data
     static_bool_array, *_ = find_static_samples(data[SF_GYR].to_numpy(), window_length, static_signal_th, metric)
 
@@ -117,5 +117,5 @@ def _get_static_acc_vector(
             " to adapt parameters like window_length, static_signal_th or used metric."
         )
 
-    # get mean acc vector indicating the sensor offset orientation from gravity from static sequences
+    # get median acc vector indicating the sensor offset orientation from gravity from static sequences
     return np.median(data[SF_ACC].to_numpy()[static_bool_array], axis=0)
