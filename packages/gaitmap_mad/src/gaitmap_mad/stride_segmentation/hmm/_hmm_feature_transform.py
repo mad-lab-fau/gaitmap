@@ -33,9 +33,9 @@ _feature_map = {
 
 
 class BaseHmmFeatureTransformer(BaseTransformer):
-    """Baseclass for HMM feature transformers used in combination with `SimpleSegmentationModel`.
+    """Base class for feature transformers used by :class:`RothSegmentationHmm`.
 
-    This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHMMFeatureTransformer`
+    This is only required if :class:`gaitmap.stride_segmentation.hmm.RothHmmFeatureTransformer`
     is not sufficient for your use case, when using :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`.
 
     In this case implement a custom subclass and pass it to the `feature_transform` parameter of

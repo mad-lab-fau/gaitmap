@@ -62,12 +62,11 @@ To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based 
 ```bash
 pip install gaitmap_mad "gaitmap[hmm]" --upgrade
 ```
-This installs the `pomegranate` package, which is the basis for the HMM implementation.
-Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
-Python 3.10.
-
-We are working on upgrading to a newer version of `pomegranate`, but this is not a priority at the moment.
-You can track the progress in the [pull request](https://github.com/mad-lab-fau/gaitmap/pull/20).
+On Python 3.10 and newer this installs the torch-based pomegranate 1.x backend
+for HMM training and optional inference. HMM models remain backend-neutral and
+can use SciPy inference without pomegranate runtime objects. Python 3.9 retains
+the optional pomegranate 0.14 inference adapter; training is only available on
+newer Python versions.
 
 ### Supported Python versions
 

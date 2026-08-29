@@ -47,9 +47,12 @@ HMM Stride Segmentation
    :template: class.rst
 
     HmmStrideSegmentation
+    CompositeHmm
     RothSegmentationHmm
-    BaseSegmentationHmm
-    SimpleHmm
+    HmmModel
+    ScipyHmmInference
+    PomegranateHmmInference
+    PomegranateHmmTrainer
+    LegacyPomegranateHmmInference
     RothHmmFeatureTransformer
-    PreTrainedRothSegmentationModel
     BaseHmmFeatureTransformer
