@@ -6,7 +6,6 @@ from typing import Literal, TypedDict, overload
 import pandas as pd
 
 from gaitmap.utils._types import _Hashable
-from gaitmap.utils.datatype_helper import get_multi_sensor_names
 
 
 class _ScoresDict(TypedDict):
@@ -58,21 +57,7 @@ def recall_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
 
 
     """
-    is_not_dict = not isinstance(matches_df, dict)
-    if is_not_dict:
-        matches_df = {"__dummy__": matches_df}
-
-    output = {}
-    matches_dict = _get_match_type_dfs(matches_df)
-    for sensor_name in get_multi_sensor_names(matches_dict):
-        tp = len(matches_dict[sensor_name]["tp"])
-        fn = len(matches_dict[sensor_name]["fn"])
-
-        output[sensor_name] = _calculate_score(tp, tp + fn, zero_division=zero_division, caller_function_name="recall")
-
-    if is_not_dict:
-        return output["__dummy__"]
-    return output
+    return _score_matches(matches_df, ("recall",), zero_division)
 
 
 @overload
@@ -118,23 +103,7 @@ def precision_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    is_not_dict = not isinstance(matches_df, dict)
-    if is_not_dict:
-        matches_df = {"__dummy__": matches_df}
-
-    output = {}
-    matches_dict = _get_match_type_dfs(matches_df)
-    for sensor_name in get_multi_sensor_names(matches_dict):
-        tp = len(matches_dict[sensor_name]["tp"])
-        fp = len(matches_dict[sensor_name]["fp"])
-
-        output[sensor_name] = _calculate_score(
-            tp, tp + fp, zero_division=zero_division, caller_function_name="precision"
-        )
-
-    if is_not_dict:
-        return output["__dummy__"]
-    return output
+    return _score_matches(matches_df, ("precision",), zero_division)
 
 
 @overload
@@ -180,23 +149,7 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    is_not_dict = not isinstance(matches_df, dict)
-    if is_not_dict:
-        matches_df = {"__dummy__": matches_df}
-
-    output = {}
-    for sensor_name, groups in _get_match_type_dfs(matches_df).items():
-        tp, fp, fn = (len(groups[label]) for label in ("tp", "fp", "fn"))
-        output[sensor_name] = _calculate_score(
-            2 * tp,
-            2 * tp + fp + fn,
-            zero_division=zero_division,
-            caller_function_name="f1",
-        )
-
-    if is_not_dict:
-        return output["__dummy__"]
-    return output
+    return _score_matches(matches_df, ("f1_score",), zero_division)
 
 
 @overload
@@ -249,48 +202,27 @@ def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    precisions = precision_score(matches_df, zero_division=zero_division)
-    recalls = recall_score(matches_df, zero_division=zero_division)
-    f1_scores = f1_score(matches_df, zero_division=zero_division)
+    return _score_matches(matches_df, ("precision", "recall", "f1_score"), zero_division)
 
+
+def _score_matches(matches_df, metrics, zero_division):
     if isinstance(matches_df, dict):
-        return {
-            key: {
-                "precision": precisions[key],
-                "recall": recalls[key],
-                "f1_score": f1_scores[key],
-            }
-            for key in precisions
-        }
+        return {name: _score_matches(frame, metrics, zero_division) for name, frame in matches_df.items()}
 
-    return {
-        "precision": precisions,
-        "recall": recalls,
-        "f1_score": f1_scores,
+    counts = matches_df["match_type"].value_counts()
+    tp, fp, fn = (int(counts.get(label, 0)) for label in ("tp", "fp", "fn"))
+    ratios = {
+        "precision": (tp, tp + fp),
+        "recall": (tp, tp + fn),
+        "f1_score": (2 * tp, 2 * tp + fp + fn),
     }
-
-
-def _get_match_type_dfs(
-    match_results: pd.DataFrame | dict[_Hashable, pd.DataFrame],
-) -> dict[_Hashable, dict[str, pd.DataFrame]] | dict[str, pd.DataFrame]:
-    is_not_dict = not isinstance(match_results, dict)
-    if is_not_dict:
-        match_results = {"__dummy__": match_results}
-
-    output = {}
-    for dataframe_name, frame in match_results.items():
-        matches_types = frame.groupby("match_type")
-        matches_types_dict = {}
-        for group in ["tp", "fp", "fn"]:
-            if group in matches_types.groups:
-                matches_types_dict[group] = matches_types.get_group(group)
-            else:
-                matches_types_dict[group] = pd.DataFrame(columns=frame.columns)
-        output[dataframe_name] = matches_types_dict
-
-    if is_not_dict:
-        return output["__dummy__"]
-    return output
+    scores = {
+        metric: _calculate_score(
+            *ratios[metric], zero_division=zero_division, caller_function_name=metric.removesuffix("_score")
+        )
+        for metric in metrics
+    }
+    return scores if len(metrics) > 1 else scores[metrics[0]]
 
 
 def _calculate_score(a, b, *, zero_division, caller_function_name):

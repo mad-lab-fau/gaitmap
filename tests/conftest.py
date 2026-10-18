@@ -71,3 +71,14 @@ def compare_val(value, json_val, name) -> None:
         assert_series_equal(value, json_val)
     else:
         assert value == json_val, name
+
+
+def group_matches_by_type(matches):
+    """Select matched rows for public event/stride matching assertions."""
+    if isinstance(matches, dict):
+        return {name: group_matches_by_type(frame) for name, frame in matches.items()}
+    grouped = matches.groupby("match_type")
+    return {
+        kind: grouped.get_group(kind) if kind in grouped.groups else pd.DataFrame(columns=matches.columns)
+        for kind in ("tp", "fp", "fn")
+    }

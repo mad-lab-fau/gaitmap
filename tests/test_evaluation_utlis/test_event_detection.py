@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import evaluate_stride_event_list
-from gaitmap.evaluation_utils.scores import _get_match_type_dfs
+from tests.conftest import group_matches_by_type
 
 
 class TestEvaluateStrideEventList:
@@ -34,7 +34,7 @@ class TestEvaluateStrideEventList:
         sl = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
         out = evaluate_stride_event_list(ground_truth=sl, stride_event_list=sl, match_cols="ic", tolerance=0)
-        out = _get_match_type_dfs(out)
+        out = group_matches_by_type(out)
 
         assert_array_equal(out["tp"]["s_id"].to_numpy(), [0, 1, 2])
         assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [0, 1, 2])
@@ -47,7 +47,7 @@ class TestEvaluateStrideEventList:
         sl2 = self._create_valid_list([[0, 1, 10], [1, 2, 20], [2, 3, 30]], "ic")
 
         out = evaluate_stride_event_list(ground_truth=sl1, stride_event_list=sl2, match_cols="ic", tolerance=0)
-        out = _get_match_type_dfs(out)
+        out = group_matches_by_type(out)
 
         assert_array_equal(out["tp"]["s_id"].to_numpy(), [1, 2])
         assert_array_equal(out["tp"]["s_id_ground_truth"].to_numpy(), [1, 2])

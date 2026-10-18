@@ -4,9 +4,9 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import evaluate_segmented_stride_list, match_stride_lists
-from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 from gaitmap.evaluation_utils.stride_segmentation import _match_label_lists
 from gaitmap.utils.exceptions import ValidationError
+from tests.conftest import group_matches_by_type
 
 
 class TestMatchStrideList:
@@ -371,7 +371,7 @@ class TestEvaluateSegmentedStrideList:
         list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
         matches = evaluate_segmented_stride_list(ground_truth=list_ground_truth, segmented_stride_list=list_predicted)
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
         assert matches["fn"].empty
@@ -388,7 +388,7 @@ class TestEvaluateSegmentedStrideList:
 
         matches = evaluate_segmented_stride_list(ground_truth=list_ground_truth, segmented_stride_list=list_predicted)
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
         assert matches["fp"].empty
@@ -405,7 +405,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=1
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), [2, 3])
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0, 1])
@@ -428,7 +428,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=0
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
 
@@ -450,7 +450,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=2, one_to_one=False
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), [0, 1])
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0, 0])
@@ -468,7 +468,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=2, one_to_one=True
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), 0)
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0])
@@ -507,7 +507,7 @@ class TestEvaluateSegmentedStrideList:
             segmented_stride_list={"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left_sensor"]["tp"].empty
         assert matches["left_sensor"]["fn"].empty
@@ -541,7 +541,7 @@ class TestEvaluateSegmentedStrideList:
             segmented_stride_list={"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left_sensor"]["tp"].empty
         assert matches["left_sensor"]["fp"].empty
@@ -569,7 +569,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth={"left": list_ground_truth}, segmented_stride_list={"left": list_predicted}, tolerance=1
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [2, 3])
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 1])
@@ -593,7 +593,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth={"left": list_ground_truth}, segmented_stride_list={"left": list_predicted}, tolerance=0
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left"]["tp"].empty
 
@@ -618,7 +618,7 @@ class TestEvaluateSegmentedStrideList:
             one_to_one=False,
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [0, 1])
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 0])
@@ -639,7 +639,7 @@ class TestEvaluateSegmentedStrideList:
             one_to_one=True,
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), 0)
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0])
