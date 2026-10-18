@@ -13,8 +13,10 @@ This example demonstrates how to train HMMs with more than two states.
 
 With suitable annotations and features, you can also train models for movement
 classes such as walking, stair walking, and rest, or walking, running, and rest.
-For a published example of HMMs for walking, running, and rest, see Martindale
-et al. [1]_. That work uses a hierarchical model; this tutorial trains a simpler
+For published multiclass approaches, Roth et al. [1]_ combine stride models for
+level walking, stair ascent, and stair descent with a transition model, while
+Martindale et al. [2]_ model walking, running, and rest. Those approaches use
+multiple internal states per movement class; this tutorial trains a simpler
 three-state model to demonstrate the training workflow with the available data.
 
 Train a three-state HMM on the healthy walking recording. As in the Roth setup,
@@ -22,7 +24,11 @@ everything outside the annotated strides belongs to the transition/null class.
 Within each stride, initial contact separates swing from stance. These labels
 are derived from the supplied annotations; no extra rest annotations are needed.
 
-.. [1] Martindale, C. F., Hoenig, F., Strohrmann, C., & Eskofier, B. M. (2017).
+.. [1] Roth, N., Küderle, A., Prossel, D., Gassner, H., Eskofier, B. M., & Kluge, F. (2021).
+   An Inertial Sensor-Based Gait Analysis Pipeline for the Assessment of Real-World
+   Stair Ambulation Parameters. Sensors, 21(19), 6559. https://doi.org/10.3390/s21196559
+
+.. [2] Martindale, C. F., Hoenig, F., Strohrmann, C., & Eskofier, B. M. (2017).
    Smart Annotation of Cyclic Data Using Hierarchical Hidden Markov Models.
    Sensors, 17(10), 2328. https://doi.org/10.3390/s17102328
 """
