@@ -18,7 +18,6 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    _DataToShortError,
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
@@ -43,7 +42,7 @@ def create_fully_labeled_gait_sequences(
     labels_train_sequence = []
 
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
-        labels_train = np.zeros(len(data))
+        labels_train = np.zeros(len(data), dtype=np.int64)
 
         # predict hidden-state sequence for each transition using "transition model"
         transition_start_end_list = convert_stride_list_to_transition_list(stride_list, data.shape[0])
@@ -51,25 +50,21 @@ def create_fully_labeled_gait_sequences(
         # for each transition, get data and create some naive labels for initialization
         for start, end in transition_start_end_list[["start", "end"]].to_numpy():
             transition_data_train = data[start:end]
-            try:
-                labels_train[start:end] = transition_model.predict_hidden_state_sequence(
-                    transition_data_train, algorithm=algo_predict
-                )
-            except _DataToShortError:
-                # This happens if a transition is too short to be predicted by the transition model
+            if len(transition_data_train) < transition_model.n_states:
                 continue
+            labels_train[start:end] = transition_model.predict_hidden_state_sequence(
+                transition_data_train, algorithm=algo_predict
+            )
 
         # predict hidden-state sequence for each stride using "stride model"
         for start, end in stride_list[["start", "end"]].to_numpy():
             stride_data_train = data[start:end]
-            try:
-                labels_train[start:end] = (
-                    stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                    + transition_model.n_states
-                )
-            except _DataToShortError:
-                # This happens if a stride is too short to be predicted by the stride model
+            if len(stride_data_train) < stride_model.n_states:
                 continue
+            labels_train[start:end] = (
+                stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
+                + transition_model.n_states
+            )
 
         # append cleaned sequences to train_sequence
         labels_train_sequence.append(labels_train)

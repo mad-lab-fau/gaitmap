@@ -10,8 +10,20 @@ from numpy.testing import assert_array_equal
 
 from gaitmap.stride_segmentation.hmm import RothHmmFeatureTransformer, RothSegmentationHmm, SimpleHmm
 from gaitmap.utils.consts import BF_COLS
+from tests.test_stride_segmentation.test_hmm_inference import aligned_legacy_boundaries, fourfold_labels
 
 matplotlib.use("Agg")
+
+
+def test_simple_hmm_trains_one_multivariate_observation():
+    """One observation retains its feature axis during initialization and training."""
+    observations = pd.DataFrame({"x": [1.0], "y": [2.0]})
+    model = SimpleHmm(1, 1, algo_train="labeled", max_iterations=1, verbose=False).self_optimize(
+        [observations], [np.array([0])]
+    )
+
+    assert_array_equal(model.model.emissions[0].means, [[1.0, 2.0]])
+    assert_array_equal(model.predict_hidden_state_sequence(observations), [0])
 
 
 @pytest.mark.parametrize("n_components", [1, 2])
@@ -124,8 +136,14 @@ def test_training_example_preserves_legacy_segmentation():
 
     with np.load(Path(__file__).parent / "fixtures" / "hmm_legacy_training_example.npz") as reference:
         for sensor in ["left_sensor", "right_sensor"]:
-            # Individual labels vary when regularization prevents nearly singular mixtures from collapsing.
-            # Their classification and all stride borders must remain unchanged.
-            assert_array_equal(hmm.hidden_state_sequence_[sensor] >= 5, reference[sensor + "_states"] >= 5)
+            # Regularization changes latent labels; complete decoding corrects their interpolation grid.
+            feature_labels = reference[sensor + "_feature_states"]
+            expected_classes = fourfold_labels(np.r_[feature_labels, feature_labels[-1]] >= 5)
+            assert_array_equal(hmm.hidden_state_sequence_[sensor] >= 5, expected_classes)
             assert_array_equal(hmm.stride_list_[sensor].to_numpy(), reference[sensor + "_strides"])
-            assert_array_equal(hmm.matches_start_end_original_[sensor], reference[sensor + "_original_strides"])
+            assert_array_equal(
+                hmm.matches_start_end_original_[sensor],
+                aligned_legacy_boundaries(
+                    reference[sensor + "_original_strides"], len(expected_classes), len(feature_labels)
+                ),
+            )

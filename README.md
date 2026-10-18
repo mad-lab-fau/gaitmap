@@ -71,7 +71,9 @@ The `hmm` extra remains available for installation compatibility and no longer i
 
 Training can produce different individual hidden-state labels for nearly singular Gaussian mixtures because covariance
 repair is sensitive to floating-point rounding. The reference training example retains the same final stride boundaries
-and stride-versus-transition classification. Prediction with existing saved models remains unchanged.
+and stride-versus-transition classification before the sequence bug fixes described in the changelog.
+Saved-model Gaussian scores remain unchanged. Complete Viterbi decoding now retains the final label,
+correcting its interpolation grid; this can move original sensor-space boundaries by a few samples.
 
 ### Supported Python versions
 

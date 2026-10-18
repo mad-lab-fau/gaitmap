@@ -398,15 +398,16 @@ class SimpleHmm(_BaseSerializable):
         self.data_columns = tuple(data_sequence[0].columns)
         # Keep feature columns in the same order for every training sequence.
         data_sequence_train = [
-            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy().squeeze())
-            for dataset in data_sequence
+            np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy()) for dataset in data_sequence
         ]
         labels_sequence_train = []
         for labels in labels_sequence:
             if labels is None:
                 labels_sequence_train.append(None)
                 continue
-            labels = labels.to_numpy().squeeze() if isinstance(labels, (pd.Series, pd.DataFrame)) else labels.squeeze()
+            labels = (
+                labels.to_numpy().reshape(-1) if isinstance(labels, (pd.Series, pd.DataFrame)) else labels.reshape(-1)
+            )
             labels_sequence_train.append(np.ascontiguousarray(labels.copy()))
 
         if self.model is not None:

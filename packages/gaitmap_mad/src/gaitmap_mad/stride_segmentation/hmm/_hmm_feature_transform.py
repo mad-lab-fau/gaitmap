@@ -282,7 +282,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         The state sequence in the original sampling rate
 
         """
-        downsampled_x = np.arange(0, len(data) - 1, len(data) / len(state_sequence))
+        downsampled_x = np.arange(len(state_sequence)) * (len(data) / len(state_sequence))
         new_x = np.arange(0, len(data))
         interpolated = interp1d(downsampled_x, state_sequence, kind="nearest", fill_value="extrapolate")(new_x)
         return interpolated.astype(int)

@@ -68,6 +68,11 @@ them read-only. Fitting returns a new model and its history, leaving the input
 model unchanged. Pass ``update_emissions=False`` to fit transitions while keeping
 emission parameters fixed.
 
+Observation matrices have shape ``(n_observations, n_features)``. Both prediction
+algorithms return one state index per observation, including paths shorter than
+the number of states when the model topology permits them. The gaitmap wrappers
+preserve this count and map the complete label sequence back to sensor samples.
+
 ``max_iterations`` counts parameter updates. Zero returns an unchanged model.
 The returned ``TrainingHistory`` contains the initial log likelihood and the
 likelihood after every update in ``log_likelihoods``. Its final entry describes

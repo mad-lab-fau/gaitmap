@@ -12,6 +12,9 @@ project.
 
 ### Scientific Changes
 
+- HMM prediction keeps the final Viterbi label for unrestricted models. This corrects the interpolation grid when
+  mapping feature labels back to sensor samples. In the healthy example, original boundaries move by at most three
+  samples at 204.8 Hz; pretrained-model boundaries after 300 ms snapping remain exact. MAP decoding is unchanged.
 - Gaussian-mixture initialization now updates centroid coordinates whose assigned observations sum to zero.
   The old Kmeans implementation left these coordinates at their previous values, changing subsequent assignments.
 - Local HMM training preserves the reference example's final stride boundaries and stride/transition classification.
@@ -19,7 +22,7 @@ project.
   pomegranate's cancellation-prone raw moments, absolute small-weight cutoff, and repair only after Cholesky failure.
   `SimpleHmm.min_covar` controls the floor in squared feature units, defaulting to `1e-6`. Fitted parameters and
   individual hidden-state labels can change for degenerate mixtures. Existing saved-model inference and frozen
-  emissions remain unchanged.
+  Gaussian scores and frozen emissions remain unchanged.
 
 ### Added
 
@@ -36,6 +39,8 @@ project.
 
 ### Fixed
 
+- HMM training preserves the observation axis for a single multivariate sample. Prediction supports valid paths
+  with fewer observations than states, and inverse state transformation supports full-length label sequences.
 - HMM iteration limits now count actual parameter updates, including a zero-update limit. Training histories
   include the initial and final likelihood and describe the returned model. Removed the inherited warning that
   treated every likelihood decrease as evidence of an unusable model; Viterbi updates can decrease this likelihood.

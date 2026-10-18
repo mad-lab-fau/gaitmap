@@ -15,9 +15,53 @@ from gaitmap.stride_segmentation.hmm import (
     HiddenMarkovModel,
     HmmStrideSegmentation,
     PreTrainedRothSegmentationModel,
+    RothHmmFeatureTransformer,
     SimpleHmm,
 )
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
+
+
+def fourfold_labels(feature_labels):
+    """Expand the fixture's 4:1 grid with midpoint ties assigned to the earlier label."""
+    repeated = np.repeat(feature_labels, 4)
+    return np.r_[repeated[1:], repeated[-1]]
+
+
+def aligned_legacy_boundaries(boundaries, n_samples, old_feature_count):
+    """Recover feature boundaries from the old stretched grid and map them to the complete 4:1 grid."""
+    feature_boundaries = np.rint(boundaries / (n_samples / old_feature_count) + 0.5).astype(int)
+    return np.clip(4 * feature_boundaries - 1, 0, n_samples)
+
+
+def complete_reference_features(reference, prefix):
+    """The recorded Viterbi fixtures omitted one final null-state label; MAP already kept it."""
+    labels = reference[prefix + "_feature_states"]
+    return np.r_[labels, labels[-1]] if prefix.endswith("viterbi") else labels
+
+
+@pytest.mark.parametrize("n_states", [1, 2])
+@pytest.mark.parametrize("algorithm", ["viterbi", "map"])
+def test_public_prediction_keeps_every_observation_in_a_short_valid_path(n_states, algorithm):
+    """A valid one-sample path survives wrappers even with more states than observations."""
+    emissions = [GaussianMixture([[float(state)]], [[[1.0]]], [1.0]) for state in range(n_states)]
+    model = SimpleHmm(
+        n_states,
+        1,
+        model=HiddenMarkovModel(emissions, np.eye(n_states), np.eye(n_states)[0]),
+        data_columns=("x",),
+    )
+
+    assert_array_equal(model.predict_hidden_state_sequence(pd.DataFrame({"x": [0.0]}), algorithm=algorithm), [0])
+
+
+@pytest.mark.parametrize("states", [[0], [0, 1, 2], [1, 1, 0, 2, 3]])
+def test_inverse_feature_transform_preserves_full_length_identity(states):
+    """Decoding without downsampling needs one interpolation coordinate per label."""
+    actual = RothHmmFeatureTransformer().inverse_transform_state_sequence(
+        np.asarray(states), data=np.zeros(len(states))
+    )
+
+    assert_array_equal(actual, states)
 
 
 @pytest.mark.parametrize("value", [-0.1, 1.1, np.nan])
@@ -48,8 +92,9 @@ def test_pretrained_prediction_matches_legacy(healthy_example_imu_data, legacy_i
     result = model.predict(data, sampling_rate_hz=204.8)
 
     prefix = f"{sensor}_{algorithm}"
-    assert_array_equal(result.hidden_state_sequence_feature_space_, legacy_inference[prefix + "_feature_states"])
-    assert_array_equal(result.hidden_state_sequence_, legacy_inference[prefix + "_states"])
+    expected_features = complete_reference_features(legacy_inference, prefix)
+    assert_array_equal(result.hidden_state_sequence_feature_space_, expected_features)
+    assert_array_equal(result.hidden_state_sequence_, fourfold_labels(expected_features))
     assert_allclose(
         result.model.log_probability(result.feature_space_data_.to_numpy()),
         legacy_inference[prefix + "_likelihood"],
@@ -69,8 +114,16 @@ def test_multisensor_segmentation_matches_legacy(healthy_example_imu_data, legac
     for sensor in ["left_sensor", "right_sensor"]:
         prefix = f"{sensor}_{algorithm}"
         assert_array_equal(result.stride_list_[sensor].to_numpy(), legacy_inference[prefix + "_strides"])
-        assert_array_equal(result.matches_start_end_original_[sensor], legacy_inference[prefix + "_original_strides"])
-        assert_array_equal(result.hidden_state_sequence_[sensor], legacy_inference[prefix + "_states"])
+        expected_boundaries = legacy_inference[prefix + "_original_strides"]
+        if algorithm == "viterbi":
+            expected_boundaries = aligned_legacy_boundaries(
+                expected_boundaries, len(data[sensor]), len(legacy_inference[prefix + "_feature_states"])
+            )
+        assert_array_equal(result.matches_start_end_original_[sensor], expected_boundaries)
+        assert_array_equal(
+            result.hidden_state_sequence_[sensor],
+            fourfold_labels(complete_reference_features(legacy_inference, prefix)),
+        )
 
 
 @pytest.mark.parametrize("restore", ["clone", "json"])
@@ -84,7 +137,10 @@ def test_restored_model_keeps_prediction_and_parameter_hash(healthy_example_imu_
 
     result = restored.predict(data, sampling_rate_hz=204.8)
 
-    assert_array_equal(result.hidden_state_sequence_, legacy_inference["left_sensor_viterbi_states"])
+    assert_array_equal(
+        result.hidden_state_sequence_,
+        fourfold_labels(complete_reference_features(legacy_inference, "left_sensor_viterbi")),
+    )
     assert custom_hash(original) == original_hash
     assert custom_hash(restored.clone()) == restored_hash
     assert restored.model is not original.model

@@ -22,9 +22,8 @@ independently of feature preprocessing.
 
 For this model, legacy Viterbi returns 1981 feature states for 1982 feature
 samples. Pomegranate omits the end-state label for models without explicit
-termination, while gaitmap removes the first and last labels. The public gaitmap
-regression intentionally preserves this existing behavior. MAP returns all 1982
-feature labels.
+termination, while gaitmap removes the first and last labels. The initial replacement preserved this behavior; the native-interface follow-up
+corrects it as described below. MAP returns all 1982 feature labels.
 
 The reference has 29 left and 31 right Viterbi strides; MAP has 29 left and 30
 right strides. Likelihoods are 2139.6616989141808 and 2449.2080755522943 for the
@@ -46,3 +45,13 @@ transitions are `[[0.6, 0.4], [0, 0.5]]`, and the second state terminates with
 probability 0.5. Both algorithms return `[0, 0, 1]` for observations
 `[-2, -1, 2]`. Unlike the unrestricted pretrained model, legacy Viterbi includes
 both the start and end label here, so the public result keeps every observation.
+## Complete decoding in the native interface
+
+The native interface returns one emitting label per observation. The old gaitmap
+Viterbi wrapper discarded the last label for unrestricted models, leaving 1981
+labels for 1982 feature observations in these recordings. The reference file
+remains unchanged. The regression tests append the known final null-state label
+and check the corrected exact 4:1 interpolation grid independently using repeated
+labels with earlier-label midpoint ties. Original boundaries are mapped from the
+old stretched grid to that complete grid. Likelihoods, all preceding Viterbi
+labels, MAP predictions, and the 300 ms snapped stride lists remain exact.

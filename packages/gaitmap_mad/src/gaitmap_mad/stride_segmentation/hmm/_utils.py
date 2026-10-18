@@ -269,10 +269,6 @@ def get_train_data_sequences_strides(
     return stride_data_train_sequence, stride_labels_train_sequence
 
 
-class _DataToShortError(ValueError):
-    pass
-
-
 def predict(
     model: HiddenMarkovModel | None,
     data: pd.DataFrame,
@@ -316,19 +312,5 @@ def predict(
             f"{data.columns}"
         ) from e
 
-    if len(data) < model.n_states:
-        raise _DataToShortError(
-            "The provided feature data is expected to have at least as many samples as the number of states "
-            f"of the model ({model.n_states}). "
-            f"But it only has {len(data)} samples."
-        )
-
     data = np.ascontiguousarray(data.to_numpy())
-    labels_predicted = model.predict(data, algorithm=algorithm)
-
-    # Preserve gaitmap's historical Viterbi output length. Legacy finite paths include start/end sentinels;
-    # paths without an explicit end include only the start sentinel, so gaitmap also dropped the final emission.
-    # Keeping that length matters when the feature labels are resampled back to the input sampling rate.
-    if algorithm == "viterbi" and model.ends is None:
-        labels_predicted = labels_predicted[:-1]
-    return np.asarray(labels_predicted)
+    return model.predict(data, algorithm=algorithm)
