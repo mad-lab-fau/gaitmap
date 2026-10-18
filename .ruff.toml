@@ -1,5 +1,5 @@
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 
 [lint]
 select = [
@@ -75,6 +75,12 @@ select = [
 ]
 
 ignore = [
+    # Preserve existing annotation/import and iteration styles when raising the Python target.
+    "UP007",
+    "UP035",
+    "UP045",
+    "B905",
+    "RUF007",
     # controversial
     "B006",
     # controversial

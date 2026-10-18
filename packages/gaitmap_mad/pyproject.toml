@@ -4,7 +4,7 @@ version = "2.6.0"
 description = "Specific algorithm implementaions by the mad_lab"
 license = "AGPL-3.0-or-later"
 readme = "README.md"
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 authors = [
     { name = "Arne Kuederle", email = "arne.kuederle@fau.de" },
     { name = "Martin Ullrich", email = "martin.ullrich@fau.de" },
