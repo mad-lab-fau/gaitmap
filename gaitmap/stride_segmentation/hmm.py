@@ -1,10 +1,6 @@
 """Hidden-Markov based stride segmentation developed by Roth et al..
 
-HMM training and inference use a local NumPy/Numba implementation, compatible with saved Gaussian models
-from the legacy pomegranate backend [1]_.
-
-.. [1] Schreiber, J. (2018). Pomegranate: fast and flexible probabilistic modeling in python.
-   Journal of Machine Learning Research, 18(164), 1-6.
+Train models with Gaussian or Gaussian-mixture emissions, or load an existing gaitmap HMM model.
 
 """
 

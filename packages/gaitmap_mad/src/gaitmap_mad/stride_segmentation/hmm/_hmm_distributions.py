@@ -12,7 +12,7 @@ from scipy.special import logsumexp
 
 @dataclass(frozen=True, eq=False, init=False)
 class GaussianMixture:
-    """One state's Gaussian components, with owned arrays safe for cached inference.
+    """One state's Gaussian components, with read-only parameter arrays.
 
     A single Gaussian uses one component. ``frozen`` prevents all updates;
     ``component_frozen`` fixes individual means and covariances while allowing

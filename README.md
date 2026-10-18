@@ -57,29 +57,23 @@ Note, that we don't guarantee that the latest version on Github is stable.
 
 #### Hidden Markov Models
 
-HMM training and prediction use a local NumPy/Numba backend and work on all supported Python versions without
-pomegranate. Install both gaitmap packages:
+HMM training and prediction are included on supported Python versions when both gaitmap packages are installed:
 
 ```bash
 pip install gaitmap_mad gaitmap --upgrade
 ```
 
-Existing gaitmap HMM JSON files remain supported through the loader. The `.model` object exposes numeric
-`transitions`, `starts`, optional `ends`, and Gaussian-mixture `emissions`. Fitting returns a new model and its history.
-New exports use a versioned gaitmap format. Arbitrary pomegranate graphs and other emission distributions are not supported.
+No additional HMM dependencies are needed. Existing gaitmap HMM JSON files remain loadable.
 The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
 
-Training uses stable centered covariance estimates and a configurable covariance eigenvalue floor.
-Fixes to covariance estimation and sequence handling can change fitted hidden states and some stride boundaries;
-the scientific changelog records their measured effect on the reference example.
-Saved-model Gaussian scores remain unchanged. Complete Viterbi decoding now retains the final label,
-correcting its interpolation grid; this can move original sensor-space boundaries by a few samples.
+See the [HMM documentation](https://gaitmap.readthedocs.io/en/latest/modules/stride_segmentation.html#hmm-stride-segmentation)
+for model usage and training options. Retraining and corrected state alignment can change hidden states and some
+stride boundaries; the [scientific changelog](CHANGELOG.md) records their measured effect.
 
 ### Supported Python versions
 
-*gaitmap* is tested against Python 3.9 at the moment.
-We expect most features to work with all Python versions >= 3.9, but because of some known issues 
-(see specific features above) we do not officially support them.
+*gaitmap* requires Python 3.9 or newer.
+CI tests Python 3.9, 3.10, and 3.11 on Linux and Windows.
 
 ## Working with Algorithms
 
@@ -196,10 +190,11 @@ Then run the commands below to get the latest source and install the dependencie
 
 ```bash
 git clone https://github.com/mad-lab-fau/gaitmap.git
+cd gaitmap
 uv sync --group dev --all-extras
 ```
 
-Warning: Building the docs currently only works in 3.9 with all extras installed.
+Read the Docs builds use Python 3.9 with all development dependencies and extras installed.
 
 Note, that you don't need to care about the `gaitmap_mad` subpackage.
 All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode

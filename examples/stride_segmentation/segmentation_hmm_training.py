@@ -84,8 +84,7 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
-# ``max_iterations`` counts actual parameter updates. These budgets preserve the work done by the old
-# pomegranate example, whose limits of 5 and 1 performed up to 6 and 2 updates.
+# ``max_iterations`` limits the number of parameter updates for each model.
 # ``min_covar`` bounds covariance eigenvalues in squared feature units during initialization and training.
 # This prevents Gaussian mixture components from collapsing. Its value should reflect the scale of the features.
 from gaitmap.stride_segmentation.hmm import SimpleHmm

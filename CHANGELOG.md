@@ -23,10 +23,10 @@ project.
   foot move by 11–16 samples at 204.8 Hz. Including the corrected interpolation grid, original boundaries move by
   at most 23 samples and fewer than 0.6% of samples change stride/transition classification. Existing pretrained
   emission parameters are unaffected.
-- Gaussian-mixture initialization now updates centroid coordinates whose assigned observations sum to zero.
-  The old Kmeans implementation left these coordinates at their previous values, changing subsequent assignments.
-- Gaussian training uses centered weighted covariance and floors covariance eigenvalues on every estimate, replacing
-  pomegranate's cancellation-prone raw moments, absolute small-weight cutoff, and repair only after Cholesky failure.
+- Fixed Gaussian-mixture initialization when a cluster mean has zero-valued coordinates, which can change
+  subsequent component assignments.
+- Gaussian training now handles nearly singular covariance matrices and very small positive sample weights.
+  Positive sample weights contribute to estimation regardless of their absolute magnitude.
   `SimpleHmm.min_covar` controls the floor in squared feature units, defaulting to `1e-6`. Fitted parameters and
   individual hidden-state labels can change for degenerate mixtures. Existing saved-model Gaussian scores and
   frozen emissions remain unchanged.
@@ -34,9 +34,9 @@ project.
 ### Added
 
 - Added a numeric HMM interface with `GaussianMixture` emissions, emitting-state transition matrices, and separate
-  start/termination probabilities. Fitting consistently returns a new model and its history. New JSON exports use
-  a versioned gaitmap format; legacy model loading is isolated in the persistence adapter.
-- Added local NumPy/Numba HMM inference and training, including Gaussian mixtures, Baum-Welch, Viterbi, and labeled
+  start/termination probabilities. Fitting consistently returns a new model and its history. Existing gaitmap HMM
+  JSON files remain loadable; new exports require the updated HMM implementation.
+- Added HMM inference and training with Gaussian mixtures, Baum-Welch, Viterbi, and labeled
   re-estimation. HMMs now work on Python 3.10+ without pomegranate, including existing gaitmap HMM JSON files.
 - HMMs use a local `.model` object with training, prediction, state and transition-matrix inspection. Arbitrary
   pomegranate graph manipulation is no longer supported. The `hmm` installation extra no longer adds dependencies.
@@ -51,7 +51,7 @@ project.
 - HMM iteration limits now count actual parameter updates, including a zero-update limit. Training histories
   include the initial and final likelihood and describe the returned model. Removed the inherited warning that
   treated every likelihood decrease as evidence of an unusable model; Viterbi updates can decrease this likelihood.
-- Added split dependency resolution so Python 3.9/3.10 stay on the pandas 2 / NumPy 1.x line while Python 3.11+
+- Added split dependency resolution so Python 3.9/3.10 use pandas 2 and NumPy `<2.1` while Python 3.11+
   supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
 
 ## [2.6.0] - 2026-03-05

@@ -138,7 +138,7 @@ def initialize_hmm(
 class SimpleHmm(_BaseSerializable):
     """Wrap all required information to train a new HMM.
 
-    Training and inference use a local NumPy/Numba backend with Gaussian or Gaussian-mixture emissions.
+    Each state uses Gaussian or Gaussian-mixture emissions.
 
     .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
               :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.

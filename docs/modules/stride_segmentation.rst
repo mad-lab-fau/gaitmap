@@ -42,17 +42,16 @@ HMM Stride Segmentation
 ***********************
 .. currentmodule:: gaitmap.stride_segmentation.hmm
 
-Training uses a local NumPy/Numba backend. Gaussian covariance estimates use
-centered differences and weights normalized to remove dependence on their absolute
-scale. Each estimate floors its eigenvalues at ``SimpleHmm.min_covar``, which
-defaults to ``1e-6`` in squared feature units. The floor prevents mixture components
-from collapsing around a few observations. Set it on the stride and transition
-submodels separately when their feature scales require different regularization.
+HMMs support Gaussian and Gaussian-mixture emissions. ``SimpleHmm.min_covar``
+bounds each estimated covariance eigenvalue, preventing mixture components from
+collapsing around a few observations. It defaults to ``1e-6`` in squared feature
+units. Set it on the stride and transition submodels separately when their feature
+scales require different regularization.
 Loading an existing model and training with frozen emissions preserve its original
 covariance matrices.
 
-The local model uses explicit numeric parameters. A single Gaussian is a mixture
-with one component. For example::
+To define a custom model, provide its emission and transition probabilities.
+A single Gaussian is a mixture with one component. For example::
 
     from gaitmap.stride_segmentation.hmm import GaussianMixture, HiddenMarkovModel
 
@@ -82,14 +81,12 @@ improvement meets ``stop_threshold``. A likelihood decrease stops training with
 ``converged=False`` and remains visible in the history. A decrease can occur with
 Viterbi training and does not imply invalid model parameters.
 
-The old pomegranate iteration limit could perform one extra update and omit that
-update from its history. To reproduce the amount of work in an old run that hit
-its iteration limit, increase that limit by one.
+When migrating a run that previously reached its iteration limit, increase the
+limit by one to retain the same training budget.
 
-New model exports use the versioned ``gaitmap-hmm`` JSON format. The loader also
-accepts existing gaitmap files containing pomegranate Gaussian models. Legacy
-silent states and edge dictionaries are converted by the loader and do not enter
-the inference or training implementation.
+Existing gaitmap HMM JSON files remain loadable. Newly exported models require
+the updated HMM implementation. Arbitrary pomegranate graphs and emission types
+other than Gaussian mixtures are not supported.
 
 .. autosummary::
    :toctree: generated/stride_segmentation/hmm

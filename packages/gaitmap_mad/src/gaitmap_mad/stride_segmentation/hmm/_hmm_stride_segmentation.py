@@ -66,8 +66,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     Note, that this class only supports prediction.
     To train your own HMM, use the `self_optimize` method on the model that you were planning to use here.
 
-    This is based on the work of Roth et al. 2021 [1]_. Training and inference use a local NumPy/Numba backend,
-    compatible with Gaussian models saved by the original `pomegranate` implementation [2]_.
+    This is based on the work of Roth et al. 2021 [1]_.
 
     Parameters
     ----------
@@ -118,8 +117,6 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
        free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
        https://doi.org/10.1186/s12984-021-00883-7
-    .. [2] J. Schreiber, “Pomegranate: Fast and flexible probabilistic modeling in python,” Journal of Machine Learning
-       Research, vol. 18, no. 164, pp. 1-6, 2018.
 
     """
 
