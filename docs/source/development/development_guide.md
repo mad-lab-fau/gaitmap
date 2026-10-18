@@ -23,7 +23,7 @@ uv python install 3.9
 # For Python 3.9 (and if you need to work on hmm)
 uv sync --group dev --all-extras
 
-# For Python >=3.10 (you can not work on hmm stuff with this)
+# For Python >=3.10 (HMM inference is supported; HMM training requires Python 3.9)
 uv sync --group dev --extra stats
 ```
 This will create a new folder called `.venv` inside your project dir.

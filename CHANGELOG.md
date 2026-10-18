@@ -12,6 +12,11 @@ project.
 
 ### Added
 
+- Added local Numba HMM inference so pretrained Roth models and existing gaitmap HMM JSON files can be used on
+  Python 3.10+ without pomegranate. HMM training still requires the legacy pomegranate backend on Python 3.9.
+- HMMs loaded from JSON now expose a local inference model through `.model`, with state and transition-matrix
+  inspection. Low-level pomegranate graph manipulation and training are not available on this inference model.
+
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
 
