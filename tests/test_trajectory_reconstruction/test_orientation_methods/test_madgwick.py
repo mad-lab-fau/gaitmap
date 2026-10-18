@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseOrientationMethod, BaseType
-from gaitmap.trajectory_reconstruction import MadgwickAHRS
+from gaitmap.trajectory_reconstruction import MadgwickAHRS, MadgwickRtsKalman
 from gaitmap.trajectory_reconstruction.orientation_methods._madgwick import _madgwick_update, _madgwick_update_mag
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -93,3 +94,30 @@ class TestSimpleRotationsWithMag(TestOrientationMethodMixin):
     def test_single_stride_regression(self):
         # Overwrite, as the regression data has no mag data
         pass
+
+
+@pytest.mark.parametrize("algorithm", [MadgwickAHRS, MadgwickRtsKalman])
+def test_zero_magnetometer_retains_imu_estimate(algorithm):
+    data = pd.DataFrame(0.0, index=range(30), columns=SF_COLS)
+    data["acc_z"] = 9.81
+    data[["gyr_x", "gyr_y", "gyr_z"]] = [3.0, -2.0, 1.0]
+    data = data.assign(mag_x=0.0, mag_y=0.0, mag_z=0.0)
+    initial = Rotation.from_euler("x", 20, degrees=True).as_quat()
+    expected = algorithm(initial_orientation=initial).estimate(data, sampling_rate_hz=100)
+    actual = algorithm(initial_orientation=initial, use_magnetometer=True).estimate(data, sampling_rate_hz=100)
+    np.testing.assert_allclose(actual.orientation_, expected.orientation_, atol=1e-12)
+    if algorithm is MadgwickRtsKalman:
+        np.testing.assert_allclose(actual.position_, expected.position_, atol=1e-12)
+        np.testing.assert_allclose(actual.velocity_, expected.velocity_, atol=1e-12)
+
+
+def test_magnetometer_dropout_preserves_heading_and_resumes_correction():
+    data = pd.DataFrame(0.0, index=range(100), columns=SF_COLS)
+    data["acc_z"] = 9.81
+    data = data.assign(mag_x=1.0, mag_y=0.0, mag_z=0.0)
+    data.loc[30:59, "mag_x"] = 0.0
+    initial = Rotation.from_euler("z", 90, degrees=True)
+    result = MadgwickAHRS(initial_orientation=initial, use_magnetometer=True).estimate(data, sampling_rate_hz=100)
+    yaw = result.orientation_object_.as_euler("xyz", degrees=True)[:, 2]
+    np.testing.assert_allclose(yaw[31:61], yaw[30], atol=1e-10)
+    assert yaw[-1] < yaw[30] < 90

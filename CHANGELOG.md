@@ -49,6 +49,9 @@ project.
 
 ### Fixed
 
+- Madgwick orientation and RTS trajectory estimation fall back to acceleration/gyroscope updates for zero
+  magnetometer readings, avoiding invalid orientations during magnetic-field dropouts.
+
 - `SlidingWindowGradient` preserves sample indices, keeping gradient features aligned with other transforms.
 
 - ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
