@@ -49,6 +49,9 @@ project.
 
 ### Fixed
 
+- ROI stride segmentation supports floating-point region identifiers and sensor identifiers such as `0`
+  or an empty string without changing sample boundaries or sensor-specific template selection.
+
 - Reusing an event detector with minimum-velocity detection or consistency checking disabled no longer
   exposes stale minimum-velocity stride results from a previous call.
 

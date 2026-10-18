@@ -213,10 +213,10 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
         instances_per_roi = {}
         combined_stride_list = {}
-        for _, (index, start, end) in rois[[index_col, "start", "end"]].iterrows():
+        for index, start, end in rois[[index_col, "start", "end"]].itertuples(index=False, name=None):
             per_roi_algo = segmentation_algorithm.clone()
             roi_data = sensor_data.iloc[start:end]
-            if sensor_name:
+            if sensor_name is not None:
                 # In case the original dataset was a dict, sensor_name is passed by the parent.
                 # Here we ensure that the data passed into segment method is still a dict to avoid potential issues with
                 # specific segmentation methods.
@@ -233,7 +233,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                     strides[["start", "end"]] += start
             else:
                 stride_list[["start", "end"]] += start
-            if sensor_name:
+            if sensor_name is not None:
                 # The reverse of what we did above.
                 # For this method a single sensor dataset should be a real single sensor dataset
                 combined_stride_list[index] = stride_list[sensor_name]
