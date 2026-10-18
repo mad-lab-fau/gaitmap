@@ -1,10 +1,11 @@
 r"""
 .. _example_stance_swing_transition_hmm:
 
-Stance, swing, and transition states
-====================================
+Composing stance, swing, and transition HMMs
+============================================
 
-This example demonstrates how to train HMMs with more than two states.
+This example demonstrates how to train and combine three HMM submodels, each
+with multiple internal states, into one segmentation model.
 
 .. warning::
 
@@ -16,11 +17,14 @@ classes such as walking, stair walking, and rest, or walking, running, and rest.
 For published multiclass approaches, Roth et al. [1]_ combine stride models for
 level walking, stair ascent, and stair descent with a transition model, while
 Martindale et al. [2]_ model walking, running, and rest. Those approaches use
-multiple internal states per movement class; this tutorial trains a simpler
-three-state model to demonstrate the training workflow with the available data.
+multiple internal states per movement class. This tutorial follows that
+composition pattern using three phase submodels and the available walking data.
 
-Train a three-state HMM on the healthy walking recording. As in the Roth setup,
-everything outside the annotated strides belongs to the transition/null class.
+Train stance, swing, and transition/null HMMs on the healthy walking recording.
+The stance and swing submodels each have five internal states; the transition/null
+submodel has three. The combined model therefore has 13 hidden states.
+As in the Roth setup, everything outside the annotated strides belongs to the
+transition/null class.
 Within each stride, initial contact separates swing from stance. These labels
 are derived from the supplied annotations; no extra rest annotations are needed.
 
@@ -44,7 +48,7 @@ from gaitmap.example_data import (
     get_healthy_example_stride_borders,
     get_healthy_example_stride_events,
 )
-from gaitmap.stride_segmentation.hmm import SimpleHmm
+from gaitmap.stride_segmentation.hmm import HiddenMarkovModel, SimpleHmm
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 
 # %%
@@ -60,7 +64,7 @@ sampling_rate_hz = 204.8
 data = convert_left_foot_to_fbf(get_healthy_example_imu_data()["left_sensor"])
 stride_list = get_healthy_example_stride_borders()["left_sensor"]
 event_list = get_healthy_example_stride_events()["left_sensor"]
-state_names = np.array(["stance", "swing", "transition/null"])
+phase_names = np.array(["stance", "swing", "transition/null"])
 
 reference_labels = np.full(len(data), 2, dtype=np.int64)
 contacts = np.unique(event_list[["pre_ic", "ic"]].to_numpy()).astype(int)
@@ -111,23 +115,86 @@ train_features = (train_features - feature_mean) / feature_scale
 test_features = (test_features - feature_mean) / feature_scale
 
 # %%
-# Train and predict
-# -----------------
-# Each of the three hidden states has three Gaussian mixture components. Known
-# phase labels identify the states; training estimates their emission parameters
-# and transition probabilities. The held-out labels are used only for evaluation.
+# Train the three submodels separately
+# ------------------------------------
+#
+# Split the training recording into contiguous regions of each reference class.
+# Initialize internal states by dividing each region into equal-length sections;
+# Baum-Welch then learns their alignment. No internal-state annotations are needed.
+# Stance and swing use strict left-to-right chains. Transition/null is fully
+# connected because movement outside strides need not follow a fixed order.
+# Each internal state uses three Gaussian mixture components.
 
-model, history = SimpleHmm(
-    n_states=3,
-    n_gmm_components=3,
-    architecture="fully-connected",
-    algo_train="labeled",
-    max_iterations=2,
-    min_covar=1e-4,
-    verbose=False,
-).self_optimize_with_info([train_features], [reference_labels[:split_sample]])
+train_labels = reference_labels[:split_sample]
+boundaries = np.r_[0, np.flatnonzero(np.diff(train_labels)) + 1, len(train_labels)]
+training_regions = list(zip(boundaries[:-1], boundaries[1:]))
+phase_models = {}
+for phase, (name, n_states) in enumerate(zip(phase_names, [5, 5, 3])):
+    sequences = [train_features.iloc[start:end] for start, end in training_regions if train_labels[start] == phase]
+    initial_labels = [np.arange(len(sequence)) * n_states // len(sequence) for sequence in sequences]
+    phase_models[name] = SimpleHmm(
+        n_states=n_states,
+        n_gmm_components=3,
+        architecture="fully-connected" if phase == 2 else "left-right-strict",
+        algo_train="baum-welch",
+        max_iterations=10,
+        min_covar=1e-4,
+        verbose=False,
+    ).self_optimize(sequences, initial_labels)
 
-predictions = model.predict_hidden_state_sequence(test_features, algorithm="viterbi")
+# %%
+# Compose the submodels
+# ------------------------------------
+#
+# Place their learned transitions in separate matrix blocks, then connect the
+# submodels. Walking alternates swing → stance → swing. Transition/null can enter
+# swing at bout initiation, and stance can return to transition/null at the end.
+# Connections to stance and swing enter their first state and leave their last
+# state, so complete phases must traverse all their internal states.
+
+state_counts = np.array([submodel.n_states for submodel in phase_models.values()])
+offsets = np.r_[0, np.cumsum(state_counts)]
+state_slices = [slice(start, end) for start, end in zip(offsets[:-1], offsets[1:])]
+transitions = np.zeros((offsets[-1], offsets[-1]))
+emissions = []
+for submodel, block in zip(phase_models.values(), state_slices):
+    transitions[block, block] = submodel.model.transitions
+    emissions.extend(submodel.model.emissions)
+
+stance, swing, background = state_slices
+transitions[swing.stop - 1, stance.start] = 0.1
+transitions[stance.stop - 1, swing.start] = 0.1
+transitions[stance.stop - 1, background] = 0.1
+transitions[background, swing.start] = 0.1
+transitions /= transitions.sum(axis=1, keepdims=True)
+
+# %%
+# Learn connection probabilities and decode
+# -----------------------------------------
+#
+# Decode each annotated training region with its fitted submodel to recover the
+# internal-state labels. Labeled fitting on the complete training recording then
+# estimates transition frequencies while keeping the learned emissions fixed.
+# The held-out labels are used only for evaluation.
+
+internal_labels = np.empty(len(train_labels), dtype=int)
+for start, end in training_regions:
+    phase = train_labels[start]
+    submodel = phase_models[phase_names[phase]]
+    internal_labels[start:end] = submodel.predict_hidden_state_sequence(train_features.iloc[start:end]) + offsets[phase]
+starts = np.zeros(offsets[-1])
+starts[internal_labels[0]] = 1.0
+model, history = HiddenMarkovModel(emissions, transitions, starts).fit(
+    [train_features.to_numpy()],
+    labels=[internal_labels],
+    algorithm="labeled",
+    max_iterations=1,
+    update_emissions=False,
+)
+
+predicted_states = model.predict(test_features.to_numpy(), algorithm="viterbi")
+state_to_phase = np.repeat(np.arange(3), state_counts)
+predictions = state_to_phase[predicted_states]
 held_out_labels = reference_labels[split_sample:]
 
 # %%
@@ -139,12 +206,12 @@ held_out_labels = reference_labels[split_sample:]
 
 counts = np.zeros((3, 3), dtype=int)
 np.add.at(counts, (held_out_labels, predictions), 1)
-confusion_matrix = pd.DataFrame(counts, index=state_names, columns=state_names)
+confusion_matrix = pd.DataFrame(counts, index=phase_names, columns=phase_names)
 precision = counts.diagonal() / counts.sum(axis=0)
 recall = counts.diagonal() / counts.sum(axis=1)
 scores = pd.DataFrame(
     {"precision": precision, "recall": recall, "f1": 2 * precision * recall / (precision + recall)},
-    index=state_names,
+    index=phase_names,
 )
 print("Confusion matrix: rows are reference labels, columns are predictions.")
 print(confusion_matrix)
@@ -155,14 +222,16 @@ print(scores.round(3))
 # ---------------------------
 
 colors = ["#377eb8", "#ff7f00", "#4daf4a"]
-fig, axes = plt.subplots(3, 1, figsize=(12, 5), sharex=True, gridspec_kw={"height_ratios": [3, 1, 1]})
+fig, axes = plt.subplots(4, 1, figsize=(12, 6), sharex=True, gridspec_kw={"height_ratios": [3, 1, 1, 2]})
 test_data.gyr_ml.plot(ax=axes[0], color="black", linewidth=0.8)
 axes[0].set(ylabel="gyr_ml [deg/s]", title="Held-out second walking bout")
 extent = (test_data.index[0], test_data.index[-1] + 1 / sampling_rate_hz, 0, 1)
-for axis, labels, title in zip(axes[1:], [held_out_labels, predictions], ["Reference", "Prediction"]):
+for axis, labels, title in zip(axes[1:3], [held_out_labels, predictions], ["Reference", "Prediction"]):
     axis.imshow(labels[None, :], aspect="auto", extent=extent, cmap=ListedColormap(colors), vmin=0, vmax=2)
     axis.set(ylabel=title, yticks=[])
+axes[-1].step(test_data.index, predicted_states, where="post", color="black", linewidth=0.8)
+axes[-1].set(ylabel="Internal state", yticks=offsets[:-1], ylim=(-0.5, offsets[-1] - 0.5))
 axes[-1].set_xlabel("Time [s]")
-axes[0].legend(handles=[Patch(color=color, label=name) for color, name in zip(colors, state_names)], loc="upper right")
+axes[0].legend(handles=[Patch(color=color, label=name) for color, name in zip(colors, phase_names)], loc="upper right")
 fig.tight_layout()
 plt.show()

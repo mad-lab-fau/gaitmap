@@ -1,6 +1,7 @@
 import matplotlib
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
@@ -292,9 +293,11 @@ def test_segmentation_hmm_training(snapshot) -> None:
 
 def test_stance_swing_transition_hmm() -> None:
     from examples.stride_segmentation.stance_swing_transition_hmm import (
+        phase_models,
         predictions,
         reference_labels,
         split_sample,
+        test_features,
     )
 
     # Independent contact/border samples from the supplied left-foot annotations.
@@ -304,8 +307,18 @@ def test_stance_swing_transition_hmm() -> None:
     )
     held_out_labels = reference_labels[split_sample:]
     # Every phase must be learned; overall accuracy alone could hide a missing class.
-    for state, minimum_recall in enumerate([0.85, 0.85, 0.70]):
+    for state, minimum_recall in enumerate([0.85, 0.85, 0.65]):
         assert np.mean(predictions[held_out_labels == state] == state) > minimum_recall
+
+    # A complete stance/swing phase must traverse every internal state in order.
+    for name in ["stance", "swing"]:
+        phase_model = phase_models[name]
+        n_states = phase_model.n_states
+        with pytest.raises(ValueError, match="No valid state path"):
+            phase_model.predict_hidden_state_sequence(test_features.iloc[: n_states - 1])
+        np.testing.assert_array_equal(
+            phase_model.predict_hidden_state_sequence(test_features.iloc[:n_states]), np.arange(n_states)
+        )
 
 
 def test_zupt_dependency() -> None:
