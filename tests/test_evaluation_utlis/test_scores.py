@@ -49,6 +49,13 @@ class TestEvaluationScores:
         for name, original in originals.items():
             assert_frame_equal(matches[name], original)
 
+    @pytest.mark.parametrize(("fp", "fn"), [([0], []), ([], [0])])
+    def test_f1_with_errors_is_zero_even_when_undefined_ratios_default_to_one(self, fp, fn) -> None:
+        matches = self._create_valid_matches_df([], fp, fn)
+        # 2 TP / (2 TP + FP + FN) has a nonzero denominator in both cases.
+        assert f1_score(matches, zero_division=1) == 0.0
+        assert precision_recall_f1_score(matches, zero_division=1)["f1_score"] == 0.0
+
     def test_precision_single(self) -> None:
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])
 

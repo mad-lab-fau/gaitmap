@@ -46,6 +46,8 @@ project.
 
 - Calculating precision or recall for multiple sensors no longer modifies the supplied match dictionary,
   so it can be reused across score calculations.
+- F1 scores now use the confusion counts directly. With `zero_division=1`, recordings containing
+  only false positives or only false negatives correctly score zero instead of one.
 - Added pandas 3 support and fixed compatibility issues around read-only views and removed APIs.
   ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 

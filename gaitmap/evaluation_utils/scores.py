@@ -185,12 +185,11 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
         matches_df = {"__dummy__": matches_df}
 
     output = {}
-    recall = recall_score(matches_df)
-    precision = precision_score(matches_df)
-    for sensor_name in list(recall.keys()):
+    for sensor_name, groups in _get_match_type_dfs(matches_df).items():
+        tp, fp, fn = (len(groups[label]) for label in ("tp", "fp", "fn"))
         output[sensor_name] = _calculate_score(
-            2 * (precision[sensor_name] * recall[sensor_name]),
-            precision[sensor_name] + recall[sensor_name],
+            2 * tp,
+            2 * tp + fp + fn,
             zero_division=zero_division,
             caller_function_name="f1",
         )
