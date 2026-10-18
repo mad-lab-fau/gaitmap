@@ -5,12 +5,19 @@ from typing import Literal, Self
 import numpy as np
 
 from gaitmap.base import BaseZuptDetector
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
 from gaitmap.zupt_detection._base import PerSampleZuptDetectorMixin
 
 SENSOR_NAMES = Literal["acc", "gyr"]
+
+
+def _sensor_values(data: SingleSensorData, sensor: SENSOR_NAMES) -> np.ndarray:
+    sensor_columns, body_columns = {"acc": (SF_ACC, BF_ACC), "gyr": (SF_GYR, BF_GYR)}[sensor]
+    columns = sensor_columns if set(sensor_columns).issubset(data.columns) else body_columns
+    return data[columns].to_numpy()
 
 
 def _validate_window(
@@ -220,7 +227,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         )
 
         self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples(
-            data.filter(like=self.sensor).to_numpy(),
+            _sensor_values(data, self.sensor),
             window_length=self.window_length_samples_,
             inactive_signal_th=self.inactive_signal_threshold,
             metric=self.metric,
@@ -493,8 +500,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         )
 
         self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples_shoe(
-            gyr=data.filter(like="gyr").to_numpy(),
-            acc=data.filter(like="acc").to_numpy(),
+            gyr=_sensor_values(data, "gyr"),
+            acc=_sensor_values(data, "acc"),
             acc_noise_var=self.acc_noise_variance,
             gyr_noise_var=self.gyr_noise_variance,
             window_length=self.window_length_samples_,

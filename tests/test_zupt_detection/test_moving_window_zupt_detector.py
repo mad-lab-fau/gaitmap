@@ -319,3 +319,27 @@ class TestShoeZuptDetector:
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert np.isnan(test_output.min_vel_value_)
         assert test_output.min_vel_index_ == 11
+
+
+@pytest.mark.parametrize("body_frame", [False, True])
+@pytest.mark.parametrize(
+    "detector",
+    [NormZuptDetector(sensor="acc"), NormZuptDetector(sensor="gyr"), AredZuptDetector(), ShoeZuptDetector()],
+)
+def test_derived_features_do_not_change_zupt_detection(detector, body_frame):
+    acc_columns, gyr_columns = (BF_ACC, BF_GYR) if body_frame else (SF_ACC, SF_GYR)
+    data = pd.DataFrame(0.0, index=range(60), columns=[*acc_columns, *gyr_columns])
+    data[acc_columns[2]] = 9.81
+    data.loc[20:39, acc_columns[2]] = 100.0
+    data.loc[20:39, gyr_columns] = 100.0
+    detector = detector.clone().set_params(window_length_s=0.05)
+    expected = detector.clone().detect(data, sampling_rate_hz=100)
+    assert expected.per_sample_zupts_.any()
+    assert not expected.per_sample_zupts_.all()
+
+    enriched = data.assign(acc_norm=1e9, gyr_energy=1e9)
+    actual = detector.detect(enriched, sampling_rate_hz=100)
+    assert_array_equal(actual.per_sample_zupts_, expected.per_sample_zupts_)
+    assert_frame_equal(actual.zupts_, expected.zupts_)
+    assert actual.min_vel_index_ == expected.min_vel_index_
+    assert actual.min_vel_value_ == pytest.approx(expected.min_vel_value_)

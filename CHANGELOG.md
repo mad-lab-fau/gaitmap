@@ -49,6 +49,8 @@ project.
 
 ### Fixed
 
+- ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
+
 - Sample-number columns and trajectory sample indices now require integer dtypes, including
   integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
   for missing events. Built-in event detection, example annotations and stride-list conversion now
