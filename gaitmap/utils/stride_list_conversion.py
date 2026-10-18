@@ -84,7 +84,7 @@ def _stride_list_to_min_vel_single_sensor(
 
     """
     stride_list = set_correct_index(stride_list, SL_INDEX)
-    converted_stride_list = stride_list.copy()
+    converted_stride_list = stride_list.copy(deep=False)
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
 
@@ -209,8 +209,8 @@ def intersect_stride_list(
     """
     is_single_sensor_stride_list(stride_event_list, raise_exception=True)
     is_single_sensor_regions_of_interest_list(regions_of_interest, raise_exception=True)
-    stride_list = set_correct_index(stride_event_list.copy(), SL_INDEX)
-    roi_list = regions_of_interest.copy()
+    stride_list = set_correct_index(stride_event_list, SL_INDEX)
+    roi_list = regions_of_interest
 
     stride_lists = []
 

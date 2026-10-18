@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from gaitmap_mad.gait_detection._ullrich_gait_sequence_detection import _gait_sequence_concat
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.gait_detection import UllrichGaitSequenceDetection

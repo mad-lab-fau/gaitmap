@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.exceptions import ValidationError

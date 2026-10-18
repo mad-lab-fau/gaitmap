@@ -10,7 +10,7 @@ from gaitmap_mad.event_detection._rampp_event_detection import (
     _detect_tc_for_segmented_stride,
 )
 from numpy.testing import assert_array_equal
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy
 from gaitmap.base import BaseType

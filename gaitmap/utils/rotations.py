@@ -85,7 +85,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSen
     # Now that we know the rotation is valid, we round the values to make all further checks simpler
     rot_matrix = np.round(rot_matrix)
 
-    data = data.copy()
+    data = data.copy(deep=False)
     if rotation is None:
         return data
 
@@ -103,7 +103,6 @@ def _flip_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSen
             rename[old_index] = col
             if np.sum(row) == -1:
                 mirror.append(col)
-        # We use inplace here to make sure we honor the inplace passed to this function
         data = data.rename(columns=rename)
         data[mirror] *= -1
     data = data[orig_col_order]
@@ -113,7 +112,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSen
 def _rotate_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSensorData:
     """Rotate the data of a single sensor with acc, gyro and mag."""
     has_mag = is_single_sensor_data(data, frame="sensor", check_mag=True)
-    data = data.copy()
+    data = data.copy(deep=False)
     if rotation is None:
         return data
     # `dataset[key]` can expose read-only NumPy views with pandas >= 3 when working on MultiIndex-backed sensor data.
@@ -142,7 +141,7 @@ def _rotate_or_flip_dataset(dataset: SensorData, rotation: Rotation | dict[str, 
         rotated_dataset = {**dataset}
         original_cols = None
     else:
-        rotated_dataset = dataset.copy()
+        rotated_dataset = dataset.copy(deep=False)
         original_cols = dataset.columns
     for key in rotation_dict:
         rotated_dataset[key] = single_rot_method(dataset[key], rotation_dict[key])

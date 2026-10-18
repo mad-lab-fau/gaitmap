@@ -263,7 +263,7 @@ class AbsMaxScaler(BaseTransformer):
         return float(np.nanmax(np.abs(data.to_numpy())))
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
-        data = data.copy()
+        data = data.copy(deep=False)
         if absmax == 0:
             return data
         data *= self.out_max / absmax
@@ -433,7 +433,7 @@ class MinMaxScaler(BaseTransformer):
         return float(np.nanmin(data)), float(np.nanmax(data))
 
     def _transform(self, data: SingleSensorData, data_range: tuple[float, float]) -> SingleSensorData:
-        data = data.copy()
+        data = data.copy(deep=False)
         feature_range = self.out_range
         data_min, data_max = data_range
         transform_range = (data_max - data_min) or 1.0

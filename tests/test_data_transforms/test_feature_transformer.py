@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
-from pandas._testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 from gaitmap.data_transform import (
     BaseTransformer,
@@ -91,6 +91,25 @@ class TestResample:
         assert after_instance.transformed_data_ is not df_or_series_imu_data
         assert_frame_equal(after_instance.transformed_roi_list_, healthy_example_stride_borders["left_sensor"])
         assert after_instance.transformed_roi_list_ is not healthy_example_stride_borders["left_sensor"]
+
+    @pytest.mark.parametrize("target_rate", [50, 100])
+    def test_resampled_roi_bounds_and_metadata_are_independent(self, target_rate) -> None:
+        regions = pd.DataFrame({"start": [0, 10], "end": [10, 20], "quality": [1.0, 2.0]})
+        original = regions.copy()
+        result = (
+            Resample(target_sampling_rate_hz=target_rate)
+            .transform(roi_list=regions, sampling_rate_hz=100)
+            .transformed_roi_list_
+        )
+        expected = pd.DataFrame(
+            {"start": [0, target_rate // 10], "end": [target_rate // 10, target_rate // 5], "quality": [1.0, 2.0]}
+        )
+        assert_frame_equal(result, expected)
+        assert_frame_equal(regions, original)
+        result.loc[0, "quality"] = 7.0
+        regions.loc[1, "quality"] = 9.0
+        assert regions.loc[0, "quality"] == 1.0
+        assert result.loc[1, "quality"] == 2.0
 
     def test_resample_roi_list(self, healthy_example_stride_borders) -> None:
         in_stride_borders = healthy_example_stride_borders["left_sensor"].astype({"start": "Int64", "end": "Int64"})

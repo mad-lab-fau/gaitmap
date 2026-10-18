@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._testing import assert_series_equal
+from pandas.testing import assert_series_equal
 
 from gaitmap.base import BaseType
 from gaitmap.parameters import SpatialParameterCalculation

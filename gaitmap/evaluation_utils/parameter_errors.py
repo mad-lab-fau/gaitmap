@@ -568,7 +568,7 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
     assert data.index.is_unique
 
     paras = data.columns.get_level_values("parameter").unique()
-    data = data.stack("error_type", future_stack=True).reset_index()
+    data = data.stack("error_type").reset_index()
     coefs: dict[str, pd.Series] = {}
     for para in paras:
         try:

@@ -6,7 +6,7 @@ from typing import NoReturn, Self
 import numpy as np
 import pandas as pd
 from numpy import polyfit
-from pandas.core.window import Rolling
+from pandas.api.typing import Rolling
 from scipy import signal
 
 from gaitmap.data_transform._base import BaseTransformer
@@ -59,7 +59,7 @@ class Resample(BaseTransformer):
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
     def _resample_roi_list(self, roi_list: SingleSensorRegionsOfInterestList) -> SingleSensorRegionsOfInterestList:
-        out = roi_list.copy()
+        out = roi_list.copy(deep=False)
         rescaled = (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round()
         for col in ["start", "end"]:
             out[col] = rescaled[col].astype(out[col].dtype)

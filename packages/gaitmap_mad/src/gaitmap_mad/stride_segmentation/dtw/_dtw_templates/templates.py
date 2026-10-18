@@ -1,7 +1,7 @@
 """Dtw template base classes and helper."""
 
 from collections.abc import Iterable, Sequence
-from importlib.resources import open_text
+from importlib.resources import files
 from typing import Self, cast
 
 import numpy as np
@@ -113,10 +113,10 @@ class BarthOriginalTemplate(BaseDtwTemplate):
 
         This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
         """
-        with open_text(
-            "gaitmap_mad.stride_segmentation.dtw._dtw_templates",
-            cast("str", self.template_file_name),
-        ) as test_data:
+        resource = files("gaitmap_mad.stride_segmentation.dtw._dtw_templates").joinpath(
+            cast("str", self.template_file_name)
+        )
+        with resource.open(encoding="utf8") as test_data:
             data = pd.read_csv(test_data, header=0)
         template = data
 
