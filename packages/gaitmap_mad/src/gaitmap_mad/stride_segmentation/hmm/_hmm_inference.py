@@ -122,6 +122,10 @@ def _owned_array(values, dtype=np.float64):
     return result
 
 
+class _NoValidPathError(ValueError):
+    """Distinguish an impossible state path from invalid observation data."""
+
+
 class HiddenMarkovModel:
     """Gaussian HMM with explicitly represented emitting states.
 
@@ -343,7 +347,7 @@ class HiddenMarkovModel:
         scores = self._scores(samples)
         forward, likelihood = _forward(scores, self._log_transitions, self._log_starts, self._log_ends)
         if not np.isfinite(likelihood):
-            raise ValueError("No valid state path exists for the observations.")
+            raise _NoValidPathError("No valid state path exists for the observations.")
         return _posteriors(scores, self._log_transitions, self._log_ends, forward, likelihood)
 
     def predict_proba(self, samples):
@@ -363,5 +367,5 @@ class HiddenMarkovModel:
             raise ValueError("Supported prediction algorithms are 'viterbi' and 'map'.")
         path, likelihood = _viterbi(self._scores(samples), self._log_transitions, self._log_starts, self._log_ends)
         if not np.isfinite(likelihood):
-            raise ValueError("No valid state path exists for the observations.")
+            raise _NoValidPathError("No valid state path exists for the observations.")
         return path

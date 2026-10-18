@@ -14,7 +14,7 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
 )
-from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel, _NoValidPathError
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
@@ -44,27 +44,24 @@ def create_fully_labeled_gait_sequences(
     for data, stride_list in zip(data_train_sequence, stride_list_sequence):
         labels_train = np.zeros(len(data), dtype=np.int64)
 
-        # predict hidden-state sequence for each transition using "transition model"
-        transition_start_end_list = convert_stride_list_to_transition_list(stride_list, data.shape[0])
-
-        # for each transition, get data and create some naive labels for initialization
-        for start, end in transition_start_end_list[["start", "end"]].to_numpy():
-            transition_data_train = data[start:end]
-            if len(transition_data_train) < transition_model.n_states:
-                continue
-            labels_train[start:end] = transition_model.predict_hidden_state_sequence(
-                transition_data_train, algorithm=algo_predict
-            )
-
-        # predict hidden-state sequence for each stride using "stride model"
-        for start, end in stride_list[["start", "end"]].to_numpy():
-            stride_data_train = data[start:end]
-            if len(stride_data_train) < stride_model.n_states:
-                continue
-            labels_train[start:end] = (
-                stride_model.predict_hidden_state_sequence(stride_data_train, algorithm=algo_predict)
-                + transition_model.n_states
-            )
+        regions = (
+            (transition_model, convert_stride_list_to_transition_list(stride_list, len(data)), 0),
+            (stride_model, stride_list, transition_model.n_states),
+        )
+        for model, intervals, state_offset in regions:
+            for start, end in intervals[["start", "end"]].to_numpy():
+                region = data[start:end]
+                if len(region) == 0:
+                    continue
+                try:
+                    predicted = model.predict_hidden_state_sequence(region, algorithm=algo_predict)
+                except _NoValidPathError:
+                    # Preserve the transition fallback only for genuinely
+                    # undecodable short regions, not all partial state paths.
+                    if len(region) >= model.n_states:
+                        raise
+                    continue
+                labels_train[start:end] = predicted + state_offset
 
         # append cleaned sequences to train_sequence
         labels_train_sequence.append(labels_train)

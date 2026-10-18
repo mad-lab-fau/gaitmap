@@ -12,6 +12,9 @@ project.
 
 ### Scientific Changes
 
+- Combined HMM training now decodes valid short stride and transition regions instead of assigning transition
+  state zero solely because a region has fewer samples than model states. Undecodable short regions retain their
+  fallback labels. The healthy training example has no additional state or stride-boundary changes.
 - HMM prediction keeps the final Viterbi label for unrestricted models. This corrects the interpolation grid when
   mapping feature labels back to sensor samples. In the healthy example, original boundaries move by at most three
   samples at 204.8 Hz; pretrained-model boundaries after 300 ms snapping remain exact. MAP decoding is unchanged.

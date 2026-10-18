@@ -6,6 +6,9 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+from gaitmap_mad.stride_segmentation.hmm._segmentation_model import create_fully_labeled_gait_sequences
 from numpy.testing import assert_array_equal
 
 from gaitmap.stride_segmentation.hmm import RothHmmFeatureTransformer, RothSegmentationHmm, SimpleHmm
@@ -188,3 +191,99 @@ def test_training_example_preserves_legacy_segmentation():
                 expected_original[row, column] += delta
             assert_array_equal(hmm.stride_list_[sensor].to_numpy(), expected_snapped)
             assert_array_equal(hmm.matches_start_end_original_[sensor], expected_original)
+
+
+def region_model(means, *, strict=False, unreachable_end=False):
+    """Build small trained region models with independently known Gaussian state labels."""
+    emissions = [GaussianMixture([[mean]], [[[1.0]]], [1.0]) for mean in means]
+    n_states = len(means)
+    if strict:
+        transitions = [[1.0, 0.0], [0.0, 0.5]] if unreachable_end else [[0.5, 0.5], [0.0, 0.5]]
+        starts = [1.0, 0.0]
+        ends = [0.0, 0.5]
+    else:
+        transitions = np.full((n_states, n_states), 0.5 / n_states)
+        starts = np.full(n_states, 1.0 / n_states)
+        ends = np.full(n_states, 0.5)
+    model = HiddenMarkovModel(emissions, transitions, starts, ends)
+    return SimpleHmm(n_states, 1, model=model, data_columns=("x",), verbose=False)
+
+
+@pytest.mark.parametrize("algorithm", ["viterbi", "map"])
+@pytest.mark.parametrize("short_region", ["transition", "stride"])
+def test_combined_training_keeps_valid_short_region_predictions(algorithm, short_region):
+    """Decode partial regions when the learned topology admits a shorter valid path."""
+    if short_region == "transition":
+        transition = region_model([-100.0, 10.0])
+        stride = region_model([100.0])
+        data = pd.DataFrame({"x": [10.0, 100.0, 100.0, 10.0]})
+        strides = pd.DataFrame({"start": [1], "end": [3]})
+        expected = [1, 2, 2, 1]
+    else:
+        transition = region_model([10.0])
+        stride = region_model([-100.0, 100.0])
+        data = pd.DataFrame({"x": [10.0, 100.0, 10.0]})
+        strides = pd.DataFrame({"start": [1], "end": [2]})
+        expected = [0, 2, 0]
+
+    labels = create_fully_labeled_gait_sequences([data], [strides], transition, stride, algorithm)
+
+    assert_array_equal(labels[0], expected)
+
+
+def test_combined_training_preserves_fallback_for_impossible_short_paths():
+    """Leave genuinely undecodable short regions at the existing transition fallback label."""
+    transition = region_model([-100.0, 10.0], strict=True)
+    stride = region_model([100.0])
+    data = pd.DataFrame({"x": [10.0, 100.0, 100.0, 10.0]})
+    strides = pd.DataFrame({"start": [1], "end": [3]})
+
+    labels = create_fully_labeled_gait_sequences([data], [strides], transition, stride, "viterbi")
+
+    assert_array_equal(labels[0], [0, 2, 2, 0])
+
+
+def test_combined_training_reports_impossible_paths_in_longer_regions():
+    """Do not hide an unreachable learned topology when region length is sufficient."""
+    transition = region_model([-100.0, 10.0], strict=True, unreachable_end=True)
+    stride = region_model([100.0])
+    data = pd.DataFrame({"x": [10.0, 10.0, 100.0, 100.0]})
+    strides = pd.DataFrame({"start": [2], "end": [4]})
+
+    with pytest.raises(ValueError, match="No valid state path"):
+        create_fully_labeled_gait_sequences([data], [strides], transition, stride, "viterbi")
+
+
+def test_combined_training_does_not_ignore_invalid_observations_in_short_regions():
+    """Observation validation errors propagate instead of being treated as impossible topology."""
+    transition = region_model([-100.0, 10.0])
+    stride = region_model([100.0])
+    data = pd.DataFrame({"x": [np.nan, 100.0, 100.0, 10.0]})
+    strides = pd.DataFrame({"start": [1], "end": [3]})
+
+    with pytest.raises(ValueError, match="finite"):
+        create_fully_labeled_gait_sequences([data], [strides], transition, stride, "viterbi")
+
+
+def test_roth_training_uses_valid_single_sample_transition_state():
+    """Build the combined topology from a valid short gap's actual nonzero state label."""
+    values = [0.0, 0.0, 10.0, 10.0, 100.0, 100.0, 10.0, 100.0, 100.0, 0.0, 0.0, 10.0, 10.0]
+    data = pd.DataFrame(np.zeros((len(values), 6)), columns=BF_COLS)
+    data["gyr_ml"] = values
+    model = RothSegmentationHmm(
+        stride_model=SimpleHmm(1, 1, max_iterations=0, verbose=False),
+        transition_model=SimpleHmm(2, 1, architecture="fully-connected", max_iterations=0, verbose=False),
+        feature_transform=RothHmmFeatureTransformer(
+            sampling_rate_feature_space_hz=100,
+            low_pass_filter=None,
+            standardization=False,
+            axes=["gyr_ml"],
+            features=["raw"],
+        ),
+        max_iterations=0,
+        verbose=False,
+    ).self_optimize([data], [pd.DataFrame({"start": [4, 7], "end": [6, 9]})], sampling_rate_hz=100)
+
+    # The single-sample gap at index 6 belongs to transition state 1.
+    # It therefore creates a stride-state 2 -> transition-state 1 cross-link.
+    assert model.model.transitions[2, 1] > 0
