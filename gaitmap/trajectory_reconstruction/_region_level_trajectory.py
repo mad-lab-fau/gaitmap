@@ -428,6 +428,11 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
                 output[s_id] = (
                     data.loc[region_id].iloc[int(stride["start"]) : int(stride["end"] + 1)].reset_index(drop=True)
                 )
+        if not output:
+            index = pd.MultiIndex.from_arrays(
+                [stride_event_list.index[:0], data.index.get_level_values("sample")[:0]], names=["s_id", "sample"]
+            )
+            return data.iloc[:0].set_axis(index)
         output = pd.concat(output, names=["s_id", "sample"])
         return output
 

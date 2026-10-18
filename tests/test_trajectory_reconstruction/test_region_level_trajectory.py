@@ -7,7 +7,7 @@ from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction._region_level_trajectory import RegionLevelTrajectory
-from gaitmap.utils.consts import GF_POS, SF_COLS
+from gaitmap.utils.consts import GF_ORI, GF_POS, GF_VEL, SF_COLS
 from gaitmap.utils.datatype_helper import (
     is_multi_sensor_position_list,
     is_single_sensor_orientation_list,
@@ -352,3 +352,27 @@ class TestRegionLevelTrajectory:
                         index=pd.Series([f"{sensor[0]}_4", f"{sensor[0]}_5"], name="s_id"),
                     ),
                 )
+
+
+@pytest.mark.parametrize("strides", [[], [(60, 80)], [(40, 60)]], ids=["empty", "outside", "partial"])
+@pytest.mark.parametrize("multi_sensor", [False, True])
+def test_estimate_intersect_with_no_contained_strides(strides, multi_sensor):
+    data = pd.DataFrame(0.0, index=range(100), columns=SF_COLS)
+    data["acc_z"] = 9.81
+    regions = pd.DataFrame({"start": [0], "end": [50]}).rename_axis("roi_id")
+    stride_list = pd.DataFrame(strides, columns=["start", "end"], dtype="int64").rename_axis("s_id")
+    if multi_sensor:
+        data, regions, stride_list = {"foot": data}, {"foot": regions}, {"foot": stride_list}
+    result = RegionLevelTrajectory().estimate_intersect(
+        data, regions_of_interest=regions, stride_event_list=stride_list, sampling_rate_hz=100
+    )
+    for frame, columns, validate in [
+        (result.orientation_, GF_ORI, is_single_sensor_orientation_list),
+        (result.position_, GF_POS, is_single_sensor_position_list),
+        (result.velocity_, GF_VEL, is_single_sensor_velocity_list),
+    ]:
+        if multi_sensor:
+            frame = frame["foot"]
+        assert frame.empty
+        assert frame.columns.tolist() == columns
+        assert validate(frame, "stride")

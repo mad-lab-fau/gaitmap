@@ -49,6 +49,9 @@ project.
 
 ### Fixed
 
+- Region-level trajectory intersection returns empty stride trajectories when no strides are fully
+  contained in a region, including empty stride lists, instead of raising an error.
+
 - ROI stride segmentation supports floating-point region identifiers and sensor identifiers such as `0`
   or an empty string without changing sample boundaries or sensor-specific template selection.
 
