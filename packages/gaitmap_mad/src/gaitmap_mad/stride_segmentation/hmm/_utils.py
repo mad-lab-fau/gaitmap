@@ -182,35 +182,18 @@ def get_model_distributions(model: HiddenMarkovModel) -> list:
 def extract_transitions_starts_stops_from_hidden_state_sequence(
     hidden_state_sequence: list[np.ndarray],
 ) -> tuple[set[tuple[int, int]], np.ndarray, np.ndarray]:
-    """Extract transitions from hidden state sequence.
-
-    This function will return a list of transitions as well as start and stop labels that can be found within the
-    input sequences.
-
-    input = [[1,1,1,1,1,3,3,3,3,2,2,2,2,4,4,4,4,5,5],
-             [0,0,1,1,1,3,3,3,3,2,2,2,6]]
-    output_transitions = [[s1,s3],
-                          [s3,s2],
-                          [s2,s4],
-                          [s4,s5],
-                          [s0,s1],
-                          [s2,s6]]
-
-    output_starts = [1,0]
-    output_stops = [5,6]
-    """
+    """Extract every observed transition, including self-loops, and start/stop labels."""
     assert isinstance(hidden_state_sequence, list), "Hidden state sequence must be list!"
 
-    transitions = []
+    transitions = set()
     starts = []
     ends = []
     for labels in hidden_state_sequence:
         starts.append(labels[0])
         ends.append(labels[-1])
-        for idx in np.where(abs(np.diff(labels)) > 0)[0]:
-            transitions.append((int(labels[idx]), int(labels[idx + 1])))
+        for source, target in zip(labels[:-1], labels[1:]):
+            transitions.add((int(source), int(target)))
 
-    transitions = set(transitions)
     starts = np.unique(starts).astype("int64")
     ends = np.unique(ends).astype("int64")
 
