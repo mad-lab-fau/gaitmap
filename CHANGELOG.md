@@ -12,45 +12,31 @@ project.
 
 ### Scientific Changes
 
-- Combined HMM training now decodes valid short stride and transition regions instead of assigning transition
-  state zero solely because a region has fewer samples than model states. Undecodable short regions retain their
-  fallback labels. The healthy training example has no additional state or stride-boundary changes.
-- HMM prediction keeps the final Viterbi label for unrestricted models. This corrects the interpolation grid when
-  mapping feature labels back to sensor samples. In the healthy example, original boundaries move by at most three
-  samples at 204.8 Hz; pretrained-model boundaries after 300 ms snapping remain exact. MAP decoding is unchanged.
-- Transition training now includes stride-end samples, matching the half-open stride intervals used elsewhere.
-  Retraining the healthy example retains all 58 strides. At its default 100 ms snapping window, two boundaries per
-  foot move by 11–16 samples at 204.8 Hz. Including the corrected interpolation grid, original boundaries move by
-  at most 23 samples and fewer than 0.6% of samples change stride/transition classification. Existing pretrained
-  emission parameters are unaffected.
-- Fixed Gaussian-mixture initialization when a cluster mean has zero-valued coordinates, which can change
-  subsequent component assignments.
-- Gaussian training now handles nearly singular covariance matrices and very small positive sample weights.
-  Positive sample weights contribute to estimation regardless of their absolute magnitude.
-  `SimpleHmm.min_covar` controls the floor in squared feature units, defaulting to `1e-6`. Fitted parameters and
-  individual hidden-state labels can change for degenerate mixtures. Existing saved-model Gaussian scores and
-  frozen emissions remain unchanged.
+- Replaced pomegranate with a custom NumPy/Numba backend for the HMM subset used by gaitmap.
+  This simplifies packaging, removes the need for an HMM installation extra, and enables Python 3.10+ upgrades.
+  We chose this approach over porting to pomegranate's newer PyTorch implementation because our specialized
+  HMM workflow needs only a small part of its API. The implementation is LLM-derived, guided by the existing
+  regression tests and checked with independent algorithmic correctness tests.
+
+  Regression testing found matching inference calculations and comparable high-level segmentation after training.
+  Internal hidden-state probabilities and labels can differ, and included alignment/training fixes can shift some
+  stride boundaries. Training should be more stable for nearly singular covariance matrices and extremely small
+  probabilities and positive weights, replacing workarounds for limitations in the old backend.
+  `SimpleHmm.min_covar` controls covariance regularization. Inference is also faster in many cases.
+
+  Existing gaitmap HMM JSON models remain loadable; newly exported models require the updated backend.
+  Custom models and code accessing `.model` should be checked against the new numeric Gaussian/GMM API.
+  Please revalidate your results and report any unexpected changes in outcomes.
+  This migration prioritizes minimal gaitmap API changes so we can retire Python 3.9; future HMM improvements
+  may introduce further breaking API changes.
 
 ### Added
-
-- Added a numeric HMM interface with `GaussianMixture` emissions, emitting-state transition matrices, and separate
-  start/termination probabilities. Fitting consistently returns a new model and its history. Existing gaitmap HMM
-  JSON files remain loadable; new exports require the updated HMM implementation.
-- Added HMM inference and training with Gaussian mixtures, Baum-Welch, Viterbi, and labeled
-  re-estimation. HMMs now work on Python 3.10+ without pomegranate, including existing gaitmap HMM JSON files.
-- HMMs use a local `.model` object with training, prediction, state and transition-matrix inspection. Arbitrary
-  pomegranate graph manipulation is no longer supported. The `hmm` installation extra no longer adds dependencies.
 
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
 
 ### Fixed
 
-- HMM training preserves the observation axis for a single multivariate sample. Prediction supports valid paths
-  with fewer observations than states, and inverse state transformation supports full-length label sequences.
-- HMM iteration limits now count actual parameter updates, including a zero-update limit. Training histories
-  include the initial and final likelihood and describe the returned model. Removed the inherited warning that
-  treated every likelihood decrease as evidence of an unusable model; Viterbi updates can decrease this likelihood.
 - Added split dependency resolution so Python 3.9/3.10 use pandas 2 and NumPy `<2.1` while Python 3.11+
   supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
 
