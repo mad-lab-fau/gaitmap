@@ -143,9 +143,6 @@ class SimpleHmm(_BaseSerializable):
     Train a standalone HMM from feature matrices, or use this class as the stride/transition model in
     :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`.
     ``predict_hidden_state_sequence`` returns predicted labels directly, without storing result attributes.
-              The reason for that is, that we regularly need to call this method with different algorithms on the same
-              model.
-              Hence, it felt more natural to do it that way.
 
     Parameters
     ----------

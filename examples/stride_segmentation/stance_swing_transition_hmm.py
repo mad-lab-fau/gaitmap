@@ -4,10 +4,27 @@ r"""
 Stance, swing, and transition states
 ====================================
 
+This example demonstrates how to train HMMs with more than two states.
+
+.. warning::
+
+   We do not recommend using this HMM to detect stance/swing transitions without
+   further validation.
+
+With suitable annotations and features, you can also train models for movement
+classes such as walking, stair walking, and rest, or walking, running, and rest.
+For a published example of HMMs for walking, running, and rest, see Martindale
+et al. [1]_. That work uses a hierarchical model; this tutorial trains a simpler
+three-state model to demonstrate the training workflow with the available data.
+
 Train a three-state HMM on the healthy walking recording. As in the Roth setup,
 everything outside the annotated strides belongs to the transition/null class.
 Within each stride, initial contact separates swing from stance. These labels
 are derived from the supplied annotations; no extra rest annotations are needed.
+
+.. [1] Martindale, C. F., Hoenig, F., Strohrmann, C., & Eskofier, B. M. (2017).
+   Smart Annotation of Cyclic Data Using Hierarchical Hidden Markov Models.
+   Sensors, 17(10), 2328. https://doi.org/10.3390/s17102328
 """
 
 import numpy as np
@@ -26,7 +43,8 @@ from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 
 # %%
 # Derive the three reference classes
-# ---------------------------------
+# ------------------------------------
+#
 # The left-foot stride borders are aligned near toe-off. Label stride start to
 # initial contact as swing, and initial contact to stride end as stance. The
 # motion-capture event list uses different stride boundaries, so match contacts
@@ -47,7 +65,8 @@ for start, end in stride_list[["start", "end"]].to_numpy():
 
 # %%
 # Hold out the second walking bout
-# -------------------------------
+# ------------------------------------
+#
 # Split in the middle of the largest gap between annotated strides. This keeps
 # complete strides in either training or testing. Use only the left foot, so
 # synchronized observations from the other foot cannot enter the training set.
