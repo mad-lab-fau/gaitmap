@@ -10,12 +10,18 @@ project.
 
 ## Unreleased
 
+### Scientific Changes
+
+- Local HMM training preserves the reference example's final stride boundaries and stride/transition classification.
+  Fitted mixture parameters and individual hidden-state labels can differ when nearly singular covariance matrices
+  require repair at different iterations. Existing saved-model inference remains unchanged.
+
 ### Added
 
-- Added local Numba HMM inference so pretrained Roth models and existing gaitmap HMM JSON files can be used on
-  Python 3.10+ without pomegranate. HMM training still requires the legacy pomegranate backend on Python 3.9.
-- HMMs loaded from JSON now expose a local inference model through `.model`, with state and transition-matrix
-  inspection. Low-level pomegranate graph manipulation and training are not available on this inference model.
+- Added local NumPy/Numba HMM inference and training, including Gaussian mixtures, Baum-Welch, Viterbi, and labeled
+  re-estimation. HMMs now work on Python 3.10+ without pomegranate, including existing gaitmap HMM JSON files.
+- HMMs use a local `.model` object with training, prediction, state and transition-matrix inspection. Arbitrary
+  pomegranate graph manipulation is no longer supported. The `hmm` installation extra no longer adds dependencies.
 
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.

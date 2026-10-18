@@ -1,9 +1,8 @@
 """Simple model base classes and helper."""
 
-import copy
 import warnings
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -13,22 +12,15 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
-    _clone_model,
-    _HackyClonableHMMFix,
-    _require_pomegranate,
     check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
-    fix_model_names,
     gmms_from_samples,
     predict,
 )
-
-if TYPE_CHECKING:
-    from pomegranate import HiddenMarkovModel as pgHMM
-    from pomegranate.hmm import History
 
 
 def initialize_hmm(
@@ -40,7 +32,7 @@ def initialize_hmm(
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
     name: str = "untrained",
     verbose: bool = False,
-) -> "pgHMM":
+) -> HiddenMarkovModel:
     """Model Initialization.
 
     Parameters
@@ -103,8 +95,6 @@ def initialize_hmm(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
 
-    pg = _require_pomegranate()
-
     # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
@@ -133,28 +123,22 @@ def initialize_hmm(
     else:  # architecture == "fully-connected"
         transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
 
-    model = pg.HiddenMarkovModel.from_matrix(
+    model = HiddenMarkovModel.from_matrix(
         transition_probabilities=transition_matrix,
-        distributions=copy.deepcopy(distributions),
+        distributions=distributions,
         starts=start_probs,
         ends=end_probs,
-        verbose=verbose,
     )
 
-    # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order like
-    # s0, s1, s10, s2 usw..)
-    model = fix_model_names(model)
-    # make sure that transition-matrix is normalized
-    model.bake()
     model.name = name
 
     return model
 
 
-class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
+class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
-    Saved models use a local Numba backend for inference. Training still uses the legacy pomegranate backend.
+    Training and inference use a local NumPy/Numba backend with Gaussian or Gaussian-mixture emissions.
 
     .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
               :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.
@@ -177,7 +161,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         See Notes for more information.
     algo_train
         The algorithm to use for training.
-        Can be either "viterbi" or "baum-welch".
+        Can be "viterbi", "baum-welch", or "labeled".
     stop_threshold
         The threshold for the training algorithm to stop.
     max_iterations
@@ -190,8 +174,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         The number of jobs to use for training.
         If set to -1, all available cores will be used.
     model
-        The HMM model, using the local inference backend when loaded from JSON or the legacy pomegranate backend
-        after training.
+        The local Gaussian HMM model, either loaded from JSON or fitted during optimization.
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
@@ -255,7 +238,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     n_states: int
     n_gmm_components: int
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"]
-    algo_train: Literal["viterbi", "baum-welch"]
+    algo_train: Literal["viterbi", "baum-welch", "labeled"]
     stop_threshold: float
     max_iterations: int
     verbose: bool
@@ -352,7 +335,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
-    ) -> tuple[Self, "History"]:
+    ) -> tuple[Self, History]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -390,7 +373,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
                     "value of states! "
                     f"For sequence {i}: n_states = {self.n_states} > {len(data)} = len(data)"
                 )
-            # We allow None labels for some sequences, as this is also supported by pomegranate.
+            # Unlabeled sequences participate in training after initialization from the labeled sequences.
             if labels is not None:
                 if len(data) != len(labels):
                     raise ValueError(
@@ -405,9 +388,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
                     )
 
         self.data_columns = tuple(data_sequence[0].columns)
-        # you have to make always sure that the input data is in a correct format when using pomegranate, if not this
-        # can lead to extremely strange behaviour! Unfortunately pomegranate will not tell if data has a bad format!
-        # We also ensure that in all provided dataframes the same columns and column order exists
+        # Keep feature columns in the same order for every training sequence.
         data_sequence_train = [
             np.ascontiguousarray(dataset[list(self.data_columns)].to_numpy().copy().squeeze())
             for dataset in data_sequence
@@ -424,7 +405,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             warnings.warn("Model already exists. Overwriting existing model.")
 
         # initialize model by naive equidistant labels
-        model_untrained = initialize_hmm(
+        model_trained = initialize_hmm(
             data_sequence_train,
             labels_sequence_train,
             n_states=self.n_states,
@@ -433,21 +414,16 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
             name=self.name + "-untrained",
         )
 
-        # make copy from untrained model, as pomegranate will just update parameters in the given model and not
-        # returning a copy
-        model_trained = _clone_model(model_untrained, assert_correct=False)
-
         history: History
         _, history = model_trained.fit(
-            sequences=np.array(data_sequence_train, dtype=object),
-            labels=np.array(labels_sequence_train, dtype=object),
+            sequences=data_sequence_train,
+            labels=labels_sequence_train,
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
             return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
-            multiple_check_input=False,
         )
         check_history_for_training_failure(history)
         model_trained.name = self.name + "_trained"

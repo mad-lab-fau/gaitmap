@@ -1,8 +1,7 @@
 """Segmentation _model base classes and helper."""
 
-import copy
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -16,28 +15,20 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     RothHmmFeatureTransformer,
 )
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
-    _clone_model,
     _DataToShortError,
-    _HackyClonableHMMFix,
-    _require_pomegranate,
-    add_transition,
     check_history_for_training_failure,
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
-    fix_model_names,
     get_model_distributions,
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
-    labels_to_strings,
     predict,
 )
-
-if TYPE_CHECKING:
-    from pomegranate.hmm import History
 
 
 def create_fully_labeled_gait_sequences(
@@ -184,7 +175,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         raise NotImplementedError
 
 
-class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHMMPrint):
+class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
     """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
     This model differentiates between strides and transitions.
@@ -237,10 +228,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         The number of parallel jobs to use during optimization.
         If set to -1, all available cores will be used.
     name
-        The name of the final pomegranate model.
+        The name of the final HMM model.
     model
-        The HMM model, using the local inference backend when loaded from JSON or the legacy pomegranate backend
-        after training.
+        The local Gaussian HMM model, either loaded from JSON or fitted during optimization.
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
@@ -293,7 +283,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     transition_model__data_columns: OptiPara
     feature_transform: BaseHmmFeatureTransformer
     algo_predict: Literal["viterbi", "baum-welch"]
-    algo_train: Literal["viterbi", "baum-welch"]
+    algo_train: Literal["viterbi", "baum-welch", "labeled"]
     stop_threshold: float
     max_iterations: int
     initialization: Literal["labels", "fully-connected"]
@@ -333,7 +323,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         feature_transform: RothHmmFeatureTransformer = cf(RothHmmFeatureTransformer()),
         *,
         algo_predict: Literal["viterbi", "map"] = "viterbi",
-        algo_train: Literal["viterbi", "baum-welch"] = "baum-welch",
+        algo_train: Literal["viterbi", "baum-welch", "labeled"] = "baum-welch",
         stop_threshold: float = 1e-9,
         max_iterations: int = 1,
         initialization: Literal["labels", "fully-connected"] = "labels",
@@ -480,7 +470,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_rate_hz: float,
-    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], "History"]]:
+    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], History]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -507,8 +497,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         """
         if self.initialization not in ["labels", "fully-connected"]:
             raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
-
-        pg = _require_pomegranate()
 
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(
@@ -539,7 +527,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
 
         # some initialization stuff...
         n_states_transition = transition_model_trained.n_states
-        n_states_stride = stride_model_trained.n_states
 
         # extract fitted distributions from both separate trained models
         distributions = get_model_distributions(transition_model_trained.model) + get_model_distributions(
@@ -555,95 +542,43 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
             self.algo_predict,
         )
 
-        # Now that we have a fully labeled dataset, we use our already fitted distributions as input for the new model
         if self.initialization == "fully-connected":
-            trans_mat, start_probs, end_probs = create_transition_matrix_fully_connected(self.n_states)
-
-            new_model = pg.HiddenMarkovModel.from_matrix(
-                transition_probabilities=copy.deepcopy(trans_mat),
-                distributions=copy.deepcopy(distributions),
-                starts=start_probs,
-                ends=None,
-                state_names=None,
-                verbose=self.verbose,
-            )
-
-        elif self.initialization == "labels":
-            # combine already trained transition matrices -> zero pad "stride" transition matrix to the left
+            trans_mat, start_probs, _ = create_transition_matrix_fully_connected(self.n_states)
+        else:
             trans_mat_stride = stride_model_trained.model.dense_transition_matrix()[:-2, :-2]
-            transmat_stride = np.pad(
-                trans_mat_stride, [(n_states_transition, 0), (n_states_transition, 0)], mode="constant"
-            )
-
-            # zero-pad "transition" transition matrix to the right
             trans_mat_transition = transition_model_trained.model.dense_transition_matrix()[:-2, :-2]
-            transmat_trans = np.pad(trans_mat_transition, [(0, n_states_stride), (0, n_states_stride)], mode="constant")
-
-            # after correct zero padding we can combine both transition matrices just by "adding" them together!
-            trans_mat = transmat_trans + transmat_stride
-
-            # find missing transitions from labels
-            transitions, starts, ends = extract_transitions_starts_stops_from_hidden_state_sequence(
-                labels_train_sequence
-            )
-
+            trans_mat = np.zeros((self.n_states, self.n_states))
+            trans_mat[:n_states_transition, :n_states_transition] = trans_mat_transition
+            trans_mat[n_states_transition:, n_states_transition:] = trans_mat_stride
+            # Removing explicit submodel termination renormalizes each emitting row before adding cross-links.
+            trans_mat /= trans_mat.sum(axis=1, keepdims=True)
+            transitions, starts, _ = extract_transitions_starts_stops_from_hidden_state_sequence(labels_train_sequence)
             start_probs = np.zeros(self.n_states)
             start_probs[starts] = 1.0
-            end_probs = np.zeros(self.n_states)
-            end_probs[ends] = 1.0
+            for source, target in sorted(transitions):
+                if trans_mat[source, target] == 0:
+                    trans_mat[source, target] = 0.1
 
-            new_model = pg.HiddenMarkovModel.from_matrix(
-                transition_probabilities=copy.deepcopy(trans_mat),
-                distributions=copy.deepcopy(distributions),
-                starts=start_probs,
-                ends=None,
-                state_names=None,
-                verbose=self.verbose,
-            )
-
-            existing_transitions = {(start.name, end.name) for start, end in new_model.graph.edges()}
-            missing_transitions = transitions - existing_transitions
-            # Add missing transitions which will "connect" transition-hmm and stride-hmm
-            # We initialize with a very small probability, so that the model can learn the correct values in the next
-            # step.
-            # Note: We sort the transitions to enforce consistent order and reproducibility.
-            for trans in sorted(missing_transitions):
-                add_transition(new_model, trans, 0.1)
-        else:
-            # Can not be reached, as we perform the check beforehand, but just to be sure and make the linter happy
-            raise RuntimeError()
-        # pomegranate seems to have a strange sorting bug where state names >= 10 (e.g. s10 get sorted in a bad order
-        # like s0, s1, s10, s2 usw..)
-        new_model = fix_model_names(new_model)
-        new_model.bake()
-
-        # make sure we do not change our distributions anymore!
+        new_model = HiddenMarkovModel.from_matrix(trans_mat, distributions, start_probs)
         new_model.freeze_distributions()
-
-        # We clone the model here, as this changes the order of edges to be sorted somehow...
-        new_model = _clone_model(new_model, assert_correct=False)
-
-        # convert labels to state-names
-        labels_train_sequence_str = labels_to_strings(labels_train_sequence)
 
         self.data_columns = tuple(data_sequence_feature_space[0].columns)
 
-        # make sure data is in an pomegranate compatible format!
+        # Keep feature columns in the same order for every training sequence.
         data_train_sequence = [
             np.ascontiguousarray(feature_data[list(self.data_columns)].to_numpy().copy())
             for feature_data in data_sequence_feature_space
         ]
 
         _, history = new_model.fit(
-            sequences=np.array(data_train_sequence, dtype=object),
-            labels=np.array(labels_train_sequence_str, dtype=object).copy(),
+            sequences=data_train_sequence,
+            labels=labels_train_sequence,
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
             return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
-            multiple_check_input=False,
         )
         check_history_for_training_failure(history)
 
