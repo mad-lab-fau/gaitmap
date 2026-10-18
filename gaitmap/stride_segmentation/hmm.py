@@ -7,6 +7,7 @@ Train models with Gaussian or Gaussian-mixture emissions, or load an existing ga
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
+    "CompositeHmm",
     "GaussianMixture",
     "HiddenMarkovModel",
     "TrainingHistory",
@@ -24,6 +25,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
     from gaitmap_mad.stride_segmentation.hmm import (
         BaseHmmFeatureTransformer,
         BaseSegmentationHmm,
+        CompositeHmm,
         GaussianMixture,
         HiddenMarkovModel,
         HmmStrideSegmentation,
@@ -38,6 +40,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
 __all__ = [
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "CompositeHmm",
     "GaussianMixture",
     "HiddenMarkovModel",
     "HmmStrideSegmentation",

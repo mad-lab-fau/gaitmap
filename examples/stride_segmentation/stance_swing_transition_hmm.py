@@ -48,7 +48,7 @@ from gaitmap.example_data import (
     get_healthy_example_stride_borders,
     get_healthy_example_stride_events,
 )
-from gaitmap.stride_segmentation.hmm import HiddenMarkovModel, SimpleHmm
+from gaitmap.stride_segmentation.hmm import CompositeHmm, SimpleHmm
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf
 
 # %%
@@ -127,15 +127,18 @@ test_features = (test_features - feature_mean) / feature_scale
 
 train_labels = reference_labels[:split_sample]
 boundaries = np.r_[0, np.flatnonzero(np.diff(train_labels)) + 1, len(train_labels)]
-training_regions = list(zip(boundaries[:-1], boundaries[1:]))
+training_regions = pd.DataFrame(
+    {"start": boundaries[:-1], "end": boundaries[1:], "label": phase_names[train_labels[boundaries[:-1]]]}
+)
 phase_models = {}
-for phase, (name, n_states) in enumerate(zip(phase_names, [5, 5, 3])):
-    sequences = [train_features.iloc[start:end] for start, end in training_regions if train_labels[start] == phase]
+for name, n_states in zip(phase_names, [5, 5, 3]):
+    regions = training_regions.loc[training_regions.label == name, ["start", "end"]]
+    sequences = [train_features.iloc[start:end] for start, end in regions.itertuples(index=False, name=None)]
     initial_labels = [np.arange(len(sequence)) * n_states // len(sequence) for sequence in sequences]
     phase_models[name] = SimpleHmm(
         n_states=n_states,
         n_gmm_components=3,
-        architecture="fully-connected" if phase == 2 else "left-right-strict",
+        architecture="fully-connected" if name == "transition/null" else "left-right-strict",
         algo_train="baum-welch",
         max_iterations=10,
         min_covar=1e-4,
@@ -146,55 +149,19 @@ for phase, (name, n_states) in enumerate(zip(phase_names, [5, 5, 3])):
 # Compose the submodels
 # ------------------------------------
 #
-# Place their learned transitions in separate matrix blocks, then connect the
-# submodels. Walking alternates swing → stance → swing. Transition/null can enter
-# swing at bout initiation, and stance can return to transition/null at the end.
-# Connections to stance and swing enter their first state and leave their last
-# state, so complete phases must traverse all their internal states.
-
-state_counts = np.array([submodel.n_states for submodel in phase_models.values()])
-offsets = np.r_[0, np.cumsum(state_counts)]
-state_slices = [slice(start, end) for start, end in zip(offsets[:-1], offsets[1:])]
-transitions = np.zeros((offsets[-1], offsets[-1]))
-emissions = []
-for submodel, block in zip(phase_models.values(), state_slices):
-    transitions[block, block] = submodel.model.transitions
-    emissions.extend(submodel.model.emissions)
-
-stance, swing, background = state_slices
-transitions[swing.stop - 1, stance.start] = 0.1
-transitions[stance.stop - 1, swing.start] = 0.1
-transitions[stance.stop - 1, background] = 0.1
-transitions[background, swing.start] = 0.1
-transitions /= transitions.sum(axis=1, keepdims=True)
-
-# %%
-# Learn connection probabilities and decode
-# -----------------------------------------
-#
-# Decode each annotated training region with its fitted submodel to recover the
-# internal-state labels. Labeled fitting on the complete training recording then
-# estimates transition frequencies while keeping the learned emissions fixed.
+# Pass the trained submodels and labeled intervals to CompositeHmm. Each row is
+# one instance of a submodel; separate rows can also describe repeated instances
+# of the same movement, such as consecutive strides. Both connections and their
+# probabilities are derived from the training data, with emissions held fixed.
 # The held-out labels are used only for evaluation.
 
-internal_labels = np.empty(len(train_labels), dtype=int)
-for start, end in training_regions:
-    phase = train_labels[start]
-    submodel = phase_models[phase_names[phase]]
-    internal_labels[start:end] = submodel.predict_hidden_state_sequence(train_features.iloc[start:end]) + offsets[phase]
-starts = np.zeros(offsets[-1])
-starts[internal_labels[0]] = 1.0
-model, history = HiddenMarkovModel(emissions, transitions, starts).fit(
-    [train_features.to_numpy()],
-    labels=[internal_labels],
-    algorithm="labeled",
-    max_iterations=1,
-    update_emissions=False,
+combined, history = CompositeHmm({name: submodel.model for name, submodel in phase_models.items()}).fit_transitions(
+    sequences=[train_features], labels=[training_regions]
 )
 
-predicted_states = model.predict(test_features.to_numpy(), algorithm="viterbi")
-state_to_phase = np.repeat(np.arange(3), state_counts)
-predictions = state_to_phase[predicted_states]
+predicted_states = combined.predict_hidden_state_sequence(test_features)
+predicted_labels = combined.predict_labels(test_features)
+predictions = pd.Categorical(predicted_labels, categories=phase_names).codes
 held_out_labels = reference_labels[split_sample:]
 
 # %%
@@ -230,7 +197,11 @@ for axis, labels, title in zip(axes[1:3], [held_out_labels, predictions], ["Refe
     axis.imshow(labels[None, :], aspect="auto", extent=extent, cmap=ListedColormap(colors), vmin=0, vmax=2)
     axis.set(ylabel=title, yticks=[])
 axes[-1].step(test_data.index, predicted_states, where="post", color="black", linewidth=0.8)
-axes[-1].set(ylabel="Internal state", yticks=offsets[:-1], ylim=(-0.5, offsets[-1] - 0.5))
+axes[-1].set(
+    ylabel="Internal state",
+    yticks=[states[0] for states in combined.state_groups.values()],
+    ylim=(-0.5, combined.model.n_states - 0.5),
+)
 axes[-1].set_xlabel("Time [s]")
 axes[0].legend(handles=[Patch(color=color, label=name) for color, name in zip(colors, phase_names)], loc="upper right")
 fig.tight_layout()

@@ -10,63 +10,21 @@ from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
+from gaitmap_mad.stride_segmentation.hmm._composite_model import _initialize_composite
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
 )
-from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel, _NoValidPathError
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
-    extract_transitions_starts_stops_from_hidden_state_sequence,
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     predict,
 )
-
-
-def create_fully_labeled_gait_sequences(
-    data_train_sequence, stride_list_sequence, transition_model, stride_model, algo_predict
-):
-    """Create fully labeled gait sequence.
-
-    To find the "actual" hidden-state labels for "labeled-training" with the given training data set, we will again
-    split everything into strides and transitions based on our initial stride borders and then predict the labels with
-    the respective already learned models.
-
-    To rephrase it again: We want to create a fully labeled dataset with already optimal hidden-state labels, but as
-    these lables are hidden, we need to predict them with our already trained models...
-    """
-    labels_train_sequence = []
-
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
-        labels_train = np.zeros(len(data), dtype=np.int64)
-
-        regions = (
-            (transition_model, convert_stride_list_to_transition_list(stride_list, len(data)), 0),
-            (stride_model, stride_list, transition_model.n_states),
-        )
-        for model, intervals, state_offset in regions:
-            for start, end in intervals[["start", "end"]].to_numpy():
-                region = data[start:end]
-                if len(region) == 0:
-                    continue
-                try:
-                    predicted = model.predict_hidden_state_sequence(region, algorithm=algo_predict)
-                except _NoValidPathError:
-                    # Preserve the transition fallback only for genuinely
-                    # undecodable short regions, not all partial state paths.
-                    if len(region) >= model.n_states:
-                        raise
-                    continue
-                labels_train[start:end] = predicted + state_offset
-
-        # append cleaned sequences to train_sequence
-        labels_train_sequence.append(labels_train)
-
-    return labels_train_sequence
 
 
 class BaseSegmentationHmm(_BaseSerializable):
@@ -510,54 +468,31 @@ class RothSegmentationHmm(BaseSegmentationHmm):
             transition_sequence, init_trans_state_labels
         )
 
-        # For model combination actually only the transition probabilities will be updated, while keeping the already
-        # learned distributions for all states. This can be achieved by "labeled" training, where basically just the
-        # number of transitions will be counted.
-
-        # some initialization stuff...
-        n_states_transition = transition_model_trained.n_states
-
-        # extract fitted distributions from both separate trained models
-        distributions = transition_model_trained.model.emissions + stride_model_trained.model.emissions
-
-        # predict hidden state labels for complete walking bouts
-        labels_train_sequence = create_fully_labeled_gait_sequences(
-            data_sequence_feature_space,
-            stride_list_feature_space,
-            transition_model_trained,
-            stride_model_trained,
-            self.algo_predict,
-        )
-
-        if self.initialization == "fully-connected":
-            trans_mat, start_probs, _ = create_transition_matrix_fully_connected(self.n_states)
-        else:
-            trans_mat_stride = stride_model_trained.model.transitions
-            trans_mat_transition = transition_model_trained.model.transitions
-            trans_mat = np.zeros((self.n_states, self.n_states))
-            trans_mat[:n_states_transition, :n_states_transition] = trans_mat_transition
-            trans_mat[n_states_transition:, n_states_transition:] = trans_mat_stride
-            # Removing explicit submodel termination renormalizes each emitting row before adding cross-links.
-            row_totals = trans_mat.sum(axis=1, keepdims=True)
-            np.divide(trans_mat, row_totals, out=trans_mat, where=row_totals > 0)
-            transitions, starts, _ = extract_transitions_starts_stops_from_hidden_state_sequence(labels_train_sequence)
-            start_probs = np.zeros(self.n_states)
-            start_probs[starts] = 1.0
-            for source, target in sorted(transitions):
-                if trans_mat[source, target] == 0:
-                    trans_mat[source, target] = 0.1
-
-        row_totals = trans_mat.sum(axis=1, keepdims=True)
-        np.divide(trans_mat, row_totals, out=trans_mat, where=row_totals > 0)
-        new_model = HiddenMarkovModel(distributions, trans_mat, start_probs / start_probs.sum())
-
         self.data_columns = tuple(data_sequence_feature_space[0].columns)
-
-        # Keep feature columns in the same order for every training sequence.
         data_train_sequence = [
             np.ascontiguousarray(feature_data[list(self.data_columns)].to_numpy().copy())
             for feature_data in data_sequence_feature_space
         ]
+        regions = [
+            pd.concat(
+                [
+                    convert_stride_list_to_transition_list(strides, len(data)).assign(label="transition"),
+                    strides[["start", "end"]].assign(label="stride"),
+                ],
+                ignore_index=True,
+            )
+            for data, strides in zip(data_train_sequence, stride_list_feature_space)
+        ]
+        new_model, labels_train_sequence = _initialize_composite(
+            {"transition": transition_model_trained.model, "stride": stride_model_trained.model},
+            data_train_sequence,
+            regions,
+            algorithm=self.algo_predict,
+            fallback_state=0,
+        )
+        if self.initialization == "fully-connected":
+            trans_mat, start_probs, _ = create_transition_matrix_fully_connected(self.n_states)
+            new_model = HiddenMarkovModel(new_model.emissions, trans_mat, start_probs / start_probs.sum())
 
         new_model, history = new_model.fit(
             sequences=data_train_sequence,

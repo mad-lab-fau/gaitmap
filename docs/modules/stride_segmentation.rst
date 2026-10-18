@@ -92,6 +92,25 @@ The :ref:`example_stance_swing_transition_hmm` example trains separate stance,
 swing, and transition/null HMMs from the supplied annotations, then composes them
 into one segmentation model. Each submodel has multiple internal states.
 
+Use ``CompositeHmm`` to combine trained numeric models by name. Supply one
+annotation table per feature sequence, with ``start``, exclusive ``end``, and
+``label`` columns. Labels identify submodels; non-overlapping intervals must
+cover the complete sequence. Keep consecutive instances of the same submodel
+in separate rows, for example two adjacent strides.
+
+.. code-block:: python
+
+    combined, history = CompositeHmm({"rest": rest_model, "stride": stride_model}).fit_transitions(
+        sequences=feature_sequences, labels=annotation_tables
+    )
+    movement_labels = combined.predict_labels(test_features)
+    internal_states = combined.predict_hidden_state_sequence(test_features)
+
+Submodels must use the same feature columns in the same order. Composition
+infers internal states within each annotated instance, then estimates transition
+and initial-state probabilities from their counts. Emissions remain fixed.
+The composition interface supports connections derived from data only.
+
 .. autosummary::
    :toctree: generated/stride_segmentation/hmm
    :template: class.rst
@@ -100,6 +119,7 @@ into one segmentation model. Each submodel has multiple internal states.
     RothSegmentationHmm
     BaseSegmentationHmm
     SimpleHmm
+    CompositeHmm
     RothHmmFeatureTransformer
     PreTrainedRothSegmentationModel
     BaseHmmFeatureTransformer
