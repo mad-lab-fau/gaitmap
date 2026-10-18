@@ -222,3 +222,14 @@ def test_pickled_emissions_restore_read_only_native_parameters():
     assert serialize_emission(restored) == serialize_emission(emissions)
     for array in [restored.means, restored.covariances, restored.weights, restored.component_frozen]:
         assert not array.flags.writeable
+
+
+def test_zero_centroid_coordinates_are_updated_during_mixture_initialization():
+    """Use the true centroid when assigned observations sum to zero."""
+    observations = np.array([[1.0], [2.0], [1.25], [-2.25]])
+
+    emissions = fit_emissions(observations, n_components=2)
+
+    assert_allclose(emissions.means[:, 0], [-2.25, 17 / 12], rtol=1e-10, atol=1e-12)
+    assert_allclose(emissions.weights, [0.25, 0.75], rtol=1e-10, atol=1e-12)
+    assert_allclose(emissions.covariances[:, 0, 0], [1e-6, 13 / 72], rtol=1e-10, atol=1e-12)

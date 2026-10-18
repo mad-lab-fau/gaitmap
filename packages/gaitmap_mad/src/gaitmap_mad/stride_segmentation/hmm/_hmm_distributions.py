@@ -230,10 +230,7 @@ def _first_k_labels(samples, n_components):
     for component in range(n_components):
         assigned = samples[labels == component]
         if len(assigned):
-            sums = assigned.sum(axis=0)
-            # Legacy Kmeans preserves coordinates whose accumulated sum is zero.
-            nonzero = sums != 0
-            centroids[component, nonzero] = sums[nonzero] / len(assigned)
+            centroids[component] = assigned.mean(axis=0)
     return _nearest_centroids(samples, centroids)
 
 

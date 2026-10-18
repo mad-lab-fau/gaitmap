@@ -12,6 +12,8 @@ project.
 
 ### Scientific Changes
 
+- Gaussian-mixture initialization now updates centroid coordinates whose assigned observations sum to zero.
+  The old Kmeans implementation left these coordinates at their previous values, changing subsequent assignments.
 - Local HMM training preserves the reference example's final stride boundaries and stride/transition classification.
   Gaussian training uses centered weighted covariance and floors covariance eigenvalues on every estimate, replacing
   pomegranate's cancellation-prone raw moments, absolute small-weight cutoff, and repair only after Cholesky failure.
