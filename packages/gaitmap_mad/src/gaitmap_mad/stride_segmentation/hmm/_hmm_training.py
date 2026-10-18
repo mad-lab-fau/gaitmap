@@ -85,6 +85,8 @@ def _expected_transitions(forward, posterior, scores, transitions, has_end):
                 - forward[observation + 1, following]
             )
             for state in range(n_states):
+                if transitions[state, following] == -np.inf:
+                    continue
                 counts[state, following] += np.exp(
                     forward[observation, state] + transitions[state, following] + remainder
                 )
