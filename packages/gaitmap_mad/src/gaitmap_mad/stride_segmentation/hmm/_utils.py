@@ -11,7 +11,6 @@ import pandas as pd
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import fit_emissions
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
-from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 
 
 def create_transition_matrix_fully_connected(n_states: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -99,20 +98,6 @@ def initialize_emissions(
         for cluster in clustered_data
     ]
     return distributions
-
-
-def check_history_for_training_failure(history: History) -> None:
-    """Check if training history contains any NaNs."""
-    if not np.all(np.isfinite(history.improvements)) or np.any(np.array(history.improvements) < 0):
-        warnings.warn(
-            "During training the improvement per epoch became NaN/infinite or negative! "
-            "Run `self_optimize_with_info` and inspect the history element for more information. "
-            "With a high likelihood, the final model is not usable and will result in errors during prediction. "
-            "This usually happens when there is not enough data for a large number of distributions and "
-            "states. "
-            "To avoid this issue, reduce the number of distributions per state or the number of states. "
-            "Or ideally, provide more data."
-        )
 
 
 def extract_transitions_starts_stops_from_hidden_state_sequence(

@@ -12,9 +12,8 @@ from typing_extensions import Self
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
-from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
     initialize_emissions,
@@ -262,7 +261,7 @@ class SimpleHmm(_BaseSerializable):
         architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"] = "left-right-strict",
         algo_train: Literal["viterbi", "baum-welch", "labeled"] = "viterbi",
         stop_threshold: float = 1e-9,
-        max_iterations: int = 1e8,
+        max_iterations: int = 100_000_000,
         min_covar: float = 1e-6,
         verbose: bool = True,
         n_jobs: int = 1,
@@ -344,7 +343,7 @@ class SimpleHmm(_BaseSerializable):
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
-    ) -> tuple[Self, History]:
+    ) -> tuple[Self, TrainingHistory]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -424,7 +423,7 @@ class SimpleHmm(_BaseSerializable):
             name=self.name + "-untrained",
         )
 
-        history: History
+        history: TrainingHistory
         model_trained, history = model_trained.fit(
             sequences=data_sequence_train,
             labels=labels_sequence_train,
@@ -435,7 +434,6 @@ class SimpleHmm(_BaseSerializable):
             n_jobs=self.n_jobs,
             min_covar=self.min_covar,
         )
-        check_history_for_training_failure(history)
         model_trained.name = self.name + "_trained"
 
         self.model = model_trained

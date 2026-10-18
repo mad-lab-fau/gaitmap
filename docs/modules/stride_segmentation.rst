@@ -68,6 +68,19 @@ them read-only. Fitting returns a new model and its history, leaving the input
 model unchanged. Pass ``update_emissions=False`` to fit transitions while keeping
 emission parameters fixed.
 
+``max_iterations`` counts parameter updates. Zero returns an unchanged model.
+The returned ``TrainingHistory`` contains the initial log likelihood and the
+likelihood after every update in ``log_likelihoods``. Its final entry describes
+the returned model. ``n_iterations`` counts completed updates; ``improvements``
+contains their likelihood differences. ``converged`` is true when a nonnegative
+improvement meets ``stop_threshold``. A likelihood decrease stops training with
+``converged=False`` and remains visible in the history. A decrease can occur with
+Viterbi training and does not imply invalid model parameters.
+
+The old pomegranate iteration limit could perform one extra update and omit that
+update from its history. To reproduce the amount of work in an old run that hit
+its iteration limit, increase that limit by one.
+
 New model exports use the versioned ``gaitmap-hmm`` JSON format. The loader also
 accepts existing gaitmap files containing pomegranate Gaussian models. Legacy
 silent states and edge dictionaries are converted by the loader and do not enter
@@ -86,3 +99,4 @@ the inference or training implementation.
     BaseHmmFeatureTransformer
     HiddenMarkovModel
     GaussianMixture
+    TrainingHistory

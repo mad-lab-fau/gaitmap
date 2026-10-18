@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from time import time
+from time import perf_counter
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -14,33 +14,22 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_inference import _forward, _poster
 
 
 @dataclass
-class History:
-    """Likelihood and timing measurements for completed training epochs."""
+class TrainingHistory:
+    """Scores of the initial model and every completed parameter update."""
 
-    improvements: list[float] = field(default_factory=list)
-    total_improvement: list[float] = field(default_factory=list)
-    log_probabilities: list[float] = field(default_factory=list)
-    epochs: list[int] = field(default_factory=list)
-    epoch_start_times: list[float] = field(default_factory=list)
-    epoch_end_times: list[float] = field(default_factory=list)
-    epoch_durations: list[float] = field(default_factory=list)
-    learning_rates: list[None] = field(default_factory=list)
-    n_seen_batches: list[int] = field(default_factory=list)
-    initial_log_probability: float | None = None
+    log_likelihoods: list[float] = field(default_factory=list)
+    iteration_durations: list[float] = field(default_factory=list)
+    converged: bool = False
 
-    def _record(self, epoch, likelihood, previous, started, ended):
-        improvement = likelihood - previous
-        self.improvements.append(improvement)
-        total = self.total_improvement[-1] if self.total_improvement else 0.0
-        self.total_improvement.append(total + improvement)
-        self.log_probabilities.append(likelihood)
-        self.epochs.append(epoch)
-        self.epoch_start_times.append(started)
-        self.epoch_end_times.append(ended)
-        self.epoch_durations.append(ended - started)
-        self.learning_rates.append(None)
-        self.n_seen_batches.append(0)
-        return improvement
+    @property
+    def improvements(self):
+        """Return the likelihood improvement for each completed update."""
+        return np.diff(self.log_likelihoods).tolist()
+
+    @property
+    def n_iterations(self):
+        """Return the number of completed parameter updates."""
+        return len(self.iteration_durations)
 
 
 @njit(cache=True, nogil=True)
@@ -167,6 +156,18 @@ def _prepare_sequences(model, sequences):
     return [np.ascontiguousarray(sequence) for sequence in sequences]
 
 
+def _summarize_sequences(model, sequences, paths, algorithm, parallel):
+    summaries = parallel(
+        delayed(_sequence_statistics)(model, sequence, path, algorithm) for sequence, path in zip(sequences, paths)
+    )
+    likelihood = sum(summary[0] for summary in summaries)
+    counts = sum((summary[1] for summary in summaries), np.zeros_like(model.transitions))
+    starts = sum((summary[2] for summary in summaries), np.zeros(model.n_states))
+    ends = sum((summary[3] for summary in summaries), np.zeros(model.n_states))
+    weights = np.concatenate([summary[4] for summary in summaries])
+    return likelihood, (counts, starts, ends, weights)
+
+
 def fit_hmm(
     model,
     sequences,
@@ -179,15 +180,13 @@ def fit_hmm(
     min_covar=1e-6,
     update_emissions=True,
 ):
-    """Fit a new model and return its training history without changing ``model``.
+    """Return a new fitted model and a history containing its final likelihood.
 
-    Sequence statistics are independent, run in threads, and reduce in input
-    order. The iteration boundary follows pomegranate 0.14: when the iteration
-    cap is reached, the last pending parameter update is applied before return.
-    Labels are used only by the ``labeled`` algorithm.
-    ``min_covar`` sets the minimum covariance eigenvalue for every estimated
-    Gaussian. Frozen emission parameters retain their original values.
-    ``update_emissions=False`` fits only the transition probabilities.
+    ``max_iterations`` limits completed parameter updates. Zero leaves the
+    initial parameters unchanged. Sequence statistics run independently in
+    threads and reduce in input order. Labels apply only to ``labeled`` fitting.
+    ``min_covar`` bounds estimated covariance eigenvalues. Frozen emissions
+    retain their parameters, and ``update_emissions=False`` fits transitions only.
     """
     if algorithm not in {"labeled", "baum-welch", "viterbi"}:
         raise ValueError("Supported training algorithms are 'baum-welch', 'viterbi' and 'labeled'.")
@@ -208,36 +207,21 @@ def fit_hmm(
         start_mask=model.start_mask,
         end_mask=model.end_mask,
     )
-    history = History()
-    pending = None
-    iteration = 0
-    improvement = np.inf
-    previous = 0.0
     with Parallel(n_jobs=n_jobs, backend="threading") as parallel:
-        while improvement > stop_threshold or iteration < 1:
-            started = time()
-            if pending is not None:
-                current = _maximize(current, observations, *pending, min_covar, update_emissions)
-            if iteration >= max_iterations + 1:
+        likelihood, statistics = _summarize_sequences(current, sequences, paths, algorithm, parallel)
+        history = TrainingHistory(log_likelihoods=[likelihood])
+        while history.n_iterations < max_iterations:
+            started = perf_counter()
+            current = _maximize(current, observations, *statistics, min_covar, update_emissions)
+            likelihood, statistics = _summarize_sequences(current, sequences, paths, algorithm, parallel)
+            improvement = likelihood - history.log_likelihoods[-1]
+            history.log_likelihoods.append(likelihood)
+            history.iteration_durations.append(perf_counter() - started)
+            if verbose:
+                print(f"[{history.n_iterations}] Improvement: {improvement}")
+            if improvement <= stop_threshold:
+                history.converged = improvement >= 0
                 break
-            summaries = parallel(
-                delayed(_sequence_statistics)(current, sequence, path, algorithm)
-                for sequence, path in zip(sequences, paths)
-            )
-            likelihood = sum(summary[0] for summary in summaries)
-            counts = sum((summary[1] for summary in summaries), np.zeros_like(current.transitions))
-            starts = sum((summary[2] for summary in summaries), np.zeros(current.n_states))
-            ends = sum((summary[3] for summary in summaries), np.zeros(current.n_states))
-            weights = np.concatenate([summary[4] for summary in summaries])
-            pending = counts, starts, ends, weights
-            if iteration == 0:
-                history.initial_log_probability = likelihood
-            else:
-                improvement = history._record(iteration, likelihood, previous, started, time())
-                if verbose:
-                    print(f"[{iteration}] Improvement: {improvement}")
-            iteration += 1
-            previous = likelihood
     if verbose:
         print(f"Total Training Improvement: {sum(history.improvements)}")
     return current, history

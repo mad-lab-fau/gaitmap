@@ -115,7 +115,7 @@ def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, 
     for observations, expected in zip(data, labels):
         assert_array_equal(trained.predict_hidden_state_sequence(observations), expected)
         assert_array_equal(restored.predict_hidden_state_sequence(observations), expected)
-    assert history.epochs
+    assert history.n_iterations > 0
 
 
 def test_training_example_preserves_legacy_segmentation():

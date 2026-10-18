@@ -13,6 +13,7 @@ from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 _gaitmap_mad_modules = {
     "GaussianMixture",
     "HiddenMarkovModel",
+    "TrainingHistory",
     "BaseHmmFeatureTransformer",
     "RothHmmFeatureTransformer",
     "HmmStrideSegmentation",
@@ -34,6 +35,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
         SimpleHmm,
+        TrainingHistory,
     )
 
 
@@ -47,4 +49,5 @@ __all__ = [
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
     "SimpleHmm",
+    "TrainingHistory",
 ]

@@ -6,7 +6,7 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
 from tpcp._hash import custom_hash
 
-from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 
 from gaitmap.data_transform import SlidingWindowMean
 from gaitmap.utils.consts import BF_COLS
@@ -310,7 +310,7 @@ class TestSimpleModel:
         instance = SimpleHmm(n_states=5, n_gmm_components=3)
         trained_instance, history = instance.self_optimize_with_info(data, labels)
         assert instance is trained_instance
-        assert isinstance(history, History)
+        assert isinstance(history, TrainingHistory)
 
     def test_invalid_architecture_raises_error(self) -> None:
         with pytest.raises(ValueError) as e:
@@ -351,7 +351,7 @@ class TestRothSegmentationHmm:
         trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
         assert instance is trained_instance
         for v in history.values():
-            assert isinstance(v, History)
+            assert isinstance(v, TrainingHistory)
         assert set(history.keys()) == {"stride_model", "transition_model", "self"}
 
     def test_short_strides_raise_warning(self) -> None:

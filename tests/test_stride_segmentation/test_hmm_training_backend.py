@@ -8,10 +8,104 @@ import pytest
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm
 from numpy.testing import assert_allclose
+from scipy.stats import norm
 
 from tests.test_stride_segmentation.test_hmm_inference_backend import gaussian, model_dict
 
 _LEGACY = json.loads((Path(__file__).parent / "fixtures" / "hmm_legacy_training.json").read_text())
+
+
+@pytest.mark.parametrize("budget", [0, 1])
+def test_iteration_budget_counts_parameter_updates_and_reports_returned_model(budget):
+    """Zero updates preserve parameters and one update stops after the first EM estimate."""
+    model = HiddenMarkovModel.from_dict(_LEGACY["initial_models"]["nonfinite"])
+    initial = model.to_dict()
+    trained, history = model.fit(_LEGACY["sequences"], max_iterations=budget)
+    if budget == 0:
+        assert trained.to_dict() == initial
+    else:
+        # This old reference stopped by threshold after precisely one update.
+        expected = _LEGACY["references"][-1]
+        assert_allclose(trained.transitions, np.asarray(expected["transition_matrix"])[:2, :2], rtol=1e-11)
+        for emission, parameters in zip(trained.emissions, expected["state_parameters"]):
+            assert_allclose(emission.means[0], parameters[0], rtol=1e-11)
+            assert_allclose(emission.covariances[0], parameters[1], rtol=1e-11)
+    assert model.to_dict() == initial
+    assert history.n_iterations == budget
+    assert len(history.log_likelihoods) == budget + 1
+    assert len(history.iteration_durations) == budget
+    assert not history.converged
+    assert_allclose(history.log_likelihoods[-1], sum(trained.log_probability(x) for x in _LEGACY["sequences"]))
+
+
+def test_one_finite_mixture_update_matches_gaussian_responsibilities_and_transition_counts():
+    """One update uses soft component responsibilities and explicit termination counts."""
+    mixture = {
+        "class": "GeneralMixtureModel",
+        "distributions": [gaussian([-1.0], [[1.0]]), gaussian([1.0], [[1.0]])],
+        "weights": [0.5, 0.5],
+    }
+    model = HiddenMarkovModel.from_dict(model_dict([mixture], [[0.8]], [1.0], [0.2]))
+    observations = np.array([-2.0, -0.5, 1.5, 2.5])
+    scores = np.column_stack([norm.pdf(observations, loc=-1), norm.pdf(observations, loc=1)])
+    responsibilities = scores / scores.sum(axis=1, keepdims=True)
+    counts = responsibilities.sum(axis=0)
+    expected_means = (responsibilities * observations[:, None]).sum(axis=0) / counts
+    expected_variances = (responsibilities * (observations[:, None] - expected_means) ** 2).sum(axis=0) / counts
+
+    trained, history = model.fit([observations], max_iterations=1)
+
+    assert_allclose(trained.transitions, [[0.75]])
+    assert_allclose(trained.ends, [0.25])
+    assert_allclose(trained.emissions[0].weights, counts / len(observations))
+    assert_allclose(trained.emissions[0].means[:, 0], expected_means)
+    assert_allclose(trained.emissions[0].covariances[:, 0, 0], expected_variances)
+    assert history.n_iterations == 1
+    assert_allclose(history.log_likelihoods[-1], trained.log_probability(observations))
+
+
+def test_convergence_reports_completed_updates_and_stops_without_a_pending_step():
+    """An unchanged likelihood ends fitting after the second, fully recorded update."""
+    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[4.0]])], [[0.8]], [1.0], [0.2]))
+    observations = np.array([-2.0, -1.0, 1.0, 2.0])
+
+    trained, history = model.fit([observations], max_iterations=20)
+
+    assert history.n_iterations == 2
+    assert history.converged
+    assert len(history.log_likelihoods) == 3
+    assert history.improvements[0] > 0
+    assert history.improvements[1] == 0
+    assert_allclose(history.log_likelihoods[-1], trained.log_probability(observations))
+
+
+def test_negative_improvement_is_recorded_without_claiming_convergence():
+    """An imposed variance floor can reduce likelihood, which must remain visible."""
+    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[0.1]])], [[1.0]], [1.0]))
+    observations = np.array([-0.1, 0.1])
+
+    trained, history = model.fit([observations], max_iterations=20, min_covar=1.0)
+
+    assert history.n_iterations == 1
+    assert not history.converged
+    assert history.improvements[0] < 0
+    assert_allclose(history.log_likelihoods[-1], trained.log_probability(observations))
+
+
+def test_labeled_fit_can_learn_currently_zero_permitted_termination():
+    """Known labels can give an initially impossible model a valid end transition."""
+    serialized = model_dict([gaussian([0.0], [[1.0]])], [[1.0]], [1.0])
+    serialized["edges"].append([0, 2, 0.0, 0.0, None])
+    model = HiddenMarkovModel.from_dict(serialized)
+    observations = np.array([-2.0, -1.0, 1.0, 2.0])
+
+    trained, history = model.fit([observations], labels=[[0, 0, 0, 0]], algorithm="labeled", max_iterations=1)
+
+    assert history.log_likelihoods[0] == -np.inf
+    assert np.isfinite(history.log_likelihoods[1])
+    assert history.n_iterations == 1
+    assert_allclose(trained.transitions, [[0.75]])
+    assert_allclose(trained.ends, [0.25])
 
 
 @pytest.mark.parametrize("use_names", [False, True])
@@ -37,7 +131,7 @@ def test_labeled_fit_learns_counts_and_gaussian_moments_without_mutating_input(u
     assert_allclose(trained.emissions[0].covariances, [[[0.25]]])
     assert_allclose(trained.emissions[1].means, [[1.8]])
     assert_allclose(trained.emissions[1].covariances, [[[0.56]]])
-    assert history.epochs == [1]
+    assert history.n_iterations == 1
 
 
 @pytest.mark.parametrize("reference", _LEGACY["references"])
@@ -48,7 +142,9 @@ def test_training_matches_legacy_models_and_history(reference):
         model,
         _LEGACY["sequences"],
         algorithm=reference["algorithm"],
-        max_iterations=reference["max_iterations"],
+        # Legacy caps applied an additional, unreported update. Give the native
+        # fitter the same update budget while retaining early-stop behavior.
+        max_iterations=reference["max_iterations"] + 1,
         stop_threshold=reference.get("stop_threshold", 1e-9),
     )
     expected = np.asarray(reference["transition_matrix"])
@@ -61,10 +157,14 @@ def test_training_matches_legacy_models_and_history(reference):
             (emission.means[0], emission.covariances[0]), expected_parameters
         ):
             assert_allclose(actual_parameter, expected_parameter, rtol=1e-11, atol=1e-13)
-    assert history.epochs == reference["epochs"]
-    assert_allclose(history.initial_log_probability, reference["initial_log_probability"], rtol=1e-12)
-    assert_allclose(history.log_probabilities, reference["log_probabilities"], rtol=1e-12)
-    assert_allclose(history.improvements, reference["improvements"], rtol=1e-10, atol=1e-13)
+    stopped = reference["improvements"][-1] <= reference.get("stop_threshold", 1e-9)
+    expected_updates = len(reference["improvements"]) if stopped else reference["max_iterations"] + 1
+    assert history.n_iterations == expected_updates
+    assert_allclose(history.log_likelihoods[0], reference["initial_log_probability"], rtol=1e-12)
+    recorded_epochs = len(reference["log_probabilities"])
+    assert_allclose(history.log_likelihoods[1 : recorded_epochs + 1], reference["log_probabilities"], rtol=1e-12)
+    assert_allclose(history.improvements[:recorded_epochs], reference["improvements"], rtol=1e-10, atol=1e-13)
+    assert_allclose(history.log_likelihoods[-1], sum(trained.log_probability(x) for x in _LEGACY["sequences"]))
 
 
 def test_labeled_training_preserves_topology_zero_edges_and_unvisited_states():
@@ -123,7 +223,7 @@ def test_parallel_sequence_reduction_is_deterministic(algorithm, n_jobs):
         model, _LEGACY["sequences"], labels, algorithm=algorithm, max_iterations=2, n_jobs=n_jobs
     )
     assert parallel.to_dict() == serial.to_dict()
-    assert parallel_history.log_probabilities == serial_history.log_probabilities
+    assert parallel_history.log_likelihoods == serial_history.log_likelihoods
     assert parallel_history.improvements == serial_history.improvements
 
 
@@ -159,7 +259,7 @@ def test_fitted_model_roundtrips_through_json_and_predicts():
     trained, history = model.fit(_LEGACY["sequences"], max_iterations=1)
     assert trained is not model
     assert model.to_dict() == initial
-    assert history.epochs == [1]
+    assert history.n_iterations == 1
     restored = HiddenMarkovModel.from_json(trained.to_json())
     assert restored.to_dict() == trained.to_dict()
     assert_allclose(restored.predict_proba(_LEGACY["sequences"][0]), trained.predict_proba(_LEGACY["sequences"][0]))

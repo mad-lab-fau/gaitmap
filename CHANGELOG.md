@@ -34,6 +34,9 @@ project.
 
 ### Fixed
 
+- HMM iteration limits now count actual parameter updates, including a zero-update limit. Training histories
+  include the initial and final likelihood and describe the returned model. Removed the inherited warning that
+  treated every likelihood decrease as evidence of an unusable model; Viterbi updates can decrease this likelihood.
 - Added split dependency resolution so Python 3.9/3.10 stay on the pandas 2 / NumPy 1.x line while Python 3.11+
   supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
 

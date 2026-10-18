@@ -15,11 +15,10 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     RothHmmFeatureTransformer,
 )
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
-from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     _DataToShortError,
-    check_history_for_training_failure,
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
@@ -468,7 +467,7 @@ class RothSegmentationHmm(BaseSegmentationHmm):
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_rate_hz: float,
-    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], History]]:
+    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], TrainingHistory]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -578,7 +577,6 @@ class RothSegmentationHmm(BaseSegmentationHmm):
             verbose=self.verbose,
             n_jobs=self.n_jobs,
         )
-        check_history_for_training_failure(history)
 
         new_model.name = self.name
 
