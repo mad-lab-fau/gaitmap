@@ -34,6 +34,8 @@ project.
 
 ### Added
 
+- Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
+  the lowest allowed direct dependency versions with all extras.
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
 

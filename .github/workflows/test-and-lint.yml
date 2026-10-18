@@ -32,6 +32,23 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  minimum-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and lowest supported Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.11"
+      - name: Install lowest direct dependencies (all extras)
+        run: uv sync --resolution lowest-direct --upgrade --group dev --all-extras
+      - name: Show resolved versions
+        run: uv pip list
+      - name: Testing with minimum dependencies
+        run: uv run --frozen poe test
+
   lint:
     runs-on: ubuntu-latest
     steps:

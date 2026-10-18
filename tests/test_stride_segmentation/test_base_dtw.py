@@ -9,6 +9,7 @@ the right thing.
 
 """
 
+import warnings
 from typing import Union
 from unittest.mock import patch
 
@@ -634,12 +635,11 @@ class TestTemplateResampling(DtwTestBase):
         template = DtwTemplate(data=np.array(template_arr), sampling_rate_hz=False)
         dtw = self.init_dtw(template=template, resample_template=False)
 
-        with pytest.warns(None) as w:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             dtw.segment(test_data, 20)
 
-        with pytest.raises(AssertionError):
-            # Check that no UserWarning was recorded
-            w.pop(UserWarning)
+        assert not any(issubclass(warning.category, UserWarning) for warning in w)
 
 
 class TestDtwConstrains(DtwTestBase):
