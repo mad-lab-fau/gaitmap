@@ -84,6 +84,8 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
+# ``min_covar`` bounds covariance eigenvalues in squared feature units during initialization and training.
+# This prevents Gaussian mixture components from collapsing. Its value should reflect the scale of the features.
 from gaitmap.stride_segmentation.hmm import SimpleHmm
 
 stride_model = SimpleHmm(
@@ -92,6 +94,7 @@ stride_model = SimpleHmm(
     algo_train="baum-welch",
     stop_threshold=1e-9,
     max_iterations=5,
+    min_covar=1e-6,
     architecture="left-right-strict",
     verbose=True,
     name="stride_model",
@@ -103,6 +106,7 @@ transition_model = SimpleHmm(
     algo_train="baum-welch",
     stop_threshold=1e-9,
     max_iterations=5,
+    min_covar=1e-6,
     architecture="left-right-loose",
     verbose=True,
     name="transition_model",

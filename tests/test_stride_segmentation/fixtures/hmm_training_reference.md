@@ -17,12 +17,26 @@ and all stride-versus-transition classifications must remain unchanged.
 
 Fitted mixture parameters and individual null-state labels are not stable golden
 targets for this example. Two initialization clusters, stride state 11 and
-transition state 4, develop nearly singular covariance matrices. The implementations
-agree near machine precision until rounding determines which iteration requires
-covariance repair. That changes the subsequent EM trajectory. The old fitter
-itself ends these initialization fits with negative likelihood improvements of
-about 21 and 20. The existing example test already avoids fitted-parameter
-snapshots because training varies across machines.
+transition state 4, develop nearly singular covariance matrices. Pomegranate
+accepts arbitrarily small positive-definite covariance matrices, then adds a
+diagonal shift only after Cholesky fails. Rounding determines which iteration
+needs repair and changes the subsequent EM trajectory. The old fitter itself ends
+these initialization fits with negative likelihood improvements of about 21 and 20.
+
+The local estimator deliberately fixes this policy. It uses centered weighted
+covariance, normalizes positive weights, and floors covariance eigenvalues at
+`min_covar`, default `1e-6`, on every estimate. Scaling all positive weights no
+longer changes whether an update takes place. Only zero-support and frozen
+distributions retain their previous parameters. A machine-precision relative
+floor applies when the requested absolute floor is too small to produce a
+representably positive-definite matrix.
+
+With the default floor on CPython 3.10 / NumPy 1.26.4, 258 of 7928 left-foot labels
+and 174 of 7928 right-foot labels differ from the old reference. All stride-versus-
+transition classifications and all 58 stride boundaries remain exact. Repeated
+updates of the real stride-state-11 mixture have finite nondecreasing likelihood
+and bounded covariance eigenvalues. Tests retain the original reference unchanged
+and check these stability properties independently.
 
 The focused training tests separately compare weighted Gaussian and mixture
 updates, deterministic clustering, transition probabilities, likelihoods,

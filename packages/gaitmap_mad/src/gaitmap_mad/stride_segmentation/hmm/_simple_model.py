@@ -30,6 +30,7 @@ def initialize_hmm(
     n_states: int,
     n_gmm_components: int,
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
+    min_covar: float = 1e-6,
     name: str = "untrained",
     verbose: bool = False,
 ) -> HiddenMarkovModel:
@@ -51,6 +52,8 @@ def initialize_hmm(
         number of components for multivariate distributions
     architecture
         type of model architecture, for more details see below
+    min_covar
+        Minimum eigenvalue of fitted covariance matrices, in squared feature units.
     name
         The name of the final model object
     verbose
@@ -103,6 +106,7 @@ def initialize_hmm(
         n_gmm_components,
         n_states,
         verbose=verbose,
+        min_covar=min_covar,
     )
 
     # if we force the model into a left-right architecture we know that stride borders should correspond to the point
@@ -166,6 +170,11 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         The threshold for the training algorithm to stop.
     max_iterations
         The maximum number of iterations for the training algorithm.
+    min_covar
+        Minimum eigenvalue of each Gaussian covariance during initialization and training.
+        The default is 1e-6 in squared feature units. Increase this for stronger regularization,
+        or decrease it when fitting features with smaller scales. Existing saved models are
+        unchanged until retrained.
     name
         The name of the model.
     verbose
@@ -241,6 +250,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
     algo_train: Literal["viterbi", "baum-welch", "labeled"]
     stop_threshold: float
     max_iterations: int
+    min_covar: float
     verbose: bool
     n_jobs: int
     name: Optional[str]
@@ -256,6 +266,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         algo_train: Literal["viterbi", "baum-welch", "labeled"] = "viterbi",
         stop_threshold: float = 1e-9,
         max_iterations: int = 1e8,
+        min_covar: float = 1e-6,
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
@@ -267,6 +278,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         self.algo_train = algo_train
         self.stop_threshold = stop_threshold
         self.max_iterations = max_iterations
+        self.min_covar = min_covar
         self.architecture = architecture
         self.verbose = verbose
         self.n_jobs = n_jobs
@@ -411,6 +423,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
             n_states=self.n_states,
             n_gmm_components=self.n_gmm_components,
             architecture=self.architecture,
+            min_covar=self.min_covar,
             name=self.name + "-untrained",
         )
 
@@ -424,6 +437,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
             return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
+            min_covar=self.min_covar,
         )
         check_history_for_training_failure(history)
         model_trained.name = self.name + "_trained"

@@ -13,8 +13,11 @@ project.
 ### Scientific Changes
 
 - Local HMM training preserves the reference example's final stride boundaries and stride/transition classification.
-  Fitted mixture parameters and individual hidden-state labels can differ when nearly singular covariance matrices
-  require repair at different iterations. Existing saved-model inference remains unchanged.
+  Gaussian training uses centered weighted covariance and floors covariance eigenvalues on every estimate, replacing
+  pomegranate's cancellation-prone raw moments, absolute small-weight cutoff, and repair only after Cholesky failure.
+  `SimpleHmm.min_covar` controls the floor in squared feature units, defaulting to `1e-6`. Fitted parameters and
+  individual hidden-state labels can change for degenerate mixtures. Existing saved-model inference and frozen
+  emissions remain unchanged.
 
 ### Added
 

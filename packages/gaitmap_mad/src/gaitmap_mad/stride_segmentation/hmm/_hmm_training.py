@@ -120,7 +120,7 @@ def _sequence_statistics(model, sequence, path, algorithm):
     return likelihood, counts, weights
 
 
-def _maximize(model, observations, counts, weights, topology):
+def _maximize(model, observations, counts, weights, topology, min_covar):
     serialized = model.to_dict()
     counts = counts * topology
     totals = counts.sum(axis=1)
@@ -133,7 +133,9 @@ def _maximize(model, observations, counts, weights, topology):
         edges.append(edge)
     serialized["edges"] = edges
     for state, state_weights in zip(serialized["states"][: model.silent_start], weights.T):
-        state["distribution"] = update_distribution(state["distribution"], observations, state_weights)
+        state["distribution"] = update_distribution(
+            state["distribution"], observations, state_weights, min_covar=min_covar
+        )
     return type(model).from_dict(serialized)
 
 
@@ -156,6 +158,7 @@ def fit_hmm(
     max_iterations=100_000_000,
     verbose=False,
     n_jobs=1,
+    min_covar=1e-6,
 ):
     """Fit a new model and return its training history without changing ``model``.
 
@@ -163,6 +166,8 @@ def fit_hmm(
     order. The iteration boundary follows pomegranate 0.14: when the iteration
     cap is reached, the last pending parameter update is applied before return.
     Labels are used only by the ``labeled`` algorithm.
+    ``min_covar`` sets the minimum covariance eigenvalue for every estimated
+    Gaussian. Frozen emission parameters retain their original values.
     """
     if algorithm not in {"labeled", "baum-welch", "viterbi"}:
         raise ValueError("Supported training algorithms are 'baum-welch', 'viterbi' and 'labeled'.")
@@ -184,7 +189,7 @@ def fit_hmm(
         while improvement > stop_threshold or iteration < 1:
             started = time()
             if pending is not None:
-                current = _maximize(current, observations, *pending, topology)
+                current = _maximize(current, observations, *pending, topology, min_covar)
             if iteration >= max_iterations + 1:
                 break
             summaries = parallel(
