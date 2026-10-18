@@ -1,6 +1,7 @@
 """Base class for all algorithms."""
 
 import json
+import sys
 import warnings
 from importlib import import_module
 from io import StringIO
@@ -44,7 +45,7 @@ def _hint_tuples(item):
 
 
 def _import_hidden_markov_model():
-    return import_module("pomegranate.hmm").HiddenMarkovModel
+    return import_module("gaitmap_mad.stride_segmentation.hmm._hmm_inference").HiddenMarkovModel
 
 
 class _CustomEncoder(json.JSONEncoder):
@@ -64,12 +65,12 @@ class _CustomEncoder(json.JSONEncoder):
             return {"_obj_type": "DataFrame", "df": o.to_json(orient="split")}
         if isinstance(o, pd.Series):
             return {"_obj_type": "Series", "df": o.to_json(orient="split")}
-        try:
-            hidden_markov_model = _import_hidden_markov_model()
-        except ImportError:
-            hidden_markov_model = None
-
-        if hidden_markov_model is not None and isinstance(o, hidden_markov_model):
+        hidden_markov_model = getattr(
+            sys.modules.get("gaitmap_mad.stride_segmentation.hmm._hmm_inference"), "HiddenMarkovModel", ()
+        )
+        if isinstance(o, hidden_markov_model):
+            return {"_obj_type": "HiddenMarkovModel", "hmm": o.to_dict()}
+        if isinstance(o, getattr(sys.modules.get("pomegranate.hmm"), "HiddenMarkovModel", ())):
             warnings.warn(
                 "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
                 "round-trips. I.e. sometimes values (in particular weightings of distributions) might change "

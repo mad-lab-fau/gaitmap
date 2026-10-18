@@ -1,17 +1,40 @@
 """Utils and helper functions for HMM classes."""
 
+from __future__ import annotations
+
+import copy
 import json
+import sys
 import warnings
-from typing import Any, Literal, Optional
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
-import pomegranate as pg
-from pomegranate.hmm import History
 from tpcp import BaseTpcpObject, CloneFactory
 from tpcp._hash import custom_hash
 
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+
+if TYPE_CHECKING:
+    import pomegranate as pg
+    from pomegranate.hmm import History
+
+
+def _require_pomegranate():
+    """Load the legacy backend only for training."""
+    try:
+        return import_module("pomegranate")
+    except ImportError as e:
+        raise ImportError(
+            "HMM training still requires pomegranate >=0.14.2,<=0.14.6 on Python 3.9. "
+            "Pretrained HMM inference does not require pomegranate."
+        ) from e
+
+
+def _is_legacy_hmm(value):
+    return isinstance(value, getattr(sys.modules.get("pomegranate.hmm"), "HiddenMarkovModel", ()))
 
 
 def _add_transition(model, a, b, probability, pseudocount, group) -> None:
@@ -59,6 +82,10 @@ def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) 
         A deepcopy of the HMM model.
 
     """
+    if not _is_legacy_hmm(orig_model):
+        return copy.deepcopy(orig_model)
+
+    pg = _require_pomegranate()
     d = json.loads(orig_model.to_json())
 
     # Make a new generic HMM
@@ -135,7 +162,7 @@ class _HackyClonableHMMFix(BaseTpcpObject):
         Our cloning implementation, does some bad stuff (and should always be covered by tests), but seems to
         properly clone the objects (so that the hashs are identical).
         """
-        if isinstance(value, pg.HiddenMarkovModel):
+        if _is_legacy_hmm(value):
             return _clone_model(value)
         return super().__clone_param__(param_name, value)
 
@@ -146,9 +173,11 @@ class ShortenedHMMPrint(BaseTpcpObject):
     def __repr_parameter__(self, name: str, value: Any) -> str:
         """Representation with specific care for HMM models."""
         if name == "model":
-            if isinstance(value, pg.HiddenMarkovModel):
+            if _is_legacy_hmm(value) or isinstance(value, HiddenMarkovModel):
                 return f"{name}=HiddenMarkovModel[name={value.name}](...)"
-            if isinstance(value, CloneFactory) and isinstance(value.default_value, pg.HiddenMarkovModel):
+            if isinstance(value, CloneFactory) and (
+                _is_legacy_hmm(value.default_value) or isinstance(value.default_value, HiddenMarkovModel)
+            ):
                 return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
         return super().__repr_parameter__(name, value)
 
@@ -186,10 +215,10 @@ def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3) -> 
     """Print model transition matrix in user-friendly format."""
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision)
-    if isinstance(model, pg.HiddenMarkovModel):
-        print(model.dense_transition_matrix()[0:-2, 0:-2])
     if isinstance(model, np.ndarray):
         print(model)
+    else:
+        print(model.dense_transition_matrix()[0:-2, 0:-2])
 
 
 def cluster_data_by_labels(data_list: list[np.ndarray], label_list: list[np.ndarray]):
@@ -229,6 +258,7 @@ def gmms_from_samples(
     Normal Distributions for each cluster. If n_components is > 1 then a Mixture Model of n-univariate or n-multivariate
     Gaussian Distributions will be fitted.
     """
+    pg = _require_pomegranate()
     if not np.array(data, dtype=object).data.c_contiguous:
         raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
 
@@ -306,7 +336,7 @@ def fix_model_names(model):
 
 
 def _iter_nested_distributions(distribution):
-    if isinstance(distribution, pg.GeneralMixtureModel):
+    if hasattr(distribution, "distributions"):
         yield distribution
         for d in distribution.distributions:
             yield from _iter_nested_distributions(d)
@@ -371,7 +401,7 @@ def get_model_distributions(model: pg.HiddenMarkovModel) -> list[pg.Distribution
     return distributions
 
 
-def labels_to_strings(labelsequence: list[Optional[np.ndarray]]) -> list[Optional[list[str]]]:
+def labels_to_strings(labelsequence: list[np.ndarray | None]) -> list[list[str] | None]:
     """Convert label sequence of ints to strings.
 
     Pomegranated messes up sorting of states: it will sort like this: s0, s1, s10, s2.... which can lead to unexpected
@@ -580,7 +610,7 @@ class _DataToShortError(ValueError):
 
 
 def predict(
-    model: Optional[pg.HiddenMarkovModel],
+    model: pg.HiddenMarkovModel | None,
     data: pd.DataFrame,
     *,
     expected_columns: tuple[str, ...],
@@ -636,7 +666,7 @@ def predict(
         if not model_params_are_finite(model):
             raise ValueError(
                 "Prediction failed! (See error above.). "
-                "However, the provided pomegranate model has non-finite/NaN parameters. "
+                "However, the provided HMM model has non-finite/NaN parameters. "
                 "This might be the source of the observed error and indicates problems during training. "
                 "Check the training history and the model parameters to confirm invalid training behaviour. "
                 "Unfortunately, there is no way to automatically fix these issues. "
@@ -646,11 +676,14 @@ def predict(
         raise ValueError(
             "Prediction failed! (See error above.). "
             "Unfortunately, we are not sure what happened. "
-            "The error was caused by pomegrante internals."
+            "The error was caused by the HMM prediction backend."
         ) from e
 
-    # pomegranate always adds an additional label for the start- and end-state, which can be ignored here!
-    # Note: This only seems to happen for the viterbi algorithm, not for the map algorithm.
-    if algorithm == "viterbi":
+    # Preserve gaitmap's historical Viterbi output length. Legacy finite paths include start/end sentinels;
+    # paths without an explicit end include only the start sentinel, so gaitmap also dropped the final emission.
+    # Keeping that length matters when the feature labels are resampled back to the input sampling rate.
+    if algorithm == "viterbi" and _is_legacy_hmm(model):
         labels_predicted = labels_predicted[1:-1]
+    elif algorithm == "viterbi" and not model.finite:
+        labels_predicted = labels_predicted[:-1]
     return np.asarray(labels_predicted)

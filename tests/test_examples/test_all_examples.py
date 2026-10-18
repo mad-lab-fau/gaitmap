@@ -274,9 +274,6 @@ def test_multi_process() -> None:
 
 
 def test_roth_hmm_stride_segmentation(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
     from examples.stride_segmentation.roth_hmm_stride_segmentation import hmm_seg
 
     snapshot.assert_match(hmm_seg.stride_list_["left_sensor"], "left_sensor")

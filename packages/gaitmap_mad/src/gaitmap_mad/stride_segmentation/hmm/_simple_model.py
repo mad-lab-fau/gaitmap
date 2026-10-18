@@ -3,22 +3,21 @@
 import copy
 import warnings
 from collections.abc import Sequence
-from typing import Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import numpy as np
 import pandas as pd
-import pomegranate as pg
-from pomegranate import HiddenMarkovModel as pgHMM
-from pomegranate.hmm import History
 from tpcp import OptiPara, make_optimize_safe
 from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
     _HackyClonableHMMFix,
+    _require_pomegranate,
     check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
@@ -26,6 +25,10 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     gmms_from_samples,
     predict,
 )
+
+if TYPE_CHECKING:
+    from pomegranate import HiddenMarkovModel as pgHMM
+    from pomegranate.hmm import History
 
 
 def initialize_hmm(
@@ -37,7 +40,7 @@ def initialize_hmm(
     architecture: Literal["left-right-strict", "left-right-loose", "fully-connected"],
     name: str = "untrained",
     verbose: bool = False,
-) -> pgHMM:
+) -> "pgHMM":
     """Model Initialization.
 
     Parameters
@@ -100,6 +103,8 @@ def initialize_hmm(
             'Invalid architecture given. Must be either "left-right-strict", "left-right-loose" or "fully-connected"'
         )
 
+    pg = _require_pomegranate()
+
     # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
     distributions, _ = gmms_from_samples(
@@ -149,8 +154,7 @@ def initialize_hmm(
 class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     """Wrap all required information to train a new HMM.
 
-    This is a thin wrapper around the pomegranate HiddenMarkovModel class and basically calls out the pomegranate for
-    all core functionality.
+    Saved models use a local Numba backend for inference. Training still uses the legacy pomegranate backend.
 
     .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
               :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.
@@ -186,7 +190,8 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         The number of jobs to use for training.
         If set to -1, all available cores will be used.
     model
-        The actual pomegranate HMM model.
+        The HMM model, using the local inference backend when loaded from JSON or the legacy pomegranate backend
+        after training.
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
@@ -256,7 +261,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
     verbose: bool
     n_jobs: int
     name: Optional[str]
-    model: OptiPara[Optional[pgHMM]]
+    model: OptiPara[Optional[HiddenMarkovModel]]
     data_columns: OptiPara[Optional[tuple[str, ...]]]
 
     def __init__(
@@ -271,7 +276,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
-        model: Optional[pgHMM] = None,
+        model: Optional[HiddenMarkovModel] = None,
         data_columns: Optional[tuple[str, ...]] = None,
     ) -> None:
         self.n_states = n_states
@@ -347,7 +352,7 @@ class SimpleHmm(_BaseSerializable, _HackyClonableHMMFix, ShortenedHMMPrint):
         self,
         data_sequence: Sequence[SingleSensorData],
         labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
-    ) -> tuple[Self, History]:
+    ) -> tuple[Self, "History"]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.

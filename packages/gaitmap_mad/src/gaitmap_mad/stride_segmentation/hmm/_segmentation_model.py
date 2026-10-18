@@ -2,13 +2,10 @@
 
 import copy
 from collections.abc import Sequence
-from typing import Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import pomegranate as pg
-from pomegranate import HiddenMarkovModel as pgHMM
-from pomegranate.hmm import History
 from tpcp import OptiPara, cf, make_optimize_safe
 from typing_extensions import Self
 
@@ -18,12 +15,14 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
 )
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
     ShortenedHMMPrint,
     _clone_model,
     _DataToShortError,
     _HackyClonableHMMFix,
+    _require_pomegranate,
     add_transition,
     check_history_for_training_failure,
     convert_stride_list_to_transition_list,
@@ -36,6 +35,9 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
     labels_to_strings,
     predict,
 )
+
+if TYPE_CHECKING:
+    from pomegranate.hmm import History
 
 
 def create_fully_labeled_gait_sequences(
@@ -237,7 +239,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     name
         The name of the final pomegranate model.
     model
-        The actual pomegranate HMM model.
+        The HMM model, using the local inference backend when loaded from JSON or the legacy pomegranate backend
+        after training.
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
@@ -297,7 +300,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
     verbose: bool
     n_jobs: int
     name: Optional[str]
-    model: OptiPara[Optional[pgHMM]]
+    model: OptiPara[Optional[HiddenMarkovModel]]
     data_columns: OptiPara[Optional[tuple[str, ...]]]
 
     feature_space_data_: pd.DataFrame
@@ -337,7 +340,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "segmentation_model",
-        model: Optional[pgHMM] = None,
+        model: Optional[HiddenMarkovModel] = None,
         data_columns: Optional[tuple[str, ...]] = None,
     ) -> None:
         self.stride_model = stride_model
@@ -406,7 +409,6 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         feature_data = feature_data[0]
         self.feature_space_data_ = feature_data
 
-        # pomegranate always adds a label for the start- and end-state, which can be ignored here!
         self.hidden_state_sequence_feature_space_ = predict(
             self.model, feature_data, expected_columns=self.data_columns, algorithm=self.algo_predict
         )
@@ -478,7 +480,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         data_sequence: Sequence[SingleSensorData],
         stride_list_sequence: Sequence[SingleSensorStrideList],
         sampling_rate_hz: float,
-    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], History]]:
+    ) -> tuple[Self, dict[Literal["self", "transition_model", "stride_model"], "History"]]:
         """Create and train the HMM model based on the given data and labels.
 
         This is identical to `self_optimize`, but returns additional information about the training process.
@@ -505,6 +507,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, _HackyClonableHMMFix, ShortenedHM
         """
         if self.initialization not in ["labels", "fully-connected"]:
             raise ValueError("Invalid value for initialization! Must be one of `labels` or `fully-connected`.")
+
+        pg = _require_pomegranate()
 
         # perform feature transformation
         data_sequence_feature_space, stride_list_feature_space = self._transform(

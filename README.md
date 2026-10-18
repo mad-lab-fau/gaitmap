@@ -57,17 +57,16 @@ Note, that we don't guarantee that the latest version on Github is stable.
 
 #### Hidden Markov Models
 
-To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based algorithms make sure you install `gaitmap` with the `hmm` extra.
+Pretrained HMM prediction, including `HmmStrideSegmentation`, uses a local Numba backend and works on Python 3.10+
+without pomegranate. Install both gaitmap packages:
 
 ```bash
-pip install gaitmap_mad "gaitmap[hmm]" --upgrade
+pip install gaitmap_mad gaitmap --upgrade
 ```
-This installs the `pomegranate` package, which is the basis for the HMM implementation.
-Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
-Python 3.10.
-
-We are working on upgrading to a newer version of `pomegranate`, but this is not a priority at the moment.
-You can track the progress in the [pull request](https://github.com/mad-lab-fau/gaitmap/pull/20).
+HMM training still requires Python 3.9 and `pomegranate>=0.14.2,<=0.14.6`, installed with `pip install "gaitmap[hmm]"`.
+Existing gaitmap HMM JSON files can be loaded for prediction without pomegranate.
+The low-level `.model` object loaded from JSON now uses the local inference implementation; prediction and matrix/state
+inspection remain available, while training and arbitrary pomegranate graph operations require the legacy backend.
 
 ### Supported Python versions
 
@@ -192,7 +191,7 @@ Then run the commands below to get the latest source and install the dependencie
 git clone https://github.com/mad-lab-fau/gaitmap.git
 # For Python 3.9 (and if you need to work on hmm)
 uv sync --group dev --all-extras
-# For Python >=3.10 (you can not work on hmm stuff with this)
+# For Python >=3.10 (HMM inference is supported; HMM training requires Python 3.9)
 uv sync --group dev --extra stats
 ```
 

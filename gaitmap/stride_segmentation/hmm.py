@@ -1,6 +1,6 @@
 """Hidden-Markov based stride segmentation developed by Roth et al..
 
-All HMM implementations are based on pomegranate [1]_.
+HMM inference uses a local Numba implementation. Training uses the legacy pomegranate backend [1]_.
 
 .. [1] Schreiber, J. (2018). Pomegranate: fast and flexible probabilistic modeling in python.
    Journal of Machine Learning Research, 18(164), 1-6.

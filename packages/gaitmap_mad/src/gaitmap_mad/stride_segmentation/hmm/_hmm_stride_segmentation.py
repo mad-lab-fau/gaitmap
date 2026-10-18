@@ -66,7 +66,8 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     Note, that this class only supports prediction.
     To train your own HMM, use the `self_optimize` method on the model that you were planning to use here.
 
-    This is based on the work of Roth et al. 2021 [1]_ and the implementation is using done with `pomegranate` [2]_.
+    This is based on the work of Roth et al. 2021 [1]_. Saved models use a local Numba inference backend;
+    training uses the legacy `pomegranate` backend [2]_.
 
     Parameters
     ----------
