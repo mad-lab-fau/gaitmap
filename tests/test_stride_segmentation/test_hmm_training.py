@@ -61,6 +61,30 @@ def test_roth_training_combines_stride_states_with_only_termination_transitions(
     assert len(model.hidden_state_sequence_) == len(data)
 
 
+def test_labeled_roth_training_supports_all_generated_transitions():
+    """Combined labels may repeat a state even when each submodel learned no self-loops."""
+    data = pd.DataFrame(np.random.default_rng(5).normal(size=(20, 6)), columns=BF_COLS)
+    strides = pd.DataFrame({"start": [2, 7, 12, 17], "end": [4, 9, 14, 19]})
+    model = RothSegmentationHmm(
+        stride_model=SimpleHmm(n_states=2, n_gmm_components=1, algo_train="labeled", verbose=False),
+        transition_model=SimpleHmm(
+            n_states=2, n_gmm_components=1, architecture="left-right-loose", algo_train="labeled", verbose=False
+        ),
+        feature_transform=RothHmmFeatureTransformer(
+            sampling_rate_feature_space_hz=100, low_pass_filter=None, axes=["gyr_ml"], features=["raw", "gradient"]
+        ),
+        algo_train="labeled",
+        max_iterations=1,
+        verbose=False,
+    ).self_optimize([data], [strides], sampling_rate_hz=100)
+
+    matrix = model.model.dense_transition_matrix()
+    assert np.isfinite(matrix).all()
+    assert matrix[0, 0] > 0
+    model.predict(data, sampling_rate_hz=100)
+    assert len(model.hidden_state_sequence_) == len(data)
+
+
 @pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
 @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
 def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, architecture):
