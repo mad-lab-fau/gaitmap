@@ -72,8 +72,8 @@ stride boundaries; the [scientific changelog](CHANGELOG.md) records their measur
 
 ### Supported Python versions
 
-*gaitmap* requires Python 3.10 or newer.
-CI tests Python 3.10 and 3.11 on Linux and Windows.
+*gaitmap* requires Python 3.11 or newer.
+CI tests Python 3.11 and 3.14 on Linux and Windows.
 
 ## Working with Algorithms
 
@@ -185,7 +185,7 @@ If you need to use *gaitmap_mad* in a closed source project, please contact us f
 The [Development Guides](https://gaitmap.readthedocs.io/en/latest/source/development/index.html#development) have detailed information for all new developers.
 
 Here some quick references
-Install Python >=3.10 and [uv](https://docs.astral.sh/uv/).
+Install Python >=3.11 and [uv](https://docs.astral.sh/uv/).
 Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
@@ -194,7 +194,7 @@ cd gaitmap
 uv sync --group dev --all-extras
 ```
 
-Read the Docs builds use Python 3.10 with all development dependencies and extras installed.
+Read the Docs builds use Python 3.11 with all development dependencies and extras installed.
 
 Note, that you don't need to care about the `gaitmap_mad` subpackage.
 All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode

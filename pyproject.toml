@@ -4,7 +4,7 @@ version = "2.6.0"
 description = "The Gait and Movement Analysis Package - Your definite guide to reliable IMU based human movement analysis."
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 authors = [
     { name = "Arne Kuederle", email = "arne.kuederle@fau.de" },
     { name = "Martin Ullrich", email = "martin.ullrich@fau.de" },
@@ -19,14 +19,12 @@ authors = [
     { name = "Felix Kluge", email = "felix.kluge@fau.de" },
 ]
 dependencies = [
-    "pandas>=2,<2.4; python_version < '3.11'",
-    "pandas>=3,<3.1; python_version >= '3.11'",
+    "pandas>=3,<3.1",
     "scipy>=1.6.1",
     "typing_extensions>=4.1.1",
     "numba>=0.55",
     "numba>=0.55.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "numpy>=1.20,<2.1; python_version < '3.11'",
-    "numpy>=1.20,<3; python_version >= '3.11'",
+    "numpy>=1.20,<3",
     "joblib>=1.2.0",
     "scikit-learn>=1.0.1",
     "tpcp>=2.1.2",

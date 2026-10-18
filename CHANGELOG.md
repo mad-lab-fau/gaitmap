@@ -14,7 +14,8 @@ project.
 
 - Replaced pomegranate with a custom NumPy/Numba backend for the HMM subset used by gaitmap.
   This simplifies packaging and removes the need for an HMM installation extra.
-  Both gaitmap packages now require Python 3.10 or newer; Python 3.9 support has been removed.
+  Both gaitmap packages now require Python 3.11 or newer and support Python 3.14;
+  Python 3.9 and 3.10 support has been removed.
   We chose this approach over porting to pomegranate's newer PyTorch implementation because our specialized
   HMM workflow needs only a small part of its API. The implementation is LLM-derived, guided by the existing
   regression tests and checked with independent algorithmic correctness tests.
@@ -28,7 +29,7 @@ project.
   Existing gaitmap HMM JSON models remain loadable; newly exported models require the updated backend.
   Custom models and code accessing `.model` should be checked against the new numeric Gaussian/GMM API.
   Please revalidate your results and report any unexpected changes in outcomes.
-  This migration prioritizes minimal gaitmap API changes while retiring Python 3.9; future HMM improvements
+  This migration prioritizes minimal gaitmap API changes while retiring Python 3.9 and 3.10; future HMM improvements
   may introduce further breaking API changes.
 
 ### Added
@@ -38,8 +39,7 @@ project.
 
 ### Fixed
 
-- Added split dependency resolution so Python 3.10 uses pandas 2 and NumPy `<2.1` while Python 3.11+
-  supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
+- Added pandas 3 support and fixed compatibility issues around read-only views and removed APIs.
 
 ## [2.6.0] - 2026-03-05
 
