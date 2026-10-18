@@ -175,9 +175,9 @@ segmentation_model = segmentation_model.self_optimize(
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(segmentation_model.model.dense_transition_matrix()[0:-2, 0:-2])
+print(segmentation_model.model.transitions)
 
-print(segmentation_model.model.states[10])
+print(segmentation_model.model.emissions[10])
 
 # %%
 # Applying the Model to a Sequence

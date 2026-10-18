@@ -10,8 +10,25 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from tpcp._hash import custom_hash
 
-from gaitmap.stride_segmentation.hmm import HmmStrideSegmentation, PreTrainedRothSegmentationModel, SimpleHmm
+from gaitmap.stride_segmentation.hmm import (
+    GaussianMixture,
+    HiddenMarkovModel,
+    HmmStrideSegmentation,
+    PreTrainedRothSegmentationModel,
+    SimpleHmm,
+)
 from gaitmap.utils.coordinate_conversion import convert_to_fbf
+
+
+@pytest.mark.parametrize("value", [-0.1, 1.1, np.nan])
+def test_native_model_loader_rejects_invalid_persisted_probabilities(value):
+    """Malformed saved probabilities fail at loading rather than corrupting inference."""
+    emission = GaussianMixture([[0.0]], [[[1.0]]], [1.0])
+    data = HiddenMarkovModel([emission], [[1.0]], [1.0]).to_dict()
+    data["transitions"][0][0] = value
+
+    with pytest.raises(ValueError, match="probabilities"):
+        HiddenMarkovModel.from_dict(data)
 
 
 @pytest.fixture(scope="module")

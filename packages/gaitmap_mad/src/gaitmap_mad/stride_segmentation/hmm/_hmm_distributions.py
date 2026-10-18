@@ -1,11 +1,93 @@
 """Gaussian emission initialization and weighted re-estimation for local HMM training."""
 
-import copy
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
 
 import numpy as np
 from numba import njit
 from scipy.linalg import cholesky, solve_triangular
 from scipy.special import logsumexp
+
+
+@dataclass(frozen=True, eq=False, init=False)
+class GaussianMixture:
+    """One state's Gaussian components, with owned arrays safe for cached inference.
+
+    A single Gaussian uses one component. ``frozen`` prevents all updates;
+    ``component_frozen`` fixes individual means and covariances while allowing
+    mixture proportions to be re-estimated.
+    """
+
+    means: np.ndarray
+    covariances: np.ndarray
+    weights: np.ndarray
+    frozen: bool
+    component_frozen: np.ndarray
+
+    def __init__(self, means, covariances, weights, *, frozen=False, component_frozen=None):
+        means = np.array(means, dtype=np.float64, copy=True, order="C")
+        covariances = np.array(covariances, dtype=np.float64, copy=True, order="C")
+        weights = np.array(weights, dtype=np.float64, copy=True, order="C")
+        if means.ndim != 2 or not all(means.shape):
+            raise ValueError("Gaussian means must have shape (n_components, n_features).")
+        n_components, n_features = means.shape
+        if covariances.shape != (n_components, n_features, n_features) or weights.shape != (n_components,):
+            raise ValueError("Covariances and weights must match the Gaussian components.")
+        if not np.isfinite(means).all() or not np.isfinite(covariances).all():
+            raise ValueError("Gaussian means and covariances must be finite.")
+        if not np.isfinite(weights).all() or np.any(weights < 0) or not np.isclose(weights.sum(), 1.0):
+            raise ValueError("Mixture weights must be nonnegative probabilities summing to one.")
+        if not np.allclose(covariances, covariances.transpose(0, 2, 1)):
+            raise ValueError("Gaussian covariance matrices must be symmetric.")
+        try:
+            np.linalg.cholesky(covariances)
+        except np.linalg.LinAlgError as error:
+            raise ValueError("Gaussian covariance matrices must be positive definite.") from error
+        component_frozen = (
+            np.zeros(n_components, dtype=bool)
+            if component_frozen is None
+            else np.array(component_frozen, dtype=bool, copy=True)
+        )
+        if component_frozen.shape != (n_components,):
+            raise ValueError("Component freeze flags must match the Gaussian components.")
+        for name, array in [
+            ("means", means),
+            ("covariances", covariances),
+            ("weights", weights),
+            ("component_frozen", component_frozen),
+        ]:
+            array.flags.writeable = False
+            object.__setattr__(self, name, array)
+        object.__setattr__(self, "frozen", bool(frozen))
+
+    @property
+    def n_components(self):
+        """Return the number of Gaussian components."""
+        return self.means.shape[0]
+
+    @property
+    def n_features(self):
+        """Return the number of observation features."""
+        return self.means.shape[1]
+
+    def __getstate__(self):
+        return {
+            "means": self.means,
+            "covariances": self.covariances,
+            "weights": self.weights,
+            "frozen": self.frozen,
+            "component_frozen": self.component_frozen,
+        }
+
+    def __setstate__(self, parameters):
+        self.__init__(**parameters)
+
+    def __deepcopy__(self, memo):
+        # NumPy deepcopy otherwise makes read-only arrays writable again.
+        copied = replace(self)
+        memo[id(self)] = copied
+        return copied
 
 
 @njit(cache=True, nogil=True)
@@ -42,15 +124,6 @@ def _samples(observations):
     return np.ascontiguousarray(samples.reshape(-1, 1) if samples.ndim == 1 else samples)
 
 
-def _gaussian(mean, covariance):
-    return {
-        "class": "Distribution",
-        "name": "MultivariateGaussianDistribution",
-        "parameters": [mean.tolist(), covariance.tolist()],
-        "frozen": False,
-    }
-
-
 def _floor_covariance(covariance, min_covar):
     eigenvalues, eigenvectors = np.linalg.eigh(covariance)
     floored = covariance
@@ -67,15 +140,6 @@ def _floor_covariance(covariance, min_covar):
         floored = (eigenvectors * np.maximum(eigenvalues, floor)) @ eigenvectors.T
         floored = (floored + floored.T) * 0.5
     return floored
-
-
-def _update_gaussian(distribution, samples, weights, min_covar):
-    if distribution.get("frozen", False) or not np.any(weights > 0):
-        return distribution
-    mean, covariance = _weighted_moments(samples, weights)
-    result = copy.deepcopy(distribution)
-    result["parameters"] = [mean.tolist(), _floor_covariance(covariance, min_covar).tolist()]
-    return result
 
 
 @njit(cache=True, nogil=True)
@@ -96,52 +160,52 @@ def _gaussian_scores(samples, means, whitening, normalizers):
     return scores
 
 
-def _component_scores(distributions, samples):
-    dimensions = samples.shape[1]
-    means = np.empty((len(distributions), dimensions))
-    whitening = np.empty((len(distributions), dimensions, dimensions))
-    normalizers = np.empty(len(distributions))
-    for index, distribution in enumerate(distributions):
-        mean, covariance = distribution["parameters"]
-        lower = cholesky(np.asarray(covariance), lower=True)
-        means[index] = mean
+def _component_scores(emissions, samples):
+    dimensions = emissions.n_features
+    whitening = np.empty((emissions.n_components, dimensions, dimensions))
+    normalizers = np.empty(emissions.n_components)
+    for index, covariance in enumerate(emissions.covariances):
+        lower = cholesky(covariance, lower=True)
         whitening[index] = solve_triangular(lower, np.eye(dimensions), lower=True)
         normalizers[index] = -0.5 * dimensions * np.log(2 * np.pi) - np.log(np.diag(lower)).sum()
-    # Only the small D-by-D factorization uses SciPy. Applying it to the full
-    # observation matrix avoids threaded BLAS setup inside each EM iteration.
-    return _gaussian_scores(samples, means, whitening, normalizers)
+    return _gaussian_scores(samples, emissions.means, whitening, normalizers)
 
 
-def update_distribution(serialized_distribution, observations, sample_weights, min_covar=1e-6):
-    """Return one weighted MLE update, using soft responsibilities inside mixtures.
+def update_emissions(emissions, observations, sample_weights, *, min_covar=1e-6):
+    """Return weighted emission estimates without changing the input object.
 
     ``min_covar`` bounds covariance eigenvalues in variance units on every
     estimate. Centered moments and normalized weights keep estimates stable
     for large offsets and tiny positive weights. Only zero-support and frozen
-    distributions retain their previous parameters.
+    parameters retain their previous values.
     """
-    result = copy.deepcopy(serialized_distribution)
     samples = _samples(observations)
     weights = np.ascontiguousarray(sample_weights, dtype=np.float64)
-    if result.get("frozen", False) or not np.any(weights > 0):
-        return result
+    if emissions.frozen or not np.any(weights > 0):
+        return replace(emissions)
     positive = weights > 0
     samples = np.ascontiguousarray(samples[positive])
     weights = np.ascontiguousarray(weights[positive])
     weights /= weights.max()
-    if result["class"] != "GeneralMixtureModel":
-        return _update_gaussian(result, samples, weights, min_covar)
-    scores = _component_scores(result["distributions"], samples)
-    with np.errstate(divide="ignore"):
-        scores += np.log(result["weights"])
-    responsibilities = np.exp(scores - logsumexp(scores, axis=1, keepdims=True)) * weights[:, None]
+    if emissions.n_components == 1:
+        responsibilities = weights[:, None]
+    else:
+        scores = _component_scores(emissions, samples)
+        with np.errstate(divide="ignore"):
+            scores += np.log(emissions.weights)
+        responsibilities = np.exp(scores - logsumexp(scores, axis=1, keepdims=True)) * weights[:, None]
     counts = responsibilities.sum(axis=0)
-    result["weights"] = (counts / counts.sum()).tolist()
-    result["distributions"] = [
-        _update_gaussian(component, samples, np.ascontiguousarray(responsibilities[:, index]), min_covar)
-        for index, component in enumerate(result["distributions"])
-    ]
-    return result
+    means = emissions.means.copy()
+    covariances = emissions.covariances.copy()
+    for component in range(emissions.n_components):
+        if emissions.component_frozen[component] or counts[component] == 0:
+            continue
+        component_weights = np.ascontiguousarray(responsibilities[:, component])
+        means[component], covariance = _weighted_moments(samples, component_weights)
+        covariances[component] = _floor_covariance(covariance, min_covar)
+    return GaussianMixture(
+        means, covariances, counts / counts.sum(), frozen=emissions.frozen, component_frozen=emissions.component_frozen
+    )
 
 
 @njit(cache=True, nogil=True)
@@ -173,47 +237,43 @@ def _first_k_labels(samples, n_components):
     return _nearest_centroids(samples, centroids)
 
 
-def _mixture_likelihood(distribution, samples):
-    scores = _component_scores(distribution["distributions"], samples)
+def _mixture_likelihood(emissions, samples):
+    scores = _component_scores(emissions, samples)
     with np.errstate(divide="ignore"):
-        scores += np.log(distribution["weights"])
+        scores += np.log(emissions.weights)
     return logsumexp(scores, axis=1).sum()
 
 
-def fit_distribution(observations, n_components=1, verbose=False, n_init=5, n_jobs=1, min_covar=1e-6):
-    """Initialize Gaussian emissions with deterministic first-k clustering and EM.
+def fit_emissions(observations, *, n_components=1, min_covar=1e-6, verbose=False):
+    """Fit Gaussian emissions with deterministic first-k clustering and EM.
 
-    One centroid update precedes Gaussian initialization, as in legacy
-    ``max_kmeans_iterations=1``. EM stops after an improvement of at most 0.1.
-    Covariance eigenvalues are bounded by ``min_covar`` in variance units.
-    First-k restarts produce identical results, so ``n_init`` needs no repeated
-    work. ``n_jobs`` is retained for callers; numeric kernels execute locally.
+    One centroid update precedes Gaussian initialization. EM stops after an
+    improvement of at most 0.1. Covariance eigenvalues are bounded by
+    ``min_covar`` in variance units.
     """
-    del n_init, n_jobs
     samples = _samples(observations)
-    blank = _gaussian(np.zeros(samples.shape[1]), np.eye(samples.shape[1]))
+    blank = GaussianMixture(np.zeros((1, samples.shape[1])), np.eye(samples.shape[1])[None, :, :], [1.0])
     if n_components == 1:
-        return update_distribution(blank, samples, np.ones(len(samples)), min_covar=min_covar)
+        return update_emissions(blank, samples, np.ones(len(samples)), min_covar=min_covar)
     if n_components < 1 or n_components > len(samples):
         raise ValueError("Mixture initialization needs at least one observation per component.")
     labels = _first_k_labels(samples, n_components)
-    distribution = {
-        "class": "GeneralMixtureModel",
-        "distributions": [
-            update_distribution(
-                blank, samples[labels == component], np.ones(np.sum(labels == component)), min_covar=min_covar
-            )
-            for component in range(n_components)
-        ],
-        "weights": [float(np.mean(labels == component)) for component in range(n_components)],
-    }
-    previous = _mixture_likelihood(distribution, samples)
+    components = [
+        update_emissions(blank, samples[labels == component], np.ones(np.sum(labels == component)), min_covar=min_covar)
+        for component in range(n_components)
+    ]
+    emissions = GaussianMixture(
+        np.concatenate([component.means for component in components]),
+        np.concatenate([component.covariances for component in components]),
+        [float(np.mean(labels == component)) for component in range(n_components)],
+    )
+    previous = _mixture_likelihood(emissions, samples)
     improvement = np.inf
     while improvement > 0.1:
-        distribution = update_distribution(distribution, samples, np.ones(len(samples)), min_covar=min_covar)
-        likelihood = _mixture_likelihood(distribution, samples)
+        emissions = update_emissions(emissions, samples, np.ones(len(samples)), min_covar=min_covar)
+        likelihood = _mixture_likelihood(emissions, samples)
         improvement = likelihood - previous
         if verbose:
             print(f"Mixture improvement: {improvement}")
         previous = likelihood
-    return distribution
+    return emissions

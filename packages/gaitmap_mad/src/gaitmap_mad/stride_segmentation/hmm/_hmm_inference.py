@@ -1,15 +1,15 @@
 """Numba inference for gaitmap's persisted Gaussian hidden Markov models.
 
-This deliberately supports only emitting Gaussian states and the two silent start
-and end states. Prediction returns one
-emitting-state index per observation, with no silent-state sentinels.
+The model contains emitting states only. Initial and termination probabilities
+are separate numeric vectors, and prediction returns one state per observation.
 """
 
-import copy
 import json
 
 import numpy as np
 from numba import njit
+
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
 
 
 @njit(cache=True)
@@ -116,198 +116,146 @@ def _log_probabilities(probabilities):
         return np.log(probabilities)
 
 
-class _Gaussian:
-    def __init__(self, data):
-        if data.get("class") != "Distribution" or data.get("name") != "MultivariateGaussianDistribution":
-            raise ValueError("Only full-covariance MultivariateGaussianDistribution emissions are supported.")
-        self._data = data
-        self.name = data["name"]
-        self.parameters = copy.deepcopy(data["parameters"])
-        self.frozen = data.get("frozen", False)
-        self.mean = np.asarray(self.parameters[0], dtype=np.float64)
-        covariance = np.asarray(self.parameters[1], dtype=np.float64)
-        self.d = len(self.mean)
-        if covariance.shape != (self.d, self.d) or not np.isfinite(covariance).all():
-            raise ValueError("Gaussian covariance must be a finite square matrix matching its mean.")
-        if not np.isfinite(self.mean).all() or not np.allclose(covariance, covariance.T):
-            raise ValueError("Gaussian means must be finite and covariance matrices must be symmetric.")
-        try:
-            cholesky = np.linalg.cholesky(covariance)
-        except np.linalg.LinAlgError as error:
-            raise ValueError("Gaussian covariance must be positive definite.") from error
-        self.whitening = np.linalg.solve(cholesky, np.eye(self.d))
-        self.normalizer = -0.5 * self.d * np.log(2 * np.pi) - np.log(np.diag(cholesky)).sum()
-
-    def to_dict(self):
-        return copy.deepcopy(self._data)
-
-
-class _Mixture:
-    def __init__(self, data):
-        self._data = data
-        self.frozen = data.get("frozen", False)
-        self.distributions = [_Gaussian(component) for component in data["distributions"]]
-        self.weights = np.asarray(data["weights"], dtype=np.float64)
-        if len(self.weights) != len(self.distributions) or not len(self.weights):
-            raise ValueError("Gaussian mixtures need one weight per component.")
-        if not np.isfinite(self.weights).all() or np.any(self.weights < 0) or not np.isclose(self.weights.sum(), 1.0):
-            raise ValueError("Serialized Gaussian mixture weights must be nonnegative probabilities summing to one.")
-        self.d = self.distributions[0].d
-
-    def to_dict(self):
-        return copy.deepcopy(self._data)
-
-
-class _State:
-    def __init__(self, data):
-        self._data = data
-        self.name = data["name"]
-        self.weight = float(data["weight"])
-        if not np.isfinite(self.weight) or self.weight < 0:
-            raise ValueError("State weights must be finite and nonnegative.")
-        distribution = data["distribution"]
-        if distribution is None:
-            self.distribution = None
-        elif distribution.get("class") == "GeneralMixtureModel":
-            self.distribution = _Mixture(distribution)
-        else:
-            self.distribution = _Gaussian(distribution)
-
-    def to_dict(self):
-        return copy.deepcopy(self._data)
+def _owned_array(values, dtype=np.float64):
+    result = np.array(values, dtype=dtype, copy=True, order="C")
+    result.flags.writeable = False
+    return result
 
 
 class HiddenMarkovModel:
-    """Gaussian HMM with local Numba inference and training.
+    """Gaussian HMM with explicitly represented emitting states.
 
-    Emitting states retain their serialized order and precede the silent states.
-    ``finite`` indicates whether the model has explicit termination edges. A
-    model without those edges can terminate in any emitting state.
+    Transition probabilities include the probability of termination in their
+    row normalization. ``ends=None`` permits termination in any state. Masks
+    preserve permitted transitions whose current probability is zero. All
+    numeric parameters are owned, read-only arrays.
     """
 
     __hash__ = None
 
-    def __init__(self, model):
-        if model.get("class") != "HiddenMarkovModel":
-            raise ValueError("Expected a serialized HiddenMarkovModel.")
-        if model.get("distribution ties") or any(edge[4] is not None for edge in model["edges"]):
-            raise ValueError("Tied distributions and transitions are not supported by the inference backend.")
-        self._model = copy.deepcopy(model)
-        self.name = model["name"]
-        self.states = [_State(state) for state in self._model["states"]]
-        self.start_index = model["start_index"]
-        self.end_index = model["end_index"]
-        self.silent_start = model["silent_index"]
-        n_states = self.silent_start
-        if n_states < 1 or {self.start_index, self.end_index} != {n_states, n_states + 1}:
-            raise ValueError("Only emitting states followed by the silent start and end states are supported.")
-        if len(self.states) != n_states + 2 or any(state.distribution is None for state in self.states[:n_states]):
-            raise ValueError("Additional silent states are not supported.")
-        if any(state.distribution is not None for state in self.states[n_states:]):
-            raise ValueError("The start and end states must be silent.")
-        self.start = self.states[self.start_index]
-        self.end = self.states[self.end_index]
-        self._load_transitions(model)
+    def __init__(
+        self,
+        emissions,
+        transitions,
+        starts,
+        ends=None,
+        *,
+        name=None,
+        state_names=None,
+        state_weights=None,
+        transition_mask=None,
+        start_mask=None,
+        end_mask=None,
+    ):
+        self.name = name
+        self.emissions = tuple(
+            GaussianMixture(
+                emission.means,
+                emission.covariances,
+                emission.weights,
+                frozen=emission.frozen,
+                component_frozen=emission.component_frozen,
+            )
+            for emission in emissions
+        )
+        self.n_states = len(self.emissions)
+        self.n_features = self.emissions[0].n_features
+        self.state_names = (
+            tuple(state_names) if state_names is not None else tuple(f"s{i}" for i in range(self.n_states))
+        )
+        self.transitions = _owned_array(transitions)
+        self.starts = _owned_array(starts)
+        self.ends = None if ends is None else _owned_array(ends)
+        self.state_weights = _owned_array(np.ones(self.n_states) if state_weights is None else state_weights)
+        self.transition_mask = _owned_array(
+            self.transitions > 0 if transition_mask is None else transition_mask, dtype=bool
+        )
+        self.start_mask = _owned_array(self.starts > 0 if start_mask is None else start_mask, dtype=bool)
+        self.end_mask = (
+            None if self.ends is None else _owned_array(self.ends > 0 if end_mask is None else end_mask, dtype=bool)
+        )
+        self._validate_shapes()
+        self._log_transitions = _log_probabilities(self.transitions)
+        self._log_starts = _log_probabilities(self.starts)
+        self._log_ends = np.zeros(self.n_states) if self.ends is None else _log_probabilities(self.ends)
         self._prepare_emissions()
+
+    def _validate_shapes(self):
+        if self.transitions.shape != (self.n_states, self.n_states) or self.starts.shape != (self.n_states,):
+            raise ValueError("Transition and initial probabilities must match the emitting state count.")
+        if self.ends is not None and self.ends.shape != (self.n_states,):
+            raise ValueError("Termination probabilities must match the emitting state count.")
+        if self.state_weights.shape != (self.n_states,) or len(self.state_names) != self.n_states:
+            raise ValueError("State names and weights must match the emitting state count.")
+        if self.transition_mask.shape != self.transitions.shape or self.start_mask.shape != self.starts.shape:
+            raise ValueError("Topology masks must match their probability arrays.")
+        if self.end_mask is not None and self.end_mask.shape != self.ends.shape:
+            raise ValueError("The termination mask must match termination probabilities.")
+        if any(emission.n_features != self.n_features for emission in self.emissions):
+            raise ValueError("All state emissions must have the same number of features.")
 
     def __eq__(self, other):
         if not isinstance(other, HiddenMarkovModel):
             return NotImplemented
-        return self.to_dict() == other.to_dict()
-
-    def _load_transitions(self, model):
-        n_states = self.silent_start
-        self._transitions = np.zeros((n_states + 2, n_states + 2), dtype=np.float64)
-        for source, target, probability, _, _ in model["edges"]:
-            if not 0 <= source < len(self.states) or not 0 <= target < len(self.states):
-                raise ValueError("Transition indices must reference existing states.")
-            if target == self.start_index or source == self.end_index:
-                raise ValueError("Transitions into the start state or out of the end state are not supported.")
-            if not np.isfinite(probability) or not 0 <= probability <= 1:
-                raise ValueError("Transition probabilities must be finite values between zero and one.")
-            self._transitions[source, target] = probability
-        self.finite = any(edge[1] == self.end_index for edge in model["edges"])
-        self._log_transitions = _log_probabilities(self._transitions[:n_states, :n_states])
-        self._log_starts = _log_probabilities(self._transitions[self.start_index, :n_states])
-        self._log_ends = (
-            _log_probabilities(self._transitions[:n_states, self.end_index]) if self.finite else np.zeros(n_states)
+        if self.name != other.name or self.state_names != other.state_names or self.n_states != other.n_states:
+            return False
+        parameters = ("transitions", "starts", "ends", "state_weights", "transition_mask", "start_mask", "end_mask")
+        if any(not np.array_equal(getattr(self, name), getattr(other, name)) for name in parameters):
+            return False
+        return all(
+            left.frozen == right.frozen
+            and all(
+                np.array_equal(getattr(left, name), getattr(right, name))
+                for name in ("means", "covariances", "weights", "component_frozen")
+            )
+            for left, right in zip(self.emissions, other.emissions)
         )
+
+    def __repr__(self):
+        """Summarize the model without printing its parameter arrays."""
+        return f"HiddenMarkovModel(n_states={self.n_states}, n_features={self.n_features}, name={self.name!r})"
+
+    def __deepcopy__(self, memo):
+        """Rebuild owning read-only parameters and their inference caches when cloning."""
+        result = type(self)(**self.__getstate__())
+        memo[id(self)] = result
+        return result
+
+    def __getstate__(self):
+        """Persist and hash native parameters independently of derived inference caches."""
+        return {
+            "emissions": self.emissions,
+            "transitions": self.transitions,
+            "starts": self.starts,
+            "ends": self.ends,
+            "name": self.name,
+            "state_names": self.state_names,
+            "state_weights": self.state_weights,
+            "transition_mask": self.transition_mask,
+            "start_mask": self.start_mask,
+            "end_mask": self.end_mask,
+        }
+
+    def __setstate__(self, state):
+        """Rebuild read-only arrays and inference caches after process transfer."""
+        self.__init__(**state)
 
     def _prepare_emissions(self):
-        n_states = self.silent_start
-        components, component_weights, offsets = [], [], [0]
-        for state in self.states[:n_states]:
-            distribution = state.distribution
-            if isinstance(distribution, _Mixture):
-                components.extend(distribution.distributions)
-                component_weights.extend(distribution.weights)
-            else:
-                components.append(distribution)
-                component_weights.append(1.0)
-            offsets.append(len(components))
-        self.d = components[0].d
-        if any(component.d != self.d for component in components):
-            raise ValueError("All Gaussian components must have the same number of dimensions.")
-        self._means = np.ascontiguousarray([component.mean for component in components])
-        self._whitening = np.ascontiguousarray([component.whitening for component in components])
-        self._normalizers = np.asarray([component.normalizer for component in components])
-        self._component_weights = _log_probabilities(np.asarray(component_weights))
+        means, whitening, normalizers, weights, offsets = [], [], [], [], [0]
+        for emission in self.emissions:
+            for mean, covariance, weight in zip(emission.means, emission.covariances, emission.weights):
+                cholesky = np.linalg.cholesky(covariance)
+                means.append(mean)
+                whitening.append(np.linalg.solve(cholesky, np.eye(self.n_features)))
+                normalizers.append(-0.5 * self.n_features * np.log(2 * np.pi) - np.log(np.diag(cholesky)).sum())
+                weights.append(weight)
+            offsets.append(len(means))
+        self._means = np.ascontiguousarray(means)
+        self._whitening = np.ascontiguousarray(whitening)
+        self._normalizers = np.asarray(normalizers)
+        self._component_weights = _log_probabilities(np.asarray(weights))
         self._offsets = np.asarray(offsets, dtype=np.int64)
-        self._state_weights = _log_probabilities(np.asarray([state.weight for state in self.states[:n_states]]))
-
-    @classmethod
-    def from_matrix(cls, transition_probabilities, distributions, starts, ends=None, state_names=None, name=None):
-        """Build a model, normalizing outgoing transitions together with termination."""
-        n_states = len(distributions)
-        state_names = state_names or [f"s{i}" for i in range(n_states)]
-        states = [
-            {
-                "class": "State",
-                "name": state_name,
-                "distribution": distribution.to_dict()
-                if hasattr(distribution, "to_dict")
-                else copy.deepcopy(distribution),
-                "weight": 1.0,
-            }
-            for state_name, distribution in zip(state_names, distributions)
-        ]
-        states.extend(
-            {"class": "State", "name": f"{name}-{boundary}", "distribution": None, "weight": 1.0}
-            for boundary in ["start", "end"]
-        )
-        transitions = np.zeros((n_states + 2, n_states + 2), dtype=np.float64)
-        transitions[:n_states, :n_states] = transition_probabilities
-        transitions[n_states, :n_states] = starts
-        if ends is not None:
-            transitions[:n_states, n_states + 1] = ends
-        totals = transitions.sum(axis=1)
-        transitions[totals > 0] /= totals[totals > 0, None]
-        edges = [
-            [int(source), int(target), float(transitions[source, target]), float(transitions[source, target]), None]
-            for source, target in zip(*np.nonzero(transitions))
-        ]
-        return cls.from_dict(
-            {
-                "class": "HiddenMarkovModel",
-                "name": name,
-                "states": states,
-                "start": states[n_states],
-                "end": states[n_states + 1],
-                "start_index": n_states,
-                "end_index": n_states + 1,
-                "silent_index": n_states,
-                "edges": edges,
-                "distribution ties": [],
-            }
-        )
-
-    def freeze_distributions(self):
-        """Keep all emission parameters and mixture weights fixed during training."""
-        serialized = self.to_dict()
-        for state in serialized["states"][: self.silent_start]:
-            state["distribution"]["frozen"] = True
-        self.__init__(serialized)
-        return self
+        self._state_weights = _log_probabilities(self.state_weights)
 
     def fit(
         self,
@@ -315,20 +263,21 @@ class HiddenMarkovModel:
         labels=None,
         algorithm="baum-welch",
         stop_threshold=1e-9,
-        max_iterations=1e8,
-        return_history=False,
+        max_iterations=100_000_000,
         verbose=False,
         n_jobs=1,
         min_covar=1e-6,
+        update_emissions=True,
     ):
-        """Re-estimate transitions and emissions with Baum-Welch, Viterbi, or labels.
+        """Return a fitted model and history, leaving this model unchanged.
 
-        ``min_covar`` floors covariance eigenvalues in squared feature units on each
-        emission update. Frozen emissions retain their original parameters.
+        ``update_emissions=False`` trains only transition probabilities.
+        ``min_covar`` floors covariance eigenvalues on each emission update.
+        Explicitly frozen emissions retain their original parameters.
         """
         from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm  # noqa: PLC0415
 
-        trained, history = fit_hmm(
+        return fit_hmm(
             self,
             sequences,
             labels=labels,
@@ -338,14 +287,15 @@ class HiddenMarkovModel:
             verbose=verbose,
             n_jobs=n_jobs,
             min_covar=min_covar,
+            update_emissions=update_emissions,
         )
-        self.__dict__.update(trained.__dict__)
-        return (self, history) if return_history else self
 
-    @classmethod
-    def from_dict(cls, model):
-        """Load the supported subset of pomegranate's serialized HMM format."""
-        return cls(model)
+    @staticmethod
+    def from_dict(data):
+        """Load a native or legacy persisted model through the persistence adapter."""
+        from gaitmap_mad.stride_segmentation.hmm._hmm_io import load_model  # noqa: PLC0415
+
+        return load_model(data)
 
     @classmethod
     def from_json(cls, serialized):
@@ -353,25 +303,21 @@ class HiddenMarkovModel:
         return cls.from_dict(json.loads(serialized))
 
     def to_dict(self):
-        """Return an independent copy of the original persisted model."""
-        serialized = copy.deepcopy(self._model)
-        serialized["name"] = self.name
-        return serialized
+        """Serialize model parameters through the persistence adapter."""
+        from gaitmap_mad.stride_segmentation.hmm._hmm_io import serialize_model  # noqa: PLC0415
+
+        return serialize_model(self)
 
     def to_json(self):
         """Serialize the model without inference caches."""
         return json.dumps(self.to_dict())
 
-    def dense_transition_matrix(self):
-        """Return transition probabilities, including the silent states."""
-        return self._transitions.copy()
-
     def _scores(self, samples):
         samples = np.asarray(samples, dtype=np.float64)
-        if samples.ndim == 1 and self.d == 1:
+        if samples.ndim == 1 and self.n_features == 1:
             samples = samples.reshape(-1, 1)
-        if samples.ndim != 2 or samples.shape[1] != self.d or len(samples) == 0:
-            raise ValueError(f"Expected a nonempty observation matrix with {self.d} columns.")
+        if samples.ndim != 2 or samples.shape[1] != self.n_features or len(samples) == 0:
+            raise ValueError(f"Expected a nonempty observation matrix with {self.n_features} columns.")
         if not np.isfinite(samples).all():
             raise ValueError("Observations must contain only finite values.")
         return _emission_scores(
@@ -404,9 +350,9 @@ class HiddenMarkovModel:
     def predict(self, samples, algorithm="viterbi"):
         """Decode observations with Viterbi or posterior maximum probability.
 
-        Ties resolve to the earliest state in serialized state order. Posterior
-        decoding need not produce a transition-valid path. Both algorithms
-        return exactly one state index per observation.
+        Ties resolve to the earliest state in model order. Posterior decoding
+        need not produce a transition-valid path. Both algorithms return
+        exactly one state index per observation.
         """
         if algorithm == "map":
             return np.argmax(self.predict_log_proba(samples), axis=1)

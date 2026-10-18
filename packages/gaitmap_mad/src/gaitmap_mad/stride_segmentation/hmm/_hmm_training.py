@@ -9,7 +9,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from numba import njit
 
-from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import update_distribution
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import update_emissions as update_emission_parameters
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import _forward, _posteriors, _viterbi
 
 
@@ -44,23 +44,25 @@ class History:
 
 
 @njit(cache=True, nogil=True)
-def _path_statistics(path, n_states, start_index, end_index, finite):
+def _path_statistics(path, n_states, has_end):
     weights = np.zeros((len(path), n_states))
-    transitions = np.zeros((n_states + 2, n_states + 2))
-    transitions[start_index, path[0]] = 1.0
+    transitions = np.zeros((n_states, n_states))
+    starts = np.zeros(n_states)
+    ends = np.zeros(n_states)
+    starts[path[0]] = 1.0
     for observation, state in enumerate(path):
         weights[observation, state] = 1.0
         if observation:
             transitions[path[observation - 1], state] += 1.0
-    if finite:
-        transitions[path[-1], end_index] = 1.0
-    return transitions, weights
+    if has_end:
+        ends[path[-1]] = 1.0
+    return transitions, starts, ends, weights
 
 
-def _labeled_paths(model, sequences, labels, topology):
+def _labeled_paths(model, sequences, labels):
     if labels is None or len(labels) != len(sequences):
         raise ValueError("Labeled training needs one label sequence per observation sequence.")
-    names = {state.name: index for index, state in enumerate(model.states[: model.silent_start])}
+    names = {name: index for index, name in enumerate(model.state_names)}
     paths = []
     for sequence, sequence_labels in zip(sequences, labels):
         if sequence_labels is None or len(sequence_labels) != len(sequence):
@@ -68,23 +70,22 @@ def _labeled_paths(model, sequences, labels, topology):
         path = np.asarray(
             [names[label] if isinstance(label, str) else label for label in sequence_labels], dtype=np.int64
         )
-        if np.any(path < 0) or np.any(path >= model.silent_start):
+        if np.any(path < 0) or np.any(path >= model.n_states):
             raise ValueError("Labels must identify an emitting state.")
-        if not topology[model.start_index, path[0]] or not np.all(topology[path[:-1], path[1:]]):
+        if not model.start_mask[path[0]] or not np.all(model.transition_mask[path[:-1], path[1:]]):
             raise ValueError("Labels contain a transition outside the model topology.")
-        if model.finite and not topology[path[-1], model.end_index]:
+        if model.ends is not None and not model.end_mask[path[-1]]:
             raise ValueError("Labels end in a state without a permitted termination transition.")
         paths.append(path)
     return paths
 
 
 @njit(cache=True, nogil=True)
-def _expected_transitions(forward, posterior, scores, transitions, start_index, end_index, finite):
+def _expected_transitions(forward, posterior, scores, transitions, has_end):
     n_samples, n_states = scores.shape
-    counts = np.zeros((n_states + 2, n_states + 2))
-    counts[start_index, :n_states] = np.exp(posterior[0])
-    if finite:
-        counts[:n_states, end_index] = np.exp(posterior[-1])
+    counts = np.zeros((n_states, n_states))
+    starts = np.exp(posterior[0])
+    ends = np.exp(posterior[-1]) if has_end else np.zeros(n_states)
     for observation in range(n_samples - 1):
         for following in range(n_states):
             if not np.isfinite(forward[observation + 1, following]):
@@ -98,50 +99,67 @@ def _expected_transitions(forward, posterior, scores, transitions, start_index, 
                 counts[state, following] += np.exp(
                     forward[observation, state] + transitions[state, following] + remainder
                 )
-    return counts
+    return counts, starts, ends
 
 
 def _sequence_statistics(model, sequence, path, algorithm):
     scores = model._scores(sequence)
     forward, likelihood = _forward(scores, model._log_transitions, model._log_starts, model._log_ends)
     if algorithm == "labeled":
-        counts, weights = _path_statistics(path, model.silent_start, model.start_index, model.end_index, model.finite)
+        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
     elif not np.isfinite(likelihood):
         raise ValueError("No valid state path exists for a training sequence.")
     elif algorithm == "viterbi":
         path, _ = _viterbi(scores, model._log_transitions, model._log_starts, model._log_ends)
-        counts, weights = _path_statistics(path, model.silent_start, model.start_index, model.end_index, model.finite)
+        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
     else:
         posterior = _posteriors(scores, model._log_transitions, model._log_ends, forward, likelihood)
-        counts = _expected_transitions(
-            forward, posterior, scores, model._log_transitions, model.start_index, model.end_index, model.finite
+        counts, starts, ends = _expected_transitions(
+            forward, posterior, scores, model._log_transitions, model.ends is not None
         )
         weights = np.exp(posterior)
-    return likelihood, counts, weights
+    return likelihood, counts, starts, ends, weights
 
 
-def _maximize(model, observations, counts, weights, topology, min_covar):
-    serialized = model.to_dict()
-    counts = counts * topology
-    totals = counts.sum(axis=1)
-    edges = []
-    for serialized_edge in serialized["edges"]:
-        edge = list(serialized_edge)
-        source, target = edge[:2]
-        if totals[source] > 0:
-            edge[2] = counts[source, target] / totals[source]
-        edges.append(edge)
-    serialized["edges"] = edges
-    for state, state_weights in zip(serialized["states"][: model.silent_start], weights.T):
-        state["distribution"] = update_distribution(
-            state["distribution"], observations, state_weights, min_covar=min_covar
+def _maximize(model, observations, counts, starts, ends, weights, min_covar, update_emissions):
+    counts = counts * model.transition_mask
+    starts = starts * model.start_mask
+    ends = ends * model.end_mask if model.ends is not None else np.zeros(model.n_states)
+    totals = counts.sum(axis=1) + ends
+    observed = totals > 0
+    transitions = model.transitions.copy()
+    transitions[observed] = counts[observed] / totals[observed, None]
+    initial = starts / starts.sum() if starts.sum() > 0 else model.starts
+    termination = None if model.ends is None else model.ends.copy()
+    if termination is not None:
+        termination[observed] = ends[observed] / totals[observed]
+    emissions = (
+        tuple(
+            update_emission_parameters(emission, observations, state_weights, min_covar=min_covar)
+            for emission, state_weights in zip(model.emissions, weights.T)
         )
-    return type(model).from_dict(serialized)
+        if update_emissions
+        else model.emissions
+    )
+    return type(model)(
+        emissions,
+        transitions,
+        initial,
+        termination,
+        name=model.name,
+        state_names=model.state_names,
+        state_weights=model.state_weights,
+        transition_mask=model.transition_mask,
+        start_mask=model.start_mask,
+        end_mask=model.end_mask,
+    )
 
 
 def _prepare_sequences(model, sequences):
     sequences = [np.asarray(sequence, dtype=np.float64) for sequence in sequences]
-    sequences = [sequence.reshape(-1, 1) if sequence.ndim == 1 and model.d == 1 else sequence for sequence in sequences]
+    sequences = [
+        sequence.reshape(-1, 1) if sequence.ndim == 1 and model.n_features == 1 else sequence for sequence in sequences
+    ]
     if not sequences or any(len(sequence) == 0 for sequence in sequences):
         raise ValueError("Training needs nonempty observation sequences.")
     for sequence in sequences:
@@ -159,6 +177,7 @@ def fit_hmm(
     verbose=False,
     n_jobs=1,
     min_covar=1e-6,
+    update_emissions=True,
 ):
     """Fit a new model and return its training history without changing ``model``.
 
@@ -168,6 +187,7 @@ def fit_hmm(
     Labels are used only by the ``labeled`` algorithm.
     ``min_covar`` sets the minimum covariance eigenvalue for every estimated
     Gaussian. Frozen emission parameters retain their original values.
+    ``update_emissions=False`` fits only the transition probabilities.
     """
     if algorithm not in {"labeled", "baum-welch", "viterbi"}:
         raise ValueError("Supported training algorithms are 'baum-welch', 'viterbi' and 'labeled'.")
@@ -175,11 +195,19 @@ def fit_hmm(
         raise ValueError("max_iterations must be nonnegative.")
     sequences = _prepare_sequences(model, sequences)
     observations = np.concatenate(sequences)
-    topology = np.zeros_like(model.dense_transition_matrix(), dtype=bool)
-    for source, target, *_ in model.to_dict()["edges"]:
-        topology[source, target] = True
-    paths = _labeled_paths(model, sequences, labels, topology) if algorithm == "labeled" else [None] * len(sequences)
-    current = type(model).from_dict(model.to_dict())
+    paths = _labeled_paths(model, sequences, labels) if algorithm == "labeled" else [None] * len(sequences)
+    current = type(model)(
+        model.emissions,
+        model.transitions,
+        model.starts,
+        model.ends,
+        name=model.name,
+        state_names=model.state_names,
+        state_weights=model.state_weights,
+        transition_mask=model.transition_mask,
+        start_mask=model.start_mask,
+        end_mask=model.end_mask,
+    )
     history = History()
     pending = None
     iteration = 0
@@ -189,7 +217,7 @@ def fit_hmm(
         while improvement > stop_threshold or iteration < 1:
             started = time()
             if pending is not None:
-                current = _maximize(current, observations, *pending, topology, min_covar)
+                current = _maximize(current, observations, *pending, min_covar, update_emissions)
             if iteration >= max_iterations + 1:
                 break
             summaries = parallel(
@@ -197,9 +225,11 @@ def fit_hmm(
                 for sequence, path in zip(sequences, paths)
             )
             likelihood = sum(summary[0] for summary in summaries)
-            counts = sum((summary[1] for summary in summaries), np.zeros_like(current.dense_transition_matrix()))
-            weights = np.concatenate([summary[2] for summary in summaries])
-            pending = counts, weights
+            counts = sum((summary[1] for summary in summaries), np.zeros_like(current.transitions))
+            starts = sum((summary[2] for summary in summaries), np.zeros(current.n_states))
+            ends = sum((summary[3] for summary in summaries), np.zeros(current.n_states))
+            weights = np.concatenate([summary[4] for summary in summaries])
+            pending = counts, starts, ends, weights
             if iteration == 0:
                 history.initial_log_probability = likelihood
             else:

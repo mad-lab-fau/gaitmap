@@ -18,13 +18,11 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    ShortenedHMMPrint,
     _DataToShortError,
     check_history_for_training_failure,
     convert_stride_list_to_transition_list,
     create_transition_matrix_fully_connected,
     extract_transitions_starts_stops_from_hidden_state_sequence,
-    get_model_distributions,
     get_train_data_sequences_strides,
     get_train_data_sequences_transitions,
     predict,
@@ -175,7 +173,7 @@ class BaseSegmentationHmm(_BaseSerializable):
         raise NotImplementedError
 
 
-class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
+class RothSegmentationHmm(BaseSegmentationHmm):
     """A hierarchical HMM model for stride segmentation proposed by Roth et al. [1]_.
 
     This model differentiates between strides and transitions.
@@ -529,9 +527,7 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         n_states_transition = transition_model_trained.n_states
 
         # extract fitted distributions from both separate trained models
-        distributions = get_model_distributions(transition_model_trained.model) + get_model_distributions(
-            stride_model_trained.model
-        )
+        distributions = transition_model_trained.model.emissions + stride_model_trained.model.emissions
 
         # predict hidden state labels for complete walking bouts
         labels_train_sequence = create_fully_labeled_gait_sequences(
@@ -545,8 +541,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
         if self.initialization == "fully-connected":
             trans_mat, start_probs, _ = create_transition_matrix_fully_connected(self.n_states)
         else:
-            trans_mat_stride = stride_model_trained.model.dense_transition_matrix()[:-2, :-2]
-            trans_mat_transition = transition_model_trained.model.dense_transition_matrix()[:-2, :-2]
+            trans_mat_stride = stride_model_trained.model.transitions
+            trans_mat_transition = transition_model_trained.model.transitions
             trans_mat = np.zeros((self.n_states, self.n_states))
             trans_mat[:n_states_transition, :n_states_transition] = trans_mat_transition
             trans_mat[n_states_transition:, n_states_transition:] = trans_mat_stride
@@ -560,8 +556,9 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
                 if trans_mat[source, target] == 0:
                     trans_mat[source, target] = 0.1
 
-        new_model = HiddenMarkovModel.from_matrix(trans_mat, distributions, start_probs)
-        new_model.freeze_distributions()
+        row_totals = trans_mat.sum(axis=1, keepdims=True)
+        np.divide(trans_mat, row_totals, out=trans_mat, where=row_totals > 0)
+        new_model = HiddenMarkovModel(distributions, trans_mat, start_probs / start_probs.sum())
 
         self.data_columns = tuple(data_sequence_feature_space[0].columns)
 
@@ -571,13 +568,13 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
             for feature_data in data_sequence_feature_space
         ]
 
-        _, history = new_model.fit(
+        new_model, history = new_model.fit(
             sequences=data_train_sequence,
             labels=labels_train_sequence,
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
-            return_history=True,
+            update_emissions=False,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
         )

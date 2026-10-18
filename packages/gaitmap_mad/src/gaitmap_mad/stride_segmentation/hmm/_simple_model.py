@@ -14,11 +14,10 @@ from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 from gaitmap_mad.stride_segmentation.hmm._utils import (
-    ShortenedHMMPrint,
     check_history_for_training_failure,
     create_transition_matrix_fully_connected,
     create_transition_matrix_left_right,
-    gmms_from_samples,
+    initialize_emissions,
     predict,
 )
 
@@ -65,7 +64,7 @@ def initialize_hmm(
     This function supports currently the following "architectures":
 
     - "left-right-strict":
-        This will result in a strictly left-right structure, with no self-transitions and
+        This will result in a strictly left-right structure, with self-transitions and
         start- and end-state bound to the first and last state, respectively.
         Example transition matrix for a 5-state model:
         transition_matrix: 1  1  0  0  0   starts: 1  0  0  0  0
@@ -74,7 +73,7 @@ def initialize_hmm(
                            0  0  0  1  1
                            0  0  0  0  1
     - "left-right-loose":
-        This will result in a loose left-right structure, with allowed self-transitions and
+        This will result in a loose left-right structure, with a last-to-first transition and
         start- and end-state not specified initially.
         Example transition matrix for a 5-state model:
         transition_matrix: 1  1  0  0  0   starts: 1  1  1  1  1
@@ -100,7 +99,7 @@ def initialize_hmm(
 
     # Note: In the past we used a fixed random state when generating the gmms.
     # Now we are using a different method of initialization, where this is not needed anymore.
-    distributions, _ = gmms_from_samples(
+    distributions = initialize_emissions(
         data_train_sequence,
         labels_initialization_sequence,
         n_gmm_components,
@@ -113,12 +112,12 @@ def initialize_hmm(
     # where the model "loops" (aka state-0 and state-n) so we also will enforce the model to start with "state-0" and
     # always end with "state-n"
     if architecture == "left-right-strict":
-        transition_matrix, start_probs, end_probs = create_transition_matrix_left_right(n_states, self_transition=False)
+        transition_matrix, start_probs, end_probs = create_transition_matrix_left_right(n_states, cyclic=False)
 
     # allow transition model to start and end in all states (as we do not have any specific information about
     # "transitions", this could be actually anything in the data which is no stride)
     elif architecture == "left-right-loose":
-        transition_matrix, _, _ = create_transition_matrix_left_right(n_states, self_transition=True)
+        transition_matrix, _, _ = create_transition_matrix_left_right(n_states, cyclic=True)
 
         start_probs = np.ones(n_states).astype(float)
         end_probs = np.ones(n_states).astype(float)
@@ -127,19 +126,17 @@ def initialize_hmm(
     else:  # architecture == "fully-connected"
         transition_matrix, start_probs, end_probs = create_transition_matrix_fully_connected(n_states)
 
-    model = HiddenMarkovModel.from_matrix(
-        transition_probabilities=transition_matrix,
-        distributions=distributions,
-        starts=start_probs,
-        ends=end_probs,
+    outgoing = transition_matrix.sum(axis=1) + end_probs
+    return HiddenMarkovModel(
+        distributions,
+        transition_matrix / outgoing[:, None],
+        start_probs / start_probs.sum(),
+        end_probs / outgoing,
+        name=name,
     )
 
-    model.name = name
 
-    return model
-
-
-class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
+class SimpleHmm(_BaseSerializable):
     """Wrap all required information to train a new HMM.
 
     Training and inference use a local NumPy/Numba backend with Gaussian or Gaussian-mixture emissions.
@@ -200,7 +197,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
     This model supports currently the following "architectures":
 
     - "left-right-strict":
-      This will result in a strictly left-right structure, with no self-transitions and
+      This will result in a strictly left-right structure, with self-transitions and
       start- and end-state bound to the first and last state, respectively.
       Example transition matrix for a 5-state model:
 
@@ -213,7 +210,7 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
                              0  0  0  0  1
 
     - "left-right-loose":
-      This will result in a loose left-right structure, with allowed self-transitions and
+      This will result in a loose left-right structure, with a last-to-first transition and
       start- and end-state not specified initially.
       Example transition matrix for a 5-state model:
 
@@ -428,13 +425,12 @@ class SimpleHmm(_BaseSerializable, ShortenedHMMPrint):
         )
 
         history: History
-        _, history = model_trained.fit(
+        model_trained, history = model_trained.fit(
             sequences=data_sequence_train,
             labels=labels_sequence_train,
             algorithm=self.algo_train,
             stop_threshold=self.stop_threshold,
             max_iterations=self.max_iterations,
-            return_history=True,
             verbose=self.verbose,
             n_jobs=self.n_jobs,
             min_covar=self.min_covar,

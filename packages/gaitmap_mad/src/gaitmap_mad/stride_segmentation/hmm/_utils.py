@@ -3,29 +3,15 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from tpcp import BaseTpcpObject, CloneFactory
 
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
-from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import fit_distribution
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import fit_emissions
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
-
-
-class ShortenedHMMPrint(BaseTpcpObject):
-    """Mixin class to better format HMM models when printing them."""
-
-    def __repr_parameter__(self, name: str, value: Any) -> str:
-        """Representation with specific care for HMM models."""
-        if name == "model":
-            if isinstance(value, HiddenMarkovModel):
-                return f"{name}=HiddenMarkovModel[name={value.name}](...)"
-            if isinstance(value, CloneFactory) and (isinstance(value.default_value, HiddenMarkovModel)):
-                return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
-        return super().__repr_parameter__(name, value)
 
 
 def create_transition_matrix_fully_connected(n_states: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -38,13 +24,13 @@ def create_transition_matrix_fully_connected(n_states: int) -> tuple[np.ndarray,
 
 
 def create_transition_matrix_left_right(
-    n_states: int, self_transition: bool = True
+    n_states: int, cyclic: bool = True
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create nxn transition for left to right model."""
     transition_matrix = np.zeros((n_states, n_states))
     transition_matrix[range(n_states - 1), range(1, n_states)] = 1
     transition_matrix[range(n_states), range(n_states)] = 1
-    if self_transition:
+    if cyclic:
         transition_matrix[-1][0] = 1
 
     # force start with first state
@@ -64,39 +50,25 @@ def print_transition_matrix(model: HiddenMarkovModel, precision: int = 3) -> Non
     if isinstance(model, np.ndarray):
         print(model)
     else:
-        print(model.dense_transition_matrix()[0:-2, 0:-2])
+        print(model.transitions)
 
 
 def cluster_data_by_labels(data_list: list[np.ndarray], label_list: list[np.ndarray]):
     """Cluster data by labels."""
-    assert isinstance(label_list, list), "label_list must be list!"
-    assert isinstance(data_list, list), "data_list must be list!"
-
-    label_list = [np.asarray(label).tolist() for label in label_list]
-    data_list = [np.asarray(data).tolist() for data in data_list]
-
-    # remove datasets where the labellist is None
-    x_ = [x for x, label in zip(data_list, label_list) if label is not None]
-    x_ = np.concatenate(x_)  # concatenate all datasets with label_list to a single array
-
-    labels_ = np.concatenate(
-        [label for label in label_list if label is not None]
-    )  # concatenate all not None labellists to a single array
-    label_set = np.unique(labels_)  # get set of unique label_list
-
-    clustered_data = [x_[labels_ == label] for label in label_set]
-
-    return clustered_data
+    labeled = [
+        (np.asarray(data), np.asarray(labels)) for data, labels in zip(data_list, label_list) if labels is not None
+    ]
+    observations = np.concatenate([data for data, _ in labeled])
+    labels = np.concatenate([labels for _, labels in labeled])
+    return [observations[labels == label] for label in np.unique(labels)]
 
 
-def gmms_from_samples(
+def initialize_emissions(
     data,
     labels,
     n_components: int,
     n_expected_states: int,
     verbose: bool = False,
-    n_init: int = 5,
-    n_jobs: int = 1,
     min_covar: float = 1e-6,
 ):
     """Create Gaussian Mixture Models from samples.
@@ -105,9 +77,6 @@ def gmms_from_samples(
     Normal Distributions for each cluster. If n_components is > 1 then a Mixture Model of n-univariate or n-multivariate
     Gaussian Distributions will be fitted.
     """
-    if not np.array(data, dtype=object).data.c_contiguous:
-        raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
-
     clustered_data = cluster_data_by_labels(data, labels)
 
     if len(clustered_data) < n_expected_states:
@@ -126,34 +95,10 @@ def gmms_from_samples(
                 "samples! Ensure that the training data contains enough samples."
             )
     distributions = [
-        fit_distribution(
-            cluster, n_components=n_components, verbose=verbose, n_init=n_init, n_jobs=n_jobs, min_covar=min_covar
-        )
+        fit_emissions(cluster, n_components=n_components, verbose=verbose, min_covar=min_covar)
         for cluster in clustered_data
     ]
-    return distributions, clustered_data
-
-
-def _iter_nested_distributions(distribution):
-    if hasattr(distribution, "distributions"):
-        yield distribution
-        for d in distribution.distributions:
-            yield from _iter_nested_distributions(d)
-    else:
-        yield distribution
-
-
-def model_params_are_finite(model: HiddenMarkovModel) -> bool:
-    """Check if model parameters are finite."""
-    for state in model.states:
-        for dist in _iter_nested_distributions(state.distribution):
-            if hasattr(dist, "parameters"):
-                for param in dist.parameters:
-                    if not np.all(np.isfinite(param)):
-                        return False
-            if hasattr(dist, "weights") and not np.all(np.isfinite(dist.weights)):
-                return False
-    return True
+    return distributions
 
 
 def check_history_for_training_failure(history: History) -> None:
@@ -168,15 +113,6 @@ def check_history_for_training_failure(history: History) -> None:
             "To avoid this issue, reduce the number of distributions per state or the number of states. "
             "Or ideally, provide more data."
         )
-
-
-def get_model_distributions(model: HiddenMarkovModel) -> list:
-    """Return all not None distributions as list from given model."""
-    distributions = []
-    for state in model.states:
-        if state.distribution is not None:
-            distributions.append(state.distribution)
-    return distributions
 
 
 def extract_transitions_starts_stops_from_hidden_state_sequence(
@@ -395,36 +331,19 @@ def predict(
             f"{data.columns}"
         ) from e
 
-    if len(data) < len(model.states) - 2:
+    if len(data) < model.n_states:
         raise _DataToShortError(
             "The provided feature data is expected to have at least as many samples as the number of states "
-            f"of the model ({len(model.states) - 2}). "
+            f"of the model ({model.n_states}). "
             f"But it only has {len(data)} samples."
         )
 
     data = np.ascontiguousarray(data.to_numpy())
-    try:
-        labels_predicted = np.asarray(model.predict(data.copy(), algorithm=algorithm))
-    except Exception as e:
-        if not model_params_are_finite(model):
-            raise ValueError(
-                "Prediction failed! (See error above.). "
-                "However, the provided HMM model has non-finite/NaN parameters. "
-                "This might be the source of the observed error and indicates problems during training. "
-                "Check the training history and the model parameters to confirm invalid training behaviour. "
-                "Unfortunately, there is no way to automatically fix these issues. "
-                "Simply speaking, your training data could not be represented well by the selected model architecture. "
-                "Check for obvious errors in your pre-processing or try to use a different model architecture. "
-            ) from e
-        raise ValueError(
-            "Prediction failed! (See error above.). "
-            "Unfortunately, we are not sure what happened. "
-            "The error was caused by the HMM prediction backend."
-        ) from e
+    labels_predicted = model.predict(data, algorithm=algorithm)
 
     # Preserve gaitmap's historical Viterbi output length. Legacy finite paths include start/end sentinels;
     # paths without an explicit end include only the start sentinel, so gaitmap also dropped the final emission.
     # Keeping that length matters when the feature labels are resampled back to the input sampling rate.
-    if algorithm == "viterbi" and not model.finite:
+    if algorithm == "viterbi" and model.ends is None:
         labels_predicted = labels_predicted[:-1]
     return np.asarray(labels_predicted)

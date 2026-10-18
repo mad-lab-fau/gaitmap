@@ -64,8 +64,9 @@ pomegranate. Install both gaitmap packages:
 pip install gaitmap_mad gaitmap --upgrade
 ```
 
-Existing gaitmap HMM JSON files remain supported. The `.model` object supports Gaussian/GMM training, prediction, and
-state/transition-matrix inspection. Arbitrary pomegranate graphs and other emission distributions are not supported.
+Existing gaitmap HMM JSON files remain supported through the loader. The `.model` object exposes numeric
+`transitions`, `starts`, optional `ends`, and Gaussian-mixture `emissions`. Fitting returns a new model and its history.
+New exports use a versioned gaitmap format. Arbitrary pomegranate graphs and other emission distributions are not supported.
 The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
 
 Training can produce different individual hidden-state labels for nearly singular Gaussian mixtures because covariance

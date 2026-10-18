@@ -2,12 +2,15 @@
 
 import copy
 import itertools
+import pickle
 
 import numpy as np
 import pytest
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy.stats import multivariate_normal
+from tpcp._hash import custom_hash
 
 
 def gaussian(mean, covariance):
@@ -109,7 +112,7 @@ def test_mixture_inference_matches_exhaustive_paths(finite):
         for observation, state in enumerate(path):
             posterior[observation, state] += probability / likelihood
 
-    assert model.finite == finite
+    assert (model.ends is not None) == finite
     assert_allclose(model.log_probability(samples), np.log(likelihood), rtol=1e-13)
     assert_array_equal(model.predict(samples), paths[np.argmax(path_probabilities)])
     assert_allclose(model.predict_proba(samples), posterior, rtol=1e-13)
@@ -142,19 +145,69 @@ def test_ties_use_serialized_state_order_and_single_observation_is_supported():
 def test_inference_serialization_does_not_mutate_or_alias_persisted_model():
     """Callers can clone and serialize a model before or after inference."""
     serialized = model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2])
-    reference = copy.deepcopy(serialized)
     model = HiddenMarkovModel.from_dict(serialized)
+    reference = copy.deepcopy(model.to_dict())
     serialized["states"][0]["name"] = "changed by caller"
     model.predict([0.0, 1.0])
     model.predict_proba([0.0, 1.0])
     assert model.to_dict() == reference
-    assert model.states[0].name == "s0"
-    assert model.states[0].distribution.parameters == [[0.0], [[1.0]]]
-    assert_allclose(model.dense_transition_matrix(), [[0.8, 0.0, 0.2], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    assert model.state_names[0] == "s0"
+    assert_allclose(model.emissions[0].means, [[0.0]])
+    assert_allclose(model.emissions[0].covariances, [[[1.0]]])
+    assert_allclose(model.transitions, [[0.8]])
+    assert_allclose(model.starts, [1.0])
+    assert_allclose(model.ends, [0.2])
     returned = model.to_dict()
-    returned["states"][0]["name"] = "changed returned dict"
+    returned["state_names"][0] = "changed returned dict"
     assert model.to_dict() == reference
     assert HiddenMarkovModel.from_json(model.to_json()).to_dict() == reference
+
+
+def test_numeric_parameters_are_owned_so_caller_changes_cannot_stale_inference_caches():
+    """Mutating constructor inputs cannot change a constructed model's probabilities."""
+    means = np.array([[0.0]])
+    covariance = np.array([[[1.0]]])
+    transitions, starts, ends = np.array([[0.8]]), np.array([1.0]), np.array([0.2])
+    emission = GaussianMixture(means, covariance, [1.0])
+    model = HiddenMarkovModel([emission], transitions, starts, ends)
+    expected = model.log_probability([0.0, 1.0])
+
+    means[:] = 10.0
+    covariance[:] = 100.0
+    transitions[:] = 0.2
+    starts[:] = 0.5
+    ends[:] = 0.8
+
+    for candidate in [model, copy.deepcopy(model)]:
+        assert_allclose(candidate.log_probability([0.0, 1.0]), expected)
+        for parameter in [candidate.transitions, candidate.starts, candidate.ends, candidate.emissions[0].means]:
+            with pytest.raises(ValueError, match="read-only"):
+                parameter.flat[0] = 0.0
+
+
+def test_parameter_hash_is_independent_of_numeric_cache_reconstruction():
+    """Cloning keeps parameter identity when derived scores differ in their final bit."""
+    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2]))
+    reconstructed = copy.deepcopy(model)
+    # Rebuilding a floating point cache may change its final bit without any
+    # parameter change. Such caches must not participate in parameter hashing.
+    reconstructed._normalizers = np.nextafter(reconstructed._normalizers, np.inf)
+
+    assert reconstructed == model
+    assert_allclose(reconstructed.log_probability([0.0, 1.0]), model.log_probability([0.0, 1.0]))
+    assert custom_hash(reconstructed) == custom_hash(model)
+
+
+def test_pickle_restores_read_only_parameters_and_matching_inference():
+    """Worker-process transfer rebuilds safe arrays and inference caches from parameters."""
+    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2]))
+    restored = pickle.loads(pickle.dumps(model))
+
+    assert custom_hash(restored) == custom_hash(model)
+    assert_allclose(restored.log_probability([0.0, 1.0]), model.log_probability([0.0, 1.0]))
+    for parameter in [restored.transitions, restored.starts, restored.ends, restored.emissions[0].means]:
+        with pytest.raises(ValueError, match="read-only"):
+            parameter.flat[0] = 0.0
 
 
 @pytest.mark.parametrize("unsupported", ["distribution", "silent state", "distribution ties", "transition ties"])

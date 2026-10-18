@@ -6,7 +6,6 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
 from tpcp._hash import custom_hash
 
-from gaitmap_mad.stride_segmentation.hmm._hmm_inference import _Mixture
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 
 from gaitmap.data_transform import SlidingWindowMean
@@ -218,18 +217,10 @@ class TestSimpleModel:
         model.self_optimize([data], [pd.Series(np.tile(np.arange(n_states), int(np.ceil(100 / n_states)))[:100])])
 
         assert list(model.data_columns) == data.columns.tolist()
-        # -2 because of the start and end state
-        assert len(model.model.states) - 2 == n_states == model.n_states
-        # Test that each state has 3 gmm components
-        for state in model.model.states:
-            if state.name not in ["None-start", "None-end"]:
-                if n_gmm_components == 1:
-                    dists = [state.distribution]
-                else:
-                    assert isinstance(state.distribution, _Mixture)
-                    assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
-                    dists = state.distribution.distributions
-                assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
+        assert model.model.n_states == n_states == model.n_states
+        for emission in model.model.emissions:
+            assert emission.n_components == model.n_gmm_components == n_gmm_components
+            assert emission.means.shape == (n_gmm_components, len(data.columns))
 
     def test_model_exists_warning(self) -> None:
         model = SimpleHmm(n_states=5, n_gmm_components=3)
@@ -278,7 +269,6 @@ class TestSimpleModel:
             n_gmm_components=3,
             architecture=architecture,
         )
-        transition_matrix = model.dense_transition_matrix()
         expected = np.zeros((7, 7))
         if architecture == "left-right-strict":
             # Normal transitions
@@ -301,7 +291,9 @@ class TestSimpleModel:
             expected[5, :5] = 1 / 5
             # End state
             expected[:5, 6] = 1 / 2
-        assert_almost_equal(transition_matrix, expected)
+        assert_almost_equal(model.transitions, expected[:5, :5])
+        assert_almost_equal(model.starts, expected[5, :5])
+        assert_almost_equal(model.ends, expected[:5, 6])
 
     def test_self_optimize_calls_self_optimize_with_info(self) -> None:
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]

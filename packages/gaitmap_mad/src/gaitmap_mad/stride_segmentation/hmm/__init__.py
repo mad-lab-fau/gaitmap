@@ -3,10 +3,12 @@
 import multiprocessing
 import warnings
 
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     BaseHmmFeatureTransformer,
     RothHmmFeatureTransformer,
 )
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
     HmmStrideSegmentation,
     PreTrainedRothSegmentationModel,
@@ -26,6 +28,8 @@ if multiprocessing.parent_process() is None:
 __all__ = [
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "GaussianMixture",
+    "HiddenMarkovModel",
     "HmmStrideSegmentation",
     "PreTrainedRothSegmentationModel",
     "RothHmmFeatureTransformer",

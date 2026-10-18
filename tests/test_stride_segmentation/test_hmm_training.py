@@ -32,15 +32,19 @@ def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_compo
     restored = SimpleHmm.from_json(model.to_json()).clone()
 
     assert restored.min_covar == 0.02
-    distribution = restored.model.to_dict()["states"][0]["distribution"]
-    for component in distribution.get("distributions", [distribution]):
-        assert np.linalg.eigvalsh(component["parameters"][1])[0] == pytest.approx(0.02)
+    for covariance in restored.model.emissions[0].covariances:
+        assert np.linalg.eigvalsh(covariance)[0] == pytest.approx(0.02)
 
 
-def test_roth_training_combines_stride_states_with_only_termination_transitions():
+@pytest.mark.parametrize("ends_at_record_boundary", [False, True])
+def test_roth_training_combines_stride_states_with_only_termination_transitions(ends_at_record_boundary):
     """Minimum-length strides can end without a self-loop and still combine with transitions."""
     data = pd.DataFrame(np.random.default_rng(4).normal(size=(30, 6)), columns=BF_COLS)
-    strides = pd.DataFrame({"start": [4, 12, 20], "end": [6, 14, 22]})
+    strides = (
+        pd.DataFrame({"start": [28], "end": [30]})
+        if ends_at_record_boundary
+        else pd.DataFrame({"start": [4, 12, 20], "end": [6, 14, 22]})
+    )
     model = RothSegmentationHmm(
         stride_model=SimpleHmm(n_states=2, n_gmm_components=1, algo_train="labeled", verbose=False),
         transition_model=SimpleHmm(
@@ -53,10 +57,13 @@ def test_roth_training_combines_stride_states_with_only_termination_transitions(
         verbose=False,
     ).self_optimize([data], [strides], sampling_rate_hz=100)
 
-    matrix = model.model.dense_transition_matrix()
+    matrix = model.model.transitions
     assert np.isfinite(matrix).all()
-    # Transition state 0 receives the cross-link from the final stride state 2.
-    assert matrix[2, 0] > 0
+    if ends_at_record_boundary:
+        assert_array_equal(matrix[2], np.zeros(3))
+    else:
+        # Transition state 0 receives the cross-link from the final stride state 2.
+        assert matrix[2, 0] > 0
     model.predict(data, sampling_rate_hz=100)
     assert len(model.hidden_state_sequence_) == len(data)
 
@@ -78,7 +85,7 @@ def test_labeled_roth_training_supports_all_generated_transitions():
         verbose=False,
     ).self_optimize([data], [strides], sampling_rate_hz=100)
 
-    matrix = model.model.dense_transition_matrix()
+    matrix = model.model.transitions
     assert np.isfinite(matrix).all()
     assert matrix[0, 0] > 0
     model.predict(data, sampling_rate_hz=100)

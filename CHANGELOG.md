@@ -21,6 +21,9 @@ project.
 
 ### Added
 
+- Added a numeric HMM interface with `GaussianMixture` emissions, emitting-state transition matrices, and separate
+  start/termination probabilities. Fitting consistently returns a new model and its history. New JSON exports use
+  a versioned gaitmap format; legacy model loading is isolated in the persistence adapter.
 - Added local NumPy/Numba HMM inference and training, including Gaussian mixtures, Baum-Welch, Viterbi, and labeled
   re-estimation. HMMs now work on Python 3.10+ without pomegranate, including existing gaitmap HMM JSON files.
 - HMMs use a local `.model` object with training, prediction, state and transition-matrix inspection. Arbitrary
