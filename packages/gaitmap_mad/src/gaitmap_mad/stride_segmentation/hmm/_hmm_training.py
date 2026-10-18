@@ -15,7 +15,11 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_inference import _forward, _poster
 
 @dataclass
 class TrainingHistory:
-    """Scores of the initial model and every completed parameter update."""
+    """Forward marginal likelihoods of the initial model and every completed update.
+
+    Scores use the same marginal objective for every training algorithm. Hard
+    and labeled updates can decrease it without making the model invalid.
+    """
 
     log_likelihoods: list[float] = field(default_factory=list)
     iteration_durations: list[float] = field(default_factory=list)
@@ -184,6 +188,9 @@ def fit_hmm(
     threads and reduce in input order. Labels apply only to ``labeled`` fitting.
     ``min_covar`` bounds estimated covariance eigenvalues. Frozen emissions
     retain their parameters, and ``update_emissions=False`` fits transitions only.
+    Recorded scores and stopping use forward marginal likelihood for every
+    algorithm. Hard or labeled updates can stop on a decrease without implying
+    an invalid model.
     A nonfinite likelihood after an update stops fitting without convergence.
     """
     if algorithm not in {"labeled", "baum-welch", "viterbi"}:
