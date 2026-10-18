@@ -38,14 +38,15 @@ class TrainingHistory:
 
 
 @njit(cache=True, nogil=True)
-def _path_statistics(path, n_states, has_end):
-    weights = np.zeros((len(path), n_states))
+def _path_statistics(path, n_states, has_end, update_emissions):
+    weights = np.zeros((len(path), n_states)) if update_emissions else None
     transitions = np.zeros((n_states, n_states))
     starts = np.zeros(n_states)
     ends = np.zeros(n_states)
     starts[path[0]] = 1.0
     for observation, state in enumerate(path):
-        weights[observation, state] = 1.0
+        if weights is not None:
+            weights[observation, state] = 1.0
         if observation:
             transitions[path[observation - 1], state] += 1.0
     if has_end:
@@ -96,22 +97,24 @@ def _expected_transitions(forward, posterior, scores, incoming, has_end):
     return counts, starts, ends
 
 
-def _sequence_statistics(model, sequence, path, algorithm):
+def _sequence_statistics(model, sequence, path, algorithm, update_emissions, collect_statistics):
     scores = model._scores(sequence)
     forward, likelihood = _forward(scores, model._incoming, model._log_starts, model._log_ends)
-    if algorithm == "labeled":
-        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
-    elif not np.isfinite(likelihood):
+    if algorithm != "labeled" and not np.isfinite(likelihood):
         raise ValueError("No valid state path exists for a training sequence.")
+    if not collect_statistics:
+        return likelihood, None, None, None, None
+    if algorithm == "labeled":
+        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None, update_emissions)
     elif algorithm == "viterbi":
         path, _ = _viterbi(scores, model._incoming, model._log_starts, model._log_ends)
-        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
+        counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None, update_emissions)
     else:
         posterior = _posteriors(scores, model._outgoing, model._log_ends, forward, likelihood)
         counts, starts, ends = _expected_transitions(
             forward, posterior, scores, model._incoming, model.ends is not None
         )
-        weights = np.exp(posterior)
+        weights = np.exp(posterior) if update_emissions else None
     return likelihood, counts, starts, ends, weights
 
 
@@ -156,15 +159,18 @@ def _prepare_sequences(model, sequences):
     return [model._prepare_observations(sequence) for sequence in sequences]
 
 
-def _summarize_sequences(model, sequences, paths, algorithm, parallel):
+def _summarize_sequences(model, sequences, paths, algorithm, parallel, update_emissions, collect_statistics):
     summaries = parallel(
-        delayed(_sequence_statistics)(model, sequence, path, algorithm) for sequence, path in zip(sequences, paths)
+        delayed(_sequence_statistics)(model, sequence, path, algorithm, update_emissions, collect_statistics)
+        for sequence, path in zip(sequences, paths)
     )
     likelihood = sum(summary[0] for summary in summaries)
+    if not collect_statistics:
+        return likelihood, None
     counts = sum((summary[1] for summary in summaries), np.zeros_like(model.transitions))
     starts = sum((summary[2] for summary in summaries), np.zeros(model.n_states))
     ends = sum((summary[3] for summary in summaries), np.zeros(model.n_states))
-    weights = np.concatenate([summary[4] for summary in summaries])
+    weights = np.concatenate([summary[4] for summary in summaries]) if update_emissions else None
     return likelihood, (counts, starts, ends, weights)
 
 
@@ -197,16 +203,27 @@ def fit_hmm(
     if max_iterations < 0:
         raise ValueError("max_iterations must be nonnegative.")
     sequences = _prepare_sequences(model, sequences)
-    observations = np.concatenate(sequences)
+    update_emissions = update_emissions and not all(emission.frozen for emission in model.emissions)
+    observations = np.concatenate(sequences) if update_emissions else None
     paths = _labeled_paths(model, sequences, labels) if algorithm == "labeled" else [None] * len(sequences)
     current = deepcopy(model)
     with Parallel(n_jobs=n_jobs, backend="threading") as parallel:
-        likelihood, statistics = _summarize_sequences(current, sequences, paths, algorithm, parallel)
+        likelihood, statistics = _summarize_sequences(
+            current, sequences, paths, algorithm, parallel, update_emissions, max_iterations > 0
+        )
         history = TrainingHistory(log_likelihoods=[likelihood])
         while history.n_iterations < max_iterations:
             started = perf_counter()
             current = _maximize(current, observations, *statistics, min_covar, update_emissions)
-            likelihood, statistics = _summarize_sequences(current, sequences, paths, algorithm, parallel)
+            likelihood, statistics = _summarize_sequences(
+                current,
+                sequences,
+                paths,
+                algorithm,
+                parallel,
+                update_emissions,
+                history.n_iterations + 1 < max_iterations,
+            )
             improvement = likelihood - history.log_likelihoods[-1]
             history.log_likelihoods.append(likelihood)
             history.iteration_durations.append(perf_counter() - started)
