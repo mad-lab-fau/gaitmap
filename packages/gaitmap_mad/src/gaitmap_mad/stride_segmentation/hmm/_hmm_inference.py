@@ -312,7 +312,7 @@ class HiddenMarkovModel:
         """Serialize the model without inference caches."""
         return json.dumps(self.to_dict())
 
-    def _scores(self, samples):
+    def _prepare_observations(self, samples):
         samples = np.asarray(samples, dtype=np.float64)
         if samples.ndim == 1 and self.n_features == 1:
             samples = samples.reshape(-1, 1)
@@ -320,8 +320,11 @@ class HiddenMarkovModel:
             raise ValueError(f"Expected a nonempty observation matrix with {self.n_features} columns.")
         if not np.isfinite(samples).all():
             raise ValueError("Observations must contain only finite values.")
+        return np.ascontiguousarray(samples)
+
+    def _scores(self, samples):
         return _emission_scores(
-            np.ascontiguousarray(samples),
+            self._prepare_observations(samples),
             self._means,
             self._whitening,
             self._normalizers,

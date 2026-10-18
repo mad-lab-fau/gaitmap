@@ -148,14 +148,9 @@ def _maximize(model, observations, counts, starts, ends, weights, min_covar, upd
 
 def _prepare_sequences(model, sequences):
     sequences = [np.asarray(sequence, dtype=np.float64) for sequence in sequences]
-    sequences = [
-        sequence.reshape(-1, 1) if sequence.ndim == 1 and model.n_features == 1 else sequence for sequence in sequences
-    ]
     if not sequences or any(len(sequence) == 0 for sequence in sequences):
         raise ValueError("Training needs nonempty observation sequences.")
-    for sequence in sequences:
-        model._scores(sequence)
-    return [np.ascontiguousarray(sequence) for sequence in sequences]
+    return [model._prepare_observations(sequence) for sequence in sequences]
 
 
 def _summarize_sequences(model, sequences, paths, algorithm, parallel):
