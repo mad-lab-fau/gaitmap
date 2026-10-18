@@ -11,25 +11,30 @@ from scipy.special import logsumexp
 @njit(cache=True, nogil=True)
 def _weighted_moments(samples, weights):
     n_samples, dimensions = samples.shape
+    anchor = samples[np.argmax(weights)]
     normalized = weights / weights.max()
     total = normalized.sum()
     mean_offset = np.zeros(dimensions)
     for sample in range(n_samples):
+        if normalized[sample] == 0:
+            continue
         for dimension in range(dimensions):
-            mean_offset[dimension] += normalized[sample] * (samples[sample, dimension] - samples[0, dimension])
+            mean_offset[dimension] += normalized[sample] * (samples[sample, dimension] - anchor[dimension])
     mean_offset /= total
     covariance = np.zeros((dimensions, dimensions))
     for sample in range(n_samples):
+        if normalized[sample] == 0:
+            continue
         weight = normalized[sample] / total
         for left in range(dimensions):
-            centered_left = (samples[sample, left] - samples[0, left]) - mean_offset[left]
+            centered_left = (samples[sample, left] - anchor[left]) - mean_offset[left]
             for right in range(left, dimensions):
-                centered_right = (samples[sample, right] - samples[0, right]) - mean_offset[right]
+                centered_right = (samples[sample, right] - anchor[right]) - mean_offset[right]
                 covariance[left, right] += weight * centered_left * centered_right
     for left in range(dimensions):
         for right in range(left):
             covariance[left, right] = covariance[right, left]
-    return samples[0] + mean_offset, covariance
+    return anchor + mean_offset, covariance
 
 
 def _samples(observations):

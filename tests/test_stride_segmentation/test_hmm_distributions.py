@@ -171,3 +171,34 @@ def test_constant_observations_use_configured_floor_through_initialization(n_com
     for component in active:
         assert_allclose(component["parameters"][0], [2.0, 3.0])
         assert_allclose(component["parameters"][1], np.eye(2) * 0.05, atol=1e-14)
+
+
+def test_zero_weight_far_observation_does_not_erase_mixture_component_variance():
+    """Center each component around supported data when distant samples have zero responsibility."""
+    distribution = {
+        "class": "GeneralMixtureModel",
+        "distributions": [
+            {
+                "class": "Distribution",
+                "name": "MultivariateGaussianDistribution",
+                "parameters": [mean, [[1.0, 0.0], [0.0, 1.0]]],
+                "frozen": False,
+            }
+            for mean in [[1e16, 1e16], [0.0, 0.0]]
+        ],
+        "weights": [0.5, 0.5],
+    }
+    observations = np.array([[1e16, 1e16], [-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]])
+
+    result = update_distribution(distribution, observations, np.ones(len(observations)))
+
+    assert_allclose(result["distributions"][1]["parameters"][0], [0.0, 0.0], atol=1e-15)
+    assert_allclose(result["distributions"][1]["parameters"][1], np.eye(2), atol=1e-15)
+
+
+def test_separated_mixture_initialization_retains_small_cluster_moments():
+    """Fit each component at its own data scale despite a distant first cluster."""
+    result = fit_distribution(np.array([[1e16], [1.0], [2.0]]), n_components=2)
+
+    assert_allclose(result["distributions"][1]["parameters"][0], [1.5], atol=1e-15)
+    assert_allclose(result["distributions"][1]["parameters"][1], [[0.25]], atol=1e-15)
