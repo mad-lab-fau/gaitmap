@@ -187,6 +187,7 @@ def fit_hmm(
     threads and reduce in input order. Labels apply only to ``labeled`` fitting.
     ``min_covar`` bounds estimated covariance eigenvalues. Frozen emissions
     retain their parameters, and ``update_emissions=False`` fits transitions only.
+    A nonfinite likelihood after an update stops fitting without convergence.
     """
     if algorithm not in {"labeled", "baum-welch", "viterbi"}:
         raise ValueError("Supported training algorithms are 'baum-welch', 'viterbi' and 'labeled'.")
@@ -219,6 +220,8 @@ def fit_hmm(
             history.iteration_durations.append(perf_counter() - started)
             if verbose:
                 print(f"[{history.n_iterations}] Improvement: {improvement}")
+            if not np.isfinite(likelihood):
+                break
             if improvement <= stop_threshold:
                 history.converged = improvement >= 0
                 break

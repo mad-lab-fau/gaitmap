@@ -108,6 +108,21 @@ def test_labeled_fit_can_learn_currently_zero_permitted_termination():
     assert_allclose(trained.ends, [0.25])
 
 
+def test_labeled_fit_stops_without_convergence_when_likelihood_remains_impossible():
+    """A persisted zero-weight state cannot recover by updating its Gaussian or transitions."""
+    serialized = model_dict([gaussian([0.0], [[1.0]])], [[1.0]], [1.0])
+    serialized["states"][0]["weight"] = 0.0
+    model = HiddenMarkovModel.from_dict(serialized)
+    observations = np.array([-1.0, 1.0])
+
+    trained, history = model.fit([observations], labels=[[0, 0]], algorithm="labeled", max_iterations=3)
+
+    assert history.n_iterations == 1
+    assert history.log_likelihoods == [-np.inf, -np.inf]
+    assert not history.converged
+    assert trained.log_probability(observations) == -np.inf
+
+
 @pytest.mark.parametrize("use_names", [False, True])
 def test_labeled_fit_learns_counts_and_gaussian_moments_without_mutating_input(use_names):
     """Known labels recover observed transition frequencies and emission moments."""
