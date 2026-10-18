@@ -1,12 +1,11 @@
 """Segmentation _model base classes and helper."""
 
 from collections.abc import Sequence
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Self
 
 import numpy as np
 import pandas as pd
 from tpcp import OptiPara, cf, make_optimize_safe
-from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
@@ -236,9 +235,9 @@ class RothSegmentationHmm(BaseSegmentationHmm):
     initialization: Literal["labels", "fully-connected"]
     verbose: bool
     n_jobs: int
-    name: Optional[str]
-    model: OptiPara[Optional[HiddenMarkovModel]]
-    data_columns: OptiPara[Optional[tuple[str, ...]]]
+    name: str | None
+    model: OptiPara[HiddenMarkovModel | None]
+    data_columns: OptiPara[tuple[str, ...] | None]
 
     feature_space_data_: pd.DataFrame
     hidden_state_sequence_feature_space_: np.ndarray
@@ -277,8 +276,8 @@ class RothSegmentationHmm(BaseSegmentationHmm):
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "segmentation_model",
-        model: Optional[HiddenMarkovModel] = None,
-        data_columns: Optional[tuple[str, ...]] = None,
+        model: HiddenMarkovModel | None = None,
+        data_columns: tuple[str, ...] | None = None,
     ) -> None:
         self.stride_model = stride_model
         self.transition_model = transition_model
@@ -357,7 +356,7 @@ class RothSegmentationHmm(BaseSegmentationHmm):
     def _transform(
         self,
         data_sequence: Sequence[pd.DataFrame],
-        stride_list_sequence: Optional[Sequence[pd.DataFrame]],
+        stride_list_sequence: Sequence[pd.DataFrame] | None,
         sampling_rate_hz: float,
     ):
         """Perform feature transformation."""
@@ -481,7 +480,7 @@ class RothSegmentationHmm(BaseSegmentationHmm):
                 ],
                 ignore_index=True,
             )
-            for data, strides in zip(data_train_sequence, stride_list_feature_space)
+            for data, strides in zip(data_train_sequence, stride_list_feature_space, strict=True)
         ]
         new_model, labels_train_sequence = _initialize_composite(
             {"transition": transition_model_trained.model, "stride": stride_model_trained.model},

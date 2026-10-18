@@ -30,7 +30,7 @@ def test_composition_counts_repeated_instances_and_separate_record_boundaries():
     # Pooled paths are [0,1,2,1,2,0,0] and [1,2,0]. No transition joins records.
     assert_allclose(trained.model.starts, [0.5, 0.5, 0.0])
     assert_allclose(trained.model.transitions, [[0.5, 0.5, 0.0], [0.0, 0.0, 1.0], [2 / 3, 1 / 3, 0.0]])
-    for actual, expected in zip(trained.model.emissions, rest.emissions + stride.emissions):
+    for actual, expected in zip(trained.model.emissions, rest.emissions + stride.emissions, strict=True):
         assert_array_equal(actual.means, expected.means)
         assert_array_equal(actual.covariances, expected.covariances)
         assert_array_equal(actual.weights, expected.weights)

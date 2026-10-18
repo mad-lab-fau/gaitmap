@@ -2,13 +2,12 @@
 
 import warnings
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseTrajectoryMethod
 from gaitmap.trajectory_reconstruction.orientation_methods import SimpleGyroIntegration
@@ -29,9 +28,9 @@ from gaitmap.utils.rotations import get_gravity_rotation
 
 
 class _TrajectoryReconstructionWrapperMixin:
-    ori_method: Optional[BaseOrientationMethod]
-    pos_method: Optional[BasePositionMethod]
-    trajectory_method: Optional[BaseTrajectoryMethod]
+    ori_method: BaseOrientationMethod | None
+    pos_method: BasePositionMethod | None
+    trajectory_method: BaseTrajectoryMethod | None
 
     data: SensorData
     sampling_rate_hz: float
@@ -43,9 +42,9 @@ class _TrajectoryReconstructionWrapperMixin:
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = cf(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = cf(ForwardBackwardIntegration()),
-        trajectory_method: Optional[BaseTrajectoryMethod] = None,
+        ori_method: BaseOrientationMethod | None = cf(SimpleGyroIntegration()),
+        pos_method: BasePositionMethod | None = cf(ForwardBackwardIntegration()),
+        trajectory_method: BaseTrajectoryMethod | None = None,
     ) -> None:
         self.ori_method = ori_method
         self.pos_method = pos_method
@@ -88,7 +87,7 @@ class _TrajectoryReconstructionWrapperMixin:
         self,
         data,
         integration_regions,
-        stride_list_list: Optional[Union[dict[str, list[SingleSensorStrideList]], list[SingleSensorStrideList]]],
+        stride_list_list: dict[str, list[SingleSensorStrideList]] | list[SingleSensorStrideList] | None,
         dataset_type: Literal["single", "multi"],
     ) -> Self:
         """Actual estimation method.
@@ -112,7 +111,7 @@ class _TrajectoryReconstructionWrapperMixin:
         self,
         data: SingleSensorData,
         integration_regions: SingleSensorRegionsOfInterestList,
-        stride_list_list: Optional[list[SingleSensorStrideList]],
+        stride_list_list: list[SingleSensorStrideList] | None,
     ) -> dict[str, pd.DataFrame]:
         integration_regions = set_correct_index(integration_regions, self._expected_integration_region_index)
         full_index = (*self._expected_integration_region_index, "sample")
@@ -135,7 +134,7 @@ class _TrajectoryReconstructionWrapperMixin:
                 "velocity": pd.DataFrame(columns=GF_VEL, index=index.copy()),
                 "position": pd.DataFrame(columns=GF_POS, index=index.copy()),
             }
-        for (r_id, i_region), stride_list in zip(integration_regions.iterrows(), stride_list_list):
+        for (r_id, i_region), stride_list in zip(integration_regions.iterrows(), stride_list_list, strict=True):
             i_start, i_end = (int(i_region["start"]), int(i_region["end"]))
             orientation[r_id], velocity[r_id], position[r_id] = self._estimate_region(data, i_start, i_end, stride_list)
         orientation_df = pd.concat(orientation)

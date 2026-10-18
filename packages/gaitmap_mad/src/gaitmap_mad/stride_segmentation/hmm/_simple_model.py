@@ -2,12 +2,11 @@
 
 import warnings
 from collections.abc import Sequence
-from typing import Literal, Optional, Union
+from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
 from tpcp import OptiPara, make_optimize_safe
-from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
@@ -244,9 +243,9 @@ class SimpleHmm(_BaseSerializable):
     min_covar: float
     verbose: bool
     n_jobs: int
-    name: Optional[str]
-    model: OptiPara[Optional[HiddenMarkovModel]]
-    data_columns: OptiPara[Optional[tuple[str, ...]]]
+    name: str | None
+    model: OptiPara[HiddenMarkovModel | None]
+    data_columns: OptiPara[tuple[str, ...] | None]
 
     def __init__(
         self,
@@ -261,8 +260,8 @@ class SimpleHmm(_BaseSerializable):
         verbose: bool = True,
         n_jobs: int = 1,
         name: str = "my_model",
-        model: Optional[HiddenMarkovModel] = None,
-        data_columns: Optional[tuple[str, ...]] = None,
+        model: HiddenMarkovModel | None = None,
+        data_columns: tuple[str, ...] | None = None,
     ) -> None:
         self.n_states = n_states
         self.n_gmm_components = n_gmm_components
@@ -311,7 +310,7 @@ class SimpleHmm(_BaseSerializable):
     def self_optimize(
         self,
         data_sequence: Sequence[SingleSensorData],
-        labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
+        labels_sequence: Sequence[np.ndarray | pd.Series | pd.DataFrame],
     ) -> Self:
         """Create and train the HMM model based on the given data and labels.
 
@@ -337,7 +336,7 @@ class SimpleHmm(_BaseSerializable):
     def self_optimize_with_info(
         self,
         data_sequence: Sequence[SingleSensorData],
-        labels_sequence: Sequence[Union[np.ndarray, pd.Series, pd.DataFrame]],
+        labels_sequence: Sequence[np.ndarray | pd.Series | pd.DataFrame],
     ) -> tuple[Self, TrainingHistory]:
         """Create and train the HMM model based on the given data and labels.
 
@@ -369,7 +368,7 @@ class SimpleHmm(_BaseSerializable):
                 "initial_hidden_states_sequence_list)"
             )
 
-        for i, (data, labels) in enumerate(zip(data_sequence, labels_sequence)):
+        for i, (data, labels) in enumerate(zip(data_sequence, labels_sequence, strict=True)):
             if len(data) < self.n_states:
                 raise ValueError(
                     "Invalid training sequence! At least one training sequence has less samples than the specified "

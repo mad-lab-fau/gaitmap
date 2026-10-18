@@ -235,7 +235,7 @@ class HiddenMarkovModel:
                 np.array_equal(getattr(left, name), getattr(right, name))
                 for name in ("means", "covariances", "weights", "component_frozen")
             )
-            for left, right in zip(self.emissions, other.emissions)
+            for left, right in zip(self.emissions, other.emissions, strict=True)
         )
 
     def __repr__(self):
@@ -270,7 +270,7 @@ class HiddenMarkovModel:
     def _prepare_emissions(self):
         means, whitening, normalizers, weights, offsets = [], [], [], [], [0]
         for emission in self.emissions:
-            for mean, covariance, weight in zip(emission.means, emission.covariances, emission.weights):
+            for mean, covariance, weight in zip(emission.means, emission.covariances, emission.weights, strict=True):
                 cholesky = np.linalg.cholesky(covariance)
                 means.append(mean)
                 whitening.append(np.linalg.solve(cholesky, np.eye(self.n_features)))

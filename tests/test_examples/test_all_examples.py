@@ -62,7 +62,7 @@ def test_preprocessing_example(snapshot) -> None:
     left_acc = dataset_sf_aligned_to_gravity["left_sensor"][SF_ACC].to_numpy()[:5, :]
     right_acc = dataset_sf_aligned_to_gravity["right_sensor"][SF_ACC].to_numpy()[:5, :]
 
-    for acc_l, acc_r in zip(left_acc, right_acc):
+    for acc_l, acc_r in zip(left_acc, right_acc, strict=True):
         np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
         np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
 
@@ -83,7 +83,7 @@ def test_sensor_alignment_detailed_example(snapshot) -> None:
     left_acc = pca_aligned_data["left_sensor"][SF_ACC].to_numpy()[:5, :]
     right_acc = pca_aligned_data["right_sensor"][SF_ACC].to_numpy()[:5, :]
 
-    for acc_l, acc_r in zip(left_acc, right_acc):
+    for acc_l, acc_r in zip(left_acc, right_acc, strict=True):
         np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
         np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
 

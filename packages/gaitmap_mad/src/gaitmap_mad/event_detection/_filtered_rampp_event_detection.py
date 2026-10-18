@@ -1,10 +1,9 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
-from typing import Optional
+from typing import Literal
 
 from joblib import Memory
 from tpcp import cf
-from typing_extensions import Literal
 
 from gaitmap.data_transform import BaseFilter, ButterworthFilter
 from gaitmap_mad.event_detection._rampp_event_detection import RamppEventDetection
@@ -110,9 +109,9 @@ class FilteredRamppEventDetection(RamppEventDetection):
         ic_search_region_ms: tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=2, cutoff_freq_hz=15)),
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[tuple[str, ...]] = None,
+        detect_only: tuple[str, ...] | None = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.ic_lowpass_filter = ic_lowpass_filter

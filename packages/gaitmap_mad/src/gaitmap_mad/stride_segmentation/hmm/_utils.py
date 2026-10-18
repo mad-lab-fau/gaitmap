@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from itertools import pairwise
 from typing import Literal
 
 import numpy as np
@@ -55,7 +56,9 @@ def print_transition_matrix(model: HiddenMarkovModel, precision: int = 3) -> Non
 def cluster_data_by_labels(data_list: list[np.ndarray], label_list: list[np.ndarray]):
     """Cluster data by labels."""
     labeled = [
-        (np.asarray(data), np.asarray(labels)) for data, labels in zip(data_list, label_list) if labels is not None
+        (np.asarray(data), np.asarray(labels))
+        for data, labels in zip(data_list, label_list, strict=True)
+        if labels is not None
     ]
     observations = np.concatenate([data for data, _ in labeled])
     labels = np.concatenate([labels for _, labels in labeled])
@@ -112,7 +115,7 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
     for labels in hidden_state_sequence:
         starts.append(labels[0])
         ends.append(labels[-1])
-        for source, target in zip(labels[:-1], labels[1:]):
+        for source, target in pairwise(labels):
             transitions.add((int(source), int(target)))
 
     starts = np.unique(starts).astype("int64")
@@ -189,7 +192,7 @@ def convert_stride_list_to_transition_list(
     transition_ends = [*stride_list["start"], last_end]
 
     return pd.DataFrame(
-        [(s, e) for s, e in zip(transition_starts, transition_ends) if e - s > 0], columns=["start", "end"]
+        [(s, e) for s, e in zip(transition_starts, transition_ends, strict=True) if e - s > 0], columns=["start", "end"]
     )
 
 
@@ -207,7 +210,7 @@ def get_train_data_sequences_transitions(
 
     n_too_short_transitions = 0
 
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
+    for data, stride_list in zip(data_train_sequence, stride_list_sequence, strict=True):
         # for each transition, get data and create some naive labels for initialization
         for start, end in convert_stride_list_to_transition_list(stride_list, data.shape[0])[
             ["start", "end"]
@@ -247,7 +250,7 @@ def get_train_data_sequences_strides(
 
     n_too_short_strides = 0
 
-    for data, stride_list in zip(data_train_sequence, stride_list_sequence):
+    for data, stride_list in zip(data_train_sequence, stride_list_sequence, strict=True):
         # extract strides directly from stride_list
         for start, end in stride_list[["start", "end"]].to_numpy():
             try:

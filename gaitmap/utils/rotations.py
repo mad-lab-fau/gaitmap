@@ -3,7 +3,7 @@
 All util functions use :class:`scipy.spatial.transform.Rotation` to represent rotations.
 """
 
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ from gaitmap.utils.datatype_helper import (
 from gaitmap.utils.vector_math import find_orthogonal, normalize, row_wise_dot
 
 
-def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
+def rotation_from_angle(axis: np.ndarray, angle: float | np.ndarray) -> Rotation:
     """Create a rotation based on a rotation axis and a angle.
 
     Parameters
@@ -64,7 +64,7 @@ def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Ro
     return Rotation.from_rotvec(np.squeeze(axis * angle.T))
 
 
-def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> SingleSensorData:
+def _flip_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSensorData:
     """Flip (same as rotate, but only 90 deg rots allowed) the data of a single sensor.
 
     Compared to normal rotations, this function can result in massive speedups!
@@ -98,7 +98,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
         mirror = []
         # We basically iterate over the rotation matrix and find which axis is transformed to which other axis.
         # If the entry is -1, we also mirror the axis.
-        for col, row in zip(cols, rot_matrix):
+        for col, row in zip(cols, rot_matrix, strict=True):
             old_index = cols[np.abs(row).astype(bool)][0]
             rename[old_index] = col
             if np.sum(row) == -1:
@@ -110,7 +110,7 @@ def _flip_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Single
     return data
 
 
-def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> SingleSensorData:
+def _rotate_sensor(data: SingleSensorData, rotation: Rotation | None) -> SingleSensorData:
     """Rotate the data of a single sensor with acc, gyro and mag."""
     has_mag = is_single_sensor_data(data, frame="sensor", check_mag=True)
     data = data.copy()
@@ -124,9 +124,7 @@ def _rotate_sensor(data: SingleSensorData, rotation: Optional[Rotation]) -> Sing
     return data
 
 
-def _rotate_or_flip_dataset(
-    dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]], single_rot_method: Callable
-):
+def _rotate_or_flip_dataset(dataset: SensorData, rotation: Rotation | dict[str, Rotation], single_rot_method: Callable):
     dataset_type = is_sensor_data(dataset, frame="sensor")
     if dataset_type == "single":
         if isinstance(rotation, dict):
@@ -155,7 +153,7 @@ def _rotate_or_flip_dataset(
     return rotated_dataset
 
 
-def flip_dataset(dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]]) -> SensorData:
+def flip_dataset(dataset: SensorData, rotation: Rotation | dict[str, Rotation]) -> SensorData:
     """Flip datasets around axis data of a dataset.
 
     This is equivalent to rotating the data, but only 90/180 deg rotations are allowed.
@@ -190,7 +188,7 @@ def flip_dataset(dataset: SensorData, rotation: Union[Rotation, dict[str, Rotati
     return _rotate_or_flip_dataset(dataset, rotation, _flip_sensor)
 
 
-def rotate_dataset(dataset: SensorData, rotation: Union[Rotation, dict[str, Rotation]]) -> SensorData:
+def rotate_dataset(dataset: SensorData, rotation: Rotation | dict[str, Rotation]) -> SensorData:
     """Apply a rotation to acc and gyro data of a dataset.
 
     Parameters
@@ -327,7 +325,7 @@ def get_gravity_rotation(gravity_vector: np.ndarray, expected_gravity: np.ndarra
     return find_shortest_rotation(gravity_vector, expected_gravity)
 
 
-def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, list]) -> Rotation:
+def find_rotation_around_axis(rot: Rotation, rotation_axis: np.ndarray | list) -> Rotation:
     """Calculate the rotation component of rot around the given rotation axis.
 
     This performs a swing-twist decomposition of the rotation quaternion [1]_.
@@ -382,8 +380,8 @@ def find_rotation_around_axis(rot: Rotation, rotation_axis: Union[np.ndarray, li
 
 
 def find_angle_between_orientations(
-    ori: Rotation, ref: Rotation, rotation_axis: Optional[np.ndarray] = None
-) -> Union[float, np.ndarray]:
+    ori: Rotation, ref: Rotation, rotation_axis: np.ndarray | None = None
+) -> float | np.ndarray:
     """Get the required rotation angle between two orientations.
 
     This will return the angle around the rotation axis that transforms ori into ref in this dimension.
@@ -429,7 +427,7 @@ def find_angle_between_orientations(
     return out
 
 
-def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> Union[np.ndarray, float]:
+def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> np.ndarray | float:
     """Find the angle (in rad) between two  3D vectors.
 
     Parameters
@@ -465,7 +463,7 @@ def find_unsigned_3d_angle(v1: np.ndarray, v2: np.ndarray) -> Union[np.ndarray, 
     return out
 
 
-def angle_diff(a: Union[float, np.ndarray], b: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+def angle_diff(a: float | np.ndarray, b: float | np.ndarray) -> float | np.ndarray:
     """Calculate the real distance bewteen two signed angle values.
 
     This returns the shorter of the two possible angle differences on a unit circle.
@@ -500,7 +498,7 @@ def angle_diff(a: Union[float, np.ndarray], b: Union[float, np.ndarray]) -> Unio
     return diff
 
 
-def find_signed_3d_angle(v1: np.ndarray, v2: np.ndarray, rotation_axis: np.ndarray) -> Union[float, np.ndarray]:
+def find_signed_3d_angle(v1: np.ndarray, v2: np.ndarray, rotation_axis: np.ndarray) -> float | np.ndarray:
     """Find the signed angle (in rad) between two 3D vectors.
 
     Signed means that the angle varies between -180 and 180 deg (or rather -pi and pi)

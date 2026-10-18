@@ -59,7 +59,7 @@ def _labeled_paths(model, sequences, labels):
         raise ValueError("Labeled training needs one label sequence per observation sequence.")
     names = {name: index for index, name in enumerate(model.state_names)}
     paths = []
-    for sequence, sequence_labels in zip(sequences, labels):
+    for sequence, sequence_labels in zip(sequences, labels, strict=True):
         if sequence_labels is None or len(sequence_labels) != len(sequence):
             raise ValueError("Labeled training needs exactly one emitting-state label per observation.")
         path = np.asarray(
@@ -133,7 +133,7 @@ def _maximize(model, observations, counts, starts, ends, weights, min_covar, upd
     emissions = (
         tuple(
             update_emission_parameters(emission, observations, state_weights, min_covar=min_covar)
-            for emission, state_weights in zip(model.emissions, weights.T)
+            for emission, state_weights in zip(model.emissions, weights.T, strict=True)
         )
         if update_emissions
         else model.emissions
@@ -162,7 +162,7 @@ def _prepare_sequences(model, sequences):
 def _summarize_sequences(model, sequences, paths, algorithm, parallel, update_emissions, collect_statistics):
     summaries = parallel(
         delayed(_sequence_statistics)(model, sequence, path, algorithm, update_emissions, collect_statistics)
-        for sequence, path in zip(sequences, paths)
+        for sequence, path in zip(sequences, paths, strict=True)
     )
     likelihood = sum(summary[0] for summary in summaries)
     if not collect_statistics:

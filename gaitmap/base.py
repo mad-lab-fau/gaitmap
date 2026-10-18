@@ -5,14 +5,13 @@ import sys
 import warnings
 from importlib import import_module
 from io import StringIO
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Self, TypeVar
 
 import numpy as np
 import pandas as pd
 import tpcp
 from joblib import Memory
 from scipy.spatial.transform import Rotation
-from typing_extensions import Self
 
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
@@ -133,7 +132,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         return instance
 
     def _to_json_dict(self) -> dict[str, Any]:
-        json_dict: dict[str, Union[str, dict[str, Any]]] = {
+        json_dict: dict[str, str | dict[str, Any]] = {
             "_gaitmap_obj": self.__class__.__name__,
             "params": self.get_params(deep=False),
         }
@@ -216,7 +215,7 @@ class BaseEventDetection(BaseAlgorithm):
     _action_methods = ("detect",)
 
     def detect(
-        self, data: SensorData, *, stride_event_list: Optional[SingleSensorStrideList] = None, sampling_rate_hz: float
+        self, data: SensorData, *, stride_event_list: SingleSensorStrideList | None = None, sampling_rate_hz: float
     ) -> Self:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
@@ -247,7 +246,7 @@ class BaseOrientationMethod(BaseAlgorithm):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Estimate the orientation of the sensor based on the input data."""
@@ -265,7 +264,7 @@ class BasePositionMethod(BaseAlgorithm):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Estimate the position of the sensor based on the input data.
@@ -334,18 +333,18 @@ class BaseZuptDetector(BaseAlgorithm):
     per_sample_zupts_: np.ndarray
 
     # These two can be implemented optionally
-    min_vel_index_: Optional[int]
-    min_vel_value_: Optional[float]
+    min_vel_index_: int | None
+    min_vel_value_: float | None
 
     data: SingleSensorData
-    stride_event_list: Optional[SingleSensorStrideList]
+    stride_event_list: SingleSensorStrideList | None
     sampling_rate_hz: float
 
     def detect(
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Find ZUPTs in data."""

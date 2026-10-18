@@ -61,7 +61,7 @@ def compare_val(value, json_val, name) -> None:
         assert_array_equal(value, json_val)
     elif isinstance(value, (tuple, list)):
         assert len(value) == len(json_val)
-        for i, (v, j) in enumerate(zip(value, json_val)):
+        for i, (v, j) in enumerate(zip(value, json_val, strict=True)):
             compare_val(v, j, f"{name}_{i}")
     elif isinstance(value, Rotation):
         assert_array_equal(value.as_quat(), json_val.as_quat())

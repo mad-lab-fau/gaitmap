@@ -1,13 +1,13 @@
 """An event detection algorithm optimized for stair ambulation developed by Liv Herzer in her Bachelor Thesis ."""
 
-from typing import Callable, Optional, Union
+from collections.abc import Callable
+from typing import Literal
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from scipy import signal
 from tpcp import cf
-from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
@@ -191,22 +191,22 @@ class HerzerEventDetection(_EventDetectionMixin, BaseEventDetection):
     """
 
     min_vel_search_win_size_ms: float
-    mid_swing_peak_prominence: Union[tuple[float, float], float]
+    mid_swing_peak_prominence: tuple[float, float] | float
     mid_swing_n_considered_peaks: int
     ic_lowpass_filter: BaseFilter
-    memory: Optional[Memory]
+    memory: Memory | None
     enforce_consistency: bool
     input_stride_type: Literal["segmented"]
 
     def __init__(
         self,
         min_vel_search_win_size_ms: float = 100,
-        mid_swing_peak_prominence: Union[tuple[float, float], float] = 20,
+        mid_swing_peak_prominence: tuple[float, float] | float = 20,
         mid_swing_n_considered_peaks: int = 3,
         ic_lowpass_filter: BaseFilter = cf(ButterworthFilter(order=1, cutoff_freq_hz=4)),
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[tuple[str, ...]] = None,
+        detect_only: tuple[str, ...] | None = None,
         input_stride_type: Literal["segmented"] = "segmented",
     ):
         self.min_vel_search_win_size_ms = min_vel_search_win_size_ms
@@ -245,12 +245,12 @@ def _find_all_events(
     *,
     events: tuple[str, ...] = ("ic", "tc", "min_vel"),
     min_vel_search_win_size: int,
-    mid_swing_peak_prominence: Union[tuple[float, float], float],
+    mid_swing_peak_prominence: tuple[float, float] | float,
     mid_swing_n_considered_peaks: int,
     ic_lowpass_filter: BaseFilter,
     sampling_rate_hz: float,
     input_stride_type: Literal["segmented"],
-) -> tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]:
+) -> tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
     """Find events in provided data by looping over single strides."""
     if input_stride_type != "segmented":
         raise NotImplementedError("This method support only segmented stride type")
@@ -298,7 +298,7 @@ def _find_all_events(
     )
 
 
-def _get_midswing_max(gyr_ml, peak_prominence_thresholds: Union[tuple[float, float], float], n_considered_peaks: int):
+def _get_midswing_max(gyr_ml, peak_prominence_thresholds: tuple[float, float] | float, n_considered_peaks: int):
     """Return the first prominent maximum within the given stride.
 
     This maximum should correspond to the mid swing gait event.
@@ -317,7 +317,7 @@ def _detect_ic(
     gyr_ml: np.ndarray,
     acc_pa_inv: np.ndarray,
     gyr_ml_grad: np.ndarray,
-    peak_prominence_thresholds: Union[tuple[float, float], float],
+    peak_prominence_thresholds: tuple[float, float] | float,
     n_considered_peaks: int,
     lowpass_filter: BaseFilter,
     sampling_rate_hz: float,

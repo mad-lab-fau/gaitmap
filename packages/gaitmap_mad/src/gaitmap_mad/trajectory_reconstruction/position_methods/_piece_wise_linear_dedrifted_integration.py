@@ -1,6 +1,6 @@
 """Estimate the IMU position with piece wise linear dedrifted integration using zupt updates."""
 
-from typing import Optional
+from typing import Self
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,6 @@ from numpy.polynomial import polynomial
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BasePositionMethod, BaseZuptDetector
 from gaitmap.utils.array_handling import bool_array_to_start_end_array
@@ -125,7 +124,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
     """
 
     level_assumption: bool
-    gravity: Optional[np.ndarray]
+    gravity: np.ndarray | None
     zupt_detector: BaseZuptDetector
 
     data: SingleSensorData
@@ -141,7 +140,7 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
             )
         ),
         level_assumption: bool = True,
-        gravity: Optional[np.ndarray] = cf(GRAV_VEC),
+        gravity: np.ndarray | None = cf(GRAV_VEC),
     ) -> None:
         self.zupt_detector = zupt_detector
         self.level_assumption = level_assumption

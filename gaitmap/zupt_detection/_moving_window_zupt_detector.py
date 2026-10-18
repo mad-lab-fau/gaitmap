@@ -1,9 +1,8 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
 
-from typing import Optional
+from typing import Literal, Self
 
 import numpy as np
-from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
@@ -16,10 +15,10 @@ SENSOR_NAMES = Literal["acc", "gyr"]
 
 def _validate_window(
     window_length_s: float,
-    window_overlap: Optional[float],
-    window_overlap_samples: Optional[int],
+    window_overlap: float | None,
+    window_overlap_samples: int | None,
     sampling_rate_hz: float,
-) -> tuple[int, Optional[int]]:
+) -> tuple[int, int | None]:
     """Validate window_length and overlap."""
     window_length = round(sampling_rate_hz * window_length_s)
     if window_length < 3:
@@ -168,8 +167,8 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
 
     sensor: SENSOR_NAMES
     window_length_s: float
-    window_overlap: Optional[float]
-    window_overlap_samples: Optional[int]
+    window_overlap: float | None
+    window_overlap_samples: int | None
     metric: METRIC_FUNCTION_NAMES
     inactive_signal_threshold: float
 
@@ -181,8 +180,8 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         *,
         sensor: SENSOR_NAMES = "gyr",
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = 0.5,
-        window_overlap_samples: Optional[int] = None,
+        window_overlap: float | None = 0.5,
+        window_overlap_samples: int | None = None,
         metric: METRIC_FUNCTION_NAMES = "mean",
         inactive_signal_threshold: float = 15,
     ) -> None:
@@ -330,8 +329,8 @@ class AredZuptDetector(NormZuptDetector):
         *,
         sensor: SENSOR_NAMES = "gyr",
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = None,
-        window_overlap_samples: Optional[int] = -1,
+        window_overlap: float | None = None,
+        window_overlap_samples: int | None = -1,
         metric: METRIC_FUNCTION_NAMES = "squared_mean",
         inactive_signal_threshold: float = 180,
     ) -> None:
@@ -439,8 +438,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     """
 
     window_length_s: float
-    window_overlap: Optional[float]
-    window_overlap_samples: Optional[int]
+    window_overlap: float | None
+    window_overlap_samples: int | None
     inactive_signal_threshold: float
     acc_noise_variance: float
     gyr_noise_variance: float
@@ -457,8 +456,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         acc_noise_variance: float = 3.5e-9,
         gyr_noise_variance: float = 1.3e-7,
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = 0.5,
-        window_overlap_samples: Optional[int] = None,
+        window_overlap: float | None = 0.5,
+        window_overlap_samples: int | None = None,
         inactive_signal_threshold: float = 2310129700,
     ) -> None:
         self.acc_noise_variance = acc_noise_variance

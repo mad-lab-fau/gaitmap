@@ -178,7 +178,7 @@ def test_frozen_gaussian_and_mixture_remain_fixed_while_transitions_learn(freeze
     other_distribution = gaussian([2.0], [[1.0]], frozen=freeze_parameters)
     model = HiddenMarkovModel([distribution, other_distribution], [[0.75, 0.25], [0.15, 0.85]], [0.6, 0.4])
     trained, _ = model.fit(_SEQUENCES, max_iterations=2, update_emissions=freeze_parameters)
-    for actual, expected in zip(trained.emissions, model.emissions):
+    for actual, expected in zip(trained.emissions, model.emissions, strict=True):
         assert actual.frozen == expected.frozen
         assert_allclose(actual.means, expected.means)
         assert_allclose(actual.covariances, expected.covariances)
@@ -271,7 +271,7 @@ def test_two_state_training_update_matches_exhaustive_paths_for_separate_sequenc
     starts = np.array([0.7, 0.3])
     ends = np.array([0.2, 0.3])
     model = HiddenMarkovModel(
-        [gaussian([mean], [[variance]]) for mean, variance in zip(means, variances)],
+        [gaussian([mean], [[variance]]) for mean, variance in zip(means, variances, strict=True)],
         transitions,
         starts,
         ends,
@@ -296,7 +296,7 @@ def test_two_state_training_update_matches_exhaustive_paths_for_separate_sequenc
         initial_log_likelihood += np.log(total)
         responsibilities = np.zeros((len(observations), 2))
         best_path = paths[np.argmax(probabilities)]
-        for path, probability in zip(paths, probabilities):
+        for path, probability in zip(paths, probabilities, strict=True):
             posterior = probability / total if algorithm == "baum-welch" else float(path == best_path)
             start_counts[path[0]] += posterior
             end_counts[path[-1]] += posterior

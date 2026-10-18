@@ -1,10 +1,9 @@
 """A set of helper functions to score the output of the evaluation of a stride segmentation against ground truth."""
 
 import warnings
-from typing import Union, overload
+from typing import Literal, TypedDict, overload
 
 import pandas as pd
-from typing_extensions import Literal, TypedDict
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
@@ -273,8 +272,8 @@ def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1
 
 
 def _get_match_type_dfs(
-    match_results: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
-) -> Union[dict[_Hashable, dict[str, pd.DataFrame]], dict[str, pd.DataFrame]]:
+    match_results: pd.DataFrame | dict[_Hashable, pd.DataFrame],
+) -> dict[_Hashable, dict[str, pd.DataFrame]] | dict[str, pd.DataFrame]:
     is_not_dict = not isinstance(match_results, dict)
     if is_not_dict:
         match_results = {"__dummy__": match_results}

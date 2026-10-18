@@ -146,7 +146,7 @@ def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, 
     trained, history = model.self_optimize_with_info(data, labels)
     restored = SimpleHmm.from_json(trained.to_json()).clone()
 
-    for observations, expected in zip(data, labels):
+    for observations, expected in zip(data, labels, strict=True):
         assert_array_equal(trained.predict_hidden_state_sequence(observations), expected)
         assert_array_equal(restored.predict_hidden_state_sequence(observations), expected)
     assert history.n_iterations > 0

@@ -1,12 +1,11 @@
 """An error state kalman filter with Rauch-Tung-Striebel smoothing fo estimating trajectories."""
 
-from typing import Optional, Union
+from typing import Self
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseTrajectoryMethod, BaseZuptDetector
 from gaitmap.trajectory_reconstruction.trajectory_methods._kalman_numba_funcs import (
@@ -148,7 +147,7 @@ class RtsKalman(BaseTrajectoryMethod):
 
     """
 
-    initial_orientation: Union[np.ndarray, Rotation]
+    initial_orientation: np.ndarray | Rotation
     zupt_threshold_dps: float
     zupt_variance: float
     velocity_error_variance: float
@@ -156,7 +155,7 @@ class RtsKalman(BaseTrajectoryMethod):
     level_walking: bool
     level_walking_variance: float
     zupt_window_length_s: float
-    zupt_window_overlap_s: Optional[float]
+    zupt_window_overlap_s: float | None
     zupt_detector: BaseZuptDetector
 
     data: SingleSensorData
@@ -170,7 +169,7 @@ class RtsKalman(BaseTrajectoryMethod):
     def __init__(
         self,
         *,
-        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
+        initial_orientation: np.ndarray | Rotation = cf(np.array([0, 0, 0, 1.0])),
         zupt_variance: float = 10e-8,
         velocity_error_variance: float = 10e5,
         orientation_error_variance: float = 10e-2,
@@ -195,7 +194,7 @@ class RtsKalman(BaseTrajectoryMethod):
         data: SingleSensorData,
         *,
         sampling_rate_hz: float,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
     ) -> Self:
         """Estimate the position, velocity and orientation of the sensor.
 
@@ -288,7 +287,7 @@ class RtsKalman(BaseTrajectoryMethod):
         """
         return ForwardPassDependencies(motion_update_func=simple_navigation_equations, motion_update_func_parameters=())
 
-    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy(copy=True))
         acc_data = self.data[SF_ACC].to_numpy(copy=True)
         return acc_data, gyro_data, None
@@ -380,7 +379,7 @@ class MadgwickRtsKalman(RtsKalman):
     def __init__(
         self,
         *,
-        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
+        initial_orientation: np.ndarray | Rotation = cf(np.array([0, 0, 0, 1.0])),
         zupt_variance: float = 10e-8,
         velocity_error_variance: float = 10e5,
         orientation_error_variance: float = 10e-2,
@@ -413,7 +412,7 @@ class MadgwickRtsKalman(RtsKalman):
             motion_update_func_parameters=(self.madgwick_beta,),
         )
 
-    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+    def _prepare_data(self) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         gyro_data = np.deg2rad(self.data[SF_GYR].to_numpy())
         acc_data = self.data[SF_ACC].to_numpy()
         if self.use_magnetometer is False:

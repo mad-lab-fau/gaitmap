@@ -21,7 +21,6 @@ authors = [
 dependencies = [
     "pandas>=3,<3.1",
     "scipy>=1.16.3",
-    "typing_extensions>=4.15.0",
     "numba>=0.63.1",
     "numpy>=2.3.5,<3",
     "joblib>=1.5.2",

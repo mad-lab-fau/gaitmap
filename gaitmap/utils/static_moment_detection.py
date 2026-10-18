@@ -1,12 +1,11 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Callable, Optional, get_args
+from typing import Literal, get_args
 
 import numpy as np
 from numpy.linalg import norm
-from typing_extensions import Literal
 
 from gaitmap.utils import array_handling
 from gaitmap.utils.array_handling import _bool_fill
@@ -45,7 +44,7 @@ def find_static_samples(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> tuple[np.ndarray, int, float]:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
@@ -147,7 +146,7 @@ def find_static_samples_shoe(
     gyr_noise_var: float,
     window_length: int,
     inactive_signal_th: float,
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> tuple[np.ndarray, int, float]:
     """Use the SHOE algorithm for static moment detection.
 
@@ -223,7 +222,7 @@ def find_static_sequences(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> np.ndarray:
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 

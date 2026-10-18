@@ -77,9 +77,9 @@ class TestAlgorithmMixin:
         instance = valid_instance.clone()
         valid_names = get_param_names(instance)
         values = list(range(len(valid_names)))
-        instance.set_params(**dict(zip(valid_names, values)))
+        instance.set_params(**dict(zip(valid_names, values, strict=True)))
 
-        for k, v in zip(valid_names, values):
+        for k, v in zip(valid_names, values, strict=True):
             assert getattr(instance, k) == v, k
 
     def test_set_params_invalid(self, valid_instance) -> None:

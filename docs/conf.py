@@ -16,7 +16,6 @@ import sys
 from datetime import datetime
 from inspect import getsourcefile
 from pathlib import Path
-from typing import Optional
 
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
@@ -229,7 +228,7 @@ linkcode_resolve = make_linkcode_resolve(
 )
 
 
-def skip_properties(app, what, name, obj, skip, options) -> Optional[bool]:
+def skip_properties(app, what, name, obj, skip, options) -> bool | None:
     """This removes all properties from the documentation as they are expected to be documented in the docstring."""
     if isinstance(obj, property):
         return True

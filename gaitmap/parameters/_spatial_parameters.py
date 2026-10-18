@@ -2,13 +2,12 @@
 
 import warnings
 from collections.abc import Sequence
-from typing import Literal, Optional, Union
+from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
-from typing_extensions import Self
 
 from gaitmap.base import BaseSpatialParameterCalculation
 from gaitmap.parameters._temporal_parameters import _get_stride_time_cols
@@ -159,27 +158,27 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
-    calculate_only: Optional[Sequence[ParamterNames]]
+    calculate_only: Sequence[ParamterNames] | None
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]
-    sole_angle_course_: Optional[Union[pd.Series, dict[_Hashable, pd.Series]]]
+    parameters_: pd.DataFrame | dict[_Hashable, pd.DataFrame]
+    sole_angle_course_: pd.Series | dict[_Hashable, pd.Series] | None
 
     stride_event_list: StrideList
-    positions: Optional[PositionList]
-    orientations: Optional[OrientationList]
+    positions: PositionList | None
+    orientations: OrientationList | None
     sampling_rate_hz: float
 
     def __init__(
         self,
-        calculate_only: Optional[Sequence[ParamterNames]] = None,
+        calculate_only: Sequence[ParamterNames] | None = None,
         expected_stride_type: Literal["min_vel", "ic"] = "min_vel",
     ) -> None:
         self.calculate_only = calculate_only
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
+    def parameters_pretty_(self) -> pd.DataFrame | dict[_Hashable, pd.DataFrame]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -208,8 +207,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     def calculate(
         self,
         stride_event_list: StrideList,
-        positions: Optional[PositionList],
-        orientations: Optional[OrientationList],
+        positions: PositionList | None,
+        orientations: OrientationList | None,
         sampling_rate_hz: float,
     ) -> Self:
         """Find spatial parameters of all strides after segmentation and detecting events for all sensors.

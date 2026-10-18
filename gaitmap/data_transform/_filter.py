@@ -1,10 +1,9 @@
 """A set of filters that can be applied to data."""
 
-from typing import Literal, Optional, Union
+from typing import Literal, Self
 
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt
-from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer
 from gaitmap.utils.datatype_helper import SingleSensorData
@@ -23,7 +22,7 @@ class BaseFilter(BaseTransformer):
         """
         return self.transformed_data_
 
-    def filter(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+    def filter(self, data: SingleSensorData, *, sampling_rate_hz: float | None = None, **kwargs) -> Self:
         """Filter the data.
 
         This will apply the filter along the **first** axis (axis=0) (aka each column will be filtered).
@@ -73,7 +72,7 @@ class ButterworthFilter(BaseFilter):
     """
 
     order: int
-    cutoff_freq_hz: Union[float, tuple[float, float]]
+    cutoff_freq_hz: float | tuple[float, float]
     filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"]
 
     sampling_rate_hz: float
@@ -81,14 +80,14 @@ class ButterworthFilter(BaseFilter):
     def __init__(
         self,
         order: int,
-        cutoff_freq_hz: Union[float, tuple[float, float]],
+        cutoff_freq_hz: float | tuple[float, float],
         filter_type: Literal["lowpass", "highpass", "bandpass", "bandstop"] = "lowpass",
     ) -> None:
         self.order = order
         self.cutoff_freq_hz = cutoff_freq_hz
         self.filter_type = filter_type
 
-    def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **_) -> Self:
+    def transform(self, data: SingleSensorData, *, sampling_rate_hz: float | None = None, **_) -> Self:
         """Filter the data.
 
         This will apply the filter along the **first** axis (axis=0) (aka each column will be filtered).

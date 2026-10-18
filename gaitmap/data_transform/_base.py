@@ -3,11 +3,10 @@
 from collections.abc import Sequence
 from copy import copy
 from functools import reduce
-from typing import Union
+from typing import Self
 
 import pandas as pd
 from tpcp import OptimizableParameter, PureParameter
-from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.utils._types import _Hashable
@@ -91,14 +90,14 @@ class GroupedTransformer(BaseTransformer, TrainableTransformerMixin):
 
     """
 
-    transformer_mapping: OptimizableParameter[list[tuple[Union[_Hashable, tuple[_Hashable, ...]], BaseTransformer]]]
+    transformer_mapping: OptimizableParameter[list[tuple[_Hashable | tuple[_Hashable, ...], BaseTransformer]]]
     keep_all_cols: PureParameter[bool]
 
     data: SingleSensorData
 
     def __init__(
         self,
-        transformer_mapping: list[tuple[Union[_Hashable, tuple[_Hashable, ...]], BaseTransformer]],
+        transformer_mapping: list[tuple[_Hashable | tuple[_Hashable, ...], BaseTransformer]],
         keep_all_cols: bool = True,
     ) -> None:
         self.transformer_mapping = transformer_mapping

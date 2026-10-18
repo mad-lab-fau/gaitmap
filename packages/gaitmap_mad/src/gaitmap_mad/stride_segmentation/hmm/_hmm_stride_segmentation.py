@@ -3,12 +3,11 @@
 from contextlib import suppress
 from importlib.resources import open_text
 from pathlib import Path
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Self, TypeVar
 
 import numpy as np
 import pandas as pd
 from tpcp import cf, make_action_safe
-from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
@@ -120,22 +119,22 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
     """
 
-    snap_to_min_win_ms: Optional[float]
+    snap_to_min_win_ms: float | None
     snap_to_min_axis: str
     model: BaseSegmentationHmmT
 
-    data: Union[np.ndarray, SensorData]
+    data: np.ndarray | SensorData
     sampling_rate_hz: float
 
-    matches_start_end_: Union[np.ndarray, dict[str, np.ndarray]]
-    hidden_state_sequence_: Union[np.ndarray, dict[str, np.ndarray]]
-    result_model_: Union[BaseSegmentationHmmT, dict[str, BaseSegmentationHmmT]]
+    matches_start_end_: np.ndarray | dict[str, np.ndarray]
+    hidden_state_sequence_: np.ndarray | dict[str, np.ndarray]
+    result_model_: BaseSegmentationHmmT | dict[str, BaseSegmentationHmmT]
 
     def __init__(
         self,
         model: BaseSegmentationHmmT = cf(PreTrainedRothSegmentationModel()),
         *,
-        snap_to_min_win_ms: Optional[float] = 100,
+        snap_to_min_win_ms: float | None = 100,
         snap_to_min_axis: str = "gyr_ml",
     ) -> None:
         self.snap_to_min_win_ms = snap_to_min_win_ms
@@ -143,7 +142,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         self.model = model
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
@@ -151,7 +150,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         return self._format_stride_list(start_ends)
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
+    def matches_start_end_original_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
         """Return the starts and end directly from the hidden state sequence.
 
         This will not be effected by potential changes of the postprocessing.

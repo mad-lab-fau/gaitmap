@@ -4,7 +4,6 @@ Definitions can be found in the :ref:`coordinate_systems` guide.
 """
 
 import warnings
-from typing import Optional
 
 import pandas as pd
 
@@ -82,10 +81,10 @@ def convert_right_foot_to_fbf(data: SingleSensorData):
 
 def convert_to_fbf(
     data: MultiSensorData,
-    left: Optional[list[str]] = None,
-    right: Optional[list[str]] = None,
-    right_like: Optional[str] = None,
-    left_like: Optional[str] = None,
+    left: list[str] | None = None,
+    right: list[str] | None = None,
+    right_like: str | None = None,
+    left_like: str | None = None,
 ):
     """Convert the axes from the sensor frame to the body frame for one MultiSensorDataset.
 

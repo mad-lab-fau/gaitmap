@@ -327,7 +327,7 @@ class TestLocalMinimaBelowThreshold:
         out = split_array_at_nan(data)
         assert len(out) == len(result)
 
-        for a, b in zip(out, result):
+        for a, b in zip(out, result, strict=True):
             np.testing.assert_array_equal(a[1], np.array(b))
 
     @pytest.mark.parametrize(

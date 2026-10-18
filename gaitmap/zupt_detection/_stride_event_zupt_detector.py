@@ -1,8 +1,7 @@
-from typing import Optional
+from typing import Self
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.array_handling import merge_intervals
@@ -64,7 +63,7 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Detect the ZUPT events using the stride event list.

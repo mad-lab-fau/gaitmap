@@ -11,7 +11,6 @@ will likely not work. We will leave the script here as documentation, but it is 
 """
 
 import warnings
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -37,7 +36,7 @@ def clip_to_closest_minima(data, points, radius):
     return np.argmin(windows, axis=1) + points - radius
 
 
-def rotation_from_angle(axis: np.ndarray, angle: Union[float, np.ndarray]) -> Rotation:
+def rotation_from_angle(axis: np.ndarray, angle: float | np.ndarray) -> Rotation:
     """Create a quaternion based on a rotation axis and a angle.
 
     The output will be a normalized rotation

@@ -1,6 +1,6 @@
 """Calculate temporal parameters algorithm."""
 
-from typing import Literal, TypeVar, Union
+from typing import Literal, TypeVar
 
 import pandas as pd
 
@@ -87,7 +87,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, dict[str, pd.DataFrame]]
+    parameters_: pd.DataFrame | dict[str, pd.DataFrame]
 
     sampling_rate_hz: float
     stride_event_list: StrideList
@@ -96,7 +96,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def parameters_pretty_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}

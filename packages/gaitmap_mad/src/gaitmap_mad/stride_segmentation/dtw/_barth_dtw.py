@@ -2,13 +2,12 @@
 
 import warnings
 from importlib import import_module
-from typing import NoReturn, Optional, Union
+from typing import Literal, NoReturn
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from tpcp import CloneFactory
-from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._types import _Hashable
@@ -165,26 +164,24 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     """
 
-    snap_to_min_win_ms: Optional[float]
-    snap_to_min_axis: Optional[str]
+    snap_to_min_win_ms: float | None
+    snap_to_min_axis: str | None
     conflict_resolution: bool
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
-            BarthOriginalTemplate()
-        ),
+        template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 4.0,
-        min_match_length_s: Optional[float] = 0.6,
-        max_match_length_s: Optional[float] = 3.0,
-        max_template_stretch_ms: Optional[float] = None,
-        max_signal_stretch_ms: Optional[float] = None,
-        snap_to_min_win_ms: Optional[float] = 300,
-        snap_to_min_axis: Optional[str] = "gyr_ml",
+        max_cost: float | None = 4.0,
+        min_match_length_s: float | None = 0.6,
+        max_match_length_s: float | None = 3.0,
+        max_template_stretch_ms: float | None = None,
+        max_signal_stretch_ms: float | None = None,
+        snap_to_min_win_ms: float | None = 300,
+        snap_to_min_axis: str | None = "gyr_ml",
         conflict_resolution: bool = True,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
     ) -> None:
         self.snap_to_min_win_ms = snap_to_min_win_ms
         self.snap_to_min_axis = snap_to_min_axis
@@ -219,7 +216,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
 
     @staticmethod
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
-        tmp: Optional[np.ndarray] = array
+        tmp: np.ndarray | None = array
         if len(array) == 0:
             tmp = None
         as_df = pd.DataFrame(tmp, columns=["start", "end"])

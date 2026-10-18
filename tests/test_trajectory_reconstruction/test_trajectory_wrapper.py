@@ -1,9 +1,10 @@
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from scipy.spatial.transform import Rotation
-from typing_extensions import Literal
 
 from gaitmap.base import BaseTrajectoryMethod, BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman

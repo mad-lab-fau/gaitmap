@@ -1,14 +1,14 @@
 """A implementation of a sDTW that can be used independent of the context of Stride Segmentation."""
 
 import warnings
-from typing import Any, Callable, ClassVar, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, ClassVar, Literal, TypeVar
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from numba import njit
 from scipy.interpolate import interp1d
-from typing_extensions import Literal
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -240,32 +240,32 @@ class BaseDtw(BaseAlgorithm):
 
     _action_methods = ("segment",)
 
-    template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]]
-    max_cost: Optional[float]
+    template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None
+    max_cost: float | None
     resample_template: bool
-    min_match_length_s: Optional[float]
-    max_match_length_s: Optional[float]
-    max_template_stretch_ms: Optional[float]
-    max_signal_stretch_ms: Optional[float]
+    min_match_length_s: float | None
+    max_match_length_s: float | None
+    max_template_stretch_ms: float | None
+    max_signal_stretch_ms: float | None
     find_matches_method: Literal["min_under_thres", "find_peaks"]
-    memory: Optional[Memory]
+    memory: Memory | None
 
-    matches_start_end_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
-    acc_cost_mat_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
-    paths_: Union[list[np.ndarray], dict[_Hashable, list[np.ndarray]]]
-    costs_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
+    matches_start_end_: np.ndarray | dict[_Hashable, np.ndarray]
+    acc_cost_mat_: np.ndarray | dict[_Hashable, np.ndarray]
+    paths_: list[np.ndarray] | dict[_Hashable, list[np.ndarray]]
+    costs_: np.ndarray | dict[_Hashable, np.ndarray]
 
-    data: Union[np.ndarray, SensorData]
+    data: np.ndarray | SensorData
     sampling_rate_hz: float
 
     _allowed_methods_map: ClassVar = {
         "min_under_thres": find_matches_min_under_threshold,
         "find_peaks": find_matches_find_peaks,
     }
-    _min_sequence_length: Optional[float]
-    _max_sequence_length: Optional[float]
-    _max_template_stretch: Optional[int]
-    _max_signal_stretch: Optional[int]
+    _min_sequence_length: float | None
+    _max_sequence_length: float | None
+    _max_template_stretch: int | None
+    _max_signal_stretch: int | None
 
     @property
     def cost_function_(self):
@@ -277,7 +277,7 @@ class BaseDtw(BaseAlgorithm):
     @property
     def matches_start_end_original_(
         self,
-    ) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
+    ) -> np.ndarray | dict[_Hashable, np.ndarray]:
         """Return the starts and end directly from the paths.
 
         This will not be effected by potential changes of the postprocessing.
@@ -289,15 +289,15 @@ class BaseDtw(BaseAlgorithm):
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = None,
+        template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = None,
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = None,
-        min_match_length_s: Optional[float] = None,
-        max_match_length_s: Optional[float] = None,
-        max_template_stretch_ms: Optional[float] = None,
-        max_signal_stretch_ms: Optional[float] = None,
-        memory: Optional[Memory] = None,
+        max_cost: float | None = None,
+        min_match_length_s: float | None = None,
+        max_match_length_s: float | None = None,
+        max_template_stretch_ms: float | None = None,
+        max_signal_stretch_ms: float | None = None,
+        memory: Memory | None = None,
     ) -> None:
         self.template = template
         self.max_cost = max_cost
@@ -309,7 +309,7 @@ class BaseDtw(BaseAlgorithm):
         self.find_matches_method = find_matches_method
         self.memory = memory
 
-    def segment(self: Self, data: Union[np.ndarray, SensorData], sampling_rate_hz: float, **_) -> Self:
+    def segment(self: Self, data: np.ndarray | SensorData, sampling_rate_hz: float, **_) -> Self:
         """Find matches by warping the provided template to the data.
 
         Parameters
@@ -338,9 +338,9 @@ class BaseDtw(BaseAlgorithm):
 
     def _segment(
         self,
-        data: Union[np.ndarray, SensorData],
+        data: np.ndarray | SensorData,
         sampling_rate_hz: float,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
     ) -> dict[str, Any]:
         if not memory:
             memory = Memory(None)
@@ -357,10 +357,9 @@ class BaseDtw(BaseAlgorithm):
         # For the typechecker
         assert self.template is not None
 
-        results: Union[
-            dict[str, Union[np.ndarray, list[np.ndarray]]],
-            dict[str, dict[Union[_Hashable, str], Union[np.ndarray, list[np.ndarray]]]],
-        ]
+        results: (
+            dict[str, np.ndarray | list[np.ndarray]] | dict[str, dict[_Hashable | str, np.ndarray | list[np.ndarray]]]
+        )
         if isinstance(data, np.ndarray):
             dataset_type = "array"
         else:
@@ -370,7 +369,7 @@ class BaseDtw(BaseAlgorithm):
             # Single template single sensor: easy
             results = self._segment_single_dataset(data, template, memory=memory)
         else:  # Multisensor
-            result_dict: dict[_Hashable, dict[str, Union[np.ndarray, list[np.ndarray]]]] = {}
+            result_dict: dict[_Hashable, dict[str, np.ndarray | list[np.ndarray]]] = {}
             if isinstance(template, dict):
                 # multiple templates, multiple sensors: Apply the correct template to the correct sensor.
                 # Ignore the rest
@@ -383,15 +382,15 @@ class BaseDtw(BaseAlgorithm):
             else:
                 raise ValueError(
                     "In case of a multi-sensor dataset input, the used template must either be of type "
-                    "`Dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
+                    "`dict[str, DtwTemplate]` or the template array must have the shape of a single-sensor dataframe."
                 )
             results = invert_result_dictionary(result_dict)
 
         return results
 
     def _segment_single_dataset(
-        self, dataset, template: Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]], memory: Memory
-    ) -> dict[str, Union[np.ndarray, list[np.ndarray]]]:
+        self, dataset, template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate], memory: Memory
+    ) -> dict[str, np.ndarray | list[np.ndarray]]:
         template_sampling_rate = getattr(template, "sampling_rate_hz", None)
         if self.resample_template and not template_sampling_rate:
             raise ValueError(
@@ -605,7 +604,7 @@ class BaseDtw(BaseAlgorithm):
     @staticmethod
     def _extract_relevant_data_and_template(
         template: BaseDtwTemplate,
-        data: Union[np.ndarray, pd.DataFrame],
+        data: np.ndarray | pd.DataFrame,
         sampling_rate_hz: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Get the relevant parts of the data based on the provided template and return template and data as array."""

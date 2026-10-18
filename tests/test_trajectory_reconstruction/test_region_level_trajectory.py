@@ -115,7 +115,7 @@ class TestIntersect:
         intersected_pos, *_ = rlt.intersect(stride_list, return_data=("position",))
 
         assert len(intersected_pos.groupby("s_id")) == len(starts)
-        for i, (start, end) in enumerate(zip(starts, ends)):
+        for i, (start, end) in enumerate(zip(starts, ends, strict=True)):
             np.testing.assert_array_equal(intersected_pos["pos_x"].loc[i].to_numpy(), position[start : end + 1])
 
         # Output should pass stride pos list test

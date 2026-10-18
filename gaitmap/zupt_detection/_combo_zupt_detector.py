@@ -1,7 +1,6 @@
-from typing import Literal, Optional
+from typing import Literal, Self
 
 import numpy as np
-from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.datatype_helper import SingleSensorData
@@ -42,11 +41,11 @@ class ComboZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
 
     _composite_params = ("detectors",)
 
-    detectors: Optional[list[tuple[str, BaseZuptDetector]]]
+    detectors: list[tuple[str, BaseZuptDetector]] | None
     operation: Literal["and", "or"]
 
     def __init__(
-        self, detectors: Optional[list[tuple[str, BaseZuptDetector]]] = None, operation: Literal["and", "or"] = "or"
+        self, detectors: list[tuple[str, BaseZuptDetector]] | None = None, operation: Literal["and", "or"] = "or"
     ) -> None:
         self.detectors = detectors
         self.operation = operation

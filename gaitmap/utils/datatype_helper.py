@@ -1,11 +1,10 @@
 """A couple of helper functions that easy the use of the typical gaitmap data formats."""
 
-from collections.abc import Iterable, Sequence
-from typing import Callable, Optional, Union, cast
+from collections.abc import Callable, Iterable, Sequence
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
 
 from gaitmap.utils._datatype_validation_helper import (
     _ALLOWED_FRAMES,
@@ -41,23 +40,23 @@ SingleSensorPositionList = _DataFrame
 SingleSensorVelocityList = _DataFrame
 SingleSensorOrientationList = _DataFrame
 
-MultiSensorData = Union[pd.DataFrame, dict[_Hashable, SingleSensorData]]
-SensorData = Union[SingleSensorData, MultiSensorData]
+MultiSensorData = pd.DataFrame | dict[_Hashable, SingleSensorData]
+SensorData = SingleSensorData | MultiSensorData
 
 MultiSensorStrideList = dict[_Hashable, pd.DataFrame]
-StrideList = Union[SingleSensorStrideList, MultiSensorStrideList]
+StrideList = SingleSensorStrideList | MultiSensorStrideList
 
 MultiSensorRegionsOfInterestList = dict[_Hashable, pd.DataFrame]
-RegionsOfInterestList = Union[SingleSensorRegionsOfInterestList, MultiSensorRegionsOfInterestList]
+RegionsOfInterestList = SingleSensorRegionsOfInterestList | MultiSensorRegionsOfInterestList
 
 MultiSensorPositionList = dict[_Hashable, pd.DataFrame]
-PositionList = Union[SingleSensorPositionList, MultiSensorPositionList]
+PositionList = SingleSensorPositionList | MultiSensorPositionList
 
 MultiSensorVelocityList = dict[_Hashable, pd.DataFrame]
-VelocityList = Union[SingleSensorVelocityList, MultiSensorVelocityList]
+VelocityList = SingleSensorVelocityList | MultiSensorVelocityList
 
 MultiSensorOrientationList = dict[_Hashable, pd.DataFrame]
-OrientationList = Union[SingleSensorOrientationList, MultiSensorOrientationList]
+OrientationList = SingleSensorOrientationList | MultiSensorOrientationList
 
 
 def to_dict_multi_sensor_data(sensordata: MultiSensorData) -> dict[_Hashable, SingleSensorData]:
@@ -78,7 +77,7 @@ def is_single_sensor_data(
     check_mag: bool = False,
     frame: _ALLOWED_FRAMES_TYPE = "any",
     raise_exception: bool = False,
-) -> Optional[bool]:
+) -> bool | None:
     """Check if an object is a valid dataset following all conventions.
 
     A valid single sensor dataset is:
@@ -308,7 +307,7 @@ def is_sensor_data(
 def is_single_sensor_stride_list(
     stride_list: SingleSensorStrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, tuple[str, ...]] = True,
+    check_additional_cols: bool | tuple[str, ...] = True,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor stride list.
@@ -414,7 +413,7 @@ def is_single_sensor_stride_list(
 def is_multi_sensor_stride_list(
     stride_list: MultiSensorStrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, tuple[str, ...]] = True,
+    check_additional_cols: bool | tuple[str, ...] = True,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor stride list.
@@ -478,7 +477,7 @@ def is_multi_sensor_stride_list(
 def is_stride_list(
     stride_list: StrideList,
     stride_type: _ALLOWED_STRIDE_TYPE = "any",
-    check_additional_cols: Union[bool, tuple[str, ...]] = True,
+    check_additional_cols: bool | tuple[str, ...] = True,
 ) -> Literal["single", "multi"]:
     """Check if an object is a valid multi-sensor or single-sensor stride list.
 
@@ -750,7 +749,7 @@ def get_multi_sensor_names(dataset: MultiSensorData) -> Sequence[_Hashable]:
 
 
 def get_single_sensor_trajectory_list_types(
-    traj_list: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
+    traj_list: SingleSensorPositionList | SingleSensorOrientationList | SingleSensorVelocityList,
 ) -> Literal["roi", "gs", "stride"]:
     """Identify which type of trajectory list is passed by checking the existing columns."""
     traj_list_columns = traj_list.reset_index().columns
@@ -772,8 +771,8 @@ def _is_single_sensor_trajectory_list(
     input_prefix: str,
     input_datatype: str,
     expected_cols: list[str],
-    traj_list: Union[SingleSensorOrientationList, SingleSensorVelocityList, SingleSensorOrientationList],
-    traj_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    traj_list: SingleSensorOrientationList | SingleSensorVelocityList | SingleSensorOrientationList,
+    traj_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     if traj_list_type and traj_list_type != "any_roi" and traj_list_type not in TRAJ_TYPE_COLS:
@@ -806,7 +805,7 @@ def _is_single_sensor_trajectory_list(
 def _is_multi_sensor_trajectory_list(
     input_datatype: str,
     single_func: Callable,
-    traj_list: Union[MultiSensorOrientationList, MultiSensorVelocityList, MultiSensorOrientationList],
+    traj_list: MultiSensorOrientationList | MultiSensorVelocityList | MultiSensorOrientationList,
     raise_exception: bool = False,
     **kwargs,
 ) -> bool:
@@ -838,7 +837,7 @@ def _is_trajectory_list(
     input_datatype: str,
     single_func: Callable,
     multi_func: Callable,
-    traj_list: Union[MultiSensorOrientationList, MultiSensorVelocityList, MultiSensorOrientationList],
+    traj_list: MultiSensorOrientationList | MultiSensorVelocityList | MultiSensorOrientationList,
     **kwargs,
 ) -> Literal["single", "multi"]:
     try:
@@ -869,7 +868,7 @@ def _is_trajectory_list(
 
 def is_single_sensor_position_list(
     position_list: SingleSensorPositionList,
-    position_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    position_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor position list.
@@ -912,7 +911,7 @@ def is_single_sensor_position_list(
 
 def is_multi_sensor_position_list(
     position_list: MultiSensorPositionList,
-    position_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    position_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor position list.
@@ -949,7 +948,7 @@ def is_multi_sensor_position_list(
     )
 
 
-def is_position_list(position_list: PositionList, position_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None):
+def is_position_list(position_list: PositionList, position_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None):
     """Check if an object is a valid multi-sensor or single-sensor position list.
 
     This function will try to check the input using
@@ -991,7 +990,7 @@ def is_position_list(position_list: PositionList, position_list_type: Optional[_
 
 def is_single_sensor_velocity_list(
     velocity_list: SingleSensorVelocityList,
-    velocity_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    velocity_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor velocity list.
@@ -1034,7 +1033,7 @@ def is_single_sensor_velocity_list(
 
 def is_multi_sensor_velocity_list(
     velocity_list: MultiSensorVelocityList,
-    velocity_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    velocity_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor velocity list.
@@ -1071,7 +1070,7 @@ def is_multi_sensor_velocity_list(
     )
 
 
-def is_velocity_list(velocity_list: VelocityList, velocity_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None):
+def is_velocity_list(velocity_list: VelocityList, velocity_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None):
     """Check if an object is a valid multi-sensor or single-sensor velocity list.
 
     This function will try to check the input using
@@ -1113,7 +1112,7 @@ def is_velocity_list(velocity_list: VelocityList, velocity_list_type: Optional[_
 
 def is_single_sensor_orientation_list(
     orientation_list: SingleSensorOrientationList,
-    orientation_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    orientation_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a single-sensor orientation list.
@@ -1156,7 +1155,7 @@ def is_single_sensor_orientation_list(
 
 def is_multi_sensor_orientation_list(
     orientation_list: MultiSensorOrientationList,
-    orientation_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None,
+    orientation_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None,
     raise_exception: bool = False,
 ) -> bool:
     """Check if an input is a multi-sensor orientation list.
@@ -1194,7 +1193,7 @@ def is_multi_sensor_orientation_list(
 
 
 def is_orientation_list(
-    orientation_list: OrientationList, orientation_list_type: Optional[_ALLOWED_TRAJ_LIST_TYPES] = None
+    orientation_list: OrientationList, orientation_list_type: _ALLOWED_TRAJ_LIST_TYPES | None = None
 ):
     """Check if an object is a valid multi-sensor or single-sensor orientation list.
 

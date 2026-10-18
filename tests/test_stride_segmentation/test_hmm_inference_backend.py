@@ -66,7 +66,7 @@ def test_mixture_inference_matches_exhaustive_paths(finite, sparse):
         path_probabilities.append(probability)
     likelihood = sum(path_probabilities)
     posterior = np.zeros((len(samples), 2))
-    for path, probability in zip(paths, path_probabilities):
+    for path, probability in zip(paths, path_probabilities, strict=True):
         for observation, state in enumerate(path):
             posterior[observation, state] += probability / likelihood
 

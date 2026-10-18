@@ -549,7 +549,6 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "tpcp" },
-    { name = "typing-extensions" },
 ]
 
 [package.optional-dependencies]
@@ -592,7 +591,6 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.7.2" },
     { name = "scipy", specifier = ">=1.16.3" },
     { name = "tpcp", specifier = ">=2.2.0" },
-    { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
 provides-extras = ["hmm", "stats", "all"]
 

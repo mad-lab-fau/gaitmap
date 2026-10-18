@@ -12,7 +12,6 @@ Grid Search optimal Algorithm Parameter
 
 import pandas as pd
 
-
 # %%
 # To perform a GridSearch (or any other form of parameter optimization in Gaitmap), we first need to have a
 # **Dataset**, a **Pipeline** and a **score** function.

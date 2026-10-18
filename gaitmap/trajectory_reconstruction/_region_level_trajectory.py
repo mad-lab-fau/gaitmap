@@ -1,11 +1,10 @@
 """Wrapper to apply position and orientation estimation to multiple regions in a dataset."""
 
-from typing import Optional, Union
+from typing import Literal, Self
 
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import CloneFactory, is_action_applied
-from typing_extensions import Literal, Self
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -187,10 +186,10 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
+        ori_method: BaseOrientationMethod | None = CloneFactory(SimpleGyroIntegration()),
         # TODO: Change default so simple forward integration once this is implemented
-        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
-        trajectory_method: Optional[BaseTrajectoryMethod] = None,
+        pos_method: BasePositionMethod | None = CloneFactory(ForwardBackwardIntegration()),
+        trajectory_method: BaseTrajectoryMethod | None = None,
         align_window_width: int = 8,
     ) -> None:
         # TODO: Make align window with a second value?
@@ -202,7 +201,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         data: SensorData,
         regions_of_interest: RegionsOfInterestList,
         *,
-        stride_event_list: Optional[StrideList] = None,
+        stride_event_list: StrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Use the initial rotation and the gyroscope signal to estimate the orientation to every time point .
@@ -331,7 +330,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
             "position",
             "velocity",
         ),
-    ) -> tuple[Union[PositionList, OrientationList, VelocityList], ...]:
+    ) -> tuple[PositionList | OrientationList | VelocityList, ...]:
         """Cut out the trajectory of individual strides from the region trajectories.
 
         This method can only be used after `estimate` was called.
@@ -408,10 +407,10 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
 
     def _intersect(
         self,
-        data: Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList],
+        data: SingleSensorPositionList | SingleSensorOrientationList | SingleSensorVelocityList,
         regions_of_interest: SingleSensorRegionsOfInterestList,
         stride_event_list: SingleSensorStrideList,
-    ) -> Union[SingleSensorPositionList, SingleSensorOrientationList, SingleSensorVelocityList]:
+    ) -> SingleSensorPositionList | SingleSensorOrientationList | SingleSensorVelocityList:
         # Note that this ignores the potential roi/gs_id column of the stride list
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
         traj_list_type = get_single_sensor_trajectory_list_types(data)
@@ -421,7 +420,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
 
         stride_lists = intersect_stride_list(stride_event_list, regions_of_interest)
         output = {}
-        for (region_id, _), stride_list in zip(regions_of_interest.iterrows(), stride_lists):
+        for (region_id, _), stride_list in zip(regions_of_interest.iterrows(), stride_lists, strict=True):
             for s_id, stride in stride_list.iterrows():
                 # This cuts out the n+1 samples for each stride.
                 # The first sample is the value before the stride started.
@@ -436,7 +435,7 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         self,
         data: SingleSensorData,
         integration_regions: SingleSensorRegionsOfInterestList,
-        stride_list_list: Optional[list[SingleSensorStrideList]],
+        stride_list_list: list[SingleSensorStrideList] | None,
     ) -> dict[str, pd.DataFrame]:
         # Set the class variable to determine the correct index values per dataset.
         self._expected_integration_region_index = [

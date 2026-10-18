@@ -4,8 +4,6 @@ Wherever possible, these functions are designed to handle multiple vectors at th
 computations.
 """
 
-from typing import Union
-
 import numpy as np
 from numpy.linalg import norm
 
@@ -21,7 +19,7 @@ def row_wise_dot(v1, v2, squeeze=False):
 
 def is_almost_parallel_or_antiparallel(
     v1: np.ndarray, v2: np.ndarray, rtol: float = 1.0e-5, atol: float = 1.0e-8
-) -> Union[np.bool_, np.ndarray]:
+) -> np.bool_ | np.ndarray:
     """Check if two vectors are either parallel or antiparallel.
 
     Parameters

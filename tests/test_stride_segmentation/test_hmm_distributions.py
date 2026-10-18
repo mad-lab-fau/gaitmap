@@ -47,7 +47,7 @@ def test_mixture_update_matches_scipy_responsibilities_and_weighted_moments(froz
     density = np.column_stack(
         [
             multivariate_normal.pdf(observations, mean, covariance) * weight
-            for mean, covariance, weight in zip(initial.means, initial.covariances, initial.weights)
+            for mean, covariance, weight in zip(initial.means, initial.covariances, initial.weights, strict=True)
         ]
     )
     responsibilities = density / density.sum(axis=1, keepdims=True) * state_weights[:, None]
@@ -180,7 +180,7 @@ def test_nearly_degenerate_mixture_updates_keep_bounded_covariance_and_monotone_
         log_scores = np.column_stack(
             [
                 multivariate_normal.logpdf(observations, mean, covariance)
-                for mean, covariance in zip(distribution.means, distribution.covariances)
+                for mean, covariance in zip(distribution.means, distribution.covariances, strict=True)
             ]
         )
         with np.errstate(divide="ignore"):
@@ -197,7 +197,7 @@ def test_constant_observations_use_configured_floor_through_initialization(n_com
     result = fit_emissions(np.repeat([[2.0, 3.0]], 5, axis=0), n_components=n_components, min_covar=0.05)
     active = result.weights > 0
 
-    for mean, covariance in zip(result.means[active], result.covariances[active]):
+    for mean, covariance in zip(result.means[active], result.covariances[active], strict=True):
         assert_allclose(mean, [2.0, 3.0])
         assert_allclose(covariance, np.eye(2) * 0.05, atol=1e-14)
 

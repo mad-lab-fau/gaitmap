@@ -1,13 +1,13 @@
 """Mixin for event detection algorithms that work similar to Rampp et al."""
 
 import warnings
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any, Literal, Self
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
 from numpy.linalg import norm
-from typing_extensions import Literal, Self
 
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
@@ -29,12 +29,12 @@ from gaitmap.utils.stride_list_conversion import (
 
 
 class _EventDetectionMixin:
-    memory: Optional[Memory]
+    memory: Memory | None
     enforce_consistency: bool
-    detect_only: Optional[tuple[str, ...]]
+    detect_only: tuple[str, ...] | None
 
-    min_vel_event_list_: Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]
-    annotated_original_event_list_: Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]
+    min_vel_event_list_: pd.DataFrame | dict[str, pd.DataFrame] | None
+    annotated_original_event_list_: pd.DataFrame | dict[str, pd.DataFrame] | None
 
     data: SensorData
     sampling_rate_hz: float
@@ -43,9 +43,9 @@ class _EventDetectionMixin:
 
     def __init__(
         self,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[tuple[str, ...]] = None,
+        detect_only: tuple[str, ...] | None = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.memory = memory
@@ -135,7 +135,7 @@ class _EventDetectionMixin:
             "start": stride_list["start"],
             "end": stride_list["end"],
         }
-        for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel)):
+        for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel), strict=True):
             if event in events:
                 annotated_original_event_list[event] = event_list
         annotated_original_event_list = pd.DataFrame(annotated_original_event_list).set_index("s_id")
@@ -169,7 +169,7 @@ class _EventDetectionMixin:
         }
 
     @property
-    def segmented_event_list_(self) -> Optional[Union[pd.DataFrame, dict[str, pd.DataFrame]]]:
+    def segmented_event_list_(self) -> pd.DataFrame | dict[str, pd.DataFrame] | None:
         warnings.warn(
             "`segmented_event_list_` is deprecated and will be removed in a future version. "
             "Use `annotated_original_event_list_` instead.",

@@ -1,11 +1,10 @@
 """Composition of trained HMM submodels from labeled model instances."""
 
 from collections.abc import Mapping, Sequence
-from typing import Optional
+from typing import Self
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Self
 
 from gaitmap.base import _BaseSerializable
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel, _NoValidPathError
@@ -16,10 +15,10 @@ from gaitmap_mad.stride_segmentation.hmm._utils import extract_transitions_start
 def _initialize_composite(submodels, sequences, labels, *, algorithm="viterbi", fallback_state=None):
     """Align labeled instances and join trained blocks with their observed connections."""
     offsets = np.r_[0, np.cumsum([model.n_states for model in submodels.values()])]
-    state_offsets = dict(zip(submodels, offsets[:-1]))
+    state_offsets = dict(zip(submodels, offsets[:-1], strict=True))
     transitions = np.zeros((offsets[-1], offsets[-1]))
     emissions = []
-    for model, start, end in zip(submodels.values(), offsets[:-1], offsets[1:]):
+    for model, start, end in zip(submodels.values(), offsets[:-1], offsets[1:], strict=True):
         transitions[start:end, start:end] = model.transitions
         emissions.extend(model.emissions)
     # Submodel termination is replaced by connections in the complete sequence.
@@ -27,7 +26,7 @@ def _initialize_composite(submodels, sequences, labels, *, algorithm="viterbi", 
     np.divide(transitions, row_totals, out=transitions, where=row_totals > 0)
 
     paths = []
-    for sequence, regions in zip(sequences, labels):
+    for sequence, regions in zip(sequences, labels, strict=True):
         path = np.zeros(len(sequence), dtype=np.int64)
         for start, end, label in regions[["start", "end", "label"]].itertuples(index=False, name=None):
             if end == start:
@@ -77,7 +76,7 @@ class CompositeHmm(_BaseSerializable):
 
     """
 
-    def __init__(self, submodels: Mapping[str, HiddenMarkovModel], model: Optional[HiddenMarkovModel] = None):
+    def __init__(self, submodels: Mapping[str, HiddenMarkovModel], model: HiddenMarkovModel | None = None):
         self.submodels = submodels
         self.model = model
 

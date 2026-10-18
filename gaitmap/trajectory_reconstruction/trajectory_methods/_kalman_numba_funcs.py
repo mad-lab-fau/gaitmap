@@ -1,6 +1,7 @@
 """Helper functions for the RTS Kalman filter."""
 
-from typing import Any, Callable, NamedTuple
+from collections.abc import Callable
+from typing import Any, NamedTuple
 
 import numpy as np
 from numba import njit

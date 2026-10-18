@@ -1,12 +1,11 @@
 """Correct for 180 degree misalignments between sensor and foot coordinate frame based on forward direction."""
 
-from typing import Union
+from typing import Self
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod, BasePositionMethod, BaseSensorAlignment, BaseZuptDetector
 from gaitmap.trajectory_reconstruction import MadgwickAHRS, PieceWiseLinearDedriftedIntegration
@@ -111,10 +110,10 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
     data: SensorData
     sampling_rate_hz: float
 
-    rotation_: Union[Rotation, dict[_Hashable, Rotation]]
-    is_flipped_: Union[bool, dict[_Hashable, bool]]
-    pos_method_: Union[BasePositionMethod, dict[_Hashable, BasePositionMethod]]
-    ori_method_: Union[BaseOrientationMethod, dict[_Hashable, BaseOrientationMethod]]
+    rotation_: Rotation | dict[_Hashable, Rotation]
+    is_flipped_: bool | dict[_Hashable, bool]
+    pos_method_: BasePositionMethod | dict[_Hashable, BasePositionMethod]
+    ori_method_: BaseOrientationMethod | dict[_Hashable, BaseOrientationMethod]
 
     def __init__(
         self,

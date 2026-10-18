@@ -1,8 +1,9 @@
 """A couple of utils to convert stride lists into different formats."""
 
+from typing import Literal
+
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
