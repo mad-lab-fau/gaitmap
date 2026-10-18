@@ -15,14 +15,18 @@ project.
 - HMM prediction keeps the final Viterbi label for unrestricted models. This corrects the interpolation grid when
   mapping feature labels back to sensor samples. In the healthy example, original boundaries move by at most three
   samples at 204.8 Hz; pretrained-model boundaries after 300 ms snapping remain exact. MAP decoding is unchanged.
+- Transition training now includes stride-end samples, matching the half-open stride intervals used elsewhere.
+  Retraining the healthy example retains all 58 strides. At its default 100 ms snapping window, two boundaries per
+  foot move by 11–16 samples at 204.8 Hz. Including the corrected interpolation grid, original boundaries move by
+  at most 23 samples and fewer than 0.6% of samples change stride/transition classification. Existing pretrained
+  emission parameters are unaffected.
 - Gaussian-mixture initialization now updates centroid coordinates whose assigned observations sum to zero.
   The old Kmeans implementation left these coordinates at their previous values, changing subsequent assignments.
-- Local HMM training preserves the reference example's final stride boundaries and stride/transition classification.
-  Gaussian training uses centered weighted covariance and floors covariance eigenvalues on every estimate, replacing
+- Gaussian training uses centered weighted covariance and floors covariance eigenvalues on every estimate, replacing
   pomegranate's cancellation-prone raw moments, absolute small-weight cutoff, and repair only after Cholesky failure.
   `SimpleHmm.min_covar` controls the floor in squared feature units, defaulting to `1e-6`. Fitted parameters and
-  individual hidden-state labels can change for degenerate mixtures. Existing saved-model inference and frozen
-  Gaussian scores and frozen emissions remain unchanged.
+  individual hidden-state labels can change for degenerate mixtures. Existing saved-model Gaussian scores and
+  frozen emissions remain unchanged.
 
 ### Added
 

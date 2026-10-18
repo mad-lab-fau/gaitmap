@@ -69,9 +69,9 @@ Existing gaitmap HMM JSON files remain supported through the loader. The `.model
 New exports use a versioned gaitmap format. Arbitrary pomegranate graphs and other emission distributions are not supported.
 The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
 
-Training can produce different individual hidden-state labels for nearly singular Gaussian mixtures because covariance
-repair is sensitive to floating-point rounding. The reference training example retains the same final stride boundaries
-and stride-versus-transition classification before the sequence bug fixes described in the changelog.
+Training uses stable centered covariance estimates and a configurable covariance eigenvalue floor.
+Fixes to covariance estimation and sequence handling can change fitted hidden states and some stride boundaries;
+the scientific changelog records their measured effect on the reference example.
 Saved-model Gaussian scores remain unchanged. Complete Viterbi decoding now retains the final label,
 correcting its interpolation grid; this can move original sensor-space boundaries by a few samples.
 

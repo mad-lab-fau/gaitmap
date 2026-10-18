@@ -185,7 +185,7 @@ def convert_stride_list_to_transition_list(
 
     """
     # Transitions are everything between two strides
-    transition_starts = [0, *(stride_list["end"] + 1)]
+    transition_starts = [0, *stride_list["end"]]
     transition_ends = [*stride_list["start"], last_end]
 
     return pd.DataFrame(
@@ -225,7 +225,7 @@ def get_train_data_sequences_transitions(
         warnings.warn(
             f"{n_too_short_transitions} transitions (out of "
             f"{len(trans_labels_train_sequence) + n_too_short_transitions}) were ignored, because they were shorter "
-            "than the expected number of transition states ({n_states}). "
+            f"than the expected number of transition states ({n_states}). "
             "This warning can usually be ignored, if the number of remaining transitions is still large "
             "enough to train a model."
         )

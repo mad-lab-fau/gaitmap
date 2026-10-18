@@ -11,9 +11,10 @@ To regenerate it, install that revision and those dependencies in a separate
 environment, then run `generate_hmm_legacy_training_example.py` with that
 environment's Python. Never regenerate the reference using the local trainer.
 
-The reference contains state labels and snapped/original stride boundaries. Its
-28 left and 30 right strides, including the original boundaries before snapping,
-and all stride-versus-transition classifications must remain unchanged.
+The reference contains state labels and snapped/original stride boundaries. The
+native-interface tests retain all 28 left and 30 right strides while explicitly
+recording the sequence corrections described below. The original reference file
+is never replaced by output from the new trainer.
 
 Fitted mixture parameters and individual null-state labels are not stable golden
 targets for this example. Two initialization clusters, stride state 11 and
@@ -37,6 +38,27 @@ transition classifications and all 58 stride boundaries remain exact. Repeated
 updates of the real stride-state-11 mixture have finite nondecreasing likelihood
 and bounded covariance eigenvalues. Tests retain the original reference unchanged
 and check these stability properties independently.
+
+## Native sequence corrections
+
+The old Viterbi wrapper omitted the last feature label. Complete decoding uses
+the correct 4:1 interpolation grid, shifting original boundaries by at most three
+sensor samples while leaving snapped boundaries unchanged in this example.
+
+The old transition extractor started at `stride_end + 1`, although stride ends
+are exclusive throughout extraction. This omitted two left-foot and one
+right-foot feature samples. The corrected public regression with known values
+learns a transition mean of 5 rather than 0. On the full example, complete coverage
+changes ten stride/transition feature labels per foot. The integration test lists
+those positions and the measured boundary deltas, in addition to analytically
+correcting the interpolation grid. All other boundaries and classifications are
+pinned to the unchanged reference.
+
+With CPython 3.10 / NumPy 1.26.4, four of 116 snapped boundary values change at the
+example's default 100 ms snapping window: left ends by -13 and -16 samples, a
+right end by -14 samples, and a right start by +11 samples. All 58 strides remain.
+Original boundaries differ by at most 23 samples; 45 of 7928 left-foot samples
+and 37 of 7928 right-foot samples change stride/transition classification.
 
 The focused training tests separately compare weighted Gaussian and mixture
 updates, deterministic clustering, transition probabilities, likelihoods,

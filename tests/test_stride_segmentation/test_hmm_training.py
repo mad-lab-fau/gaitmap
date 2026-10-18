@@ -26,6 +26,30 @@ def test_simple_hmm_trains_one_multivariate_observation():
     assert_array_equal(model.predict_hidden_state_sequence(observations), [0])
 
 
+def test_transition_initialization_includes_exclusive_stride_end_samples():
+    """Every observation outside half-open strides participates in transition fitting."""
+    data = pd.DataFrame(np.zeros((10, 6)), columns=BF_COLS)
+    data.loc[[4, 8], "gyr_ml"] = [10.0, 20.0]
+    model = RothSegmentationHmm(
+        stride_model=SimpleHmm(1, 1, algo_train="labeled", max_iterations=0, verbose=False),
+        transition_model=SimpleHmm(
+            1, 1, architecture="fully-connected", algo_train="labeled", max_iterations=0, verbose=False
+        ),
+        feature_transform=RothHmmFeatureTransformer(
+            sampling_rate_feature_space_hz=100,
+            low_pass_filter=None,
+            standardization=False,
+            axes=["gyr_ml"],
+            features=["raw"],
+        ),
+        max_iterations=0,
+        verbose=False,
+    ).self_optimize([data], [pd.DataFrame({"start": [2, 6], "end": [4, 8]})], sampling_rate_hz=100)
+
+    # Transition observations are [0, 0, 10, 0, 20, 0]. Stride intervals exclude their end sample.
+    assert_array_equal(model.transition_model.model.emissions[0].means, [[5.0]])
+
+
 @pytest.mark.parametrize("n_components", [1, 2])
 @pytest.mark.parametrize("max_iterations", [0, 1])
 def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_components, max_iterations):
@@ -81,13 +105,13 @@ def test_roth_training_combines_stride_states_with_only_termination_transitions(
 
 
 def test_labeled_roth_training_supports_all_generated_transitions():
-    """Combined labels may repeat a state even when each submodel learned no self-loops."""
+    """Short ignored transitions can repeat the fallback label even without learned self-loops."""
     data = pd.DataFrame(np.random.default_rng(5).normal(size=(20, 6)), columns=BF_COLS)
-    strides = pd.DataFrame({"start": [2, 7, 12, 17], "end": [4, 9, 14, 19]})
+    strides = pd.DataFrame({"start": [3, 8, 13, 17], "end": [5, 10, 15, 19]})
     model = RothSegmentationHmm(
         stride_model=SimpleHmm(n_states=2, n_gmm_components=1, algo_train="labeled", verbose=False),
         transition_model=SimpleHmm(
-            n_states=2, n_gmm_components=1, architecture="left-right-loose", algo_train="labeled", verbose=False
+            n_states=3, n_gmm_components=1, architecture="left-right-loose", algo_train="labeled", verbose=False
         ),
         feature_transform=RothHmmFeatureTransformer(
             sampling_rate_feature_space_hz=100, low_pass_filter=None, axes=["gyr_ml"], features=["raw", "gradient"]
@@ -131,19 +155,36 @@ def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, 
 
 
 def test_training_example_preserves_legacy_segmentation():
-    """Preserve stride boundaries and stride/transition classification after training."""
+    """Pin measured corrections while retaining every stride in the untouched legacy reference."""
     from examples.stride_segmentation.segmentation_hmm_training import hmm
 
+    corrections = {
+        "left_sensor": {
+            "classes": [*range(863, 868), *range(1772, 1777)],
+            "snapped": [(13, 1, -13), (27, 1, -16)],
+            "original": [(13, 1, -20), (27, 1, -20)],
+        },
+        "right_sensor": {
+            "classes": [*range(949, 954), *range(1741, 1745), 1810],
+            "snapped": [(14, 1, -14), (29, 0, 11)],
+            "original": [(14, 1, -12), (15, 0, 8), (28, 1, -4), (29, 0, 12), (29, 1, 4)],
+        },
+    }
     with np.load(Path(__file__).parent / "fixtures" / "hmm_legacy_training_example.npz") as reference:
         for sensor in ["left_sensor", "right_sensor"]:
-            # Regularization changes latent labels; complete decoding corrects their interpolation grid.
+            # Independent small-data regressions prove complete coverage. These deltas record its real-data effect.
             feature_labels = reference[sensor + "_feature_states"]
-            expected_classes = fourfold_labels(np.r_[feature_labels, feature_labels[-1]] >= 5)
+            feature_classes = np.r_[feature_labels, feature_labels[-1]] >= 5
+            feature_classes[corrections[sensor]["classes"]] ^= True
+            expected_classes = fourfold_labels(feature_classes)
             assert_array_equal(hmm.hidden_state_sequence_[sensor] >= 5, expected_classes)
-            assert_array_equal(hmm.stride_list_[sensor].to_numpy(), reference[sensor + "_strides"])
-            assert_array_equal(
-                hmm.matches_start_end_original_[sensor],
-                aligned_legacy_boundaries(
-                    reference[sensor + "_original_strides"], len(expected_classes), len(feature_labels)
-                ),
+            expected_snapped = reference[sensor + "_strides"].copy()
+            expected_original = aligned_legacy_boundaries(
+                reference[sensor + "_original_strides"], len(expected_classes), len(feature_labels)
             )
+            for row, column, delta in corrections[sensor]["snapped"]:
+                expected_snapped[row, column] += delta
+            for row, column, delta in corrections[sensor]["original"]:
+                expected_original[row, column] += delta
+            assert_array_equal(hmm.stride_list_[sensor].to_numpy(), expected_snapped)
+            assert_array_equal(hmm.matches_start_end_original_[sensor], expected_original)
