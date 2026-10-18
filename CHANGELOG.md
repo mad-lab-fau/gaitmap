@@ -49,6 +49,8 @@ project.
 
 ### Fixed
 
+- `SlidingWindowGradient` preserves sample indices, keeping gradient features aligned with other transforms.
+
 - ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
 
 - Sample-number columns and trajectory sample indices now require integer dtypes, including

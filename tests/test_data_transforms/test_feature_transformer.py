@@ -281,3 +281,14 @@ class TestSlidingWindowGradient(_TestSlidingWindowTransformer):
         # Test that data and sampling rate are set as attributes
         assert after_instance.data is df_or_series_imu_data
         assert after_instance.sampling_rate_hz == 100
+
+
+@pytest.mark.parametrize("as_series", [False, True])
+@pytest.mark.parametrize("index", [pd.Index(range(100, 110), name="sample"), pd.date_range("2020-01-01", periods=10)])
+def test_gradient_preserves_sample_alignment(index, as_series):
+    data = pd.DataFrame({"x": 2.0 * np.arange(10) + 5.0}, index=index)
+    if as_series:
+        data = data["x"]
+    result = SlidingWindowGradient(window_size_s=0.3).transform(data, sampling_rate_hz=10).transformed_data_
+    assert result.index.equals(data.index)
+    np.testing.assert_allclose(result.iloc[1:-1], 2.0)

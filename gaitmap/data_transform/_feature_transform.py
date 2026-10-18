@@ -342,8 +342,10 @@ class SlidingWindowGradient(_CustomSlidingWindowTransform):
             fit_coefs = reshaped_fit_coefs
 
         if isinstance(data, pd.Series):
-            return pd.Series(fit_coefs, name=f"gradient__{data.name}")
+            return pd.Series(fit_coefs, index=data.index, name=f"gradient__{data.name}")
         if isinstance(data, pd.DataFrame):
-            return pd.DataFrame(fit_coefs, columns=data.columns).rename(columns=lambda x: f"gradient__{x}")
+            return pd.DataFrame(fit_coefs, index=data.index, columns=data.columns).rename(
+                columns=lambda x: f"gradient__{x}"
+            )
         # We should never end up here...
         raise ValueError("Unexpected input dtype")
