@@ -46,15 +46,16 @@ def _emission_scores(samples, means, whitening, normalizers, component_weights, 
 
 
 @njit(cache=True, nogil=True)
-def _forward(scores, transitions, starts, ends):
+def _forward(scores, incoming, starts, ends):
     n_samples, n_states = scores.shape
+    offsets, sources, transitions = incoming
     forward = np.empty_like(scores)
     forward[0] = starts + scores[0]
     for observation in range(1, n_samples):
         for state in range(n_states):
             total = -np.inf
-            for previous in range(n_states):
-                total = _logaddexp(total, forward[observation - 1, previous] + transitions[previous, state])
+            for edge in range(offsets[state], offsets[state + 1]):
+                total = _logaddexp(total, forward[observation - 1, sources[edge]] + transitions[edge])
             forward[observation, state] = total + scores[observation, state]
     likelihood = -np.inf
     for state in range(n_states):
@@ -63,47 +64,31 @@ def _forward(scores, transitions, starts, ends):
 
 
 @njit(cache=True, nogil=True)
-def _posteriors(scores, transitions, ends, forward, likelihood):
+def _posteriors(scores, outgoing, ends, forward, likelihood):
     n_samples, n_states = scores.shape
+    offsets, targets, transitions = outgoing
     backward = np.empty_like(scores)
     backward[-1] = ends
     for observation in range(n_samples - 2, -1, -1):
         for state in range(n_states):
             total = -np.inf
-            for following in range(n_states):
+            for edge in range(offsets[state], offsets[state + 1]):
+                following = targets[edge]
                 total = _logaddexp(
                     total,
-                    transitions[state, following]
-                    + scores[observation + 1, following]
-                    + backward[observation + 1, following],
+                    transitions[edge] + scores[observation + 1, following] + backward[observation + 1, following],
                 )
             backward[observation, state] = total
     return forward + backward - likelihood
 
 
 @njit(cache=True, nogil=True)
-def _viterbi(scores, transitions, starts, ends):
-    n_samples, n_states = scores.shape
-    predecessors = np.zeros((n_samples, n_states), dtype=np.int64)
-    previous_scores = starts + scores[0]
-    for observation in range(1, n_samples):
-        next_scores = np.full(n_states, -np.inf)
-        for state in range(n_states):
-            best = -np.inf
-            for previous in range(n_states):
-                candidate = previous_scores[previous] + transitions[previous, state]
-                if candidate > best:
-                    best = candidate
-                    predecessors[observation, state] = previous
-            next_scores[state] = best + scores[observation, state]
-        previous_scores = next_scores
-    best = -np.inf
-    last = 0
+def _traceback(predecessors, final_scores):
+    n_samples, n_states = predecessors.shape
+    best, last = -np.inf, 0
     for state in range(n_states):
-        candidate = previous_scores[state] + ends[state]
-        if candidate > best:
-            best = candidate
-            last = state
+        if final_scores[state] > best:
+            best, last = final_scores[state], state
     path = np.empty(n_samples, dtype=np.int64)
     path[-1] = last
     for observation in range(n_samples - 1, 0, -1):
@@ -111,9 +96,46 @@ def _viterbi(scores, transitions, starts, ends):
     return path, best
 
 
+@njit(cache=True, nogil=True)
+def _viterbi(scores, incoming, starts, ends):
+    n_samples, n_states = scores.shape
+    offsets, sources, transitions = incoming
+    dense = len(sources) == n_states * n_states
+    predecessors = np.zeros((n_samples, n_states), dtype=np.int64)
+    previous_scores = starts + scores[0]
+    for observation in range(1, n_samples):
+        next_scores = np.full(n_states, -np.inf)
+        for state in range(n_states):
+            best = -np.inf
+            if dense:
+                # Full neighborhoods are ordered 0..n_states-1, so skip indirect indexing.
+                for previous in range(n_states):
+                    candidate = previous_scores[previous] + transitions[state * n_states + previous]
+                    if candidate > best:
+                        best = candidate
+                        predecessors[observation, state] = previous
+            else:
+                for edge in range(offsets[state], offsets[state + 1]):
+                    previous = sources[edge]
+                    candidate = previous_scores[previous] + transitions[edge]
+                    if candidate > best:
+                        best = candidate
+                        predecessors[observation, state] = previous
+            next_scores[state] = best + scores[observation, state]
+        previous_scores = next_scores
+    return _traceback(predecessors, previous_scores + ends)
+
+
 def _log_probabilities(probabilities):
     with np.errstate(divide="ignore"):
         return np.log(probabilities)
+
+
+def _transition_edges(probabilities):
+    """Group nonzero edges by row, preserving ascending neighbor order for ties."""
+    rows, neighbors = np.nonzero(probabilities)
+    offsets = np.concatenate(([0], np.cumsum(np.bincount(rows, minlength=len(probabilities)))))
+    return offsets, neighbors, _log_probabilities(probabilities[rows, neighbors])
 
 
 def _owned_array(values, dtype=np.float64):
@@ -179,7 +201,8 @@ class HiddenMarkovModel:
             None if self.ends is None else _owned_array(self.ends > 0 if end_mask is None else end_mask, dtype=bool)
         )
         self._validate_shapes()
-        self._log_transitions = _log_probabilities(self.transitions)
+        self._incoming = _transition_edges(self.transitions.T)
+        self._outgoing = _transition_edges(self.transitions)
         self._log_starts = _log_probabilities(self.starts)
         self._log_ends = np.zeros(self.n_states) if self.ends is None else _log_probabilities(self.ends)
         self._prepare_emissions()
@@ -339,16 +362,16 @@ class HiddenMarkovModel:
 
     def log_probability(self, samples):
         """Return the summed log likelihood of all valid state paths."""
-        _, likelihood = _forward(self._scores(samples), self._log_transitions, self._log_starts, self._log_ends)
+        _, likelihood = _forward(self._scores(samples), self._incoming, self._log_starts, self._log_ends)
         return likelihood
 
     def predict_log_proba(self, samples):
         """Return posterior log probabilities for each emitting state."""
         scores = self._scores(samples)
-        forward, likelihood = _forward(scores, self._log_transitions, self._log_starts, self._log_ends)
+        forward, likelihood = _forward(scores, self._incoming, self._log_starts, self._log_ends)
         if not np.isfinite(likelihood):
             raise _NoValidPathError("No valid state path exists for the observations.")
-        return _posteriors(scores, self._log_transitions, self._log_ends, forward, likelihood)
+        return _posteriors(scores, self._outgoing, self._log_ends, forward, likelihood)
 
     def predict_proba(self, samples):
         """Return posterior probabilities for each emitting state."""
@@ -365,7 +388,7 @@ class HiddenMarkovModel:
             return np.argmax(self.predict_log_proba(samples), axis=1)
         if algorithm != "viterbi":
             raise ValueError("Supported prediction algorithms are 'viterbi' and 'map'.")
-        path, likelihood = _viterbi(self._scores(samples), self._log_transitions, self._log_starts, self._log_ends)
+        path, likelihood = _viterbi(self._scores(samples), self._incoming, self._log_starts, self._log_ends)
         if not np.isfinite(likelihood):
             raise _NoValidPathError("No valid state path exists for the observations.")
         return path

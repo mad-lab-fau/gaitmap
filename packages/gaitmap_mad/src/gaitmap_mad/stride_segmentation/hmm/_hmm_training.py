@@ -75,8 +75,9 @@ def _labeled_paths(model, sequences, labels):
 
 
 @njit(cache=True, nogil=True)
-def _expected_transitions(forward, posterior, scores, transitions, has_end):
+def _expected_transitions(forward, posterior, scores, incoming, has_end):
     n_samples, n_states = scores.shape
+    offsets, sources, transitions = incoming
     counts = np.zeros((n_states, n_states))
     starts = np.exp(posterior[0])
     ends = np.exp(posterior[-1]) if has_end else np.zeros(n_states)
@@ -89,29 +90,26 @@ def _expected_transitions(forward, posterior, scores, transitions, has_end):
                 + posterior[observation + 1, following]
                 - forward[observation + 1, following]
             )
-            for state in range(n_states):
-                if transitions[state, following] == -np.inf:
-                    continue
-                counts[state, following] += np.exp(
-                    forward[observation, state] + transitions[state, following] + remainder
-                )
+            for edge in range(offsets[following], offsets[following + 1]):
+                state = sources[edge]
+                counts[state, following] += np.exp(forward[observation, state] + transitions[edge] + remainder)
     return counts, starts, ends
 
 
 def _sequence_statistics(model, sequence, path, algorithm):
     scores = model._scores(sequence)
-    forward, likelihood = _forward(scores, model._log_transitions, model._log_starts, model._log_ends)
+    forward, likelihood = _forward(scores, model._incoming, model._log_starts, model._log_ends)
     if algorithm == "labeled":
         counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
     elif not np.isfinite(likelihood):
         raise ValueError("No valid state path exists for a training sequence.")
     elif algorithm == "viterbi":
-        path, _ = _viterbi(scores, model._log_transitions, model._log_starts, model._log_ends)
+        path, _ = _viterbi(scores, model._incoming, model._log_starts, model._log_ends)
         counts, starts, ends, weights = _path_statistics(path, model.n_states, model.ends is not None)
     else:
-        posterior = _posteriors(scores, model._log_transitions, model._log_ends, forward, likelihood)
+        posterior = _posteriors(scores, model._outgoing, model._log_ends, forward, likelihood)
         counts, starts, ends = _expected_transitions(
-            forward, posterior, scores, model._log_transitions, model.ends is not None
+            forward, posterior, scores, model._incoming, model.ends is not None
         )
         weights = np.exp(posterior)
     return likelihood, counts, starts, ends, weights

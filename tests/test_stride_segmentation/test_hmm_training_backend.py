@@ -260,11 +260,14 @@ def test_training_applies_requested_covariance_floor_except_to_frozen_emissions(
 
 
 @pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi"])
-def test_two_state_training_update_matches_exhaustive_paths_for_separate_sequences(algorithm):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_two_state_training_update_matches_exhaustive_paths_for_separate_sequences(algorithm, sparse):
     """Complete paths determine soft or hard starts, ends, transitions, and pooled moments."""
     means = np.array([-1.0, 1.0])
     variances = np.array([0.8, 1.3])
     transitions = np.array([[0.6, 0.2], [0.15, 0.55]])
+    if sparse:
+        transitions[1] = [0.0, 0.7]
     starts = np.array([0.7, 0.3])
     ends = np.array([0.2, 0.3])
     model = HiddenMarkovModel(

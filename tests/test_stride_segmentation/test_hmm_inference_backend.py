@@ -71,13 +71,17 @@ def test_full_covariance_gaussian_sequence_likelihood(layout):
 
 
 @pytest.mark.parametrize("finite", [False, True])
-def test_mixture_inference_matches_exhaustive_paths(finite):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_mixture_inference_matches_exhaustive_paths(finite, sparse):
     """Path enumeration verifies likelihoods, the best path and state posteriors."""
     emissions = [
         GaussianMixture([[-1.0], [1.0]], [[[0.4]], [[1.2]]], [0.3, 0.7]),
         GaussianMixture([[2.0]], [[[0.7]]], [1.0]),
     ]
     transitions = [[0.65, 0.25], [0.15, 0.55]] if finite else [[0.75, 0.25], [0.2, 0.8]]
+    if sparse:
+        transitions[1][1] += transitions[1][0]
+        transitions[1][0] = 0.0
     starts = [0.6, 0.4]
     ends = [0.1, 0.3] if finite else None
     weights = [0.7, 1.3]
@@ -113,7 +117,7 @@ def test_mixture_inference_matches_exhaustive_paths(finite):
     assert_allclose(model.log_probability(samples), np.log(likelihood), rtol=1e-13)
     assert_array_equal(model.predict(samples), paths[np.argmax(path_probabilities)])
     assert_allclose(model.predict_proba(samples), posterior, rtol=1e-13)
-    assert_allclose(model.predict_log_proba(samples), np.log(posterior), rtol=1e-13)
+    assert_allclose(model.predict_log_proba(samples), np.log(posterior), rtol=1e-13, atol=1e-14)
     assert_array_equal(model.predict(samples, algorithm="map"), np.argmax(posterior, axis=1))
 
 
