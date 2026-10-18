@@ -140,11 +140,9 @@ class SimpleHmm(_BaseSerializable):
 
     Each state uses Gaussian or Gaussian-mixture emissions.
 
-    .. note:: This class is not intended to be used directly, but should be used as stride/transition model in the
-              :class:`~gaitmap.stride_segmentation.hmm.SegmentationModel`.
-              `SimpleHmm` therefore does not provide the same interface as other gaitmap algorithms.
-              It does not have a dedicated action method, but only has a `predict_hidden_state_sequence` method that
-              directly returns the hidden state sequence and does not store it on the object.
+    Train a standalone HMM from feature matrices, or use this class as the stride/transition model in
+    :class:`~gaitmap.stride_segmentation.hmm.RothSegmentationHmm`.
+    ``predict_hidden_state_sequence`` returns predicted labels directly, without storing result attributes.
               The reason for that is, that we regularly need to call this method with different algorithms on the same
               model.
               Hence, it felt more natural to do it that way.

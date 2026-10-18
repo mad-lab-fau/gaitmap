@@ -290,6 +290,24 @@ def test_segmentation_hmm_training(snapshot) -> None:
     snapshot.assert_match(hmm.stride_list_["right_sensor"], "right_sensor")
 
 
+def test_stance_swing_transition_hmm() -> None:
+    from examples.stride_segmentation.stance_swing_transition_hmm import (
+        predictions,
+        reference_labels,
+        split_sample,
+    )
+
+    # Independent contact/border samples from the supplied left-foot annotations.
+    np.testing.assert_array_equal(
+        reference_labels[[363, 364, 437, 438, 583, 584, 3453, 3934, 7091]],
+        [2, 1, 1, 0, 0, 1, 2, 1, 2],
+    )
+    held_out_labels = reference_labels[split_sample:]
+    # Every phase must be learned; overall accuracy alone could hide a missing class.
+    for state, minimum_recall in enumerate([0.85, 0.85, 0.70]):
+        assert np.mean(predictions[held_out_labels == state] == state) > minimum_recall
+
+
 def test_zupt_dependency() -> None:
     from examples.trajectory_reconstruction.zupt_dependency import gs
 

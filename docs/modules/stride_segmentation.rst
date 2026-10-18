@@ -88,6 +88,9 @@ Existing gaitmap HMM JSON files remain loadable. Newly exported models require
 the updated HMM implementation. Arbitrary pomegranate graphs and emission types
 other than Gaussian mixtures are not supported.
 
+The :ref:`example_stance_swing_transition_hmm` example trains a custom model
+with stance, swing, and transition/null states from the supplied annotations.
+
 .. autosummary::
    :toctree: generated/stride_segmentation/hmm
    :template: class.rst
