@@ -47,7 +47,7 @@ jobs:
       - name: Show resolved versions
         run: uv pip list
       - name: Testing with minimum dependencies
-        run: uv run --frozen poe test
+        run: uv run --frozen poe -e simple test
 
   lint:
     runs-on: ubuntu-latest
