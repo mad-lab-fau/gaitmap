@@ -1,0 +1,887 @@
+{
+  "provenance": "pomegranate 0.14.6, Python 3.9, standard full-batch fit with contiguous float64 sequences and n_jobs=1",
+  "sequences": [
+    [
+      [
+        -2.0
+      ],
+      [
+        -1.2
+      ],
+      [
+        0.8
+      ],
+      [
+        1.5
+      ],
+      [
+        2.2
+      ]
+    ],
+    [
+      [
+        -1.1
+      ],
+      [
+        -0.4
+      ],
+      [
+        1.2
+      ],
+      [
+        1.8
+      ]
+    ],
+    [
+      [
+        0.5
+      ],
+      [
+        1.3
+      ],
+      [
+        2.4
+      ]
+    ]
+  ],
+  "references": [
+    {
+      "finite": false,
+      "algorithm": "baum-welch",
+      "max_iterations": 1,
+      "improvements": [
+        3.5931629468136563
+      ],
+      "log_probabilities": [
+        -15.669336331019377
+      ],
+      "epochs": [
+        1
+      ],
+      "initial_log_probability": -19.262499277833033,
+      "transition_matrix": [
+        [
+          0.4556891777725723,
+          0.5443108222274277,
+          0.0,
+          0.0
+        ],
+        [
+          1.6514392975462187e-05,
+          0.9999834856070244,
+          0.0,
+          0.0
+        ],
+        [
+          0.7837956892998561,
+          0.21620431070014387,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -1.022435122232585
+          ],
+          [
+            [
+              0.5605063957560744
+            ]
+          ]
+        ],
+        [
+          [
+            1.486586859498525
+          ],
+          [
+            [
+              0.3919638380545298
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": false,
+      "algorithm": "baum-welch",
+      "max_iterations": 3,
+      "improvements": [
+        3.5931629468136563,
+        0.3007631078772892,
+        0.045762729323671536
+      ],
+      "log_probabilities": [
+        -15.669336331019377,
+        -15.368573223142088,
+        -15.322810493818416
+      ],
+      "epochs": [
+        1,
+        2,
+        3
+      ],
+      "initial_log_probability": -19.262499277833033,
+      "transition_matrix": [
+        [
+          0.44686841700601804,
+          0.553131582993982,
+          0.0,
+          0.0
+        ],
+        [
+          2.0320840110462204e-11,
+          0.9999999999796791,
+          0.0,
+          0.0
+        ],
+        [
+          0.8347718544032433,
+          0.16522814559675672,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -0.9715636290313665
+          ],
+          [
+            [
+              0.5950828785597677
+            ]
+          ]
+        ],
+        [
+          [
+            1.525433570991394
+          ],
+          [
+            [
+              0.3431245920822116
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": false,
+      "algorithm": "viterbi",
+      "max_iterations": 1,
+      "improvements": [
+        3.8392729650270088
+      ],
+      "log_probabilities": [
+        -15.423226312806024
+      ],
+      "epochs": [
+        1
+      ],
+      "initial_log_probability": -19.262499277833033,
+      "transition_matrix": [
+        [
+          0.5,
+          0.5,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.6666666666666666,
+          0.3333333333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -1.1750000000000003
+          ],
+          [
+            [
+              0.32187499999999925
+            ]
+          ]
+        ],
+        [
+          [
+            1.4625000000000001
+          ],
+          [
+            [
+              0.3748437499999997
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": false,
+      "algorithm": "viterbi",
+      "max_iterations": 3,
+      "improvements": [
+        3.8392729650270088,
+        0.0
+      ],
+      "log_probabilities": [
+        -15.423226312806024,
+        -15.423226312806024
+      ],
+      "epochs": [
+        1,
+        2
+      ],
+      "initial_log_probability": -19.262499277833033,
+      "transition_matrix": [
+        [
+          0.5,
+          0.5,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.6666666666666666,
+          0.3333333333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -1.1750000000000003
+          ],
+          [
+            [
+              0.32187499999999925
+            ]
+          ]
+        ],
+        [
+          [
+            1.4625000000000001
+          ],
+          [
+            [
+              0.3748437499999997
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": true,
+      "algorithm": "baum-welch",
+      "max_iterations": 1,
+      "improvements": [
+        4.617476910753961
+      ],
+      "log_probabilities": [
+        -20.701631342739052
+      ],
+      "epochs": [
+        1
+      ],
+      "initial_log_probability": -25.319108253493013,
+      "transition_matrix": [
+        [
+          0.45200400623719206,
+          0.5479959308216382,
+          0.0,
+          6.294116959858444e-08
+        ],
+        [
+          7.3659373033357685e-06,
+          0.596260651299192,
+          0.0,
+          0.40373198276350475
+        ],
+        [
+          0.8346396710056805,
+          0.16536032899431943,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -0.9435753824722717
+          ],
+          [
+            [
+              0.6484104449533308
+            ]
+          ]
+        ],
+        [
+          [
+            1.522272387243711
+          ],
+          [
+            [
+              0.35929129988168973
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": true,
+      "algorithm": "baum-welch",
+      "max_iterations": 3,
+      "improvements": [
+        4.617476910753961,
+        0.5303860897164476,
+        0.3548832182292294
+      ],
+      "log_probabilities": [
+        -20.701631342739052,
+        -20.171245253022605,
+        -19.816362034793375
+      ],
+      "epochs": [
+        1,
+        2,
+        3
+      ],
+      "initial_log_probability": -25.319108253493013,
+      "transition_matrix": [
+        [
+          0.4296405033283438,
+          0.5703594966716561,
+          0.0,
+          8.158990418987646e-17
+        ],
+        [
+          5.843545216710949e-11,
+          0.5633817679962194,
+          0.0,
+          0.43661823194534505
+        ],
+        [
+          0.9751263052232454,
+          0.02487369477675459,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -0.7889398622232372
+          ],
+          [
+            [
+              0.7853125238113068
+            ]
+          ]
+        ],
+        [
+          [
+            1.607698123336358
+          ],
+          [
+            [
+              0.28238890217789414
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": true,
+      "algorithm": "viterbi",
+      "max_iterations": 1,
+      "improvements": [
+        4.614930924432695
+      ],
+      "log_probabilities": [
+        -20.704177329060318
+      ],
+      "epochs": [
+        1
+      ],
+      "initial_log_probability": -25.319108253493013,
+      "transition_matrix": [
+        [
+          0.5,
+          0.5,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.625,
+          0.0,
+          0.37500000000000006
+        ],
+        [
+          0.6666666666666666,
+          0.3333333333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -1.1750000000000003
+          ],
+          [
+            [
+              0.32187499999999925
+            ]
+          ]
+        ],
+        [
+          [
+            1.4625000000000001
+          ],
+          [
+            [
+              0.3748437499999997
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": true,
+      "algorithm": "viterbi",
+      "max_iterations": 3,
+      "improvements": [
+        4.614930924432695,
+        0.0
+      ],
+      "log_probabilities": [
+        -20.704177329060318,
+        -20.704177329060318
+      ],
+      "epochs": [
+        1,
+        2
+      ],
+      "initial_log_probability": -25.319108253493013,
+      "transition_matrix": [
+        [
+          0.5,
+          0.5,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.625,
+          0.0,
+          0.37500000000000006
+        ],
+        [
+          0.6666666666666666,
+          0.3333333333333333,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -1.1750000000000003
+          ],
+          [
+            [
+              0.32187499999999925
+            ]
+          ]
+        ],
+        [
+          [
+            1.4625000000000001
+          ],
+          [
+            [
+              0.3748437499999997
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "finite": false,
+      "algorithm": "baum-welch",
+      "max_iterations": 100,
+      "stop_threshold": 1000000.0,
+      "improvements": [
+        3.5931629468136563
+      ],
+      "log_probabilities": [
+        -15.669336331019377
+      ],
+      "epochs": [
+        1
+      ],
+      "initial_log_probability": -19.262499277833033,
+      "transition_matrix": [
+        [
+          0.48053245674989353,
+          0.5194675432501064,
+          0.0,
+          0.0
+        ],
+        [
+          0.0040063683826256176,
+          0.9959936316173744,
+          0.0,
+          0.0
+        ],
+        [
+          0.7203934339406292,
+          0.27960656605937084,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "state_parameters": [
+        [
+          [
+            -0.9945196338218306
+          ],
+          [
+            [
+              0.6913655582539463
+            ]
+          ]
+        ],
+        [
+          [
+            1.4288737856299956
+          ],
+          [
+            [
+              0.5032992873645802
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "initial_models": {
+    "nonfinite": {
+      "class": "HiddenMarkovModel",
+      "name": "training_reference",
+      "start": {
+        "class": "State",
+        "distribution": null,
+        "name": "training_reference-start",
+        "weight": 1.0
+      },
+      "end": {
+        "class": "State",
+        "distribution": null,
+        "name": "training_reference-end",
+        "weight": 1.0
+      },
+      "states": [
+        {
+          "class": "State",
+          "distribution": {
+            "class": "Distribution",
+            "name": "MultivariateGaussianDistribution",
+            "parameters": [
+              [
+                -1.2
+              ],
+              [
+                [
+                  1.2
+                ]
+              ]
+            ],
+            "frozen": false
+          },
+          "name": "s0",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": {
+            "class": "Distribution",
+            "name": "MultivariateGaussianDistribution",
+            "parameters": [
+              [
+                1.6
+              ],
+              [
+                [
+                  1.2
+                ]
+              ]
+            ],
+            "frozen": false
+          },
+          "name": "s1",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": null,
+          "name": "training_reference-start",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": null,
+          "name": "training_reference-end",
+          "weight": 1.0
+        }
+      ],
+      "end_index": 3,
+      "start_index": 2,
+      "silent_index": 2,
+      "edges": [
+        [
+          2,
+          0,
+          0.6,
+          0.6,
+          null
+        ],
+        [
+          2,
+          1,
+          0.4,
+          0.4,
+          null
+        ],
+        [
+          0,
+          0,
+          0.75,
+          0.75,
+          null
+        ],
+        [
+          0,
+          1,
+          0.25000000000000006,
+          0.25,
+          null
+        ],
+        [
+          1,
+          0,
+          0.15000000000000002,
+          0.15,
+          null
+        ],
+        [
+          1,
+          1,
+          0.85,
+          0.85,
+          null
+        ]
+      ],
+      "distribution ties": []
+    },
+    "finite": {
+      "class": "HiddenMarkovModel",
+      "name": "training_reference",
+      "start": {
+        "class": "State",
+        "distribution": null,
+        "name": "training_reference-start",
+        "weight": 1.0
+      },
+      "end": {
+        "class": "State",
+        "distribution": null,
+        "name": "training_reference-end",
+        "weight": 1.0
+      },
+      "states": [
+        {
+          "class": "State",
+          "distribution": {
+            "class": "Distribution",
+            "name": "MultivariateGaussianDistribution",
+            "parameters": [
+              [
+                -1.2
+              ],
+              [
+                [
+                  1.2
+                ]
+              ]
+            ],
+            "frozen": false
+          },
+          "name": "s0",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": {
+            "class": "Distribution",
+            "name": "MultivariateGaussianDistribution",
+            "parameters": [
+              [
+                1.6
+              ],
+              [
+                [
+                  1.2
+                ]
+              ]
+            ],
+            "frozen": false
+          },
+          "name": "s1",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": null,
+          "name": "training_reference-start",
+          "weight": 1.0
+        },
+        {
+          "class": "State",
+          "distribution": null,
+          "name": "training_reference-end",
+          "weight": 1.0
+        }
+      ],
+      "end_index": 3,
+      "start_index": 2,
+      "silent_index": 2,
+      "edges": [
+        [
+          2,
+          0,
+          0.6,
+          0.6,
+          null
+        ],
+        [
+          2,
+          1,
+          0.4,
+          0.4,
+          null
+        ],
+        [
+          0,
+          0,
+          0.65,
+          0.65,
+          null
+        ],
+        [
+          0,
+          1,
+          0.25000000000000006,
+          0.25,
+          null
+        ],
+        [
+          0,
+          3,
+          0.10000000000000003,
+          0.1,
+          null
+        ],
+        [
+          1,
+          0,
+          0.10000000000000003,
+          0.1,
+          null
+        ],
+        [
+          1,
+          1,
+          0.7,
+          0.7,
+          null
+        ],
+        [
+          1,
+          3,
+          0.20000000000000004,
+          0.2,
+          null
+        ]
+      ],
+      "distribution ties": []
+    }
+  }
+}

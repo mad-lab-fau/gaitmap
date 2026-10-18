@@ -281,9 +281,6 @@ def test_roth_hmm_stride_segmentation(snapshot) -> None:
 
 
 def test_segmentation_hmm_training(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
     from examples.stride_segmentation.segmentation_hmm_training import hmm
 
     # XXX: For some sad reason the training does not seem to be deterministic accross different machines.

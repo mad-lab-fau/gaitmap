@@ -164,7 +164,7 @@ segmentation_model = segmentation_model.self_optimize(
 # Inspecting the Results
 # --------------------------------------
 #
-# Now all internal models which were initialized as "None" should be populated by pomegranate models.
+# Now all internal models which were initialized as "None" should be populated by local Gaussian HMM models.
 # We can now have a look at the final transition matrix or the trained distributions (GMMs).
 # You could now either use the model to predict stride borders on an unseen sequence or save it to a json file for later
 # use.

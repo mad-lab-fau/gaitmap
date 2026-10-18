@@ -6,6 +6,9 @@ import pytest
 from numpy.testing import assert_almost_equal, assert_array_equal
 from tpcp._hash import custom_hash
 
+from gaitmap_mad.stride_segmentation.hmm._hmm_inference import _Mixture
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
+
 from gaitmap.data_transform import SlidingWindowMean
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_to_fbf
@@ -167,10 +170,6 @@ class TestRothHmmFeatureTransform:
 
 
 class TestSimpleModel:
-    @pytest.fixture(autouse=True)
-    def require_training_backend(self):
-        pytest.importorskip("pomegranate")
-
     def test_error_on_different_number_data_and_labels(self) -> None:
         with pytest.raises(ValueError) as e:
             SimpleHmm(n_states=5, n_gmm_components=3).self_optimize(
@@ -212,12 +211,9 @@ class TestSimpleModel:
         ],
     )
     @pytest.mark.parametrize("n_gmm_components", [1, 3])
-    # We test one value with n_states > 10, as this should trigger a sorting bug in pomegranate that we are handling
-    # explicitly
+    # State indexes must retain their order even when the model has more than ten states.
     @pytest.mark.parametrize("n_states", [5, 12])
     def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states) -> None:
-        from pomegranate import GeneralMixtureModel
-
         model = SimpleHmm(n_states=n_states, n_gmm_components=n_gmm_components, max_iterations=1)
         model.self_optimize([data], [pd.Series(np.tile(np.arange(n_states), int(np.ceil(100 / n_states)))[:100])])
 
@@ -230,7 +226,7 @@ class TestSimpleModel:
                 if n_gmm_components == 1:
                     dists = [state.distribution]
                 else:
-                    assert isinstance(state.distribution, GeneralMixtureModel)
+                    assert isinstance(state.distribution, _Mixture)
                     assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
                     dists = state.distribution.distributions
                 assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
@@ -318,8 +314,6 @@ class TestSimpleModel:
             mock.assert_called_once_with(data, labels)
 
     def test_self_optimize_with_info_returns_history(self) -> None:
-        from pomegranate.hmm import History
-
         data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
         instance = SimpleHmm(n_states=5, n_gmm_components=3)
         trained_instance, history = instance.self_optimize_with_info(data, labels)
@@ -353,9 +347,6 @@ class TestRothSegmentationHmm:
             mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
 
     def test_self_optimize_with_info_returns_history(self) -> None:
-        pytest.importorskip("pomegranate")
-        from pomegranate.hmm import History
-
         data, labels = (
             [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
@@ -372,8 +363,6 @@ class TestRothSegmentationHmm:
         assert set(history.keys()) == {"stride_model", "transition_model", "self"}
 
     def test_short_strides_raise_warning(self) -> None:
-        pytest.importorskip("pomegranate")
-
         data, labels = (
             [pd.DataFrame(np.random.rand(130, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 40, 70, 110], "end": [30, 70, 100, 114]})],
@@ -389,8 +378,6 @@ class TestRothSegmentationHmm:
         assert "1 strides (out of 4)" in str(w[0].message)
 
     def test_short_transitions_raise_warning(self) -> None:
-        pytest.importorskip("pomegranate")
-
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
             [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
@@ -404,8 +391,7 @@ class TestRothSegmentationHmm:
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        # The first warning is the warning about negative improvements during training
-        assert "1 transitions (out of 3)" in str(w[1].message)
+        assert any("1 transitions (out of 3)" in str(warning.message) for warning in w)
 
     def test_strange_inputs_trigger_nan_error(self) -> None:
         # XXXX: We test the skip at the moment because it is not deteministic...
@@ -433,7 +419,6 @@ class TestRothSegmentationHmm:
 
     def test_training_updates_all_models(self) -> None:
         """Training should modify the stride, the transition model and the model itself."""
-        pytest.importorskip("pomegranate")
 
         data, labels = (
             [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],

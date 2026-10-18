@@ -1,7 +1,7 @@
 """Numba inference for gaitmap's persisted Gaussian hidden Markov models.
 
 This deliberately supports only emitting Gaussian states and the two silent start
-and end states. Training remains a separate concern. Prediction returns one
+and end states. Prediction returns one
 emitting-state index per observation, with no silent-state sentinels.
 """
 
@@ -22,7 +22,7 @@ def _logaddexp(left, right):
     return maximum + np.log1p(np.exp(-abs(left - right)))
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def _emission_scores(samples, means, whitening, normalizers, component_weights, offsets, state_weights):
     n_samples, dimensions = samples.shape
     n_states = len(offsets) - 1
@@ -45,7 +45,7 @@ def _emission_scores(samples, means, whitening, normalizers, component_weights, 
     return scores
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def _forward(scores, transitions, starts, ends):
     n_samples, n_states = scores.shape
     forward = np.empty_like(scores)
@@ -62,7 +62,7 @@ def _forward(scores, transitions, starts, ends):
     return forward, likelihood
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def _posteriors(scores, transitions, ends, forward, likelihood):
     n_samples, n_states = scores.shape
     backward = np.empty_like(scores)
@@ -81,7 +81,7 @@ def _posteriors(scores, transitions, ends, forward, likelihood):
     return forward + backward - likelihood
 
 
-@njit(cache=True)
+@njit(cache=True, nogil=True)
 def _viterbi(scores, transitions, starts, ends):
     n_samples, n_states = scores.shape
     predecessors = np.zeros((n_samples, n_states), dtype=np.int64)
@@ -145,6 +145,7 @@ class _Gaussian:
 class _Mixture:
     def __init__(self, data):
         self._data = data
+        self.frozen = data.get("frozen", False)
         self.distributions = [_Gaussian(component) for component in data["distributions"]]
         self.weights = np.asarray(data["weights"], dtype=np.float64)
         if len(self.weights) != len(self.distributions) or not len(self.weights):
@@ -177,7 +178,7 @@ class _State:
 
 
 class HiddenMarkovModel:
-    """Inference-only HMM loaded from legacy pomegranate Gaussian model JSON.
+    """Gaussian HMM with local Numba inference and training.
 
     Emitting states retain their serialized order and precede the silent states.
     ``finite`` indicates whether the model has explicit termination edges. A
@@ -255,6 +256,87 @@ class HiddenMarkovModel:
         self._state_weights = _log_probabilities(np.asarray([state.weight for state in self.states[:n_states]]))
 
     @classmethod
+    def from_matrix(cls, transition_probabilities, distributions, starts, ends=None, state_names=None, name=None):
+        """Build a model, normalizing outgoing transitions together with termination."""
+        n_states = len(distributions)
+        state_names = state_names or [f"s{i}" for i in range(n_states)]
+        states = [
+            {
+                "class": "State",
+                "name": state_name,
+                "distribution": distribution.to_dict()
+                if hasattr(distribution, "to_dict")
+                else copy.deepcopy(distribution),
+                "weight": 1.0,
+            }
+            for state_name, distribution in zip(state_names, distributions)
+        ]
+        states.extend(
+            {"class": "State", "name": f"{name}-{boundary}", "distribution": None, "weight": 1.0}
+            for boundary in ["start", "end"]
+        )
+        transitions = np.zeros((n_states + 2, n_states + 2), dtype=np.float64)
+        transitions[:n_states, :n_states] = transition_probabilities
+        transitions[n_states, :n_states] = starts
+        if ends is not None:
+            transitions[:n_states, n_states + 1] = ends
+        totals = transitions.sum(axis=1)
+        transitions[totals > 0] /= totals[totals > 0, None]
+        edges = [
+            [int(source), int(target), float(transitions[source, target]), float(transitions[source, target]), None]
+            for source, target in zip(*np.nonzero(transitions))
+        ]
+        return cls.from_dict(
+            {
+                "class": "HiddenMarkovModel",
+                "name": name,
+                "states": states,
+                "start": states[n_states],
+                "end": states[n_states + 1],
+                "start_index": n_states,
+                "end_index": n_states + 1,
+                "silent_index": n_states,
+                "edges": edges,
+                "distribution ties": [],
+            }
+        )
+
+    def freeze_distributions(self):
+        """Keep all emission parameters and mixture weights fixed during training."""
+        serialized = self.to_dict()
+        for state in serialized["states"][: self.silent_start]:
+            state["distribution"]["frozen"] = True
+        self.__init__(serialized)
+        return self
+
+    def fit(
+        self,
+        sequences,
+        labels=None,
+        algorithm="baum-welch",
+        stop_threshold=1e-9,
+        max_iterations=1e8,
+        return_history=False,
+        verbose=False,
+        n_jobs=1,
+    ):
+        """Re-estimate transitions and emissions with Baum-Welch, Viterbi, or labels."""
+        from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm  # noqa: PLC0415
+
+        trained, history = fit_hmm(
+            self,
+            sequences,
+            labels=labels,
+            algorithm=algorithm,
+            stop_threshold=stop_threshold,
+            max_iterations=max_iterations,
+            verbose=verbose,
+            n_jobs=n_jobs,
+        )
+        self.__dict__.update(trained.__dict__)
+        return (self, history) if return_history else self
+
+    @classmethod
     def from_dict(cls, model):
         """Load the supported subset of pomegranate's serialized HMM format."""
         return cls(model)
@@ -266,7 +348,9 @@ class HiddenMarkovModel:
 
     def to_dict(self):
         """Return an independent copy of the original persisted model."""
-        return copy.deepcopy(self._model)
+        serialized = copy.deepcopy(self._model)
+        serialized["name"] = self.name
+        return serialized
 
     def to_json(self):
         """Serialize the model without inference caches."""

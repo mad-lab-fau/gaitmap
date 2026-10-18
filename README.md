@@ -57,16 +57,20 @@ Note, that we don't guarantee that the latest version on Github is stable.
 
 #### Hidden Markov Models
 
-Pretrained HMM prediction, including `HmmStrideSegmentation`, uses a local Numba backend and works on Python 3.10+
-without pomegranate. Install both gaitmap packages:
+HMM training and prediction use a local NumPy/Numba backend and work on all supported Python versions without
+pomegranate. Install both gaitmap packages:
 
 ```bash
 pip install gaitmap_mad gaitmap --upgrade
 ```
-HMM training still requires Python 3.9 and `pomegranate>=0.14.2,<=0.14.6`, installed with `pip install "gaitmap[hmm]"`.
-Existing gaitmap HMM JSON files can be loaded for prediction without pomegranate.
-The low-level `.model` object loaded from JSON now uses the local inference implementation; prediction and matrix/state
-inspection remain available, while training and arbitrary pomegranate graph operations require the legacy backend.
+
+Existing gaitmap HMM JSON files remain supported. The `.model` object supports Gaussian/GMM training, prediction, and
+state/transition-matrix inspection. Arbitrary pomegranate graphs and other emission distributions are not supported.
+The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
+
+Training can produce different individual hidden-state labels for nearly singular Gaussian mixtures because covariance
+repair is sensitive to floating-point rounding. The reference training example retains the same final stride boundaries
+and stride-versus-transition classification. Prediction with existing saved models remains unchanged.
 
 ### Supported Python versions
 
@@ -189,10 +193,7 @@ Then run the commands below to get the latest source and install the dependencie
 
 ```bash
 git clone https://github.com/mad-lab-fau/gaitmap.git
-# For Python 3.9 (and if you need to work on hmm)
 uv sync --group dev --all-extras
-# For Python >=3.10 (HMM inference is supported; HMM training requires Python 3.9)
-uv sync --group dev --extra stats
 ```
 
 Warning: Building the docs currently only works in 3.9 with all extras installed.

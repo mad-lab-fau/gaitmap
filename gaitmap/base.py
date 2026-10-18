@@ -52,7 +52,7 @@ class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # noqa: C901, PLR0911
+    def default(self, o):  # noqa: PLR0911
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
@@ -70,14 +70,6 @@ class _CustomEncoder(json.JSONEncoder):
         )
         if isinstance(o, hidden_markov_model):
             return {"_obj_type": "HiddenMarkovModel", "hmm": o.to_dict()}
-        if isinstance(o, getattr(sys.modules.get("pomegranate.hmm"), "HiddenMarkovModel", ())):
-            warnings.warn(
-                "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
-                "round-trips. I.e. sometimes values (in particular weightings of distributions) might change "
-                "slightly in the re-imported model due to rounding issue. "
-                "This is a limitation of the underlying pomegrante library."
-            )
-            return {"_obj_type": "HiddenMarkovModel", "hmm": json.loads(o.to_json())}
         if o is tpcp.NOTHING:
             return {"_obj_type": "EmptyDefault"}
         if isinstance(o, Memory):

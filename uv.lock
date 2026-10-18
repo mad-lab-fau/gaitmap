@@ -1046,14 +1046,8 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
-    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pingouin", version = "0.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pingouin", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "pomegranate", marker = "python_full_version < '3.10'" },
-]
-hmm = [
-    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "pomegranate", marker = "python_full_version < '3.10'" },
 ]
 stats = [
     { name = "pingouin", version = "0.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -1089,16 +1083,12 @@ requires-dist = [
     { name = "joblib", specifier = ">=1.2.0" },
     { name = "numba", specifier = ">=0.55" },
     { name = "numba", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = ">=0.55.2" },
-    { name = "numpy", marker = "python_full_version < '3.10' and extra == 'all'", specifier = "<2" },
-    { name = "numpy", marker = "python_full_version < '3.10' and extra == 'hmm'", specifier = "<2" },
     { name = "numpy", marker = "python_full_version < '3.11'", specifier = ">=1.20,<2.1" },
     { name = "numpy", marker = "python_full_version >= '3.11'", specifier = ">=1.20,<3" },
     { name = "pandas", marker = "python_full_version < '3.11'", specifier = ">=2,<2.4" },
     { name = "pandas", marker = "python_full_version >= '3.11'", specifier = ">=3,<3.1" },
     { name = "pingouin", marker = "extra == 'all'", specifier = ">=0.5.3" },
     { name = "pingouin", marker = "extra == 'stats'", specifier = ">=0.5.3" },
-    { name = "pomegranate", marker = "python_full_version < '3.10' and extra == 'all'", specifier = ">=0.14.2,<=0.14.6" },
-    { name = "pomegranate", marker = "python_full_version < '3.10' and extra == 'hmm'", specifier = ">=0.14.2,<=0.14.6" },
     { name = "pooch", specifier = ">=1.7.0" },
     { name = "scikit-learn", specifier = ">=1.0.1" },
     { name = "scipy", specifier = ">=1.6.1" },
@@ -2120,15 +2110,6 @@ wheels = [
 ]
 
 [[package]]
-name = "networkx"
-version = "3.2.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c4/80/a84676339aaae2f1cfdf9f418701dd634aef9cc76f708ef55c36ff39c3ca/networkx-3.2.1.tar.gz", hash = "sha256:9f1bb5cf3409bf324e0a722c20bdb4c20ee39bf1c30ce8ae499c8502b0b5e0c6", size = 2073928, upload-time = "2023-10-28T08:41:39.364Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/f0/8fbc882ca80cf077f1b246c0e3c3465f7f415439bdea6b899f6b19f61f70/networkx-3.2.1-py3-none-any.whl", hash = "sha256:f18c69adc97877c42332c170849c96cefa91881c99a7cb3e95b7c659ebdc1ec2", size = 1647772, upload-time = "2023-10-28T08:41:36.945Z" },
-]
-
-[[package]]
 name = "numba"
 version = "0.60.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3001,28 +2982,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/05/9b/e717572686bbf23e17483389c1bf3a381ca2427c84c7e0af0cdc0f23fccc/poethepoet-0.42.1.tar.gz", hash = "sha256:205747e276062c2aaba8afd8a98838f8a3a0237b7ab94715fab8d82718aac14f", size = 93209, upload-time = "2026-02-26T22:57:50.883Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/68/75fa0a5ef39718ea6ba7ab6a3d031fa93640e57585580cec85539540bb65/poethepoet-0.42.1-py3-none-any.whl", hash = "sha256:d8d1345a5ca521be9255e7c13bc2c4c8698ed5e5ac5e9e94890d239fcd423d0a", size = 119967, upload-time = "2026-02-26T22:57:49.467Z" },
-]
-
-[[package]]
-name = "pomegranate"
-version = "0.14.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "joblib", marker = "python_full_version < '3.11'" },
-    { name = "networkx", marker = "python_full_version < '3.10'" },
-    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "pyyaml", marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/91/7d8b8b5c4287df2ef60022fb606a8fae5ae09150128734ee6409e55ced20/pomegranate-0.14.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:f52e114ce9697ecc2f20459af0c8c1f3673ca15f971e5bf023e9d1c1050d9abe", size = 7245105, upload-time = "2021-11-01T20:09:58.815Z" },
-    { url = "https://files.pythonhosted.org/packages/49/f7/815d07285b230c8b886bde62a4daf5ca48c8f313d47fe6f8b04f4d226e89/pomegranate-0.14.6-cp39-cp39-manylinux1_i686.whl", hash = "sha256:df45a694d7f34feafbdbf31d4363c5e7a32f19be5abe0636b66ec064e7393ecb", size = 18800403, upload-time = "2021-11-01T20:28:28.984Z" },
-    { url = "https://files.pythonhosted.org/packages/3f/0a/4f1da60799a84b555902fd3a36f7ddeb51ac4162c5506bcc1e484c3ac211/pomegranate-0.14.6-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:3233d73b215aa626ad0d02cb640786bb951856ab381031d7a3331e327d50f239", size = 19521048, upload-time = "2021-11-01T20:28:31.655Z" },
-    { url = "https://files.pythonhosted.org/packages/c8/37/c4021bfb91b6fe2847c5e622b05d8d4bcfc1887a0f8b32f63df893a8c536/pomegranate-0.14.6-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:e1a1416ef4ec540b2ed56c6f90300a528ea9db9a4e89b8e53f19c5813f34299a", size = 18800409, upload-time = "2021-11-01T20:28:34.514Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/c7/2ad070a52d5a745ea4b48773a03742a5695e7f32904ea5d2c2011354ef0d/pomegranate-0.14.6-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:031c70914f5dfa3532500ce551581b2932e5752e88c82c37fcdef7d52ea90d9e", size = 19521053, upload-time = "2021-11-01T20:28:36.923Z" },
-    { url = "https://files.pythonhosted.org/packages/48/f3/0767052a407617adc1588632326b0718b22ba5b52f5789e7780b72b1509d/pomegranate-0.14.6-cp39-cp39-win32.whl", hash = "sha256:2157e55baccafc12b354a0b19089a56d2aa5fa6ccd12d548452ace17e5be64e1", size = 6330503, upload-time = "2021-11-01T20:13:59.789Z" },
-    { url = "https://files.pythonhosted.org/packages/31/67/5727ef43ebcc035280696d0a8af98101f5c9128dba37961105bfe246b59e/pomegranate-0.14.6-cp39-cp39-win_amd64.whl", hash = "sha256:d14ed36ac12d782763b97ec3bd8cb1934ccad919ecc1e8008686d19591367ffd", size = 6745855, upload-time = "2021-11-01T20:14:01.511Z" },
 ]
 
 [[package]]

@@ -75,8 +75,8 @@ def test_restored_model_keeps_prediction_and_parameter_hash(healthy_example_imu_
     assert restored.transition_model.model is not original.transition_model.model
 
 
-def test_public_hmm_import_and_serialization_do_not_require_pomegranate():
-    """Load and save pretrained inference models when the old dependency is unavailable."""
+def test_public_hmm_training_prediction_and_serialization_do_not_require_pomegranate():
+    """Train, load and save HMMs when the old dependency is unavailable."""
     code = """
 import importlib.abc
 import sys
@@ -87,10 +87,16 @@ class RejectPomegranate(importlib.abc.MetaPathFinder):
             raise AssertionError("Inference attempted to import pomegranate")
 
 sys.meta_path.insert(0, RejectPomegranate())
-from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
+import numpy as np
+import pandas as pd
+from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel, SimpleHmm
 model = PreTrainedRothSegmentationModel()
 model.clone()
 type(model).from_json(model.to_json())
+trained = SimpleHmm(2, 1, algo_train="labeled", max_iterations=1, verbose=False)
+trained.self_optimize([pd.DataFrame({"feature": [-3., -1., 1., 3.]})], [np.array([0, 0, 1, 1])])
+restored = SimpleHmm.from_json(trained.to_json()).clone()
+np.testing.assert_array_equal(restored.predict_hidden_state_sequence(pd.DataFrame({"feature": [-3., -1., 1., 3.]})), [0, 0, 1, 1])
 """
 
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)

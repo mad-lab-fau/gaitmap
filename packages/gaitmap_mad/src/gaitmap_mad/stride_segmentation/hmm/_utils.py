@@ -2,182 +2,28 @@
 
 from __future__ import annotations
 
-import copy
-import json
-import sys
 import warnings
-from importlib import import_module
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from tpcp import BaseTpcpObject, CloneFactory
-from tpcp._hash import custom_hash
 
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorRegionsOfInterestList, SingleSensorStrideList
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import fit_distribution
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
-
-if TYPE_CHECKING:
-    import pomegranate as pg
-    from pomegranate.hmm import History
-
-
-def _require_pomegranate():
-    """Load the legacy backend only for training."""
-    try:
-        return import_module("pomegranate")
-    except ImportError as e:
-        raise ImportError(
-            "HMM training still requires pomegranate >=0.14.2,<=0.14.6 on Python 3.9. "
-            "Pretrained HMM inference does not require pomegranate."
-        ) from e
-
-
-def _is_legacy_hmm(value):
-    return isinstance(value, getattr(sys.modules.get("pomegranate.hmm"), "HiddenMarkovModel", ()))
-
-
-def _add_transition(model, a, b, probability, pseudocount, group) -> None:
-    """Hacky way to add a transition when cloning a model in the "wrong" way."""
-    pseudocount = pseudocount or probability
-    model.graph.add_edge(a, b, probability=probability, pseudocount=pseudocount, group=group)
-
-
-def _clone_model(orig_model: pg.HiddenMarkovModel, assert_correct: bool = True) -> pg.HiddenMarkovModel:
-    """Clone a HMM without changing its values using a hacky way.
-
-    XXX: This method can clone a HMM by copying over all values individually.
-    It skips the init of the models, as using them lead to rounding issues, that result in models that are not
-    strictly identical.
-    This should not be a problem mathematically (as the rounding errors are small), but if you expect to get an
-    exact copy, this method can help you.
-
-    This should only be used internally! If you have a tpcp/gaitmap algorithm that contains a HMM as input param,
-    you should use `_clone_model` in the implementation, when you need a copy.
-    To make your algorithm itself properly clonable (including your HMM model), the algorithm needs to inherit from
-    `_HackyClonableHMMFix`.
-    This will overwrite how your algorithm handles `tpcp.clone`.
-    Note, it will not fix how deepcopy (`copy.deepcopy`) is handled.
-
-    .. warning:: This will not work all the time! In particular when transitions are added to the model after the
-                 initial creation, it seems like it is impossible to clone the model correctly, because the order of
-                 the edges can not be restored.
-                 A possible workaround in this case is to clone the model twice.
-                 The first clone will reorder the edges in a predictable way and the order will stay consistent
-                 afterwards.
-
-    Parameters
-    ----------
-    orig_model
-        The HMM model to clone
-    assert_correct
-        If True, the cloned model will be compared to the original model and an AssertionError will be raised if they
-        not identical.
-        In general, this should be True, however, when you want to clone a model with certain edges that are not
-        fully covered, you can set this to False at your own risk.
-
-    Returns
-    -------
-    model
-        A deepcopy of the HMM model.
-
-    """
-    if not _is_legacy_hmm(orig_model):
-        return copy.deepcopy(orig_model)
-
-    pg = _require_pomegranate()
-    d = json.loads(orig_model.to_json())
-
-    # Make a new generic HMM
-    model = pg.HiddenMarkovModel(str(d["name"]))
-
-    with np.errstate(divide="ignore"):
-        states = [pg.State.from_dict(j) for j in d["states"]]
-
-    for cloned_state, state in zip(states, orig_model.states):
-        assert cloned_state.name == state.name
-        if state.distribution is not None:
-            cloned_state.distribution.frozen = state.distribution.frozen
-        if isinstance(state.distribution, pg.GeneralMixtureModel):
-            # Fix the distribution weights
-            # Note the `[:]`! This is important, because pg keeps a pointer to the original weights vector internally.
-            # If we would reassign weights (and not just its content), we would update weights, but pg would still
-            # use the old values internally, as it uses the pointer to access it.
-            cloned_state.distribution.weights[:] = np.copy(state.distribution.weights)
-
-    for i, j in d["distribution ties"]:
-        # Tie appropriate states together
-        states[i].tie(states[j])
-
-    # Add all the states to the model
-    model.add_states(states)
-
-    # Indicate appropriate start and end states
-    model.start = states[d["start_index"]]
-    model.end = states[d["end_index"]]
-
-    new_state_order = [state.name for state in states]
-
-    # Add all the edges to the model
-    for start, end, data in list(orig_model.graph.edges(data=True)):
-        _add_transition(
-            model,
-            states[new_state_order.index(start.name)],
-            states[new_state_order.index(end.name)],
-            data["probability"],
-            data["pseudocount"],
-            data["group"],
-        )
-
-    # Bake the model
-    model.bake(verbose=False)
-
-    if assert_correct:
-        assert custom_hash(model) == custom_hash(orig_model), (
-            "Cloning the provided HMM model failed! Please open an issue on github with an example."
-        )
-
-    return model
-
-
-class _HackyClonableHMMFix(BaseTpcpObject):
-    """A hacky implementation to ensure that HMM parameters are actually cloned, when cloning the algorithm.
-
-    This implements and alternative cloning method for all parameters that are of type `pg.HiddenMarkovModel` that is
-    used when `tpcp.clone` is used.
-    When you implement an algorithm with a `pg.HiddenMarkovModel` as parameter, you should inherit from this class.
-    In addition, you should use `_clone_model` internally, when you need a identical copy/clone of your hmm.
-
-    For more information see the `_clone_model` function.
-
-    """
-
-    @classmethod
-    def __clone_param__(cls, param_name: str, value: Any) -> Any:
-        """Overwrite cloning for HMM models.
-
-        XXX: This is hacky shit and it is stupid that I have to do it in the first place, but there is no build in
-        way in pomegrante to properly deepcopy a HMM.
-        For several reasons, a deepcopied HMM will only be approximately identical to the original (rounding issues).
-        Our cloning implementation, does some bad stuff (and should always be covered by tests), but seems to
-        properly clone the objects (so that the hashs are identical).
-        """
-        if _is_legacy_hmm(value):
-            return _clone_model(value)
-        return super().__clone_param__(param_name, value)
+from gaitmap_mad.stride_segmentation.hmm._hmm_training import History
 
 
 class ShortenedHMMPrint(BaseTpcpObject):
-    """Mixin class to better format pg.HMM models when printing them."""
+    """Mixin class to better format HMM models when printing them."""
 
     def __repr_parameter__(self, name: str, value: Any) -> str:
         """Representation with specific care for HMM models."""
         if name == "model":
-            if _is_legacy_hmm(value) or isinstance(value, HiddenMarkovModel):
+            if isinstance(value, HiddenMarkovModel):
                 return f"{name}=HiddenMarkovModel[name={value.name}](...)"
-            if isinstance(value, CloneFactory) and (
-                _is_legacy_hmm(value.default_value) or isinstance(value.default_value, HiddenMarkovModel)
-            ):
+            if isinstance(value, CloneFactory) and (isinstance(value.default_value, HiddenMarkovModel)):
                 return f"{name}=cf(HiddenMarkovModel[name={value.get_value().name}](...))"
         return super().__repr_parameter__(name, value)
 
@@ -211,7 +57,7 @@ def create_transition_matrix_left_right(
     return transition_matrix, start_probs, end_probs
 
 
-def print_transition_matrix(model: pg.HiddenMarkovModel, precision: int = 3) -> None:
+def print_transition_matrix(model: HiddenMarkovModel, precision: int = 3) -> None:
     """Print model transition matrix in user-friendly format."""
     np.set_printoptions(suppress=True)
     np.set_printoptions(precision)
@@ -258,7 +104,6 @@ def gmms_from_samples(
     Normal Distributions for each cluster. If n_components is > 1 then a Mixture Model of n-univariate or n-multivariate
     Gaussian Distributions will be fitted.
     """
-    pg = _require_pomegranate()
     if not np.array(data, dtype=object).data.c_contiguous:
         raise ValueError("Memory Layout of given input data is not contiguous! Consider using numpy.ascontiguousarray.")
 
@@ -271,68 +116,19 @@ def gmms_from_samples(
             "Ensure that the training data contains samples for all states."
         )
 
-    if data[0].ndim == 1:
-        # we need to reshape the 1D-data for pomegranate!
-        clustered_data = [np.reshape(data, (len(data), 1)) for data in clustered_data]
-
-    # We use a Multivariate Normal Distribution even if we only have 1D data.
-    # For some reason they are handled better in pomegranate.
-    pg_dist_type = pg.MultivariateGaussianDistribution
-
-    if n_components > 1:
-        for cluster in clustered_data:
-            if len(cluster) < n_components:
-                raise ValueError(
-                    f"The training labels did only provide a small number of samples ({len(cluster)}) for one of the "
-                    "states. "
-                    f"To initialize {n_components} components in a mixture model, we need at least {n_components} "
-                    f"samples! "
-                    "Ensure that the training data contains enough samples."
-                )
-        # calculate Mixture Model for each state, clustered by labels
-        distributions = []
-        for cluster in clustered_data:
-            dist = pg.GeneralMixtureModel.from_samples(
-                pg_dist_type,
-                n_components=n_components,
-                X=cluster,
-                verbose=verbose,
-                n_jobs=n_jobs,
-                n_init=n_init,
-                init="first-k",  # With this initialisation, we don't have any randomnes! -> No need for any random
-                # seed.
+    for cluster in clustered_data:
+        if len(cluster) < n_components:
+            raise ValueError(
+                f"The training labels did only provide a small number of samples ({len(cluster)}) for one of the "
+                "states. "
+                f"To initialize {n_components} components in a mixture model, we need at least {n_components} "
+                "samples! Ensure that the training data contains enough samples."
             )
-            for d in dist.distributions:
-                if np.any([np.isnan(p).any() for p in d.parameters]).any():
-                    raise ValueError(
-                        "NaN in parameters during distribution fitting! "
-                        "This usually happens when there is not enough data for a large number of distributions and "
-                        "states. "
-                        "To avoid this issue, reduce the number of distributions per state or the number of states. "
-                        "Or ideally, provide more data."
-                    )
-            distributions.append(dist)
-    else:
-        # if n components is just 1 we do not need a mixture model and just build either multivariate Normal
-        # Distribution
-        distributions = [pg_dist_type.from_samples(dataset) for dataset in clustered_data]
-
+    distributions = [
+        fit_distribution(cluster, n_components=n_components, verbose=verbose, n_init=n_init, n_jobs=n_jobs)
+        for cluster in clustered_data
+    ]
     return distributions, clustered_data
-
-
-def fix_model_names(model):
-    """Fix pomegranate model names.
-
-    Replace state name from s10 to sN with characters as pomegranate seems to have a "sorting" bug. Where states
-    get sorted like s0, s1, s10, s2, .... so we will map state names >10 to letters. E.g. "s10" -> "sa", "s11" -> "sb"
-    """
-    for state in model.states:
-        if state.name[0] == "s":
-            state_number = int(state.name[1:])
-            # replace state numbers >= 10 by characters form the ascii-table :)
-            if state_number >= 10:
-                state.name = "s" + chr(87 + state_number)
-    return model
 
 
 def _iter_nested_distributions(distribution):
@@ -344,7 +140,7 @@ def _iter_nested_distributions(distribution):
         yield distribution
 
 
-def model_params_are_finite(model: pg.HiddenMarkovModel) -> bool:
+def model_params_are_finite(model: HiddenMarkovModel) -> bool:
     """Check if model parameters are finite."""
     for state in model.states:
         for dist in _iter_nested_distributions(state.distribution):
@@ -371,28 +167,7 @@ def check_history_for_training_failure(history: History) -> None:
         )
 
 
-def get_state_by_name(model: pg.HiddenMarkovModel, state_name: str) -> str:
-    """Get state object from model by name."""
-    for state in model.states:
-        if state.name == state_name:
-            return state
-    raise ValueError(f"State {state_name} not found within given _model!")
-
-
-def add_transition(model: pg.HiddenMarkovModel, transition: tuple[str, str], transition_probability: float) -> None:
-    """Add a transition to an existing model by state-names.
-
-    add_transition(model, transition = ("s0","s1"), transition_probability = 0.5)
-    to add an edge from state s0 to state s1 with a transition probability of 0.5.
-    """
-    model.add_transition(
-        get_state_by_name(model, transition[0]),
-        get_state_by_name(model, transition[1]),
-        transition_probability,
-    )
-
-
-def get_model_distributions(model: pg.HiddenMarkovModel) -> list[pg.Distribution]:
+def get_model_distributions(model: HiddenMarkovModel) -> list:
     """Return all not None distributions as list from given model."""
     distributions = []
     for state in model.states:
@@ -401,26 +176,9 @@ def get_model_distributions(model: pg.HiddenMarkovModel) -> list[pg.Distribution
     return distributions
 
 
-def labels_to_strings(labelsequence: list[np.ndarray | None]) -> list[list[str] | None]:
-    """Convert label sequence of ints to strings.
-
-    Pomegranated messes up sorting of states: it will sort like this: s0, s1, s10, s2.... which can lead to unexpected
-    behaviour.
-    """
-    assert isinstance(labelsequence, list), "labelsequence must be list!"
-
-    labelsequence_str = []
-    for sequence in labelsequence:
-        if sequence is None:
-            labelsequence_str.append(sequence)
-            continue
-        labelsequence_str.append([f"s{i:02}" for i in sequence])
-    return labelsequence_str
-
-
 def extract_transitions_starts_stops_from_hidden_state_sequence(
     hidden_state_sequence: list[np.ndarray],
-) -> tuple[set[tuple[str, str]], np.ndarray, np.ndarray]:
+) -> tuple[set[tuple[int, int]], np.ndarray, np.ndarray]:
     """Extract transitions from hidden state sequence.
 
     This function will return a list of transitions as well as start and stop labels that can be found within the
@@ -447,10 +205,9 @@ def extract_transitions_starts_stops_from_hidden_state_sequence(
         starts.append(labels[0])
         ends.append(labels[-1])
         for idx in np.where(abs(np.diff(labels)) > 0)[0]:
-            transitions.append((f"s{int(labels[idx])}", f"s{int(labels[idx + 1])}"))
+            transitions.append((int(labels[idx]), int(labels[idx + 1])))
 
-    if len(transitions) > 0:
-        transitions = set(transitions)
+    transitions = set(transitions)
     starts = np.unique(starts).astype("int64")
     ends = np.unique(ends).astype("int64")
 
@@ -610,7 +367,7 @@ class _DataToShortError(ValueError):
 
 
 def predict(
-    model: pg.HiddenMarkovModel | None,
+    model: HiddenMarkovModel | None,
     data: pd.DataFrame,
     *,
     expected_columns: tuple[str, ...],
@@ -682,8 +439,6 @@ def predict(
     # Preserve gaitmap's historical Viterbi output length. Legacy finite paths include start/end sentinels;
     # paths without an explicit end include only the start sentinel, so gaitmap also dropped the final emission.
     # Keeping that length matters when the feature labels are resampled back to the input sampling rate.
-    if algorithm == "viterbi" and _is_legacy_hmm(model):
-        labels_predicted = labels_predicted[1:-1]
-    elif algorithm == "viterbi" and not model.finite:
+    if algorithm == "viterbi" and not model.finite:
         labels_predicted = labels_predicted[:-1]
     return np.asarray(labels_predicted)
