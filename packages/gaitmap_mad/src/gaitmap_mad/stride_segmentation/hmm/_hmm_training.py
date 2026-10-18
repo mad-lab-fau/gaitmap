@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from time import perf_counter
 
@@ -200,18 +201,7 @@ def fit_hmm(
     sequences = _prepare_sequences(model, sequences)
     observations = np.concatenate(sequences)
     paths = _labeled_paths(model, sequences, labels) if algorithm == "labeled" else [None] * len(sequences)
-    current = type(model)(
-        model.emissions,
-        model.transitions,
-        model.starts,
-        model.ends,
-        name=model.name,
-        state_names=model.state_names,
-        state_weights=model.state_weights,
-        transition_mask=model.transition_mask,
-        start_mask=model.start_mask,
-        end_mask=model.end_mask,
-    )
+    current = deepcopy(model)
     with Parallel(n_jobs=n_jobs, backend="threading") as parallel:
         likelihood, statistics = _summarize_sequences(current, sequences, paths, algorithm, parallel)
         history = TrainingHistory(log_likelihoods=[likelihood])
