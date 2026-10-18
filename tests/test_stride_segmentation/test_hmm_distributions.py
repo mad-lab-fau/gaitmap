@@ -1,82 +1,99 @@
-"""Emission updates agree with independently captured legacy Gaussian and GMM fits."""
+"""Gaussian and mixture fitting agree with hand moments, SciPy densities, and numerical invariants."""
 
 import copy
-import json
 import pickle
-from pathlib import Path
 
 import numpy as np
 import pytest
-from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture, fit_emissions, update_emissions
-from gaitmap_mad.stride_segmentation.hmm._hmm_io import load_emission, serialize_emission
+from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import fit_emissions, update_emissions
 from numpy.testing import assert_allclose
 from scipy.special import logsumexp
 from scipy.stats import multivariate_normal
 
-REFERENCE = json.loads((Path(__file__).parent / "fixtures" / "hmm_distributions_legacy.json").read_text())
+from gaitmap.stride_segmentation.hmm import GaussianMixture
 
 
-def assert_distribution_close(actual, expected):
-    """Compare native numerical parameters with independently persisted legacy references."""
-    expected = load_emission(expected)
-    assert_allclose(actual.means, expected.means, rtol=1e-9, atol=1e-11)
-    assert_allclose(actual.covariances, expected.covariances, rtol=1e-9, atol=1e-11)
-    assert_allclose(actual.weights, expected.weights, rtol=1e-9, atol=1e-11)
+def assert_emissions_equal(actual, expected):
+    """Compare owned numerical parameters without going through serialization."""
+    for name in ["means", "covariances", "weights", "component_frozen"]:
+        np.testing.assert_array_equal(getattr(actual, name), getattr(expected, name))
     assert actual.frozen == expected.frozen
-    np.testing.assert_array_equal(actual.component_frozen, expected.component_frozen)
 
 
-@pytest.mark.parametrize("case", REFERENCE["updates"], ids=lambda case: case["name"])
-def test_weighted_reestimation_matches_legacy(case):
-    """Match weighted MLE and soft component responsibilities over consecutive updates."""
-    initial = load_emission(case["initial"])
-    distribution = initial
-    original = serialize_emission(initial)
-    for expected in case["updates"]:
-        distribution = update_emissions(
-            distribution, np.asarray(case["observations"]), np.asarray(case["sample_weights"])
-        )
-        assert_distribution_close(distribution, expected)
-    assert serialize_emission(initial) == original
+def test_weighted_gaussian_update_matches_hand_computed_full_covariance():
+    """Weighted MLE keeps the off-diagonal covariance and leaves the input unchanged."""
+    initial = GaussianMixture([[9.0, 9.0]], [np.eye(2)], [1.0])
+    observations = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 3.0], [2.0, 3.0]])
+    original = copy.deepcopy(initial)
+
+    result = update_emissions(initial, observations, [1.0, 2.0, 3.0, 4.0])
+
+    assert_allclose(result.means, [[1.2, 2.1]], rtol=1e-13)
+    assert_allclose(result.covariances, [[[0.96, -0.12], [-0.12, 1.89]]], rtol=1e-13)
+    assert_emissions_equal(initial, original)
 
 
-@pytest.mark.parametrize(
-    "case",
-    REFERENCE["initializations"],
-    ids=lambda case: f"{len(case['observations'][0])}d-{case['n_components']}components",
-)
-def test_deterministic_initialization_matches_legacy(case):
-    """Match first-k initialization followed by EM at the legacy stopping threshold."""
-    result = fit_emissions(np.asarray(case["observations"]), n_components=case["n_components"])
-
-    assert_distribution_close(result, case["expected"])
-
-
-@pytest.mark.parametrize(
-    "case",
-    [case for case in REFERENCE["support_and_repair"] if case["name"] in {"zero_component", "frozen_component"}],
-    ids=lambda case: case["name"],
-)
-def test_component_zero_support_and_freezes_match_legacy(case):
-    """Keep supported mixture semantics while replacing legacy covariance and small-weight quirks."""
-    result = update_emissions(
-        load_emission(case["initial"]), np.asarray(case["observations"]), np.asarray(case["sample_weights"])
+@pytest.mark.parametrize("frozen_component", [False, True])
+def test_mixture_update_matches_scipy_responsibilities_and_weighted_moments(frozen_component):
+    """State weights multiply soft component responsibilities, including frozen components."""
+    initial = GaussianMixture(
+        [[-1.0, 0.0], [1.0, 0.5]],
+        [[[1.0, 0.2], [0.2, 0.8]], [[0.7, -0.1], [-0.1, 1.2]]],
+        [0.4, 0.6],
+        component_frozen=[frozen_component, False],
     )
+    observations = np.array([[-2.0, -1.0], [-0.5, 0.7], [0.5, -0.4], [1.5, 1.3], [2.0, 0.2]])
+    state_weights = np.array([0.2, 1.0, 0.7, 0.4, 0.8])
+    density = np.column_stack(
+        [
+            multivariate_normal.pdf(observations, mean, covariance) * weight
+            for mean, covariance, weight in zip(initial.means, initial.covariances, initial.weights)
+        ]
+    )
+    responsibilities = density / density.sum(axis=1, keepdims=True) * state_weights[:, None]
+    counts = responsibilities.sum(axis=0)
 
-    assert_distribution_close(result, case["expected"])
+    result = update_emissions(initial, observations, state_weights)
+
+    assert_allclose(result.weights, counts / counts.sum(), rtol=1e-13)
+    for component in range(2):
+        if frozen_component and component == 0:
+            np.testing.assert_array_equal(result.means[component], initial.means[component])
+            np.testing.assert_array_equal(result.covariances[component], initial.covariances[component])
+        else:
+            expected_mean = np.average(observations, weights=responsibilities[:, component], axis=0)
+            centered = observations - expected_mean
+            expected_covariance = (centered.T * responsibilities[:, component]) @ centered / counts[component]
+            assert_allclose(result.means[component], expected_mean, rtol=1e-13)
+            assert_allclose(result.covariances[component], expected_covariance, rtol=1e-13)
 
 
-@pytest.mark.parametrize("case", REFERENCE["updates"], ids=lambda case: case["name"])
+def test_zero_probability_component_keeps_its_parameters():
+    """A component with no responsibility retains its moments and zero mixture weight."""
+    initial = GaussianMixture([[-1.0], [10.0]], [[[1.0]], [[2.0]]], [1.0, 0.0])
+
+    result = update_emissions(initial, [-2.0, -1.0, 0.0], np.ones(3))
+
+    assert_allclose(result.means[:, 0], [-1.0, 10.0])
+    assert_allclose(result.covariances[:, 0, 0], [2 / 3, 2.0])
+    np.testing.assert_array_equal(result.weights, [1.0, 0.0])
+
+
+@pytest.mark.parametrize("n_components", [1, 2])
 @pytest.mark.parametrize("frozen", [False, True])
-def test_zero_support_and_frozen_distributions_keep_parameters(case, frozen):
-    """Do not change unsupported state emissions or explicitly frozen whole distributions."""
-    serialized = dict(case["initial"], frozen=frozen)
-    initial = load_emission(serialized)
-    weights = np.asarray(case["sample_weights"]) if frozen else np.zeros(len(case["observations"]))
+def test_zero_support_and_frozen_distributions_keep_parameters(n_components, frozen):
+    """Zero support and an explicit freeze take precedence over the covariance floor."""
+    initial = GaussianMixture(
+        [[-1.0], [1.0]][:n_components],
+        [[[0.2]], [[0.4]]][:n_components],
+        np.ones(n_components) / n_components,
+        frozen=frozen,
+    )
+    weights = np.ones(4) if frozen else np.zeros(4)
 
-    result = update_emissions(initial, np.asarray(case["observations"]), weights, min_covar=10.0)
+    result = update_emissions(initial, [-2.0, -0.5, 0.5, 2.0], weights, min_covar=10.0)
 
-    assert serialize_emission(result) == serialize_emission(initial)
+    assert_emissions_equal(result, initial)
     assert result is not initial
 
 
@@ -90,7 +107,7 @@ def test_tiny_positive_covariance_respects_requested_floor(min_covar, operation)
         fit_emissions(observations, min_covar=min_covar)
         if operation == "initialization"
         else update_emissions(
-            load_emission(REFERENCE["updates"][0]["initial"]), observations, np.ones(4), min_covar=min_covar
+            GaussianMixture([[0.0, 0.0]], [np.eye(2)], [1.0]), observations, np.ones(4), min_covar=min_covar
         )
     )
 
@@ -118,15 +135,21 @@ def test_large_offset_retains_small_observed_variances():
     assert_allclose(fitted.covariances[0], [[0.0625, 0.0], [0.0, 0.25]], rtol=1e-12, atol=1e-15)
 
 
-@pytest.mark.parametrize("case", REFERENCE["updates"][:2], ids=lambda case: case["name"])
-def test_tiny_uniformly_scaled_weights_preserve_weighted_estimate(case):
-    """Absolute posterior magnitude does not change the fitted state or mixture."""
-    observations = np.asarray(case["observations"])
-    weights = np.asarray(case["sample_weights"])
+@pytest.mark.parametrize("n_components", [1, 2])
+def test_tiny_uniformly_scaled_weights_preserve_weighted_estimate(n_components):
+    """Absolute posterior magnitude does not change Gaussian or mixture estimates."""
+    initial = GaussianMixture(
+        [[-1.0], [1.0]][:n_components], [[[1.0]]] * n_components, np.ones(n_components) / n_components
+    )
+    observations = np.array([[-2.0], [-0.5], [0.5], [2.0]])
+    weights = np.array([0.3, 1.0, 0.4, 0.7])
+    expected = update_emissions(initial, observations, weights)
 
-    result = update_emissions(load_emission(case["initial"]), observations, weights * 1e-250)
+    result = update_emissions(initial, observations, weights * 1e-250)
 
-    assert_distribution_close(result, case["updates"][0])
+    assert_allclose(result.means, expected.means, rtol=1e-13)
+    assert_allclose(result.covariances, expected.covariances, rtol=1e-13)
+    assert_allclose(result.weights, expected.weights, rtol=1e-13)
 
 
 @pytest.mark.parametrize("direction", [[1e12, 1e12], [638294.7409282152, -292047.4852193635]])
@@ -143,11 +166,12 @@ def test_large_covariance_scale_still_returns_representable_positive_definite_ma
     assert_allclose(np.trace(covariance), np.dot(vector, vector), rtol=1e-14)
 
 
-def test_real_gait_mixture_updates_keep_bounded_covariance_and_monotone_likelihood():
-    """Repeated updates avoid the legacy covariance collapse and large negative repair jumps."""
-    case = REFERENCE["updates"][2]
-    observations = np.asarray(case["observations"])
-    distribution = load_emission(case["initial"])
+def test_nearly_degenerate_mixture_updates_keep_bounded_covariance_and_monotone_likelihood():
+    """Repeated EM fits nearly collinear clusters without covariance collapse or likelihood jumps."""
+    offset = np.linspace(-0.03, 0.03, 20)
+    cluster = np.column_stack([offset, 2 * offset + 1e-5 * (-1.0) ** np.arange(len(offset))])
+    observations = np.concatenate([cluster + np.array([-1.0, -0.5]), cluster + np.array([1.0, 0.5])])
+    distribution = GaussianMixture([[-0.5, -0.2], [0.5, 0.2]], [np.eye(2)] * 2, [0.5, 0.5])
     previous = -np.inf
     for _ in range(40):
         distribution = update_emissions(distribution, observations, np.ones(len(observations)))
@@ -219,7 +243,7 @@ def test_pickled_emissions_restore_read_only_native_parameters():
 
     restored = pickle.loads(pickle.dumps(emissions))
 
-    assert serialize_emission(restored) == serialize_emission(emissions)
+    assert_emissions_equal(restored, emissions)
     for array in [restored.means, restored.covariances, restored.weights, restored.component_frozen]:
         assert not array.flags.writeable
 

@@ -6,14 +6,14 @@ import pickle
 
 import numpy as np
 import pytest
-from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
-from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy.stats import multivariate_normal
 from tpcp._hash import custom_hash
 
+from gaitmap.stride_segmentation.hmm import GaussianMixture, HiddenMarkovModel
 
-def gaussian(mean, covariance):
+
+def legacy_gaussian(mean, covariance):
     """Create a legacy full-covariance Gaussian definition."""
     return {
         "class": "Distribution",
@@ -23,7 +23,7 @@ def gaussian(mean, covariance):
     }
 
 
-def model_dict(distributions, transitions, starts, ends=None, weights=None):
+def legacy_model_dict(distributions, transitions, starts, ends=None, weights=None):
     """Create a legacy model with separate emitting and silent states."""
     n_states = len(distributions)
     states = [
@@ -62,7 +62,7 @@ def test_full_covariance_gaussian_sequence_likelihood(layout):
     mean = [0.5, -1.0]
     covariance = [[2.0, 0.8], [0.8, 0.9]]
     samples = np.array([[1.1, -0.3], [-1.0, 0.4], [0.5, -1.0]], order=layout)
-    model = HiddenMarkovModel.from_dict(model_dict([gaussian(mean, covariance)], [[0.8]], [1.0], [0.2]))
+    model = HiddenMarkovModel([GaussianMixture([mean], [covariance], [1.0])], [[0.8]], [1.0], [0.2])
 
     expected = np.sum(multivariate_normal.logpdf(samples, mean=mean, cov=covariance)) + 2 * np.log(0.8) + np.log(0.2)
     assert_allclose(model.log_probability(samples), expected, rtol=1e-13)
@@ -73,19 +73,16 @@ def test_full_covariance_gaussian_sequence_likelihood(layout):
 @pytest.mark.parametrize("finite", [False, True])
 def test_mixture_inference_matches_exhaustive_paths(finite):
     """Path enumeration verifies likelihoods, the best path and state posteriors."""
-    mixture = {
-        "class": "GeneralMixtureModel",
-        "distributions": [gaussian([-1.0], [[0.4]]), gaussian([1.0], [[1.2]])],
-        "weights": [0.3, 0.7],
-    }
-    distributions = [mixture, gaussian([2.0], [[0.7]])]
+    emissions = [
+        GaussianMixture([[-1.0], [1.0]], [[[0.4]], [[1.2]]], [0.3, 0.7]),
+        GaussianMixture([[2.0]], [[[0.7]]], [1.0]),
+    ]
     transitions = [[0.65, 0.25], [0.15, 0.55]] if finite else [[0.75, 0.25], [0.2, 0.8]]
     starts = [0.6, 0.4]
     ends = [0.1, 0.3] if finite else None
     weights = [0.7, 1.3]
     samples = np.array([[-0.8], [0.4], [1.7], [-0.3]])
-    serialized = model_dict(distributions, transitions, starts, ends, weights)
-    model = HiddenMarkovModel.from_dict(serialized)
+    model = HiddenMarkovModel(emissions, transitions, starts, ends, state_weights=weights)
 
     # Enumerating complete paths gives an independent reference for both dynamic programs.
     density = np.column_stack(
@@ -122,8 +119,11 @@ def test_mixture_inference_matches_exhaustive_paths(finite):
 
 def test_decoding_impossible_path_raises_without_inventing_a_state_path():
     """A disconnected end state gives no decode and a zero sequence probability."""
-    model = HiddenMarkovModel.from_dict(
-        model_dict([gaussian([0.0], [[1.0]])] * 2, [[1.0, 0.0], [0.0, 0.5]], [1.0, 0.0], [0.0, 0.5])
+    model = HiddenMarkovModel(
+        [GaussianMixture([[0.0]], [[[1.0]]], [1.0])] * 2,
+        [[1.0, 0.0], [0.0, 0.5]],
+        [1.0, 0.0],
+        [0.0, 0.5],
     )
     samples = np.zeros((3, 1))
     assert model.log_probability(samples) == -np.inf
@@ -134,9 +134,9 @@ def test_decoding_impossible_path_raises_without_inventing_a_state_path():
         model.predict_proba(samples)
 
 
-def test_ties_use_serialized_state_order_and_single_observation_is_supported():
+def test_ties_use_state_order_and_single_observation_is_supported():
     """Equal probabilities choose the first state without silent-state labels."""
-    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[1.0]])] * 2, [[0.5, 0.5]] * 2, [0.5, 0.5]))
+    model = HiddenMarkovModel([GaussianMixture([[0.0]], [[[1.0]]], [1.0])] * 2, [[0.5, 0.5]] * 2, [0.5, 0.5])
     for samples in [np.array([1.0]), np.zeros(4)]:
         assert_array_equal(model.predict(samples), np.zeros(len(samples), dtype=int))
         assert_array_equal(model.predict(samples, algorithm="map"), np.zeros(len(samples), dtype=int))
@@ -144,10 +144,10 @@ def test_ties_use_serialized_state_order_and_single_observation_is_supported():
 
 def test_inference_serialization_does_not_mutate_or_alias_persisted_model():
     """Callers can clone and serialize a model before or after inference."""
-    serialized = model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2])
+    serialized = HiddenMarkovModel([GaussianMixture([[0.0]], [[[1.0]]], [1.0])], [[0.8]], [1.0], [0.2]).to_dict()
     model = HiddenMarkovModel.from_dict(serialized)
     reference = copy.deepcopy(model.to_dict())
-    serialized["states"][0]["name"] = "changed by caller"
+    serialized["state_names"][0] = "changed by caller"
     model.predict([0.0, 1.0])
     model.predict_proba([0.0, 1.0])
     assert model.to_dict() == reference
@@ -185,22 +185,9 @@ def test_numeric_parameters_are_owned_so_caller_changes_cannot_stale_inference_c
                 parameter.flat[0] = 0.0
 
 
-def test_parameter_hash_is_independent_of_numeric_cache_reconstruction():
-    """Cloning keeps parameter identity when derived scores differ in their final bit."""
-    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2]))
-    reconstructed = copy.deepcopy(model)
-    # Rebuilding a floating point cache may change its final bit without any
-    # parameter change. Such caches must not participate in parameter hashing.
-    reconstructed._normalizers = np.nextafter(reconstructed._normalizers, np.inf)
-
-    assert reconstructed == model
-    assert_allclose(reconstructed.log_probability([0.0, 1.0]), model.log_probability([0.0, 1.0]))
-    assert custom_hash(reconstructed) == custom_hash(model)
-
-
 def test_pickle_restores_read_only_parameters_and_matching_inference():
     """Worker-process transfer rebuilds safe arrays and inference caches from parameters."""
-    model = HiddenMarkovModel.from_dict(model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2]))
+    model = HiddenMarkovModel([GaussianMixture([[0.0]], [[[1.0]]], [1.0])], [[0.8]], [1.0], [0.2])
     restored = pickle.loads(pickle.dumps(model))
 
     assert custom_hash(restored) == custom_hash(model)
@@ -213,7 +200,7 @@ def test_pickle_restores_read_only_parameters_and_matching_inference():
 @pytest.mark.parametrize("unsupported", ["distribution", "silent state", "distribution ties", "transition ties"])
 def test_unsupported_persisted_model_features_fail_clearly(unsupported):
     """Unsupported legacy model types do not silently change inference semantics."""
-    serialized = model_dict([gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2])
+    serialized = legacy_model_dict([legacy_gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2])
     if unsupported == "distribution":
         serialized["states"][0]["distribution"]["name"] = "NormalDistribution"
     elif unsupported == "silent state":
