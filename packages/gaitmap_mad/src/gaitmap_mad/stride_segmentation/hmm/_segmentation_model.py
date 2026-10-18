@@ -551,7 +551,8 @@ class RothSegmentationHmm(BaseSegmentationHmm, ShortenedHMMPrint):
             trans_mat[:n_states_transition, :n_states_transition] = trans_mat_transition
             trans_mat[n_states_transition:, n_states_transition:] = trans_mat_stride
             # Removing explicit submodel termination renormalizes each emitting row before adding cross-links.
-            trans_mat /= trans_mat.sum(axis=1, keepdims=True)
+            row_totals = trans_mat.sum(axis=1, keepdims=True)
+            np.divide(trans_mat, row_totals, out=trans_mat, where=row_totals > 0)
             transitions, starts, _ = extract_transitions_starts_stops_from_hidden_state_sequence(labels_train_sequence)
             start_probs = np.zeros(self.n_states)
             start_probs[starts] = 1.0
