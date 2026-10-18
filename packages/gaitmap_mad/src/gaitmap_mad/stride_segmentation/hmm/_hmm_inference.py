@@ -319,8 +319,13 @@ class HiddenMarkovModel:
         return_history=False,
         verbose=False,
         n_jobs=1,
+        min_covar=1e-6,
     ):
-        """Re-estimate transitions and emissions with Baum-Welch, Viterbi, or labels."""
+        """Re-estimate transitions and emissions with Baum-Welch, Viterbi, or labels.
+
+        ``min_covar`` floors covariance eigenvalues in squared feature units on each
+        emission update. Frozen emissions retain their original parameters.
+        """
         from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm  # noqa: PLC0415
 
         trained, history = fit_hmm(
@@ -332,6 +337,7 @@ class HiddenMarkovModel:
             max_iterations=max_iterations,
             verbose=verbose,
             n_jobs=n_jobs,
+            min_covar=min_covar,
         )
         self.__dict__.update(trained.__dict__)
         return (self, history) if return_history else self

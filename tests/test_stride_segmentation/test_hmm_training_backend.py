@@ -150,3 +150,29 @@ def test_fitted_model_roundtrips_through_json_and_predicts():
     restored = HiddenMarkovModel.from_json(trained.to_json())
     assert restored.to_dict() == trained.to_dict()
     assert_allclose(restored.predict_proba(_LEGACY["sequences"][0]), trained.predict_proba(_LEGACY["sequences"][0]))
+
+
+@pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
+@pytest.mark.parametrize("frozen", [False, True])
+def test_training_applies_requested_covariance_floor_except_to_frozen_emissions(algorithm, frozen):
+    """Degenerate observations honor the caller's eigenvalue floor during training."""
+    distribution = gaussian([0.0, 0.0], [[0.001, 0.0], [0.0, 0.002]])
+    distribution["frozen"] = frozen
+    model = HiddenMarkovModel.from_dict(model_dict([distribution], [[1.0]], [1.0]))
+    samples = np.array([[0.0, 0.0], [1.0, 1.0], [-1.0, -1.0], [2.0, 2.0]])
+    trained, _ = fit_hmm(
+        model,
+        [samples],
+        labels=[[0, 0, 0, 0]],
+        algorithm=algorithm,
+        max_iterations=1,
+        min_covar=0.025,
+    )
+    if frozen:
+        assert trained.states[0].distribution.to_dict() == distribution
+    else:
+        # The empirical covariance has eigenvalues 0 and 2.5. Flooring only the
+        # null direction adds 0.0125 * [[1, -1], [-1, 1]] to its 1.25 entries.
+        assert_allclose(trained.states[0].distribution.parameters[0], [0.5, 0.5])
+        assert_allclose(trained.states[0].distribution.parameters[1], [[1.2625, 1.2375], [1.2375, 1.2625]])
+    assert np.isfinite(trained.log_probability(samples))

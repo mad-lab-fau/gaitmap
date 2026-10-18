@@ -2,12 +2,38 @@
 
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.stride_segmentation.hmm import SimpleHmm
+
+matplotlib.use("Agg")
+
+
+@pytest.mark.parametrize("n_components", [1, 2])
+@pytest.mark.parametrize("max_iterations", [0, 1])
+def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_components, max_iterations):
+    """A caller-selected variance floor applies during initialization and re-estimation."""
+    x = np.arange(20, dtype=float)
+    data = [pd.DataFrame({"x": x, "y": 2 * x})]
+    model = SimpleHmm(
+        n_states=1,
+        n_gmm_components=n_components,
+        architecture="fully-connected",
+        algo_train="labeled",
+        min_covar=0.02,
+        max_iterations=max_iterations,
+        verbose=False,
+    ).self_optimize(data, [np.zeros(len(x), dtype=int)])
+    restored = SimpleHmm.from_json(model.to_json()).clone()
+
+    assert restored.min_covar == 0.02
+    distribution = restored.model.to_dict()["states"][0]["distribution"]
+    for component in distribution.get("distributions", [distribution]):
+        assert np.linalg.eigvalsh(component["parameters"][1])[0] == pytest.approx(0.02)
 
 
 @pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
@@ -42,7 +68,7 @@ def test_training_example_preserves_legacy_segmentation():
 
     with np.load(Path(__file__).parent / "fixtures" / "hmm_legacy_training_example.npz") as reference:
         for sensor in ["left_sensor", "right_sensor"]:
-            # Individual null-state labels vary when nearly singular mixtures reach covariance repair.
+            # Individual labels vary when regularization prevents nearly singular mixtures from collapsing.
             # Their classification and all stride borders must remain unchanged.
             assert_array_equal(hmm.hidden_state_sequence_[sensor] >= 5, reference[sensor + "_states"] >= 5)
             assert_array_equal(hmm.stride_list_[sensor].to_numpy(), reference[sensor + "_strides"])

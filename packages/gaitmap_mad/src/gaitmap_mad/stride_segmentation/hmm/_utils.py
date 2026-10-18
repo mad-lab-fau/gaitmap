@@ -97,6 +97,7 @@ def gmms_from_samples(
     verbose: bool = False,
     n_init: int = 5,
     n_jobs: int = 1,
+    min_covar: float = 1e-6,
 ):
     """Create Gaussian Mixture Models from samples.
 
@@ -125,7 +126,9 @@ def gmms_from_samples(
                 "samples! Ensure that the training data contains enough samples."
             )
     distributions = [
-        fit_distribution(cluster, n_components=n_components, verbose=verbose, n_init=n_init, n_jobs=n_jobs)
+        fit_distribution(
+            cluster, n_components=n_components, verbose=verbose, n_init=n_init, n_jobs=n_jobs, min_covar=min_covar
+        )
         for cluster in clustered_data
     ]
     return distributions, clustered_data

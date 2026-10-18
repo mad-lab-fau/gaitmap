@@ -11,18 +11,25 @@ from scipy.special import logsumexp
 @njit(cache=True, nogil=True)
 def _weighted_moments(samples, weights):
     n_samples, dimensions = samples.shape
-    total = 0.0
-    sums = np.zeros(dimensions)
-    products = np.zeros((dimensions, dimensions))
+    normalized = weights / weights.max()
+    total = normalized.sum()
+    mean_offset = np.zeros(dimensions)
     for sample in range(n_samples):
-        weight = weights[sample]
-        total += weight
-        root_weight = np.sqrt(weight)
+        for dimension in range(dimensions):
+            mean_offset[dimension] += normalized[sample] * (samples[sample, dimension] - samples[0, dimension])
+    mean_offset /= total
+    covariance = np.zeros((dimensions, dimensions))
+    for sample in range(n_samples):
+        weight = normalized[sample] / total
         for left in range(dimensions):
-            sums[left] += weight * samples[sample, left]
-            for right in range(dimensions):
-                products[left, right] += (samples[sample, left] * root_weight) * (samples[sample, right] * root_weight)
-    return total, sums, products
+            centered_left = (samples[sample, left] - samples[0, left]) - mean_offset[left]
+            for right in range(left, dimensions):
+                centered_right = (samples[sample, right] - samples[0, right]) - mean_offset[right]
+                covariance[left, right] += weight * centered_left * centered_right
+    for left in range(dimensions):
+        for right in range(left):
+            covariance[left, right] = covariance[right, left]
+    return samples[0] + mean_offset, covariance
 
 
 def _samples(observations):
@@ -39,23 +46,30 @@ def _gaussian(mean, covariance):
     }
 
 
-def _update_gaussian(distribution, samples, weights):
-    if distribution.get("frozen", False):
-        return distribution
-    total, sums, products = _weighted_moments(samples, weights)
-    dimensions = samples.shape[1]
-    if dimensions * total < 1e-7:
-        return distribution
-    mean = sums / total
-    covariance = (products - np.outer(sums, sums) / total) / total
+def _floor_covariance(covariance, min_covar):
+    eigenvalues, eigenvectors = np.linalg.eigh(covariance)
+    floored = covariance
+    if eigenvalues[0] < min_covar:
+        floored = (eigenvectors * np.maximum(eigenvalues, min_covar)) @ eigenvectors.T
+        floored = (floored + floored.T) * 0.5
     try:
-        cholesky(covariance, lower=True)
+        np.linalg.cholesky(floored)
     except np.linalg.LinAlgError:
-        # Match the legacy MLE repair rather than regularizing every covariance.
-        shift = 1e-5 if covariance.sum() == 0 else 1e-8 - np.linalg.eigvalsh(covariance).min()
-        covariance += np.eye(dimensions) * shift
+        # A requested floor far below the largest eigenvalue may disappear when
+        # projected back to covariance coordinates. Use its representable scale.
+        representable = np.finfo(np.float64).eps * max(abs(eigenvalues)) * len(eigenvalues)
+        floor = max(min_covar, representable)
+        floored = (eigenvectors * np.maximum(eigenvalues, floor)) @ eigenvectors.T
+        floored = (floored + floored.T) * 0.5
+    return floored
+
+
+def _update_gaussian(distribution, samples, weights, min_covar):
+    if distribution.get("frozen", False) or not np.any(weights > 0):
+        return distribution
+    mean, covariance = _weighted_moments(samples, weights)
     result = copy.deepcopy(distribution)
-    result["parameters"] = [mean.tolist(), covariance.tolist()]
+    result["parameters"] = [mean.tolist(), _floor_covariance(covariance, min_covar).tolist()]
     return result
 
 
@@ -93,23 +107,25 @@ def _component_scores(distributions, samples):
     return _gaussian_scores(samples, means, whitening, normalizers)
 
 
-def update_distribution(serialized_distribution, observations, sample_weights):
+def update_distribution(serialized_distribution, observations, sample_weights, min_covar=1e-6):
     """Return one weighted MLE update, using soft responsibilities inside mixtures.
 
-    Zero-support and frozen distributions retain their parameters. Gaussian
-    components with less than ``1e-7`` total dimension weight also retain their
-    parameters, matching the legacy backend's sufficient-statistics threshold.
+    ``min_covar`` bounds covariance eigenvalues in variance units on every
+    estimate. Centered moments and normalized weights keep estimates stable
+    for large offsets and tiny positive weights. Only zero-support and frozen
+    distributions retain their previous parameters.
     """
     result = copy.deepcopy(serialized_distribution)
     samples = _samples(observations)
     weights = np.ascontiguousarray(sample_weights, dtype=np.float64)
-    if result.get("frozen", False) or weights.sum() == 0:
+    if result.get("frozen", False) or not np.any(weights > 0):
         return result
     positive = weights > 0
     samples = np.ascontiguousarray(samples[positive])
     weights = np.ascontiguousarray(weights[positive])
+    weights /= weights.max()
     if result["class"] != "GeneralMixtureModel":
-        return _update_gaussian(result, samples, weights)
+        return _update_gaussian(result, samples, weights, min_covar)
     scores = _component_scores(result["distributions"], samples)
     with np.errstate(divide="ignore"):
         scores += np.log(result["weights"])
@@ -117,7 +133,7 @@ def update_distribution(serialized_distribution, observations, sample_weights):
     counts = responsibilities.sum(axis=0)
     result["weights"] = (counts / counts.sum()).tolist()
     result["distributions"] = [
-        _update_gaussian(component, samples, np.ascontiguousarray(responsibilities[:, index]))
+        _update_gaussian(component, samples, np.ascontiguousarray(responsibilities[:, index]), min_covar)
         for index, component in enumerate(result["distributions"])
     ]
     return result
@@ -159,11 +175,12 @@ def _mixture_likelihood(distribution, samples):
     return logsumexp(scores, axis=1).sum()
 
 
-def fit_distribution(observations, n_components=1, verbose=False, n_init=5, n_jobs=1):
+def fit_distribution(observations, n_components=1, verbose=False, n_init=5, n_jobs=1, min_covar=1e-6):
     """Initialize Gaussian emissions with deterministic first-k clustering and EM.
 
     One centroid update precedes Gaussian initialization, as in legacy
     ``max_kmeans_iterations=1``. EM stops after an improvement of at most 0.1.
+    Covariance eigenvalues are bounded by ``min_covar`` in variance units.
     First-k restarts produce identical results, so ``n_init`` needs no repeated
     work. ``n_jobs`` is retained for callers; numeric kernels execute locally.
     """
@@ -171,14 +188,16 @@ def fit_distribution(observations, n_components=1, verbose=False, n_init=5, n_jo
     samples = _samples(observations)
     blank = _gaussian(np.zeros(samples.shape[1]), np.eye(samples.shape[1]))
     if n_components == 1:
-        return update_distribution(blank, samples, np.ones(len(samples)))
+        return update_distribution(blank, samples, np.ones(len(samples)), min_covar=min_covar)
     if n_components < 1 or n_components > len(samples):
         raise ValueError("Mixture initialization needs at least one observation per component.")
     labels = _first_k_labels(samples, n_components)
     distribution = {
         "class": "GeneralMixtureModel",
         "distributions": [
-            update_distribution(blank, samples[labels == component], np.ones(np.sum(labels == component)))
+            update_distribution(
+                blank, samples[labels == component], np.ones(np.sum(labels == component)), min_covar=min_covar
+            )
             for component in range(n_components)
         ],
         "weights": [float(np.mean(labels == component)) for component in range(n_components)],
@@ -186,7 +205,7 @@ def fit_distribution(observations, n_components=1, verbose=False, n_init=5, n_jo
     previous = _mixture_likelihood(distribution, samples)
     improvement = np.inf
     while improvement > 0.1:
-        distribution = update_distribution(distribution, samples, np.ones(len(samples)))
+        distribution = update_distribution(distribution, samples, np.ones(len(samples)), min_covar=min_covar)
         likelihood = _mixture_likelihood(distribution, samples)
         improvement = likelihood - previous
         if verbose:
