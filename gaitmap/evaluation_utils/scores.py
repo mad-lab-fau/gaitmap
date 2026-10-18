@@ -185,8 +185,8 @@ def f1_score(matches_df, *, zero_division: Literal["warn", 0, 1] = "warn"):
         matches_df = {"__dummy__": matches_df}
 
     output = {}
-    recall = recall_score(matches_df.copy())
-    precision = precision_score(matches_df.copy())
+    recall = recall_score(matches_df)
+    precision = precision_score(matches_df)
     for sensor_name in list(recall.keys()):
         output[sensor_name] = _calculate_score(
             2 * (precision[sensor_name] * recall[sensor_name]),
@@ -250,9 +250,9 @@ def precision_recall_f1_score(matches_df, *, zero_division: Literal["warn", 0, 1
     gaitmap.evaluation_utils.evaluate_segmented_stride_list: Generate matched_df from stride lists
 
     """
-    precisions = precision_score(matches_df.copy(), zero_division=zero_division)
-    recalls = recall_score(matches_df.copy(), zero_division=zero_division)
-    f1_scores = f1_score(matches_df.copy(), zero_division=zero_division)
+    precisions = precision_score(matches_df, zero_division=zero_division)
+    recalls = recall_score(matches_df, zero_division=zero_division)
+    f1_scores = f1_score(matches_df, zero_division=zero_division)
 
     if isinstance(matches_df, dict):
         return {
@@ -278,19 +278,20 @@ def _get_match_type_dfs(
     if is_not_dict:
         match_results = {"__dummy__": match_results}
 
-    for dataframe_name in get_multi_sensor_names(match_results):
-        matches_types = match_results[dataframe_name].groupby("match_type")
+    output = {}
+    for dataframe_name, frame in match_results.items():
+        matches_types = frame.groupby("match_type")
         matches_types_dict = {}
         for group in ["tp", "fp", "fn"]:
             if group in matches_types.groups:
                 matches_types_dict[group] = matches_types.get_group(group)
             else:
-                matches_types_dict[group] = pd.DataFrame(columns=match_results[dataframe_name].columns.copy())
-        match_results[dataframe_name] = matches_types_dict
+                matches_types_dict[group] = pd.DataFrame(columns=frame.columns)
+        output[dataframe_name] = matches_types_dict
 
     if is_not_dict:
-        return match_results["__dummy__"]
-    return match_results
+        return output["__dummy__"]
+    return output
 
 
 def _calculate_score(a, b, *, zero_division, caller_function_name):

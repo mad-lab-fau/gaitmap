@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.evaluation_utils.scores import f1_score, precision_recall_f1_score, precision_score, recall_score
 
@@ -21,6 +22,32 @@ class TestEvaluationScores:
         )
 
         return pd.concat([tp_df, fp_df, fn_df])
+
+    def test_sensor_matches_can_be_reused_across_score_calculations(self) -> None:
+        matches = {
+            "left": self._create_valid_matches_df([0, 1], [2], [3]),
+            "right": self._create_valid_matches_df([0], [1], [2, 3]),
+        }
+        originals = {name: frame.copy() for name, frame in matches.items()}
+        expected_precision = {"left": 2 / 3, "right": 1 / 2}
+        expected_recall = {"left": 2 / 3, "right": 1 / 3}
+        expected_f1 = {"left": 2 / 3, "right": 2 / 5}
+
+        for _ in range(2):
+            assert precision_score(matches) == pytest.approx(expected_precision)
+            assert recall_score(matches) == pytest.approx(expected_recall)
+            assert f1_score(matches) == pytest.approx(expected_f1)
+            combined = precision_recall_f1_score(matches)
+            for name in matches:
+                assert combined[name] == pytest.approx(
+                    {
+                        "precision": expected_precision[name],
+                        "recall": expected_recall[name],
+                        "f1_score": expected_f1[name],
+                    }
+                )
+        for name, original in originals.items():
+            assert_frame_equal(matches[name], original)
 
     def test_precision_single(self) -> None:
         matches_df = self._create_valid_matches_df([0, 1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13])

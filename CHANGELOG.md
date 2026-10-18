@@ -44,6 +44,8 @@ project.
 
 ### Fixed
 
+- Calculating precision or recall for multiple sensors no longer modifies the supplied match dictionary,
+  so it can be reused across score calculations.
 - Added pandas 3 support and fixed compatibility issues around read-only views and removed APIs.
   ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 
