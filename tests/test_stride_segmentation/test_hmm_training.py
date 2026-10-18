@@ -8,7 +8,8 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.stride_segmentation.hmm import SimpleHmm
+from gaitmap.stride_segmentation.hmm import RothHmmFeatureTransformer, RothSegmentationHmm, SimpleHmm
+from gaitmap.utils.consts import BF_COLS
 
 matplotlib.use("Agg")
 
@@ -34,6 +35,30 @@ def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_compo
     distribution = restored.model.to_dict()["states"][0]["distribution"]
     for component in distribution.get("distributions", [distribution]):
         assert np.linalg.eigvalsh(component["parameters"][1])[0] == pytest.approx(0.02)
+
+
+def test_roth_training_combines_stride_states_with_only_termination_transitions():
+    """Minimum-length strides can end without a self-loop and still combine with transitions."""
+    data = pd.DataFrame(np.random.default_rng(4).normal(size=(30, 6)), columns=BF_COLS)
+    strides = pd.DataFrame({"start": [4, 12, 20], "end": [6, 14, 22]})
+    model = RothSegmentationHmm(
+        stride_model=SimpleHmm(n_states=2, n_gmm_components=1, algo_train="labeled", verbose=False),
+        transition_model=SimpleHmm(
+            n_states=1, n_gmm_components=1, architecture="fully-connected", algo_train="labeled", verbose=False
+        ),
+        feature_transform=RothHmmFeatureTransformer(
+            sampling_rate_feature_space_hz=100, low_pass_filter=None, axes=["gyr_ml"], features=["raw", "gradient"]
+        ),
+        max_iterations=1,
+        verbose=False,
+    ).self_optimize([data], [strides], sampling_rate_hz=100)
+
+    matrix = model.model.dense_transition_matrix()
+    assert np.isfinite(matrix).all()
+    # Transition state 0 receives the cross-link from the final stride state 2.
+    assert matrix[2, 0] > 0
+    model.predict(data, sampling_rate_hz=100)
+    assert len(model.hidden_state_sequence_) == len(data)
 
 
 @pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
