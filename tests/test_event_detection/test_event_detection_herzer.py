@@ -8,7 +8,7 @@ from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection._herzer_event_detection import HerzerEventDetection
+from gaitmap.event_detection import FilteredRamppEventDetection, HerzerEventDetection, RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -226,6 +226,37 @@ class TestEventDetectionHerzer:
             assert hasattr(ed, "min_vel_event_list_") is False
 
         assert set(ed.annotated_original_event_list_.columns) == {"start", "end", *detect_only}
+
+
+@pytest.mark.parametrize("algorithm", [HerzerEventDetection, RamppEventDetection, FilteredRamppEventDetection])
+@pytest.mark.parametrize("parameters", [{"detect_only": ("ic",)}, {"enforce_consistency": False}])
+@pytest.mark.parametrize("multi_sensor", [False, True])
+def test_repeated_detection_replaces_optional_results(
+    algorithm, parameters, multi_sensor, healthy_example_imu_data, healthy_example_stride_borders
+):
+    data = coordinate_conversion.convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    strides = healthy_example_stride_borders["left_sensor"].iloc[:4]
+    if multi_sensor:
+        data, strides = {"left": data}, {"left": strides}
+    detector = algorithm().detect(data, strides, sampling_rate_hz=204.8)
+    assert hasattr(detector, "min_vel_event_list_")
+
+    latest_strides = {"left": strides["left"].iloc[:2]} if multi_sensor else strides.iloc[:2]
+    detector.set_params(**parameters).detect(data, latest_strides, sampling_rate_hz=204.8)
+    expected = algorithm(**parameters).detect(data, latest_strides, sampling_rate_hz=204.8)
+    assert not hasattr(detector, "min_vel_event_list_")
+    actual_events = detector.annotated_original_event_list_
+    expected_events = expected.annotated_original_event_list_
+    if multi_sensor:
+        actual_events, expected_events = actual_events["left"], expected_events["left"]
+    assert_frame_equal(actual_events, expected_events)
+
+    detector.set_params(detect_only=None, enforce_consistency=True).detect(data, latest_strides, sampling_rate_hz=204.8)
+    expected = algorithm().detect(data, latest_strides, sampling_rate_hz=204.8)
+    actual_events, expected_events = detector.min_vel_event_list_, expected.min_vel_event_list_
+    if multi_sensor:
+        actual_events, expected_events = actual_events["left"], expected_events["left"]
+    assert_frame_equal(actual_events, expected_events)
 
 
 @pytest.mark.parametrize(

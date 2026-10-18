@@ -49,6 +49,9 @@ project.
 
 ### Fixed
 
+- Reusing an event detector with minimum-velocity detection or consistency checking disabled no longer
+  exposes stale minimum-velocity stride results from a previous call.
+
 - Madgwick orientation and RTS trajectory estimation fall back to acceleration/gyroscope updates for zero
   magnetometer readings, avoiding invalid orientations during magnetic-field dropouts.
 

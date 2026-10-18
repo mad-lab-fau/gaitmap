@@ -101,6 +101,8 @@ class _EventDetectionMixin:
 
         if not self.enforce_consistency:
             results.pop("min_vel_event_list", None)
+        if "min_vel_event_list" not in results:
+            self.__dict__.pop("min_vel_event_list_", None)
         set_params_from_dict(self, results, result_formatting=True)
         return self
 
