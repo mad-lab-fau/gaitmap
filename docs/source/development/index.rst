@@ -12,3 +12,4 @@ Development
     development_guide
     caching_guide
     constrained_dtw_issue_93
+    constrained_dtw_benchmark

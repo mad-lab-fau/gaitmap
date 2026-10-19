@@ -174,3 +174,6 @@ state IDs wider than one byte. Existing Barth consumers and DTW tutorial snapsho
 Analyses that use constrained DTW should expect changed paths, costs, and potentially stride borders. Identical final
 borders do not imply identical alignments. Existing scientific conclusions may need reassessment when the changed
 recordings/settings are relevant; the healthy-label result above is limited evidence, and general improvements in clinical precision or recall remain unproven.
+
+A full labeled-cohort follow-up is available in the :ref:`gaitmap-bench comparison <constrained_dtw_benchmark>`.
+It finds a small default-parameter detection regression despite the numerical correctness repair.
