@@ -1,11 +1,10 @@
 """Wrapper class to apply a stride segmentation to multiple regions of interest in a dataset."""
 
 from copy import deepcopy
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Literal, TypeVar
 
 import pandas as pd
 from tpcp import get_action_method
-from typing_extensions import Literal
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -122,13 +121,13 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     """
 
-    segmentation_algorithm: Optional[StrideSegmentationAlgorithm]
+    segmentation_algorithm: StrideSegmentationAlgorithm | None
     s_id_naming: Literal["replace", "prefix"]
-    action_method: Optional[str]
+    action_method: str | None
 
-    instances_per_roi_: Union[
-        dict[_Hashable, StrideSegmentationAlgorithm], dict[_Hashable, dict[_Hashable, StrideSegmentationAlgorithm]]
-    ]
+    instances_per_roi_: (
+        dict[_Hashable, StrideSegmentationAlgorithm] | dict[_Hashable, dict[_Hashable, StrideSegmentationAlgorithm]]
+    )
     stride_list_: StrideList
 
     data: SensorData
@@ -140,9 +139,9 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     def __init__(
         self,
-        segmentation_algorithm: Optional[StrideSegmentationAlgorithm] = None,
+        segmentation_algorithm: StrideSegmentationAlgorithm | None = None,
         s_id_naming: Literal["replace", "prefix"] = "replace",
-        action_method: Optional[str] = None,
+        action_method: str | None = None,
     ) -> None:
         self.segmentation_algorithm = segmentation_algorithm
         self.s_id_naming = s_id_naming
@@ -153,7 +152,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         data: SensorData,
         sampling_rate_hz: float,
         *,
-        regions_of_interest: Optional[RegionsOfInterestList] = None,
+        regions_of_interest: RegionsOfInterestList | None = None,
         **kwargs,
     ) -> Self:
         """Run the segmentation on each region of interest.
@@ -184,9 +183,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
         if self._multi_roi:
             # Apply the segmentation to a single dataset in case a multi - sensor roi list is provided
-            results_dict: dict[
-                _Hashable, dict[str, Union[pd.DataFrame, dict[_Hashable, StrideSegmentationAlgorithm]]]
-            ] = {}
+            results_dict: dict[_Hashable, dict[str, pd.DataFrame | dict[_Hashable, StrideSegmentationAlgorithm]]] = {}
             for sensor, roi in self.regions_of_interest.items():
                 sensor_data = self.data[sensor]
                 results_dict[sensor] = self._segment_single_sensor(
@@ -207,19 +204,19 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
         sensor_data: pd.DataFrame,
         sampling_rate_hz: float,
         rois: SingleSensorRegionsOfInterestList,
-        sensor_name: Optional[_Hashable] = None,
+        sensor_name: _Hashable | None = None,
         **kwargs,
-    ) -> dict[str, Union[pd.DataFrame, dict[_Hashable, StrideSegmentationAlgorithm]]]:
+    ) -> dict[str, pd.DataFrame | dict[_Hashable, StrideSegmentationAlgorithm]]:
         """Call the the segmentation algorithm for each region of interest and store the instance."""
         rois = rois.reset_index()
         index_col = ROI_ID_COLS[get_single_sensor_regions_of_interest_types(rois)]
 
         instances_per_roi = {}
         combined_stride_list = {}
-        for _, (index, start, end) in rois[[index_col, "start", "end"]].iterrows():
+        for index, start, end in rois[[index_col, "start", "end"]].itertuples(index=False, name=None):
             per_roi_algo = segmentation_algorithm.clone()
             roi_data = sensor_data.iloc[start:end]
-            if sensor_name:
+            if sensor_name is not None:
                 # In case the original dataset was a dict, sensor_name is passed by the parent.
                 # Here we ensure that the data passed into segment method is still a dict to avoid potential issues with
                 # specific segmentation methods.
@@ -236,7 +233,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
                     strides[["start", "end"]] += start
             else:
                 stride_list[["start", "end"]] += start
-            if sensor_name:
+            if sensor_name is not None:
                 # The reverse of what we did above.
                 # For this method a single sensor dataset should be a real single sensor dataset
                 combined_stride_list[index] = stride_list[sensor_name]
@@ -264,7 +261,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     def _merge_single_sensor_stride_lists(self, stride_lists, index_name) -> StrideList:
         if len(stride_lists) == 0:
-            empty = pd.DataFrame(columns=[index_name, "start", "end"])
+            empty = pd.DataFrame(columns=[index_name, "start", "end"], dtype="int64")
             empty.index = pd.Index([], name="s_id")
             return empty
         concat_stride_list = pd.concat(stride_lists, names=[index_name]).reset_index(index_name).reset_index(drop=True)

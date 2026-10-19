@@ -1,9 +1,10 @@
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from scipy.spatial.transform import Rotation
-from typing_extensions import Literal
 
 from gaitmap.base import BaseTrajectoryMethod, BaseTrajectoryReconstructionWrapper
 from gaitmap.trajectory_reconstruction import RegionLevelTrajectory, RtsKalman
@@ -120,7 +121,7 @@ class TestIODataStructures:
         snapshot.assert_match(instance.position_.loc[first_last_stride], "pos")
 
     def test_single_sensor_output_empty_stride_list(self, healthy_example_imu_data) -> None:
-        empty_stride_events = pd.DataFrame(columns=self.example_region["left_sensor"].columns)
+        empty_stride_events = self.example_region["left_sensor"].iloc[:0].copy()
         test_data = healthy_example_imu_data["left_sensor"]
 
         instance = self.wrapper_class()

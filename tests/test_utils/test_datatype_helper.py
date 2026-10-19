@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import (
     BF_ACC,
@@ -235,7 +235,7 @@ class TestIsSingleSensorStrideList:
             np.arange(6),
             {},
             pd.DataFrame(),
-            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame(columns=[*range(3)], dtype="Int64"),
             pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()),
         ],
     )
@@ -258,7 +258,7 @@ class TestIsSingleSensorStrideList:
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index) -> None:
         expected_outcome = stride_types in stride_types_valid or stride_types == "any"
-        df = pd.DataFrame(columns=cols)
+        df = pd.DataFrame(columns=cols, dtype="Int64")
         if as_index:
             df = df.set_index("s_id")
 
@@ -269,7 +269,7 @@ class TestIsSingleSensorStrideList:
     @pytest.mark.parametrize("check_additional_cols", [True, False, ("ic",)])
     def test_check_additional_columns(self, check_additional_cols) -> None:
         # We construct a df that only has the minimal columns for min_vel
-        df = pd.DataFrame(columns=["s_id", "start", "end", "min_vel"])
+        df = pd.DataFrame(columns=["s_id", "start", "end", "min_vel"], dtype="Int64")
 
         if check_additional_cols is not False:
             with pytest.raises(ValidationError):
@@ -288,10 +288,10 @@ class TestIsSingleSensorStrideList:
     def test_columns_same_min_vel(self, start, min_vel, expected) -> None:
         """Test that the column equals check for min_vel_strides work."""
         min_vel_cols = ["s_id", "start", "end", "gsd_id", "pre_ic", "ic", "min_vel", "tc"]
-        stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list = pd.DataFrame(columns=min_vel_cols, dtype="Int64")
         stride_list["s_id"] = start
-        stride_list["start"] = start
-        stride_list["min_vel"] = min_vel
+        stride_list["start"] = pd.Series(start, dtype="Int64")
+        stride_list["min_vel"] = pd.Series(min_vel, dtype="Int64")
 
         out = is_single_sensor_stride_list(stride_list, stride_type="min_vel")
 
@@ -304,10 +304,10 @@ class TestIsSingleSensorStrideList:
     def test_columns_same_ic(self, start, ic, expected) -> None:
         """Test that the column equals check for ic_strides work."""
         min_vel_cols = ["s_id", "start", "end", "gsd_id", "ic", "min_vel", "tc"]
-        stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list = pd.DataFrame(columns=min_vel_cols, dtype="Int64")
         stride_list["s_id"] = start
-        stride_list["start"] = start
-        stride_list["ic"] = ic
+        stride_list["start"] = pd.Series(start, dtype="Int64")
+        stride_list["ic"] = pd.Series(ic, dtype="Int64")
 
         out = is_single_sensor_stride_list(stride_list, stride_type="ic")
 
@@ -315,7 +315,7 @@ class TestIsSingleSensorStrideList:
 
     def test_invalid_stride_type_argument(self) -> None:
         valid_cols = ["s_id", "start", "end", "gsd_id"]
-        valid = pd.DataFrame(columns=valid_cols)
+        valid = pd.DataFrame(columns=valid_cols, dtype="Int64")
 
         with pytest.raises(ValueError):
             is_single_sensor_stride_list(valid, stride_type="invalid_value")
@@ -323,7 +323,7 @@ class TestIsSingleSensorStrideList:
     def test_identical_stride_ids(self) -> None:
         """Test that the search for identical stride ids works."""
         min_vel_cols = ["s_id", "start", "end"]
-        stride_list = pd.DataFrame(columns=min_vel_cols)
+        stride_list = pd.DataFrame(columns=min_vel_cols, dtype="Int64")
         stride_list["s_id"] = np.array([1, 2, 2])
         expected_outcome = False
 
@@ -342,7 +342,7 @@ class TestIsSingleSensorStrideList:
 class TestIsMultiSensorStrideList:
     @pytest.mark.parametrize(
         "value",
-        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])],
+        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)], dtype="Int64")],
     )
     def test_wrong_datatype(self, value) -> None:
         assert not is_multi_sensor_stride_list(value)
@@ -363,7 +363,7 @@ class TestIsMultiSensorStrideList:
     )
     def test_valid_versions(self, cols, stride_types_valid, stride_types, as_index) -> None:
         expected_outcome = stride_types in stride_types_valid or stride_types == "any"
-        df = pd.DataFrame(columns=cols)
+        df = pd.DataFrame(columns=cols, dtype="Int64")
         if as_index:
             df = df.set_index("s_id")
 
@@ -374,15 +374,15 @@ class TestIsMultiSensorStrideList:
     def test_only_one_invalid(self) -> None:
         valid_cols = ["s_id", "start", "end", "gsd_id"]
         invalid_cols = ["start", "end", "gsd_id"]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
-        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+        valid = {"s1": pd.DataFrame(columns=valid_cols, dtype="Int64")}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols, dtype="Int64"), **valid}
 
         assert is_multi_sensor_stride_list(valid)
         assert not is_multi_sensor_stride_list(invalid)
 
     def test_invalid_stride_type_argument(self) -> None:
         valid_cols = ["s_id", "start", "end", "gsd_id"]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
+        valid = {"s1": pd.DataFrame(columns=valid_cols, dtype="Int64")}
 
         with pytest.raises(ValueError):
             is_multi_sensor_stride_list(valid, stride_type="invalid_value")
@@ -408,8 +408,8 @@ class TestIsStrideList:
     @pytest.mark.parametrize(
         ("obj", "out"),
         [
-            (pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"]), "single"),
-            ({"s1": pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"])}, "multi"),
+            (pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"], dtype="Int64"), "single"),
+            ({"s1": pd.DataFrame(columns=["s_id", "start", "end", "gsd_id"], dtype="Int64")}, "multi"),
         ],
     )
     def test_basic_function(self, obj, out) -> None:
@@ -437,8 +437,8 @@ class TestIsSingleSensorTrajLikeList:
             np.arange(6),
             {},
             pd.DataFrame(),
-            pd.DataFrame(columns=[*range(3)]),
-            pd.DataFrame(columns=["s_id", "sample", "wrong1", "wrong2"]),
+            pd.DataFrame(columns=[*range(3)], dtype="Int64"),
+            pd.DataFrame(columns=["s_id", "sample", "wrong1", "wrong2"], dtype="Int64"),
         ],
     )
     def test_wrong_datatype(self, value) -> None:
@@ -455,7 +455,7 @@ class TestIsSingleSensorTrajLikeList:
         ],
     )
     def test_valid_versions(self, cols, index) -> None:
-        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index])
+        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index], dtype="Int64")
         if index:
             df = df.set_index(index)
 
@@ -471,7 +471,7 @@ class TestIsSingleSensorTrajLikeList:
         ],
     )
     def test_valid_versions_without_s_id(self, cols, index, both) -> None:
-        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index])
+        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index], dtype="Int64")
         if index:
             df = df.set_index(index)
 
@@ -481,14 +481,14 @@ class TestIsSingleSensorTrajLikeList:
     @pytest.mark.parametrize(("list_type", "index"), TRAJ_TYPE_COLS.items())
     def test_different_list_types(self, list_type, index) -> None:
         valid_cols = [index, "sample", *self.valid_cols]
-        df = pd.DataFrame(columns=valid_cols)
+        df = pd.DataFrame(columns=valid_cols, dtype="Int64")
         for k in TRAJ_TYPE_COLS:
             assert self.func(df, k) == (k == list_type)
 
     @pytest.mark.parametrize(("list_type", "index"), TRAJ_TYPE_COLS.items())
     def test_any_roi_list_type(self, list_type, index) -> None:
         valid_cols = [index, "sample", *self.valid_cols]
-        df = pd.DataFrame(columns=valid_cols)
+        df = pd.DataFrame(columns=valid_cols, dtype="Int64")
         assert self.func(df, "any_roi") == (list_type in ["roi", "gs"])
 
     def test_error_raising(self) -> None:
@@ -514,7 +514,7 @@ class TestIsMultiSensorTrajLikeList:
 
     @pytest.mark.parametrize(
         "value",
-        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])],
+        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)], dtype="Int64")],
     )
     def test_wrong_datatype(self, value) -> None:
         assert not self.func(value)
@@ -530,7 +530,7 @@ class TestIsMultiSensorTrajLikeList:
         ],
     )
     def test_valid_versions(self, cols, index) -> None:
-        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index])
+        df = pd.DataFrame(columns=[*self.valid_cols, *cols, *index], dtype="Int64")
         if index:
             df = df.set_index(index)
 
@@ -539,8 +539,8 @@ class TestIsMultiSensorTrajLikeList:
     def test_only_one_invalid(self) -> None:
         valid_cols = ["s_id", "sample", *self.valid_cols]
         invalid_cols = ["sample", *self.valid_cols]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
-        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+        valid = {"s1": pd.DataFrame(columns=valid_cols, dtype="Int64")}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols, dtype="Int64"), **valid}
 
         assert self.func(valid, "stride")
         assert not self.func(invalid, "stride")
@@ -577,7 +577,7 @@ class TestIsTrajLikeList:
 
     def test_basic_function(self) -> None:
         valid_cols = ["s_id", "sample", *self.valid_cols]
-        obj = pd.DataFrame(columns=valid_cols)
+        obj = pd.DataFrame(columns=valid_cols, dtype="Int64")
         assert self.func(obj) == "single"
         assert self.func({"s1": obj}) == "multi"
 
@@ -639,7 +639,7 @@ class TestIsSingleRegionsOfInterestList:
             np.arange(6),
             {},
             pd.DataFrame(),
-            pd.DataFrame(columns=[*range(3)]),
+            pd.DataFrame(columns=[*range(3)], dtype="Int64"),
             pd.DataFrame([[*range(9)]], columns=_create_test_multiindex()),
         ],
     )
@@ -658,13 +658,15 @@ class TestIsSingleRegionsOfInterestList:
     def test_valid_versions(self, cols, roi_type_valid, roi_types) -> None:
         expected_outcome = roi_types in roi_type_valid or roi_types == "any"
 
-        out = is_single_sensor_regions_of_interest_list(pd.DataFrame(columns=cols), region_type=roi_types)
+        out = is_single_sensor_regions_of_interest_list(
+            pd.DataFrame(columns=cols, dtype="Int64"), region_type=roi_types
+        )
 
         assert expected_outcome == out
 
     def test_invalid_region_type_argument(self) -> None:
         valid_cols = ["start", "end", "gs_id"]
-        valid = pd.DataFrame(columns=valid_cols)
+        valid = pd.DataFrame(columns=valid_cols, dtype="Int64")
 
         with pytest.raises(ValueError):
             is_single_sensor_regions_of_interest_list(valid, region_type="invalid_value")
@@ -673,7 +675,7 @@ class TestIsSingleRegionsOfInterestList:
     def test_identical_region_ids(self, col_name) -> None:
         """Test that the search for identical region ids works."""
         cols = [col_name, "start", "end"]
-        roi_list = pd.DataFrame(columns=cols)
+        roi_list = pd.DataFrame(columns=cols, dtype="Int64")
         roi_list[col_name] = np.array([1, 2, 2])
         expected_outcome = False
 
@@ -685,7 +687,7 @@ class TestIsSingleRegionsOfInterestList:
     def test_id_col_as_index(self, col_name) -> None:
         """Test that the id col can either be the index or a column."""
         cols = [col_name, "start", "end"]
-        roi_list = pd.DataFrame(columns=cols)
+        roi_list = pd.DataFrame(columns=cols, dtype="Int64")
         roi_list = roi_list.set_index(col_name)
 
         out = is_single_sensor_regions_of_interest_list(roi_list, region_type="any")
@@ -703,7 +705,7 @@ class TestIsSingleRegionsOfInterestList:
 class TestIsMultiSensorRegionsOfInterestList:
     @pytest.mark.parametrize(
         "value",
-        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)])],
+        [list(range(6)), "test", np.arange(6), {}, pd.DataFrame(), pd.DataFrame(columns=[*range(3)], dtype="Int64")],
     )
     def test_wrong_datatype(self, value) -> None:
         assert not is_multi_sensor_regions_of_interest_list(value)
@@ -720,22 +722,24 @@ class TestIsMultiSensorRegionsOfInterestList:
     def test_valid_versions(self, cols, roi_type_valid, roi_types) -> None:
         expected_outcome = roi_types in roi_type_valid or roi_types == "any"
 
-        out = is_multi_sensor_regions_of_interest_list({"s1": pd.DataFrame(columns=cols)}, region_type=roi_types)
+        out = is_multi_sensor_regions_of_interest_list(
+            {"s1": pd.DataFrame(columns=cols, dtype="Int64")}, region_type=roi_types
+        )
 
         assert expected_outcome == out
 
     def test_only_one_invalid(self) -> None:
         valid_cols = ["gs_id", "start", "end"]
         invalid_cols = ["start", "end"]
-        valid = {"s1": pd.DataFrame(columns=valid_cols)}
-        invalid = {"s2": pd.DataFrame(columns=invalid_cols), **valid}
+        valid = {"s1": pd.DataFrame(columns=valid_cols, dtype="Int64")}
+        invalid = {"s2": pd.DataFrame(columns=invalid_cols, dtype="Int64"), **valid}
 
         assert is_multi_sensor_regions_of_interest_list(valid)
         assert not is_multi_sensor_regions_of_interest_list(invalid)
 
     def test_invalid_region_type_argument(self) -> None:
         valid_cols = ["start", "end", "gs_id"]
-        valid = pd.DataFrame(columns=valid_cols)
+        valid = pd.DataFrame(columns=valid_cols, dtype="Int64")
 
         with pytest.raises(ValueError):
             is_multi_sensor_regions_of_interest_list({"si": valid}, region_type="invalid_value")
@@ -761,10 +765,10 @@ class TestIsRegionsOfInterestList:
     @pytest.mark.parametrize(
         ("obj", "out"),
         [
-            (pd.DataFrame(columns=["gs_id", "start", "end"]), "single"),
-            (pd.DataFrame(columns=["roi_id", "start", "end"]), "single"),
-            ({"s1": pd.DataFrame(columns=["roi_id", "start", "end"])}, "multi"),
-            ({"s1": pd.DataFrame(columns=["gs_id", "start", "end"])}, "multi"),
+            (pd.DataFrame(columns=["gs_id", "start", "end"], dtype="Int64"), "single"),
+            (pd.DataFrame(columns=["roi_id", "start", "end"], dtype="Int64"), "single"),
+            ({"s1": pd.DataFrame(columns=["roi_id", "start", "end"], dtype="Int64")}, "multi"),
+            ({"s1": pd.DataFrame(columns=["gs_id", "start", "end"], dtype="Int64")}, "multi"),
         ],
     )
     def test_basic_function(self, obj, out) -> None:
@@ -790,3 +794,83 @@ class TestToDictMultiSensorData:
 
         out = to_dict_multi_sensor_data(data)
         assert out is data
+
+
+@pytest.mark.parametrize("kind", ["stride", "roi", "gs"])
+@pytest.mark.parametrize(
+    ("invalid", "dtype"),
+    [
+        (1.5, None),
+        (np.inf, None),
+        (-np.inf, None),
+        (1e20, None),
+        ("not-a-sample", None),
+        (1.5, "Float64"),
+        (np.inf, "Float64"),
+        (1.0, "float64"),
+        (1, "object"),
+        (True, "bool"),
+    ],
+)
+def test_sample_list_validation_reports_non_integer_positions(kind, invalid, dtype):
+    """Sample positions require integer storage rather than implicit numeric conversion."""
+    identifier = {"stride": "s_id", "roi": "roi_id", "gs": "gs_id"}[kind]
+    validator = is_single_sensor_stride_list if kind == "stride" else is_single_sensor_regions_of_interest_list
+    samples = pd.DataFrame({identifier: ["first"], "start": pd.Series([invalid], dtype=dtype), "end": [10]})
+    original = samples.copy(deep=True)
+
+    assert not validator(samples)
+    with pytest.raises(ValidationError, match="start.*integer dtype"):
+        validator(samples, raise_exception=True)
+    assert_frame_equal(samples, original)
+
+
+@pytest.mark.parametrize("column", ["end", "pre_ic", "ic", "min_vel", "tc"])
+def test_stride_validation_checks_all_present_event_positions(column):
+    """Invalid event positions are rejected even for an unspecified stride type."""
+    strides = pd.DataFrame({"s_id": ["stride"], "start": [0], "end": [10], column: [2.25]})
+    assert not is_single_sensor_stride_list(strides)
+    with pytest.raises(ValidationError, match=f"{column}.*integer dtype"):
+        is_single_sensor_stride_list(strides, raise_exception=True)
+
+
+@pytest.mark.parametrize("dtype", ["int32", "int64", "uint32", "Int64", "UInt64"])
+@pytest.mark.parametrize("kind", ["stride", "roi", "gs"])
+def test_sample_list_validation_preserves_integral_coordinates_and_metadata(kind, dtype):
+    """Supported integer coordinates, floating identifiers and metadata remain untouched."""
+    identifier = {"stride": "s_id", "roi": "roi_id", "gs": "gs_id"}[kind]
+    validator = is_single_sensor_stride_list if kind == "stride" else is_single_sensor_regions_of_interest_list
+    samples = pd.DataFrame({identifier: [0.5, 1.5], "start": [0, 10], "end": [10, 20], "score": [0.25, 0.75]})
+    samples[["start", "end"]] = samples[["start", "end"]].astype(dtype)
+    if kind == "stride":
+        samples["ic"] = pd.Series([2, None], dtype="Int64")
+    original = samples.copy(deep=True)
+
+    assert validator(samples, raise_exception=True)
+    assert_frame_equal(samples, original)
+
+
+def test_multi_sensor_validation_identifies_sensor_with_invalid_sample_position():
+    """Nested diagnostics retain the sensor and the column needing correction."""
+    strides = {"left": pd.DataFrame({"s_id": [0], "start": [0], "end": [10.5]})}
+    assert not is_multi_sensor_stride_list(strides)
+    with pytest.raises(ValidationError, match="(?s)left.*end.*integer dtype"):
+        is_multi_sensor_stride_list(strides, raise_exception=True)
+
+
+@pytest.mark.parametrize(
+    ("validator", "columns"),
+    [
+        (is_single_sensor_position_list, GF_POS),
+        (is_single_sensor_velocity_list, GF_VEL),
+        (is_single_sensor_orientation_list, GF_ORI),
+    ],
+)
+@pytest.mark.parametrize("dtype", ["float64", "object", "bool"])
+def test_trajectory_validation_rejects_non_integer_sample_indices(validator, columns, dtype):
+    """Sample indices obey the same integer contract as stride and region boundaries."""
+    trajectory = pd.DataFrame(np.zeros((2, len(columns))), columns=columns)
+    trajectory.index = pd.Index(pd.Series([0, 1], dtype=dtype), name="sample")
+    assert not validator(trajectory)
+    with pytest.raises(ValidationError, match="sample.*integer dtype"):
+        validator(trajectory, raise_exception=True)

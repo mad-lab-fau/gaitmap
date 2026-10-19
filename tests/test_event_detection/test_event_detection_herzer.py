@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
-from gaitmap.event_detection._herzer_event_detection import HerzerEventDetection
+from gaitmap.event_detection import FilteredRamppEventDetection, HerzerEventDetection, RamppEventDetection
 from gaitmap.utils import coordinate_conversion, datatype_helper
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -226,3 +226,92 @@ class TestEventDetectionHerzer:
             assert hasattr(ed, "min_vel_event_list_") is False
 
         assert set(ed.annotated_original_event_list_.columns) == {"start", "end", *detect_only}
+
+
+@pytest.mark.parametrize("algorithm", [HerzerEventDetection, RamppEventDetection, FilteredRamppEventDetection])
+@pytest.mark.parametrize("parameters", [{"detect_only": ("ic",)}, {"enforce_consistency": False}])
+@pytest.mark.parametrize("multi_sensor", [False, True])
+def test_repeated_detection_replaces_optional_results(
+    algorithm, parameters, multi_sensor, healthy_example_imu_data, healthy_example_stride_borders
+):
+    data = coordinate_conversion.convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    strides = healthy_example_stride_borders["left_sensor"].iloc[:4]
+    if multi_sensor:
+        data, strides = {"left": data}, {"left": strides}
+    detector = algorithm().detect(data, strides, sampling_rate_hz=204.8)
+    assert hasattr(detector, "min_vel_event_list_")
+
+    latest_strides = {"left": strides["left"].iloc[:2]} if multi_sensor else strides.iloc[:2]
+    detector.set_params(**parameters).detect(data, latest_strides, sampling_rate_hz=204.8)
+    expected = algorithm(**parameters).detect(data, latest_strides, sampling_rate_hz=204.8)
+    assert not hasattr(detector, "min_vel_event_list_")
+    actual_events = detector.annotated_original_event_list_
+    expected_events = expected.annotated_original_event_list_
+    if multi_sensor:
+        actual_events, expected_events = actual_events["left"], expected_events["left"]
+    assert_frame_equal(actual_events, expected_events)
+
+    detector.set_params(detect_only=None, enforce_consistency=True).detect(data, latest_strides, sampling_rate_hz=204.8)
+    expected = algorithm().detect(data, latest_strides, sampling_rate_hz=204.8)
+    actual_events, expected_events = detector.min_vel_event_list_, expected.min_vel_event_list_
+    if multi_sensor:
+        actual_events, expected_events = actual_events["left"], expected_events["left"]
+    assert_frame_equal(actual_events, expected_events)
+
+
+@pytest.mark.parametrize(
+    "detector_name", ["HerzerEventDetection", "RamppEventDetection", "FilteredRamppEventDetection"]
+)
+def test_integer_sample_bounds_remain_usable_with_float_metadata(
+    detector_name, healthy_example_imu_data, healthy_example_stride_borders
+):
+    """Unrelated floating metadata cannot change which samples form a stride."""
+    from gaitmap import event_detection
+
+    data = coordinate_conversion.convert_to_fbf(healthy_example_imu_data, left_like="left", right_like="right")[
+        "left_sensor"
+    ]
+    strides = healthy_example_stride_borders["left_sensor"].set_index("s_id")[["start", "end"]].iloc[:3]
+    detector = getattr(event_detection, detector_name)
+    expected = detector().detect(data, strides, sampling_rate_hz=204.8)
+    actual = detector().detect(data, strides.assign(confidence=0.5), sampling_rate_hz=204.8)
+
+    assert_frame_equal(actual.annotated_original_event_list_, expected.annotated_original_event_list_)
+    assert datatype_helper.is_single_sensor_stride_list(actual.annotated_original_event_list_, raise_exception=True)
+
+
+@pytest.mark.parametrize(
+    "detector_name", ["HerzerEventDetection", "RamppEventDetection", "FilteredRamppEventDetection"]
+)
+def test_empty_stride_input_returns_valid_empty_event_lists(detector_name, healthy_example_imu_data):
+    """A recording without detected strides remains usable by the next pipeline step."""
+    from gaitmap import event_detection
+
+    data = coordinate_conversion.convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    strides = pd.DataFrame(columns=["start", "end"], dtype="int64").rename_axis("s_id")
+    result = getattr(event_detection, detector_name)().detect(data, strides, sampling_rate_hz=204.8)
+
+    assert result.annotated_original_event_list_.empty
+    assert result.min_vel_event_list_.empty
+    assert datatype_helper.is_single_sensor_stride_list(result.annotated_original_event_list_, raise_exception=True)
+    assert datatype_helper.is_single_sensor_stride_list(
+        result.min_vel_event_list_, stride_type="min_vel", raise_exception=True
+    )
+
+
+def test_single_event_consistency_removes_undetectable_ic():
+    """A motionless interval cannot become a stride merely because only IC was requested."""
+    data = pd.DataFrame(np.zeros((200, 6)), columns=BF_COLS)
+    data["acc_si"] = 9.81
+    strides = pd.DataFrame({"start": [0], "end": [200]}).rename_axis("s_id")
+    unfiltered = HerzerEventDetection(detect_only=("ic",), enforce_consistency=False).detect(
+        data, strides, sampling_rate_hz=204.8
+    )
+    assert unfiltered.annotated_original_event_list_["ic"].isna().all()
+
+    filtered = HerzerEventDetection(detect_only=("ic",), enforce_consistency=True).detect(
+        data, strides, sampling_rate_hz=204.8
+    )
+
+    assert filtered.annotated_original_event_list_.empty
+    assert datatype_helper.is_single_sensor_stride_list(filtered.annotated_original_event_list_, raise_exception=True)

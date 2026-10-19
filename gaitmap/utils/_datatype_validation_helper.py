@@ -1,10 +1,9 @@
 """Internal helpers for dataset validation."""
 
 from collections.abc import Iterable, Sequence
-from typing import Union
+from typing import Literal
 
 import pandas as pd
-from typing_extensions import Literal
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import BF_ACC, BF_GYR, BF_MAG, SF_ACC, SF_GYR, SF_MAG
@@ -39,7 +38,7 @@ def _get_expected_dataset_cols(
     return expected_cols
 
 
-def _assert_is_dtype(obj, dtype: Union[type, tuple[type, ...]]) -> None:
+def _assert_is_dtype(obj, dtype: type | tuple[type, ...]) -> None:
     """Check if an object has a specific dtype."""
     if not isinstance(obj, dtype):
         raise ValidationError(f"The dataobject is expected to be one of ({dtype},). But it is a {type(obj)}")
@@ -76,7 +75,7 @@ def _assert_has_multindex_cols(df: pd.DataFrame, nlevels: int = 2, expected: boo
         )
 
 
-def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[Union[list[_Hashable], list[str]]]) -> None:
+def _assert_has_columns(df: pd.DataFrame, columns_sets: Sequence[list[_Hashable] | list[str]]) -> None:
     """Check if the dataframe has at least all columns sets.
 
     Examples
@@ -113,13 +112,30 @@ def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable])
         )
 
 
+def _assert_has_integer_sample_positions(df: pd.DataFrame, columns: Iterable[str]) -> None:
+    """Require integer storage for sample numbers, including nullable integer events."""
+    for column in columns:
+        if column in df:
+            values = df[column]
+        elif column in df.index.names:
+            values = df.index.get_level_values(column)
+        else:
+            continue
+        if not pd.api.types.is_integer_dtype(values.dtype):
+            raise ValidationError(
+                f"The '{column}' column/index must have an integer dtype, not {values.dtype}. "
+                "Use integer sample numbers and a nullable integer dtype such as Int64 for missing events. "
+                "Floating-point sample positions must be converted explicitly without rounding or truncation."
+            )
+
+
 # This function exists to avoid cyclic imports in this module
-def _get_multi_sensor_data_names(dataset: Union[dict, pd.DataFrame]) -> Sequence[str]:
+def _get_multi_sensor_data_names(dataset: dict | pd.DataFrame) -> Sequence[str]:
     keys = dataset.columns.unique(level=0) if isinstance(dataset, pd.DataFrame) else dataset.keys()
     return keys
 
 
-def _assert_multisensor_is_not_empty(obj: Union[pd.DataFrame, dict]) -> None:
+def _assert_multisensor_is_not_empty(obj: pd.DataFrame | dict) -> None:
     sensors = _get_multi_sensor_data_names(obj)
     if len(sensors) == 0:
         raise ValidationError("The provided multi-sensor object does not contain any data/contains no sensors.")

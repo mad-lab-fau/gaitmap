@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -38,12 +37,12 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 def create_dummy_single_sensor_roi():
     cols = ["start", "end", "gs_id"]
-    return pd.DataFrame(columns=cols)
+    return pd.DataFrame(columns=cols, dtype="int64")
 
 
 def create_dummy_multi_sensor_roi():
     cols = ["start", "end", "gs_id"]
-    return {"sensor_1": pd.DataFrame(columns=cols)}
+    return {"sensor_1": pd.DataFrame(columns=cols, dtype="int64")}
 
 
 class TestParameterValidation:
@@ -168,7 +167,7 @@ class MockStrideSegmentation(BaseStrideSegmentation):
         return out
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         return deepcopy(self._stride_list_)
 
 
@@ -261,7 +260,7 @@ class TestCombinedStridelist:
     def test_empty_roi_returns_empty_stride_list(self) -> None:
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = pd.DataFrame(np.ones(27))
-        roi = pd.DataFrame(columns=["roi_id", "start", "end"])
+        roi = pd.DataFrame(columns=["roi_id", "start", "end"], dtype="int64")
 
         roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
 
@@ -279,3 +278,29 @@ def test_alternative_action_method(action_method) -> None:
 
     for a in roi_seg.instances_per_roi_.values():
         assert a.secondary_segment_ == (action_method == "secondary_segment")
+
+
+@pytest.mark.parametrize("id_column", ["roi_id", "gs_id"])
+def test_float_region_identifiers_preserve_sample_boundaries(id_column):
+    data = pd.DataFrame({"gyr_ml": [10.0, 10.0, 0.0, 1.0, 0.0, 10.0, 10.0, 0.0, 1.0, 0.0, 10.0, 10.0]})
+    template = DtwTemplate(data=pd.DataFrame({"gyr_ml": [0.0, 1.0, 0.0]}), sampling_rate_hz=100)
+    segmenter = BarthDtw(template=template, max_cost=0.1, min_match_length_s=None, snap_to_min_win_ms=None)
+    regions = pd.DataFrame({id_column: [0.5, 1.5], "start": [1, 6], "end": [6, 11]})
+    result = RoiStrideSegmentation(segmenter).segment(data, sampling_rate_hz=100, regions_of_interest=regions)
+    assert_array_equal(result.stride_list_[["start", "end"]], [[2, 5], [7, 10]])
+    assert_array_equal(result.stride_list_[id_column], [0.5, 1.5])
+
+
+@pytest.mark.parametrize("sensor_name", [0, ""])
+def test_falsy_sensor_identifiers_preserve_template_selection(sensor_name):
+    data = pd.DataFrame({"gyr_ml": [10.0, 10.0, 0.0, 1.0, 0.0, 10.0, 10.0, 0.0, 1.0, 0.0, 10.0, 10.0]})
+    template = DtwTemplate(data=pd.DataFrame({"gyr_ml": [0.0, 1.0, 0.0]}), sampling_rate_hz=100)
+    segmenter = BarthDtw(
+        template={sensor_name: template}, max_cost=0.1, min_match_length_s=None, snap_to_min_win_ms=None
+    )
+    regions = pd.DataFrame({"roi_id": [0, 1], "start": [1, 6], "end": [6, 11]})
+    result = RoiStrideSegmentation(segmenter).segment(
+        {sensor_name: data}, sampling_rate_hz=100, regions_of_interest={sensor_name: regions}
+    )
+    assert_array_equal(result.stride_list_[sensor_name][["start", "end"]], [[2, 5], [7, 10]])
+    assert_array_equal(result.stride_list_[sensor_name]["roi_id"], [0, 1])

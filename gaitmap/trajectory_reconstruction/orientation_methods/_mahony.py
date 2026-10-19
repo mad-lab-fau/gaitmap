@@ -1,13 +1,12 @@
 """Implementation of the MahonyAHRS."""
 
-from typing import Optional, Union
+from typing import Self
 
 import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_ACC, SF_GYR, SF_MAG
@@ -101,19 +100,19 @@ class MahonyAHRS(BaseOrientationMethod):
 
     """
 
-    initial_orientation: Union[np.ndarray, Rotation]
+    initial_orientation: np.ndarray | Rotation
     kp: float
     ki: float
     use_magnetometer: bool
-    memory: Optional[Memory]
+    memory: Memory | None
 
     def __init__(
         self,
         kp: float = 1.0,
         ki: float = 0.0,
-        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
+        initial_orientation: np.ndarray | Rotation = cf(np.array([0, 0, 0, 1.0])),
         use_magnetometer: bool = False,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
     ) -> None:
         self.kp = kp
         self.ki = ki
@@ -293,7 +292,8 @@ def _mahony_update_series(gyro, acc, initial_orientation, sampling_rate_hz, kp, 
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
     integral_error = np.zeros(3)
-    for i, (gyro_val, acc_val) in enumerate(zip(gyro, acc)):
+    for i in range(len(gyro)):
+        gyro_val, acc_val = gyro[i], acc[i]
         initial_orientation, integral_error = _mahony_update(
             gyro=gyro_val,
             acc=acc_val,
@@ -313,7 +313,8 @@ def _mahony_update_series_mag(gyro, acc, mag, initial_orientation, sampling_rate
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
     integral_error = np.zeros(3)
-    for i, (gyro_val, acc_val, mag_val) in enumerate(zip(gyro, acc, mag)):
+    for i in range(len(gyro)):
+        gyro_val, acc_val, mag_val = gyro[i], acc[i], mag[i]
         initial_orientation, integral_error = _mahony_update_mag(
             gyro=gyro_val,
             acc=acc_val,

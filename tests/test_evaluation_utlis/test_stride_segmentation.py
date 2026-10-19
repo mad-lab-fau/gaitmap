@@ -4,14 +4,14 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from gaitmap.evaluation_utils import evaluate_segmented_stride_list, match_stride_lists
-from gaitmap.evaluation_utils.scores import _get_match_type_dfs
 from gaitmap.evaluation_utils.stride_segmentation import _match_label_lists
 from gaitmap.utils.exceptions import ValidationError
+from tests.conftest import group_matches_by_type
 
 
 class TestMatchStrideList:
     def _create_valid_list(self, labels):
-        df = pd.DataFrame(labels, columns=["start", "end"])
+        df = pd.DataFrame(labels, columns=["start", "end"], dtype="int64")
         df.index.name = "s_id"
         return df
 
@@ -62,15 +62,15 @@ class TestMatchStrideList:
         assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2, 3])
 
     def test_simple_match_with_tolerance(self) -> None:
-        list_left = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
-        list_left += 0.1
-        list_right = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
+        list_left = self._create_valid_list([[0, 10], [10, 20], [20, 30], [30, 40]])
+        list_left += 1
+        list_right = self._create_valid_list([[0, 10], [10, 20], [20, 30], [30, 40]])
 
         out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=0.0, one_to_one=False)
         assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, np.nan, np.nan, np.nan, np.nan])
         assert_array_equal(out["s_id_b"].to_numpy().astype(float), [np.nan, np.nan, np.nan, np.nan, 0, 1, 2, 3])
 
-        out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=0.15, one_to_one=False)
+        out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=1.5, one_to_one=False)
         assert_array_equal(out["s_id_a"].to_numpy(), [0, 1, 2, 3])
         assert_array_equal(out["s_id_b"].to_numpy(), [0, 1, 2, 3])
 
@@ -102,10 +102,10 @@ class TestMatchStrideList:
         assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0, 1, np.nan, 2, 3, 4])
 
     def test_double_match_with_tolerance_enforce_one_to_one(self) -> None:
-        list_left = self._create_valid_list([[0, 1], [1.1, 2.1], [1, 2], [2, 3], [3, 4]])
-        list_right = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3.1, 3.9], [3, 4]])
+        list_left = self._create_valid_list([[0, 10], [11, 21], [10, 20], [20, 30], [30, 40]])
+        list_right = self._create_valid_list([[0, 10], [10, 20], [20, 30], [31, 39], [30, 40]])
 
-        out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=0.15, one_to_one=True)
+        out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=1.5, one_to_one=True)
 
         assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2, 3, 4, np.nan])
         assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0, np.nan, 1, 2, 4, 3])
@@ -254,7 +254,7 @@ class TestSpecialMatchStrideList:
 
                 df = pd.DataFrame(labels, columns=columns)
         else:
-            df = pd.DataFrame(labels, columns=["start", "end"])
+            df = pd.DataFrame(labels, columns=["start", "end"], dtype="int64")
         df.index.name = "s_id"
         return df
 
@@ -355,7 +355,7 @@ class TestSpecialMatchStrideList:
 
 class TestEvaluateSegmentedStrideList:
     def _create_valid_list(self, labels):
-        df = pd.DataFrame(labels, columns=["start", "end"])
+        df = pd.DataFrame(labels, columns=["start", "end"], dtype="int64")
         df.index.name = "s_id"
         return df
 
@@ -371,7 +371,7 @@ class TestEvaluateSegmentedStrideList:
         list_predicted = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4]])
         matches = evaluate_segmented_stride_list(ground_truth=list_ground_truth, segmented_stride_list=list_predicted)
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
         assert matches["fn"].empty
@@ -388,7 +388,7 @@ class TestEvaluateSegmentedStrideList:
 
         matches = evaluate_segmented_stride_list(ground_truth=list_ground_truth, segmented_stride_list=list_predicted)
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
         assert matches["fp"].empty
@@ -405,7 +405,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=1
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), [2, 3])
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0, 1])
@@ -428,7 +428,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=0
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["tp"].empty
 
@@ -450,7 +450,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=2, one_to_one=False
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), [0, 1])
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0, 0])
@@ -468,7 +468,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth=list_ground_truth, segmented_stride_list=list_predicted, tolerance=2, one_to_one=True
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["tp"]["s_id"].to_numpy(), 0)
         assert_array_equal(matches["tp"]["s_id_ground_truth"].to_numpy(), [0])
@@ -507,7 +507,7 @@ class TestEvaluateSegmentedStrideList:
             segmented_stride_list={"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left_sensor"]["tp"].empty
         assert matches["left_sensor"]["fn"].empty
@@ -541,7 +541,7 @@ class TestEvaluateSegmentedStrideList:
             segmented_stride_list={"left_sensor": list_predicted_left, "right_sensor": list_predicted_right},
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left_sensor"]["tp"].empty
         assert matches["left_sensor"]["fp"].empty
@@ -569,7 +569,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth={"left": list_ground_truth}, segmented_stride_list={"left": list_predicted}, tolerance=1
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [2, 3])
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 1])
@@ -593,7 +593,7 @@ class TestEvaluateSegmentedStrideList:
             ground_truth={"left": list_ground_truth}, segmented_stride_list={"left": list_predicted}, tolerance=0
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert matches["left"]["tp"].empty
 
@@ -618,7 +618,7 @@ class TestEvaluateSegmentedStrideList:
             one_to_one=False,
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), [0, 1])
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0, 0])
@@ -639,7 +639,7 @@ class TestEvaluateSegmentedStrideList:
             one_to_one=True,
         )
 
-        matches = _get_match_type_dfs(matches)
+        matches = group_matches_by_type(matches)
 
         assert_array_equal(matches["left"]["tp"]["s_id"].to_numpy(), 0)
         assert_array_equal(matches["left"]["tp"]["s_id_ground_truth"].to_numpy(), [0])

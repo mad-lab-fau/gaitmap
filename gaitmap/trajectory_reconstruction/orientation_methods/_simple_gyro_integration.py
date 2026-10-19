@@ -1,13 +1,12 @@
 """Naive Integration of Gyroscope to estimate the orientation."""
 
-from typing import Optional, Union
+from typing import Self
 
 import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_GYR
@@ -74,13 +73,13 @@ class SimpleGyroIntegration(BaseOrientationMethod):
 
     """
 
-    initial_orientation: Union[np.ndarray, Rotation]
-    memory: Optional[Memory]
+    initial_orientation: np.ndarray | Rotation
+    memory: Memory | None
 
     def __init__(
         self,
-        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
-        memory: Optional[Memory] = None,
+        initial_orientation: np.ndarray | Rotation = cf(np.array([0, 0, 0, 1.0])),
+        memory: Memory | None = None,
     ) -> None:
         self.initial_orientation = initial_orientation
         self.memory = memory

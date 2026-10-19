@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._testing import assert_series_equal
+from pandas.testing import assert_series_equal
 
 from gaitmap.base import BaseType
 from gaitmap.parameters import SpatialParameterCalculation
@@ -25,7 +25,7 @@ def single_sensor_stride_list():
     stride_events_list["pre_ic"] = [1.0, 3.0, 5.0]
     stride_events_list["start"] = [2, 4, 5]
     stride_events_list["min_vel"] = stride_events_list["start"]
-    return stride_events_list
+    return stride_events_list.astype({c: "Int64" for c in ["ic", "tc", "pre_ic", "min_vel", "start", "end"]})
 
 
 @pytest.fixture()
@@ -329,7 +329,7 @@ class TestSpatialParameterCalculation:
         assert_series_equal(
             t.parameters_["gait_velocity"],
             t.parameters_["stride_length"]
-            / (single_sensor_stride_list_ic["end"] - single_sensor_stride_list_ic["start"])
+            / (single_sensor_stride_list_ic["end"] - single_sensor_stride_list_ic["start"]).astype(float)
             * 100,
             check_names=False,
         )
@@ -365,3 +365,37 @@ class TestSpatialParameterRegression:
         t = SpatialParameterCalculation()
         t.calculate(healthy_example_stride_events, healthy_example_position, healthy_example_orientation, 100)
         snapshot.assert_match(t.parameters_["left_sensor"])
+
+
+@pytest.mark.parametrize("missing_contact", [False, True])
+def test_nullable_events_keep_physical_parameters_usable_in_numpy(
+    single_sensor_stride_list, single_sensor_position_list, missing_contact
+):
+    """Nullable sample positions yield ordinary numeric quantities and NaN for missing durations."""
+    if missing_contact:
+        single_sensor_stride_list.loc[0, "pre_ic"] = pd.NA
+    result = SpatialParameterCalculation(calculate_only=["stride_length", "gait_velocity"]).calculate(
+        single_sensor_stride_list, single_sensor_position_list, orientations=None, sampling_rate_hz=1
+    )
+
+    values = result.parameters_[["stride_length", "gait_velocity"]].to_numpy()
+
+    expected = [[2.0, np.nan if missing_contact else 1.0], [np.sqrt(8), np.sqrt(2)], [0.0, 0.0]]
+    np.testing.assert_array_equal(np.isfinite(values), np.isfinite(expected))
+    np.testing.assert_allclose(values, expected, equal_nan=True)
+
+
+def test_mixed_integer_events_preserve_velocity_under_a_shared_sample_offset(
+    single_sensor_stride_list, single_sensor_position_list
+):
+    """Absolute integer storage cannot change a physical velocity."""
+    origin = 2**53
+    strides = single_sensor_stride_list.astype({"ic": "UInt64"})
+    for column in ["start", "end", "ic", "pre_ic", "min_vel", "tc"]:
+        strides[column] += origin
+
+    result = SpatialParameterCalculation(calculate_only=["gait_velocity"]).calculate(
+        strides, single_sensor_position_list, orientations=None, sampling_rate_hz=1
+    )
+
+    np.testing.assert_allclose(result.parameters_["gait_velocity"], [1.0, np.sqrt(2), 0.0])

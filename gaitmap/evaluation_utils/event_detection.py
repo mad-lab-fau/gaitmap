@@ -1,9 +1,8 @@
 """A set of helper functions to evaluate the output of an event stride segmentation against ground truth."""
 
-from typing import Union
+from typing import Literal
 
 from pandas import DataFrame
-from typing_extensions import Literal
 
 from gaitmap.evaluation_utils.stride_segmentation import _evaluate_stride_list
 from gaitmap.utils._types import _Hashable
@@ -15,11 +14,11 @@ def evaluate_stride_event_list(
     ground_truth: StrideList,
     stride_event_list: StrideList,
     match_cols: Literal["pre_ic", "ic", "min_vel", "tc"],
-    tolerance: Union[int, float] = 0,
+    tolerance: int | float = 0,
     one_to_one: bool = True,
     stride_list_postfix: str = "",
     ground_truth_postfix: str = "_ground_truth",
-) -> Union[DataFrame, dict[_Hashable, DataFrame]]:
+) -> DataFrame | dict[_Hashable, DataFrame]:
     """Find True Positives, False Positives and True Negatives by comparing an stride event list with ground truth.
 
     This compares a stride event list with a ground truth stride event list and returns True Positives,

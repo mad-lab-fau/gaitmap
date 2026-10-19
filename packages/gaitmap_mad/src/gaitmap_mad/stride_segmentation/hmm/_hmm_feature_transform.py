@@ -1,6 +1,6 @@
 """Feature transformation class for HMM."""
 
-from typing import NoReturn, Optional
+from typing import NoReturn
 
 import numpy as np
 import pandas as pd
@@ -50,10 +50,10 @@ class BaseHmmFeatureTransformer(BaseTransformer):
 
     def transform(
         self,
-        data: Optional[SingleSensorData] = None,
+        data: SingleSensorData | None = None,
         *,
-        roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
-        sampling_rate_hz: Optional[float] = None,
+        roi_list: SingleSensorRegionsOfInterestList | None = None,
+        sampling_rate_hz: float | None = None,
         **kwargs,
     ) -> NoReturn:
         """Transform the data and the roi/stride list into to the feature space.
@@ -158,7 +158,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     # TODO: Find a way to expose the internal objects instead of exposing just parameters.
     sampling_rate_feature_space_hz: float
-    low_pass_filter: Optional[BaseFilter]
+    low_pass_filter: BaseFilter | None
     axes: list[str]
     features: list[str]
     window_size_s: float
@@ -167,7 +167,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
     def __init__(
         self,
         sampling_rate_feature_space_hz: float = 51.2,
-        low_pass_filter: Optional[BaseFilter] = cf(ButterworthFilter(cutoff_freq_hz=10.0, order=4)),
+        low_pass_filter: BaseFilter | None = cf(ButterworthFilter(cutoff_freq_hz=10.0, order=4)),
         axes: list[str] = cf(["gyr_ml"]),
         features: list[str] = cf(["raw", "gradient"]),
         window_size_s: float = 0.2,
@@ -187,10 +187,10 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
 
     def transform(
         self,
-        data: Optional[SingleSensorData] = None,
+        data: SingleSensorData | None = None,
         *,
-        roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
-        sampling_rate_hz: Optional[float] = None,
+        roi_list: SingleSensorRegionsOfInterestList | None = None,
+        sampling_rate_hz: float | None = None,
         **_,
     ):
         """Perform feature transformation for a single dataset and/or stride list.
@@ -282,7 +282,7 @@ class RothHmmFeatureTransformer(BaseHmmFeatureTransformer):
         The state sequence in the original sampling rate
 
         """
-        downsampled_x = np.arange(0, len(data) - 1, len(data) / len(state_sequence))
+        downsampled_x = np.arange(len(state_sequence)) * (len(data) / len(state_sequence))
         new_x = np.arange(0, len(data))
         interpolated = interp1d(downsampled_x, state_sequence, kind="nearest", fill_value="extrapolate")(new_x)
         return interpolated.astype(int)

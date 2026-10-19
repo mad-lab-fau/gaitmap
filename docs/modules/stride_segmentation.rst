@@ -42,6 +42,8 @@ HMM Stride Segmentation
 ***********************
 .. currentmodule:: gaitmap.stride_segmentation.hmm
 
+See :ref:`hmm_models` for training and composing HMMs.
+
 .. autosummary::
    :toctree: generated/stride_segmentation/hmm
    :template: class.rst
@@ -50,6 +52,10 @@ HMM Stride Segmentation
     RothSegmentationHmm
     BaseSegmentationHmm
     SimpleHmm
+    CompositeHmm
     RothHmmFeatureTransformer
     PreTrainedRothSegmentationModel
     BaseHmmFeatureTransformer
+    HiddenMarkovModel
+    GaussianMixture
+    TrainingHistory

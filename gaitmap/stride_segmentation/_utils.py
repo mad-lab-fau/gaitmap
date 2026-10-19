@@ -1,7 +1,5 @@
 """Some general utils for the stride segmentation algorithms."""
 
-from typing import Union
-
 import numpy as np
 
 from gaitmap.utils.array_handling import find_extrema_in_radius
@@ -10,7 +8,7 @@ from gaitmap.utils.array_handling import find_extrema_in_radius
 def snap_to_min(
     data: np.ndarray,
     matches_start_end: np.ndarray,
-    snap_to_min_win_samples: Union[int, tuple[int, int]],
+    snap_to_min_win_samples: int | tuple[int, int],
 ):
     """Post process a set of matches by "snapping" their start and end values to the closest minima of the data.
 

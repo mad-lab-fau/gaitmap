@@ -10,15 +10,93 @@ project.
 
 ## Unreleased
 
+### Migration Guide
+
+- Sample-number columns and trajectory sample indices now require integer dtypes, including
+  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
+  for missing events. Built-in event detection, example annotations and stride-list conversion now
+  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
+  identifiers and physical quantities are unaffected.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
+  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
+
+### Scientific Changes
+
+- Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
+  Scores without an explicit aggregator now ignore NaN values when calculating the mean;
+  this can change aggregate validation scores and model selection when individual scores are NaN.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
+
+- SHOE zero-velocity detection now estimates gravity direction within each sliding window, as specified
+  in the original paper, instead of using the whole recording. This can change detected stationary
+  intervals and downstream trajectories; revalidate existing SHOE thresholds and results. On the healthy
+  example, 30 of 7,928 left-foot samples and 15 right-foot samples become stationary, with unchanged
+  numbers of stationary intervals.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- Replaced pomegranate with a custom NumPy/Numba backend for the HMM subset used by gaitmap.
+  This simplifies packaging and removes the need for an HMM installation extra.
+  Both gaitmap packages now require Python 3.11 or newer and support Python 3.14;
+  Python 3.9 and 3.10 support has been removed.
+  We chose this approach over porting to pomegranate's newer PyTorch implementation because our specialized
+  HMM workflow needs only a small part of its API. The implementation is LLM-derived, guided by the existing
+  regression tests and checked with independent algorithmic correctness tests.
+
+  Regression testing found matching inference calculations and comparable high-level segmentation after training.
+  Internal hidden-state probabilities and labels can differ, and included alignment/training fixes can shift some
+  stride boundaries. Training should be more stable for nearly singular covariance matrices and extremely small
+  probabilities and positive weights, replacing workarounds for limitations in the old backend.
+  `SimpleHmm.min_covar` controls covariance regularization. Inference is also faster in many cases.
+
+  Existing gaitmap HMM JSON models remain loadable; newly exported models require the updated backend.
+  Custom models and code accessing `.model` should be checked against the new numeric Gaussian/GMM API.
+  Please revalidate your results and report any unexpected changes in outcomes.
+  This migration prioritizes minimal gaitmap API changes while retiring Python 3.9 and 3.10; future HMM improvements
+  may introduce further breaking API changes.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
+
 ### Added
 
+- Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
+  the lowest allowed direct dependency versions with all extras.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
+  ([#81](https://github.com/mad-lab-fau/gaitmap/pull/81))
 
 ### Fixed
 
-- Added split dependency resolution so Python 3.9/3.10 stay on the pandas 2 / NumPy 1.x line while Python 3.11+
-  supports pandas 3, and fixed the resulting pandas 3 compatibility issues around read-only views and removed APIs.
+- Region-level trajectory intersection returns empty stride trajectories when no strides are fully
+  contained in a region, including empty stride lists, instead of raising an error.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- ROI stride segmentation supports floating-point region identifiers and sensor identifiers such as `0`
+  or an empty string without changing sample boundaries or sensor-specific template selection.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- Reusing an event detector with minimum-velocity detection or consistency checking disabled no longer
+  exposes stale minimum-velocity stride results from a previous call.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- `SlidingWindowGradient` preserves sample indices, keeping gradient features aligned with other transforms.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
+
+- Event detection handles empty stride input and discards missing events during consistency
+  checking when only one event type is requested.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
+
+- Calculating precision or recall for multiple sensors no longer modifies the supplied match dictionary,
+  so it can be reused across score calculations.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
+- F1 scores now use the confusion counts directly. With `zero_division=1`, recordings containing
+  only false positives or only false negatives correctly score zero instead of one.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
+- Added pandas 3 support and fixed compatibility issues around read-only views and removed APIs.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89),
+  [#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
 
 ## [2.6.0] - 2026-03-05
 

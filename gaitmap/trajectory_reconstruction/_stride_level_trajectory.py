@@ -1,10 +1,9 @@
 """Wrapper to apply position and orientation estimation to each stride of a dataset."""
 
-from typing import Optional
+from typing import Self
 
 from scipy.spatial.transform import Rotation
 from tpcp import CloneFactory
-from typing_extensions import Self
 
 from gaitmap.base import (
     BaseOrientationMethod,
@@ -136,9 +135,9 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
     def __init__(
         self,
         *,
-        ori_method: Optional[BaseOrientationMethod] = CloneFactory(SimpleGyroIntegration()),
-        pos_method: Optional[BasePositionMethod] = CloneFactory(ForwardBackwardIntegration()),
-        trajectory_method: Optional[BaseTrajectoryMethod] = None,
+        ori_method: BaseOrientationMethod | None = CloneFactory(SimpleGyroIntegration()),
+        pos_method: BasePositionMethod | None = CloneFactory(ForwardBackwardIntegration()),
+        trajectory_method: BaseTrajectoryMethod | None = None,
         align_window_width: int = 8,
     ) -> None:
         # TODO: Make align window with a second value?
@@ -180,14 +179,15 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         if stride_list_type == "single":
             stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
             stride_list_list = [
-                stride_event_list.iloc[[i]] - stride_event_list.iloc[i]["start"] for i in range(len(stride_event_list))
+                stride_event_list.iloc[[i]] - int(stride_event_list["start"].iloc[i])
+                for i in range(len(stride_event_list))
             ]
         else:
             stride_list_list = {}
             for sensor, stride_list in stride_event_list.items():
                 stride_list = set_correct_index(stride_list, SL_INDEX)
                 stride_list_list[sensor] = [
-                    stride_list.iloc[[i]] - stride_list.iloc[i]["start"] for i in range(len(stride_list))
+                    stride_list.iloc[[i]] - int(stride_list["start"].iloc[i]) for i in range(len(stride_list))
                 ]
 
         self._estimate(

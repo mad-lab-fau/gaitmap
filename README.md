@@ -57,23 +57,24 @@ Note, that we don't guarantee that the latest version on Github is stable.
 
 #### Hidden Markov Models
 
-To use the HMM (anything imported from `gaitmap.stride_segmentation.hmm`) based algorithms make sure you install `gaitmap` with the `hmm` extra.
+HMM training and prediction are included on supported Python versions when both gaitmap packages are installed:
 
 ```bash
-pip install gaitmap_mad "gaitmap[hmm]" --upgrade
+pip install gaitmap_mad gaitmap --upgrade
 ```
-This installs the `pomegranate` package, which is the basis for the HMM implementation.
-Note, that we only support the `pomegranate` version `>=0.14.2,<=0.14.6` and that `pomegrante` is not compatible with 
-Python 3.10.
 
-We are working on upgrading to a newer version of `pomegranate`, but this is not a priority at the moment.
-You can track the progress in the [pull request](https://github.com/mad-lab-fau/gaitmap/pull/20).
+No additional HMM dependencies are needed. Existing gaitmap HMM JSON files remain loadable.
+The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
+
+See the [HMM documentation](https://gaitmap.readthedocs.io/en/latest/modules/stride_segmentation.html#hmm-stride-segmentation)
+for model usage and training options. Retraining and corrected state alignment can change hidden states and some
+stride boundaries; the [scientific changelog](CHANGELOG.md) records their measured effect.
 
 ### Supported Python versions
 
-*gaitmap* is tested against Python 3.9 at the moment.
-We expect most features to work with all Python versions >= 3.9, but because of some known issues 
-(see specific features above) we do not officially support them.
+*gaitmap* requires Python 3.11 or newer.
+CI tests Python 3.11 through 3.14 on Linux and Windows. A separate Python 3.11 job tests the lowest
+allowed direct dependency versions, including optional dependencies.
 
 ## Working with Algorithms
 
@@ -185,18 +186,16 @@ If you need to use *gaitmap_mad* in a closed source project, please contact us f
 The [Development Guides](https://gaitmap.readthedocs.io/en/latest/source/development/index.html#development) have detailed information for all new developers.
 
 Here some quick references
-Install Python >=3.9 and [uv](https://docs.astral.sh/uv/).
+Install Python >=3.11 and [uv](https://docs.astral.sh/uv/).
 Then run the commands below to get the latest source and install the dependencies:
 
 ```bash
 git clone https://github.com/mad-lab-fau/gaitmap.git
-# For Python 3.9 (and if you need to work on hmm)
+cd gaitmap
 uv sync --group dev --all-extras
-# For Python >=3.10 (you can not work on hmm stuff with this)
-uv sync --group dev --extra stats
 ```
 
-Warning: Building the docs currently only works in 3.9 with all extras installed.
+Read the Docs builds use Python 3.11 with all development dependencies and extras installed.
 
 Note, that you don't need to care about the `gaitmap_mad` subpackage.
 All dependencies are specified in the main `pyproject.toml` and the `gaitmap_mad` will be installed in editable mode

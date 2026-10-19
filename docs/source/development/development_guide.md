@@ -9,7 +9,7 @@ If you are looking for a higher level overview over the guiding ideas and struct
 
 ## Project Setup and uv
 
-*gaitmap* only supports Python 3.9 and newer.
+*gaitmap* only supports Python 3.11 and newer.
 Install [uv](https://docs.astral.sh/uv/) first.
 
 *gaitmap* uses uv for Python management, dependency resolution, and project execution.
@@ -18,13 +18,9 @@ dependencies:
 
 ```bash
 # Install and pin the recommended Python version
-uv python install 3.9
+uv python install 3.11
 
-# For Python 3.9 (and if you need to work on hmm)
 uv sync --group dev --all-extras
-
-# For Python >=3.10 (you can not work on hmm stuff with this)
-uv sync --group dev --extra stats
 ```
 This will create a new folder called `.venv` inside your project dir.
 It contains the python interpreter and all site packages.

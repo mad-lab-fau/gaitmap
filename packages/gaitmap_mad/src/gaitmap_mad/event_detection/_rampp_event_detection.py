@@ -1,12 +1,12 @@
 """The event detection algorithm by Rampp et al. 2014."""
 
 import warnings
-from typing import Callable, Optional, Union, cast
+from collections.abc import Callable
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from typing_extensions import Literal
 
 from gaitmap._event_detection_common._event_detection_mixin import _detect_min_vel_gyr_energy, _EventDetectionMixin
 from gaitmap.base import BaseEventDetection
@@ -183,9 +183,9 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         self,
         ic_search_region_ms: tuple[float, float] = (80, 50),
         min_vel_search_win_size_ms: float = 100,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
         enforce_consistency: bool = True,
-        detect_only: Optional[tuple[str, ...]] = None,
+        detect_only: tuple[str, ...] | None = None,
         input_stride_type: Literal["segmented", "ic"] = "segmented",
     ):
         self.ic_search_region_ms = ic_search_region_ms
@@ -205,7 +205,7 @@ class RamppEventDetection(_EventDetectionMixin, BaseEventDetection):
         """
         return _find_all_events
 
-    def _get_detect_kwargs(self) -> dict[str, Union[tuple[int, int], int]]:
+    def _get_detect_kwargs(self) -> dict[str, tuple[int, int] | int]:
         ic_search_region = cast(
             "tuple[int, int]", tuple(int(v / 1000 * self.sampling_rate_hz) for v in self.ic_search_region_ms)
         )
@@ -230,7 +230,7 @@ def _find_all_events(
     ic_search_region: tuple[float, float],
     min_vel_search_win_size: int,
     sampling_rate_hz: float,
-    gyr_ic_lowpass_filter: Optional[BaseFilter],
+    gyr_ic_lowpass_filter: BaseFilter | None,
     input_stride_type: Literal["segmented", "ic"],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Find events in provided data by looping over single strides."""
@@ -257,9 +257,8 @@ def _find_all_events(
     ic_events = []
     tc_events = []
     min_vel_events = []
-    for _, stride in stride_list.iterrows():
-        start = stride["start"]
-        end = stride["end"]
+    for start, end in stride_list[["start", "end"]].itertuples(index=False, name=None):
+        start, end = int(start), int(end)
         if "ic" in events:
             ic_events.append(
                 methods["ic"](

@@ -200,8 +200,7 @@ def test_nested_clone() -> None:
         assert cloned_params[k] == v
 
 
-def test_clone_pomegranate() -> None:
-    pytest.importorskip("pomegranate")
+def test_clone_pretrained_hmm() -> None:
     from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel
 
     hmm_model = PreTrainedRothSegmentationModel()

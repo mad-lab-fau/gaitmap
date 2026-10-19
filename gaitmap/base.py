@@ -1,17 +1,17 @@
 """Base class for all algorithms."""
 
 import json
+import sys
 import warnings
 from importlib import import_module
 from io import StringIO
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Self, TypeVar
 
 import numpy as np
 import pandas as pd
 import tpcp
 from joblib import Memory
 from scipy.spatial.transform import Rotation
-from typing_extensions import Self
 
 from gaitmap.utils.consts import GF_ORI
 from gaitmap.utils.datatype_helper import (
@@ -44,14 +44,14 @@ def _hint_tuples(item):
 
 
 def _import_hidden_markov_model():
-    return import_module("pomegranate.hmm").HiddenMarkovModel
+    return import_module("gaitmap_mad.stride_segmentation.hmm._hmm_inference").HiddenMarkovModel
 
 
 class _CustomEncoder(json.JSONEncoder):
     def encode(self, o: Any) -> str:
         return super().encode(_hint_tuples(o))
 
-    def default(self, o):  # noqa: C901, PLR0911
+    def default(self, o):  # noqa: PLR0911
         if isinstance(o, _BaseSerializable):
             return o._to_json_dict()
         if isinstance(o, Rotation):
@@ -64,19 +64,11 @@ class _CustomEncoder(json.JSONEncoder):
             return {"_obj_type": "DataFrame", "df": o.to_json(orient="split")}
         if isinstance(o, pd.Series):
             return {"_obj_type": "Series", "df": o.to_json(orient="split")}
-        try:
-            hidden_markov_model = _import_hidden_markov_model()
-        except ImportError:
-            hidden_markov_model = None
-
-        if hidden_markov_model is not None and isinstance(o, hidden_markov_model):
-            warnings.warn(
-                "Exporting `pomegranate.hmm.HiddenMarkovModel` objects to json can sometimes not provide perfect "
-                "round-trips. I.e. sometimes values (in particular weightings of distributions) might change "
-                "slightly in the re-imported model due to rounding issue. "
-                "This is a limitation of the underlying pomegrante library."
-            )
-            return {"_obj_type": "HiddenMarkovModel", "hmm": json.loads(o.to_json())}
+        hidden_markov_model = getattr(
+            sys.modules.get("gaitmap_mad.stride_segmentation.hmm._hmm_inference"), "HiddenMarkovModel", ()
+        )
+        if isinstance(o, hidden_markov_model):
+            return {"_obj_type": "HiddenMarkovModel", "hmm": o.to_dict()}
         if o is tpcp.NOTHING:
             return {"_obj_type": "EmptyDefault"}
         if isinstance(o, Memory):
@@ -140,7 +132,7 @@ class _BaseSerializable(tpcp.BaseTpcpObject):
         return instance
 
     def _to_json_dict(self) -> dict[str, Any]:
-        json_dict: dict[str, Union[str, dict[str, Any]]] = {
+        json_dict: dict[str, str | dict[str, Any]] = {
             "_gaitmap_obj": self.__class__.__name__,
             "params": self.get_params(deep=False),
         }
@@ -223,7 +215,7 @@ class BaseEventDetection(BaseAlgorithm):
     _action_methods = ("detect",)
 
     def detect(
-        self, data: SensorData, *, stride_event_list: Optional[SingleSensorStrideList] = None, sampling_rate_hz: float
+        self, data: SensorData, *, stride_event_list: SingleSensorStrideList | None = None, sampling_rate_hz: float
     ) -> Self:
         """Find gait events in data within strides provided by roi_list."""
         raise NotImplementedError("Needs to be implemented by child class.")
@@ -254,7 +246,7 @@ class BaseOrientationMethod(BaseAlgorithm):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Estimate the orientation of the sensor based on the input data."""
@@ -272,7 +264,7 @@ class BasePositionMethod(BaseAlgorithm):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Estimate the position of the sensor based on the input data.
@@ -341,18 +333,18 @@ class BaseZuptDetector(BaseAlgorithm):
     per_sample_zupts_: np.ndarray
 
     # These two can be implemented optionally
-    min_vel_index_: Optional[int]
-    min_vel_value_: Optional[float]
+    min_vel_index_: int | None
+    min_vel_value_: float | None
 
     data: SingleSensorData
-    stride_event_list: Optional[SingleSensorStrideList]
+    stride_event_list: SingleSensorStrideList | None
     sampling_rate_hz: float
 
     def detect(
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Find ZUPTs in data."""

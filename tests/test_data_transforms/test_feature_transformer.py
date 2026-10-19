@@ -1,10 +1,11 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
-from pandas._testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 from gaitmap.data_transform import (
     BaseTransformer,
@@ -90,6 +91,25 @@ class TestResample:
         assert after_instance.transformed_data_ is not df_or_series_imu_data
         assert_frame_equal(after_instance.transformed_roi_list_, healthy_example_stride_borders["left_sensor"])
         assert after_instance.transformed_roi_list_ is not healthy_example_stride_borders["left_sensor"]
+
+    @pytest.mark.parametrize("target_rate", [50, 100])
+    def test_resampled_roi_bounds_and_metadata_are_independent(self, target_rate) -> None:
+        regions = pd.DataFrame({"start": [0, 10], "end": [10, 20], "quality": [1.0, 2.0]})
+        original = regions.copy()
+        result = (
+            Resample(target_sampling_rate_hz=target_rate)
+            .transform(roi_list=regions, sampling_rate_hz=100)
+            .transformed_roi_list_
+        )
+        expected = pd.DataFrame(
+            {"start": [0, target_rate // 10], "end": [target_rate // 10, target_rate // 5], "quality": [1.0, 2.0]}
+        )
+        assert_frame_equal(result, expected)
+        assert_frame_equal(regions, original)
+        result.loc[0, "quality"] = 7.0
+        regions.loc[1, "quality"] = 9.0
+        assert regions.loc[0, "quality"] == 1.0
+        assert result.loc[1, "quality"] == 2.0
 
     def test_resample_roi_list(self, healthy_example_stride_borders) -> None:
         in_stride_borders = healthy_example_stride_borders["left_sensor"].astype({"start": "Int64", "end": "Int64"})
@@ -261,3 +281,14 @@ class TestSlidingWindowGradient(_TestSlidingWindowTransformer):
         # Test that data and sampling rate are set as attributes
         assert after_instance.data is df_or_series_imu_data
         assert after_instance.sampling_rate_hz == 100
+
+
+@pytest.mark.parametrize("as_series", [False, True])
+@pytest.mark.parametrize("index", [pd.Index(range(100, 110), name="sample"), pd.date_range("2020-01-01", periods=10)])
+def test_gradient_preserves_sample_alignment(index, as_series):
+    data = pd.DataFrame({"x": 2.0 * np.arange(10) + 5.0}, index=index)
+    if as_series:
+        data = data["x"]
+    result = SlidingWindowGradient(window_size_s=0.3).transform(data, sampling_rate_hz=10).transformed_data_
+    assert result.index.equals(data.index)
+    np.testing.assert_allclose(result.iloc[1:-1], 2.0)

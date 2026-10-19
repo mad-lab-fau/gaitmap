@@ -1,11 +1,11 @@
 """A Basic ZUPT detector based on moving windows on the norm."""
 
-from typing import Optional
+from typing import Literal, Self
 
 import numpy as np
-from typing_extensions import Literal, Self
 
 from gaitmap.base import BaseZuptDetector
+from gaitmap.utils.consts import BF_ACC, BF_GYR, SF_ACC, SF_GYR
 from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_data
 from gaitmap.utils.exceptions import ValidationError
 from gaitmap.utils.static_moment_detection import METRIC_FUNCTION_NAMES, find_static_samples, find_static_samples_shoe
@@ -14,12 +14,18 @@ from gaitmap.zupt_detection._base import PerSampleZuptDetectorMixin
 SENSOR_NAMES = Literal["acc", "gyr"]
 
 
+def _sensor_values(data: SingleSensorData, sensor: SENSOR_NAMES) -> np.ndarray:
+    sensor_columns, body_columns = {"acc": (SF_ACC, BF_ACC), "gyr": (SF_GYR, BF_GYR)}[sensor]
+    columns = sensor_columns if set(sensor_columns).issubset(data.columns) else body_columns
+    return data[columns].to_numpy()
+
+
 def _validate_window(
     window_length_s: float,
-    window_overlap: Optional[float],
-    window_overlap_samples: Optional[int],
+    window_overlap: float | None,
+    window_overlap_samples: int | None,
     sampling_rate_hz: float,
-) -> tuple[int, Optional[int]]:
+) -> tuple[int, int | None]:
     """Validate window_length and overlap."""
     window_length = round(sampling_rate_hz * window_length_s)
     if window_length < 3:
@@ -168,8 +174,8 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
 
     sensor: SENSOR_NAMES
     window_length_s: float
-    window_overlap: Optional[float]
-    window_overlap_samples: Optional[int]
+    window_overlap: float | None
+    window_overlap_samples: int | None
     metric: METRIC_FUNCTION_NAMES
     inactive_signal_threshold: float
 
@@ -181,8 +187,8 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         *,
         sensor: SENSOR_NAMES = "gyr",
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = 0.5,
-        window_overlap_samples: Optional[int] = None,
+        window_overlap: float | None = 0.5,
+        window_overlap_samples: int | None = None,
         metric: METRIC_FUNCTION_NAMES = "mean",
         inactive_signal_threshold: float = 15,
     ) -> None:
@@ -221,7 +227,7 @@ class NormZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         )
 
         self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples(
-            data.filter(like=self.sensor).to_numpy(),
+            _sensor_values(data, self.sensor),
             window_length=self.window_length_samples_,
             inactive_signal_th=self.inactive_signal_threshold,
             metric=self.metric,
@@ -330,8 +336,8 @@ class AredZuptDetector(NormZuptDetector):
         *,
         sensor: SENSOR_NAMES = "gyr",
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = None,
-        window_overlap_samples: Optional[int] = -1,
+        window_overlap: float | None = None,
+        window_overlap_samples: int | None = -1,
         metric: METRIC_FUNCTION_NAMES = "squared_mean",
         inactive_signal_threshold: float = 180,
     ) -> None:
@@ -439,8 +445,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
     """
 
     window_length_s: float
-    window_overlap: Optional[float]
-    window_overlap_samples: Optional[int]
+    window_overlap: float | None
+    window_overlap_samples: int | None
     inactive_signal_threshold: float
     acc_noise_variance: float
     gyr_noise_variance: float
@@ -457,8 +463,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         acc_noise_variance: float = 3.5e-9,
         gyr_noise_variance: float = 1.3e-7,
         window_length_s: float = 0.15,
-        window_overlap: Optional[float] = 0.5,
-        window_overlap_samples: Optional[int] = None,
+        window_overlap: float | None = 0.5,
+        window_overlap_samples: int | None = None,
         inactive_signal_threshold: float = 2310129700,
     ) -> None:
         self.acc_noise_variance = acc_noise_variance
@@ -494,8 +500,8 @@ class ShoeZuptDetector(BaseZuptDetector, PerSampleZuptDetectorMixin):
         )
 
         self.per_sample_zupts_, self.min_vel_index_, self.min_vel_value_ = find_static_samples_shoe(
-            gyr=data.filter(like="gyr").to_numpy(),
-            acc=data.filter(like="acc").to_numpy(),
+            gyr=_sensor_values(data, "gyr"),
+            acc=_sensor_values(data, "acc"),
             acc_noise_var=self.acc_noise_variance,
             gyr_noise_var=self.gyr_noise_variance,
             window_length=self.window_length_samples_,

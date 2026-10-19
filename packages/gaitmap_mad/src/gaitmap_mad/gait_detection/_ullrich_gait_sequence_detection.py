@@ -2,7 +2,7 @@
 
 import copy
 import itertools
-from typing import Optional, TypeVar, Union
+from typing import TypeVar
 
 import numpy as np
 import pandas as pd
@@ -147,11 +147,11 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_channel_config: str = "gyr_ml",
         peak_prominence: float = 17.0,
         window_size_s: float = 10,
-        active_signal_threshold: Optional[float] = None,
+        active_signal_threshold: float | None = None,
         locomotion_band: tuple[float, float] = (0.5, 3),
         harmonic_tolerance_hz: float = 0.3,
         merge_gait_sequences_from_sensors: bool = False,
-        additional_margin_s: Optional[float] = None,
+        additional_margin_s: float | None = None,
     ) -> None:
         self.sensor_channel_config = sensor_channel_config
         self.peak_prominence = peak_prominence
@@ -201,14 +201,14 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         return self
 
     @property
-    def start_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
+    def start_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
         """Just the start values of all gait sequences."""
         if isinstance(self.gait_sequences_, dict):
             return {k: np.array(v["start"]) for k, v in self.gait_sequences_.items()}
         return np.array(self.gait_sequences_["start"])
 
     @property
-    def end_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
+    def end_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
         """Just the end values of all gait sequences."""
         if isinstance(self.gait_sequences_, dict):
             return {k: np.array(v["end"]) for k, v in self.gait_sequences_.items()}
@@ -251,7 +251,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         s_1d, active_signal_mask = self._active_signal_detection(s_3d_norm, s_1d, active_signal_th)
 
         if s_1d.size == 0:
-            gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
+            gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"], dtype="int64")
             return {"gait_sequences": gait_sequences_}
 
         # dominant frequency via autocorrelation
@@ -278,7 +278,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
         if gait_sequences_start_end.size == 0:
-            gait_sequences_ = pd.DataFrame(columns=["start", "end"])
+            gait_sequences_ = pd.DataFrame(columns=["start", "end"], dtype="int64")
         else:
             gait_sequences_ = pd.DataFrame(
                 {"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]}
@@ -450,7 +450,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_names = list(get_multi_sensor_names(self.data))
 
         if all(df.empty for df in gait_sequences.values()):
-            return {sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"]) for sensor_name in sensor_names}
+            return {
+                sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"], dtype="int64")
+                for sensor_name in sensor_names
+            }
 
         gait_sequences_merged = pd.DataFrame(
             merge_intervals(pd.concat(gait_sequences, ignore_index=True)[["start", "end"]].to_numpy()),

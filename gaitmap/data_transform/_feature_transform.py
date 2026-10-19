@@ -1,14 +1,13 @@
 """A set of transformers that can be used to calculate traditional features from a timeseries."""
 
 from copy import copy
-from typing import NoReturn, Optional
+from typing import NoReturn, Self
 
 import numpy as np
 import pandas as pd
 from numpy import polyfit
-from pandas.core.window import Rolling
+from pandas.api.typing import Rolling
 from scipy import signal
-from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer
 from gaitmap.utils.array_handling import sliding_window_view
@@ -46,7 +45,7 @@ class Resample(BaseTransformer):
 
     """
 
-    target_sampling_rate_hz: Optional[float]
+    target_sampling_rate_hz: float | None
 
     sampling_rate_hz: float
     roi_list: SingleSensorRegionsOfInterestList
@@ -55,12 +54,12 @@ class Resample(BaseTransformer):
 
     def __init__(
         self,
-        target_sampling_rate_hz: Optional[float] = None,
+        target_sampling_rate_hz: float | None = None,
     ) -> None:
         self.target_sampling_rate_hz = target_sampling_rate_hz
 
     def _resample_roi_list(self, roi_list: SingleSensorRegionsOfInterestList) -> SingleSensorRegionsOfInterestList:
-        out = roi_list.copy()
+        out = roi_list.copy(deep=False)
         rescaled = (roi_list[["start", "end"]] * self.target_sampling_rate_hz / self.sampling_rate_hz).round()
         for col in ["start", "end"]:
             out[col] = rescaled[col].astype(out[col].dtype)
@@ -68,10 +67,10 @@ class Resample(BaseTransformer):
 
     def transform(
         self,
-        data: Optional[SingleSensorData] = None,
+        data: SingleSensorData | None = None,
         *,
-        roi_list: Optional[SingleSensorRegionsOfInterestList] = None,
-        sampling_rate_hz: Optional[float] = None,
+        roi_list: SingleSensorRegionsOfInterestList | None = None,
+        sampling_rate_hz: float | None = None,
         **_,
     ) -> Self:
         """Resample the data.
@@ -129,11 +128,11 @@ class Resample(BaseTransformer):
 class BaseSlidingWindowFeatureTransform(BaseTransformer):
     """Baseclass for all Sliding window feature transforms."""
 
-    window_size_s: Optional[float]
+    window_size_s: float | None
 
     sampling_rate_hz: float
 
-    def __init__(self, window_size_s: Optional[float] = None) -> None:
+    def __init__(self, window_size_s: float | None = None) -> None:
         self.window_size_s = window_size_s
 
     @property
@@ -145,7 +144,7 @@ class BaseSlidingWindowFeatureTransform(BaseTransformer):
             win_size += 1
         return win_size
 
-    def transform(self, data: SingleSensorData, *, sampling_rate_hz: Optional[float] = None, **kwargs) -> Self:
+    def transform(self, data: SingleSensorData, *, sampling_rate_hz: float | None = None, **kwargs) -> Self:
         """Apply the transformation on each sliding window.
 
         Parameters
@@ -343,8 +342,10 @@ class SlidingWindowGradient(_CustomSlidingWindowTransform):
             fit_coefs = reshaped_fit_coefs
 
         if isinstance(data, pd.Series):
-            return pd.Series(fit_coefs, name=f"gradient__{data.name}")
+            return pd.Series(fit_coefs, index=data.index, name=f"gradient__{data.name}")
         if isinstance(data, pd.DataFrame):
-            return pd.DataFrame(fit_coefs, columns=data.columns).rename(columns=lambda x: f"gradient__{x}")
+            return pd.DataFrame(fit_coefs, index=data.index, columns=data.columns).rename(
+                columns=lambda x: f"gradient__{x}"
+            )
         # We should never end up here...
         raise ValueError("Unexpected input dtype")

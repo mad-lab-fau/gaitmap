@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.evaluation_utils import calculate_aggregated_parameter_errors, parameter_errors
 from gaitmap.evaluation_utils.parameter_errors import calculate_parameter_errors
@@ -22,7 +22,7 @@ def _create_valid_input(columns, data, is_dict=False, sensors=None, mix=-1):
         output = {}
         for i, sensor_name in enumerate(sensors):
             if len(columns) > 1:
-                output[sensor_name] = pd.DataFrame(dict(zip(columns, data[i]))).rename_axis("s_id")
+                output[sensor_name] = pd.DataFrame(dict(zip(columns, data[i], strict=True))).rename_axis("s_id")
             else:
                 output[sensor_name] = pd.DataFrame(data[i], columns=columns).rename_axis("s_id")
             if mix > -1:
@@ -169,7 +169,7 @@ class TestCalculateAggregatedParameterErrors:
             predicted_parameter=input_param, reference_parameter=ground_truth
         )
 
-        for sensor_name, expectation in zip(sensor_names, expectations):
+        for sensor_name, expectation in zip(sensor_names, expectations, strict=True):
             for error_type in expectation:
                 assert_array_equal(
                     np.round(output_normal[sensor_name]["param"].loc[error_type], 5), expectation[error_type]

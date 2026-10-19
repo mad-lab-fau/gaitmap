@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -344,12 +346,11 @@ class TestPostProcessing:
         # Test that no warning is raised with default paras
         dtw = BarthDtw()
 
-        with pytest.warns(None) as w:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             dtw.segment(data, sampling_rate_hz=204.8)
 
-        with pytest.raises(AssertionError):
-            # Check that no UserWarning was recorded
-            w.pop(UserWarning)
+        assert not any(issubclass(warning.category, UserWarning) for warning in w)
 
     def test_snapping_edge_case(self) -> None:
         """Testing if snapping works, even if one of the strides ends inclusive the last sample.

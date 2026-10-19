@@ -103,14 +103,16 @@ ic_idx = ed.min_vel_event_list_["left_sensor"]["ic"].to_numpy().astype(int)
 tc_idx = ed.min_vel_event_list_["left_sensor"]["tc"].to_numpy().astype(int)
 min_vel_idx = ed.min_vel_event_list_["left_sensor"]["min_vel"].to_numpy().astype(int)
 
-for ax, data in zip(axs, axs_data):
+for ax, data in zip(axs, axs_data, strict=True):
     ax.plot(data)
     for _i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")
 
     for (m, s, c, l), pos in zip(
-        [("*", 100, "r", "ic"), ("p", 50, "g", "tc"), ("s", 50, "y", "min_vel")], [ic_idx, tc_idx, min_vel_idx]
+        [("*", 100, "r", "ic"), ("p", 50, "g", "tc"), ("s", 50, "y", "min_vel")],
+        [ic_idx, tc_idx, min_vel_idx],
+        strict=True,
     ):
         ax.scatter(pos, data[pos], marker=m, s=s, color=c, zorder=3, label=l)
 
@@ -140,7 +142,7 @@ ax2.plot(bf_data.reset_index(drop=True)["left_sensor"][["acc_pa"]])
 
 pre_ic_idx = ed.min_vel_event_list_["left_sensor"]["pre_ic"].to_numpy().astype(int)
 
-for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"]):
+for ax, sensor in zip([ax1, ax2], ["gyr_ml", "acc_pa"], strict=True):
     for _i, stride in ed.min_vel_event_list_["left_sensor"].iterrows():
         ax.axvline(stride["start"], color="g")
         ax.axvline(stride["end"], color="r")

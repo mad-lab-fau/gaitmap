@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_COLS
 from gaitmap.utils.exceptions import ValidationError
@@ -92,3 +92,16 @@ class TestStrideEventZuptDetector:
             zupts, pd.DataFrame([[0, 2], [4, 7], [9, 12], [14, 17]], columns=["start", "end"], dtype="Int64")
         )
         assert detector.half_region_size_samples_ == 1
+
+
+@pytest.mark.parametrize("dtype", ["uint8", "uint32", "UInt32", "int8"])
+def test_window_arithmetic_preserves_zupts_at_integer_boundaries(dtype):
+    """Stationary windows clip to the recording rather than wrapping integer storage."""
+    data = pd.DataFrame(0.0, index=range(128), columns=SF_COLS)
+    strides = pd.DataFrame({"start": [0], "end": [127], "min_vel": [0]}, dtype=dtype).rename_axis("s_id")
+
+    result = StrideEventZuptDetector(half_region_size_s=1).detect(data, stride_event_list=strides, sampling_rate_hz=1)
+
+    expected = pd.DataFrame({"start": [0, 126], "end": [2, 128]}, dtype="Int64")
+    assert_frame_equal(result.zupts_, expected)
+    assert result.per_sample_zupts_.sum() == 4

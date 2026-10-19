@@ -1,12 +1,11 @@
 """Estimate the IMU position with dedrifting using Forward-Backwards integration."""
 
-from typing import Optional
+from typing import Self
 
 import numpy as np
 import pandas as pd
 from scipy.integrate import cumulative_trapezoid
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BasePositionMethod
 from gaitmap.utils.consts import GF_POS, GF_VEL, GRAV_VEC, SF_ACC
@@ -102,7 +101,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
     steepness: float
     turning_point: float
     level_assumption: bool
-    gravity: Optional[np.ndarray]
+    gravity: np.ndarray | None
 
     data: SingleSensorData
     sampling_rate_hz: float
@@ -112,7 +111,7 @@ class ForwardBackwardIntegration(BasePositionMethod):
         turning_point: float = 0.5,
         steepness: float = 0.08,
         level_assumption: bool = True,
-        gravity: Optional[np.ndarray] = cf(GRAV_VEC),
+        gravity: np.ndarray | None = cf(GRAV_VEC),
     ) -> None:
         self.turning_point = turning_point
         self.steepness = steepness

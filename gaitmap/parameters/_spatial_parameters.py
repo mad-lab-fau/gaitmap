@@ -2,16 +2,15 @@
 
 import warnings
 from collections.abc import Sequence
-from typing import Literal, Optional, Union
+from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
 from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
-from typing_extensions import Self
 
 from gaitmap.base import BaseSpatialParameterCalculation
-from gaitmap.parameters._temporal_parameters import _get_stride_time_cols
+from gaitmap.parameters._temporal_parameters import _calculate_event_duration, _get_stride_time_cols
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
@@ -159,27 +158,27 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
     """
 
-    calculate_only: Optional[Sequence[ParamterNames]]
+    calculate_only: Sequence[ParamterNames] | None
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]
-    sole_angle_course_: Optional[Union[pd.Series, dict[_Hashable, pd.Series]]]
+    parameters_: pd.DataFrame | dict[_Hashable, pd.DataFrame]
+    sole_angle_course_: pd.Series | dict[_Hashable, pd.Series] | None
 
     stride_event_list: StrideList
-    positions: Optional[PositionList]
-    orientations: Optional[OrientationList]
+    positions: PositionList | None
+    orientations: OrientationList | None
     sampling_rate_hz: float
 
     def __init__(
         self,
-        calculate_only: Optional[Sequence[ParamterNames]] = None,
+        calculate_only: Sequence[ParamterNames] | None = None,
         expected_stride_type: Literal["min_vel", "ic"] = "min_vel",
     ) -> None:
         self.calculate_only = calculate_only
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]:
+    def parameters_pretty_(self) -> pd.DataFrame | dict[_Hashable, pd.DataFrame]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -208,8 +207,8 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
     def calculate(
         self,
         stride_event_list: StrideList,
-        positions: Optional[PositionList],
-        orientations: Optional[OrientationList],
+        positions: PositionList | None,
+        orientations: OrientationList | None,
         sampling_rate_hz: float,
     ) -> Self:
         """Find spatial parameters of all strides after segmentation and detecting events for all sensors.
@@ -357,10 +356,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                     f"{stride_time_end_col}) are not available."
                 )
             else:
-                param_dict["gait_velocity"] = stride_length / (
-                    (stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col])
-                    / sampling_rate_hz
+                stride_duration = _calculate_event_duration(
+                    stride_event_list, stride_time_start_col, stride_time_end_col, sampling_rate_hz
                 )
+                param_dict["gait_velocity"] = stride_length / stride_duration
         if self._should_calculate("arc_length"):
             param_dict["arc_length"] = _calc_arc_length(positions)
         if self._should_calculate("max_sensor_lift"):

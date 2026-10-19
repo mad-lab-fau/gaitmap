@@ -1,8 +1,10 @@
 """A couple of utils to convert stride lists into different formats."""
 
+from itertools import pairwise
+from typing import Literal
+
 import numpy as np
 import pandas as pd
-from typing_extensions import Literal
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -83,7 +85,13 @@ def _stride_list_to_min_vel_single_sensor(
 
     """
     stride_list = set_correct_index(stride_list, SL_INDEX)
-    converted_stride_list = stride_list.copy()
+    converted_stride_list = stride_list.astype(
+        {
+            col: "UInt64" if pd.api.types.is_unsigned_integer_dtype(stride_list[col].dtype) else "Int64"
+            for col in stride_list
+            if col in {"start", "end", "pre_ic", "ic", "min_vel", "tc"}
+        }
+    )
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
 
@@ -108,7 +116,7 @@ def _stride_list_to_min_vel_single_sensor(
         converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
-    breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0
+    breaks = (converted_stride_list["old_end"] != converted_stride_list["old_start"].shift(-1)).fillna(False)
 
     # drop unneeded tmp columns
     converted_stride_list = converted_stride_list.drop(["old_start", "old_end"], axis=1)
@@ -167,11 +175,14 @@ def enforce_stride_list_consistency(
         raise ValueError("No valid events found in the stride list.")
 
     if len(order) == 1:
-        # only one event, no need to check order
-        return stride_list, pd.DataFrame(columns=stride_list.columns)
+        # One event needs no ordering check, but missing events still invalidate a stride.
+        valid = stride_list[order[0]].notna()
+        return stride_list[valid], stride_list[~valid]
 
     # Note: the following also drops strides that contain NaN for any event
-    bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
+    bool_map = np.logical_and.reduce(
+        [(stride_list[left] < stride_list[right]).fillna(False).to_numpy(dtype=bool) for left, right in pairwise(order)]
+    )
 
     return stride_list[bool_map], stride_list[~bool_map]
 
@@ -208,17 +219,26 @@ def intersect_stride_list(
     """
     is_single_sensor_stride_list(stride_event_list, raise_exception=True)
     is_single_sensor_regions_of_interest_list(regions_of_interest, raise_exception=True)
-    stride_list = set_correct_index(stride_event_list.copy(), SL_INDEX)
-    roi_list = regions_of_interest.copy()
+    stride_list = set_correct_index(stride_event_list, SL_INDEX)
+    roi_list = regions_of_interest
 
     stride_lists = []
 
-    for _, roi in roi_list.iterrows():
+    for start, end in roi_list[["start", "end"]].itertuples(index=False, name=None):
+        if pd.isna(start) or pd.isna(end):
+            stride_lists.append(stride_list.iloc[:0].copy())
+            continue
+        start, end = int(start), int(end)
         # find all strides that are fully contained in the roi
-        partial_stride_list = stride_list.loc[
-            (stride_list["start"] >= roi["start"]) & (stride_list["end"] <= roi["end"])
-        ]
-        partial_stride_list -= roi["start"]
+        partial_stride_list = stride_list.loc[(stride_list["start"] >= start) & (stride_list["end"] <= end)]
+        # Previous-stride events may precede the ROI and need negative coordinates.
+        unsigned = {
+            column: object
+            for column in partial_stride_list
+            if pd.api.types.is_unsigned_integer_dtype(partial_stride_list[column].dtype)
+        }
+        partial_stride_list = partial_stride_list.astype(unsigned) - start
+        partial_stride_list = partial_stride_list.astype(dict.fromkeys(unsigned, "Int64"))
         stride_lists.append(partial_stride_list)
 
     return stride_lists

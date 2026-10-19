@@ -1,14 +1,12 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 
 from contextlib import suppress
-from importlib.resources import open_text
-from pathlib import Path
-from typing import Generic, Optional, TypeVar, Union
+from importlib.resources import files
+from typing import Generic, Self, TypeVar
 
 import numpy as np
 import pandas as pd
 from tpcp import cf, make_action_safe
-from typing_extensions import Self
 
 from gaitmap.base import BaseStrideSegmentation
 from gaitmap.stride_segmentation._utils import snap_to_min
@@ -41,14 +39,11 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
     """
 
     def __new__(cls):
-        # try to load models
-        with (
-            open_text(
-                "gaitmap_mad.stride_segmentation.hmm._pre_trained_models", "fallriskpd_at_lab_model.json"
-            ) as test_data,
-            Path(test_data.name).open(encoding="utf8") as f,
-        ):
-            model_json = f.read()
+        model_json = (
+            files("gaitmap_mad.stride_segmentation.hmm._pre_trained_models")
+            .joinpath("fallriskpd_at_lab_model.json")
+            .read_text(encoding="utf8")
+        )
         return RothSegmentationHmm.from_json(model_json)
 
 
@@ -66,7 +61,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     Note, that this class only supports prediction.
     To train your own HMM, use the `self_optimize` method on the model that you were planning to use here.
 
-    This is based on the work of Roth et al. 2021 [1]_ and the implementation is using done with `pomegranate` [2]_.
+    This is based on the work of Roth et al. 2021 [1]_.
 
     Parameters
     ----------
@@ -117,27 +112,25 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     .. [1] Roth, N., Küderle, A., Ullrich, M. et al. Hidden Markov Model based stride segmentation on unsupervised
        free-living gait data in Parkinson`s disease patients. J NeuroEngineering Rehabil 18, 93 (2021).
        https://doi.org/10.1186/s12984-021-00883-7
-    .. [2] J. Schreiber, “Pomegranate: Fast and flexible probabilistic modeling in python,” Journal of Machine Learning
-       Research, vol. 18, no. 164, pp. 1-6, 2018.
 
     """
 
-    snap_to_min_win_ms: Optional[float]
+    snap_to_min_win_ms: float | None
     snap_to_min_axis: str
     model: BaseSegmentationHmmT
 
-    data: Union[np.ndarray, SensorData]
+    data: np.ndarray | SensorData
     sampling_rate_hz: float
 
-    matches_start_end_: Union[np.ndarray, dict[str, np.ndarray]]
-    hidden_state_sequence_: Union[np.ndarray, dict[str, np.ndarray]]
-    result_model_: Union[BaseSegmentationHmmT, dict[str, BaseSegmentationHmmT]]
+    matches_start_end_: np.ndarray | dict[str, np.ndarray]
+    hidden_state_sequence_: np.ndarray | dict[str, np.ndarray]
+    result_model_: BaseSegmentationHmmT | dict[str, BaseSegmentationHmmT]
 
     def __init__(
         self,
         model: BaseSegmentationHmmT = cf(PreTrainedRothSegmentationModel()),
         *,
-        snap_to_min_win_ms: Optional[float] = 100,
+        snap_to_min_win_ms: float | None = 100,
         snap_to_min_axis: str = "gyr_ml",
     ) -> None:
         self.snap_to_min_win_ms = snap_to_min_win_ms
@@ -145,7 +138,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         self.model = model
 
     @property
-    def stride_list_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def stride_list_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         """Return start and end of each match as pd.DataFrame."""
         start_ends = self.matches_start_end_
         if isinstance(start_ends, dict):
@@ -153,7 +146,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
         return self._format_stride_list(start_ends)
 
     @property
-    def matches_start_end_original_(self) -> Union[np.ndarray, dict[_Hashable, np.ndarray]]:
+    def matches_start_end_original_(self) -> np.ndarray | dict[_Hashable, np.ndarray]:
         """Return the starts and end directly from the hidden state sequence.
 
         This will not be effected by potential changes of the postprocessing.
@@ -174,7 +167,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
         if len(array) == 0:
             array = None
-        as_df = pd.DataFrame(array, columns=["start", "end"])
+        as_df = pd.DataFrame(array, columns=["start", "end"], dtype="int64")
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df

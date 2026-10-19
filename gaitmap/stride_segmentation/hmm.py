@@ -1,15 +1,16 @@
 """Hidden-Markov based stride segmentation developed by Roth et al..
 
-All HMM implementations are based on pomegranate [1]_.
-
-.. [1] Schreiber, J. (2018). Pomegranate: fast and flexible probabilistic modeling in python.
-   Journal of Machine Learning Research, 18(164), 1-6.
+Train models with Gaussian or Gaussian-mixture emissions, or load an existing gaitmap HMM model.
 
 """
 
 from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 
 _gaitmap_mad_modules = {
+    "CompositeHmm",
+    "GaussianMixture",
+    "HiddenMarkovModel",
+    "TrainingHistory",
     "BaseHmmFeatureTransformer",
     "RothHmmFeatureTransformer",
     "HmmStrideSegmentation",
@@ -24,20 +25,28 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
     from gaitmap_mad.stride_segmentation.hmm import (
         BaseHmmFeatureTransformer,
         BaseSegmentationHmm,
+        CompositeHmm,
+        GaussianMixture,
+        HiddenMarkovModel,
         HmmStrideSegmentation,
         PreTrainedRothSegmentationModel,
         RothHmmFeatureTransformer,
         RothSegmentationHmm,
         SimpleHmm,
+        TrainingHistory,
     )
 
 
 __all__ = [
     "BaseHmmFeatureTransformer",
     "BaseSegmentationHmm",
+    "CompositeHmm",
+    "GaussianMixture",
+    "HiddenMarkovModel",
     "HmmStrideSegmentation",
     "PreTrainedRothSegmentationModel",
     "RothHmmFeatureTransformer",
     "RothSegmentationHmm",
     "SimpleHmm",
+    "TrainingHistory",
 ]

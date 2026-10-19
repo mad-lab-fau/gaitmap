@@ -1,11 +1,10 @@
 """Transformers that scale data to certain data ranges."""
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Self
 
 import numpy as np
 from tpcp import OptimizableParameter, Parameter
-from typing_extensions import Self
 
 from gaitmap.data_transform._base import BaseTransformer, TrainableTransformerMixin
 from gaitmap.utils.datatype_helper import SensorData, SingleSensorData, is_single_sensor_data
@@ -149,10 +148,10 @@ class TrainableStandardScaler(StandardScaler, TrainableTransformerMixin):
 
     """
 
-    mean: OptimizableParameter[Optional[float]]
-    std: OptimizableParameter[Optional[float]]
+    mean: OptimizableParameter[float | None]
+    std: OptimizableParameter[float | None]
 
-    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None, ddof: int = 1) -> None:
+    def __init__(self, mean: float | None = None, std: float | None = None, ddof: int = 1) -> None:
         self.mean = mean
         self.std = std
         super().__init__(ddof=ddof)
@@ -264,7 +263,7 @@ class AbsMaxScaler(BaseTransformer):
         return float(np.nanmax(np.abs(data.to_numpy())))
 
     def _transform(self, data: SingleSensorData, absmax: float) -> SingleSensorData:
-        data = data.copy()
+        data = data.copy(deep=False)
         if absmax == 0:
             return data
         data *= self.out_max / absmax
@@ -319,9 +318,9 @@ class TrainableAbsMaxScaler(AbsMaxScaler, TrainableTransformerMixin):
 
     """
 
-    data_max: OptimizableParameter[Optional[float]]
+    data_max: OptimizableParameter[float | None]
 
-    def __init__(self, out_max: float = 1, data_max: Optional[float] = None) -> None:
+    def __init__(self, out_max: float = 1, data_max: float | None = None) -> None:
         self.data_max = data_max
         super().__init__(out_max=out_max)
 
@@ -434,7 +433,7 @@ class MinMaxScaler(BaseTransformer):
         return float(np.nanmin(data)), float(np.nanmax(data))
 
     def _transform(self, data: SingleSensorData, data_range: tuple[float, float]) -> SingleSensorData:
-        data = data.copy()
+        data = data.copy(deep=False)
         feature_range = self.out_range
         data_min, data_max = data_range
         transform_range = (data_max - data_min) or 1.0
@@ -490,12 +489,12 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
 
     """
 
-    data_range: OptimizableParameter[Optional[tuple[float, float]]]
+    data_range: OptimizableParameter[tuple[float, float] | None]
 
     def __init__(
         self,
         out_range: tuple[float, float] = (0, 1.0),
-        data_range: Optional[tuple[float, float]] = None,
+        data_range: tuple[float, float] | None = None,
     ) -> None:
         self.data_range = data_range
         super().__init__(out_range=out_range)
@@ -514,7 +513,7 @@ class TrainableMinMaxScaler(MinMaxScaler, TrainableTransformerMixin):
             The trained instance of the transformer
 
         """
-        mins, maxs = zip(*(self._calc_data_range(d) for d in data))
+        mins, maxs = zip(*(self._calc_data_range(d) for d in data), strict=True)
         self.data_range = np.min(mins), np.max(maxs)
         return self
 

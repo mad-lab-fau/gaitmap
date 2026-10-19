@@ -40,7 +40,6 @@ Datasets work best in combination with `Pipelines` and are further compatible wi
 # Then you can filter the dataset first and load the data once you know which data-points you want to access.
 # We will discuss this later in the example.
 from itertools import product
-from typing import Optional, Union
 
 import pandas as pd
 
@@ -329,8 +328,8 @@ class CustomDatasetWithConfig(Dataset):
         data_folder: str,
         custom_config_para: bool = False,
         *,
-        groupby_cols: Optional[Union[list[str], str]] = None,
-        subset_index: Optional[pd.DataFrame] = None,
+        groupby_cols: list[str] | str | None = None,
+        subset_index: pd.DataFrame | None = None,
     ) -> None:
         self.data_folder = data_folder
         self.custom_config_para = custom_config_para

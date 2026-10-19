@@ -1,5 +1,4 @@
 from contextlib import nullcontext
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -46,7 +45,7 @@ class TestMetaFunctionalityAredZuptDetector(TestAlgorithmMixin):
 class TestNormZuptDetector:
     """Test the function `sliding_window_view`."""
 
-    algorithm_class: Union[type[NormZuptDetector], type[AredZuptDetector]]
+    algorithm_class: type[NormZuptDetector] | type[AredZuptDetector]
 
     @pytest.fixture(params=(NormZuptDetector, AredZuptDetector), autouse=True)
     def get_algorithm_class(self, request) -> None:
@@ -320,3 +319,87 @@ class TestShoeZuptDetector:
         assert_array_equal(test_output.per_sample_zupts_, expected_output)
         assert np.isnan(test_output.min_vel_value_)
         assert test_output.min_vel_index_ == 11
+
+
+@pytest.mark.parametrize("body_frame", [False, True])
+@pytest.mark.parametrize(
+    "detector",
+    [NormZuptDetector(sensor="acc"), NormZuptDetector(sensor="gyr"), AredZuptDetector(), ShoeZuptDetector()],
+)
+def test_derived_features_do_not_change_zupt_detection(detector, body_frame):
+    acc_columns, gyr_columns = (BF_ACC, BF_GYR) if body_frame else (SF_ACC, SF_GYR)
+    data = pd.DataFrame(0.0, index=range(60), columns=[*acc_columns, *gyr_columns])
+    data[acc_columns[2]] = 9.81
+    data.loc[20:39, acc_columns[2]] = 100.0
+    data.loc[20:39, gyr_columns] = 100.0
+    detector = detector.clone().set_params(window_length_s=0.05)
+    expected = detector.clone().detect(data, sampling_rate_hz=100)
+    assert expected.per_sample_zupts_.any()
+    assert not expected.per_sample_zupts_.all()
+
+    enriched = data.assign(acc_norm=1e9, gyr_energy=1e9)
+    actual = detector.detect(enriched, sampling_rate_hz=100)
+    assert_array_equal(actual.per_sample_zupts_, expected.per_sample_zupts_)
+    assert_frame_equal(actual.zupts_, expected.zupts_)
+    assert actual.min_vel_index_ == expected.min_vel_index_
+    assert actual.min_vel_value_ == pytest.approx(expected.min_vel_value_)
+
+
+@pytest.mark.parametrize("overlap_samples", [0, -1])
+def test_shoe_stationary_sections_use_their_local_gravity_direction(overlap_samples):
+    data = pd.DataFrame(0.0, index=range(200), columns=SF_COLS)
+    data.loc[:99, "acc_z"] = 9.81
+    data.loc[100:, "acc_x"] = 9.81
+    result = ShoeZuptDetector(
+        window_length_s=0.1,
+        window_overlap=None,
+        window_overlap_samples=overlap_samples,
+        acc_noise_variance=1.0,
+        gyr_noise_variance=1.0,
+        inactive_signal_threshold=0.1,
+    ).detect(data, sampling_rate_hz=100)
+    assert result.per_sample_zupts_.all()
+    assert result.min_vel_value_ == pytest.approx(0.0, abs=1e-10)
+
+
+@pytest.mark.parametrize(
+    ("acc", "gyr_x", "expected_statistic"),
+    [
+        ([[0, 0, 10.81], [0, 0, 9.81], [0, 0, 8.81]], 1.0, 7 / 3),
+        ([[9.81, 0, 0], [-9.81, 0, 0], [0, 0, 0]], 0.0, 5 * 9.81**2 / 6),
+    ],
+    ids=["acceleration_variation_and_rotation", "zero_mean_acceleration"],
+)
+def test_shoe_single_window_likelihood_statistic(acc, gyr_x, expected_statistic):
+    # The paper's GLRT residual is acceleration error / variance plus gyro energy / variance.
+    # For a zero acceleration mean, every gravity direction gives the same minimum cost.
+    data = pd.DataFrame(acc, columns=SF_ACC).assign(gyr_x=gyr_x, gyr_y=0.0, gyr_z=0.0)
+    result = ShoeZuptDetector(
+        window_length_s=0.03,
+        window_overlap=None,
+        window_overlap_samples=0,
+        acc_noise_variance=2.0,
+        gyr_noise_variance=0.5,
+        inactive_signal_threshold=1000,
+    ).detect(data, sampling_rate_hz=100)
+    assert result.min_vel_value_ == pytest.approx(expected_statistic)
+    assert result.min_vel_index_ == 1
+
+
+@pytest.mark.parametrize("dtype", ["float32", "float64"])
+@pytest.mark.parametrize("threshold", [1e-6, 1e-5])
+def test_shoe_preserves_small_gravity_residuals(dtype, threshold):
+    data = pd.DataFrame(0.0, index=range(3), columns=SF_COLS, dtype=dtype)
+    data["acc_z"] = np.full(3, 9.8125, dtype=dtype)
+    result = ShoeZuptDetector(
+        window_length_s=0.03,
+        window_overlap=None,
+        window_overlap_samples=0,
+        acc_noise_variance=1.0,
+        gyr_noise_variance=1.0,
+        inactive_signal_threshold=threshold,
+    ).detect(data, sampling_rate_hz=100)
+    # (9.8125 - 9.81)^2 = 6.25e-6, with no angular motion or acceleration variance.
+    assert_array_equal(result.per_sample_zupts_, [threshold >= 6.25e-6] * 3)
+    if threshold >= 6.25e-6:
+        assert result.min_vel_value_ == pytest.approx(6.25e-6)

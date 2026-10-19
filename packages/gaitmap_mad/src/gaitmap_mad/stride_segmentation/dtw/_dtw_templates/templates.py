@@ -1,13 +1,12 @@
 """Dtw template base classes and helper."""
 
 from collections.abc import Iterable, Sequence
-from importlib.resources import open_text
-from typing import Optional, Union, cast
+from importlib.resources import files
+from typing import Self, cast
 
 import numpy as np
 import pandas as pd
 from tpcp import HyperParameter, OptimizableParameter, cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.data_transform import BaseTransformer, FixedScaler, TrainableTransformerMixin
@@ -19,18 +18,18 @@ from gaitmap.utils.datatype_helper import SingleSensorData, is_single_sensor_dat
 class BaseDtwTemplate(BaseAlgorithm):
     """Base class for dtw templates."""
 
-    use_cols: Optional[Sequence[Union[str, int]]]
+    use_cols: Sequence[str | int] | None
 
     def __init__(
         self,
         *,
-        scaling: Optional[BaseTransformer] = None,
-        use_cols: Optional[Sequence[Union[str, int]]] = None,
+        scaling: BaseTransformer | None = None,
+        use_cols: Sequence[str | int] | None = None,
     ) -> None:
         self.scaling = scaling
         self.use_cols = use_cols
 
-    def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
+    def get_data(self) -> np.ndarray | pd.DataFrame:
         """Return the template data."""
         raise NotImplementedError
 
@@ -106,20 +105,18 @@ class BarthOriginalTemplate(BaseDtwTemplate):
     template_file_name = "barth_original_template.csv"
     sampling_rate_hz = 204.8
 
-    def __init__(
-        self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Optional[Sequence[Union[str, int]]] = None
-    ) -> None:
+    def __init__(self, *, scaling=cf(FixedScaler(scale=500.0)), use_cols: Sequence[str | int] | None = None) -> None:
         super().__init__(scaling=scaling, use_cols=use_cols)
 
-    def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
+    def get_data(self) -> np.ndarray | pd.DataFrame:
         """Return the template data.
 
         This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
         """
-        with open_text(
-            "gaitmap_mad.stride_segmentation.dtw._dtw_templates",
-            cast("str", self.template_file_name),
-        ) as test_data:
+        resource = files("gaitmap_mad.stride_segmentation.dtw._dtw_templates").joinpath(
+            cast("str", self.template_file_name)
+        )
+        with resource.open(encoding="utf8") as test_data:
             data = pd.read_csv(test_data, header=0)
         template = data
 
@@ -133,9 +130,9 @@ class TrainableTemplateMixin:
     def self_optimize(
         self,
         data_sequences: Iterable[SingleSensorData],
-        sampling_rate_hz: Optional[float] = None,
+        sampling_rate_hz: float | None = None,
         *,
-        columns: Optional[list[_Hashable]] = None,
+        columns: list[_Hashable] | None = None,
         **_,
     ) -> Self:
         """Optimize or recreate the template from data sequences."""
@@ -178,24 +175,24 @@ class DtwTemplate(BaseDtwTemplate):
 
     """
 
-    sampling_rate_hz: Optional[float]
-    template_file_name: Optional[str]
-    scaling: Optional[BaseTransformer]
-    data: Optional[Union[np.ndarray, pd.DataFrame]]
+    sampling_rate_hz: float | None
+    template_file_name: str | None
+    scaling: BaseTransformer | None
+    data: np.ndarray | pd.DataFrame | None
 
     def __init__(
         self,
         *,
-        data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        sampling_rate_hz: Optional[float] = None,
-        scaling: Optional[BaseTransformer] = None,
-        use_cols: Optional[Sequence[Union[str, int]]] = None,
+        data: np.ndarray | pd.DataFrame | None = None,
+        sampling_rate_hz: float | None = None,
+        scaling: BaseTransformer | None = None,
+        use_cols: Sequence[str | int] | None = None,
     ) -> None:
         self.data = data
         self.sampling_rate_hz = sampling_rate_hz
         super().__init__(scaling=scaling, use_cols=use_cols)
 
-    def get_data(self) -> Union[np.ndarray, pd.DataFrame]:
+    def get_data(self) -> np.ndarray | pd.DataFrame:
         """Return the template data.
 
         This will only return the columns of data that are listed in `use_cols` and will apply the scaling.
@@ -267,21 +264,21 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
 
     """
 
-    scaling: OptimizableParameter[Optional[BaseTransformer]]
-    data: OptimizableParameter[Optional[Union[np.ndarray, pd.DataFrame]]]
-    sampling_rate_hz: OptimizableParameter[Optional[float]]
+    scaling: OptimizableParameter[BaseTransformer | None]
+    data: OptimizableParameter[np.ndarray | pd.DataFrame | None]
+    sampling_rate_hz: OptimizableParameter[float | None]
     interpolation_method: HyperParameter[str]
-    n_samples: HyperParameter[Optional[int]]
+    n_samples: HyperParameter[int | None]
 
     def __init__(
         self,
         *,
-        data: Optional[Union[np.ndarray, pd.DataFrame]] = None,
-        sampling_rate_hz: Optional[float] = None,
-        scaling: Optional[BaseTransformer] = None,
+        data: np.ndarray | pd.DataFrame | None = None,
+        sampling_rate_hz: float | None = None,
+        scaling: BaseTransformer | None = None,
         interpolation_method: str = "linear",
-        n_samples: Optional[int] = None,
-        use_cols: Optional[Sequence[Union[str, int]]] = None,
+        n_samples: int | None = None,
+        use_cols: Sequence[str | int] | None = None,
     ) -> None:
         self.interpolation_method = interpolation_method
         self.n_samples = n_samples
@@ -295,9 +292,9 @@ class InterpolatedDtwTemplate(DtwTemplate, TrainableTemplateMixin):
     def self_optimize(
         self,
         data_sequences: Iterable[SingleSensorData],
-        sampling_rate_hz: Optional[float] = None,
+        sampling_rate_hz: float | None = None,
         *,
-        columns: Optional[list[_Hashable]] = None,
+        columns: list[_Hashable] | None = None,
         **_,
     ):
         """Create a template from multiple data sequences.
@@ -347,8 +344,8 @@ def _create_interpolated_dtw_template(
     signal_sequences: Iterable[SingleSensorData],
     sampling_rate_hz: float,
     kind: str = "linear",
-    n_samples: Optional[int] = None,
-    columns: Optional[list[_Hashable]] = None,
+    n_samples: int | None = None,
+    columns: list[_Hashable] | None = None,
 ) -> tuple[pd.DataFrame, float]:
     expected_col_order = columns
     arrays = []

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from gaitmap.base import BaseType
 from gaitmap.trajectory_reconstruction._stride_level_trajectory import StrideLevelTrajectory
@@ -95,3 +95,30 @@ class TestStrideLevelTrajectory:
                         {"start": [0], "end": [7], "min_vel": [0]}, index=pd.Series([f"{sensor[0]}_3"], name="s_id")
                     ),
                 )
+
+
+@pytest.mark.parametrize("multi_sensor", [False, True])
+def test_event_based_reconstruction_accepts_float_stride_metadata(multi_sensor):
+    """Metadata must not change the sample coordinates forwarded to event ZUPTs."""
+    from gaitmap.trajectory_reconstruction import RtsKalman
+    from gaitmap.zupt_detection import StrideEventZuptDetector
+
+    data = pd.DataFrame(0.0, index=range(80), columns=SF_COLS)
+    data["acc_z"] = 9.81
+    strides = pd.DataFrame({"start": [10, 40], "end": [30, 60], "min_vel": [10, 40]}).rename_axis("s_id")
+    with_metadata = strides.assign(confidence=[0.5, 0.75])
+    if multi_sensor:
+        data, strides, with_metadata = {"foot": data}, {"foot": strides}, {"foot": with_metadata}
+    reconstruction = StrideLevelTrajectory(
+        ori_method=None, pos_method=None, trajectory_method=RtsKalman(zupt_detector=StrideEventZuptDetector())
+    )
+    expected = reconstruction.clone().estimate(data, strides, sampling_rate_hz=100)
+
+    actual = reconstruction.estimate(data, with_metadata, sampling_rate_hz=100)
+
+    for attribute in ["position_", "velocity_", "orientation_"]:
+        result, reference = getattr(actual, attribute), getattr(expected, attribute)
+        if multi_sensor:
+            result, reference = result["foot"], reference["foot"]
+        assert_frame_equal(result, reference)
+        assert not result.empty

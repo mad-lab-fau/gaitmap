@@ -1,10 +1,9 @@
 """A version of BarthDTW that used local warping constrains by default."""
 
-from typing import Optional, Union
+from typing import Literal
 
 from joblib import Memory
 from tpcp import CloneFactory
-from typing_extensions import Literal
 
 from gaitmap.utils._types import _Hashable
 from gaitmap_mad.stride_segmentation.dtw._barth_dtw import BarthDtw
@@ -135,20 +134,18 @@ class ConstrainedBarthDtw(BarthDtw):
 
     def __init__(
         self,
-        template: Optional[Union[BaseDtwTemplate, dict[_Hashable, BaseDtwTemplate]]] = CloneFactory(
-            BarthOriginalTemplate()
-        ),
+        template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
         find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
-        max_cost: Optional[float] = 4,
-        min_match_length_s: Optional[float] = 0.6,
-        max_match_length_s: Optional[float] = 3.0,
-        max_template_stretch_ms: Optional[float] = 120,
-        max_signal_stretch_ms: Optional[float] = 120,
-        snap_to_min_win_ms: Optional[float] = 300,
-        snap_to_min_axis: Optional[str] = "gyr_ml",
+        max_cost: float | None = 4,
+        min_match_length_s: float | None = 0.6,
+        max_match_length_s: float | None = 3.0,
+        max_template_stretch_ms: float | None = 120,
+        max_signal_stretch_ms: float | None = 120,
+        snap_to_min_win_ms: float | None = 300,
+        snap_to_min_axis: str | None = "gyr_ml",
         conflict_resolution: bool = True,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
     ) -> None:
         super().__init__(
             template=template,

@@ -1,12 +1,11 @@
 """A implementation of a PCA based sensor alignment to perform coordinate system rotations."""
 
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Self
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 from sklearn.decomposition import PCA
-from typing_extensions import Self
 
 from gaitmap.base import BaseSensorAlignment
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
@@ -18,7 +17,7 @@ from gaitmap.utils.rotations import find_signed_3d_angle, rotate_dataset
 # TODO: Move `right_handed_cord` to general utils package
 
 
-def right_handed_cord(x: Optional[np.ndarray], y: Optional[np.ndarray], z: Optional[np.ndarray]) -> np.ndarray:
+def right_handed_cord(x: np.ndarray | None, y: np.ndarray | None, z: np.ndarray | None) -> np.ndarray:
     """Create right handed coordinate system, with two axis provided."""
     if x is None:
         x = np.cross(y, z)
@@ -146,9 +145,9 @@ class PcaAlignment(BaseSensorAlignment):
 
     """
 
-    rotation_: Union[Rotation, dict[_Hashable, Rotation]]
-    pca_: Union[PCA, dict[_Hashable, PCA]]
-    normalized_pca_components_: Union[np.ndarray, dict[_Hashable, np.ndarray]]
+    rotation_: Rotation | dict[_Hashable, Rotation]
+    pca_: PCA | dict[_Hashable, PCA]
+    normalized_pca_components_: np.ndarray | dict[_Hashable, np.ndarray]
 
     target_axis: str
     pca_plane_axis: Sequence[str]

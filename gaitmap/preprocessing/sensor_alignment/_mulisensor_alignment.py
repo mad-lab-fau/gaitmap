@@ -1,7 +1,5 @@
 """A implementation to align multiple sensors attached to a shared rigid body."""
 
-from typing import Optional
-
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -15,7 +13,7 @@ def align_heading_of_sensors(
     gyro_signal_sensor: np.ndarray,
     gyro_signal_ref: np.ndarray,
     movement_threshold: float = 150,
-    smoothing_window_size: Optional[int] = None,
+    smoothing_window_size: int | None = None,
 ) -> Rotation:
     """Align the heading (rotation in the ground plane) of multiple sensors attached to the same rigid body.
 

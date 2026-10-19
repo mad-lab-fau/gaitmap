@@ -1,6 +1,6 @@
 """Calculate temporal parameters algorithm."""
 
-from typing import Literal, TypeVar, Union
+from typing import Literal, TypeVar
 
 import pandas as pd
 
@@ -87,7 +87,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
 
     expected_stride_type: Literal["min_vel", "ic"]
 
-    parameters_: Union[pd.DataFrame, dict[str, pd.DataFrame]]
+    parameters_: pd.DataFrame | dict[str, pd.DataFrame]
 
     sampling_rate_hz: float
     stride_event_list: StrideList
@@ -96,7 +96,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         self.expected_stride_type = expected_stride_type
 
     @property
-    def parameters_pretty_(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def parameters_pretty_(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         """Return parameters with column names indicating units."""
         if isinstance(self.parameters_, dict):
             parameters_ = {}
@@ -165,21 +165,21 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
         stride_time_start_col, stride_time_end_col = _get_stride_time_cols(self.expected_stride_type)
-        stride_time = (
-            stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col]
-        ) / sampling_rate_hz
+        stride_time = _calculate_event_duration(
+            stride_event_list, stride_time_start_col, stride_time_end_col, sampling_rate_hz
+        )
 
         swing_time_start_col, swing_time_end_col = _get_swing_time_cols(self.expected_stride_type)
-        swing_time = (
-            stride_event_list[swing_time_end_col] - stride_event_list[swing_time_start_col]
-        ) / sampling_rate_hz
+        swing_time = _calculate_event_duration(
+            stride_event_list, swing_time_start_col, swing_time_end_col, sampling_rate_hz
+        )
         stance_time = stride_time - swing_time
         stride_parameter_dict = {
             "stride_time": stride_time,
             "swing_time": swing_time,
             "stance_time": stance_time,
         }
-        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
+        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index).astype(float)
         return parameters_
 
 
@@ -197,3 +197,11 @@ def _get_swing_time_cols(stride_type: Literal["min_vel", "ic"]) -> tuple[str, st
     if stride_type == "ic":
         return "tc", "end"
     raise ValueError("stride_type should be either 'min_vel' or 'ic'")
+
+
+def _calculate_event_duration(stride_list, start_col, end_col, sampling_rate_hz):
+    # Mixed signed/unsigned pandas integers can promote absolute positions to
+    # floats before subtraction. Python integers preserve the sample difference.
+    differences = stride_list[end_col].astype(object) - stride_list[start_col].astype(object)
+    seconds = differences.to_numpy(dtype=float, na_value=float("nan")) / sampling_rate_hz
+    return pd.Series(seconds, index=stride_list.index)

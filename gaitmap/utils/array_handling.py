@@ -1,14 +1,13 @@
 """A set of util functions that help to manipulate arrays in any imaginable way."""
 
 from collections.abc import Iterable, Iterator
-from typing import Optional, Union
+from typing import Literal
 
 import numba.typed
 import numpy as np
 from numba import njit
 from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
-from typing_extensions import Literal
 
 from gaitmap.utils.datatype_helper import (
     SingleSensorData,
@@ -140,7 +139,7 @@ def bool_array_to_start_end_array(bool_array: np.ndarray) -> np.ndarray:
     return np.array([[s.start, s.stop] for s in slices])
 
 
-def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: Optional[int] = None) -> np.ndarray:
+def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: int | None = None) -> np.ndarray:
     """Convert a start-end list to a bool array.
 
     Parameters
@@ -214,7 +213,7 @@ def find_local_minima_below_threshold(data: np.ndarray, threshold: float) -> np.
     return np.array([s + np.argmin(p) for s, p in peaks])
 
 
-def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float] = None, **kwargs) -> np.ndarray:
+def find_local_minima_with_distance(data: np.ndarray, threshold: float | None = None, **kwargs) -> np.ndarray:
     """Find local minima using scipy's `find_peaks` function.
 
     Because `find_peaks` is designed to find local maxima, the data multiplied by -1.
@@ -243,7 +242,7 @@ def find_local_minima_with_distance(data: np.ndarray, threshold: Optional[float]
 def find_extrema_in_radius(
     data: np.ndarray,
     indices: np.ndarray,
-    radius: Union[int, tuple[int, int]],
+    radius: int | tuple[int, int],
     extrema_type: Literal["min", "max"] = "min",
 ):
     """Return the index of the global extrema of data in the given radius around each index in indices.
@@ -421,8 +420,8 @@ def _solve_overlap(input_array: np.ndarray, gap_size: int) -> numba.typed.List:
 
 def iterate_region_data(
     signal_sequence: Iterable[SingleSensorData],
-    label_sequences: Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]],
-    expected_col_order: Optional[list[str]] = None,
+    label_sequences: Iterable[SingleSensorStrideList | SingleSensorRegionsOfInterestList],
+    expected_col_order: list[str] | None = None,
 ) -> Iterator[SingleSensorData]:
     """Iterate over individual strides/ROIs in multiple sensor data sequences.
 
@@ -433,11 +432,11 @@ def iterate_region_data(
     ----------
     signal_sequence : Iterable[SingleSensorData]
         A list/iterable of SingleSensorData objects.
-    label_sequences : Iterable[Union[SingleSensorStrideList, SingleSensorRegionsOfInterestList]]
+    label_sequences : Iterable[SingleSensorStrideList | SingleSensorRegionsOfInterestList]
         A list/iterable of SingleSensorStrideList or SingleSensorRegionsOfInterestList objects.
         This must have the same length as `signal_sequence` as we expect that the first signal sequence belongs to the
         first label sequence.
-    expected_col_order : Optional[List[str]]
+    expected_col_order : list[str] | None
         A list of strings that defines the expected column order of the output.
         This ensures that all signal sequences have the same column order.
         If None, the column order of the first signal sequence is used.
@@ -448,7 +447,7 @@ def iterate_region_data(
         A SingleSensorData object with the data of the next stride/ROI.
 
     """
-    for df, labels in zip(signal_sequence, label_sequences):
+    for df, labels in zip(signal_sequence, label_sequences, strict=True):
         is_single_sensor_data(df, check_acc=False, check_gyr=False, raise_exception=True)
         try:
             is_single_sensor_stride_list(labels, raise_exception=True)

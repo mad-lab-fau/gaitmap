@@ -16,7 +16,6 @@ import sys
 from datetime import datetime
 from inspect import getsourcefile
 from pathlib import Path
-from typing import Optional
 
 import toml
 from sphinx_gallery.sorting import ExplicitOrder
@@ -43,7 +42,8 @@ def replace_gitlab_links(base_url, text):
 
 
 def convert_github_links(base_url, text):
-    regex = base_url + r"(pull|issues|commit)/(\w+)"
+    # Markdown links already have labels; only shorten bare URLs.
+    regex = r"(?<!\]\()" + re.escape(base_url) + r"(pull|issues|commit)/(\w+)"
 
     def substitute(matchobj) -> str:
         if matchobj.group(1) == "commit":
@@ -229,7 +229,7 @@ linkcode_resolve = make_linkcode_resolve(
 )
 
 
-def skip_properties(app, what, name, obj, skip, options) -> Optional[bool]:
+def skip_properties(app, what, name, obj, skip, options) -> bool | None:
     """This removes all properties from the documentation as they are expected to be documented in the docstring."""
     if isinstance(obj, property):
         return True

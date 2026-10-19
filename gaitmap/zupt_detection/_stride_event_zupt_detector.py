@@ -1,8 +1,7 @@
-from typing import Optional
+from typing import Self
 
 import numpy as np
 import pandas as pd
-from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.utils.array_handling import merge_intervals
@@ -64,7 +63,7 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         self,
         data: SingleSensorData,
         *,
-        stride_event_list: Optional[SingleSensorStrideList] = None,
+        stride_event_list: SingleSensorStrideList | None = None,
         sampling_rate_hz: float,
     ) -> Self:
         """Detect the ZUPT events using the stride event list.
@@ -109,7 +108,9 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         self.half_region_size_samples_ = int(np.round(self.half_region_size_s * sampling_rate_hz))
 
         # In a min_vel stride list, all starts and all ends are min_vel events.
-        all_min_vel_events = np.unique(np.concatenate([self.stride_event_list["start"], self.stride_event_list["end"]]))
+        all_min_vel_events = np.unique(
+            np.concatenate([self.stride_event_list["start"], self.stride_event_list["end"]]).astype(np.int64)
+        )
 
         start_ends = np.empty((len(all_min_vel_events), 2), dtype=int)
         start_ends[:, 0] = np.clip(all_min_vel_events - self.half_region_size_samples_, 0, None)

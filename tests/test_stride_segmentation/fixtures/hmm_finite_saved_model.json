@@ -1,0 +1,134 @@
+{
+    "_gaitmap_obj": "SimpleHmm",
+    "params": {
+        "algo_train": "viterbi",
+        "architecture": "left-right-strict",
+        "data_columns": {
+            "_obj_type": "Tuple",
+            "tuple": [
+                "feature"
+            ]
+        },
+        "max_iterations": 100000000.0,
+        "model": {
+            "_obj_type": "HiddenMarkovModel",
+            "hmm": {
+                "class": "HiddenMarkovModel",
+                "name": "finite_reference",
+                "start": {
+                    "class": "State",
+                    "distribution": null,
+                    "name": "finite_reference-start",
+                    "weight": 1.0
+                },
+                "end": {
+                    "class": "State",
+                    "distribution": null,
+                    "name": "finite_reference-end",
+                    "weight": 1.0
+                },
+                "states": [
+                    {
+                        "class": "State",
+                        "distribution": {
+                            "class": "Distribution",
+                            "name": "MultivariateGaussianDistribution",
+                            "parameters": [
+                                [
+                                    -2.0
+                                ],
+                                [
+                                    [
+                                        1.0
+                                    ]
+                                ]
+                            ],
+                            "frozen": false
+                        },
+                        "name": "s0",
+                        "weight": 1.0
+                    },
+                    {
+                        "class": "State",
+                        "distribution": {
+                            "class": "Distribution",
+                            "name": "MultivariateGaussianDistribution",
+                            "parameters": [
+                                [
+                                    2.0
+                                ],
+                                [
+                                    [
+                                        1.0
+                                    ]
+                                ]
+                            ],
+                            "frozen": false
+                        },
+                        "name": "s1",
+                        "weight": 1.0
+                    },
+                    {
+                        "class": "State",
+                        "distribution": null,
+                        "name": "finite_reference-start",
+                        "weight": 1.0
+                    },
+                    {
+                        "class": "State",
+                        "distribution": null,
+                        "name": "finite_reference-end",
+                        "weight": 1.0
+                    }
+                ],
+                "end_index": 3,
+                "start_index": 2,
+                "silent_index": 2,
+                "edges": [
+                    [
+                        2,
+                        0,
+                        1.0,
+                        1.0,
+                        null
+                    ],
+                    [
+                        0,
+                        0,
+                        0.6,
+                        0.6,
+                        null
+                    ],
+                    [
+                        0,
+                        1,
+                        0.4,
+                        0.4,
+                        null
+                    ],
+                    [
+                        1,
+                        1,
+                        0.5,
+                        0.5,
+                        null
+                    ],
+                    [
+                        1,
+                        3,
+                        0.5,
+                        0.5,
+                        null
+                    ]
+                ],
+                "distribution ties": []
+            }
+        },
+        "n_gmm_components": 1,
+        "n_jobs": 1,
+        "n_states": 2,
+        "name": "my_model",
+        "stop_threshold": 1e-09,
+        "verbose": false
+    }
+}

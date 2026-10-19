@@ -186,7 +186,9 @@ def get_healthy_example_stride_events():
     This fixture returns a dictionary of stridelists, where the key is the sensor name.
     """
     test_data_path = _get_data("stride_events_sample.csv")
-    data = pd.read_csv(test_data_path, header=0)
+    data = pd.read_csv(test_data_path, header=0).astype(
+        dict.fromkeys(["start", "end", "ic", "tc", "min_vel", "pre_ic"], "Int64")
+    )
 
     # Convert to dict with sensor name as key.
     # Sensor name here is derived from the foot. In the real pipeline that would be provided to the algo.

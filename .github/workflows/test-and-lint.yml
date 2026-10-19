@@ -4,13 +4,12 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
 
 jobs:
   test:
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
@@ -23,18 +22,31 @@ jobs:
           cache-dependency-glob: "uv.lock"
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies (all extras)
-        if: ${{ matrix.python-version == '3.9' }}
         run: uv sync --group dev --all-extras
-      - name: Install dependencies (stats extra)
-        if: ${{ matrix.python-version != '3.9' }}
-        run: uv sync --group dev --extra stats
       - name: Testing
         run: uv run poe test
       - name: Upload coverage reports to Codecov
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  minimum-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv and lowest supported Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.11"
+      - name: Install lowest direct dependencies (all extras)
+        run: uv sync --resolution lowest-direct --upgrade --group dev --all-extras
+      - name: Show resolved versions
+        run: uv pip list
+      - name: Testing with minimum dependencies
+        run: uv run --frozen poe -e simple test
 
   lint:
     runs-on: ubuntu-latest
@@ -45,7 +57,7 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-          python-version: "3.9"
+          python-version: "3.11"
       - name: Install dependencies
         run: uv sync --group dev --all-extras
       - name: Linting

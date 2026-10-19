@@ -2,7 +2,7 @@
 
 import warnings
 from importlib import import_module
-from typing import Literal, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -16,10 +16,10 @@ _ID_COL_NAME = "__id_col__"
 
 def calculate_parameter_errors(
     *,
-    reference_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
-    predicted_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
+    reference_parameter: pd.DataFrame | dict[_Hashable, pd.DataFrame],
+    predicted_parameter: pd.DataFrame | dict[_Hashable, pd.DataFrame],
     id_column: str = "s_id",
-) -> tuple[Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]], Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]]]:
+) -> tuple[pd.DataFrame | dict[_Hashable, pd.DataFrame], pd.DataFrame | dict[_Hashable, pd.DataFrame]]:
     """Calculate the error per row between a parameter predicted and a given ground truth.
 
     We calculate four different groups of errors:
@@ -97,8 +97,8 @@ def calculate_parameter_errors(
 
 def calculate_aggregated_parameter_errors(
     *,
-    reference_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
-    predicted_parameter: Union[pd.DataFrame, dict[_Hashable, pd.DataFrame]],
+    reference_parameter: pd.DataFrame | dict[_Hashable, pd.DataFrame],
+    predicted_parameter: pd.DataFrame | dict[_Hashable, pd.DataFrame],
     calculate_per_sensor: bool = True,
     scoring_errors: Literal["ignore", "warn", "raise"] = "warn",
     id_column: str = "s_id",
@@ -568,7 +568,7 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
     assert data.index.is_unique
 
     paras = data.columns.get_level_values("parameter").unique()
-    data = data.stack("error_type", future_stack=True).reset_index()
+    data = data.stack("error_type").reset_index()
     coefs: dict[str, pd.Series] = {}
     for para in paras:
         try:

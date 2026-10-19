@@ -84,6 +84,9 @@ feature_transform = RothHmmFeatureTransformer(
 # different in architecture, number of states or number of gaussian mixture model (GMM) components.
 # In this example all configurable parameters are exposed.
 # These parameters might require optimization for your specific type of dataset!
+# ``max_iterations`` limits the number of parameter updates for each model.
+# ``min_covar`` bounds covariance eigenvalues in squared feature units during initialization and training.
+# This prevents Gaussian mixture components from collapsing. Its value should reflect the scale of the features.
 from gaitmap.stride_segmentation.hmm import SimpleHmm
 
 stride_model = SimpleHmm(
@@ -91,7 +94,8 @@ stride_model = SimpleHmm(
     n_gmm_components=6,
     algo_train="baum-welch",
     stop_threshold=1e-9,
-    max_iterations=5,
+    max_iterations=6,
+    min_covar=1e-6,
     architecture="left-right-strict",
     verbose=True,
     name="stride_model",
@@ -102,7 +106,8 @@ transition_model = SimpleHmm(
     n_gmm_components=3,
     algo_train="baum-welch",
     stop_threshold=1e-9,
-    max_iterations=5,
+    max_iterations=6,
+    min_covar=1e-6,
     architecture="left-right-loose",
     verbose=True,
     name="transition_model",
@@ -125,7 +130,7 @@ segmentation_model = RothSegmentationHmm(
     algo_predict="viterbi",
     algo_train="baum-welch",
     stop_threshold=1e-9,
-    max_iterations=1,
+    max_iterations=2,
     initialization="labels",
     verbose=True,
     name="segmentation_model",
@@ -164,16 +169,16 @@ segmentation_model = segmentation_model.self_optimize(
 # Inspecting the Results
 # --------------------------------------
 #
-# Now all internal models which were initialized as "None" should be populated by pomegranate models.
+# Now all internal models which were initialized as "None" should be populated by local Gaussian HMM models.
 # We can now have a look at the final transition matrix or the trained distributions (GMMs).
 # You could now either use the model to predict stride borders on an unseen sequence or save it to a json file for later
 # use.
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 
-print(segmentation_model.model.dense_transition_matrix()[0:-2, 0:-2])
+print(segmentation_model.model.transitions)
 
-print(segmentation_model.model.states[10])
+print(segmentation_model.model.emissions[10])
 
 # %%
 # Applying the Model to a Sequence

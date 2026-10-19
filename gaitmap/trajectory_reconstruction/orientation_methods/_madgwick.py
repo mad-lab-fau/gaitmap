@@ -1,13 +1,12 @@
 """Implementation of the MadgwickAHRS."""
 
-from typing import Optional, Union
+from typing import Self
 
 import numpy as np
 from joblib import Memory
 from numba import njit
 from scipy.spatial.transform import Rotation
 from tpcp import cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseOrientationMethod
 from gaitmap.utils.consts import SF_ACC, SF_GYR, SF_MAG
@@ -99,17 +98,17 @@ class MadgwickAHRS(BaseOrientationMethod):
 
     """
 
-    initial_orientation: Union[np.ndarray, Rotation]
+    initial_orientation: np.ndarray | Rotation
     beta: float
     use_magnetometer: bool
-    memory: Optional[Memory]
+    memory: Memory | None
 
     def __init__(
         self,
         beta: float = 0.2,
-        initial_orientation: Union[np.ndarray, Rotation] = cf(np.array([0, 0, 0, 1.0])),
+        initial_orientation: np.ndarray | Rotation = cf(np.array([0, 0, 0, 1.0])),
         use_magnetometer: bool = False,
-        memory: Optional[Memory] = None,
+        memory: Memory | None = None,
     ) -> None:
         self.initial_orientation = initial_orientation
         self.beta = beta
@@ -145,7 +144,7 @@ class MadgwickAHRS(BaseOrientationMethod):
         if isinstance(initial_orientation, Rotation):
             initial_orientation = Rotation.as_quat(initial_orientation)
         initial_orientation = initial_orientation.copy()
-        gyro_data = np.deg2rad(data[SF_GYR].to_numpy(copy=True))
+        gyro_data = np.deg2rad(data[SF_GYR].to_numpy())
         acc_data = data[SF_ACC].to_numpy(copy=True)
         if self.use_magnetometer:
             mag_data = data[SF_MAG].to_numpy(copy=True)
@@ -316,7 +315,8 @@ def _madgwick_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, 
 def _madgwick_update_series(gyro, acc, initial_orientation, sampling_rate_hz, beta):
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
-    for i, (gyro_val, acc_val) in enumerate(zip(gyro, acc)):
+    for i in range(len(gyro)):
+        gyro_val, acc_val = gyro[i], acc[i]
         initial_orientation = _madgwick_update(
             gyro=gyro_val,
             acc=acc_val,
@@ -333,7 +333,8 @@ def _madgwick_update_series(gyro, acc, initial_orientation, sampling_rate_hz, be
 def _madgwick_update_series_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, beta):
     out = np.empty((len(gyro) + 1, 4))
     out[0] = initial_orientation
-    for i, (gyro_val, acc_val, mag_val) in enumerate(zip(gyro, acc, mag)):
+    for i in range(len(gyro)):
+        gyro_val, acc_val, mag_val = gyro[i], acc[i], mag[i]
         initial_orientation = _madgwick_update_mag(
             gyro=gyro_val,
             acc=acc_val,

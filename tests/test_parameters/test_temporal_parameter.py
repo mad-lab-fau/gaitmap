@@ -24,7 +24,7 @@ def _min_vel_stride_list():
     temporal_parameters["swing_time"] = [1.0, 1.0, 2.0]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
     temporal_parameters = temporal_parameters.set_index("s_id")
-    return stride_events_list, temporal_parameters
+    return stride_events_list.astype("Int64"), temporal_parameters
 
 
 @pytest.fixture()
@@ -48,7 +48,7 @@ def ic_stride_list():
     temporal_parameters["swing_time"] = [0.5, 0.5, 1.5]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
     temporal_parameters = temporal_parameters.set_index("s_id")
-    return stride_events_list, temporal_parameters
+    return stride_events_list.astype("Int64"), temporal_parameters
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
@@ -124,3 +124,32 @@ class TestTemporalParameterRegression:
         t = TemporalParameterCalculation()
         t.calculate(healthy_example_stride_events, 204.8)
         snapshot.assert_match(t.parameters_)
+
+
+@pytest.mark.parametrize("ic_dtype,tc_dtype", [("int64", "uint64"), ("uint64", "int64")])
+def test_converted_mixed_integer_events_preserve_sample_differences(ic_dtype, tc_dtype):
+    """Large shared offsets must cancel before converting sample intervals to seconds."""
+    from gaitmap.utils.stride_list_conversion import convert_stride_list
+
+    origin = 2**53
+    strides = (
+        pd.DataFrame(
+            {
+                "start": [origin, origin + 20],
+                "end": [origin + 20, origin + 40],
+                "ic": [origin + 10, origin + 30],
+                "tc": [origin + 5, origin + 25],
+                "min_vel": [origin + 15, origin + 35],
+            },
+            dtype="int64",
+        )
+        .rename_axis("s_id")
+        .astype({"ic": ic_dtype, "tc": tc_dtype})
+    )
+    converted = convert_stride_list(strides, target_stride_type="ic")
+
+    result = TemporalParameterCalculation(expected_stride_type="ic").calculate(converted, sampling_rate_hz=10)
+
+    assert result.parameters_.loc[0, "stride_time"] == 2.0
+    assert result.parameters_.loc[0, "swing_time"] == 0.5
+    assert result.parameters_.loc[0, "stance_time"] == 1.5

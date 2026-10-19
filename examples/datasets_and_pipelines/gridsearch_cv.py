@@ -20,11 +20,9 @@ tuning hyperparameters <https://scikit-learn.org/stable/modules/grid_search.html
 """
 
 import random
-from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 
 from gaitmap.data_transform import TrainableAbsMaxScaler
 from gaitmap.utils.array_handling import iterate_region_data
@@ -78,7 +76,7 @@ from gaitmap.utils.datatype_helper import SingleSensorStrideList
 class MyPipeline(OptimizablePipeline):
     max_cost: PureParameter[float]
     template: OptimizableParameter[InterpolatedDtwTemplate]
-    n_train_strides: HyperParameter[Optional[int]]
+    n_train_strides: HyperParameter[int | None]
 
     segmented_stride_list_: SingleSensorStrideList
     cost_func_: np.ndarray
@@ -88,7 +86,7 @@ class MyPipeline(OptimizablePipeline):
         max_cost: float = 3,
         # We need to wrap the template in a `CloneFactory` call here to prevent issues with mutable defaults!
         template: InterpolatedDtwTemplate = CloneFactory(InterpolatedDtwTemplate(scaling=TrainableAbsMaxScaler())),
-        n_train_strides: Optional[int] = None,
+        n_train_strides: int | None = None,
     ) -> None:
         self.max_cost = max_cost
         self.template = template

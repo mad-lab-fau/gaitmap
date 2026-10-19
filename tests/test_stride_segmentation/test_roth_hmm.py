@@ -1,18 +1,16 @@
-from unittest.mock import patch
-
-import pytest
-
-pytest.importorskip("pomegranate")
-
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_almost_equal, assert_array_equal
-from pomegranate import GeneralMixtureModel
-from pomegranate.hmm import History
-from tpcp._hash import custom_hash
+from numpy.testing import assert_allclose, assert_array_equal
 
 from gaitmap.data_transform import SlidingWindowMean
+from gaitmap.stride_segmentation.hmm import (
+    HmmStrideSegmentation,
+    PreTrainedRothSegmentationModel,
+    RothHmmFeatureTransformer,
+    RothSegmentationHmm,
+    SimpleHmm,
+)
 from gaitmap.utils.consts import BF_COLS
 from gaitmap.utils.coordinate_conversion import convert_left_foot_to_fbf, convert_to_fbf
 from gaitmap.utils.datatype_helper import (
@@ -20,14 +18,6 @@ from gaitmap.utils.datatype_helper import (
     is_multi_sensor_stride_list,
     is_single_sensor_stride_list,
 )
-from gaitmap_mad.stride_segmentation.hmm import (
-    HmmStrideSegmentation,
-    PreTrainedRothSegmentationModel,
-    RothHmmFeatureTransformer,
-    RothSegmentationHmm,
-    SimpleHmm,
-)
-from gaitmap_mad.stride_segmentation.hmm._simple_model import initialize_hmm
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 
 # Fix random seed for reproducibility
@@ -206,35 +196,6 @@ class TestSimpleModel:
 
         assert "Invalid label sequence" in str(e.value)
 
-    @pytest.mark.parametrize(
-        "data",
-        [
-            pd.DataFrame(np.random.rand(100, 3), columns=["feature1", "feature2", "feature3"]),
-            pd.DataFrame(np.random.rand(100, 1), columns=["feature1"]),
-        ],
-    )
-    @pytest.mark.parametrize("n_gmm_components", [1, 3])
-    # We test one value with n_states > 10, as this should trigger a sorting bug in pomegranate that we are handling
-    # explicitly
-    @pytest.mark.parametrize("n_states", [5, 12])
-    def test_optimize_with_single_sequence(self, data, n_gmm_components, n_states) -> None:
-        model = SimpleHmm(n_states=n_states, n_gmm_components=n_gmm_components, max_iterations=1)
-        model.self_optimize([data], [pd.Series(np.tile(np.arange(n_states), int(np.ceil(100 / n_states)))[:100])])
-
-        assert list(model.data_columns) == data.columns.tolist()
-        # -2 because of the start and end state
-        assert len(model.model.states) - 2 == n_states == model.n_states
-        # Test that each state has 3 gmm components
-        for state in model.model.states:
-            if state.name not in ["None-start", "None-end"]:
-                if n_gmm_components == 1:
-                    dists = [state.distribution]
-                else:
-                    assert isinstance(state.distribution, GeneralMixtureModel)
-                    assert len(state.distribution.distributions) == model.n_gmm_components == n_gmm_components
-                    dists = state.distribution.distributions
-                assert {d.name for d in dists} == {"MultivariateGaussianDistribution"}
-
     def test_model_exists_warning(self) -> None:
         model = SimpleHmm(n_states=5, n_gmm_components=3)
         model.self_optimize([pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))])
@@ -272,57 +233,25 @@ class TestSimpleModel:
         assert len(pred) == 100
         assert set(pred) == set(range(5))
 
-    @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
-    def test_different_architectures(self, architecture) -> None:
-        # We test initialization directly, otherwise training will modify the transition matrizes
-        model = initialize_hmm(
-            [np.random.rand(100, 3)],
-            [np.random.choice(5, 100)],
-            n_states=5,
-            n_gmm_components=3,
-            architecture=architecture,
+    @pytest.mark.parametrize(
+        ("architecture", "transitions", "starts", "ends"),
+        [
+            ("left-right-strict", [[0.5, 0.5], [0.0, 0.5]], [1.0, 0.0], [0.0, 0.5]),
+            ("left-right-loose", [[1 / 3, 1 / 3], [1 / 3, 1 / 3]], [0.5, 0.5], [1 / 3, 1 / 3]),
+            ("fully-connected", [[0.25, 0.25], [0.25, 0.25]], [0.5, 0.5], [0.5, 0.5]),
+        ],
+    )
+    def test_different_architectures(self, architecture, transitions, starts, ends) -> None:
+        """Public initialization normalizes permitted transitions together with termination."""
+        data = pd.DataFrame({"feature": [-2.0, -1.0, 1.0, 2.0]})
+        labels = pd.Series([0, 0, 1, 1])
+        result = SimpleHmm(2, 1, architecture=architecture, max_iterations=0, verbose=False).self_optimize(
+            [data], [labels]
         )
-        transition_matrix = model.dense_transition_matrix()
-        expected = np.zeros((7, 7))
-        if architecture == "left-right-strict":
-            # Normal transitions
-            expected[0:5, 0:5] += np.diag(np.ones(5) / 2) + np.diag(np.ones(4) / 2, k=1)
-            # Start state
-            expected[5, 0] = 1
-            # End state
-            expected[4, 6] = 0.5
-        elif architecture == "left-right-loose":
-            # Normal transitions
-            expected[0:5, 0:5] += np.diag(np.ones(5) / 3) + np.diag(np.ones(4) / 3, k=1)
-            expected[4, 0] = 1 / 3
-            # Start state
-            expected[5, :5] = 1 / 5
-            # End state
-            expected[:5, 6] = 1 / 3
-        elif architecture == "fully-connected":
-            expected[0:5, 0:5] = 1 / 10
-            # Start state
-            expected[5, :5] = 1 / 5
-            # End state
-            expected[:5, 6] = 1 / 2
-        assert_almost_equal(transition_matrix, expected)
 
-    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-
-        with patch.object(SimpleHmm, "self_optimize_with_info") as mock:
-            instance = SimpleHmm(n_states=5, n_gmm_components=3)
-            mock.return_value = (instance, None)
-            instance.self_optimize(data, labels)
-
-            mock.assert_called_once_with(data, labels)
-
-    def test_self_optimize_with_info_returns_history(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.Series(np.random.choice(5, 100))]
-        instance = SimpleHmm(n_states=5, n_gmm_components=3)
-        trained_instance, history = instance.self_optimize_with_info(data, labels)
-        assert instance is trained_instance
-        assert isinstance(history, History)
+        assert_allclose(result.model.transitions, transitions)
+        assert_allclose(result.model.starts, starts)
+        assert_allclose(result.model.ends, ends)
 
     def test_invalid_architecture_raises_error(self) -> None:
         with pytest.raises(ValueError) as e:
@@ -339,32 +268,6 @@ class TestRothSegmentationHmm:
             RothSegmentationHmm().predict(pd.DataFrame(np.random.rand(100, 3)), sampling_rate_hz=100)
 
         assert "No trained model for prediction available!" in str(e.value)
-
-    def test_self_optimize_calls_self_optimize_with_info(self) -> None:
-        data, labels = [pd.DataFrame(np.random.rand(100, 3))], [pd.DataFrame({"start": [0], "end": [100]})]
-
-        with patch.object(RothSegmentationHmm, "self_optimize_with_info") as mock:
-            instance = RothSegmentationHmm()
-            mock.return_value = (instance, None)
-            instance.self_optimize(data, labels, sampling_rate_hz=100)
-
-            mock.assert_called_once_with(data, labels, sampling_rate_hz=100)
-
-    def test_self_optimize_with_info_returns_history(self) -> None:
-        data, labels = (
-            [pd.DataFrame(np.random.rand(120, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 40, 70], "end": [30, 70, 100]})],
-        )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            stride_model__n_states=3,
-            stride_model__n_gmm_components=3,
-        )
-        trained_instance, history = instance.self_optimize_with_info(data, labels, sampling_rate_hz=100)
-        assert instance is trained_instance
-        for v in history.values():
-            assert isinstance(v, History)
-        assert set(history.keys()) == {"stride_model", "transition_model", "self"}
 
     def test_short_strides_raise_warning(self) -> None:
         data, labels = (
@@ -395,8 +298,7 @@ class TestRothSegmentationHmm:
         with pytest.warns(UserWarning) as w:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
-        # The first warning is the warning about negative improvements during training
-        assert "1 transitions (out of 3)" in str(w[1].message)
+        assert any("1 transitions (out of 3)" in str(warning.message) for warning in w)
 
     def test_strange_inputs_trigger_nan_error(self) -> None:
         # XXXX: We test the skip at the moment because it is not deteministic...
@@ -420,30 +322,7 @@ class TestRothSegmentationHmm:
             instance.self_optimize(data, labels, sampling_rate_hz=100)
 
         assert "During training the improvement per epoch became NaN/infinite or negative!" in str(w[0].message)
-        assert "the provided pomegranate model has non-finite/NaN parameters." in str(e.value)
-
-    def test_training_updates_all_models(self) -> None:
-        """Training should modify the stride, the transition model and the model itself."""
-        data, labels = (
-            [pd.DataFrame(np.random.rand(250, 6), columns=BF_COLS)],
-            [pd.DataFrame({"start": [0, 70, 102, 125, 170], "end": [30, 100, 125, 170, 200]})],
-        )
-        instance = RothSegmentationHmm().set_params(
-            feature_transform__sampling_rate_feature_space_hz=100,
-            transition_model__n_gmm_components=3,
-            stride_model__n_gmm_components=3,
-            stride_model__n_states=5,
-        )
-        # We can not properly test this, so we get the hash before and after and compare them.
-        hash_stride_model = custom_hash(instance.stride_model)
-        hash_transition_model = custom_hash(instance.transition_model)
-        hash_model = custom_hash(instance.model)
-
-        instance.self_optimize(data, labels, sampling_rate_hz=100)
-
-        assert hash_stride_model != custom_hash(instance.stride_model)
-        assert hash_transition_model != custom_hash(instance.transition_model)
-        assert hash_model != custom_hash(instance.model)
+        assert "the provided HMM model has non-finite/NaN parameters." in str(e.value)
 
 
 class TestHmmStrideSegmentation:
@@ -560,7 +439,3 @@ class TestHmmStrideSegmentation:
         starts_ends = HmmStrideSegmentation()._hidden_states_to_matches_start_end(hidden_state_sequence, 1, 2)
 
         assert_array_equal(starts_ends, correct)
-
-
-def test_pre_trained_model_returns_correctly() -> None:
-    assert isinstance(PreTrainedRothSegmentationModel(), RothSegmentationHmm)

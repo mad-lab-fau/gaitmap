@@ -9,18 +9,18 @@ the right thing.
 
 """
 
-from typing import Union
+import warnings
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
+from gaitmap_mad.stride_segmentation.dtw._base_dtw import subsequence_cost_matrix_with_constrains
 
 from gaitmap.base import BaseType
 from gaitmap.stride_segmentation import BarthOriginalTemplate, BaseDtw, DtwTemplate
 from gaitmap.utils.datatype_helper import get_multi_sensor_names
 from gaitmap.utils.exceptions import ValidationError
-from gaitmap_mad.stride_segmentation.dtw._base_dtw import subsequence_cost_matrix_with_constrains
 from tests.mixins.test_algorithm_mixin import TestAlgorithmMixin
 from tests.mixins.test_caching_mixin import TestCachingMixin
 
@@ -95,7 +95,7 @@ class TestIOErrors(DtwTestBase):
             dtw = self.init_dtw(template=template)
             dtw.segment(data=data, sampling_rate_hz=100)
 
-        assert "template must either be of type `Dict[str, DtwTemplate]`" in str(e)
+        assert "template must either be of type `dict[str, DtwTemplate]`" in str(e)
 
     def test_invalid_find_matches_method(self) -> None:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
@@ -121,7 +121,7 @@ class TestIOErrors(DtwTestBase):
         para_names = ("max_template_stretch_ms", "max_signal_stretch_ms")
         func_names = ("max_subseq_steps", "max_longseq_steps")
         none_index = list(paras).index(None)
-        paras = dict(zip(para_names, paras))
+        paras = dict(zip(para_names, paras, strict=True))
 
         sampling_rate = 100
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=sampling_rate)
@@ -413,7 +413,7 @@ class TestMultiDimensionalArrayInputs(DtwTestBase):
 
 
 class TestMultiSensorInputs(DtwTestBase):
-    data: Union[pd.DataFrame, dict[str, pd.DataFrame]]
+    data: pd.DataFrame | dict[str, pd.DataFrame]
 
     @pytest.fixture(params=("dict", "frame"), autouse=True)
     def multi_sensor_dataset(self, request) -> None:
@@ -634,12 +634,11 @@ class TestTemplateResampling(DtwTestBase):
         template = DtwTemplate(data=np.array(template_arr), sampling_rate_hz=False)
         dtw = self.init_dtw(template=template, resample_template=False)
 
-        with pytest.warns(None) as w:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             dtw.segment(test_data, 20)
 
-        with pytest.raises(AssertionError):
-            # Check that no UserWarning was recorded
-            w.pop(UserWarning)
+        assert not any(issubclass(warning.category, UserWarning) for warning in w)
 
 
 class TestDtwConstrains(DtwTestBase):

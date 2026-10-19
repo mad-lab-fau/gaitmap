@@ -13,5 +13,6 @@ User Guide
     datatypes
     prepare_data
     create_own_algorithm
+    hmm_models
     gaitmap_mad
     contributing

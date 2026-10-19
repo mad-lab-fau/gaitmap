@@ -41,7 +41,7 @@ data.sort_index(axis=1).head(1)
 
 # %%
 fig, axs = plt.subplots(nrows=2, figsize=(10, 5), sharex=True)
-for ax, foot in zip(axs, ["left", "right"]):
+for ax, foot in zip(axs, ["left", "right"], strict=True):
     ax.set_title(f"{foot} foot")
     convert_left_foot_to_fbf(template_data[f"{foot}_sensor"])[BF_GYR].plot(ax=ax)
     # Mark stride borders with vertical lines
@@ -178,7 +178,7 @@ dtw = BarthDtw(template=template)
 dtw.segment(bf_data, sampling_rate_hz=sampling_rate_hz)
 
 fig, axs = plt.subplots(nrows=2, figsize=(10, 5), sharex=True)
-for ax, foot in zip(axs, ["left", "right"]):
+for ax, foot in zip(axs, ["left", "right"], strict=True):
     ax.set_title(f"{foot} foot")
     bf_data[f"{foot}_sensor"][BF_GYR].plot(ax=ax)
     # Mark stride borders with vertical lines

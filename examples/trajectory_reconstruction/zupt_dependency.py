@@ -21,7 +21,6 @@ This is also a great example of how to use the `tpcp` optimization methods in co
 
 import pandas as pd
 
-
 # %%
 # The Data
 # --------
@@ -73,8 +72,9 @@ class HealthyImu(Dataset):
 # ---------------------
 # We start by setting up a pipeline, that we can use to estimate the trajectory.
 # It takes the Zupt method as parameter and internally uses `RtsKalman` to estimate the trajectory.
+from typing import Self
+
 from tpcp import Pipeline, cf
-from typing_extensions import Self
 
 from gaitmap.base import BaseZuptDetector
 from gaitmap.trajectory_reconstruction import RtsKalman

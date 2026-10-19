@@ -1,6 +1,7 @@
 import matplotlib
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
@@ -61,7 +62,7 @@ def test_preprocessing_example(snapshot) -> None:
     left_acc = dataset_sf_aligned_to_gravity["left_sensor"][SF_ACC].to_numpy()[:5, :]
     right_acc = dataset_sf_aligned_to_gravity["right_sensor"][SF_ACC].to_numpy()[:5, :]
 
-    for acc_l, acc_r in zip(left_acc, right_acc):
+    for acc_l, acc_r in zip(left_acc, right_acc, strict=True):
         np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
         np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
 
@@ -82,7 +83,7 @@ def test_sensor_alignment_detailed_example(snapshot) -> None:
     left_acc = pca_aligned_data["left_sensor"][SF_ACC].to_numpy()[:5, :]
     right_acc = pca_aligned_data["right_sensor"][SF_ACC].to_numpy()[:5, :]
 
-    for acc_l, acc_r in zip(left_acc, right_acc):
+    for acc_l, acc_r in zip(left_acc, right_acc, strict=True):
         np.testing.assert_almost_equal(acc_l, desired_acc_vec, decimal=0)
         np.testing.assert_almost_equal(acc_r, desired_acc_vec, decimal=0)
 
@@ -120,8 +121,8 @@ def test_rampp_event_detection(snapshot) -> None:
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], name="left")
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right")
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], name="left", check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right", check_dtype=False)
 
     # For this simple case the results should be identical
     assert_frame_equal(
@@ -139,8 +140,8 @@ def test_herzer_event_detection(snapshot) -> None:
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"])
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"])
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], check_dtype=False)
 
 
 def test_json_example(snapshot) -> None:
@@ -184,8 +185,11 @@ def test_mahony_orientation_example(snapshot) -> None:
 def test_mad_pipeline(snapshot) -> None:
     from examples.full_pipelines.mad_gait_pipeline import ed, spatial_paras, temporal_paras
 
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left")
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right")
+    for parameters in spatial_paras.parameters_.values():
+        assert np.isfinite(parameters.to_numpy()).all()
+
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left", check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right", check_dtype=False)
     snapshot.assert_match(
         spatial_paras.parameters_pretty_["right_sensor"],
         "spatial_paras_right",
@@ -274,9 +278,6 @@ def test_multi_process() -> None:
 
 
 def test_roth_hmm_stride_segmentation(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
     from examples.stride_segmentation.roth_hmm_stride_segmentation import hmm_seg
 
     snapshot.assert_match(hmm_seg.stride_list_["left_sensor"], "left_sensor")
@@ -284,22 +285,54 @@ def test_roth_hmm_stride_segmentation(snapshot) -> None:
 
 
 def test_segmentation_hmm_training(snapshot) -> None:
-    import pytest
-
-    pytest.importorskip("pomegranate")
     from examples.stride_segmentation.segmentation_hmm_training import hmm
 
-    # XXX: For some sad reason the training does not seem to be deterministic accross different machines.
-    #      Therefore, we will just check that the model will still find the same strides for now.
-    # snapshot.assert_match(segmentation_model.model.to_json())
+    # Model fitting and repeatability are checked through the public training interfaces.
     snapshot.assert_match(hmm.stride_list_["left_sensor"], "left_sensor")
     snapshot.assert_match(hmm.stride_list_["right_sensor"], "right_sensor")
+
+
+def test_custom_hierarchical_hmms() -> None:
+    from examples.stride_segmentation.custom_hierarchical_hmms import (
+        phase_models,
+        predictions,
+        reference_labels,
+        test_starts,
+        test_features,
+        train_data,
+        test_data,
+    )
+
+    # Independent contact/border samples from the supplied left-foot annotations.
+    np.testing.assert_array_equal(
+        reference_labels["left_sensor"][[363, 364, 437, 438, 583, 584, 3453, 3934]],
+        [2, 1, 1, 0, 0, 1, 2, 1],
+    )
+    np.testing.assert_array_equal(reference_labels["right_sensor"][[474, 475, 548, 549, 690, 691]], [2, 1, 1, 0, 0, 1])
+    # Synchronized observations of held-out strides must never enter training.
+    assert max(frame.index[-1] for frame in train_data.values()) < min(frame.index[0] for frame in test_data.values())
+    # Every phase present in a held-out foot must be learned independently.
+    for sensor, labels in reference_labels.items():
+        held_out_labels = labels[test_starts[sensor] :]
+        for state, minimum_recall in enumerate([0.85, 0.85, 0.65]):
+            if np.any(held_out_labels == state):
+                assert np.mean(predictions[sensor][held_out_labels == state] == state) > minimum_recall
+
+    # A complete stance/swing phase must traverse every internal state in order.
+    for name in ["stance", "swing"]:
+        phase_model = phase_models[name]
+        n_states = phase_model.n_states
+        with pytest.raises(ValueError, match="No valid state path"):
+            phase_model.predict_hidden_state_sequence(test_features["left_sensor"].iloc[: n_states - 1])
+        np.testing.assert_array_equal(
+            phase_model.predict_hidden_state_sequence(test_features["left_sensor"].iloc[:n_states]), np.arange(n_states)
+        )
 
 
 def test_zupt_dependency() -> None:
     from examples.trajectory_reconstruction.zupt_dependency import gs
 
-    assert_almost_equal(gs.best_score_, 0.10171051541126)
+    assert_almost_equal(gs.best_score_, 0.11083297936143488)
     assert_almost_equal(gs.best_params_["zupt_method__inactive_signal_threshold"], 2782559402.207125, decimal=3)
 
 

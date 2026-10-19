@@ -1,12 +1,11 @@
 """A set of util functions to detect static regions in a IMU signal given certain constrains."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Callable, Optional, get_args
+from typing import Literal, get_args
 
 import numpy as np
 from numpy.linalg import norm
-from typing_extensions import Literal
 
 from gaitmap.utils import array_handling
 from gaitmap.utils.array_handling import _bool_fill
@@ -45,7 +44,7 @@ def find_static_samples(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> tuple[np.ndarray, int, float]:
     """Search for static samples within given input signal, based on windowed L2-norm thresholding.
 
@@ -147,7 +146,7 @@ def find_static_samples_shoe(
     gyr_noise_var: float,
     window_length: int,
     inactive_signal_th: float,
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> tuple[np.ndarray, int, float]:
     """Use the SHOE algorithm for static moment detection.
 
@@ -207,15 +206,21 @@ def find_static_samples_shoe(
     if overlap is None:
         overlap = window_length - 1
 
-    # For acc we try to remove the influence of gravity first, by substracting the value of gravity in the direction
-    # the average acceleration
-    acc_mean = np.mean(acc, axis=0)
-    grav_direction = acc_mean / norm(acc_mean)
-    acc_norm = np.square(norm(acc - GRAV * grav_direction, axis=1))
-    gyr_norm = np.square(norm(gyr, axis=1))
-    combined = acc_norm / acc_noise_var + gyr_norm / gyr_noise_var
+    # Keep the subtraction of nearly equal energy terms accurate for float32 sensor inputs.
+    acc = np.asarray(acc, dtype=np.float64)
+    gyr = np.asarray(gyr, dtype=np.float64)
+    # Equations 16-17 estimate gravity from the mean within each window, not the whole recording.
+    acc_windows = array_handling.sliding_window_view(acc, window_length, overlap, nan_padding=False)
+    acc_mean = acc_windows.reshape(-1, window_length, 3).mean(axis=1)
+    gravity_term = 2 * GRAV * norm(acc_mean, axis=1) / acc_noise_var
+    combined = (np.square(norm(acc, axis=1)) + GRAV**2) / acc_noise_var + np.square(norm(gyr, axis=1)) / gyr_noise_var
 
-    return _window_apply_threshold(combined, window_length, overlap, partial(np.nanmean, axis=1), inactive_signal_th)
+    def window_statistic(windowed_energy):
+        # Expanding the squared residual avoids dividing by a zero mean acceleration.
+        # The likelihood statistic is nonnegative; clip cancellation round-off at zero.
+        return np.maximum(np.mean(windowed_energy, axis=1) - gravity_term, 0.0)
+
+    return _window_apply_threshold(combined, window_length, overlap, window_statistic, inactive_signal_th)
 
 
 def find_static_sequences(
@@ -223,7 +228,7 @@ def find_static_sequences(
     window_length: int,
     inactive_signal_th: float,
     metric: METRIC_FUNCTION_NAMES = "mean",
-    overlap: Optional[int] = None,
+    overlap: int | None = None,
 ) -> np.ndarray:
     """Search for static sequences within given input signal, based on windowed L2-norm thresholding.
 
