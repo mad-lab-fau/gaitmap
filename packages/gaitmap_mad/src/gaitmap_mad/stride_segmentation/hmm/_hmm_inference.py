@@ -298,9 +298,55 @@ class HiddenMarkovModel:
     ):
         """Return a fitted model and history, leaving this model unchanged.
 
-        ``update_emissions=False`` trains only transition probabilities.
-        ``min_covar`` floors covariance eigenvalues on each emission update.
-        Explicitly frozen emissions retain their original parameters.
+        Parameters
+        ----------
+        sequences : sequence of array-like
+            Independent observation sequences, each with shape
+            ``(n_observations, n_features)``. One-dimensional arrays are accepted
+            for univariate models. Features must match this model's feature order.
+            Training starts from this model's existing parameters.
+        labels : sequence of array-like or None, default=None
+            One integer state sequence per observation sequence, with one label
+            per observation and values in ``[0, n_states)``. Required only for
+            ``algorithm="labeled"``. Labels are ignored by Baum-Welch and Viterbi
+            training; supplying them does not select supervised training or
+            initialize the emissions.
+        algorithm : {"baum-welch", "viterbi", "labeled"}, default="baum-welch"
+            Baum-Welch uses posterior state responsibilities. Viterbi uses the
+            current most likely paths. Labeled training uses the supplied paths.
+        stop_threshold : float, default=1e-9
+            Stop when the improvement in total forward log likelihood is at most
+            this value. A nonnegative improvement within the threshold marks
+            convergence. A decrease or nonfinite likelihood stops without
+            convergence and remains visible in the returned history.
+        max_iterations : int, default=100_000_000
+            Maximum number of parameter updates. Zero returns an unchanged copy
+            of the model and a history containing only its initial likelihood.
+        verbose : bool, default=False
+            Print the likelihood improvement after each update and the total
+            improvement when training ends.
+        n_jobs : int, default=1
+            Number of workers for independent sequence statistics, following
+            joblib's worker-count conventions. ``-1`` uses all available CPUs.
+            Workers use threads and their results are combined in input order.
+        min_covar : float, default=1e-6
+            Minimum estimated covariance eigenvalue, in squared feature units.
+            Applied only when updating emissions. Explicitly frozen emissions
+            retain their original parameters.
+        update_emissions : bool, default=True
+            Update emission parameters as well as initial, transition and
+            termination probabilities. Set to False to keep emissions fixed.
+            Existing topology masks remain in effect for probability updates.
+
+        Returns
+        -------
+        model : HiddenMarkovModel
+            Fitted model after the last completed update. The input model remains
+            unchanged, including when fitting stops without convergence.
+        history : TrainingHistory
+            Initial forward log likelihood and the likelihood after every update,
+            update durations and convergence status. The final likelihood
+            describes the returned model for every training algorithm.
         """
         from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm  # noqa: PLC0415
 
