@@ -171,8 +171,8 @@ segmentation_model = segmentation_model.self_optimize(
 #
 # Now all internal models which were initialized as "None" should be populated by local Gaussian HMM models.
 # We can now have a look at the final transition matrix or the trained distributions (GMMs).
-# You could now either use the model to predict stride borders on an unseen sequence or save it to a json file for later
-# use.
+# You can now predict stride borders on an unseen sequence or save the complete configuration for later use with
+# `joblib.dump(segmentation_model.clone(), "segmentation_model.joblib")`. Load it again with `joblib.load`.
 
 np.set_printoptions(precision=3, linewidth=180, suppress=True)
 

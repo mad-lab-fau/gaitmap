@@ -1,5 +1,6 @@
 """Composition learns state transitions from complete, labeled model instances."""
 
+import joblib
 import numpy as np
 import pandas as pd
 from numpy.testing import assert_allclose, assert_array_equal
@@ -7,7 +8,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from gaitmap.stride_segmentation.hmm import CompositeHmm, GaussianMixture, HiddenMarkovModel
 
 
-def test_composition_counts_repeated_instances_and_separate_record_boundaries():
+def test_composition_counts_repeated_instances_and_separate_record_boundaries(tmp_path):
     """Adjacent instances of the same model retain their last-to-first connection."""
     rest = HiddenMarkovModel([GaussianMixture([[-5.0]], [[[0.25]]], [1.0])], [[0.8]], [1.0], [0.2])
     stride = HiddenMarkovModel(
@@ -41,7 +42,8 @@ def test_composition_counts_repeated_instances_and_separate_record_boundaries():
     assert_array_equal(trained.predict_labels(sequences[0]), expected_labels)
     assert_array_equal(trained.predict_hidden_state_sequence(sequences[0]), [0, 1, 2, 1, 2, 0, 0])
     # Saving and cloning must preserve the named interpretation of internal states.
-    restored = CompositeHmm.from_json(trained.to_json()).clone()
+    joblib.dump(trained.clone(), tmp_path / "model.joblib")
+    restored = joblib.load(tmp_path / "model.joblib").clone()
     assert_array_equal(restored.predict_labels(sequences[0]), expected_labels)
     assert_allclose(restored.model.log_probability(sequences[0]), trained.model.log_probability(sequences[0]))
 

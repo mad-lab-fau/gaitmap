@@ -142,7 +142,7 @@ From the guide:
 
 Additions to the guide:
 
-- All algorithms classes must directly or indirectly inherit from `tpcp.Algorithm`, and `gaitmap.base._BaseSerializable`
+- All algorithm classes must directly or indirectly inherit from `gaitmap.base.BaseAlgorithm`
 - All classes should store the data (and other arguments) passed in the "action" step in the class object unless the 
   amount of data would result in an unreasonable performance issue.
   Ideally this should be a reference and not a copy of the data! This allows to path the final object as a whole to 
@@ -160,7 +160,9 @@ Additions to the guide:
   the interface. Remember to call respective `super` methods when required.
   The resulting class structure should look like this:
 ```
-tpcp.Algorithm/gaitmap.base._BaseSerializable -> Basic setting of parameters
+tpcp.Algorithm -> Basic setting of parameters
+|
+gaitmap.base.BaseAlgorithm
 |
 Base<AlgorithmType> -> Basic interface to ensure all algos of the same type use the same input and outputs for their 
 |                      action methods

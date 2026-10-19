@@ -3,6 +3,7 @@
 import subprocess
 import sys
 
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
@@ -43,11 +44,15 @@ def test_inverse_feature_transform_preserves_full_length_identity(states):
     assert_array_equal(actual, states)
 
 
-@pytest.mark.parametrize("restore", ["clone", "json"])
-def test_saved_and_cloned_pretrained_models_preserve_predictions(healthy_example_imu_data, restore):
+@pytest.mark.parametrize("restore", ["clone", "joblib"])
+def test_saved_and_cloned_pretrained_models_preserve_predictions(healthy_example_imu_data, restore, tmp_path):
     """Saving or cloning a trained model preserves the decoded gait sequence."""
     original = PreTrainedRothSegmentationModel()
-    restored = original.clone() if restore == "clone" else type(original).from_json(original.to_json())
+    if restore == "clone":
+        restored = original.clone()
+    else:
+        joblib.dump(original.clone(), tmp_path / "model.joblib")
+        restored = joblib.load(tmp_path / "model.joblib")
     data = convert_to_fbf(healthy_example_imu_data, left_like="left_", right_like="right_")["left_sensor"]
 
     expected = original.predict(data, sampling_rate_hz=204.8).hidden_state_sequence_
@@ -56,11 +61,13 @@ def test_saved_and_cloned_pretrained_models_preserve_predictions(healthy_example
     assert_array_equal(actual, expected)
 
 
-def test_public_hmm_training_prediction_and_serialization_do_not_require_pomegranate():
+def test_public_hmm_training_prediction_and_persistence_do_not_require_pomegranate():
     """Train, load and save HMMs when the old dependency is unavailable."""
     code = """
 import importlib.abc
 import sys
+from io import BytesIO
+import joblib
 
 class RejectPomegranate(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
@@ -73,11 +80,18 @@ import pandas as pd
 from gaitmap.stride_segmentation.hmm import PreTrainedRothSegmentationModel, SimpleHmm
 model = PreTrainedRothSegmentationModel()
 model.clone()
-type(model).from_json(model.to_json())
+stream = BytesIO()
+joblib.dump(model.clone(), stream)
+stream.seek(0)
+joblib.load(stream)
 trained = SimpleHmm(2, 1, algo_train="labeled", max_iterations=1, verbose=False)
 trained.self_optimize([pd.DataFrame({"feature": [-3., -1., 1., 3.]})], [np.array([0, 0, 1, 1])])
-restored = SimpleHmm.from_json(trained.to_json()).clone()
-np.testing.assert_array_equal(restored.predict_hidden_state_sequence(pd.DataFrame({"feature": [-3., -1., 1., 3.]})), [0, 0, 1, 1])
+stream = BytesIO()
+joblib.dump(trained.clone(), stream)
+stream.seek(0)
+restored = joblib.load(stream).clone()
+observations = pd.DataFrame({"feature": [-3., -1., 1., 3.]})
+np.testing.assert_array_equal(restored.predict_hidden_state_sequence(observations), [0, 0, 1, 1])
 """
 
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)

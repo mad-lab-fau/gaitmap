@@ -1,5 +1,6 @@
 """Scientific regressions through gaitmap HMM training interfaces."""
 
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
@@ -50,7 +51,7 @@ def test_transition_initialization_includes_exclusive_stride_end_samples():
 
 @pytest.mark.parametrize("n_components", [1, 2])
 @pytest.mark.parametrize("max_iterations", [0, 1])
-def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_components, max_iterations):
+def test_simple_hmm_covariance_floor_survives_training_and_persistence(n_components, max_iterations, tmp_path):
     """A caller-selected variance floor applies during initialization and re-estimation."""
     x = np.arange(20, dtype=float)
     data = [pd.DataFrame({"x": x, "y": 2 * x})]
@@ -63,7 +64,8 @@ def test_simple_hmm_covariance_floor_survives_training_and_serialization(n_compo
         max_iterations=max_iterations,
         verbose=False,
     ).self_optimize(data, [np.zeros(len(x), dtype=int)])
-    restored = SimpleHmm.from_json(model.to_json()).clone()
+    joblib.dump(model.clone(), tmp_path / "model.joblib")
+    restored = joblib.load(tmp_path / "model.joblib").clone()
 
     assert restored.min_covar == 0.02
     for covariance in restored.model.emissions[0].covariances:
@@ -128,7 +130,7 @@ def test_labeled_roth_training_supports_all_generated_transitions():
 
 @pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
 @pytest.mark.parametrize("architecture", ["left-right-strict", "left-right-loose", "fully-connected"])
-def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, architecture):
+def test_simple_hmm_training_and_persistence_preserve_known_states(algorithm, architecture, tmp_path):
     """Fit variable-length labeled sequences through the public gaitmap interface."""
     rng = np.random.default_rng(31)
     labels = [np.repeat([0, 1], repeats) for repeats in [20, 30]]
@@ -144,7 +146,8 @@ def test_simple_hmm_training_and_serialization_preserve_known_states(algorithm, 
     )
 
     trained, history = model.self_optimize_with_info(data, labels)
-    restored = SimpleHmm.from_json(trained.to_json()).clone()
+    joblib.dump(trained.clone(), tmp_path / "model.joblib")
+    restored = joblib.load(tmp_path / "model.joblib").clone()
 
     for observations, expected in zip(data, labels, strict=True):
         assert_array_equal(trained.predict_hidden_state_sequence(observations), expected)

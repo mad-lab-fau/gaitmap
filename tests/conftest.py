@@ -4,9 +4,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
-from pandas.testing import assert_frame_equal, assert_series_equal
-from scipy.spatial.transform import Rotation
 from tpcp import BaseTpcpObject
 
 from gaitmap.example_data import (
@@ -41,36 +38,6 @@ healthy_example_position = pytest.fixture()(get_healthy_example_position)
 
 def _get_params_without_nested_class(instance: BaseTpcpObject) -> dict[str, Any]:
     return {k: v for k, v in instance.get_params().items() if not hasattr(v, "get_params")}
-
-
-def compare_algo_objects(a, b) -> None:
-    parameters = _get_params_without_nested_class(a)
-    b_parameters = _get_params_without_nested_class(b)
-
-    assert set(parameters.keys()) == set(b_parameters.keys())
-
-    for p, value in parameters.items():
-        json_val = b_parameters[p]
-        compare_val(value, json_val, p)
-
-
-def compare_val(value, json_val, name) -> None:
-    if isinstance(value, BaseTpcpObject):
-        compare_algo_objects(value, json_val)
-    elif isinstance(value, np.ndarray):
-        assert_array_equal(value, json_val)
-    elif isinstance(value, (tuple, list)):
-        assert len(value) == len(json_val)
-        for i, (v, j) in enumerate(zip(value, json_val, strict=True)):
-            compare_val(v, j, f"{name}_{i}")
-    elif isinstance(value, Rotation):
-        assert_array_equal(value.as_quat(), json_val.as_quat())
-    elif isinstance(value, pd.DataFrame):
-        assert_frame_equal(value, json_val, check_dtype=False)
-    elif isinstance(value, pd.Series):
-        assert_series_equal(value, json_val)
-    else:
-        assert value == json_val, name
 
 
 def group_matches_by_type(matches):

@@ -6,9 +6,8 @@ from typing import Literal, Self
 
 import numpy as np
 import pandas as pd
-from tpcp import OptiPara, make_optimize_safe
+from tpcp import BaseTpcpObject, OptiPara, make_optimize_safe
 
-from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
@@ -134,7 +133,7 @@ def initialize_hmm(
     )
 
 
-class SimpleHmm(_BaseSerializable):
+class SimpleHmm(BaseTpcpObject):
     """Wrap all required information to train a new HMM.
 
     Each state uses Gaussian or Gaussian-mixture emissions.
@@ -177,8 +176,8 @@ class SimpleHmm(_BaseSerializable):
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
-        However, we recommend to ideally export this entire class instead of just the model to make sure that things
-        like the feature transform are also exported/stored.
+        Use ``joblib.dump(instance.clone(), path)`` to save the complete configuration, including feature
+        settings, and ``joblib.load(path)`` to restore it.
     data_columns
         The expected columns of the input data in feature space.
         This will be automatically set based on the feature transform output during the optimization step.

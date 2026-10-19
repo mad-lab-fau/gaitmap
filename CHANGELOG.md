@@ -12,6 +12,15 @@ project.
 
 ### Migration Guide
 
+- Removed the algorithm-wide `to_json()` and `from_json()` methods, including those on HMM wrappers.
+  Save an algorithm's configuration with `joblib.dump(algorithm.clone(), path)` and restore it with
+  `joblib.load(path)`. Cloning first excludes action results and input data. Keep the library and
+  dependency versions with saved objects, and load only trusted joblib files.
+  For existing HMM wrapper JSON files, use `gaitmap.stride_segmentation.hmm.load_legacy_hmm_json(json_text)`
+  and save the returned object with joblib. For other existing algorithm JSON files, load them with
+  the gaitmap version that created them and export their configuration to joblib before upgrading.
+  The numeric `HiddenMarkovModel` retains its dedicated JSON format and methods.
+
 - Sample-number columns and trajectory sample indices now require integer dtypes, including
   integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
   for missing events. Built-in event detection, example annotations and stride-list conversion now
@@ -48,7 +57,8 @@ project.
   probabilities and positive weights, replacing workarounds for limitations in the old backend.
   `SimpleHmm.min_covar` controls covariance regularization. Inference is also faster in many cases.
 
-  Existing gaitmap HMM JSON models remain loadable; newly exported models require the updated backend.
+  Existing gaitmap HMM JSON models remain loadable through `load_legacy_hmm_json`; newly exported numeric
+  HMM models require the updated backend.
   Custom models and code accessing `.model` should be checked against the new numeric Gaussian/GMM API.
   Please revalidate your results and report any unexpected changes in outcomes.
   This migration prioritizes minimal gaitmap API changes while retiring Python 3.9 and 3.10; future HMM improvements
