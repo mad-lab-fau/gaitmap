@@ -206,3 +206,28 @@ def test_roth_training_uses_valid_single_sample_regions(algorithm, short_region)
     ).self_optimize([data], [strides], sampling_rate_hz=100)
 
     assert model.model.transitions[expected_edge] > 0
+
+
+@pytest.mark.parametrize("algorithm", ["baum-welch", "viterbi", "labeled"])
+def test_mixture_initialization_and_training_are_repeatable_across_worker_counts(algorithm):
+    """Repeated fits preserve densities and state assignments, including singular features."""
+    rng = np.random.default_rng(16)
+    labels = [np.repeat([0, 1], repeats) for repeats in [20, 30]]
+    values = [rng.normal(0, 0.2, len(path)) + 10 * path for path in labels]
+    observations = [pd.DataFrame({"x": x, "y": 2 * x}) for x in values]
+    template = SimpleHmm(n_states=2, n_gmm_components=2, algo_train=algorithm, max_iterations=2, verbose=False)
+
+    serial, serial_history = template.clone().self_optimize_with_info(observations, labels)
+    parallel, parallel_history = template.clone().set_params(n_jobs=2).self_optimize_with_info(observations, labels)
+
+    assert_array_equal(parallel.model.transitions, serial.model.transitions)
+    assert_array_equal(parallel.model.starts, serial.model.starts)
+    assert_array_equal(parallel.model.ends, serial.model.ends)
+    assert_array_equal(parallel_history.log_likelihoods, serial_history.log_likelihoods)
+    for actual, expected in zip(parallel.model.emissions, serial.model.emissions):
+        assert_array_equal(actual.means, expected.means)
+        assert_array_equal(actual.covariances, expected.covariances)
+        assert_array_equal(actual.weights, expected.weights)
+    for data, expected in zip(observations, labels):
+        assert_array_equal(serial.predict_hidden_state_sequence(data), expected)
+        assert_array_equal(parallel.predict_hidden_state_sequence(data), expected)
