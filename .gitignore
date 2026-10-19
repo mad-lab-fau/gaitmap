@@ -307,3 +307,6 @@ $RECYCLE.BIN/
 
 # Just a folder for local tests
 _debug_test
+
+# Keep shared RoboRev configuration in version control.
+!/.roborev.toml
