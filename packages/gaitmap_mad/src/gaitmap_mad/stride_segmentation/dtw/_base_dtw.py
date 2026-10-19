@@ -86,6 +86,19 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
 
 
+def _find_matches_find_peaks_with_boundaries(acc_cost_mat, max_cost, min_distance):
+    """Include constrained boundary candidates before subclass match selection."""
+    matches = find_matches_find_peaks(acc_cost_mat, max_cost, min_distance)
+    # Preserve ordinary distance selection for interior peaks. Add only boundary
+    # minima, including plateaus that reach a recording edge. Their duration is
+    # validated before they can suppress an existing interior match.
+    curve = np.pad(np.sqrt(acc_cost_mat[-1]), (1, 1), constant_values=np.inf)
+    height = -max_cost if max_cost is not None else None
+    peaks, properties = find_peaks(-curve, height=height, plateau_size=(None, None))
+    boundary = (properties["left_edges"] == 1) | (properties["right_edges"] == len(curve) - 2)
+    return np.union1d(matches, peaks[boundary] - 1).astype(int)
+
+
 class BaseDtw(BaseAlgorithm):
     """A basic implementation of subsequent dynamic time warping.
 
@@ -448,14 +461,15 @@ class BaseDtw(BaseAlgorithm):
         acc_cost_mat_ = (cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result).copy()
 
         # Find matches and postprocess them
+        match_finder = find_matches_method
+        if isinstance(cost_result, ConstrainedDtwResult) and match_finder is find_matches_find_peaks:
+            match_finder = _find_matches_find_peaks_with_boundaries
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,
             max_cost=self.max_cost,
             min_sequence_length=self._min_sequence_length,
-            find_matches_method=find_matches_method,
+            find_matches_method=match_finder,
         )
-        if isinstance(cost_result, ConstrainedDtwResult):
-            matches = self._add_constrained_boundary_matches(acc_cost_mat_, matches, self.max_cost, find_matches_method)
         if isinstance(cost_result, ConstrainedDtwResult) and len(matches):
             # An infinite threshold must not turn unreachable endpoints into paths.
             matches = matches[np.isfinite(acc_cost_mat_[-1, matches])]
@@ -525,21 +539,6 @@ class BaseDtw(BaseAlgorithm):
             max_cost=max_cost,
             min_distance=min_sequence_length,
         )
-
-    @staticmethod
-    def _add_constrained_boundary_matches(acc_cost_mat, matches, max_cost, find_matches_method):
-        """Add constrained boundary candidates without changing the match-finder hook."""
-        if find_matches_method is find_matches_find_peaks:
-            # Preserve ordinary distance selection for all interior peaks. Only
-            # add the boundary minima scipy otherwise excludes, including a
-            # plateau reaching a recording edge. Their duration is validated
-            # before they can suppress an existing interior match.
-            curve = np.pad(np.sqrt(acc_cost_mat[-1]), (1, 1), constant_values=np.inf)
-            height = -max_cost if max_cost is not None else None
-            peaks, properties = find_peaks(-curve, height=height, plateau_size=(None, None))
-            boundary = (properties["left_edges"] == 1) | (properties["right_edges"] == len(curve) - 2)
-            matches = np.union1d(matches, peaks[boundary] - 1).astype(int)
-        return matches
 
     def _filter_constrained_peaks(self, acc_cost_mat, paths, to_keep):
         """Resolve distances involving new boundary peaks after their validation.

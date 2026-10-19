@@ -193,3 +193,23 @@ def test_existing_match_finder_override_keeps_its_four_argument_signature(stretc
         max_cost=0.1,
     ).segment(np.array([9.0, 0.0, 1.0, 0.0, 9.0]), sampling_rate_hz=1)
     np.testing.assert_array_equal(dtw.matches_start_end_, [[1, 4]])
+
+
+def test_match_finder_override_can_reject_a_valid_boundary_match():
+    """Constrained boundary generation must respect a subclass's final selection."""
+
+    class RejectMatchesDtw(BaseDtw):
+        def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):
+            matches = super()._find_matches(acc_cost_mat, max_cost, min_sequence_length, find_matches_method)
+            return matches[:0]
+
+    dtw = RejectMatchesDtw(
+        template=DtwTemplate(data=np.array([0.0, 1.0, 0.0]), sampling_rate_hz=1),
+        resample_template=False,
+        min_match_length_s=None,
+        max_template_stretch_ms=1000,
+        max_signal_stretch_ms=1000,
+        max_cost=0.1,
+    ).segment(np.array([9.0, 0.0, 1.0, 0.0]), sampling_rate_hz=1)
+    assert dtw.acc_cost_mat_[-1, 3] == 0
+    assert dtw.paths_ == []
