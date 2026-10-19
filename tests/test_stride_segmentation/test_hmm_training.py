@@ -224,10 +224,10 @@ def test_mixture_initialization_and_training_are_repeatable_across_worker_counts
     assert_array_equal(parallel.model.starts, serial.model.starts)
     assert_array_equal(parallel.model.ends, serial.model.ends)
     assert_array_equal(parallel_history.log_likelihoods, serial_history.log_likelihoods)
-    for actual, expected in zip(parallel.model.emissions, serial.model.emissions):
+    for actual, expected in zip(parallel.model.emissions, serial.model.emissions, strict=True):
         assert_array_equal(actual.means, expected.means)
         assert_array_equal(actual.covariances, expected.covariances)
         assert_array_equal(actual.weights, expected.weights)
-    for data, expected in zip(observations, labels):
+    for data, expected in zip(observations, labels, strict=True):
         assert_array_equal(serial.predict_hidden_state_sequence(data), expected)
         assert_array_equal(parallel.predict_hidden_state_sequence(data), expected)
