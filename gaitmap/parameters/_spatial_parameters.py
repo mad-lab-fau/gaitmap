@@ -10,7 +10,7 @@ from numpy.linalg import norm
 from scipy.spatial.transform import Rotation
 
 from gaitmap.base import BaseSpatialParameterCalculation
-from gaitmap.parameters._temporal_parameters import _get_stride_time_cols
+from gaitmap.parameters._temporal_parameters import _calculate_event_duration, _get_stride_time_cols
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.consts import GF_INDEX, GF_ORI, GF_POS, SL_INDEX
@@ -356,9 +356,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                     f"{stride_time_end_col}) are not available."
                 )
             else:
-                stride_duration = (
-                    stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col]
-                ).astype(float) / sampling_rate_hz
+                stride_duration = _calculate_event_duration(
+                    stride_event_list, stride_time_start_col, stride_time_end_col, sampling_rate_hz
+                )
                 param_dict["gait_velocity"] = stride_length / stride_duration
         if self._should_calculate("arc_length"):
             param_dict["arc_length"] = _calc_arc_length(positions)

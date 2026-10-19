@@ -383,3 +383,19 @@ def test_nullable_events_keep_physical_parameters_usable_in_numpy(
     expected = [[2.0, np.nan if missing_contact else 1.0], [np.sqrt(8), np.sqrt(2)], [0.0, 0.0]]
     np.testing.assert_array_equal(np.isfinite(values), np.isfinite(expected))
     np.testing.assert_allclose(values, expected, equal_nan=True)
+
+
+def test_mixed_integer_events_preserve_velocity_under_a_shared_sample_offset(
+    single_sensor_stride_list, single_sensor_position_list
+):
+    """Absolute integer storage cannot change a physical velocity."""
+    origin = 2**53
+    strides = single_sensor_stride_list.astype({"ic": "UInt64"})
+    for column in ["start", "end", "ic", "pre_ic", "min_vel", "tc"]:
+        strides[column] += origin
+
+    result = SpatialParameterCalculation(calculate_only=["gait_velocity"]).calculate(
+        strides, single_sensor_position_list, orientations=None, sampling_rate_hz=1
+    )
+
+    np.testing.assert_allclose(result.parameters_["gait_velocity"], [1.0, np.sqrt(2), 0.0])

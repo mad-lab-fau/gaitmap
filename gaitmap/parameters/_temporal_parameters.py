@@ -165,14 +165,14 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
         stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
 
         stride_time_start_col, stride_time_end_col = _get_stride_time_cols(self.expected_stride_type)
-        stride_time = (
-            stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col]
-        ) / sampling_rate_hz
+        stride_time = _calculate_event_duration(
+            stride_event_list, stride_time_start_col, stride_time_end_col, sampling_rate_hz
+        )
 
         swing_time_start_col, swing_time_end_col = _get_swing_time_cols(self.expected_stride_type)
-        swing_time = (
-            stride_event_list[swing_time_end_col] - stride_event_list[swing_time_start_col]
-        ) / sampling_rate_hz
+        swing_time = _calculate_event_duration(
+            stride_event_list, swing_time_start_col, swing_time_end_col, sampling_rate_hz
+        )
         stance_time = stride_time - swing_time
         stride_parameter_dict = {
             "stride_time": stride_time,
@@ -197,3 +197,11 @@ def _get_swing_time_cols(stride_type: Literal["min_vel", "ic"]) -> tuple[str, st
     if stride_type == "ic":
         return "tc", "end"
     raise ValueError("stride_type should be either 'min_vel' or 'ic'")
+
+
+def _calculate_event_duration(stride_list, start_col, end_col, sampling_rate_hz):
+    # Mixed signed/unsigned pandas integers can promote absolute positions to
+    # floats before subtraction. Python integers preserve the sample difference.
+    differences = stride_list[end_col].astype(object) - stride_list[start_col].astype(object)
+    seconds = differences.to_numpy(dtype=float, na_value=float("nan")) / sampling_rate_hz
+    return pd.Series(seconds, index=stride_list.index)
