@@ -49,6 +49,14 @@ project.
 
 ### Fixed
 
+- Sample-number columns and trajectory sample indices now require integer dtypes, including
+  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
+  for missing events. Built-in event detection, example annotations and stride-list conversion now
+  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
+  identifiers and physical quantities are unaffected.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
+  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
+
 - Calculating precision or recall for multiple sensors no longer modifies the supplied match dictionary,
   so it can be reused across score calculations.
   ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))

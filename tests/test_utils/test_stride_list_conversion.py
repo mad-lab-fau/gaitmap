@@ -17,11 +17,11 @@ class TestEnforceStrideListConsistency:
     def _create_example_stride_list(self, stride_type: str):
         events = SL_EVENT_ORDER[stride_type]
         event_dict = {}
-        event_dict["start"] = np.array(list(range(20)))
-        event_dict["s_id"] = event_dict["start"]
-        event_dict["end"] = np.array(list(range(1, 21)))
+        event_dict["start"] = np.arange(20) * 4
+        event_dict["s_id"] = np.arange(len(event_dict["start"]))
+        event_dict["end"] = np.arange(1, 21) * 4
         for i, e in enumerate(events):
-            event_dict[e] = event_dict["start"] + i * 1 / len(events)
+            event_dict[e] = event_dict["start"] + i
         if stride_type != "segmented":
             event_dict["start"] = event_dict[stride_type]
         return pd.DataFrame(event_dict)
@@ -44,7 +44,7 @@ class TestEnforceStrideListConsistency:
         event_list = self._create_example_stride_list(stride_type)
         wrong_s_ids = [0, 3, 5, 19]
         modified = SL_EVENT_ORDER[stride_type][-1]
-        wrong = event_list[modified].copy()
+        wrong = event_list[modified].astype("Int64")
         wrong[event_list["s_id"].isin(wrong_s_ids)] = -1
         event_list[modified] = wrong
 
@@ -63,7 +63,7 @@ class TestEnforceStrideListConsistency:
         event_list = self._create_example_stride_list(stride_type)
         nan_s_ids = [0, 3, 5, 19]
         modified = SL_EVENT_ORDER[stride_type][-1]
-        wrong = event_list[modified].copy()
+        wrong = event_list[modified].astype("Int64")
         wrong[event_list["s_id"].isin(nan_s_ids)] = np.nan
         event_list[modified] = wrong
 
@@ -107,11 +107,11 @@ class TestConvertSegmentedStrideList:
     def _create_example_stride_list_with_pause(self):
         events = SL_EVENT_ORDER["segmented"]
         event_dict = {}
-        event_dict["start"] = np.array(list(range(10)))
-        event_dict["s_id"] = event_dict["start"]
-        event_dict["end"] = np.array(list(range(1, 11)))
+        event_dict["start"] = np.arange(10) * 4
+        event_dict["s_id"] = np.arange(len(event_dict["start"]))
+        event_dict["end"] = np.arange(1, 11) * 4
         for i, e in enumerate(events):
-            event_dict[e] = event_dict["start"] + i * 1 / len(events)
+            event_dict[e] = event_dict["start"] + i
         stride_list = pd.DataFrame(event_dict)
         stride_list = stride_list.drop(5)
         return stride_list
@@ -132,8 +132,8 @@ class TestConvertSegmentedStrideList:
         # check consistency
         _, tmp = enforce_stride_list_consistency(converted, input_stride_type=target)
         assert len(tmp) == 0
-        # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
+        # Check that the length of all strides is still 4
+        assert np.all((converted["end"] - converted["start"]) == 4)
 
     def test_second_to_last_stride_is_break(self) -> None:
         """Test an edge case where there is a break right before the last stride."""
@@ -144,8 +144,8 @@ class TestConvertSegmentedStrideList:
             stride_list, source_stride_type="segmented", target_stride_type="min_vel"
         )
 
-        # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
+        # Check that the length of all strides is still 4
+        assert np.all((converted["end"] - converted["start"]) == 4)
         # We should have dropped 3 strides
         assert len(dropped) == 3
         assert list(dropped.index) == [4, 7, 9]
@@ -171,11 +171,11 @@ class TestConvertIcStrideList:
     def _create_example_stride_list_with_pause(self):
         events = SL_EVENT_ORDER["ic"]
         event_dict = {}
-        event_dict["start"] = np.array(list(range(10)))
-        event_dict["s_id"] = event_dict["start"]
-        event_dict["end"] = np.array(list(range(1, 11)))
+        event_dict["start"] = np.arange(10) * 4
+        event_dict["s_id"] = np.arange(len(event_dict["start"]))
+        event_dict["end"] = np.arange(1, 11) * 4
         for i, e in enumerate(events):
-            event_dict[e] = event_dict["start"] + i * 1 / len(events)
+            event_dict[e] = event_dict["start"] + i
         stride_list = pd.DataFrame(event_dict)
         stride_list = stride_list.drop(5)
         return stride_list
@@ -195,8 +195,8 @@ class TestConvertIcStrideList:
         # check consistency
         _, tmp = enforce_stride_list_consistency(converted, input_stride_type="min_vel")
         assert len(tmp) == 0
-        # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
+        # Check that the length of all strides is still 4
+        assert np.all((converted["end"] - converted["start"]) == 4)
 
     def test_second_to_last_stride_is_break(self):
         """Test an edge case where there is a break right before the last stride."""
@@ -207,8 +207,8 @@ class TestConvertIcStrideList:
             stride_list, source_stride_type="ic", target_stride_type="min_vel"
         )
 
-        # Check that the length of all strides is still 1
-        assert np.all((converted["end"] - converted["start"]).round(2) == 1.0)
+        # Check that the length of all strides is still 4
+        assert np.all((converted["end"] - converted["start"]) == 4)
         # We should have dropped 3 strides
         assert len(dropped) == 3
         assert list(dropped.index) == [4, 7, 9]

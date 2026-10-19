@@ -447,7 +447,7 @@ class BaseDtw(BaseAlgorithm):
         if len(matches) == 0:
             paths_ = []
             costs_ = np.array([])
-            matches_start_end_ = np.array([])
+            matches_start_end_ = np.array([], dtype=np.int64)
         else:
             paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.

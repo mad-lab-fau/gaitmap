@@ -112,6 +112,23 @@ def _assert_has_index_columns(df: pd.DataFrame, index_cols: Iterable[_Hashable])
         )
 
 
+def _assert_has_integer_sample_positions(df: pd.DataFrame, columns: Iterable[str]) -> None:
+    """Require integer storage for sample numbers, including nullable integer events."""
+    for column in columns:
+        if column in df:
+            values = df[column]
+        elif column in df.index.names:
+            values = df.index.get_level_values(column)
+        else:
+            continue
+        if not pd.api.types.is_integer_dtype(values.dtype):
+            raise ValidationError(
+                f"The '{column}' column/index must have an integer dtype, not {values.dtype}. "
+                "Use integer sample numbers and a nullable integer dtype such as Int64 for missing events. "
+                "Floating-point sample positions must be converted explicitly without rounding or truncation."
+            )
+
+
 # This function exists to avoid cyclic imports in this module
 def _get_multi_sensor_data_names(dataset: dict | pd.DataFrame) -> Sequence[str]:
     keys = dataset.columns.unique(level=0) if isinstance(dataset, pd.DataFrame) else dataset.keys()

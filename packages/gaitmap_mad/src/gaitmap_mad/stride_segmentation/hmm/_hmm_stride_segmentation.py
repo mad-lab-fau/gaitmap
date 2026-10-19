@@ -167,7 +167,7 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
     def _format_stride_list(array: np.ndarray) -> pd.DataFrame:
         if len(array) == 0:
             array = None
-        as_df = pd.DataFrame(array, columns=["start", "end"])
+        as_df = pd.DataFrame(array, columns=["start", "end"], dtype="int64")
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df

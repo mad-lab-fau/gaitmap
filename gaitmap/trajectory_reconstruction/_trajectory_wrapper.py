@@ -128,7 +128,7 @@ class _TrajectoryReconstructionWrapperMixin:
             stride_list_list = [None] * len(integration_regions)
 
         if len(integration_regions) == 0:
-            index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=full_index)
+            index = pd.MultiIndex(levels=[[], pd.Index([], dtype="int64")], codes=[[], []], names=full_index)
             return {
                 "orientation": pd.DataFrame(columns=GF_ORI, index=index.copy()),
                 "velocity": pd.DataFrame(columns=GF_VEL, index=index.copy()),

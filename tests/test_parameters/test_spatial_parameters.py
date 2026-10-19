@@ -25,7 +25,7 @@ def single_sensor_stride_list():
     stride_events_list["pre_ic"] = [1.0, 3.0, 5.0]
     stride_events_list["start"] = [2, 4, 5]
     stride_events_list["min_vel"] = stride_events_list["start"]
-    return stride_events_list
+    return stride_events_list.astype({c: "Int64" for c in ["ic", "tc", "pre_ic", "min_vel", "start", "end"]})
 
 
 @pytest.fixture()

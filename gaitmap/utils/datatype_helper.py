@@ -13,6 +13,7 @@ from gaitmap.utils._datatype_validation_helper import (
     _ALLOWED_TRAJ_LIST_TYPES,
     _assert_has_columns,
     _assert_has_index_columns,
+    _assert_has_integer_sample_positions,
     _assert_has_multindex_cols,
     _assert_is_dtype,
     _assert_multisensor_is_not_empty,
@@ -318,8 +319,10 @@ def is_single_sensor_stride_list(
       The `s_id` column can also be part of the index.
     - has only a single level column index
     - the value of `s_id` is unique
+    - sample positions in start, end and present event columns have integer dtypes.
+      Missing events require a nullable integer dtype such as ``Int64``; validation does not modify the input.
 
-    Note that this function does only check the structure and not the plausibility of the contained values.
+    This checks structure and integer dtypes, not the plausibility of the contained values.
     For this `~gaitmap.utils.stride_list_conversions.enforce_stride_list_consistency` can be used.
 
     However, depending on the type of stride list, further requirements need to be fulfilled:
@@ -384,6 +387,7 @@ def is_single_sensor_stride_list(
         # Check if it has the correct columns
         all_columns = [*SL_COLS, *SL_MINIMAL_COLS.get(stride_type, []), *additional_cols]
         _assert_has_columns(stride_list, [all_columns])
+        _assert_has_integer_sample_positions(stride_list, [*SL_COLS, *SL_ADDITIONAL_COLS["min_vel"]])
 
         start_event = {"min_vel": "min_vel", "ic": "ic"}
         # Check that the start time corresponds to the correct event
@@ -571,8 +575,10 @@ def is_single_sensor_regions_of_interest_list(
     - additionally it has either a column or a single index named either "roi_id" or "gs_id" depended on the specified
       `region_type`. The value of this id column must be unique.
     - has only a single level column index
+    - start and end positions have integer dtypes.
+      Missing values require a nullable integer dtype such as ``Int64``; validation does not modify the input.
 
-    Note that this function does only check the structure and not the plausibility of the contained values.
+    This checks structure and integer dtypes, not the plausibility of the contained values.
 
     Parameters
     ----------
@@ -608,6 +614,7 @@ def is_single_sensor_regions_of_interest_list(
 
         roi_list = set_correct_index(roi_list, [ROI_ID_COLS[actual_region_type]])
         _assert_has_columns(roi_list, [["start", "end"]])
+        _assert_has_integer_sample_positions(roi_list, SL_COLS)
 
         # Check that the roi ids are unique
         if not roi_list.index.nunique() == roi_list.index.size:
@@ -785,6 +792,7 @@ def _is_single_sensor_trajectory_list(
         _assert_is_dtype(traj_list, pd.DataFrame)
         _assert_has_multindex_cols(traj_list, expected=False)
         traj_list = set_correct_index(traj_list, ["sample"], drop_false_index_cols=False)
+        _assert_has_integer_sample_positions(traj_list, ["sample"])
         if traj_list_type == "any_roi":
             nested_expected_cols = [[*expected_cols, TRAJ_TYPE_COLS["roi"]], [*expected_cols, TRAJ_TYPE_COLS["gs"]]]
         elif traj_list_type:
@@ -880,6 +888,7 @@ def is_single_sensor_position_list(
       level position lists, respectively.
       In case of "any_roi" the name of this column can be either `"roi_id"` or `"gs_id"`.
     - This column and the `sample` column can also be part of the index instead
+    - The ``sample`` column or index level has an integer dtype
 
     Parameters
     ----------
@@ -1002,6 +1011,7 @@ def is_single_sensor_velocity_list(
       level velocity lists, respectively.
       In case of "any_roi" the name of this column can be either `"roi_id"` or `"gs_id"`.
     - This column and the `sample` column can also be part of the index instead
+    - The ``sample`` column or index level has an integer dtype
 
     Parameters
     ----------
@@ -1124,6 +1134,7 @@ def is_single_sensor_orientation_list(
       level orientation lists, respectively.
       In case of "any_roi" the name of this column can be either `"roi_id"` or `"gs_id"`.
     - This column and the `sample` column can also be part of the index instead
+    - The ``sample`` column or index level has an integer dtype
 
     Parameters
     ----------

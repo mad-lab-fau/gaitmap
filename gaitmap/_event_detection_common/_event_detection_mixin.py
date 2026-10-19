@@ -137,7 +137,7 @@ class _EventDetectionMixin:
         }
         for event, event_list in zip(("ic", "tc", "min_vel"), (ic, tc, min_vel), strict=True):
             if event in events:
-                annotated_original_event_list[event] = event_list
+                annotated_original_event_list[event] = pd.array(event_list, dtype="Int64")
         annotated_original_event_list = pd.DataFrame(annotated_original_event_list).set_index("s_id")
         if self.enforce_consistency:
             # check for consistency, remove inconsistent strides

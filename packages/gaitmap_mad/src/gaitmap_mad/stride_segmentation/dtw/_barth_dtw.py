@@ -219,7 +219,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         tmp: np.ndarray | None = array
         if len(array) == 0:
             tmp = None
-        as_df = pd.DataFrame(tmp, columns=["start", "end"])
+        as_df = pd.DataFrame(tmp, columns=["start", "end"], dtype="int64")
         # Add the s_id
         as_df.index.name = "s_id"
         return as_df

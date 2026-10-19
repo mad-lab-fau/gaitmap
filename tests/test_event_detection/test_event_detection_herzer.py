@@ -226,3 +226,24 @@ class TestEventDetectionHerzer:
             assert hasattr(ed, "min_vel_event_list_") is False
 
         assert set(ed.annotated_original_event_list_.columns) == {"start", "end", *detect_only}
+
+
+@pytest.mark.parametrize(
+    "detector_name", ["HerzerEventDetection", "RamppEventDetection", "FilteredRamppEventDetection"]
+)
+def test_integer_sample_bounds_remain_usable_with_float_metadata(
+    detector_name, healthy_example_imu_data, healthy_example_stride_borders
+):
+    """Unrelated floating metadata cannot change which samples form a stride."""
+    from gaitmap import event_detection
+
+    data = coordinate_conversion.convert_to_fbf(healthy_example_imu_data, left_like="left", right_like="right")[
+        "left_sensor"
+    ]
+    strides = healthy_example_stride_borders["left_sensor"].set_index("s_id")[["start", "end"]].iloc[:3]
+    detector = getattr(event_detection, detector_name)
+    expected = detector().detect(data, strides, sampling_rate_hz=204.8)
+    actual = detector().detect(data, strides.assign(confidence=0.5), sampling_rate_hz=204.8)
+
+    assert_frame_equal(actual.annotated_original_event_list_, expected.annotated_original_event_list_)
+    assert datatype_helper.is_single_sensor_stride_list(actual.annotated_original_event_list_, raise_exception=True)

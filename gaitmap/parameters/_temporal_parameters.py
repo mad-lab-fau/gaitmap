@@ -179,7 +179,7 @@ class TemporalParameterCalculation(BaseTemporalParameterCalculation):
             "swing_time": swing_time,
             "stance_time": stance_time,
         }
-        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index)
+        parameters_ = pd.DataFrame(stride_parameter_dict, index=stride_event_list.index).astype(float)
         return parameters_
 
 

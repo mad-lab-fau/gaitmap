@@ -251,7 +251,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         s_1d, active_signal_mask = self._active_signal_detection(s_3d_norm, s_1d, active_signal_th)
 
         if s_1d.size == 0:
-            gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"])
+            gait_sequences_ = pd.DataFrame(columns=["gs_id", "start", "end"], dtype="int64")
             return {"gait_sequences": gait_sequences_}
 
         # dominant frequency via autocorrelation
@@ -278,7 +278,7 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
             )
 
         if gait_sequences_start_end.size == 0:
-            gait_sequences_ = pd.DataFrame(columns=["start", "end"])
+            gait_sequences_ = pd.DataFrame(columns=["start", "end"], dtype="int64")
         else:
             gait_sequences_ = pd.DataFrame(
                 {"start": gait_sequences_start_end[:, 0], "end": gait_sequences_start_end[:, 1]}
@@ -450,7 +450,10 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         sensor_names = list(get_multi_sensor_names(self.data))
 
         if all(df.empty for df in gait_sequences.values()):
-            return {sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"]) for sensor_name in sensor_names}
+            return {
+                sensor_name: pd.DataFrame(columns=["gs_id", "start", "end"], dtype="int64")
+                for sensor_name in sensor_names
+            }
 
         gait_sequences_merged = pd.DataFrame(
             merge_intervals(pd.concat(gait_sequences, ignore_index=True)[["start", "end"]].to_numpy()),

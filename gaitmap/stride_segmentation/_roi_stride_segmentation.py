@@ -261,7 +261,7 @@ class RoiStrideSegmentation(BaseStrideSegmentation, Generic[StrideSegmentationAl
 
     def _merge_single_sensor_stride_lists(self, stride_lists, index_name) -> StrideList:
         if len(stride_lists) == 0:
-            empty = pd.DataFrame(columns=[index_name, "start", "end"])
+            empty = pd.DataFrame(columns=[index_name, "start", "end"], dtype="int64")
             empty.index = pd.Index([], name="s_id")
             return empty
         concat_stride_list = pd.concat(stride_lists, names=[index_name]).reset_index(index_name).reset_index(drop=True)

@@ -37,12 +37,12 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 def create_dummy_single_sensor_roi():
     cols = ["start", "end", "gs_id"]
-    return pd.DataFrame(columns=cols)
+    return pd.DataFrame(columns=cols, dtype="int64")
 
 
 def create_dummy_multi_sensor_roi():
     cols = ["start", "end", "gs_id"]
-    return {"sensor_1": pd.DataFrame(columns=cols)}
+    return {"sensor_1": pd.DataFrame(columns=cols, dtype="int64")}
 
 
 class TestParameterValidation:
@@ -260,7 +260,7 @@ class TestCombinedStridelist:
     def test_empty_roi_returns_empty_stride_list(self) -> None:
         roi_seg = RoiStrideSegmentation(MockStrideSegmentation(), self.s_id_naming)
         data = pd.DataFrame(np.ones(27))
-        roi = pd.DataFrame(columns=["roi_id", "start", "end"])
+        roi = pd.DataFrame(columns=["roi_id", "start", "end"], dtype="int64")
 
         roi_seg.segment(data, sampling_rate_hz=100, regions_of_interest=roi)
 

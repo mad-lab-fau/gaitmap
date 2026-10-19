@@ -56,6 +56,16 @@ To get the last sample of a region you must use `end-1`.
 
 The duration of a region (in samples) is simply `end - start`.
 
+Sample-number columns, including ``start``, ``end``, gait events and trajectory ``sample`` indices,
+must have integer dtypes. Floating-point columns are rejected even when their values are whole numbers.
+Use a nullable integer dtype such as ``Int64`` when events can be missing:
+
+>>> events = pd.DataFrame({"start": [0, 100], "end": [100, 200], "ic": [20, None]}, dtype="Int64")
+
+Convert existing sample columns explicitly after checking their values; do not silently round fractional positions.
+Stride, region and sensor identifiers do not have this restriction. Sensor-data time indices in seconds and
+physical quantities such as stride duration remain floating-point values.
+
 For edge cases this means:
 
 - A region that starts on the first sample of a dataset has `start=0`

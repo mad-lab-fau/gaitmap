@@ -1,9 +1,9 @@
 """A couple of utils to convert stride lists into different formats."""
 
+from itertools import pairwise
 from typing import Literal
 
 import numpy as np
-import pandas as pd
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -84,7 +84,9 @@ def _stride_list_to_min_vel_single_sensor(
 
     """
     stride_list = set_correct_index(stride_list, SL_INDEX)
-    converted_stride_list = stride_list.copy(deep=False)
+    converted_stride_list = stride_list.astype(
+        {col: "Int64" for col in stride_list if col in {"start", "end", "pre_ic", "ic", "min_vel", "tc"}}
+    )
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
 
@@ -169,10 +171,12 @@ def enforce_stride_list_consistency(
 
     if len(order) == 1:
         # only one event, no need to check order
-        return stride_list, pd.DataFrame(columns=stride_list.columns)
+        return stride_list, stride_list.iloc[:0].copy()
 
     # Note: the following also drops strides that contain NaN for any event
-    bool_map = np.logical_and.reduce([stride_list[order[i]] < stride_list[order[i + 1]] for i in range(len(order) - 1)])
+    bool_map = np.logical_and.reduce(
+        [(stride_list[left] < stride_list[right]).fillna(False).to_numpy(dtype=bool) for left, right in pairwise(order)]
+    )
 
     return stride_list[bool_map], stride_list[~bool_map]
 

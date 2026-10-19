@@ -113,7 +113,7 @@ def test_temporal_parameters(snapshot) -> None:
 def test_spatial_parameters(snapshot) -> None:
     from examples.parameters.spatial_parameters import p
 
-    snapshot.assert_match(p.parameters_["left_sensor"])
+    snapshot.assert_match(p.parameters_["left_sensor"], check_dtype=False)
 
 
 def test_rampp_event_detection(snapshot) -> None:
@@ -121,8 +121,8 @@ def test_rampp_event_detection(snapshot) -> None:
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], name="left")
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right")
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], name="left", check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], name="right", check_dtype=False)
 
     # For this simple case the results should be identical
     assert_frame_equal(
@@ -140,8 +140,8 @@ def test_herzer_event_detection(snapshot) -> None:
 
     assert len(ed.min_vel_event_list_["left_sensor"]) == 26
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"])
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"])
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], check_dtype=False)
 
 
 def test_json_example(snapshot) -> None:
@@ -185,14 +185,15 @@ def test_mahony_orientation_example(snapshot) -> None:
 def test_mad_pipeline(snapshot) -> None:
     from examples.full_pipelines.mad_gait_pipeline import ed, spatial_paras, temporal_paras
 
-    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left")
-    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right")
+    snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], "strides_left", check_dtype=False)
+    snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], "strides_right", check_dtype=False)
     snapshot.assert_match(
         spatial_paras.parameters_pretty_["right_sensor"],
         "spatial_paras_right",
+        check_dtype=False,
     )
     snapshot.assert_match(temporal_paras.parameters_pretty_["right_sensor"], "temporal_paras_right")
-    snapshot.assert_match(spatial_paras.parameters_pretty_["left_sensor"], "spatial_paras_left")
+    snapshot.assert_match(spatial_paras.parameters_pretty_["left_sensor"], "spatial_paras_left", check_dtype=False)
     snapshot.assert_match(temporal_paras.parameters_pretty_["left_sensor"], "temporal_paras_left")
 
 

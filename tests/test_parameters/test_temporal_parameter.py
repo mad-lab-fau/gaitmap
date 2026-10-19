@@ -24,7 +24,7 @@ def _min_vel_stride_list():
     temporal_parameters["swing_time"] = [1.0, 1.0, 2.0]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
     temporal_parameters = temporal_parameters.set_index("s_id")
-    return stride_events_list, temporal_parameters
+    return stride_events_list.astype("Int64"), temporal_parameters
 
 
 @pytest.fixture()
@@ -48,7 +48,7 @@ def ic_stride_list():
     temporal_parameters["swing_time"] = [0.5, 0.5, 1.5]
     temporal_parameters["stance_time"] = [1.0, 1.0, 1.0]
     temporal_parameters = temporal_parameters.set_index("s_id")
-    return stride_events_list, temporal_parameters
+    return stride_events_list.astype("Int64"), temporal_parameters
 
 
 class TestMetaFunctionality(TestAlgorithmMixin):
