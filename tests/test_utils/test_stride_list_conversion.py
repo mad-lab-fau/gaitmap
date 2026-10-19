@@ -295,3 +295,17 @@ def test_intersection_preserves_events_before_roi_start(dtype):
     assert len(valid) == 1
     assert invalid.empty
     assert_frame_equal(strides, original)
+
+
+@pytest.mark.parametrize("dtype", ["uint64", "UInt64"])
+def test_intersection_shifts_large_absolute_positions_before_signed_conversion(dtype):
+    """Only ROI-relative coordinates need to fit signed storage."""
+    origin = 2**63
+    strides = pd.DataFrame({"start": [origin], "end": [origin + 10], "pre_ic": [origin - 2]}, dtype=dtype).rename_axis(
+        "s_id"
+    )
+    regions = pd.DataFrame({"start": [origin - 1], "end": [origin + 20]}, dtype=dtype).rename_axis("roi_id")
+
+    (actual,) = intersect_stride_list(strides, regions)
+
+    np.testing.assert_array_equal(actual.iloc[0], [1, 11, -1])
