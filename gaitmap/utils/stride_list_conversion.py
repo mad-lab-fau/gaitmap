@@ -218,12 +218,11 @@ def intersect_stride_list(
 
     stride_lists = []
 
-    for _, roi in roi_list.iterrows():
+    for start, end in roi_list[["start", "end"]].itertuples(index=False, name=None):
+        start, end = int(start), int(end)
         # find all strides that are fully contained in the roi
-        partial_stride_list = stride_list.loc[
-            (stride_list["start"] >= roi["start"]) & (stride_list["end"] <= roi["end"])
-        ]
-        partial_stride_list -= roi["start"]
+        partial_stride_list = stride_list.loc[(stride_list["start"] >= start) & (stride_list["end"] <= end)]
+        partial_stride_list -= start
         stride_lists.append(partial_stride_list)
 
     return stride_lists

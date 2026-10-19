@@ -246,3 +246,20 @@ class TestIntersectStrideList:
 
         for i, o in enumerate(out):
             assert_frame_equal(o, expected[i])
+
+
+@pytest.mark.parametrize("as_index", [False, True])
+def test_intersection_preserves_integer_samples_with_float_roi_metadata(as_index):
+    """ROI IDs and confidence values cannot alter sample coordinates or their representation."""
+    strides = pd.DataFrame({"start": [10], "end": [20], "ic": [13]}, index=pd.Index(["step"], name="s_id"))
+    regions = pd.DataFrame({"roi_id": [0.5], "start": [5], "end": [25], "confidence": [0.75]})
+    if as_index:
+        regions = regions.set_index("roi_id")
+    original_strides, original_regions = strides.copy(deep=True), regions.copy(deep=True)
+
+    (actual,) = intersect_stride_list(strides, regions)
+
+    expected = pd.DataFrame({"start": [5], "end": [15], "ic": [8]}, index=strides.index)
+    assert_frame_equal(actual, expected)
+    assert_frame_equal(strides, original_strides)
+    assert_frame_equal(regions, original_regions)
