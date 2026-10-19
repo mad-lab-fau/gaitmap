@@ -7,7 +7,7 @@ Use :class:`~gaitmap.stride_segmentation.hmm.SimpleHmm` to train a Gaussian or
 Gaussian-mixture HMM from feature matrices and initial internal-state labels.
 The :ref:`HMM training example <example_segmentation_hmm_training>` shows how to train the Roth stride
 segmentation model. The :ref:`custom hierarchical HMM example
-<example_stance_swing_transition_hmm>` trains three submodels and combines them.
+<example_custom_hierarchical_hmms>` trains three submodels and combines them.
 
 Training Gaussian emissions
 ---------------------------

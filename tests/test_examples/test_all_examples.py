@@ -289,33 +289,40 @@ def test_segmentation_hmm_training(snapshot) -> None:
     snapshot.assert_match(hmm.stride_list_["right_sensor"], "right_sensor")
 
 
-def test_stance_swing_transition_hmm() -> None:
-    from examples.stride_segmentation.stance_swing_transition_hmm import (
+def test_custom_hierarchical_hmms() -> None:
+    from examples.stride_segmentation.custom_hierarchical_hmms import (
         phase_models,
         predictions,
         reference_labels,
-        split_sample,
+        test_starts,
         test_features,
+        train_data,
+        test_data,
     )
 
     # Independent contact/border samples from the supplied left-foot annotations.
     np.testing.assert_array_equal(
-        reference_labels[[363, 364, 437, 438, 583, 584, 3453, 3934, 7091]],
-        [2, 1, 1, 0, 0, 1, 2, 1, 2],
+        reference_labels["left_sensor"][[363, 364, 437, 438, 583, 584, 3453, 3934]],
+        [2, 1, 1, 0, 0, 1, 2, 1],
     )
-    held_out_labels = reference_labels[split_sample:]
-    # Every phase must be learned; overall accuracy alone could hide a missing class.
-    for state, minimum_recall in enumerate([0.85, 0.85, 0.65]):
-        assert np.mean(predictions[held_out_labels == state] == state) > minimum_recall
+    np.testing.assert_array_equal(reference_labels["right_sensor"][[474, 475, 548, 549, 690, 691]], [2, 1, 1, 0, 0, 1])
+    # Synchronized observations of held-out strides must never enter training.
+    assert max(frame.index[-1] for frame in train_data.values()) < min(frame.index[0] for frame in test_data.values())
+    # Every phase present in a held-out foot must be learned independently.
+    for sensor, labels in reference_labels.items():
+        held_out_labels = labels[test_starts[sensor] :]
+        for state, minimum_recall in enumerate([0.85, 0.85, 0.65]):
+            if np.any(held_out_labels == state):
+                assert np.mean(predictions[sensor][held_out_labels == state] == state) > minimum_recall
 
     # A complete stance/swing phase must traverse every internal state in order.
     for name in ["stance", "swing"]:
         phase_model = phase_models[name]
         n_states = phase_model.n_states
         with pytest.raises(ValueError, match="No valid state path"):
-            phase_model.predict_hidden_state_sequence(test_features.iloc[: n_states - 1])
+            phase_model.predict_hidden_state_sequence(test_features["left_sensor"].iloc[: n_states - 1])
         np.testing.assert_array_equal(
-            phase_model.predict_hidden_state_sequence(test_features.iloc[:n_states]), np.arange(n_states)
+            phase_model.predict_hidden_state_sequence(test_features["left_sensor"].iloc[:n_states]), np.arange(n_states)
         )
 
 
