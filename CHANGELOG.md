@@ -68,10 +68,6 @@ project.
   exposes stale minimum-velocity stride results from a previous call.
   ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
-- Madgwick orientation and RTS trajectory estimation fall back to acceleration/gyroscope updates for zero
-  magnetometer readings, avoiding invalid orientations during magnetic-field dropouts.
-  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
-
 - `SlidingWindowGradient` preserves sample indices, keeping gradient features aligned with other transforms.
   ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 

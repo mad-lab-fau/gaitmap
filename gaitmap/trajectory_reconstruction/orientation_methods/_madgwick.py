@@ -221,9 +221,6 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
 @njit()
 def _madgwick_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, beta):
-    if np.all(mag == 0.0):
-        return _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta)
-
     q = np.copy(initial_orientation)
     qdot = rate_of_change_from_gyro(gyro, q)
 
