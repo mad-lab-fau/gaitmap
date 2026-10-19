@@ -14,3 +14,4 @@ Development
     constrained_dtw_issue_93
     constrained_dtw_benchmark
     tempo_regularized_dtw
+    tempo_dtw_benchmark

@@ -1,0 +1,134 @@
+{
+  "accuracy": {
+    "constrained": {
+      "pooled": {
+        "tp": 11776,
+        "fp": 338,
+        "fn": 395,
+        "precision": 0.9720983985471355,
+        "recall": 0.9675458056034837,
+        "f1_score": 0.9698167593164505
+      },
+      "participant_macro": {
+        "precision": 0.9721398432979832,
+        "recall": 0.9681000837636641,
+        "f1_score": 0.9695563986294361
+      }
+    },
+    "tempo": {
+      "pooled": {
+        "tp": 12058,
+        "fp": 189,
+        "fn": 113,
+        "precision": 0.9845676492202172,
+        "recall": 0.9907156355270725,
+        "f1_score": 0.9876320746989925
+      },
+      "participant_macro": {
+        "precision": 0.9847175678250644,
+        "recall": 0.9907312602755098,
+        "f1_score": 0.9876828098706183
+      }
+    },
+    "zero_penalty": {
+      "pooled": {
+        "tp": 12087,
+        "fp": 199,
+        "fn": 84,
+        "precision": 0.983802702262738,
+        "recall": 0.9930983485333991,
+        "f1_score": 0.9884286707282168
+      },
+      "participant_macro": {
+        "precision": 0.9839850762773736,
+        "recall": 0.993004568991034,
+        "f1_score": 0.9884453872882931
+      }
+    }
+  },
+  "comparisons": {
+    "tempo_minus_constrained_f1_percentage_points": {
+      "difference": 1.7815315382541996,
+      "paired_participant_bootstrap_95_percentile": [
+        1.0532514530117851,
+        2.949393411368871
+      ]
+    },
+    "tempo_minus_zero_penalty_f1_percentage_points": {
+      "difference": -0.07965960292243279,
+      "paired_participant_bootstrap_95_percentile": [
+        -0.25329838685448386,
+        0.016333591185550552
+      ]
+    },
+    "zero_penalty_minus_constrained_f1_percentage_points": {
+      "difference": 1.8611911411766324,
+      "paired_participant_bootstrap_95_percentile": [
+        1.0415294969212605,
+        3.2039608576309235
+      ]
+    }
+  },
+  "performance": {
+    "constrained": {
+      "sum_participant_warm_medians_seconds": 15.144048856499921,
+      "mean_participant_warm_median_seconds": 3.7860122141249803,
+      "runtime_ratio_to_constrained": 1.0,
+      "paired_runtime_ratio_range": [
+        1.0,
+        1.0
+      ],
+      "median_process_peak_rss_mib": 1326.84375,
+      "median_retained_projection_mib": 558.0825805664062
+    },
+    "tempo": {
+      "sum_participant_warm_medians_seconds": 44.171894336999685,
+      "mean_participant_warm_median_seconds": 11.042973584249921,
+      "runtime_ratio_to_constrained": 2.916782345035874,
+      "paired_runtime_ratio_range": [
+        1.92671109264024,
+        3.422036027094756
+      ],
+      "median_process_peak_rss_mib": 381.5859375,
+      "median_retained_projection_mib": 27.904129028320312
+    },
+    "zero_penalty": {
+      "sum_participant_warm_medians_seconds": 44.534488323999994,
+      "mean_participant_warm_median_seconds": 11.133622080999999,
+      "runtime_ratio_to_constrained": 2.9407253467018175,
+      "paired_runtime_ratio_range": [
+        1.9073761061957022,
+        3.4290641357574425
+      ],
+      "median_process_peak_rss_mib": 382.07421875,
+      "median_retained_projection_mib": 27.904129028320312
+    }
+  },
+  "search": {
+    "unique_numerical_computations": 112,
+    "hyperparameter_combinations_per_fold": 56,
+    "threshold_pipeline_equivalence_checks": 784,
+    "sum_parallel_job_calculation_seconds": 2079.628144755002,
+    "sum_parallel_job_verification_seconds": 14.436262806005288,
+    "generation_service_wall_seconds": 287.846,
+    "search_and_accuracy_wall_seconds_after_resume": 82.12939063600061,
+    "generation_service_cpu_seconds": 2141.324,
+    "generation_service_peak_ram_gib": 2.0690536499023438,
+    "zero_duration_fallbacks_in_all_generation_jobs": true
+  },
+  "timing_participants": [
+    "4d91",
+    "80b8",
+    "9b4b",
+    "e54d"
+  ],
+  "timing_repeats": 2,
+  "notes": [
+    "Main tempo search includes zero penalty; the zero-penalty control separately selects grid/threshold.",
+    "Runtime/peak-RSS figures cover four representative participants, accuracy covers all14.",
+    "Warm latency includes the public segment call including template processing/traceback/postprocessing; input loading and scoring excluded.",
+    "Peak RSS includes interpreter, imports, data loading, warmup and all timed calls in each isolated process.",
+    "Time penalty measures this recomputation-based prototype, not an intrinsic lower bound of tempo regularization.",
+    "Baseline predictions rescored with current official scorer and identical prepared references."
+  ]
+}

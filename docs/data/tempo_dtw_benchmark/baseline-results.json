@@ -1,0 +1,192 @@
+{
+  "folds": [
+    {
+      "fold": 0,
+      "train": [
+        "54a9",
+        "6dbe_2",
+        "6e2e",
+        "80b8",
+        "8873",
+        "8d60",
+        "9b4b",
+        "c9bb",
+        "cb3d",
+        "cdfc",
+        "e54d"
+      ],
+      "test": [
+        "4d91",
+        "5047",
+        "5237"
+      ],
+      "best_params": {
+        "dtw__max_cost": 3.077727293478334,
+        "dtw__max_template_stretch_ms": 100.02287724679212,
+        "dtw__template__use_cols": "(\"gyr_ml\",)"
+      },
+      "training_f1": 0.9769079424251839,
+      "heldout": {
+        "tp": 2525,
+        "fp": 74,
+        "fn": 50,
+        "precision": 0.9715275105809927,
+        "recall": 0.9805825242718447,
+        "f1_score": 0.9760340162350213
+      }
+    },
+    {
+      "fold": 1,
+      "train": [
+        "4d91",
+        "5047",
+        "5237",
+        "80b8",
+        "8873",
+        "8d60",
+        "9b4b",
+        "c9bb",
+        "cb3d",
+        "cdfc",
+        "e54d"
+      ],
+      "test": [
+        "54a9",
+        "6dbe_2",
+        "6e2e"
+      ],
+      "best_params": {
+        "dtw__max_cost": 3.194663005597118,
+        "dtw__max_template_stretch_ms": 100.0041781975682,
+        "dtw__template__use_cols": "(\"gyr_ml\",)"
+      },
+      "training_f1": 0.9767247240964485,
+      "heldout": {
+        "tp": 2636,
+        "fp": 93,
+        "fn": 35,
+        "precision": 0.9659215829974349,
+        "recall": 0.9868962935230251,
+        "f1_score": 0.9762962962962963
+      }
+    },
+    {
+      "fold": 2,
+      "train": [
+        "4d91",
+        "5047",
+        "5237",
+        "54a9",
+        "6dbe_2",
+        "6e2e",
+        "9b4b",
+        "c9bb",
+        "cb3d",
+        "cdfc",
+        "e54d"
+      ],
+      "test": [
+        "80b8",
+        "8873",
+        "8d60"
+      ],
+      "best_params": {
+        "dtw__max_cost": 3.1267572874027305,
+        "dtw__max_template_stretch_ms": 100.11158184552212,
+        "dtw__template__use_cols": "(\"gyr_ml\",)"
+      },
+      "training_f1": 0.977273893192428,
+      "heldout": {
+        "tp": 2443,
+        "fp": 81,
+        "fn": 46,
+        "precision": 0.9679080824088748,
+        "recall": 0.9815186822016875,
+        "f1_score": 0.9746658687412727
+      }
+    },
+    {
+      "fold": 3,
+      "train": [
+        "4d91",
+        "5047",
+        "5237",
+        "54a9",
+        "6dbe_2",
+        "6e2e",
+        "80b8",
+        "8873",
+        "8d60",
+        "cdfc",
+        "e54d"
+      ],
+      "test": [
+        "9b4b",
+        "c9bb",
+        "cb3d"
+      ],
+      "best_params": {
+        "dtw__max_cost": 2.42080896410656,
+        "dtw__max_template_stretch_ms": 100.07064392216586,
+        "dtw__template__use_cols": "(\"gyr_ml\",)"
+      },
+      "training_f1": 0.9787885183621781,
+      "heldout": {
+        "tp": 2428,
+        "fp": 41,
+        "fn": 235,
+        "precision": 0.9833940866747671,
+        "recall": 0.9117536612842658,
+        "f1_score": 0.946219797349961
+      }
+    },
+    {
+      "fold": 4,
+      "train": [
+        "4d91",
+        "5047",
+        "5237",
+        "54a9",
+        "6dbe_2",
+        "6e2e",
+        "80b8",
+        "8873",
+        "8d60",
+        "9b4b",
+        "c9bb",
+        "cb3d"
+      ],
+      "test": [
+        "cdfc",
+        "e54d"
+      ],
+      "best_params": {
+        "dtw__max_cost": 3.1167824429918234,
+        "dtw__max_template_stretch_ms": 113.3376415264909,
+        "dtw__template__use_cols": "(\"gyr_ml\",)"
+      },
+      "training_f1": 0.9764531690309022,
+      "heldout": {
+        "tp": 1744,
+        "fp": 49,
+        "fn": 29,
+        "precision": 0.9726715002788623,
+        "recall": 0.9836435420191766,
+        "f1_score": 0.9781267526640494
+      }
+    }
+  ],
+  "pooled_heldout": {
+    "precision": 0.9720983985471355,
+    "recall": 0.9675458056034837,
+    "f1_score": 0.9698167593164505,
+    "tp": 11776,
+    "fp": 338,
+    "fn": 395
+  },
+  "participant_macro": {
+    "precision": 0.9721398432979832,
+    "recall": 0.9681000837636641,
+    "f1_score": 0.9695563986294361
+  }
+}

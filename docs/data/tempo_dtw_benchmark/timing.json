@@ -1,0 +1,254 @@
+[
+  {
+    "participant": "4d91",
+    "arm": "constrained",
+    "baseline_params": {
+      "dtw__max_cost": 3.077727293478334,
+      "dtw__max_template_stretch_ms": 100.02287724679212,
+      "dtw__template__use_cols": "(\"gyr_ml\",)"
+    },
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3code-cdc00b1b/work/issue-93/optimized-rerun/4d91-heldout-strides.joblib",
+    "warmup_seconds": 3.677925001999938,
+    "warm_seconds": [
+      3.5137920289998874,
+      3.485099211000488
+    ],
+    "warm_median_seconds": 3.4994456200001878,
+    "peak_rss_mib": 1496.9296875,
+    "signal_seconds_both_feet": 1680.13671875,
+    "numerical_projection_bytes": 550547200,
+    "retained_array_bytes_in_paths": 4286480,
+    "fallbacks": null
+  },
+  {
+    "participant": "4d91",
+    "arm": "tempo",
+    "config": 0,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/4d91-tempo-strides.joblib",
+    "warmup_seconds": 12.18241586899967,
+    "warm_seconds": [
+      11.99285539199991,
+      11.957602580999264
+    ],
+    "warm_median_seconds": 11.975228986499587,
+    "peak_rss_mib": 379.17578125,
+    "signal_seconds_both_feet": 1680.13671875,
+    "numerical_projection_bytes": 27527360,
+    "retained_array_bytes_in_paths": 5137856,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "4d91",
+    "arm": "zero_penalty",
+    "config": 0,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/4d91-zero_penalty-strides.joblib",
+    "warmup_seconds": 12.055206248000104,
+    "warm_seconds": [
+      11.683687624999948,
+      11.67834030999984
+    ],
+    "warm_median_seconds": 11.681013967499894,
+    "peak_rss_mib": 377.5859375,
+    "signal_seconds_both_feet": 1680.13671875,
+    "numerical_projection_bytes": 27527360,
+    "retained_array_bytes_in_paths": 5137856,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "80b8",
+    "arm": "constrained",
+    "baseline_params": {
+      "dtw__max_cost": 3.1267572874027305,
+      "dtw__max_template_stretch_ms": 100.11158184552212,
+      "dtw__template__use_cols": "(\"gyr_ml\",)"
+    },
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3code-cdc00b1b/work/issue-93/optimized-rerun/80b8-heldout-strides.joblib",
+    "warmup_seconds": 4.169264131000091,
+    "warm_seconds": [
+      3.9963278220002394,
+      3.986729029000344
+    ],
+    "warm_median_seconds": 3.9915284255002916,
+    "peak_rss_mib": 1342.0390625,
+    "signal_seconds_both_feet": 1882.412109375,
+    "numerical_projection_bytes": 616828800,
+    "retained_array_bytes_in_paths": 4531936,
+    "fallbacks": null
+  },
+  {
+    "participant": "80b8",
+    "arm": "tempo",
+    "config": 4,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/80b8-tempo-strides.joblib",
+    "warmup_seconds": 7.820153845000277,
+    "warm_seconds": [
+      7.614035161000174,
+      7.767009027000313
+    ],
+    "warm_median_seconds": 7.690522094000244,
+    "peak_rss_mib": 412.66015625,
+    "signal_seconds_both_feet": 1882.412109375,
+    "numerical_projection_bytes": 61682880,
+    "retained_array_bytes_in_paths": 4681344,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "80b8",
+    "arm": "zero_penalty",
+    "config": 4,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/80b8-zero_penalty-strides.joblib",
+    "warmup_seconds": 7.841344421000031,
+    "warm_seconds": [
+      7.675044007000906,
+      7.551647884999511
+    ],
+    "warm_median_seconds": 7.613345946000209,
+    "peak_rss_mib": 412.9765625,
+    "signal_seconds_both_feet": 1882.412109375,
+    "numerical_projection_bytes": 61682880,
+    "retained_array_bytes_in_paths": 4681344,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "9b4b",
+    "arm": "constrained",
+    "baseline_params": {
+      "dtw__max_cost": 2.42080896410656,
+      "dtw__max_template_stretch_ms": 100.07064392216586,
+      "dtw__template__use_cols": "(\"gyr_ml\",)"
+    },
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3code-cdc00b1b/work/issue-93/optimized-rerun/9b4b-heldout-strides.joblib",
+    "warmup_seconds": 3.743809539999347,
+    "warm_seconds": [
+      3.5553823479995117,
+      3.5303634219999367
+    ],
+    "warm_median_seconds": 3.542872884999724,
+    "peak_rss_mib": 990.97265625,
+    "signal_seconds_both_feet": 1741.357421875,
+    "numerical_projection_bytes": 570608000,
+    "retained_array_bytes_in_paths": 4472096,
+    "fallbacks": null
+  },
+  {
+    "participant": "9b4b",
+    "arm": "tempo",
+    "config": 1,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/9b4b-tempo-strides.joblib",
+    "warmup_seconds": 11.807736108000427,
+    "warm_seconds": [
+      11.706827635000082,
+      11.693487118000121
+    ],
+    "warm_median_seconds": 11.700157376500101,
+    "peak_rss_mib": 379.9921875,
+    "signal_seconds_both_feet": 1741.357421875,
+    "numerical_projection_bytes": 28530400,
+    "retained_array_bytes_in_paths": 5459840,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "9b4b",
+    "arm": "zero_penalty",
+    "config": 0,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/9b4b-zero_penalty-strides.joblib",
+    "warmup_seconds": 12.851062708999962,
+    "warm_seconds": [
+      12.157903960000112,
+      12.139572735000002
+    ],
+    "warm_median_seconds": 12.148738347500057,
+    "peak_rss_mib": 379.78515625,
+    "signal_seconds_both_feet": 1741.357421875,
+    "numerical_projection_bytes": 28530400,
+    "retained_array_bytes_in_paths": 5101312,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "e54d",
+    "arm": "constrained",
+    "baseline_params": {
+      "dtw__max_cost": 3.1167824429918234,
+      "dtw__max_template_stretch_ms": 113.3376415264909,
+      "dtw__template__use_cols": "(\"gyr_ml\",)"
+    },
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3code-cdc00b1b/work/issue-93/optimized-rerun/e54d-heldout-strides.joblib",
+    "warmup_seconds": 4.258208891000322,
+    "warm_seconds": [
+      4.1544625379992794,
+      4.065941314000156
+    ],
+    "warm_median_seconds": 4.110201925999718,
+    "peak_rss_mib": 1311.6484375,
+    "signal_seconds_both_feet": 1830.37109375,
+    "numerical_projection_bytes": 599776000,
+    "retained_array_bytes_in_paths": 4521520,
+    "fallbacks": null
+  },
+  {
+    "participant": "e54d",
+    "arm": "tempo",
+    "config": 0,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/e54d-tempo-strides.joblib",
+    "warmup_seconds": 12.777868258000126,
+    "warm_seconds": [
+      12.652415554000072,
+      12.959556205999434
+    ],
+    "warm_median_seconds": 12.805985879999753,
+    "peak_rss_mib": 383.1796875,
+    "signal_seconds_both_feet": 1830.37109375,
+    "numerical_projection_bytes": 29988800,
+    "retained_array_bytes_in_paths": 5354304,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  },
+  {
+    "participant": "e54d",
+    "arm": "zero_penalty",
+    "config": 0,
+    "threshold": 0.25,
+    "expected_strides": "/home/arne/.t3/worktrees/gaitmap/t3-dbd1d8c2/work/tempo-dtw-benchmark/results/e54d-zero_penalty-strides.joblib",
+    "warmup_seconds": 13.552858148000269,
+    "warm_seconds": [
+      12.977456611999514,
+      13.205323514000156
+    ],
+    "warm_median_seconds": 13.091390062999835,
+    "peak_rss_mib": 384.36328125,
+    "signal_seconds_both_feet": 1830.37109375,
+    "numerical_projection_bytes": 29988800,
+    "retained_array_bytes_in_paths": 5354304,
+    "fallbacks": {
+      "left_sensor": 0,
+      "right_sensor": 0
+    }
+  }
+]

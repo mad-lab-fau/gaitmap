@@ -1,0 +1,107 @@
+{
+  "revision": "80b629c14d8f1517f69c35a76b5f652309e493d2",
+  "grid": [
+    {
+      "n_segments": 10,
+      "penalty_at_20_blocks": 0.0
+    },
+    {
+      "n_segments": 10,
+      "penalty_at_20_blocks": 0.01
+    },
+    {
+      "n_segments": 10,
+      "penalty_at_20_blocks": 0.1
+    },
+    {
+      "n_segments": 10,
+      "penalty_at_20_blocks": 1.0
+    },
+    {
+      "n_segments": 20,
+      "penalty_at_20_blocks": 0.0
+    },
+    {
+      "n_segments": 20,
+      "penalty_at_20_blocks": 0.01
+    },
+    {
+      "n_segments": 20,
+      "penalty_at_20_blocks": 0.1
+    },
+    {
+      "n_segments": 20,
+      "penalty_at_20_blocks": 1.0
+    }
+  ],
+  "thresholds": [
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.4,
+    0.6
+  ],
+  "tempo_bounds": [
+    0.65,
+    2.0
+  ],
+  "axes": [
+    "gyr_ml"
+  ],
+  "min_match_length_s": 0.6,
+  "max_match_length_s": 3.0,
+  "snap_to_min_win_ms": 300,
+  "threads": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMBA_NUM_THREADS": "1"
+  },
+  "source_sha256": {
+    "scripts/benchmark_tempo_dtw.py": "e64e70da1067edd7c1ca143473a00412cfafba508e99820efd3bf45841a3778b",
+    "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_tempo_dtw.py": "5c811c95ab69a7592652cd4aa8705caf8c58b2c4d890bbadb27f0314198dba6a",
+    "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_tempo_barth_dtw.py": "11ffe8829549652c0b06c331a29236e7de52ac0dbadeb08cf793e3fee0ff8f41"
+  },
+  "prepared_sha256": {
+    "4d91.joblib": "3d075d6d28c24273eb777b3b96764db89c0243cab55e49226f03b02cebfbffc1",
+    "5047.joblib": "8ce88a7a23d9ceae53803a3abbc0417e43aff16e8520d20e8a78a4cfcd38f43c",
+    "5237.joblib": "267c1342ec8f191eb0078592ca51831ea18f07575ba9221bec50232b24477750",
+    "54a9.joblib": "bfb78ab916b4f742efd7650cb91aa21f50c49b264595246b27a81e85fab6266e",
+    "6dbe_2.joblib": "015800b8352155f985b41b155f04ab0749705150369e00afc392108318f264d5",
+    "6e2e.joblib": "ad1c716a7dbf60c7d05412a001900476928c2d5c26b5217342234adcc086a277",
+    "80b8.joblib": "0239342b61d4c943a032657c683fd6ea92e635078ad80037142da529789ded60",
+    "8873.joblib": "6960fe8dd2fe242f506ad205dc4fb4a17bf71773422b63ca96b9a30e84b435a5",
+    "8d60.joblib": "b00a641f2a5d01b6381f203532dbacfd3c78eb79b358c6f8a0393a88da63ff2b",
+    "9b4b.joblib": "0adfb0d41d63d2de1cf14f2b75b559c2456c662f2686d88651a860d0d4ba04f6",
+    "c9bb.joblib": "bfbf3d5b8332e3b459d44429b4f813abdea17db769c84d7318f31a6e5210ac1e",
+    "cb3d.joblib": "a5efd4c490b907ebd42850524aaa8c84dd18a0c282fa44d21954f703bc3f260d",
+    "cdfc.joblib": "c16f627940c2dd5387da950d8af89794b8069d6c261bf8ab0c0f2e02679a9dfc",
+    "e54d.joblib": "46a4797639b54c7eed087f0391cc597d28df9b7859a265ce3eec1d64e7f7ad27"
+  },
+  "prepared_source_manifest": {
+    "gaitmap_revision": "564a431640a4c9399e44b735ebebdf28548dece1",
+    "benchmark_revision": "50b8d08584ca50f7d10c539d4070978f40e62214",
+    "data_folder": "/home/arne/Documents/repos/mad/data/sensorpositoncomparison",
+    "trials_per_fold": 100,
+    "sampler_seed": 42,
+    "versions": {
+      "gaitmap": "2.6.0",
+      "gaitmap-mad": "2.6.0",
+      "gaitmap-datasets": "0.15.0",
+      "tpcp": "2.2.0",
+      "optuna": "3.2.0",
+      "numpy": "2.4.3",
+      "pandas": "3.0.0",
+      "numba": "0.64.0"
+    },
+    "source_sha256": {
+      "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_constrained_dtw.py": "3545c93a8e182d8647646069b5ff0c74399364980930d328abd96043604b7034",
+      "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_base_dtw.py": "af347749679ba302a875f988372535cdb78046db626a0c7488a63caa7a2be5b5",
+      "packages/gaitmap_mad/src/gaitmap_mad/stride_segmentation/dtw/_barth_dtw.py": "3975d2f56557ec2113769899ae63816fefb9f9e9b756926abc2a759b1c15c2f8"
+    }
+  },
+  "baseline_directory": "/home/arne/.t3/worktrees/gaitmap/t3code-cdc00b1b/work/issue-93/optimized-rerun",
+  "benchmark_revision": "50b8d08584ca50f7d10c539d4070978f40e62214"
+}

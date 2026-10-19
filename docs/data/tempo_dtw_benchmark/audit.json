@@ -1,0 +1,28 @@
+{
+  "verified_participants": 14,
+  "verified_match_tables": 42,
+  "verified_search_rows": 784,
+  "comparisons": {
+    "tempo_minus_constrained_f1_percentage_points": {
+      "difference": 1.7815315382541996,
+      "paired_participant_bootstrap_95_percentile": [
+        1.0532514530117851,
+        2.949393411368871
+      ]
+    },
+    "tempo_minus_zero_penalty_f1_percentage_points": {
+      "difference": -0.07965960292243279,
+      "paired_participant_bootstrap_95_percentile": [
+        -0.25329838685448386,
+        0.016333591185550552
+      ]
+    },
+    "zero_penalty_minus_constrained_f1_percentage_points": {
+      "difference": 1.8611911411766324,
+      "paired_participant_bootstrap_95_percentile": [
+        1.0415294969212605,
+        3.2039608576309235
+      ]
+    }
+  }
+}

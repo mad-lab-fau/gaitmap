@@ -335,8 +335,15 @@ def _probe(args):
 def _timing(args):
     selections = json.loads((args.output_dir / "selections.json").read_text())
     baseline = json.loads((args.baseline_dir / "results.json").read_text())
-    # Fixed before inspecting labels/scores: first, middle and last participant.
+    # Fixed core subset plus the first test participant of each fold whose
+    # training-only selection actually uses a positive tempo penalty. This
+    # covers smoothing without selecting examples from held-out accuracy.
     participants = ["4d91", "80b8", "e54d"]
+    for selected in selections:
+        if selected["arm"] == "tempo" and GRID[selected["config"]]["penalty_at_20_blocks"] > 0:
+            participant = selected["test"][0]
+            if participant not in participants:
+                participants.append(participant)
     requests = []
     for participant in participants:
         fold = next(f for f in baseline["folds"] if participant in f["test"])

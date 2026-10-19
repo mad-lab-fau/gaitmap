@@ -5,8 +5,11 @@ Experimental tempo-regularized subsequence alignment
 
 ``ExperimentalTempoBarthDtw`` is a separate experimental segmentation algorithm.
 It leaves ``BaseDtw``, ``BarthDtw`` and ``ConstrainedBarthDtw`` unchanged.
-No improvement in gait accuracy has been established. The defaults are
-uncalibrated, and existing DTW thresholds do not transfer to its normalized score.
+A :ref:`small held-out benchmark <tempo_dtw_benchmark>` finds improved detection
+with the new formulation on a healthy-participant cohort, also with the
+tempo-change penalty disabled. It does not establish a benefit from that penalty
+or validation across clinical populations. The defaults remain uncalibrated,
+and existing DTW thresholds do not transfer to its normalized score.
 
 The method adapts the expanded-state second-order warp regularization discussed
 by Deriso and Boyd in `section 6.2 of A General Optimization Framework for Dynamic
