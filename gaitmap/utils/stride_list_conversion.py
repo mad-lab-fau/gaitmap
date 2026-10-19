@@ -4,6 +4,7 @@ from itertools import pairwise
 from typing import Literal
 
 import numpy as np
+import pandas as pd
 
 from gaitmap.utils.consts import SL_EVENT_ORDER, SL_INDEX
 from gaitmap.utils.datatype_helper import (
@@ -220,6 +221,9 @@ def intersect_stride_list(
     stride_lists = []
 
     for start, end in roi_list[["start", "end"]].itertuples(index=False, name=None):
+        if pd.isna(start) or pd.isna(end):
+            stride_lists.append(stride_list.iloc[:0].copy())
+            continue
         start, end = int(start), int(end)
         # find all strides that are fully contained in the roi
         partial_stride_list = stride_list.loc[(stride_list["start"] >= start) & (stride_list["end"] <= end)]

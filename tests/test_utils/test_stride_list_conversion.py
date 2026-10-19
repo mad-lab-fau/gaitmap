@@ -263,3 +263,16 @@ def test_intersection_preserves_integer_samples_with_float_roi_metadata(as_index
     assert_frame_equal(actual, expected)
     assert_frame_equal(strides, original_strides)
     assert_frame_equal(regions, original_regions)
+
+
+@pytest.mark.parametrize("missing_boundary", ["start", "end"])
+def test_intersection_keeps_complete_regions_when_another_boundary_is_missing(missing_boundary):
+    """An incomplete annotation contributes no strides without discarding other regions."""
+    strides = pd.DataFrame({"start": [10], "end": [20]}, index=pd.Index(["step"], name="s_id"))
+    regions = pd.DataFrame({"start": [5, 5], "end": [25, 25]}, dtype="Int64").rename_axis("roi_id")
+    regions.loc[0, missing_boundary] = pd.NA
+
+    empty, complete = intersect_stride_list(strides, regions)
+
+    assert_frame_equal(empty, strides.iloc[:0])
+    assert_frame_equal(complete, pd.DataFrame({"start": [5], "end": [15]}, index=strides.index))
