@@ -1,6 +1,8 @@
 """Saved-model compatibility is tested at the public loading interface."""
 
 import json
+import subprocess
+import sys
 from importlib.resources import files
 from pathlib import Path
 
@@ -51,6 +53,33 @@ def test_saved_stride_segmentation_preserves_model_and_postprocessing(tmp_path):
     assert restored.model.name == "archived_model"
     assert restored.model.model.n_states == 25
     assert restored.model.data_columns == ["raw__gyr_ml", "gradient__gradient__gyr_ml"]
+
+
+def test_legacy_loading_preserves_same_named_custom_subclass():
+    """Custom stride-state semantics survive loading even when the parent shares its name."""
+    # Isolate the custom class so it cannot change class discovery in other tests.
+    code = """
+from gaitmap.stride_segmentation.hmm import RothSegmentationHmm as BaseRoth, load_legacy_hmm_json
+
+class RothSegmentationHmm(BaseRoth):
+    def __init__(self, custom_stride_states=(0,)):
+        super().__init__()
+        self.custom_stride_states = custom_stride_states
+
+    @property
+    def stride_states(self):
+        return self.custom_stride_states
+
+restored = load_legacy_hmm_json(
+    '{"_gaitmap_obj": "RothSegmentationHmm", '
+    '"params": {"custom_stride_states": {"_obj_type": "Tuple", "tuple": [2, 3]}}}'
+)
+assert restored.stride_states == (2, 3)
+"""
+
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize("value", [-0.1, 1.1, np.nan])

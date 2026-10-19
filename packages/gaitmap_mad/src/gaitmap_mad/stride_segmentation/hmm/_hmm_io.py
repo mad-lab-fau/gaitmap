@@ -52,11 +52,10 @@ def load_legacy_hmm_json(serialized: str) -> SimpleHmm | CompositeHmm | BaseSegm
             yield from subclasses(child)
         yield cls
 
-    classes = {
-        cls.__name__: cls
-        for root in (BaseAlgorithm, SimpleHmm, CompositeHmm, BaseSegmentationHmm)
-        for cls in subclasses(root)
-    }
+    classes = {}
+    for root in (BaseAlgorithm, SimpleHmm, CompositeHmm, BaseSegmentationHmm):
+        for cls in subclasses(root):
+            classes.setdefault(cls.__name__, cls)
 
     model = json.loads(serialized, object_hook=partial(_decode_legacy_hmm_object, classes=classes))
     if isinstance(model, (SimpleHmm, CompositeHmm, BaseSegmentationHmm)):
