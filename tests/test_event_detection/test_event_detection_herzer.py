@@ -247,3 +247,22 @@ def test_integer_sample_bounds_remain_usable_with_float_metadata(
 
     assert_frame_equal(actual.annotated_original_event_list_, expected.annotated_original_event_list_)
     assert datatype_helper.is_single_sensor_stride_list(actual.annotated_original_event_list_, raise_exception=True)
+
+
+@pytest.mark.parametrize(
+    "detector_name", ["HerzerEventDetection", "RamppEventDetection", "FilteredRamppEventDetection"]
+)
+def test_empty_stride_input_returns_valid_empty_event_lists(detector_name, healthy_example_imu_data):
+    """A recording without detected strides remains usable by the next pipeline step."""
+    from gaitmap import event_detection
+
+    data = coordinate_conversion.convert_left_foot_to_fbf(healthy_example_imu_data["left_sensor"])
+    strides = pd.DataFrame(columns=["start", "end"], dtype="int64").rename_axis("s_id")
+    result = getattr(event_detection, detector_name)().detect(data, strides, sampling_rate_hz=204.8)
+
+    assert result.annotated_original_event_list_.empty
+    assert result.min_vel_event_list_.empty
+    assert datatype_helper.is_single_sensor_stride_list(result.annotated_original_event_list_, raise_exception=True)
+    assert datatype_helper.is_single_sensor_stride_list(
+        result.min_vel_event_list_, stride_type="min_vel", raise_exception=True
+    )
