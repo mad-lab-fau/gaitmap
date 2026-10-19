@@ -1,0 +1,63 @@
+# Project-specific review guidelines
+review_guidelines = """
+Flag any change that breaks a public interface, user-facing behavior, or persisted data format without explicit
+maintainer approval, a documented migration plan, and prominent release communication. Permit safe internal refactors
+only when all in-repository consumers are updated and public behavior remains stable.
+"""
+
+# Synthesis uses fix-workflow reasoning in RoboRev v0.69.0.
+# This also sets high reasoning for ordinary fix jobs.
+fix_reasoning = "high"
+
+# Agent/model choices are deliberately inherited from each developer's settings.
+# These entries replace complete global definitions with the same names.
+
+[review.types.full-stack]
+template = ".agents/roborev/full-stack.md"
+[review.types.full-stack.includes]
+guidance = ".agents/roborev/guidance.md"
+
+[review.types.plan-conformance]
+template = ".agents/roborev/plan-conformance.md"
+[review.types.plan-conformance.includes]
+guidance = ".agents/roborev/guidance.md"
+
+[review.types.conventions]
+template = ".agents/roborev/conventions.md"
+[review.types.conventions.includes]
+guidance = ".agents/roborev/guidance.md"
+
+[review.types.simplicity]
+template = ".agents/roborev/simplicity.md"
+[review.types.simplicity.includes]
+guidance = ".agents/roborev/guidance.md"
+
+[review.types.scientific-correctness]
+template = ".agents/roborev/scientific-correctness.md"
+[review.types.scientific-correctness.includes]
+guidance = ".agents/roborev/guidance.md"
+
+[review.subagents.full_stack]
+review_type = "full-stack"
+reasoning = "high"
+
+[review.subagents.plan_conformance]
+review_type = "plan-conformance"
+reasoning = "high"
+
+[review.subagents.conventions]
+review_type = "conventions"
+reasoning = "high"
+
+[review.subagents.simplicity]
+review_type = "simplicity"
+reasoning = "high"
+
+[review.subagents.scientific_correctness]
+review_type = "scientific-correctness"
+reasoning = "high"
+
+# Explicit final review only; no automatic panel selectors are installed.
+[review.panels.feature_ready]
+members = ["full_stack", "plan_conformance", "conventions", "simplicity", "scientific_correctness"]
+# With no synthesis agent/model pin, the developer's fix workflow selects them.
