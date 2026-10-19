@@ -22,6 +22,7 @@ project.
   intervals and downstream trajectories; revalidate existing SHOE thresholds and results. On the healthy
   example, 30 of 7,928 left-foot samples and 15 right-foot samples become stationary, with unchanged
   numbers of stationary intervals.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - Replaced pomegranate with a custom NumPy/Numba backend for the HMM subset used by gaitmap.
   This simplifies packaging and removes the need for an HMM installation extra.
@@ -57,19 +58,25 @@ project.
 
 - Region-level trajectory intersection returns empty stride trajectories when no strides are fully
   contained in a region, including empty stride lists, instead of raising an error.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - ROI stride segmentation supports floating-point region identifiers and sensor identifiers such as `0`
   or an empty string without changing sample boundaries or sensor-specific template selection.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - Reusing an event detector with minimum-velocity detection or consistency checking disabled no longer
   exposes stale minimum-velocity stride results from a previous call.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - Madgwick orientation and RTS trajectory estimation fall back to acceleration/gyroscope updates for zero
   magnetometer readings, avoiding invalid orientations during magnetic-field dropouts.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - `SlidingWindowGradient` preserves sample indices, keeping gradient features aligned with other transforms.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
+  ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
 - Sample-number columns and trajectory sample indices now require integer dtypes, including
   integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
