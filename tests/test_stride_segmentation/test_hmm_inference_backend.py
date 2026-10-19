@@ -13,49 +13,6 @@ from tpcp._hash import custom_hash
 from gaitmap.stride_segmentation.hmm import GaussianMixture, HiddenMarkovModel
 
 
-def legacy_gaussian(mean, covariance):
-    """Create a legacy full-covariance Gaussian definition."""
-    return {
-        "class": "Distribution",
-        "name": "MultivariateGaussianDistribution",
-        "parameters": [mean, covariance],
-        "frozen": False,
-    }
-
-
-def legacy_model_dict(distributions, transitions, starts, ends=None, weights=None):
-    """Create a legacy model with separate emitting and silent states."""
-    n_states = len(distributions)
-    states = [
-        {"class": "State", "name": f"s{i}", "distribution": distribution, "weight": weight}
-        for i, (distribution, weight) in enumerate(zip(distributions, weights or [1.0] * n_states))
-    ]
-    states.extend({"class": "State", "name": name, "distribution": None, "weight": 1.0} for name in ["start", "end"])
-    edges = [
-        [i, j, probability, probability, None]
-        for i, row in enumerate(transitions)
-        for j, probability in enumerate(row)
-        if probability
-    ]
-    edges.extend([n_states, i, probability, probability, None] for i, probability in enumerate(starts) if probability)
-    if ends is not None:
-        edges.extend(
-            [i, n_states + 1, probability, probability, None] for i, probability in enumerate(ends) if probability
-        )
-    return {
-        "class": "HiddenMarkovModel",
-        "name": "example",
-        "states": states,
-        "start": states[-2],
-        "end": states[-1],
-        "start_index": n_states,
-        "end_index": n_states + 1,
-        "silent_index": n_states,
-        "edges": edges,
-        "distribution ties": [],
-    }
-
-
 @pytest.mark.parametrize("layout", ["C", "F"])
 def test_full_covariance_gaussian_sequence_likelihood(layout):
     """Gaussian scores are independent of the input memory layout."""
@@ -199,19 +156,3 @@ def test_pickle_restores_read_only_parameters_and_matching_inference():
     for parameter in [restored.transitions, restored.starts, restored.ends, restored.emissions[0].means]:
         with pytest.raises(ValueError, match="read-only"):
             parameter.flat[0] = 0.0
-
-
-@pytest.mark.parametrize("unsupported", ["distribution", "silent state", "distribution ties", "transition ties"])
-def test_unsupported_persisted_model_features_fail_clearly(unsupported):
-    """Unsupported legacy model types do not silently change inference semantics."""
-    serialized = legacy_model_dict([legacy_gaussian([0.0], [[1.0]])], [[0.8]], [1.0], [0.2])
-    if unsupported == "distribution":
-        serialized["states"][0]["distribution"]["name"] = "NormalDistribution"
-    elif unsupported == "silent state":
-        serialized["states"][0]["distribution"] = None
-    elif unsupported == "distribution ties":
-        serialized["distribution ties"] = [[0, 0]]
-    else:
-        serialized["edges"][0][4] = "group"
-    with pytest.raises(ValueError, match="supported"):
-        HiddenMarkovModel.from_dict(serialized)

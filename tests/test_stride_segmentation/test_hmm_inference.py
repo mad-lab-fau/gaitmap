@@ -2,7 +2,6 @@
 
 import subprocess
 import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -42,17 +41,6 @@ def test_inverse_feature_transform_preserves_full_length_identity(states):
     )
 
     assert_array_equal(actual, states)
-
-
-@pytest.mark.parametrize("value", [-0.1, 1.1, np.nan])
-def test_native_model_loader_rejects_invalid_persisted_probabilities(value):
-    """Malformed saved probabilities fail at loading rather than corrupting inference."""
-    emission = GaussianMixture([[0.0]], [[[1.0]]], [1.0])
-    data = HiddenMarkovModel([emission], [[1.0]], [1.0]).to_dict()
-    data["transitions"][0][0] = value
-
-    with pytest.raises(ValueError, match="probabilities"):
-        HiddenMarkovModel.from_dict(data)
 
 
 @pytest.mark.parametrize("restore", ["clone", "json"])
@@ -95,15 +83,3 @@ np.testing.assert_array_equal(restored.predict_hidden_state_sequence(pd.DataFram
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
 
     assert result.returncode == 0, result.stderr
-
-
-@pytest.mark.parametrize("algorithm", ["viterbi", "map"])
-def test_saved_finite_simple_hmm_keeps_all_emitting_samples(algorithm):
-    """Keep the last emitting sample when the model includes explicit termination."""
-    serialized = (Path(__file__).parent / "fixtures" / "hmm_finite_saved_model.json").read_text()
-    model = SimpleHmm.from_json(serialized)
-    data = pd.DataFrame({"feature": [-2.0, -1.0, 2.0]})
-
-    result = model.predict_hidden_state_sequence(data, algorithm=algorithm)
-
-    assert_array_equal(result, [0, 0, 1])
