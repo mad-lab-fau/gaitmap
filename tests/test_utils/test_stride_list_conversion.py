@@ -276,3 +276,22 @@ def test_intersection_keeps_complete_regions_when_another_boundary_is_missing(mi
 
     assert_frame_equal(empty, strides.iloc[:0])
     assert_frame_equal(complete, pd.DataFrame({"start": [5], "end": [15]}, index=strides.index))
+
+
+@pytest.mark.parametrize("dtype", ["uint32", "uint64", "UInt32", "UInt64"])
+def test_intersection_preserves_events_before_roi_start(dtype):
+    """A previous contact remains negative in ROI coordinates, rather than wrapping."""
+    strides = pd.DataFrame(
+        {"start": [10], "end": [20], "pre_ic": [8], "min_vel": [10], "tc": [12], "ic": [15]},
+        dtype=dtype,
+    ).rename_axis("s_id")
+    regions = pd.DataFrame({"start": [9], "end": [25]}, index=pd.Index([0.5], name="roi_id"))
+    original = strides.copy(deep=True)
+
+    (actual,) = intersect_stride_list(strides, regions)
+
+    np.testing.assert_array_equal(actual.iloc[0], [1, 11, -1, 1, 3, 6])
+    valid, invalid = enforce_stride_list_consistency(actual, input_stride_type="min_vel")
+    assert len(valid) == 1
+    assert invalid.empty
+    assert_frame_equal(strides, original)

@@ -227,6 +227,14 @@ def intersect_stride_list(
         start, end = int(start), int(end)
         # find all strides that are fully contained in the roi
         partial_stride_list = stride_list.loc[(stride_list["start"] >= start) & (stride_list["end"] <= end)]
+        # Previous-stride events may precede the ROI and need negative coordinates.
+        partial_stride_list = partial_stride_list.astype(
+            {
+                column: "Int64"
+                for column in partial_stride_list
+                if pd.api.types.is_unsigned_integer_dtype(partial_stride_list[column].dtype)
+            }
+        )
         partial_stride_list -= start
         stride_lists.append(partial_stride_list)
 
