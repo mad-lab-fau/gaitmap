@@ -21,6 +21,7 @@ Classes
     BaseDtw
     BarthDtw
     ConstrainedBarthDtw
+    ExperimentalTempoBarthDtw
     RoiStrideSegmentation
     BaseDtwTemplate
     DtwTemplate
@@ -53,3 +54,15 @@ HMM Stride Segmentation
     RothHmmFeatureTransformer
     PreTrainedRothSegmentationModel
     BaseHmmFeatureTransformer
+
+Experimental numerical tempo alignment
+*************************************
+
+.. currentmodule:: gaitmap_mad.stride_segmentation.dtw
+
+.. autosummary::
+   :toctree: generated/stride_segmentation
+   :template: function.rst
+
+    tempo_regularized_subsequence_dtw
+    tempo_dtw_paths

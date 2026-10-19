@@ -14,6 +14,7 @@ from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
 )
+from gaitmap_mad.stride_segmentation.dtw._tempo_barth_dtw import ExperimentalTempoBarthDtw
 from gaitmap_mad.stride_segmentation.dtw._tempo_dtw import (
     TempoDtwAlignment,
     TempoDtwResult,
@@ -28,6 +29,7 @@ __all__ = [
     "BaseDtwTemplate",
     "ConstrainedBarthDtw",
     "DtwTemplate",
+    "ExperimentalTempoBarthDtw",
     "InterpolatedDtwTemplate",
     "TempoDtwAlignment",
     "TempoDtwResult",
