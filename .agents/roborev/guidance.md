@@ -46,7 +46,7 @@ usage. Apply their rules as inspection criteria only. Check the installed tpcp
 version and existing supported behavior before requiring a newer API or convention.
 Use current pyproject.toml and .github/workflows/test-and-lint.yml for supported
 Python/dependency/platform requirements and verification commands. CI currently
-covers Python 3.9 through 3.11 on Ubuntu and Windows. Check
+covers Python 3.11 through 3.14 on Ubuntu and Windows. Check
 optional imports, packaged resources, and cross-platform paths when affected.
 Review both gaitmap and packages/gaitmap_mad when a change crosses their boundary;
 preserve documented optional-package behavior and licensing separation.
