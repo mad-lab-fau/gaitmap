@@ -14,6 +14,12 @@ from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
 )
+from gaitmap_mad.stride_segmentation.dtw._tempo_dtw import (
+    TempoDtwAlignment,
+    TempoDtwResult,
+    tempo_dtw_paths,
+    tempo_regularized_subsequence_dtw,
+)
 
 __all__ = [
     "BarthDtw",
@@ -23,7 +29,11 @@ __all__ = [
     "ConstrainedBarthDtw",
     "DtwTemplate",
     "InterpolatedDtwTemplate",
+    "TempoDtwAlignment",
+    "TempoDtwResult",
     "TrainableTemplateMixin",
     "find_matches_find_peaks",
     "find_matches_min_under_threshold",
+    "tempo_dtw_paths",
+    "tempo_regularized_subsequence_dtw",
 ]
