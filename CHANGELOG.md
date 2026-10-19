@@ -22,6 +22,14 @@ project.
 
 ### Scientific Changes
 
+- Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected
+  constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.
+  Constrained matching also includes minima at recording boundaries. New boundary candidates are validated before
+  distance selection; existing interior peak selection is unchanged. Existing constrained costs, warping paths,
+  and detected stride borders can change; unconstrained DTW is unchanged.
+  State costs use rolling buffers and traceback stores three compact state IDs per cell.
+  (Issue: https://github.com/mad-lab-fau/gaitmap/issues/93)
+
 - Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
   Scores without an explicit aggregator now ignore NaN values when calculating the mean;
   this can change aggregate validation scores and model selection when individual scores are NaN.
