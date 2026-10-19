@@ -2,7 +2,7 @@ r"""
 .. _example_custom_hierarchical_hmms:
 
 Custom hierarchical HMMs
-=======================
+==========================
 
 This example demonstrates how to train and combine three HMM submodels, each
 with multiple internal states, into one segmentation model.

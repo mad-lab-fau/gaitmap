@@ -1,7 +1,7 @@
 .. _hmm_models:
 
 Training and composing HMMs
-==========================
+=============================
 
 Use :class:`~gaitmap.stride_segmentation.hmm.SimpleHmm` to train a Gaussian or
 Gaussian-mixture HMM from feature matrices and initial internal-state labels.
