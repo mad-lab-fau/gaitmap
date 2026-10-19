@@ -266,3 +266,21 @@ def test_empty_stride_input_returns_valid_empty_event_lists(detector_name, healt
     assert datatype_helper.is_single_sensor_stride_list(
         result.min_vel_event_list_, stride_type="min_vel", raise_exception=True
     )
+
+
+def test_single_event_consistency_removes_undetectable_ic():
+    """A motionless interval cannot become a stride merely because only IC was requested."""
+    data = pd.DataFrame(np.zeros((200, 6)), columns=BF_COLS)
+    data["acc_si"] = 9.81
+    strides = pd.DataFrame({"start": [0], "end": [200]}).rename_axis("s_id")
+    unfiltered = HerzerEventDetection(detect_only=("ic",), enforce_consistency=False).detect(
+        data, strides, sampling_rate_hz=204.8
+    )
+    assert unfiltered.annotated_original_event_list_["ic"].isna().all()
+
+    filtered = HerzerEventDetection(detect_only=("ic",), enforce_consistency=True).detect(
+        data, strides, sampling_rate_hz=204.8
+    )
+
+    assert filtered.annotated_original_event_list_.empty
+    assert datatype_helper.is_single_sensor_stride_list(filtered.annotated_original_event_list_, raise_exception=True)

@@ -54,6 +54,8 @@ project.
   for missing events. Built-in event detection, example annotations and stride-list conversion now
   preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
   identifiers and physical quantities are unaffected.
+  Event detection also handles empty stride input and discards missing events during consistency
+  checking when only one event type is requested.
   ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
   [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
 

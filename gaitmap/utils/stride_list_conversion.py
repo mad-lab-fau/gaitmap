@@ -170,8 +170,9 @@ def enforce_stride_list_consistency(
         raise ValueError("No valid events found in the stride list.")
 
     if len(order) == 1:
-        # only one event, no need to check order
-        return stride_list, stride_list.iloc[:0].copy()
+        # One event needs no ordering check, but missing events still invalidate a stride.
+        valid = stride_list[order[0]].notna()
+        return stride_list[valid], stride_list[~valid]
 
     # Note: the following also drops strides that contain NaN for any event
     bool_map = np.logical_and.reduce(
