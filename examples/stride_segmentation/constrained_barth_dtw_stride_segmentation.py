@@ -33,6 +33,18 @@ These constraints are used by :class:`~gaitmap.stride_segmentation.ConstrainedBa
 Note that these parameters can also be used in :class:`~gaitmap.stride_segmentation.BarthDtw`, but the
 :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` has already sensible defaults set.
 
+The corrected :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` and the historical
+:class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw` are both available.
+To preserve results from the previous implementation, switch to the historical class and keep the same parameters.
+The `paired issue-93 benchmark`_ explains the tradeoff: the correction removed 464 invalid paths and path/cost
+disagreements, but pooled detection F1 with unchanged defaults decreased from 92.0274% to 91.9701% on 14 healthy
+participants' instep recordings. Correct numerical alignments do not guarantee better stride detection with existing
+parameters. The historical class preserves the known defects for reproducibility; its name does not claim general
+superiority. These benchmark results concern a separate dataset, not the MS example plotted below.
+
+.. _paired issue-93 benchmark:
+   https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+
 .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
    Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
    activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
@@ -66,7 +78,12 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # Note, that we only use the "gyr_ml" and "gyr_si" axis for matching.
 # In this (and many other cases), this can help recognise more strides correctly, with the risk of segmenting
 # "non-strides" as well.
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, ConstrainedBarthDtw
+from gaitmap.stride_segmentation import (
+    BarthDtw,
+    BarthOriginalTemplate,
+    ConstrainedBarthDtw,
+    IncorrectButBetterConstrainedBarthDtw,
+)
 
 dtw = BarthDtw(BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")), min_match_length_s=None)
 # Apply the dtw to the data
@@ -147,5 +164,22 @@ default_cdtw = ConstrainedBarthDtw(
 default_cdtw = default_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 plot_dtw(default_cdtw)
+
+# %%
+# Preserve historical results
+# ---------------------------
+# Use the historical class with the same template, preprocessing and parameters to reproduce the previous behavior.
+# This example uses the same settings as ``default_cdtw`` above, including its disabled horizontal limit.
+# The historical cost matrix and traceback can disagree and its paths can exceed the requested run limits.
+# See the paired benchmark linked above for the numerical checks, detection results, matching protocol and raw data.
+# Switching to the corrected class requires revalidating the detected strides for your application.
+
+historical_cdtw = IncorrectButBetterConstrainedBarthDtw(
+    BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")),
+    min_match_length_s=None,
+    max_signal_stretch_ms=None,
+).segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
+
+plot_dtw(historical_cdtw)
 
 # sphinx_gallery_thumbnail_number = 2

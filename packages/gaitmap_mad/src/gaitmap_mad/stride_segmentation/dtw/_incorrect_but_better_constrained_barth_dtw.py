@@ -24,6 +24,14 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     "Better" refers only to the higher detection F1 observed with unchanged
     defaults on the Sensor Position Comparison instep benchmark. It does not
     imply better performance on other datasets or parameter choices.
+    The `archived paired benchmark`_ reports pooled F1 of 92.0274% for this historical behavior and 91.9701%
+    after correction on 14 healthy participants. The historical output contained 464 invalid paths and
+    path/cost disagreements; the corrected output contained none.
+    To preserve earlier results, replace ConstrainedBarthDtw with this class and keep the same parameters.
+    To use mathematically valid constrained alignments, use the corrected class and revalidate stride detections.
+
+    .. _archived paired benchmark:
+       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
 
     Parameters
     ----------

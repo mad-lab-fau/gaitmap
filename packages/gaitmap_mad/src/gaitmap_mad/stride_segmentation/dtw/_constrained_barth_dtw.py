@@ -25,6 +25,15 @@ class ConstrainedBarthDtw(BarthDtw):
     To reproduce the historical implementation, including its known defects, use
     :class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw` with the same parameters.
 
+    The `paired issue-93 benchmark`_ explains why both implementations are available.
+    With unchanged defaults on 14 healthy participants' instep recordings, the correction eliminated 464
+    invalid paths and path/cost disagreements, but pooled detection F1 decreased from 92.0274% to 91.9701%.
+    Numerical correctness therefore does not imply improved stride detection with existing parameters.
+    Choose the historical class to preserve earlier results; revalidate outputs when using this corrected class.
+
+    .. _paired issue-93 benchmark:
+       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+
     This method is based on [1]_ and the modification of the constrained warping path is inspired by [2]_.
 
     Parameters
