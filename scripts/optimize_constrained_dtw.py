@@ -77,17 +77,24 @@ def _build_summary(prepared, axis, steps, destination):
         return result
 
     start = perf_counter()
-    with patch(COST_FUNCTION, side_effect=calculate):
+    # Supply plain callables: MagicMock's reference cycles retain the captured
+    # DP matrices across worker jobs until a full cyclic-GC collection.
+    with patch(COST_FUNCTION, new=calculate):
         dtw = _pipeline(axis, steps * 1000 / rate, CEILING).segment(data, sampling_rate_hz=rate)
     summary = {}
     for sensor in dtw.costs_:
         intervals = dtw.matches_start_end_[sensor]
         summary[f"{sensor}_intervals"] = np.asarray(intervals, dtype=int).reshape(-1, 2)
         summary[f"{sensor}_costs"] = np.asarray(dtw.costs_[sensor])
+
     # Forward DP is independent of max_cost. Exercise the complete public peak
     # selection, snapping, duration and conflict processing with that same DP.
+    def replay(*_args, **_kwargs):
+        return next(results)
+
     for threshold in (2.0, 2.75, CEILING):
-        with patch(COST_FUNCTION, side_effect=iter(captured)):
+        results = iter(captured)
+        with patch(COST_FUNCTION, new=replay):
             direct = _pipeline(axis, steps * 1000 / rate, threshold).segment(data, sampling_rate_hz=rate)
         predicted = _prediction(summary, threshold)
         for sensor in predicted:
