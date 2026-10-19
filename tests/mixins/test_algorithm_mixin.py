@@ -8,7 +8,6 @@ from numpydoc.docscrape import NumpyDocString
 from tpcp import BaseFactory, get_action_method, get_action_params, get_param_names, get_results
 
 from gaitmap.base import BaseAlgorithm, BaseType
-from tests.conftest import compare_algo_objects
 
 
 class TestAlgorithmMixin:
@@ -90,15 +89,6 @@ class TestAlgorithmMixin:
 
         assert "an_invalid_name" in str(e)
         assert self.algorithm_class.__name__ in str(e)
-
-    def test_json_roundtrip(self, valid_instance) -> None:
-        instance = valid_instance.clone()
-
-        json_str = instance.to_json()
-
-        instance_from_json = self.algorithm_class.from_json(json_str)
-
-        compare_algo_objects(instance, instance_from_json)
 
     def test_hashing(self, valid_instance) -> None:
         """This checks if caching with joblib will work as expected."""

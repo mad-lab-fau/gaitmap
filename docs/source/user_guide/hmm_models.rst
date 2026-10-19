@@ -61,6 +61,29 @@ state, including partway through a movement instance.
 Saved models
 ------------
 
-Existing gaitmap HMM JSON files remain loadable. Newly exported models require
-the updated HMM implementation. Arbitrary pomegranate graphs and emission types
-other than Gaussian mixtures are not supported.
+Save complete model configurations, including preprocessing and feature columns,
+with joblib::
+
+    import joblib
+
+    joblib.dump(model.clone(), "model.joblib")
+    restored = joblib.load("model.joblib")
+
+Cloning first stores parameters and trained models without action results or
+input recordings. Record the gaitmap and dependency versions alongside the file.
+Only load joblib files from trusted sources.
+
+Algorithm wrappers no longer provide ``to_json()`` or ``from_json()``. To migrate
+an existing gaitmap HMM wrapper JSON file::
+
+    from pathlib import Path
+    from gaitmap.stride_segmentation.hmm import load_legacy_hmm_json
+
+    restored = load_legacy_hmm_json(Path("old_model.json").read_text())
+    joblib.dump(restored, "model.joblib")
+
+Import any custom classes used in the saved configuration before loading.
+The numeric :class:`~gaitmap.stride_segmentation.hmm.HiddenMarkovModel` retains
+its dedicated JSON format and ``to_json()``/``from_json()`` methods. Newly exported
+numeric models require the updated HMM implementation. Arbitrary pomegranate
+graphs and emission types other than Gaussian mixtures are not supported.

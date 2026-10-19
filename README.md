@@ -63,7 +63,8 @@ HMM training and prediction are included on supported Python versions when both 
 pip install gaitmap_mad gaitmap --upgrade
 ```
 
-No additional HMM dependencies are needed. Existing gaitmap HMM JSON files remain loadable.
+No additional HMM dependencies are needed. Existing gaitmap HMM JSON files remain loadable with
+`gaitmap.stride_segmentation.hmm.load_legacy_hmm_json`.
 The `hmm` extra remains available for installation compatibility and no longer installs additional dependencies.
 
 See the [HMM documentation](https://gaitmap.readthedocs.io/en/latest/modules/stride_segmentation.html#hmm-stride-segmentation)

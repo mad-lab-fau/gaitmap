@@ -10,31 +10,6 @@ from pandas.testing import assert_frame_equal
 from gaitmap.data_transform import FixedScaler, IdentityTransformer, TrainableTransformerMixin
 from gaitmap.stride_segmentation import BarthOriginalTemplate, DtwTemplate, InterpolatedDtwTemplate
 from gaitmap.utils.exceptions import ValidationError
-from tests.conftest import compare_algo_objects
-
-
-class TestSerialize:
-    """Test that templates can be serialized correctly."""
-
-    @pytest.mark.parametrize("dtype", [list, np.array, pd.Series, pd.DataFrame])
-    def test_different_dtypes(self, dtype) -> None:
-        template = dtype(list(range(10)))
-
-        instance = DtwTemplate(data=template)
-
-        new_instance = DtwTemplate.from_json(instance.to_json())
-
-        compare_algo_objects(instance, new_instance)
-
-    def test_index_order_long_dfs(self) -> None:
-        """Loading df based templates might change their index."""
-        template = pd.DataFrame(list(range(20)))
-
-        instance = DtwTemplate(data=template)
-
-        new_instance = DtwTemplate.from_json(instance.to_json())
-
-        compare_algo_objects(instance, new_instance)
 
 
 class TestTemplateBaseClass:

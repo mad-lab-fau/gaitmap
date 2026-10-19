@@ -59,3 +59,9 @@ See :ref:`hmm_models` for training and composing HMMs.
     HiddenMarkovModel
     GaussianMixture
     TrainingHistory
+
+.. autosummary::
+   :toctree: generated/stride_segmentation/hmm
+   :template: function.rst
+
+    load_legacy_hmm_json

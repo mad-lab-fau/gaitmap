@@ -11,6 +11,7 @@ _gaitmap_mad_modules = {
     "GaussianMixture",
     "HiddenMarkovModel",
     "TrainingHistory",
+    "load_legacy_hmm_json",
     "BaseHmmFeatureTransformer",
     "RothHmmFeatureTransformer",
     "HmmStrideSegmentation",
@@ -34,6 +35,7 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         RothSegmentationHmm,
         SimpleHmm,
         TrainingHistory,
+        load_legacy_hmm_json,
     )
 
 
@@ -49,4 +51,5 @@ __all__ = [
     "RothSegmentationHmm",
     "SimpleHmm",
     "TrainingHistory",
+    "load_legacy_hmm_json",
 ]

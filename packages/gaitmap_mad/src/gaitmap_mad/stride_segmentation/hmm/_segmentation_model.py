@@ -5,9 +5,8 @@ from typing import Any, Literal, Self
 
 import numpy as np
 import pandas as pd
-from tpcp import OptiPara, cf, make_optimize_safe
+from tpcp import BaseTpcpObject, OptiPara, cf, make_optimize_safe
 
-from gaitmap.base import _BaseSerializable
 from gaitmap.utils.datatype_helper import SingleSensorData, SingleSensorStrideList
 from gaitmap_mad.stride_segmentation.hmm._composite_model import _initialize_composite
 from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
@@ -26,7 +25,7 @@ from gaitmap_mad.stride_segmentation.hmm._utils import (
 )
 
 
-class BaseSegmentationHmm(_BaseSerializable):
+class BaseSegmentationHmm(BaseTpcpObject):
     """Base class for HMM segmentation models.
 
     In case you want to propose your own HMM architecture that is not covered by the options provided in
@@ -180,8 +179,8 @@ class RothSegmentationHmm(BaseSegmentationHmm):
         This can be set to `None` initially.
         A model will then be created during the optimization step.
         If you want to use a pre-trained model, you can set this parameter to the respective model.
-        However, we recommend to ideally export this entire class instead of just the model to make sure that things
-        like the feature transform are also exported/stored.
+        Use ``joblib.dump(instance.clone(), path)`` to save the complete configuration, including feature
+        settings, and ``joblib.load(path)`` to restore it.
     data_columns
         The expected columns of the input data in feature space.
         This will be automatically set based on the feature transform output during the optimization step.
