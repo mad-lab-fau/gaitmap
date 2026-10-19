@@ -73,7 +73,7 @@ stride boundaries; the [scientific changelog](CHANGELOG.md) records their measur
 ### Supported Python versions
 
 *gaitmap* requires Python 3.11 or newer.
-CI tests Python 3.11 and 3.14 on Linux and Windows. A separate Python 3.11 job tests the lowest
+CI tests Python 3.11 through 3.14 on Linux and Windows. A separate Python 3.11 job tests the lowest
 allowed direct dependency versions, including optional dependencies.
 
 ## Working with Algorithms
