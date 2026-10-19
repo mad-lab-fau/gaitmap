@@ -31,17 +31,21 @@ project.
   Please revalidate your results and report any unexpected changes in outcomes.
   This migration prioritizes minimal gaitmap API changes while retiring Python 3.9 and 3.10; future HMM improvements
   may introduce further breaking API changes.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 
 ### Added
 
 - Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
   the lowest allowed direct dependency versions with all extras.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
+  ([#81](https://github.com/mad-lab-fau/gaitmap/pull/81))
 
 ### Fixed
 
 - Added pandas 3 support and fixed compatibility issues around read-only views and removed APIs.
+  ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 
 ## [2.6.0] - 2026-03-05
 
