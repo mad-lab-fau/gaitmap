@@ -45,7 +45,7 @@ def _enumerated_costs(template, signal, vertical, horizontal):
 
 
 def _assert_paths(dtw, template, signal, vertical, horizontal):
-    for path, cost, interval in zip(dtw.paths_, dtw.costs_, dtw.matches_start_end_):
+    for path, cost, interval in zip(dtw.paths_, dtw.costs_, dtw.matches_start_end_, strict=True):
         assert path[0, 0] == 0
         assert path[-1, 0] == len(template) - 1
         np.testing.assert_array_equal(interval, [path[0, 1], path[-1, 1] + 1])
@@ -110,7 +110,7 @@ def test_ties_are_deterministic_and_cached_paths_remain_consistent(tmp_path):
     second = _segment(template, signal, 1, 1, memory=Memory(tmp_path, mmap_mode="r", verbose=0))
     assert len(first.paths_) > 0
     np.testing.assert_array_equal(first.acc_cost_mat_, second.acc_cost_mat_)
-    for a, b in zip(first.paths_, second.paths_):
+    for a, b in zip(first.paths_, second.paths_, strict=True):
         np.testing.assert_array_equal(a, b)
     _assert_paths(second, template, signal, 1, 1)
 
@@ -122,7 +122,7 @@ def test_nonbinding_limits_agree_with_unconstrained_paths():
     constrained = _segment(template, signal, 20, 20)
     unconstrained = _segment(template, signal, None, None)
     np.testing.assert_array_equal(constrained.acc_cost_mat_, unconstrained.acc_cost_mat_)
-    for a, b in zip(constrained.paths_, unconstrained.paths_):
+    for a, b in zip(constrained.paths_, unconstrained.paths_, strict=True):
         np.testing.assert_array_equal(a, b)
 
 
