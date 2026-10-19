@@ -10,6 +10,16 @@ project.
 
 ## Unreleased
 
+### Scientific Changes
+
+- Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected
+  constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.
+  Constrained matching also includes minima at recording boundaries. New boundary candidates are validated before
+  distance selection; existing interior peak selection is unchanged. Existing constrained costs, warping paths,
+  and detected stride borders can change; unconstrained DTW is unchanged.
+  State costs use rolling buffers and traceback stores three compact state IDs per cell.
+  (Issue: https://github.com/mad-lab-fau/gaitmap/issues/93)
+
 ### Added
 
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
