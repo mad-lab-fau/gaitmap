@@ -18,10 +18,11 @@ def _initialize_composite(submodels, sequences, labels, *, algorithm="viterbi", 
     offsets = np.r_[0, np.cumsum([model.n_states for model in submodels.values()])]
     state_offsets = dict(zip(submodels, offsets[:-1]))
     transitions = np.zeros((offsets[-1], offsets[-1]))
-    emissions = []
+    emissions, state_weights = [], []
     for model, start, end in zip(submodels.values(), offsets[:-1], offsets[1:]):
         transitions[start:end, start:end] = model.transitions
         emissions.extend(model.emissions)
+        state_weights.extend(model.state_weights)
     # Submodel termination is replaced by connections in the complete sequence.
     row_totals = transitions.sum(axis=1, keepdims=True)
     np.divide(transitions, row_totals, out=transitions, where=row_totals > 0)
@@ -50,7 +51,7 @@ def _initialize_composite(submodels, sequences, labels, *, algorithm="viterbi", 
             transitions[source, target] = 0.1
     row_totals = transitions.sum(axis=1, keepdims=True)
     np.divide(transitions, row_totals, out=transitions, where=row_totals > 0)
-    return HiddenMarkovModel(emissions, transitions, initial), paths
+    return HiddenMarkovModel(emissions, transitions, initial, state_weights=state_weights), paths
 
 
 class CompositeHmm(_BaseSerializable):

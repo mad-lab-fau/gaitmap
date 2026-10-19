@@ -44,3 +44,20 @@ def test_composition_counts_repeated_instances_and_separate_record_boundaries():
     restored = CompositeHmm.from_json(trained.to_json()).clone()
     assert_array_equal(restored.predict_labels(sequences[0]), expected_labels)
     assert_allclose(restored.model.log_probability(sequences[0]), trained.model.log_probability(sequences[0]))
+
+
+def test_composition_preserves_weighted_observation_scores():
+    """Fixed emissions include state weights, which must still affect decoding."""
+    emission = GaussianMixture([[0.0]], [[[1.0]]], [1.0])
+    submodels = {
+        "light": HiddenMarkovModel([emission], [[1.0]], [1.0], state_weights=[1.0]),
+        "heavy": HiddenMarkovModel([emission], [[1.0]], [1.0], state_weights=[2.0]),
+    }
+    labels = [pd.DataFrame({"start": [0], "end": [1], "label": [name]}) for name in submodels]
+
+    trained, _ = CompositeHmm(submodels).fit_transitions([[[0.0]], [[0.0]]], labels)
+
+    # Equal starts and identical standard Gaussians leave a 1:2 observation ratio.
+    assert_allclose(trained.model.log_probability([[0.0]]), np.log(1.5) - 0.5 * np.log(2 * np.pi))
+    assert_allclose(trained.model.predict_proba([[0.0]]), [[1 / 3, 2 / 3]])
+    assert_array_equal(trained.predict_labels([[0.0]]), ["heavy"])
