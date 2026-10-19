@@ -77,12 +77,8 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 # ----------------------
 
 
-def plot_dtw(dtw, sensor="left_sensor", *, axs=None, xlim=(3000, 5500), show=True):
-    """Plot signal, endpoint costs and warping paths, optionally into existing axes."""
-    if axs is None:
-        fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
-    else:
-        fig = axs[0].figure
+def plot_dtw(dtw, sensor="left_sensor") -> None:
+    fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
     dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
     axs[0].set_ylabel("gyro [deg/s]")
     axs[1].plot(dtw.cost_function_[sensor])
@@ -97,12 +93,10 @@ def plot_dtw(dtw, sensor="left_sensor", *, axs=None, xlim=(3000, 5500), show=Tru
     for _, s in dtw.stride_list_[sensor][["start", "end"]].iterrows():
         axs[0].axvspan(*s, alpha=0.3, color="g")
 
-    axs[0].set_xlim(*xlim)
+    axs[0].set_xlim(3000, 5500)
     axs[0].set_xlabel("time [#]")
-    if show:
-        fig.tight_layout()
-        fig.show()
-    return fig, axs
+    fig.tight_layout()
+    fig.show()
 
 
 plot_dtw(dtw)
