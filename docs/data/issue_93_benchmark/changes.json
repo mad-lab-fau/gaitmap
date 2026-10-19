@@ -1,0 +1,645 @@
+[
+  {
+    "participant": "4d91",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "4d91",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      247
+    ],
+    "removed_intervals": [
+      [
+        108551,
+        108794
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "4d91",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "4d91",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      247
+    ],
+    "removed_intervals": [
+      [
+        108551,
+        108794
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "5047",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5047",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5047",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5047",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5237",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5237",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5237",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "5237",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "54a9",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      603
+    ],
+    "removed_intervals": [
+      [
+        96145,
+        96402
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "54a9",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      202,
+      264
+    ],
+    "removed_intervals": [
+      [
+        103111,
+        103353
+      ],
+      [
+        117984,
+        118225
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "54a9",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "54a9",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      202,
+      264
+    ],
+    "removed_intervals": [
+      [
+        103111,
+        103353
+      ],
+      [
+        117984,
+        118225
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "6dbe_2",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6dbe_2",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6dbe_2",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6dbe_2",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6e2e",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6e2e",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6e2e",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "6e2e",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "80b8",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "80b8",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "80b8",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      412
+    ],
+    "removed_intervals": [
+      [
+        17286,
+        17545
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "80b8",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "8873",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      784
+    ],
+    "removed_intervals": [
+      [
+        6251,
+        6482
+      ],
+      [
+        159043,
+        159264
+      ]
+    ],
+    "added_intervals": [
+      [
+        7597,
+        7724
+      ]
+    ]
+  },
+  {
+    "participant": "8873",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      33,
+      177
+    ],
+    "removed_intervals": [
+      [
+        14212,
+        14457
+      ],
+      [
+        105203,
+        105451
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "8873",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "8873",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      33,
+      177
+    ],
+    "removed_intervals": [
+      [
+        14212,
+        14457
+      ],
+      [
+        105203,
+        105451
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "8d60",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "8d60",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "8d60",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "8d60",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "9b4b",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      600,
+      668
+    ],
+    "removed_intervals": [
+      [
+        105234,
+        105520
+      ],
+      [
+        122055,
+        122300
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "9b4b",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "9b4b",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "9b4b",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "c9bb",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "c9bb",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "c9bb",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "c9bb",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cb3d",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      784
+    ],
+    "removed_intervals": [
+      [
+        146310,
+        146608
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "cb3d",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cb3d",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cb3d",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cdfc",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cdfc",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cdfc",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "cdfc",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": []
+  },
+  {
+    "participant": "e54d",
+    "protocol": "explicit_feet",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      804
+    ],
+    "removed_intervals": [
+      [
+        157158,
+        157443
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "e54d",
+    "protocol": "explicit_feet",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      243
+    ],
+    "removed_intervals": [
+      [
+        124392,
+        124631
+      ]
+    ],
+    "added_intervals": []
+  },
+  {
+    "participant": "e54d",
+    "protocol": "historical_entry",
+    "sensor": "left_sensor",
+    "gained_reference_ids": [
+      481
+    ],
+    "lost_reference_ids": [],
+    "removed_intervals": [],
+    "added_intervals": [
+      [
+        27098,
+        27363
+      ]
+    ]
+  },
+  {
+    "participant": "e54d",
+    "protocol": "historical_entry",
+    "sensor": "right_sensor",
+    "gained_reference_ids": [],
+    "lost_reference_ids": [
+      243
+    ],
+    "removed_intervals": [
+      [
+        124392,
+        124631
+      ]
+    ],
+    "added_intervals": []
+  }
+]
