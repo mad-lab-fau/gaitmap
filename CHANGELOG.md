@@ -12,6 +12,11 @@ project.
 
 ### Scientific Changes
 
+- Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
+  Scores without an explicit aggregator now ignore NaN values when calculating the mean;
+  this can change aggregate validation scores and model selection when individual scores are NaN.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
+
 - Replaced pomegranate with a custom NumPy/Numba backend for the HMM subset used by gaitmap.
   This simplifies packaging and removes the need for an HMM installation extra.
   Both gaitmap packages now require Python 3.11 or newer and support Python 3.14;
