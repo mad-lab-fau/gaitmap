@@ -444,8 +444,8 @@ class BaseDtw(BaseAlgorithm):
         cost_result = cost_matrix_method(
             _timeseries_reshape(final_template), _timeseries_reshape(matching_data), **cost_matrix_kwargs
         )
-        # The unconstrained implementation returns a view of its padded matrix.
-        acc_cost_mat_ = cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result.copy()
+        # Public outputs and postprocessors must not mutate a persisted cache entry.
+        acc_cost_mat_ = (cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result).copy()
 
         # Find matches and postprocess them
         matches = self._find_matches(
@@ -453,8 +453,9 @@ class BaseDtw(BaseAlgorithm):
             max_cost=self.max_cost,
             min_sequence_length=self._min_sequence_length,
             find_matches_method=find_matches_method,
-            include_boundaries=isinstance(cost_result, ConstrainedDtwResult),
         )
+        if isinstance(cost_result, ConstrainedDtwResult):
+            matches = self._add_constrained_boundary_matches(acc_cost_mat_, matches, self.max_cost, find_matches_method)
         if isinstance(cost_result, ConstrainedDtwResult) and len(matches):
             # An infinite threshold must not turn unreachable endpoints into paths.
             matches = matches[np.isfinite(acc_cost_mat_[-1, matches])]
@@ -514,17 +515,21 @@ class BaseDtw(BaseAlgorithm):
             },
         )
 
-    def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method, include_boundaries=False):
+    def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):
         """Find the matches in the cost matrix.
 
         This is separate method to make it easy to overwrite by a subclass.
         """
-        matches = find_matches_method(
+        return find_matches_method(
             acc_cost_mat=acc_cost_mat,
             max_cost=max_cost,
             min_distance=min_sequence_length,
         )
-        if include_boundaries and find_matches_method is find_matches_find_peaks:
+
+    @staticmethod
+    def _add_constrained_boundary_matches(acc_cost_mat, matches, max_cost, find_matches_method):
+        """Add constrained boundary candidates without changing the match-finder hook."""
+        if find_matches_method is find_matches_find_peaks:
             # Preserve ordinary distance selection for all interior peaks. Only
             # add the boundary minima scipy otherwise excludes, including a
             # plateau reaching a recording edge. Their duration is validated

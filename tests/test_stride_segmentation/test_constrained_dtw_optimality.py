@@ -155,3 +155,41 @@ def test_short_boundary_candidate_cannot_suppress_a_valid_nearby_match(max_cost)
         find_matches_method="find_peaks",
     )
     np.testing.assert_array_equal(dtw.matches_start_end_, [[0, 3]])
+
+
+@pytest.mark.parametrize("mmap_mode", ["r", "r+"])
+def test_cached_constrained_costs_remain_writable_and_isolated(tmp_path, mmap_mode):
+    """Editing a public matrix must not modify persistent costs or later paths."""
+    template = np.array([0.0, 1.0, 0.0])
+    signal = np.array([9.0, 0.0, 1.0, 0.0, 9.0])
+    memory = Memory(tmp_path, mmap_mode=mmap_mode, verbose=0)
+    original = _segment(template, signal, 1, 1, memory=memory)
+    expected_costs = original.acc_cost_mat_.copy()
+    cached = _segment(template, signal, 1, 1, memory=memory)
+    assert cached.acc_cost_mat_.flags.writeable
+    cached.acc_cost_mat_[-1, 3] = 10000
+    subsequent = _segment(template, signal, 1, 1, memory=memory)
+    np.testing.assert_array_equal(subsequent.acc_cost_mat_, expected_costs)
+    np.testing.assert_array_equal(subsequent.matches_start_end_, original.matches_start_end_)
+    np.testing.assert_array_equal(subsequent.costs_, original.costs_)
+    for actual, expected in zip(subsequent.paths_, original.paths_, strict=True):
+        np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize("stretch_ms", [None, 1000])
+def test_existing_match_finder_override_keeps_its_four_argument_signature(stretch_ms):
+    """Existing customization hooks work for constrained and ordinary segment()."""
+
+    class CustomDtw(BaseDtw):
+        def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):
+            return super()._find_matches(acc_cost_mat, max_cost, min_sequence_length, find_matches_method)
+
+    dtw = CustomDtw(
+        template=DtwTemplate(data=np.array([0.0, 1.0, 0.0]), sampling_rate_hz=1),
+        resample_template=False,
+        min_match_length_s=None,
+        max_template_stretch_ms=stretch_ms,
+        max_signal_stretch_ms=stretch_ms,
+        max_cost=0.1,
+    ).segment(np.array([9.0, 0.0, 1.0, 0.0, 9.0]), sampling_rate_hz=1)
+    np.testing.assert_array_equal(dtw.matches_start_end_, [[1, 4]])
