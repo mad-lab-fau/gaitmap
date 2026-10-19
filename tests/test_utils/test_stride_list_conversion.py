@@ -309,3 +309,40 @@ def test_intersection_shifts_large_absolute_positions_before_signed_conversion(d
     (actual,) = intersect_stride_list(strides, regions)
 
     np.testing.assert_array_equal(actual.iloc[0], [1, 11, -1])
+
+
+@pytest.mark.parametrize("dtype", ["uint64", "UInt64"])
+@pytest.mark.parametrize("target", ["min_vel", "ic"])
+def test_conversion_preserves_unsigned_absolute_event_positions(dtype, target):
+    """Changing stride alignment must preserve events across the full unsigned range."""
+    origin = 2**63
+    strides = (
+        pd.DataFrame(
+            {
+                "start": [origin, origin + 20],
+                "end": [origin + 20, origin + 40],
+                "ic": [origin + 10, origin + 30],
+                "tc": [origin + 5, origin + 25],
+                "min_vel": [origin + 15, origin + 35],
+            },
+            dtype=dtype,
+        )
+        .rename_axis("s_id")
+        .assign(confidence=[0.5, 0.75])
+    )
+    original = strides.copy(deep=True)
+
+    actual = convert_stride_list(strides, target_stride_type=target)
+
+    expected = {
+        "start": [origin + (15 if target == "min_vel" else 10)],
+        "end": [origin + (35 if target == "min_vel" else 30)],
+        "ic": [origin + (30 if target == "min_vel" else 10)],
+        "tc": [origin + 25],
+        "min_vel": [origin + 15],
+        "confidence": [0.5],
+    }
+    if target == "min_vel":
+        expected["pre_ic"] = [origin + 10]
+    assert actual.to_dict("list") == expected
+    assert_frame_equal(strides, original)

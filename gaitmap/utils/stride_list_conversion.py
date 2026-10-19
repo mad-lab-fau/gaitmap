@@ -86,7 +86,11 @@ def _stride_list_to_min_vel_single_sensor(
     """
     stride_list = set_correct_index(stride_list, SL_INDEX)
     converted_stride_list = stride_list.astype(
-        {col: "Int64" for col in stride_list if col in {"start", "end", "pre_ic", "ic", "min_vel", "tc"}}
+        {
+            col: "UInt64" if pd.api.types.is_unsigned_integer_dtype(stride_list[col].dtype) else "Int64"
+            for col in stride_list
+            if col in {"start", "end", "pre_ic", "ic", "min_vel", "tc"}
+        }
     )
     converted_stride_list["old_start"] = converted_stride_list["start"]
     converted_stride_list["old_end"] = converted_stride_list["end"]
@@ -112,7 +116,7 @@ def _stride_list_to_min_vel_single_sensor(
         converted_stride_list["tc"] = converted_stride_list["tc"].shift(-1)
 
     # Find breaks in the stride list, which indicate the ends of individual gait sequences.
-    breaks = (converted_stride_list["old_end"] - converted_stride_list["old_start"].shift(-1)).fillna(0) != 0
+    breaks = (converted_stride_list["old_end"] != converted_stride_list["old_start"].shift(-1)).fillna(False)
 
     # drop unneeded tmp columns
     converted_stride_list = converted_stride_list.drop(["old_start", "old_end"], axis=1)
