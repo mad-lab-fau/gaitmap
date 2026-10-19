@@ -11,8 +11,7 @@
             },
             {
                 "name":"gait_velocity",
-                "type":"number",
-                "extDtype":"Float64"
+                "type":"number"
             },
             {
                 "name":"ic_angle",

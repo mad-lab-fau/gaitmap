@@ -356,10 +356,10 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
                     f"{stride_time_end_col}) are not available."
                 )
             else:
-                param_dict["gait_velocity"] = stride_length / (
-                    (stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col])
-                    / sampling_rate_hz
-                )
+                stride_duration = (
+                    stride_event_list[stride_time_end_col] - stride_event_list[stride_time_start_col]
+                ).astype(float) / sampling_rate_hz
+                param_dict["gait_velocity"] = stride_length / stride_duration
         if self._should_calculate("arc_length"):
             param_dict["arc_length"] = _calc_arc_length(positions)
         if self._should_calculate("max_sensor_lift"):
