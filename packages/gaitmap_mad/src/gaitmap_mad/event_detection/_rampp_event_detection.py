@@ -258,6 +258,7 @@ def _find_all_events(
     tc_events = []
     min_vel_events = []
     for start, end in stride_list[["start", "end"]].itertuples(index=False, name=None):
+        start, end = int(start), int(end)
         if "ic" in events:
             ic_events.append(
                 methods["ic"](

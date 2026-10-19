@@ -395,3 +395,22 @@ class TestEventDetectionRampp:
             assert hasattr(ed, "min_vel_event_list_") is False
 
         assert set(ed.annotated_original_event_list_.columns) == {"start", "end", *detect_only}
+
+
+@pytest.mark.parametrize("detector_name", ["RamppEventDetection", "FilteredRamppEventDetection"])
+@pytest.mark.parametrize("dtype", ["UInt32", "UInt64"])
+def test_unsigned_stride_at_record_start_keeps_detectable_ic(detector_name, dtype):
+    """A heel-strike impulse at sample five survives clipping the IC lookback at zero."""
+    from gaitmap import event_detection
+
+    data = pd.DataFrame(np.zeros((120, 6)), columns=BF_COLS)
+    data["acc_si"] = 9.81
+    data.loc[5, "acc_pa"] = 10.0
+    data.loc[:19, "gyr_ml"] = -np.sin(np.linspace(0, np.pi, 20))
+    strides = pd.DataFrame({"start": [0], "end": [100]}, dtype=dtype).rename_axis("s_id")
+
+    result = getattr(event_detection, detector_name)(input_stride_type="ic", detect_only=("ic",)).detect(
+        data, strides, sampling_rate_hz=100
+    )
+
+    assert_array_equal(result.annotated_original_event_list_["ic"].dropna().to_numpy(), [5])

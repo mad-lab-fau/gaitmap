@@ -262,6 +262,7 @@ def _find_all_events(
     tc_events = []
     min_vel_events = []
     for start, end in stride_list[["start", "end"]].itertuples(index=False, name=None):
+        start, end = int(start), int(end)
         gyr_sec = gyr[start:end]
         gyr_ml_sec = gyr_ml[start:end]
         duration = end - start
