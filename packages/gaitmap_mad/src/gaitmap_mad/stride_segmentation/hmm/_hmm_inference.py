@@ -317,8 +317,8 @@ class HiddenMarkovModel:
         stop_threshold : float, default=1e-9
             Stop when the improvement in total forward log likelihood is at most
             this value. A nonnegative improvement within the threshold marks
-            convergence. A decrease or nonfinite likelihood stops without
-            convergence and remains visible in the returned history.
+            convergence. A decrease stops without convergence and remains
+            visible in the returned history.
         max_iterations : int, default=100_000_000
             Maximum number of parameter updates. Zero returns an unchanged copy
             of the model and a history containing only its initial likelihood.
@@ -347,6 +347,20 @@ class HiddenMarkovModel:
             Initial forward log likelihood and the likelihood after every update,
             update durations and convergence status. The final likelihood
             describes the returned model for every training algorithm.
+
+        Raises
+        ------
+        ValueError
+            If Baum-Welch or Viterbi training encounters a sequence with a
+            nonfinite likelihood, including an impossible state path. In this
+            case fitting raises instead of returning a model and history.
+
+        Notes
+        -----
+        Labeled training can start from an impossible model with an initial
+        likelihood of negative infinity. If its likelihood remains nonfinite
+        after an update, fitting stops without convergence and records that
+        likelihood in the returned history.
         """
         from gaitmap_mad.stride_segmentation.hmm._hmm_training import fit_hmm  # noqa: PLC0415
 
