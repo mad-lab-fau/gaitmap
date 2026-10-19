@@ -108,7 +108,9 @@ class StrideEventZuptDetector(BaseZuptDetector, RegionZuptDetectorMixin):
         self.half_region_size_samples_ = int(np.round(self.half_region_size_s * sampling_rate_hz))
 
         # In a min_vel stride list, all starts and all ends are min_vel events.
-        all_min_vel_events = np.unique(np.concatenate([self.stride_event_list["start"], self.stride_event_list["end"]]))
+        all_min_vel_events = np.unique(
+            np.concatenate([self.stride_event_list["start"], self.stride_event_list["end"]]).astype(np.int64)
+        )
 
         start_ends = np.empty((len(all_min_vel_events), 2), dtype=int)
         start_ends[:, 0] = np.clip(all_min_vel_events - self.half_region_size_samples_, 0, None)

@@ -10,6 +10,16 @@ project.
 
 ## Unreleased
 
+### Migration Guide
+
+- Sample-number columns and trajectory sample indices now require integer dtypes, including
+  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
+  for missing events. Built-in event detection, example annotations and stride-list conversion now
+  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
+  identifiers and physical quantities are unaffected.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
+  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
+
 ### Scientific Changes
 
 - Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
@@ -74,15 +84,9 @@ project.
 - ZUPT detectors now ignore additional derived acceleration/gyroscope columns when selecting physical axes.
   ([#94](https://github.com/mad-lab-fau/gaitmap/pull/94))
 
-- Sample-number columns and trajectory sample indices now require integer dtypes, including
-  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
-  for missing events. Built-in event detection, example annotations and stride-list conversion now
-  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
-  identifiers and physical quantities are unaffected.
-  Event detection also handles empty stride input and discards missing events during consistency
+- Event detection handles empty stride input and discards missing events during consistency
   checking when only one event type is requested.
-  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
-  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91))
 
 - Calculating precision or recall for multiple sensors no longer modifies the supplied match dictionary,
   so it can be reused across score calculations.

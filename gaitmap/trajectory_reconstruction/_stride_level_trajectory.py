@@ -179,14 +179,15 @@ class StrideLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         if stride_list_type == "single":
             stride_event_list = set_correct_index(stride_event_list, SL_INDEX)
             stride_list_list = [
-                stride_event_list.iloc[[i]] - stride_event_list.iloc[i]["start"] for i in range(len(stride_event_list))
+                stride_event_list.iloc[[i]] - int(stride_event_list["start"].iloc[i])
+                for i in range(len(stride_event_list))
             ]
         else:
             stride_list_list = {}
             for sensor, stride_list in stride_event_list.items():
                 stride_list = set_correct_index(stride_list, SL_INDEX)
                 stride_list_list[sensor] = [
-                    stride_list.iloc[[i]] - stride_list.iloc[i]["start"] for i in range(len(stride_list))
+                    stride_list.iloc[[i]] - int(stride_list["start"].iloc[i]) for i in range(len(stride_list))
                 ]
 
         self._estimate(
