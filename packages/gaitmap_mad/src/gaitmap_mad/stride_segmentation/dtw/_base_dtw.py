@@ -162,10 +162,14 @@ class BaseDtw(BaseAlgorithm):
         The ms value will internally be converted to samples using the template sampling-rate (or the signal
         sampling-rate, if `resample_template=True`).
         If no template sampling-rate is provided, this constrain can not be used.
+        The rounded sample limit counts consecutive vertical steps. A run of L steps maps L + 1 template samples
+        to one signal sample; the first matched cell consumes no step.
     max_signal_stretch_ms
         A local warping constraint for the DTW.
         It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
-        The ms value will internally be converted to samples using the data sampling-rate
+        The ms value will internally be converted to samples using the data sampling-rate.
+        The rounded sample limit counts consecutive horizontal steps. A run of L steps maps L + 1 signal samples
+        to one template sample; the first matched cell consumes no step.
     find_matches_method
         Select the method used to find matches in the cost function.
 

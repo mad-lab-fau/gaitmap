@@ -1,0 +1,20 @@
+[
+  {
+    "engine": "before",
+    "seconds": 0.17079919390380383,
+    "retained_bytes": 32000000,
+    "process_high_water_bytes": 440426496,
+    "baseline_rss_bytes": 345677824,
+    "peak_rss_bytes": 441974784,
+    "incremental_peak_bytes": 96296960
+  },
+  {
+    "engine": "after",
+    "seconds": 0.22129501402378082,
+    "retained_bytes": 44020000,
+    "process_high_water_bytes": 341745664,
+    "baseline_rss_bytes": 299679744,
+    "peak_rss_bytes": 343814144,
+    "incremental_peak_bytes": 44134400
+  }
+]

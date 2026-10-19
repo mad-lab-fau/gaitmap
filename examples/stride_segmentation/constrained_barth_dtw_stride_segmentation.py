@@ -77,8 +77,12 @@ dtw = dtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 # ----------------------
 
 
-def plot_dtw(dtw, sensor="left_sensor") -> None:
-    fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
+def plot_dtw(dtw, sensor="left_sensor", *, axs=None, xlim=(3000, 5500), show=True):
+    """Plot signal, endpoint costs and warping paths, optionally into existing axes."""
+    if axs is None:
+        fig, axs = plt.subplots(nrows=3, sharex=True, figsize=(10, 5))
+    else:
+        fig = axs[0].figure
     dtw.data[sensor]["gyr_ml"].reset_index(drop=True).plot(ax=axs[0])
     axs[0].set_ylabel("gyro [deg/s]")
     axs[1].plot(dtw.cost_function_[sensor])
@@ -93,10 +97,12 @@ def plot_dtw(dtw, sensor="left_sensor") -> None:
     for _, s in dtw.stride_list_[sensor][["start", "end"]].iterrows():
         axs[0].axvspan(*s, alpha=0.3, color="g")
 
-    axs[0].set_xlim(3000, 5500)
+    axs[0].set_xlim(*xlim)
     axs[0].set_xlabel("time [#]")
-    fig.tight_layout()
-    fig.show()
+    if show:
+        fig.tight_layout()
+        fig.show()
+    return fig, axs
 
 
 plot_dtw(dtw)
@@ -111,8 +117,9 @@ plot_dtw(dtw)
 #
 # This can be controlled by the `max_template_stretch_ms` parameter.
 # It expects a value in "ms" to be independent of the sampling rate.
-# This means if we only want to allow 10 matches (but not 11 or more) with the same signal sample, we need to set the
-# constrain to 11 / `sampling_rate_hz` / 1000, which means approx 110 ms at a sampling rate of 102.4 Hz.
+# The limit counts consecutive vertical steps, not visited cells. At 102.4 Hz, 110 ms rounds to 11 steps,
+# permitting up to 12 template samples to match one signal sample. To permit at most N samples, use a limit
+# corresponding to N - 1 steps. The first matched cell consumes no stretch allowance.
 #
 # As seen below, this fixes a couple of the mismatches.
 # We can see the effect very clearly in the cost function, too.
