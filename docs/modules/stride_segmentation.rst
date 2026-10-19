@@ -21,6 +21,7 @@ Classes
     BaseDtw
     BarthDtw
     ConstrainedBarthDtw
+    IncorrectButBetterConstrainedBarthDtw
     RoiStrideSegmentation
     BaseDtwTemplate
     DtwTemplate

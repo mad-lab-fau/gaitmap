@@ -28,6 +28,8 @@ project.
   distance selection; existing interior peak selection is unchanged. Existing constrained costs, warping paths,
   and detected stride borders can change; unconstrained DTW is unchanged.
   State costs use rolling buffers and traceback stores three compact state IDs per cell.
+  To reproduce results from the previous constrained implementation, use
+  `IncorrectButBetterConstrainedBarthDtw`, which preserves its known calculation and traceback defects.
   (Issue: https://github.com/mad-lab-fau/gaitmap/issues/93)
 
 - Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
@@ -64,6 +66,9 @@ project.
   ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 
 ### Added
+
+- Added `IncorrectButBetterConstrainedBarthDtw` alongside the corrected `ConstrainedBarthDtw` to reproduce
+  historical constrained-DTW costs, paths and stride detections with the same parameters and defaults.
 
 - Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
   the lowest allowed direct dependency versions with all extras.

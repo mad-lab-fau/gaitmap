@@ -21,6 +21,10 @@ class ConstrainedBarthDtw(BarthDtw):
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
 
+    This class uses the corrected direction/run-state calculation and constrained traceback.
+    To reproduce the historical implementation, including its known defects, use
+    :class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw` with the same parameters.
+
     This method is based on [1]_ and the modification of the constrained warping path is inspired by [2]_.
 
     Parameters
