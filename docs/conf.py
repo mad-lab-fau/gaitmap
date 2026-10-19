@@ -42,7 +42,8 @@ def replace_gitlab_links(base_url, text):
 
 
 def convert_github_links(base_url, text):
-    regex = base_url + r"(pull|issues|commit)/(\w+)"
+    # Markdown links already have labels; only shorten bare URLs.
+    regex = r"(?<!\]\()" + re.escape(base_url) + r"(pull|issues|commit)/(\w+)"
 
     def substitute(matchobj) -> str:
         if matchobj.group(1) == "commit":
