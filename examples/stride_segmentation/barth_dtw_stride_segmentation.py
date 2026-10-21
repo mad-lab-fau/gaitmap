@@ -13,7 +13,7 @@ The default ``find_matches_method="find_peaks_with_boundaries"`` includes minima
 match can end. It validates boundary candidates before minimum-distance suppression. Select ``"find_peaks"`` for
 the historical interior-only peak selection, or ``"min_under_thres"`` for threshold-region minima.
 See :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for the boundary assumptions and
-the :ref:`constrained example <example_constrained_barth_stride_segmentation>` for the historical algorithm choice.
+the :ref:`constrained example <example_constrained_barth_stride_segmentation>` for the constrained-solver correction and measured detection loss.
 
 .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
    Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
