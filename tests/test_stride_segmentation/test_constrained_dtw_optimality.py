@@ -213,3 +213,32 @@ def test_match_finder_override_can_reject_a_valid_boundary_match():
     ).segment(np.array([9.0, 0.0, 1.0, 0.0]), sampling_rate_hz=1)
     assert dtw.acc_cost_mat_[-1, 3] == 0
     assert dtw.paths_ == []
+
+
+@pytest.mark.parametrize("stretch_ms", [None, 1000])
+@pytest.mark.parametrize(
+    ("signal", "endpoint", "expected"),
+    [
+        ([0.0, 1.0, 0.0, 0.5, 9.0], 3, [[0, 4]]),
+        ([0.0, 1.0, 0.0, 0.0, 0.0, 9.0], 2, [[0, 3]]),
+    ],
+    ids=["non-minimum", "plateau-edge"],
+)
+def test_match_finder_override_preserves_selected_endpoints_with_minimum_distance(
+    stretch_ms, signal, endpoint, expected
+):
+    """Distance filtering must not rediscover peaks after a custom endpoint choice."""
+
+    class CustomEndpointDtw(BaseDtw):
+        def _find_matches(self, acc_cost_mat, max_cost, min_sequence_length, find_matches_method):  # noqa: ARG002
+            return np.array([endpoint])
+
+    dtw = CustomEndpointDtw(
+        template=DtwTemplate(data=np.array([0.0, 1.0, 0.0]), sampling_rate_hz=1),
+        resample_template=False,
+        min_match_length_s=2,
+        max_template_stretch_ms=stretch_ms,
+        max_signal_stretch_ms=stretch_ms,
+        max_cost=1,
+    ).segment(np.array(signal), sampling_rate_hz=1)
+    np.testing.assert_array_equal(dtw.matches_start_end_, expected)

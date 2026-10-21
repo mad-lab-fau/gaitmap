@@ -500,6 +500,10 @@ class BaseDtw(BaseAlgorithm):
         )
         # Public outputs and postprocessors must not mutate a persisted cache entry.
         acc_cost_mat_ = (cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result).copy()
+        # Retain traceback metadata without keeping a second full cost matrix alive.
+        cost_result = (
+            cost_result._replace(costs=acc_cost_mat_) if isinstance(cost_result, ConstrainedDtwResult) else None
+        )
 
         # Find matches and postprocess them
         matches = self._find_matches(
@@ -587,11 +591,16 @@ class BaseDtw(BaseAlgorithm):
         if self._min_sequence_length is None or not np.any(to_keep):
             return to_keep
         endpoints = np.array([p[-1, 1] for p in paths])
-        curve = np.pad(np.sqrt(acc_cost_mat[-1]), (1, 1), constant_values=np.inf)
-        height = np.full_like(curve, np.inf)
-        height[endpoints[to_keep] + 1] = -self.max_cost if self.max_cost is not None else -np.inf
-        selected = find_peaks(-curve, height=height, distance=self._min_sequence_length)[0] - 1
-        return to_keep & np.isin(endpoints, selected)
+        # Respect custom endpoint choices from _find_matches. Rediscovering peaks
+        # would discard non-minima or a different point on a minimum plateau.
+        # Prefer lower costs, breaking ties in favour of the later endpoint.
+        priority = np.argsort(-acc_cost_mat[-1, endpoints], kind="stable")[::-1]
+        for index in priority:
+            if to_keep[index]:
+                too_close = np.abs(endpoints - endpoints[index]) < self._min_sequence_length
+                too_close[index] = False
+                to_keep[too_close] = False
+        return to_keep
 
     def _postprocess_matches(
         self,
