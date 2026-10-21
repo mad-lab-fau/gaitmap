@@ -35,6 +35,7 @@ Functions
    :template: function.rst
 
     find_matches_find_peaks
+    find_matches_find_peaks_with_boundaries
     find_matches_min_under_threshold
 
 

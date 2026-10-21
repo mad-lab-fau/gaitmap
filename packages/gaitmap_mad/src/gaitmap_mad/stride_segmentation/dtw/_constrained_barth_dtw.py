@@ -44,8 +44,7 @@ class ConstrainedBarthDtw(BarthDtw):
         The minimal length of a sequence in seconds to be considered a stride.
         Matches that result in shorter sequences, will be ignored.
         In general, this exclusion is performed as a post-processing step after the matching.
-        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
-        matches directly.
+        For either peak-finding method, this parameter also sets the minimum distance between candidate endings.
     max_match_length_s
         The maximal length of a sequence in seconds to be considered a stride.
         Matches that result in longer sequences will be ignored.
@@ -56,10 +55,14 @@ class ConstrainedBarthDtw(BarthDtw):
         The ms value will internally be converted to samples using the template sampling-rate (or the signal
         sampling-rate, if `resample_template=True`).
         If no template sampling-rate is provided, this constrain can not be used.
+        The rounded sample limit counts consecutive vertical steps. A run of L steps maps L + 1 template samples
+        to one signal sample; the first matched cell consumes no step.
     max_signal_stretch_ms
         A local warping constraint for the DTW.
         It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
-        The ms value will internally be converted to samples using the data sampling-rate
+        The ms value will internally be converted to samples using the data sampling-rate.
+        The rounded sample limit counts consecutive horizontal steps. A run of L steps maps L + 1 signal samples
+        to one template sample; the first matched cell consumes no step.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -68,9 +71,12 @@ class ConstrainedBarthDtw(BarthDtw):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
         - "find_peaks"
-            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
-            method.
+            Historical interior-only minima and distance suppression via
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks`.
+        - "find_peaks_with_boundaries" (default)
+            Also considers minima and flat minima touching a recording edge, where a valid match can end.
+            Boundary candidates are validated before competing for minimum distance. See
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for details.
     snap_to_min_win_ms
         The size of the window in ms used to search local minima during the post processing of the stride borders.
         If this is set to None, this postprocessing step is skipped.
@@ -118,6 +124,32 @@ class ConstrainedBarthDtw(BarthDtw):
 
     Notes
     -----
+    The implementation changed after version 2.6 to correct the handling of direction/run-state constraints.
+    Previously, it retained only the cheapest path at each cell, without distinguishing its arrival state.
+    A path with a higher intermediate cost could be needed to complete the cheapest valid alignment,
+    but was discarded in favour of a cheaper partial path that could not be extended without violating the limits.
+
+    The historical backwards pass also followed neighbouring minimum costs without enforcing the run-state
+    constraints. Unlike ordinary DTW, the two-dimensional cost matrix alone does not define a valid constrained
+    path. Traceback needs the state information from the forward pass. The current implementation retains the
+    cheapest arrival per direction/run state and traces its stored predecessors.
+
+    In the `paired issue-93 benchmark`_, this correction reduced pooled F1 from 92.0274% to 91.9701% with unchanged
+    defaults on 14 healthy participants' instep recordings. Further default-setting comparisons on healthy participants
+    reduced pooled F1 from 47.6082% to 47.1229% on stair ambulation and from 79.2882% to 79.1790% on Adidas recordings.
+    These are losses of 0.0573, 0.4853 and 0.1092 percentage points, respectively. The `issue-93 benchmark summary`_
+    describes the datasets and evaluation, including the partially annotated Adidas recordings.
+
+    Numerical correctness does not guarantee better stride detection with existing parameters. The defective solver
+    is no longer retained; revalidate detected strides and parameter choices when upgrading. Peak selection is a
+    separate choice: explicitly set ``find_matches_method="find_peaks"`` for the previous interior-only peak method,
+    which still uses the corrected constrained solver.
+
+    .. _issue-93 benchmark summary: https://github.com/mad-lab-fau/gaitmap/pull/96
+
+    .. _paired issue-93 benchmark:
+       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
@@ -136,7 +168,9 @@ class ConstrainedBarthDtw(BarthDtw):
         self,
         template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
+        find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"] = (
+            "find_peaks_with_boundaries"
+        ),
         max_cost: float | None = 4,
         min_match_length_s: float | None = 0.6,
         max_match_length_s: float | None = 3.0,

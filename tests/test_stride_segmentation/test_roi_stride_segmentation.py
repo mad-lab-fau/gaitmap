@@ -26,7 +26,8 @@ class TestMetaFunctionality(TestAlgorithmMixin):
     def after_action_instance(self) -> RoiStrideSegmentation:
         # We use a simple dtw to create the instance
         template = DtwTemplate(data=pd.DataFrame([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None)
+        # This synthetic frame has no named gyro axis for snapping.
+        dtw = BarthDtw(template=template, max_cost=0.5, min_match_length_s=None, snap_to_min_win_ms=None)
         data = pd.DataFrame(np.array([0, 1.0, 0]))
         instance = RoiStrideSegmentation(segmentation_algorithm=dtw)
         instance.segment(

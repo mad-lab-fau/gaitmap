@@ -48,8 +48,7 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         The minimal length of a sequence in seconds to be considered a stride.
         Matches that result in shorter sequences, will be ignored.
         In general, this exclusion is performed as a post-processing step after the matching.
-        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
-        matches directly.
+        For either peak-finding method, this parameter also sets the minimum distance between candidate endings.
     max_match_length_s
         The maximal length of a sequence in seconds to be considered a stride.
         Matches that result in longer sequences will be ignored.
@@ -60,10 +59,14 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         The ms value will internally be converted to samples using the template sampling-rate (or the signal
         sampling-rate, if `resample_template=True`).
         If no template sampling-rate is provided, this constrain can not be used.
+        The rounded sample limit counts consecutive vertical steps. A run of L steps maps L + 1 template samples
+        to one signal sample; the first matched cell consumes no step.
     max_signal_stretch_ms
         A local warping constraint for the DTW.
         It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
-        The ms value will internally be converted to samples using the data sampling-rate
+        The ms value will internally be converted to samples using the data sampling-rate.
+        The rounded sample limit counts consecutive horizontal steps. A run of L steps maps L + 1 signal samples
+        to one template sample; the first matched cell consumes no step.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -72,9 +75,12 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
         - "find_peaks"
-            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
-            method.
+            Historical interior-only minima and distance suppression via
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks`.
+        - "find_peaks_with_boundaries" (default)
+            Also considers minima and flat minima touching a recording edge, where a valid match can end.
+            Boundary candidates are validated before competing for minimum distance. See
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for details.
     snap_to_min_win_ms
         The size of the window in ms used to search local minima during the post processing of the stride borders.
         If this is set to None, this postprocessing step is skipped.
@@ -172,7 +178,9 @@ class BarthDtw(BaseDtw, BaseStrideSegmentation):
         self,
         template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
+        find_matches_method: Literal[
+            "min_under_thres", "find_peaks", "find_peaks_with_boundaries"
+        ] = "find_peaks_with_boundaries",
         max_cost: float | None = 4.0,
         min_match_length_s: float | None = 0.6,
         max_match_length_s: float | None = 3.0,

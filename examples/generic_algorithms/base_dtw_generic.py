@@ -70,6 +70,10 @@ print(template.sampling_rate_hz)
 # With the created template we can initialize the BaseDtw.
 # Additionally, we set a set of thresholds that help to prevent false positive matches.
 # Note that these thresholds are adapted for this specific example and need to be modified for a different dataset.
+# The default ``find_matches_method="find_peaks_with_boundaries"`` also considers minima at the recording edges.
+# Here the fifth exact template copy ends at sample 1000, which is therefore a valid candidate ending.
+# Historical ``"find_peaks"`` ignores that boundary minimum and selected an earlier ending at sample 995.
+# Use ``find_matches_method="find_peaks"`` to reproduce that interior-only candidate selection.
 
 from gaitmap.stride_segmentation import BaseDtw
 

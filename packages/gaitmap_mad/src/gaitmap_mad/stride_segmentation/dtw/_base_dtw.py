@@ -7,17 +7,21 @@ from typing import Any, ClassVar, Literal, TypeVar
 import numpy as np
 import pandas as pd
 from joblib import Memory
-from numba import njit
 from scipy.interpolate import interp1d
+from scipy.signal import find_peaks
 
 from gaitmap.base import BaseAlgorithm
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.array_handling import find_local_minima_below_threshold, find_local_minima_with_distance
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data, is_single_sensor_data
+from gaitmap_mad.stride_segmentation.dtw._constrained_dtw import (
+    ConstrainedDtwResult,
+    constrained_paths,
+    constrained_subsequence_dtw,
+)
 from gaitmap_mad.stride_segmentation.dtw._dtw_templates import BaseDtwTemplate
 from gaitmap_mad.stride_segmentation.dtw._vendored_tslearn import (
-    _local_squared_dist,
     subsequence_cost_matrix,
     subsequence_path,
 )
@@ -80,6 +84,55 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
 
     """
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
+
+
+def find_matches_find_peaks_with_boundaries(
+    acc_cost_mat: np.ndarray, max_cost: float | None, min_distance: float | None
+) -> np.ndarray:
+    """Find candidate endings including minima at recording boundaries.
+
+    Ordinary ``find_peaks`` requires neighbours on both sides and therefore
+    omits minima and flat minima touching the first or last cost sample. In
+    subsequence DTW, a valid template match can end there. Including these
+    one-sided minima makes candidate detection more complete at recording
+    boundaries; it does not establish better detection accuracy on every dataset.
+
+    Interior candidates retain the historical threshold and distance selection.
+    Boundary candidates below the threshold are added without distance suppression.
+    During ``segment()``, paths are reconstructed and candidates are postprocessed
+    before a final distance selection. An invalid boundary match therefore cannot
+    suppress a nearby valid candidate. Calling this function directly returns
+    candidates which may still violate ``min_distance``; path validation and final
+    distance selection are the caller's responsibility.
+
+    Parameters
+    ----------
+    acc_cost_mat
+        Accumulated DTW cost matrix. Its final row gives squared endpoint costs.
+    max_cost
+        Maximum allowed square-root endpoint cost; None disables the threshold.
+    min_distance
+        Minimum distance in samples for interior candidates; None disables it.
+
+    Returns
+    -------
+    matches
+        Sorted candidate endpoint indices, including eligible boundary minima.
+
+    See Also
+    --------
+    find_matches_find_peaks : Historical interior-only candidate selection.
+
+    """
+    matches = find_matches_find_peaks(acc_cost_mat, max_cost, min_distance)
+    # Preserve ordinary distance selection for interior peaks. Add only boundary
+    # minima, including plateaus that reach a recording edge. Their duration is
+    # validated before they can suppress an existing interior match.
+    curve = np.pad(np.sqrt(acc_cost_mat[-1]), (1, 1), constant_values=np.inf)
+    height = -max_cost if max_cost is not None else None
+    peaks, properties = find_peaks(-curve, height=height, plateau_size=(None, None))
+    boundary = (properties["left_edges"] == 1) | (properties["right_edges"] == len(curve) - 2)
+    return np.union1d(matches, peaks[boundary] - 1).astype(int)
 
 
 class BaseDtw(BaseAlgorithm):
@@ -146,8 +199,7 @@ class BaseDtw(BaseAlgorithm):
         The minimal length of a sequence in seconds to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         In general, this exclusion is performed as a post-processing step after the matching.
-        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
-        matches directly.
+        For either peak-finding method, this parameter also sets the minimum distance between candidate endings.
     max_match_length_s
         The maximal length of a sequence in seconds to be considered a match.
         Matches that result in longer sequences will be ignored.
@@ -158,10 +210,14 @@ class BaseDtw(BaseAlgorithm):
         The ms value will internally be converted to samples using the template sampling-rate (or the signal
         sampling-rate, if `resample_template=True`).
         If no template sampling-rate is provided, this constrain can not be used.
+        The rounded sample limit counts consecutive vertical steps. A run of L steps maps L + 1 template samples
+        to one signal sample; the first matched cell consumes no step.
     max_signal_stretch_ms
         A local warping constraint for the DTW.
         It describes how many ms of the signal are allowed to be mapped to just a single datapoint of the template.
-        The ms value will internally be converted to samples using the data sampling-rate
+        The ms value will internally be converted to samples using the data sampling-rate.
+        The rounded sample limit counts consecutive horizontal steps. A run of L steps maps L + 1 signal samples
+        to one template sample; the first matched cell consumes no step.
     find_matches_method
         Select the method used to find matches in the cost function.
 
@@ -170,9 +226,12 @@ class BaseDtw(BaseAlgorithm):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
         - "find_peaks"
-            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
-            method.
+            Historical interior-only minima and distance suppression via
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks`.
+        - "find_peaks_with_boundaries" (default)
+            Also considers minima and flat minima touching a recording edge, where a valid match can end.
+            Boundary candidates are validated before competing for minimum distance. See
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for details.
     memory
         An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes.
 
@@ -247,7 +306,7 @@ class BaseDtw(BaseAlgorithm):
     max_match_length_s: float | None
     max_template_stretch_ms: float | None
     max_signal_stretch_ms: float | None
-    find_matches_method: Literal["min_under_thres", "find_peaks"]
+    find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"]
     memory: Memory | None
 
     matches_start_end_: np.ndarray | dict[_Hashable, np.ndarray]
@@ -261,6 +320,7 @@ class BaseDtw(BaseAlgorithm):
     _allowed_methods_map: ClassVar = {
         "min_under_thres": find_matches_min_under_threshold,
         "find_peaks": find_matches_find_peaks,
+        "find_peaks_with_boundaries": find_matches_find_peaks_with_boundaries,
     }
     _min_sequence_length: float | None
     _max_sequence_length: float | None
@@ -291,7 +351,9 @@ class BaseDtw(BaseAlgorithm):
         self,
         template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = None,
         resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
+        find_matches_method: Literal[
+            "min_under_thres", "find_peaks", "find_peaks_with_boundaries"
+        ] = "find_peaks_with_boundaries",
         max_cost: float | None = None,
         min_match_length_s: float | None = None,
         max_match_length_s: float | None = None,
@@ -431,11 +493,17 @@ class BaseDtw(BaseAlgorithm):
         # If we have smart cache enabled, this will cache the methods with the longest runtime
         cost_matrix_method = memory.cache(cost_matrix_method)
 
-        # Calculate cost matrix
-        # We need to copy the result to ensure that it is an actual array and not a view on an array.
-        acc_cost_mat_ = cost_matrix_method(
+        # Constrained matching retains compact state predecessors alongside the
+        # 2D cost matrix; ordinary DTW keeps its existing calculation/traceback.
+        cost_result = cost_matrix_method(
             _timeseries_reshape(final_template), _timeseries_reshape(matching_data), **cost_matrix_kwargs
-        ).copy()
+        )
+        # Public outputs and postprocessors must not mutate a persisted cache entry.
+        acc_cost_mat_ = (cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result).copy()
+        # Retain traceback metadata without keeping a second full cost matrix alive.
+        cost_result = (
+            cost_result._replace(costs=acc_cost_mat_) if isinstance(cost_result, ConstrainedDtwResult) else None
+        )
 
         # Find matches and postprocess them
         matches = self._find_matches(
@@ -444,12 +512,18 @@ class BaseDtw(BaseAlgorithm):
             min_sequence_length=self._min_sequence_length,
             find_matches_method=find_matches_method,
         )
+        if isinstance(cost_result, ConstrainedDtwResult) and len(matches):
+            # An infinite threshold must not turn unreachable endpoints into paths.
+            matches = matches[np.isfinite(acc_cost_mat_[-1, matches])]
         if len(matches) == 0:
             paths_ = []
             costs_ = np.array([])
             matches_start_end_ = np.array([], dtype=np.int64)
         else:
-            paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
+            if isinstance(cost_result, ConstrainedDtwResult):
+                paths_ = constrained_paths(cost_result, np.sort(matches))
+            else:
+                paths_ = self._find_multiple_paths(acc_cost_mat_, np.sort(matches))
             # We add +1 here to adhere to the convention that the end index of a region/stride is exclusive.
             matches_start_end_ = np.array([[p[0][-1], p[-1][-1] + 1] for p in paths_])
             # Calculate cost before potential modifications are made to start and end
@@ -464,6 +538,8 @@ class BaseDtw(BaseAlgorithm):
                 acc_cost_mat=acc_cost_mat_,
                 memory=memory,
             )
+            if find_matches_method is find_matches_find_peaks_with_boundaries:
+                to_keep = self._filter_boundary_peaks(acc_cost_mat_, paths_, to_keep)
             matches_start_end_ = matches_start_end_[to_keep]
             costs_ = costs_[to_keep]
             self._post_postprocess_check(matches_start_end_)
@@ -491,7 +567,7 @@ class BaseDtw(BaseAlgorithm):
             {
                 "max_subseq_steps": max_template_stretch,
                 "max_longseq_steps": max_signal_stretch,
-                "return_only_cost": True,
+                "return_only_cost": False,
             },
         )
 
@@ -505,6 +581,26 @@ class BaseDtw(BaseAlgorithm):
             max_cost=max_cost,
             min_distance=min_sequence_length,
         )
+
+    def _filter_boundary_peaks(self, acc_cost_mat, paths, to_keep):
+        """Resolve distances involving new boundary peaks after their validation.
+
+        Interior candidates were already distance-filtered by the existing peak
+        finder. This pass cannot introduce previously suppressed interior peaks.
+        """
+        if self._min_sequence_length is None or not np.any(to_keep):
+            return to_keep
+        endpoints = np.array([p[-1, 1] for p in paths])
+        # Respect custom endpoint choices from _find_matches. Rediscovering peaks
+        # would discard non-minima or a different point on a minimum plateau.
+        # Prefer lower costs, breaking ties in favour of the later endpoint.
+        priority = np.argsort(-acc_cost_mat[-1, endpoints], kind="stable")[::-1]
+        for index in priority:
+            if to_keep[index]:
+                too_close = np.abs(endpoints - endpoints[index]) < self._min_sequence_length
+                too_close[index] = False
+                to_keep[too_close] = False
+        return to_keep
 
     def _postprocess_matches(
         self,
@@ -701,64 +797,12 @@ class BaseDtw(BaseAlgorithm):
 def subsequence_cost_matrix_with_constrains(
     subseq, longseq, max_subseq_steps, max_longseq_steps, return_only_cost=False
 ):
-    """Create a costmatrix using local warping constrains.
+    """Calculate exact constrained costs and, optionally, compact traceback data.
 
-    This works, by tracking for each step, how many consecutive vertical (subseq) and how many horizontal (longseq)
-    steps have been taken to reach a certain point in the cost matrix.
-    Whenever, a step in another direction is taken, all other counters are reset to 0.
-    If more or equal than `max_subseq_steps` consecutive vertical or `max_longseq_steps` consecutive horizontal steps
-    have been taken, it is not possible to take another vertical or horizontal, respectively, unless at least one
-    step in any other direction is taken.
-
-    To save ram, the implementation, only tracks a single counter.
-    Negative values of the counter indicate that we are currently in a series of horizontal steps (along the `longseq`).
-    Positive values indicate that we are in a series of vertical steps.
-    In result, the returned cost-matrix has 2 "layers".
-    The first layer is the actual warping cost.
-    The second layer are the respective counters.
+    Limits count consecutive vertical (subsequence) and horizontal (long-sequence)
+    steps. Direction changes reset the run. The minimum over all arrival states
+    is returned when ``return_only_cost`` is true; otherwise the result also
+    retains the selected state predecessors needed for constrained traceback.
     """
-    cum_sum = _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps)
-    if return_only_cost is True:
-        return cum_sum[..., 0]
-    return cum_sum
-
-
-@njit(cache=True)
-def _subsequence_cost_matrix_with_constrains(subseq, longseq, max_subseq_steps, max_longseq_steps):
-    # We consider longseq directions as negative and subseq directions as positive values
-    max_longseq_steps = -max_longseq_steps
-    l1 = subseq.shape[0]
-    l2 = longseq.shape[0]
-    cum_sum = np.full((l1 + 1, l2 + 1, 2), np.inf)
-    cum_sum[0, :] = 0.0
-    # All counter values are set to 0
-    cum_sum[:, :, 1] = 0
-
-    for i in range(l1):
-        for j in range(l2):
-            cum_sum[i + 1, j + 1, 0] = _local_squared_dist(subseq[i], longseq[j])
-            vals = np.empty((3, 2))
-            shifts = [(1, 0), (0, 1), (0, 0)]
-            # Generate all possible outcomes and check if any of them violate the constrains.
-            for index, shift in enumerate(shifts):
-                vals[index, :] = cum_sum[i + shift[0], j + shift[1]]
-            # Check if either the number vertical or horizontal step exceed the threshold.
-            # In this case set the distance to infinite, so that this direction can not be picked.
-            # vertical step
-            if vals[0, 1] <= max_longseq_steps:
-                vals[0, 0] = np.inf
-            if vals[1, 1] >= max_subseq_steps:
-                vals[1, 0] = np.inf
-            smallest_cost = np.argmin(vals[:, 0])
-            # update the step counter based on what step is taken (smallest cost)
-            # We only need to update the step counter, if the smallest cost wasn't the diagonal step (2)
-            if smallest_cost != 2:
-                step = -1 if smallest_cost == 0 else 1
-                current_counter = vals[smallest_cost, 1]
-                if np.sign(step) != np.sign(current_counter):
-                    # The step changes direction from horizontal to vertical
-                    # This means we reset the counter
-                    current_counter = 0
-                cum_sum[i + 1, j + 1, 1] = current_counter + step
-            cum_sum[i + 1, j + 1, 0] += vals[smallest_cost, 0]
-    return cum_sum[1:, 1:]
+    result = constrained_subsequence_dtw(subseq, longseq, max_subseq_steps, max_longseq_steps)
+    return result.costs if return_only_cost else result

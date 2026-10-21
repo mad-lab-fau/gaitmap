@@ -33,6 +33,23 @@ These constraints are used by :class:`~gaitmap.stride_segmentation.ConstrainedBa
 Note that these parameters can also be used in :class:`~gaitmap.stride_segmentation.BarthDtw`, but the
 :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` has already sensible defaults set.
 
+The corrected :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` retains separate direction/run states
+and traces their predecessors. The `paired issue-93 benchmark`_ found that this removed 464 invalid paths and
+path/cost disagreements, but pooled detection F1 with unchanged defaults decreased from 92.0274% to 91.9701% on
+14 healthy participants' instep recordings. Further default-setting comparisons on healthy participants found
+47.6082% to 47.1229% on stairs and 79.2882% to 79.1790% on Adidas recordings. These losses are 0.0573, 0.4853 and
+0.1092 percentage points, respectively. The `issue-93 benchmark summary`_ describes the datasets and evaluation,
+including the partially annotated Adidas recordings. These results concern separate datasets, not the MS example
+plotted below.
+
+Correct numerical alignments do not guarantee better stride detection with existing parameters. The defective
+solver is no longer retained. Revalidate detected strides and parameter choices when upgrading.
+
+.. _issue-93 benchmark summary: https://github.com/mad-lab-fau/gaitmap/pull/96
+
+.. _paired issue-93 benchmark:
+   https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+
 .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
    Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
    activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
@@ -66,7 +83,11 @@ bf_data = convert_to_fbf(data, left_like="left_", right_like="right_")
 # Note, that we only use the "gyr_ml" and "gyr_si" axis for matching.
 # In this (and many other cases), this can help recognise more strides correctly, with the risk of segmenting
 # "non-strides" as well.
-from gaitmap.stride_segmentation import BarthDtw, BarthOriginalTemplate, ConstrainedBarthDtw
+from gaitmap.stride_segmentation import (
+    BarthDtw,
+    BarthOriginalTemplate,
+    ConstrainedBarthDtw,
+)
 
 dtw = BarthDtw(BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")), min_match_length_s=None)
 # Apply the dtw to the data
@@ -111,8 +132,9 @@ plot_dtw(dtw)
 #
 # This can be controlled by the `max_template_stretch_ms` parameter.
 # It expects a value in "ms" to be independent of the sampling rate.
-# This means if we only want to allow 10 matches (but not 11 or more) with the same signal sample, we need to set the
-# constrain to 11 / `sampling_rate_hz` / 1000, which means approx 110 ms at a sampling rate of 102.4 Hz.
+# The limit counts consecutive vertical steps, not visited cells. At 102.4 Hz, 110 ms rounds to 11 steps,
+# permitting up to 12 template samples to match one signal sample. To permit at most N samples, use a limit
+# corresponding to N - 1 steps. The first matched cell consumes no stretch allowance.
 #
 # As seen below, this fixes a couple of the mismatches.
 # We can see the effect very clearly in the cost function, too.
@@ -137,6 +159,10 @@ plot_dtw(cdtw)
 # To make it easy to constrained dtw with sensible defaults, the `ConstrainedBarthDtw` class exists.
 # It uses 120 ms for both the signal and the template stretch.
 # Note that you still need to change the template columns to reproduce the results from above.
+# BarthDtw and ConstrainedBarthDtw default to ``find_matches_method="find_peaks_with_boundaries"``.
+# This includes possible stride endings at recording edges; ordinary scipy peak finding omits those minima.
+# Select ``"find_peaks"`` for the historical interior-only selection, or ``"min_under_thres"`` for minima
+# within below-threshold regions. The matching method is independent of which DTW calculation is used.
 
 default_cdtw = ConstrainedBarthDtw(
     BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")),
@@ -146,5 +172,13 @@ default_cdtw = ConstrainedBarthDtw(
 default_cdtw = default_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 plot_dtw(default_cdtw)
+
+# %%
+# Historical peak selection with corrected DTW
+# --------------------------------------------
+# This changes only candidate selection. Costs and constrained traceback still use the corrected implementation.
+
+interior_only_cdtw = default_cdtw.clone().set_params(find_matches_method="find_peaks")
+interior_only_cdtw = interior_only_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 # sphinx_gallery_thumbnail_number = 2
