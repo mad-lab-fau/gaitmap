@@ -57,8 +57,7 @@ class ConstrainedBarthDtw(BarthDtw):
         The minimal length of a sequence in seconds to be considered a stride.
         Matches that result in shorter sequences, will be ignored.
         In general, this exclusion is performed as a post-processing step after the matching.
-        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
-        matches directly.
+        For either peak-finding method, this parameter also sets the minimum distance between candidate endings.
     max_match_length_s
         The maximal length of a sequence in seconds to be considered a stride.
         Matches that result in longer sequences will be ignored.
@@ -85,9 +84,12 @@ class ConstrainedBarthDtw(BarthDtw):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
         - "find_peaks"
-            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
-            method.
+            Historical interior-only minima and distance suppression via
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks`.
+        - "find_peaks_with_boundaries" (default)
+            Also considers minima and flat minima touching a recording edge, where a valid match can end.
+            Boundary candidates are validated before competing for minimum distance. See
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for details.
     snap_to_min_win_ms
         The size of the window in ms used to search local minima during the post processing of the stride borders.
         If this is set to None, this postprocessing step is skipped.
@@ -153,7 +155,9 @@ class ConstrainedBarthDtw(BarthDtw):
         self,
         template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
         resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
+        find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"] = (
+            "find_peaks_with_boundaries"
+        ),
         max_cost: float | None = 4,
         min_match_length_s: float | None = 0.6,
         max_match_length_s: float | None = 3.0,

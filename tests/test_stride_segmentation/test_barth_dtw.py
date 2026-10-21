@@ -26,7 +26,8 @@ class MetaTestConfig:
     @pytest.fixture()
     def after_action_instance(self) -> BaseType:
         template = DtwTemplate(data=np.array([0, 1.0, 0]), sampling_rate_hz=100.0)
-        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None)
+        # Synthetic arrays have no named gyro axis for snapping.
+        dtw = self.algorithm_class(template=template, max_cost=0.5, min_match_length_s=None, snap_to_min_win_ms=None)
         data = np.array([0, 1.0, 0, 0])
         dtw.segment(data, sampling_rate_hz=100)
         return dtw

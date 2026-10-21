@@ -12,6 +12,12 @@ project.
 
 ### Migration Guide
 
+- `BaseDtw`, `BarthDtw` and `ConstrainedBarthDtw` now default to
+  `find_matches_method="find_peaks_with_boundaries"`. This also considers valid minima at recording edges.
+  Select `find_matches_method="find_peaks"` to keep the previous interior-only peak selection with the same
+  numerical DTW calculation. `"min_under_thres"` is unchanged.
+  `IncorrectButBetterConstrainedBarthDtw` retains `"find_peaks"` as its default to preserve historical results.
+
 - Sample-number columns and trajectory sample indices now require integer dtypes, including
   integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
   for missing events. Built-in event detection, example annotations and stride-list conversion now
@@ -26,7 +32,8 @@ project.
   constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.
   Constrained matching also includes minima at recording boundaries. New boundary candidates are validated before
   distance selection; existing interior peak selection is unchanged. Existing constrained costs, warping paths,
-  and detected stride borders can change; unconstrained DTW is unchanged.
+  and detected stride borders can change. Unconstrained DTW costs and traceback are unchanged;
+  its default peak selection changes separately as described in the migration guide.
   State costs use rolling buffers and traceback stores three compact state IDs per cell.
   **To preserve the previous behavior, switch from `ConstrainedBarthDtw` to
   `IncorrectButBetterConstrainedBarthDtw` and keep your existing parameters.**

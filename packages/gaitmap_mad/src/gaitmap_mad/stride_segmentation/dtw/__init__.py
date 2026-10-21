@@ -4,6 +4,7 @@ from gaitmap_mad.stride_segmentation.dtw._barth_dtw import BarthDtw
 from gaitmap_mad.stride_segmentation.dtw._base_dtw import (
     BaseDtw,
     find_matches_find_peaks,
+    find_matches_find_peaks_with_boundaries,
     find_matches_min_under_threshold,
 )
 from gaitmap_mad.stride_segmentation.dtw._constrained_barth_dtw import ConstrainedBarthDtw
@@ -29,5 +30,6 @@ __all__ = [
     "InterpolatedDtwTemplate",
     "TrainableTemplateMixin",
     "find_matches_find_peaks",
+    "find_matches_find_peaks_with_boundaries",
     "find_matches_min_under_threshold",
 ]

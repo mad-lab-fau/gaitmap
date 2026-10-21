@@ -86,8 +86,44 @@ def find_matches_min_under_threshold(acc_cost_mat: np.ndarray, max_cost: float, 
     return find_local_minima_below_threshold(np.sqrt(acc_cost_mat[-1, :]), threshold=max_cost)
 
 
-def _find_matches_find_peaks_with_boundaries(acc_cost_mat, max_cost, min_distance):
-    """Include constrained boundary candidates before subclass match selection."""
+def find_matches_find_peaks_with_boundaries(
+    acc_cost_mat: np.ndarray, max_cost: float | None, min_distance: float | None
+) -> np.ndarray:
+    """Find candidate endings including minima at recording boundaries.
+
+    Ordinary ``find_peaks`` requires neighbours on both sides and therefore
+    omits minima and flat minima touching the first or last cost sample. In
+    subsequence DTW, a valid template match can end there. Including these
+    one-sided minima makes candidate detection more complete at recording
+    boundaries; it does not establish better detection accuracy on every dataset.
+
+    Interior candidates retain the historical threshold and distance selection.
+    Boundary candidates below the threshold are added without distance suppression.
+    During ``segment()``, paths are reconstructed and candidates are postprocessed
+    before a final distance selection. An invalid boundary match therefore cannot
+    suppress a nearby valid candidate. Calling this function directly returns
+    candidates which may still violate ``min_distance``; path validation and final
+    distance selection are the caller's responsibility.
+
+    Parameters
+    ----------
+    acc_cost_mat
+        Accumulated DTW cost matrix. Its final row gives squared endpoint costs.
+    max_cost
+        Maximum allowed square-root endpoint cost; None disables the threshold.
+    min_distance
+        Minimum distance in samples for interior candidates; None disables it.
+
+    Returns
+    -------
+    matches
+        Sorted candidate endpoint indices, including eligible boundary minima.
+
+    See Also
+    --------
+    find_matches_find_peaks : Historical interior-only candidate selection.
+
+    """
     matches = find_matches_find_peaks(acc_cost_mat, max_cost, min_distance)
     # Preserve ordinary distance selection for interior peaks. Add only boundary
     # minima, including plateaus that reach a recording edge. Their duration is
@@ -163,8 +199,7 @@ class BaseDtw(BaseAlgorithm):
         The minimal length of a sequence in seconds to be considered a match.
         Matches that result in shorter sequences, will be ignored.
         In general, this exclusion is performed as a post-processing step after the matching.
-        If "find_peaks" is selected as `find_matches_method`, the parameter is additionally used in the detection of
-        matches directly.
+        For either peak-finding method, this parameter also sets the minimum distance between candidate endings.
     max_match_length_s
         The maximal length of a sequence in seconds to be considered a match.
         Matches that result in longer sequences will be ignored.
@@ -191,9 +226,12 @@ class BaseDtw(BaseAlgorithm):
             In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_min_under_threshold` will be used as
             method.
         - "find_peaks"
-            Uses :func:`~scipy.signal.find_peaks` with additional constraints to find stride candidates.
-            In this case :func:`~gaitmap.stride_segmentation.base_dtw.find_matches_find_peaks` will be used as
-            method.
+            Historical interior-only minima and distance suppression via
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks`.
+        - "find_peaks_with_boundaries" (default)
+            Also considers minima and flat minima touching a recording edge, where a valid match can end.
+            Boundary candidates are validated before competing for minimum distance. See
+            :func:`~gaitmap.stride_segmentation.find_matches_find_peaks_with_boundaries` for details.
     memory
         An optional `joblib.Memory` object that can be provided to cache the creation of cost matrizes.
 
@@ -268,7 +306,7 @@ class BaseDtw(BaseAlgorithm):
     max_match_length_s: float | None
     max_template_stretch_ms: float | None
     max_signal_stretch_ms: float | None
-    find_matches_method: Literal["min_under_thres", "find_peaks"]
+    find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"]
     memory: Memory | None
 
     matches_start_end_: np.ndarray | dict[_Hashable, np.ndarray]
@@ -282,6 +320,7 @@ class BaseDtw(BaseAlgorithm):
     _allowed_methods_map: ClassVar = {
         "min_under_thres": find_matches_min_under_threshold,
         "find_peaks": find_matches_find_peaks,
+        "find_peaks_with_boundaries": find_matches_find_peaks_with_boundaries,
     }
     _min_sequence_length: float | None
     _max_sequence_length: float | None
@@ -312,7 +351,9 @@ class BaseDtw(BaseAlgorithm):
         self,
         template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = None,
         resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks"] = "find_peaks",
+        find_matches_method: Literal[
+            "min_under_thres", "find_peaks", "find_peaks_with_boundaries"
+        ] = "find_peaks_with_boundaries",
         max_cost: float | None = None,
         min_match_length_s: float | None = None,
         max_match_length_s: float | None = None,
@@ -461,14 +502,11 @@ class BaseDtw(BaseAlgorithm):
         acc_cost_mat_ = (cost_result.costs if isinstance(cost_result, ConstrainedDtwResult) else cost_result).copy()
 
         # Find matches and postprocess them
-        match_finder = find_matches_method
-        if isinstance(cost_result, ConstrainedDtwResult) and match_finder is find_matches_find_peaks:
-            match_finder = _find_matches_find_peaks_with_boundaries
         matches = self._find_matches(
             acc_cost_mat=acc_cost_mat_,
             max_cost=self.max_cost,
             min_sequence_length=self._min_sequence_length,
-            find_matches_method=match_finder,
+            find_matches_method=find_matches_method,
         )
         if isinstance(cost_result, ConstrainedDtwResult) and len(matches):
             # An infinite threshold must not turn unreachable endpoints into paths.
@@ -496,8 +534,8 @@ class BaseDtw(BaseAlgorithm):
                 acc_cost_mat=acc_cost_mat_,
                 memory=memory,
             )
-            if isinstance(cost_result, ConstrainedDtwResult) and find_matches_method is find_matches_find_peaks:
-                to_keep = self._filter_constrained_peaks(acc_cost_mat_, paths_, to_keep)
+            if find_matches_method is find_matches_find_peaks_with_boundaries:
+                to_keep = self._filter_boundary_peaks(acc_cost_mat_, paths_, to_keep)
             matches_start_end_ = matches_start_end_[to_keep]
             costs_ = costs_[to_keep]
             self._post_postprocess_check(matches_start_end_)
@@ -540,7 +578,7 @@ class BaseDtw(BaseAlgorithm):
             min_distance=min_sequence_length,
         )
 
-    def _filter_constrained_peaks(self, acc_cost_mat, paths, to_keep):
+    def _filter_boundary_peaks(self, acc_cost_mat, paths, to_keep):
         """Resolve distances involving new boundary peaks after their validation.
 
         Interior candidates were already distance-filtered by the existing peak

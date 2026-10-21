@@ -65,7 +65,7 @@ def _assert_paths(dtw, template, signal, vertical, horizontal):
 
 
 @pytest.mark.parametrize("threshold", [0.1, 100])
-@pytest.mark.parametrize("method", ["find_peaks", "min_under_thres"])
+@pytest.mark.parametrize("method", ["find_peaks_with_boundaries", "min_under_thres"])
 def test_issue_93_retains_the_legal_zero_cost_match(threshold, method):
     """A legal zero-cost path must survive forward calculation and thresholding."""
     template = np.array([3.0, 3.0, 3.0, 3.0, 0.0, 3.0])
@@ -152,7 +152,7 @@ def test_short_boundary_candidate_cannot_suppress_a_valid_nearby_match(max_cost)
         0,
         max_cost=max_cost,
         min_match_length_s=2.5,
-        find_matches_method="find_peaks",
+        find_matches_method="find_peaks_with_boundaries",
     )
     np.testing.assert_array_equal(dtw.matches_start_end_, [[0, 3]])
 

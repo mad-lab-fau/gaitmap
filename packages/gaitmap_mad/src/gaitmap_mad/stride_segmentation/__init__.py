@@ -19,6 +19,7 @@ from gaitmap_mad.stride_segmentation.dtw import (
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
     find_matches_find_peaks,
+    find_matches_find_peaks_with_boundaries,
     find_matches_min_under_threshold,
 )
 
@@ -33,5 +34,6 @@ __all__ = [
     "InterpolatedDtwTemplate",
     "TrainableTemplateMixin",
     "find_matches_find_peaks",
+    "find_matches_find_peaks_with_boundaries",
     "find_matches_min_under_threshold",
 ]

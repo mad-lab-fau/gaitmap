@@ -1,9 +1,15 @@
 """Preserve historical constrained-DTW segmentation for reproducibility."""
 
-import numpy as np
-from numba import njit
+from typing import Literal
 
+import numpy as np
+from joblib import Memory
+from numba import njit
+from tpcp import CloneFactory
+
+from gaitmap.utils._types import _Hashable
 from gaitmap_mad.stride_segmentation.dtw._constrained_barth_dtw import ConstrainedBarthDtw
+from gaitmap_mad.stride_segmentation.dtw._dtw_templates import BarthOriginalTemplate, BaseDtwTemplate
 from gaitmap_mad.stride_segmentation.dtw._vendored_tslearn import _local_squared_dist
 
 
@@ -11,8 +17,9 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     """Reproduce the constrained-DTW algorithm used before the issue-93 correction.
 
     This class retains the historical single-counter calculation, ordinary
-    traceback and interior-only peak selection. Parameters, defaults and result
-    attributes are inherited from :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw`.
+    traceback and interior-only peak selection. Parameters and result attributes
+    follow :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw`, but the default
+    ``find_matches_method="find_peaks"`` preserves historical peak handling.
     It supports the same template processing, snapping, conflict resolution and caching.
 
     The historical calculation can discard the cheapest valid alignment. Its
@@ -40,11 +47,12 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     resample_template
         Resample the template to the signal sampling rate when True.
     find_matches_method
-        Either "find_peaks" or "min_under_thres"; see ConstrainedBarthDtw for details.
+        Defaults to historical "find_peaks". "min_under_thres" and "find_peaks_with_boundaries" are also available;
+        selecting the latter opts into the new boundary handling rather than preserving historical output.
     max_cost
         Maximum cost for a candidate match; None disables the threshold for "find_peaks".
     min_match_length_s
-        Minimum match duration in seconds, also used as peak distance for "find_peaks".
+        Minimum match duration in seconds, also used as peak distance for either peak-finding method.
     max_match_length_s
         Maximum match duration in seconds.
     max_template_stretch_ms
@@ -91,6 +99,36 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     gaitmap.stride_segmentation.ConstrainedBarthDtw : Corrected constrained DTW.
 
     """
+
+    def __init__(
+        self,
+        template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
+        resample_template: bool = True,
+        find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"] = "find_peaks",
+        max_cost: float | None = 4,
+        min_match_length_s: float | None = 0.6,
+        max_match_length_s: float | None = 3.0,
+        max_template_stretch_ms: float | None = 120,
+        max_signal_stretch_ms: float | None = 120,
+        snap_to_min_win_ms: float | None = 300,
+        snap_to_min_axis: str | None = "gyr_ml",
+        conflict_resolution: bool = True,
+        memory: Memory | None = None,
+    ) -> None:
+        super().__init__(
+            template=template,
+            max_cost=max_cost,
+            min_match_length_s=min_match_length_s,
+            max_match_length_s=max_match_length_s,
+            max_template_stretch_ms=max_template_stretch_ms,
+            max_signal_stretch_ms=max_signal_stretch_ms,
+            resample_template=resample_template,
+            find_matches_method=find_matches_method,
+            snap_to_min_win_ms=snap_to_min_win_ms,
+            snap_to_min_axis=snap_to_min_axis,
+            conflict_resolution=conflict_resolution,
+            memory=memory,
+        )
 
     def _select_cost_matrix_method(self, max_template_stretch, max_signal_stretch):
         if max_template_stretch == np.inf and max_signal_stretch == np.inf:

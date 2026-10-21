@@ -155,6 +155,10 @@ plot_dtw(cdtw)
 # To make it easy to constrained dtw with sensible defaults, the `ConstrainedBarthDtw` class exists.
 # It uses 120 ms for both the signal and the template stretch.
 # Note that you still need to change the template columns to reproduce the results from above.
+# Both BarthDtw and ConstrainedBarthDtw default to ``find_matches_method="find_peaks_with_boundaries"``.
+# This includes possible stride endings at recording edges; ordinary scipy peak finding omits those minima.
+# Select ``"find_peaks"`` for the historical interior-only selection, or ``"min_under_thres"`` for minima
+# within below-threshold regions. The matching method is independent of which DTW calculation is used.
 
 default_cdtw = ConstrainedBarthDtw(
     BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")),
@@ -164,6 +168,14 @@ default_cdtw = ConstrainedBarthDtw(
 default_cdtw = default_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 plot_dtw(default_cdtw)
+
+# %%
+# Historical peak selection with corrected DTW
+# --------------------------------------------
+# This changes only candidate selection. Costs and constrained traceback still use the corrected implementation.
+
+interior_only_cdtw = default_cdtw.clone().set_params(find_matches_method="find_peaks")
+interior_only_cdtw = interior_only_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
 
 # %%
 # Preserve historical results
