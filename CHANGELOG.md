@@ -18,14 +18,14 @@ project.
   Existing constrained costs, warping paths and detected stride borders can change.
   Unconstrained DTW costs and traceback are unchanged.
   State costs use rolling buffers and traceback stores three compact state IDs per cell.
-  **To preserve the previous behavior, switch from `ConstrainedBarthDtw` to
-  `IncorrectButBetterConstrainedBarthDtw`, keep your existing parameters and explicitly set
-  `find_matches_method="find_peaks"`.**
-  The compatibility class intentionally preserves the previous calculation and traceback defects.
+  With unchanged defaults, pooled F1 decreased from 92.0274% to 91.9701% on healthy instep recordings,
+  47.6082% to 47.1229% on stair ambulation and 79.2882% to 79.1790% on Adidas recordings, evaluated within
+  their annotated regions. These are losses of 0.0573, 0.4853 and 0.1092 percentage points, respectively.
+  The defective solver is no longer retained. **Revalidate detected strides and parameter choices when upgrading.**
   ([#96](https://github.com/mad-lab-fau/gaitmap/pull/96),
   [#93](https://github.com/mad-lab-fau/gaitmap/issues/93))
 
-- `BaseDtw`, `BarthDtw`, `ConstrainedBarthDtw` and `IncorrectButBetterConstrainedBarthDtw` now default to
+- `BaseDtw`, `BarthDtw` and `ConstrainedBarthDtw` now default to
   `find_matches_method="find_peaks_with_boundaries"`. This also considers valid minima at recording edges.
   Select `find_matches_method="find_peaks"` to keep the previous interior-only peak selection with the same
   numerical DTW calculation.
@@ -67,11 +67,6 @@ project.
   ([#89](https://github.com/mad-lab-fau/gaitmap/pull/89))
 
 ### Added
-
-- Added `IncorrectButBetterConstrainedBarthDtw` alongside the corrected `ConstrainedBarthDtw` to reproduce
-  the historical constrained-DTW calculation and traceback. It shares the corrected class's peak-selection
-  options and default. Explicitly select `find_matches_method="find_peaks"` to also reproduce historical peak handling.
-  ([#96](https://github.com/mad-lab-fau/gaitmap/pull/96))
 
 - Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
   the lowest allowed direct dependency versions with all extras.

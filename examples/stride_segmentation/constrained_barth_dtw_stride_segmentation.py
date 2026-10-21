@@ -33,15 +33,19 @@ These constraints are used by :class:`~gaitmap.stride_segmentation.ConstrainedBa
 Note that these parameters can also be used in :class:`~gaitmap.stride_segmentation.BarthDtw`, but the
 :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` has already sensible defaults set.
 
-The corrected :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` and the historical
-:class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw` are both available.
-Both use the current boundary-aware peak selection by default. To preserve results from the previous implementation,
-switch to the historical class, keep the same parameters and explicitly set ``find_matches_method="find_peaks"``.
-The `paired issue-93 benchmark`_ explains the tradeoff: the correction removed 464 invalid paths and path/cost
-disagreements, but pooled detection F1 with unchanged defaults decreased from 92.0274% to 91.9701% on 14 healthy
-participants' instep recordings. Correct numerical alignments do not guarantee better stride detection with existing
-parameters. The historical class preserves the known defects for reproducibility; its name does not claim general
-superiority. These benchmark results concern a separate dataset, not the MS example plotted below.
+The corrected :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` retains separate direction/run states
+and traces their predecessors. The `paired issue-93 benchmark`_ found that this removed 464 invalid paths and
+path/cost disagreements, but pooled detection F1 with unchanged defaults decreased from 92.0274% to 91.9701% on
+14 healthy participants' instep recordings. Further default-setting comparisons on healthy participants found
+47.6082% to 47.1229% on stairs and 79.2882% to 79.1790% on Adidas recordings. These losses are 0.0573, 0.4853 and
+0.1092 percentage points, respectively. The `issue-93 benchmark summary`_ describes the datasets and evaluation,
+including the partially annotated Adidas recordings. These results concern separate datasets, not the MS example
+plotted below.
+
+Correct numerical alignments do not guarantee better stride detection with existing parameters. The defective
+solver is no longer retained. Revalidate detected strides and parameter choices when upgrading.
+
+.. _issue-93 benchmark summary: https://github.com/mad-lab-fau/gaitmap/pull/96
 
 .. _paired issue-93 benchmark:
    https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
@@ -83,7 +87,6 @@ from gaitmap.stride_segmentation import (
     BarthDtw,
     BarthOriginalTemplate,
     ConstrainedBarthDtw,
-    IncorrectButBetterConstrainedBarthDtw,
 )
 
 dtw = BarthDtw(BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")), min_match_length_s=None)
@@ -156,7 +159,7 @@ plot_dtw(cdtw)
 # To make it easy to constrained dtw with sensible defaults, the `ConstrainedBarthDtw` class exists.
 # It uses 120 ms for both the signal and the template stretch.
 # Note that you still need to change the template columns to reproduce the results from above.
-# BarthDtw and both constrained classes default to ``find_matches_method="find_peaks_with_boundaries"``.
+# BarthDtw and ConstrainedBarthDtw default to ``find_matches_method="find_peaks_with_boundaries"``.
 # This includes possible stride endings at recording edges; ordinary scipy peak finding omits those minima.
 # Select ``"find_peaks"`` for the historical interior-only selection, or ``"min_under_thres"`` for minima
 # within below-threshold regions. The matching method is independent of which DTW calculation is used.
@@ -177,23 +180,5 @@ plot_dtw(default_cdtw)
 
 interior_only_cdtw = default_cdtw.clone().set_params(find_matches_method="find_peaks")
 interior_only_cdtw = interior_only_cdtw.segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
-
-# %%
-# Historical DTW with current peak selection
-# -------------------------------------------
-# The historical class retains the old calculation and traceback while sharing the current peak selection.
-# To also reproduce historical peak handling, explicitly set ``find_matches_method="find_peaks"``.
-# This example uses the same settings as ``default_cdtw`` above, including its disabled horizontal limit.
-# The historical cost matrix and traceback can disagree and its paths can exceed the requested run limits.
-# See the paired benchmark linked above for the numerical checks, detection results, matching protocol and raw data.
-# Switching to the corrected class requires revalidating the detected strides for your application.
-
-historical_cdtw = IncorrectButBetterConstrainedBarthDtw(
-    BarthOriginalTemplate(use_cols=("gyr_ml", "gyr_si")),
-    min_match_length_s=None,
-    max_signal_stretch_ms=None,
-).segment(data=bf_data, sampling_rate_hz=sampling_rate_hz)
-
-plot_dtw(historical_cdtw)
 
 # sphinx_gallery_thumbnail_number = 2

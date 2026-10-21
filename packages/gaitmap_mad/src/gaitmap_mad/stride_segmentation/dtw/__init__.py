@@ -15,9 +15,6 @@ from gaitmap_mad.stride_segmentation.dtw._dtw_templates.templates import (
     InterpolatedDtwTemplate,
     TrainableTemplateMixin,
 )
-from gaitmap_mad.stride_segmentation.dtw._incorrect_but_better_constrained_barth_dtw import (
-    IncorrectButBetterConstrainedBarthDtw,
-)
 
 __all__ = [
     "BarthDtw",
@@ -26,7 +23,6 @@ __all__ = [
     "BaseDtwTemplate",
     "ConstrainedBarthDtw",
     "DtwTemplate",
-    "IncorrectButBetterConstrainedBarthDtw",
     "InterpolatedDtwTemplate",
     "TrainableTemplateMixin",
     "find_matches_find_peaks",

@@ -14,7 +14,6 @@ from gaitmap.utils._gaitmap_mad import patch_gaitmap_mad_import
 _gaitmap_mad_modules = {
     "BarthDtw",
     "ConstrainedBarthDtw",
-    "IncorrectButBetterConstrainedBarthDtw",
     "BaseDtw",
     "BaseDtwTemplate",
     "InterpolatedDtwTemplate",
@@ -35,7 +34,6 @@ if not (__getattr__ := patch_gaitmap_mad_import(_gaitmap_mad_modules, __name__))
         BaseDtwTemplate,
         ConstrainedBarthDtw,
         DtwTemplate,
-        IncorrectButBetterConstrainedBarthDtw,
         InterpolatedDtwTemplate,
         TrainableTemplateMixin,
         find_matches_find_peaks,
@@ -51,7 +49,6 @@ __all__ = [
     "BaseDtwTemplate",
     "ConstrainedBarthDtw",
     "DtwTemplate",
-    "IncorrectButBetterConstrainedBarthDtw",
     "InterpolatedDtwTemplate",
     "RoiStrideSegmentation",
     "TrainableTemplateMixin",

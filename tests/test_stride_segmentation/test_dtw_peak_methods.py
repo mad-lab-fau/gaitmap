@@ -9,7 +9,6 @@ from gaitmap.stride_segmentation import (
     BaseDtw,
     ConstrainedBarthDtw,
     DtwTemplate,
-    IncorrectButBetterConstrainedBarthDtw,
 )
 
 
@@ -30,20 +29,20 @@ def _segment(algorithm, method=None, signal=None, **kwargs):
     return algorithm(**parameters).segment(signal, sampling_rate_hz=1)
 
 
-@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw, IncorrectButBetterConstrainedBarthDtw])
+@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw])
 def test_boundary_peak_option_detects_a_match_at_the_recording_end(algorithm):
     """An explicitly selected peak method can detect a valid last-sample minimum."""
     dtw = _segment(algorithm, "find_peaks_with_boundaries")
     np.testing.assert_array_equal(dtw.matches_start_end_, [[1, 4]])
 
 
-@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw, IncorrectButBetterConstrainedBarthDtw])
+@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw])
 def test_algorithms_detect_boundary_matches_by_default(algorithm):
     """The shared default includes a valid final-sample match."""
     np.testing.assert_array_equal(_segment(algorithm).matches_start_end_, [[1, 4]])
 
 
-@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw, IncorrectButBetterConstrainedBarthDtw])
+@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw])
 def test_explicit_historical_peak_option_excludes_boundary_matches(algorithm):
     """Selecting the original method preserves interior-only peak handling."""
     assert _segment(algorithm, "find_peaks").paths_ == []

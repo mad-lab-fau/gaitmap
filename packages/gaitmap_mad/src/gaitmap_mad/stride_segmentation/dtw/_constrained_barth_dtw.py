@@ -135,13 +135,17 @@ class ConstrainedBarthDtw(BarthDtw):
     cheapest arrival per direction/run state and traces its stored predecessors.
 
     In the `paired issue-93 benchmark`_, this correction reduced pooled F1 from 92.0274% to 91.9701% with unchanged
-    defaults on 14 healthy participants' instep recordings. Numerical correctness does not guarantee better stride
-    detection with existing parameters. For reproducibility, the previous calculation and traceback remain available
-    as :class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw`, which retains the known defects
-    and is not recommended for new analyses.
+    defaults on 14 healthy participants' instep recordings. Further default-setting comparisons on healthy participants
+    reduced pooled F1 from 47.6082% to 47.1229% on stair ambulation and from 79.2882% to 79.1790% on Adidas recordings.
+    These are losses of 0.0573, 0.4853 and 0.1092 percentage points, respectively. The `issue-93 benchmark summary`_
+    describes the datasets and evaluation, including the partially annotated Adidas recordings.
 
-    Both classes share the current boundary-aware peak selection by default. To also reproduce historical peak
-    handling, explicitly set ``find_matches_method="find_peaks"`` when using the historical class.
+    Numerical correctness does not guarantee better stride detection with existing parameters. The defective solver
+    is no longer retained; revalidate detected strides and parameter choices when upgrading. Peak selection is a
+    separate choice: explicitly set ``find_matches_method="find_peaks"`` for the previous interior-only peak method,
+    which still uses the corrected constrained solver.
+
+    .. _issue-93 benchmark summary: https://github.com/mad-lab-fau/gaitmap/pull/96
 
     .. _paired issue-93 benchmark:
        https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
