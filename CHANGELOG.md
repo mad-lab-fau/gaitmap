@@ -12,11 +12,11 @@ project.
 
 ### Migration Guide
 
-- `BaseDtw`, `BarthDtw` and `ConstrainedBarthDtw` now default to
+- `BaseDtw`, `BarthDtw`, `ConstrainedBarthDtw` and `IncorrectButBetterConstrainedBarthDtw` now default to
   `find_matches_method="find_peaks_with_boundaries"`. This also considers valid minima at recording edges.
   Select `find_matches_method="find_peaks"` to keep the previous interior-only peak selection with the same
   numerical DTW calculation. `"min_under_thres"` is unchanged.
-  `IncorrectButBetterConstrainedBarthDtw` retains `"find_peaks"` as its default to preserve historical results.
+  The historical class preserves only its DTW calculation and traceback, and shares the current peak selection.
 
 - Removed the algorithm-wide `to_json()` and `from_json()` methods, including those on HMM wrappers.
   Save an algorithm's configuration with `joblib.dump(algorithm.clone(), path)` and restore it with
@@ -45,7 +45,8 @@ project.
   its default peak selection changes separately as described in the migration guide.
   State costs use rolling buffers and traceback stores three compact state IDs per cell.
   **To preserve the previous behavior, switch from `ConstrainedBarthDtw` to
-  `IncorrectButBetterConstrainedBarthDtw` and keep your existing parameters.**
+  `IncorrectButBetterConstrainedBarthDtw`, keep your existing parameters and explicitly set
+  `find_matches_method="find_peaks"`.**
   The compatibility class intentionally preserves the previous calculation and traceback defects.
   (Issue: https://github.com/mad-lab-fau/gaitmap/issues/93)
 
@@ -86,7 +87,8 @@ project.
 ### Added
 
 - Added `IncorrectButBetterConstrainedBarthDtw` alongside the corrected `ConstrainedBarthDtw` to reproduce
-  historical constrained-DTW costs, paths and stride detections with the same parameters and defaults.
+  the historical constrained-DTW calculation and traceback. It shares the corrected class's peak-selection
+  options and default. Explicitly select `find_matches_method="find_peaks"` to also reproduce historical peak handling.
 
 - Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
   the lowest allowed direct dependency versions with all extras.

@@ -37,8 +37,8 @@ def test_boundary_peak_option_detects_a_match_at_the_recording_end(algorithm):
     np.testing.assert_array_equal(dtw.matches_start_end_, [[1, 4]])
 
 
-@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw])
-def test_main_algorithms_detect_boundary_matches_by_default(algorithm):
+@pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw, IncorrectButBetterConstrainedBarthDtw])
+def test_algorithms_detect_boundary_matches_by_default(algorithm):
     """The shared default includes a valid final-sample match."""
     np.testing.assert_array_equal(_segment(algorithm).matches_start_end_, [[1, 4]])
 
@@ -47,11 +47,6 @@ def test_main_algorithms_detect_boundary_matches_by_default(algorithm):
 def test_explicit_historical_peak_option_excludes_boundary_matches(algorithm):
     """Selecting the original method preserves interior-only peak handling."""
     assert _segment(algorithm, "find_peaks").paths_ == []
-
-
-def test_compatibility_class_keeps_its_historical_default():
-    """The compatibility class must not silently inherit the new peak default."""
-    assert _segment(IncorrectButBetterConstrainedBarthDtw).paths_ == []
 
 
 @pytest.mark.parametrize("algorithm", [BaseDtw, BarthDtw, ConstrainedBarthDtw])

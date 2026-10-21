@@ -44,8 +44,8 @@ def test_preserves_historical_costs_and_inconsistent_traceback(use_cache, tmp_pa
     np.testing.assert_allclose(dtw.costs_, [np.sqrt(2)])
 
 
-def test_preserves_historical_exclusion_of_recording_boundary_minima():
-    """The compatibility class must not add the corrected boundary candidates."""
+def test_explicit_historical_peak_selection_excludes_recording_boundary_minima():
+    """Interior-only peak selection remains available separately from the solver."""
     kwargs = {
         "template": DtwTemplate(data=np.array([0.0, 1.0, 0.0]), sampling_rate_hz=1),
         "resample_template": False,
@@ -57,7 +57,9 @@ def test_preserves_historical_exclusion_of_recording_boundary_minima():
         "max_signal_stretch_ms": 1000,
     }
     signal = np.array([9.0, 0.0, 1.0, 0.0])
-    historical = IncorrectButBetterConstrainedBarthDtw(**kwargs).segment(signal, sampling_rate_hz=1)
+    historical = IncorrectButBetterConstrainedBarthDtw(**kwargs, find_matches_method="find_peaks").segment(
+        signal, sampling_rate_hz=1
+    )
     corrected = ConstrainedBarthDtw(**kwargs).segment(signal, sampling_rate_hz=1)
     assert historical.paths_ == []
     np.testing.assert_array_equal(corrected.matches_start_end_, [[1, 4]])

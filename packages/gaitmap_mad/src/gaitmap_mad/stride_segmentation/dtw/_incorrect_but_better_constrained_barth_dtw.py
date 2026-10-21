@@ -1,25 +1,19 @@
-"""Preserve historical constrained-DTW segmentation for reproducibility."""
-
-from typing import Literal
+"""Preserve historical constrained-DTW costs and traceback."""
 
 import numpy as np
-from joblib import Memory
 from numba import njit
-from tpcp import CloneFactory
 
-from gaitmap.utils._types import _Hashable
 from gaitmap_mad.stride_segmentation.dtw._constrained_barth_dtw import ConstrainedBarthDtw
-from gaitmap_mad.stride_segmentation.dtw._dtw_templates import BarthOriginalTemplate, BaseDtwTemplate
 from gaitmap_mad.stride_segmentation.dtw._vendored_tslearn import _local_squared_dist
 
 
 class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     """Reproduce the constrained-DTW algorithm used before the issue-93 correction.
 
-    This class retains the historical single-counter calculation, ordinary
-    traceback and interior-only peak selection. Parameters and result attributes
-    follow :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw`, but the default
-    ``find_matches_method="find_peaks"`` preserves historical peak handling.
+    This class retains the historical single-counter calculation and ordinary
+    traceback. Parameters, peak selection and result attributes follow
+    :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw`, including the default
+    ``find_matches_method="find_peaks_with_boundaries"``.
     It supports the same template processing, snapping, conflict resolution and caching.
 
     The historical calculation can discard the cheapest valid alignment. Its
@@ -34,7 +28,9 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     The `archived paired benchmark`_ reports pooled F1 of 92.0274% for this historical behavior and 91.9701%
     after correction on 14 healthy participants. The historical output contained 464 invalid paths and
     path/cost disagreements; the corrected output contained none.
-    To preserve earlier results, replace ConstrainedBarthDtw with this class and keep the same parameters.
+    That benchmark used the historical ``find_matches_method="find_peaks"``.
+    To preserve earlier segmentation results, replace ConstrainedBarthDtw with this class,
+    keep the same parameters and explicitly select ``find_matches_method="find_peaks"``.
     To use mathematically valid constrained alignments, use the corrected class and revalidate stride detections.
 
     .. _archived paired benchmark:
@@ -47,10 +43,11 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     resample_template
         Resample the template to the signal sampling rate when True.
     find_matches_method
-        Defaults to historical "find_peaks". "min_under_thres" and "find_peaks_with_boundaries" are also available;
-        selecting the latter opts into the new boundary handling rather than preserving historical output.
+        Defaults to "find_peaks_with_boundaries", as in the corrected class.
+        Select "find_peaks" to also reproduce historical interior-only peak selection,
+        or "min_under_thres" for minima in below-threshold regions.
     max_cost
-        Maximum cost for a candidate match; None disables the threshold for "find_peaks".
+        Maximum cost for a candidate match; None disables the threshold for either peak-finding method.
     min_match_length_s
         Minimum match duration in seconds, also used as peak distance for either peak-finding method.
     max_match_length_s
@@ -100,40 +97,10 @@ class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
 
     """
 
-    def __init__(
-        self,
-        template: BaseDtwTemplate | dict[_Hashable, BaseDtwTemplate] | None = CloneFactory(BarthOriginalTemplate()),
-        resample_template: bool = True,
-        find_matches_method: Literal["min_under_thres", "find_peaks", "find_peaks_with_boundaries"] = "find_peaks",
-        max_cost: float | None = 4,
-        min_match_length_s: float | None = 0.6,
-        max_match_length_s: float | None = 3.0,
-        max_template_stretch_ms: float | None = 120,
-        max_signal_stretch_ms: float | None = 120,
-        snap_to_min_win_ms: float | None = 300,
-        snap_to_min_axis: str | None = "gyr_ml",
-        conflict_resolution: bool = True,
-        memory: Memory | None = None,
-    ) -> None:
-        super().__init__(
-            template=template,
-            max_cost=max_cost,
-            min_match_length_s=min_match_length_s,
-            max_match_length_s=max_match_length_s,
-            max_template_stretch_ms=max_template_stretch_ms,
-            max_signal_stretch_ms=max_signal_stretch_ms,
-            resample_template=resample_template,
-            find_matches_method=find_matches_method,
-            snap_to_min_win_ms=snap_to_min_win_ms,
-            snap_to_min_axis=snap_to_min_axis,
-            conflict_resolution=conflict_resolution,
-            memory=memory,
-        )
-
     def _select_cost_matrix_method(self, max_template_stretch, max_signal_stretch):
         if max_template_stretch == np.inf and max_signal_stretch == np.inf:
             return super()._select_cost_matrix_method(max_template_stretch, max_signal_stretch)
-        # An ordinary matrix selects historical traceback and peak handling in BaseDtw.
+        # An ordinary matrix selects historical traceback; peak selection remains independent.
         return _historical_cost_matrix, {
             "max_subseq_steps": max_template_stretch,
             "max_longseq_steps": max_signal_stretch,

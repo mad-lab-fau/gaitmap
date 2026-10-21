@@ -34,6 +34,10 @@ class ConstrainedBarthDtw(BarthDtw):
     .. _paired issue-93 benchmark:
        https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
 
+    Both classes share the current boundary-aware peak selection by default.
+    To also reproduce historical peak handling, explicitly set ``find_matches_method="find_peaks"``
+    when using the historical class.
+
     This method is based on [1]_ and the modification of the constrained warping path is inspired by [2]_.
 
     Parameters
