@@ -1,5 +1,6 @@
 """Select historical and boundary-complete peak handling through segment()."""
 
+import joblib
 import numpy as np
 import pytest
 
@@ -68,9 +69,11 @@ def test_boundary_method_detects_a_flat_minimum_touching_both_edges(algorithm):
 
 
 @pytest.mark.parametrize("method", ["find_peaks", "find_peaks_with_boundaries", "min_under_thres"])
-def test_selected_matching_method_survives_json_and_cloning(method):
+def test_selected_matching_method_survives_cloning_and_persistence(method, tmp_path):
     """Persisted explicit choices continue to control boundary detection."""
     original = _segment(ConstrainedBarthDtw, method)
-    for restored in (original.clone(), ConstrainedBarthDtw.from_json(original.to_json())):
+    path = tmp_path / "algorithm.joblib"
+    joblib.dump(original.clone(), path)
+    for restored in (original.clone(), joblib.load(path)):
         restored.segment(original.data, sampling_rate_hz=1)
         np.testing.assert_array_equal(restored.matches_start_end_, original.matches_start_end_)

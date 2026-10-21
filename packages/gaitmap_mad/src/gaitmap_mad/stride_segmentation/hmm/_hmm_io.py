@@ -2,10 +2,92 @@
 
 from __future__ import annotations
 
+import json
+from functools import partial
+from io import StringIO
+from typing import TYPE_CHECKING
+
 import numpy as np
+import pandas as pd
+from scipy.spatial.transform import Rotation
+from tpcp import NOTHING, get_param_names
 
 from gaitmap_mad.stride_segmentation.hmm._hmm_distributions import GaussianMixture
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+
+if TYPE_CHECKING:
+    from gaitmap_mad.stride_segmentation.hmm._composite_model import CompositeHmm
+    from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import HmmStrideSegmentation
+    from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm
+    from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm
+
+
+def load_legacy_hmm_json(serialized: str) -> SimpleHmm | CompositeHmm | BaseSegmentationHmm | HmmStrideSegmentation:
+    """Load an HMM wrapper saved with the former algorithm JSON API.
+
+    This read-only migration helper accepts existing ``SimpleHmm``,
+    ``CompositeHmm``, segmentation HMM and ``HmmStrideSegmentation`` files,
+    including their nested feature transforms and postprocessing settings.
+    Custom classes used in the file must be imported before loading.
+    Save the loaded object with ``joblib.dump`` for subsequent use.
+    Numeric HMM files use :meth:`HiddenMarkovModel.from_json` instead.
+
+    Parameters
+    ----------
+    serialized
+        JSON text exported by the former HMM wrapper ``to_json()`` method.
+
+    Returns
+    -------
+    model
+        Restored HMM wrapper, including its saved parameters and feature transforms.
+    """
+    from gaitmap.base import BaseAlgorithm  # noqa: PLC0415
+    from gaitmap_mad.stride_segmentation.hmm._composite_model import CompositeHmm  # noqa: PLC0415
+    from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm  # noqa: PLC0415
+    from gaitmap_mad.stride_segmentation.hmm._simple_model import SimpleHmm  # noqa: PLC0415
+
+    def subclasses(cls):
+        for child in cls.__subclasses__():
+            yield from subclasses(child)
+        yield cls
+
+    classes = {}
+    for root in (BaseAlgorithm, SimpleHmm, CompositeHmm, BaseSegmentationHmm):
+        for cls in subclasses(root):
+            classes.setdefault(cls.__name__, cls)
+
+    model = json.loads(serialized, object_hook=partial(_decode_legacy_hmm_object, classes=classes))
+    if isinstance(model, (SimpleHmm, CompositeHmm, BaseSegmentationHmm)):
+        return model
+    # The bundled model loads while HmmStrideSegmentation's defaults are being defined.
+    from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import HmmStrideSegmentation  # noqa: PLC0415
+
+    if isinstance(model, HmmStrideSegmentation):
+        return model
+    raise TypeError("Expected a saved gaitmap HMM wrapper.")
+
+
+def _decode_legacy_hmm_object(obj, *, classes):  # noqa: PLR0911
+    if "_gaitmap_obj" in obj:
+        cls = classes[obj["_gaitmap_obj"]]
+        return cls(**{key: value for key, value in obj["params"].items() if key in get_param_names(cls)})
+    kind = obj.get("_obj_type")
+    if kind is None:
+        return obj
+    if kind == "HiddenMarkovModel":
+        return HiddenMarkovModel.from_dict(obj["hmm"])
+    if kind == "Tuple":
+        return tuple(obj["tuple"])
+    if kind == "Array":
+        return np.array(obj["array"])
+    if kind == "Rotation":
+        return Rotation.from_quat(obj["quat"])
+    if kind in ("Series", "DataFrame"):
+        return pd.read_json(StringIO(obj["df"]), orient="split", typ="series" if kind == "Series" else "frame")
+    if kind == "EmptyDefault":
+        return NOTHING
+    raise ValueError(f"Unknown object type in saved HMM: {kind}.")
 
 
 def load_emission(data: dict) -> GaussianMixture:

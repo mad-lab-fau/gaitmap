@@ -5,8 +5,8 @@ from typing import Self
 
 import numpy as np
 import pandas as pd
+from tpcp import BaseTpcpObject
 
-from gaitmap.base import _BaseSerializable
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel, _NoValidPathError
 from gaitmap_mad.stride_segmentation.hmm._hmm_training import TrainingHistory
 from gaitmap_mad.stride_segmentation.hmm._utils import extract_transitions_starts_stops_from_hidden_state_sequence
@@ -53,7 +53,7 @@ def _initialize_composite(submodels, sequences, labels, *, algorithm="viterbi", 
     return HiddenMarkovModel(emissions, transitions, initial, state_weights=state_weights), paths
 
 
-class CompositeHmm(_BaseSerializable):
+class CompositeHmm(BaseTpcpObject):
     """Combine named, trained HMMs using annotated model instances.
 
     Each annotation table has ``start``, exclusive ``end``, and ``label`` columns.

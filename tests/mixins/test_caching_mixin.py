@@ -40,7 +40,6 @@ class TestCachingMixin:
 
         # Store some info to compare later:
         algo_id = id(results)
-        algo_json = results.to_json()
         # If the hash is the same the results must be the same
         algo_hash = joblib.hash(results)
 
@@ -54,7 +53,6 @@ class TestCachingMixin:
         assert capsys.readouterr().out.count("[Memory] Calling") > 0
 
         after_first_id = id(results)
-        after_first_json = results.to_json()
         # Need to remove the memory object. Otherwise the hash is changed
         results.memory = None
         after_first_hash = joblib.hash(results)
@@ -67,7 +65,6 @@ class TestCachingMixin:
         assert len(re.findall(r"[Memory].*: Loading", capsys.readouterr().out)) > 0
 
         after_second_id = id(results)
-        after_second_json = results.to_json()
         # Need to remove the memory object. Otherwise the hash is changed
         results.memory = None
         after_second_hash = joblib.hash(results)
@@ -78,13 +75,4 @@ class TestCachingMixin:
         # We expect that the results are the same every time and also that we used the exact same object and no
         # copy was created at any point.
         assert algo_id == after_first_id == after_second_id
-        assert algo_json == after_first_json == after_second_json
         assert algo_hash == after_first_hash == after_second_hash
-
-    def test_cached_json_export(self) -> None:
-        """Test that there is a warning on json export."""
-        instance = self.algorithm_class(memory=Memory(None))
-        with pytest.warns(UserWarning) as w:
-            instance.to_json()
-
-        assert "joblib.Memory" in str(w[0])

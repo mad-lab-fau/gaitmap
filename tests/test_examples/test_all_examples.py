@@ -6,7 +6,6 @@ from numpy.testing import assert_almost_equal
 from pandas.testing import assert_frame_equal
 
 from gaitmap.utils.consts import SF_ACC
-from tests.conftest import compare_algo_objects
 
 # This is needed to avoid plots to open
 matplotlib.use("Agg")
@@ -142,14 +141,6 @@ def test_herzer_event_detection(snapshot) -> None:
     assert len(ed.min_vel_event_list_["right_sensor"]) == 29
     snapshot.assert_match(ed.min_vel_event_list_["left_sensor"], check_dtype=False)
     snapshot.assert_match(ed.min_vel_event_list_["right_sensor"], check_dtype=False)
-
-
-def test_json_example(snapshot) -> None:
-    from examples.advanced_features.algo_serialize import json_str, loaded_slt, slt
-
-    snapshot.assert_match(json_str)
-
-    compare_algo_objects(slt, loaded_slt)
 
 
 def test_trajectory_reconstruction(snapshot) -> None:

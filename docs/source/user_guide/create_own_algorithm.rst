@@ -99,9 +99,6 @@ This means, you should not modify any parameters of the class in the `__init__` 
 must not modify any of your parameters at should return the modified algorithm object.
 The latter can be enforced by using the :func:`~tpcp.make_action_safe` decorator on your action method.
 
-Note, that json serialization of your algorithm might not work, depending on the parameters you use.
-In this case, please open an issue on github with your usecase.
-
 Creating a new algorithm type
 -----------------------------
 
@@ -117,7 +114,7 @@ So your baseclass acts more as a guidance and to help your IDE to provide better
 
 .. note:: Depending on what you are planning to implement, you might not need to inherit from any existing gaitmap class.
           All the gaitmap classes are based on the `tpcp` classes.
-          We only add a json-serialization solution on top.
-          If you don't need this you can inherit from :class:`tpcp.Algorithm` directly.
+          The gaitmap base classes specify interfaces for gait analysis tasks.
+          For other tasks you can inherit from :class:`tpcp.Algorithm` directly.
           This decouples your work from gaitmap and might make maintenance easier.
 

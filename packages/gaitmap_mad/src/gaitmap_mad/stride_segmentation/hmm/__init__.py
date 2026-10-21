@@ -10,6 +10,7 @@ from gaitmap_mad.stride_segmentation.hmm._hmm_feature_transform import (
     RothHmmFeatureTransformer,
 )
 from gaitmap_mad.stride_segmentation.hmm._hmm_inference import HiddenMarkovModel
+from gaitmap_mad.stride_segmentation.hmm._hmm_io import load_legacy_hmm_json
 from gaitmap_mad.stride_segmentation.hmm._hmm_stride_segmentation import (
     HmmStrideSegmentation,
     PreTrainedRothSegmentationModel,
@@ -39,4 +40,5 @@ __all__ = [
     "RothSegmentationHmm",
     "SimpleHmm",
     "TrainingHistory",
+    "load_legacy_hmm_json",
 ]

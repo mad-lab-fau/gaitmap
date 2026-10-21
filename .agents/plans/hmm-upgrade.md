@@ -56,6 +56,31 @@ Source: https://github.com/mad-lab-fau/gaitmap/pull/94
 - Constrained DTW issue #93 needs further consideration. Finite composition #80,
   heading smoothing and changes of turning-angle definitions remain out of scope.
 
+## Approved follow-up: remove algorithm JSON serialization
+
+On 2026-10-19, the maintainer explicitly requested removal of the general
+algorithm JSON serialization feature because it is no longer used. This
+supersedes the old `to_json`/`from_json` API compatibility requirement for all
+algorithm and HMM wrapper classes, but preserves numeric HMM persistence and
+loading of existing saved HMM files.
+
+- Remove the generic encoder, decoder, serializable base, shared roundtrip tests,
+  DTW JSON tests, example and its snapshot, and stale documentation.
+- Keep parameter handling, cloning, hashing, caching and scientific outputs.
+  Caching tests compare existing object hashes instead of JSON strings.
+- Use a read-only `load_legacy_hmm_json` migration function for existing HMM
+  wrapper files, complete `HmmStrideSegmentation` configurations, and the
+  bundled pretrained model. Keep the numeric
+  `HiddenMarkovModel` JSON format and APIs.
+- Save complete algorithm configurations with joblib; clone before dumping to
+  exclude action results and recordings. Document trusted-file and version
+  requirements. Existing non-HMM JSON configurations must first be loaded with
+  their originating gaitmap version and exported with joblib before upgrading.
+- Include prominent breaking-change and migration guidance in the changelog.
+- Verify affected base classes, caching and HMM consumers, then run the full
+  available test suite and repository lint/format checks. Deliver one coherent
+  removal commit and retain any final review corrections as additional commits.
+
 ## Recorded verification and limits
 
 Before the mainline rebase, the combined stack passed 2,701 tests with 41 skips

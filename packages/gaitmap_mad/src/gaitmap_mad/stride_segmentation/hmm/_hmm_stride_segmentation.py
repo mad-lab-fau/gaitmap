@@ -13,6 +13,7 @@ from gaitmap.stride_segmentation._utils import snap_to_min
 from gaitmap.utils._algo_helper import invert_result_dictionary, set_params_from_dict
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import SensorData, get_multi_sensor_names, is_sensor_data
+from gaitmap_mad.stride_segmentation.hmm._hmm_io import load_legacy_hmm_json
 from gaitmap_mad.stride_segmentation.hmm._segmentation_model import BaseSegmentationHmm, RothSegmentationHmm
 
 
@@ -44,7 +45,7 @@ class PreTrainedRothSegmentationModel(RothSegmentationHmm):
             .joinpath("fallriskpd_at_lab_model.json")
             .read_text(encoding="utf8")
         )
-        return RothSegmentationHmm.from_json(model_json)
+        return load_legacy_hmm_json(model_json)
 
 
 BaseSegmentationHmmT = TypeVar("BaseSegmentationHmmT", bound=BaseSegmentationHmm)
