@@ -10,31 +10,8 @@ from gaitmap_mad.stride_segmentation.dtw._vendored_tslearn import _local_squared
 class IncorrectButBetterConstrainedBarthDtw(ConstrainedBarthDtw):
     """Reproduce the constrained-DTW algorithm used before the issue-93 correction.
 
-    This class retains the historical single-counter calculation and ordinary
-    traceback. Parameters, peak selection and result attributes follow
-    :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw`, including the default
-    ``find_matches_method="find_peaks_with_boundaries"``.
-    It supports the same template processing, snapping, conflict resolution and caching.
-
-    The historical calculation can discard the cheapest valid alignment. Its
-    returned paths can violate the stretch limits and disagree with the reported
-    costs. These known defects are deliberately preserved to reproduce earlier
-    results. Use :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` for the
-    corrected calculation and constrained traceback.
-
-    "Better" refers only to the higher detection F1 observed with unchanged
-    defaults on the Sensor Position Comparison instep benchmark. It does not
-    imply better performance on other datasets or parameter choices.
-    The `archived paired benchmark`_ reports pooled F1 of 92.0274% for this historical behavior and 91.9701%
-    after correction on 14 healthy participants. The historical output contained 464 invalid paths and
-    path/cost disagreements; the corrected output contained none.
-    That benchmark used the historical ``find_matches_method="find_peaks"``.
-    To preserve earlier segmentation results, replace ConstrainedBarthDtw with this class,
-    keep the same parameters and explicitly select ``find_matches_method="find_peaks"``.
-    To use mathematically valid constrained alignments, use the corrected class and revalidate stride detections.
-
-    .. _archived paired benchmark:
-       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+    See the notes in :class:`~gaitmap.stride_segmentation.ConstrainedBarthDtw` for details on the issue
+    and its correction.
 
     Parameters
     ----------

@@ -1,54 +1,36 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ the Migration Guide and 
-Scientific Changes section), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) (+ a Scientific Changes
+section), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-For more information see the 
-[Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this 
+For more information see the
+[Github Releases Page](https://github.com/mad-lab-fau/gaitmap/releases) of this
 project.
 
 ## Unreleased
-
-### Migration Guide
-
-- `BaseDtw`, `BarthDtw`, `ConstrainedBarthDtw` and `IncorrectButBetterConstrainedBarthDtw` now default to
-  `find_matches_method="find_peaks_with_boundaries"`. This also considers valid minima at recording edges.
-  Select `find_matches_method="find_peaks"` to keep the previous interior-only peak selection with the same
-  numerical DTW calculation. `"min_under_thres"` is unchanged.
-  The historical class preserves only its DTW calculation and traceback, and shares the current peak selection.
-
-- Removed the algorithm-wide `to_json()` and `from_json()` methods, including those on HMM wrappers.
-  Save an algorithm's configuration with `joblib.dump(algorithm.clone(), path)` and restore it with
-  `joblib.load(path)`. Cloning first excludes action results and input data. Keep the library and
-  dependency versions with saved objects, and load only trusted joblib files.
-  For existing HMM wrapper JSON files, use `gaitmap.stride_segmentation.hmm.load_legacy_hmm_json(json_text)`
-  and save the returned object with joblib. For other existing algorithm JSON files, load them with
-  the gaitmap version that created them and export their configuration to joblib before upgrading.
-  The numeric `HiddenMarkovModel` retains its dedicated JSON format and methods.
-
-- Sample-number columns and trajectory sample indices now require integer dtypes, including
-  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
-  for missing events. Built-in event detection, example annotations and stride-list conversion now
-  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
-  identifiers and physical quantities are unaffected.
-  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
-  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
 
 ### Scientific Changes
 
 - Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected
   constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.
-  Constrained matching also includes minima at recording boundaries. New boundary candidates are validated before
-  distance selection; existing interior peak selection is unchanged. Existing constrained costs, warping paths,
-  and detected stride borders can change. Unconstrained DTW costs and traceback are unchanged;
-  its default peak selection changes separately as described in the migration guide.
+  Existing constrained costs, warping paths and detected stride borders can change.
+  Unconstrained DTW costs and traceback are unchanged.
   State costs use rolling buffers and traceback stores three compact state IDs per cell.
   **To preserve the previous behavior, switch from `ConstrainedBarthDtw` to
   `IncorrectButBetterConstrainedBarthDtw`, keep your existing parameters and explicitly set
   `find_matches_method="find_peaks"`.**
   The compatibility class intentionally preserves the previous calculation and traceback defects.
-  (Issue: https://github.com/mad-lab-fau/gaitmap/issues/93)
+  ([#96](https://github.com/mad-lab-fau/gaitmap/pull/96),
+  [#93](https://github.com/mad-lab-fau/gaitmap/issues/93))
+
+- `BaseDtw`, `BarthDtw`, `ConstrainedBarthDtw` and `IncorrectButBetterConstrainedBarthDtw` now default to
+  `find_matches_method="find_peaks_with_boundaries"`. This also considers valid minima at recording edges.
+  Select `find_matches_method="find_peaks"` to keep the previous interior-only peak selection with the same
+  numerical DTW calculation.
+  New boundary candidates are validated before distance selection; existing interior peak selection is unchanged.
+  ([#96](https://github.com/mad-lab-fau/gaitmap/pull/96))
 
 - Require tpcp 3.0.0 or newer and adopt its default NaN-aware score aggregation.
   Scores without an explicit aggregator now ignore NaN values when calculating the mean;
@@ -89,6 +71,7 @@ project.
 - Added `IncorrectButBetterConstrainedBarthDtw` alongside the corrected `ConstrainedBarthDtw` to reproduce
   the historical constrained-DTW calculation and traceback. It shares the corrected class's peak-selection
   options and default. Explicitly select `find_matches_method="find_peaks"` to also reproduce historical peak handling.
+  ([#96](https://github.com/mad-lab-fau/gaitmap/pull/96))
 
 - Updated runtime and development dependency minimums and added a Python 3.11 CI job that tests
   the lowest allowed direct dependency versions with all extras.
@@ -96,6 +79,28 @@ project.
 - Added a new `MahonyAHRS` orientation method for trajectory reconstruction, including optional magnetometer-based
   heading correction, API docs, regression tests, and a comparison example against `MadgwickAHRS`.
   ([#81](https://github.com/mad-lab-fau/gaitmap/pull/81))
+
+### Changed
+
+- Sample-number columns and trajectory sample indices now require integer dtypes, including
+  integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
+  for missing events. Built-in event detection, example annotations and stride-list conversion now
+  preserve integer storage. Check custom inputs and explicitly convert their sample columns before use;
+  identifiers and physical quantities are unaffected.
+  ([#91](https://github.com/mad-lab-fau/gaitmap/pull/91),
+  [#35](https://github.com/mad-lab-fau/gaitmap/issues/35))
+
+### Removed
+
+- Removed the algorithm-wide `to_json()` and `from_json()` methods, including those on HMM wrappers.
+  Save an algorithm's configuration with `joblib.dump(algorithm.clone(), path)` and restore it with
+  `joblib.load(path)`. Cloning first excludes action results and input data. Keep the library and
+  dependency versions with saved objects, and load only trusted joblib files.
+  For existing HMM wrapper JSON files, use `gaitmap.stride_segmentation.hmm.load_legacy_hmm_json(json_text)`
+  and save the returned object with joblib. For other existing algorithm JSON files, load them with
+  the gaitmap version that created them and export their configuration to joblib before upgrading.
+  The numeric `HiddenMarkovModel` retains its dedicated JSON format and methods.
+  ([#99](https://github.com/mad-lab-fau/gaitmap/pull/99))
 
 ### Fixed
 

@@ -21,23 +21,6 @@ class ConstrainedBarthDtw(BarthDtw):
     This exists as a separate class, so that users are aware, they are using a different method that might impact
     their results.
 
-    This class uses the corrected direction/run-state calculation and constrained traceback.
-    To reproduce the historical implementation, including its known defects, use
-    :class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw` with the same parameters.
-
-    The `paired issue-93 benchmark`_ explains why both implementations are available.
-    With unchanged defaults on 14 healthy participants' instep recordings, the correction eliminated 464
-    invalid paths and path/cost disagreements, but pooled detection F1 decreased from 92.0274% to 91.9701%.
-    Numerical correctness therefore does not imply improved stride detection with existing parameters.
-    Choose the historical class to preserve earlier results; revalidate outputs when using this corrected class.
-
-    .. _paired issue-93 benchmark:
-       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
-
-    Both classes share the current boundary-aware peak selection by default.
-    To also reproduce historical peak handling, explicitly set ``find_matches_method="find_peaks"``
-    when using the historical class.
-
     This method is based on [1]_ and the modification of the constrained warping path is inspired by [2]_.
 
     Parameters
@@ -141,6 +124,28 @@ class ConstrainedBarthDtw(BarthDtw):
 
     Notes
     -----
+    The implementation changed after version 2.6 to correct the handling of direction/run-state constraints.
+    Previously, it retained only the cheapest path at each cell, without distinguishing its arrival state.
+    A path with a higher intermediate cost could be needed to complete the cheapest valid alignment,
+    but was discarded in favour of a cheaper partial path that could not be extended without violating the limits.
+
+    The historical backwards pass also followed neighbouring minimum costs without enforcing the run-state
+    constraints. Unlike ordinary DTW, the two-dimensional cost matrix alone does not define a valid constrained
+    path. Traceback needs the state information from the forward pass. The current implementation retains the
+    cheapest arrival per direction/run state and traces its stored predecessors.
+
+    In the `paired issue-93 benchmark`_, this correction reduced pooled F1 from 92.0274% to 91.9701% with unchanged
+    defaults on 14 healthy participants' instep recordings. Numerical correctness does not guarantee better stride
+    detection with existing parameters. For reproducibility, the previous calculation and traceback remain available
+    as :class:`~gaitmap.stride_segmentation.IncorrectButBetterConstrainedBarthDtw`, which retains the known defects
+    and is not recommended for new analyses.
+
+    Both classes share the current boundary-aware peak selection by default. To also reproduce historical peak
+    handling, explicitly set ``find_matches_method="find_peaks"`` when using the historical class.
+
+    .. _paired issue-93 benchmark:
+       https://github.com/mad-lab-fau/gaitmap/blob/564a431640a4c9399e44b735ebebdf28548dece1/docs/source/development/constrained_dtw_benchmark.rst
+
     .. [1] Barth, J., Oberndorfer, C., Kugler, P., Schuldhaus, D., Winkler, J., Klucken, J., & Eskofier, B. (2013).
        Subsequence dynamic time warping as a method for robust step segmentation using gyroscope signals of daily life
        activities. Proceedings of the Annual International Conference of the IEEE Engineering in Medicine and Biology
