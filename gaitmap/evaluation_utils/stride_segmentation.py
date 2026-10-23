@@ -520,7 +520,9 @@ def _match_label_lists(
         # Minkowski with p = np.inf uses the Chebyshev distance
         boolean_map = (
             minkowski_distance(
-                list_left[index_large_matches], list_right[valid_matches[index_large_matches, 1]], p=np.inf
+                list_left[valid_matches[index_large_matches, 0]],
+                list_right[valid_matches[index_large_matches, 1]],
+                p=np.inf,
             )
             <= tolerance
         )

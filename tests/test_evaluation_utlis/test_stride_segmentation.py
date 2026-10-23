@@ -83,6 +83,15 @@ class TestMatchStrideList:
         assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0.0, 1, 2, np.nan])
         assert_array_equal(out["s_id_b"].to_numpy().astype(float), [0.0, 2, np.nan, 1])
 
+    def test_one_to_one_tolerance_after_unmatched_stride(self) -> None:
+        list_left = self._create_valid_list([[0, 10], [20, 30], [40, 50]])
+        list_right = self._create_valid_list([[21, 31], [41, 51]])
+
+        out = match_stride_lists(stride_list_a=list_left, stride_list_b=list_right, tolerance=1, one_to_one=True)
+
+        assert_array_equal(out["s_id_a"].to_numpy().astype(float), [0, 1, 2])
+        assert_array_equal(out["s_id_b"].to_numpy().astype(float), [np.nan, 0, 1])
+
     def test_simple_double_match_no_tolerance(self) -> None:
         list_left = self._create_valid_list([[0, 1], [1, 2], [1, 2], [2, 3], [3, 4]])
         list_right = self._create_valid_list([[0, 1], [1, 2], [2, 3], [3, 4], [3, 4]])
