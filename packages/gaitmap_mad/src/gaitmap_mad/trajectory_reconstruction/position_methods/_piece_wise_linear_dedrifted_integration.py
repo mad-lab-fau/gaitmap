@@ -226,8 +226,9 @@ class PieceWiseLinearDedriftedIntegration(BasePositionMethod):
 
         # linear fit within all zupt sequence
         for start, end in zupt_sequences:
-            poly_fn = polynomial.polyfit(np.arange(end - start), data[start:end], 1)
-            drift_model[start:end] = polynomial.polyval(np.arange(end - start), poly_fn).T
+            samples = np.arange(end - start)
+            poly_fn = polynomial.polyfit(samples, data[start:end], 1)
+            drift_model[start:end] = polynomial.polyval(samples, poly_fn).T
 
         # fill all non zupt regions with linear drift models
         # make sure our mask is only 1D as multidimensional masks result in single dimensional outputs in numpy

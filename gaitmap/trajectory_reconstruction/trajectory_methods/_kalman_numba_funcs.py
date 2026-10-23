@@ -153,6 +153,7 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # n
     posterior_covariances[0, :, :] = initial_covariance
     transition_matrix = np.eye(9)
     transition_matrix[:3, 3:6] = np.eye(3) / sampling_rate_hz
+    identity = np.eye(initial_covariance.shape[0])
 
     # During zupt we measure 4 values:
     # 1-3: v_{x,y,z} = 0
@@ -251,7 +252,7 @@ def default_rts_kalman_forward_pass(  # pylint: disable=too-many-statements  # n
             # positive and symmetric Joseph from to avoid numerical instability (see footnote 26 in _[2] page 61).
             #
             # factor = I - K_nH
-            factor = np.eye(initial_covariance.shape[0]) - gain @ meas_jacob
+            factor = identity - gain @ meas_jacob
             # covariance_adj = (I - K_nH)P_{n|n-1}(I - K_nH)^T = (factor)P_{n|n-1}(factor)^T
             covariance_adj = factor @ prior_covariances[i + 1] @ factor.T
             # posterior_covariance = P_{n|n} = (I - K_nH)P_{n|n-1}(I - K_nH)^T + K_nRK_n^T

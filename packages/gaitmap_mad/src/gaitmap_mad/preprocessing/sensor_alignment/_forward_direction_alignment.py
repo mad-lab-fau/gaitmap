@@ -213,8 +213,9 @@ class ForwardDirectionSignAlignment(BaseSensorAlignment):
         initial_orientation = get_gravity_rotation(first_static_acc_vec, GRAV_VEC)
         ori_method = self.ori_method.clone().set_params(initial_orientation=initial_orientation)
         ori_method = ori_method.estimate(data_after_first_static, sampling_rate_hz=sampling_rate_hz)
-        acc_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_ACC])
-        gyr_data = ori_method.orientation_object_[:-1].apply(data_after_first_static[SF_GYR])
+        orientations = ori_method.orientation_object_[:-1]
+        acc_data = orientations.apply(data_after_first_static[SF_ACC])
+        gyr_data = orientations.apply(data_after_first_static[SF_GYR])
 
         data_wf = pd.DataFrame(np.column_stack([acc_data, gyr_data]), columns=SF_COLS)
 

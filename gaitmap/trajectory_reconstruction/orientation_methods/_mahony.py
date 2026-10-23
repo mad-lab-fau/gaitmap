@@ -180,7 +180,7 @@ class MahonyAHRS(BaseOrientationMethod):
 
 @njit()
 def _mahony_update(gyro, acc, initial_orientation, sampling_rate_hz, kp, ki, integral_error):
-    q = np.copy(initial_orientation)
+    q = initial_orientation
     integral_error = np.copy(integral_error)
     corrected_gyro = np.copy(gyro)
 
@@ -223,7 +223,7 @@ def _mahony_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, kp
     if np.all(mag == 0.0):
         return _mahony_update(gyro, acc, initial_orientation, sampling_rate_hz, kp, ki, integral_error)
 
-    q = np.copy(initial_orientation)
+    q = initial_orientation
     integral_error = np.copy(integral_error)
     corrected_gyro = np.copy(gyro)
 

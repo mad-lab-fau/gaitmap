@@ -147,10 +147,16 @@ class ForwardBackwardIntegration(BasePositionMethod):
 
         # Add an implicit 0 to the beginning of the acc data
         padded_acc = np.pad(acc_data, pad_width=((1, 0), (0, 0)), constant_values=0)
-        velocity = self._forward_backward_integration(padded_acc)
+        weights = self._sigmoid_weight_function(len(padded_acc))
+        velocity = self._forward_backward_integration(padded_acc, weights=weights)
         position_xy = cumulative_trapezoid(velocity[:, :2], axis=0, initial=0) / self.sampling_rate_hz
         if self.level_assumption is True:
-            position_z = self._forward_backward_integration(velocity[:, [2]])
+            # Reuse weights only within exp's safe range [-700, 700], preserving numerical warnings otherwise.
+            reuse_weights = np.isfinite(weights).all() and max(self.turning_point, 1 - self.turning_point) / 700 <= abs(
+                self.steepness
+            )
+            position_weights = weights if reuse_weights else None
+            position_z = self._forward_backward_integration(velocity[:, [2]], weights=position_weights)
         else:
             position_z = cumulative_trapezoid(velocity[:, [2]], axis=0, initial=0) / self.sampling_rate_hz
         position = np.hstack((position_xy, position_z))
@@ -168,11 +174,12 @@ class ForwardBackwardIntegration(BasePositionMethod):
         weights = (s - s[0]) / (s[-1] - s[0])
         return weights
 
-    def _forward_backward_integration(self, data: np.ndarray) -> np.ndarray:
+    def _forward_backward_integration(self, data: np.ndarray, weights: np.ndarray | None = None) -> np.ndarray:
         # TODO: different steepness and turning point for velocity and position?
         integral_forward = cumulative_trapezoid(data, axis=0, initial=0) / self.sampling_rate_hz
         # for backward integration, we flip the signal and inverse the time by using a negative sampling rate.
         integral_backward = cumulative_trapezoid(data[::-1], axis=0, initial=0) / -self.sampling_rate_hz
-        weights = self._sigmoid_weight_function(integral_forward.shape[0])
+        if weights is None:
+            weights = self._sigmoid_weight_function(integral_forward.shape[0])
         combined = (integral_forward.T * (1 - weights) + integral_backward[::-1].T * weights).T
         return combined
