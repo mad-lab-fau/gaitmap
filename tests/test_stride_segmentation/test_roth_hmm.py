@@ -428,6 +428,10 @@ class TestHmmStrideSegmentation:
                 np.array([9, 19, 39, 49, 49]),
                 np.array([[10, 20], [20, 40], [40, 50]]),
             ),
+            # No start states
+            (np.array([], dtype=int), np.array([9, 19]), np.array([])),
+            # No end states
+            (np.array([0, 10]), np.array([], dtype=int), np.array([])),
         ],
     )
     def test_hidden_state_sequence_start_end(self, starts, ends, correct) -> None:
@@ -439,3 +443,4 @@ class TestHmmStrideSegmentation:
         starts_ends = HmmStrideSegmentation()._hidden_states_to_matches_start_end(hidden_state_sequence, 1, 2)
 
         assert_array_equal(starts_ends, correct)
+        assert starts_ends.dtype == correct.dtype

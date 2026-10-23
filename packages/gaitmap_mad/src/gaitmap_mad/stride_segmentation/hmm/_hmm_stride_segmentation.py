@@ -1,6 +1,5 @@
 """HMM based stride segmentation by Roth et al. 2021."""
 
-from contextlib import suppress
 from importlib.resources import files
 from typing import Generic, Self, TypeVar
 
@@ -248,10 +247,11 @@ class HmmStrideSegmentation(BaseStrideSegmentation, Generic[BaseSegmentationHmmT
 
         # For each start, find the next end
         # if no end is found (as it is the end of the signal), we remove the start
-        matches_start_end = []
-        for start in matches_starts:
-            with suppress(IndexError):
-                matches_start_end.append([start, matches_ends[matches_ends > start][0]])
+        end_positions = np.searchsorted(matches_ends, matches_starts, side="right")
+        valid = end_positions < len(matches_ends)
+        matches_start_end = [
+            [start, end] for start, end in zip(matches_starts[valid], matches_ends[end_positions[valid]], strict=True)
+        ]
 
         # If multiple starts with the same end are found, we remove all but the first
         matches_start_end = np.array(matches_start_end)

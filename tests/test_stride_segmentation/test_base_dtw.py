@@ -269,6 +269,19 @@ class TestSimpleSegment(DtwTestBase):
         assert len(dtw.costs_) == 1
 
 
+def test_equal_cost_paths_prefer_diagonal_steps():
+    """A flat zero-cost region keeps the same selected alignment on ties."""
+    result = BaseDtw(
+        template=DtwTemplate(data=np.zeros(3), sampling_rate_hz=100),
+        find_matches_method="find_peaks",
+        min_match_length_s=None,
+        max_cost=0.5,
+    ).segment(np.array([2.0, 0.0, 0.0, 0.0, 2.0]), sampling_rate_hz=100)
+
+    np.testing.assert_array_equal(result.paths_, [[[0, 1], [1, 1], [2, 2]]])
+    np.testing.assert_array_equal(result.matches_start_end_, [[1, 3]])
+
+
 class TestMultiDimensionalArrayInputs(DtwTestBase):
     @pytest.mark.parametrize(
         ("template", "data"),
