@@ -1,11 +1,13 @@
 """A helper function to evaluate the output of the temporal or spatial parameter calculation against a ground truth."""
 
 import warnings
+from collections.abc import Sequence
 from importlib import import_module
 from typing import Literal
 
 import numpy as np
 import pandas as pd
+from tpcp.validate import Aggregator
 
 from gaitmap.utils._types import _Hashable
 from gaitmap.utils.datatype_helper import set_correct_index
@@ -597,3 +599,37 @@ def _icc(data: pd.DataFrame, scoring_errors: Literal["ignore", "warn", "raise"])
 
 
 __all__ = ["calculate_aggregated_parameter_errors", "calculate_parameter_errors"]
+
+_AggType = tuple[
+    str, dict[Literal["reference", "predicted"], dict[Literal["left_sensor", "right_sensor"], pd.DataFrame]]
+]
+
+
+class SingleValueErrors(Aggregator[_AggType]):
+    """Pool per-stride predictions and references across recordings."""
+
+    def aggregate(self, /, values: Sequence[_AggType], datapoints) -> dict[str, float]:  # noqa: ARG002
+        """Aggregate predictions from the supplied recordings."""
+        parameter = values[0][0]
+        all_references = {}
+        all_predictions = {}
+        for i, (_, val) in enumerate(values):
+            ref = val["reference"]
+            pred = val["predicted"]
+            for sensor in ["left_sensor", "right_sensor"]:
+                try:
+                    all_references[f"{i}_{sensor}"] = ref[sensor][[parameter]]
+                    all_predictions[f"{i}_{sensor}"] = pred[sensor][[parameter]]
+                except KeyError:
+                    # Could be that the sensor is not available for this data
+                    pass
+
+        return calculate_aggregated_parameter_errors(
+            reference_parameter=all_references,
+            predicted_parameter=all_predictions,
+            calculate_per_sensor=False,
+            scoring_errors="ignore",
+        )[parameter].to_dict()
+
+
+__all__ += ["SingleValueErrors"]

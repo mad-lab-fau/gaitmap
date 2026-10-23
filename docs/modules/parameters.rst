@@ -28,3 +28,19 @@ Evaluation
 
     calculate_parameter_errors
     calculate_aggregated_parameter_errors
+
+
+Challenges
+----------
+
+See :doc:`challenges` for installation and usage.
+
+.. currentmodule:: gaitmap.parameters.challenges
+
+.. autosummary::
+   :toctree: generated/parameters/challenges
+   :template: class.rst
+
+    EgaitAdidas2014Challenge
+    EgaitParameterValidation2013Challenge
+    SensorPositionComparisonInstepChallenge

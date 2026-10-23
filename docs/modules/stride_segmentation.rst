@@ -80,3 +80,19 @@ Evaluation
     evaluate_segmented_stride_list
     match_stride_lists
     precision_recall_f1_score
+
+
+Challenges
+----------
+
+See :doc:`challenges` for installation and usage.
+
+.. currentmodule:: gaitmap.stride_segmentation.challenges
+
+.. autosummary::
+   :toctree: generated/stride_segmentation/challenges
+   :template: class.rst
+
+    EgaitSegmentationValidation2014Challenge
+    EgaitSegmentationValidation2014OriginalLabelChallenge
+    SensorPositionComparisonInstepChallenge

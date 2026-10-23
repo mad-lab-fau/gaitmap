@@ -13,6 +13,11 @@ project.
 
 ### Added
 
+- Integrated the eight runnable gaitmap-challenges benchmarks under `stride_segmentation.challenges`,
+  `parameters.challenges`, and `pipeline.challenges`, with current tpcp scoring and split support.
+  Install `gaitmap[challenges]` on Python 3.11 through 3.13 for the optional dataset loaders.
+  Configuration, saved-run management, and plotting remain outside gaitmap.
+
 - Added algorithm-specific `evaluation` modules for stride segmentation, event detection, and parameters.
   Existing `gaitmap.evaluation_utils` imports remain supported.
 

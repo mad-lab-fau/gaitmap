@@ -2,27 +2,24 @@ The Gaitmap Ecosystem
 =====================
 
 .. figure:: /images/gaitmap_ecosystem.svg
-    :alt: Overview over all relevant packages in the Gaitmap ecosystem (tpcp, gaitmap, gaitmap-datasets, gaitmap-bench,
-          gaitmap-challenges)
+    :alt: Overview over all relevant packages in the Gaitmap ecosystem (tpcp, gaitmap, gaitmap-datasets, gaitmap-bench)
     :figclass: align-center
 
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| Package                                                                                 | Description                                                                           |
-+=========================================================================================+=======================================================================================+
-| `gaitmap <https://github.com/mad-lab-fau/gaitmap>`_                                     | The core package of the ecosystem, providing the gait analysis algorithms.            |
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| `gaitmap-datasets <https://github.com/mad-lab-fau/gaitmap-datasets>`_                   | A collection of dataset loaders for existing open source gait datasets.               |
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| `gaitmap-challenges <https://github.com/mad-lab-fau/gaitmap-bench>`_                    | A collection of pre-defined challenges that can be used to evaluate gait analysis     |
-|                                                                                         | algorithms.                                                                           |
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| `gaitmap-bench <https://gaitmap-bench.readthedocs.io/en/latest/challenges/index.html>`_ | Reference results and visualisations for all gaitmap algorithms and other algorithms  |
-|                                                                                         | to compare performances.                                                              |
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
-| `tpcp <https://github.com/mad-lab-fau/tpcp>`_                                           | A domain-agnostic framework for building pipelines, performing parameter optimization,|
-|                                                                                         | and evaluating the performance of your pipelines.                                     |
-|                                                                                         | It forms the foundation for all gaitmap algorithms and challenges.                    |
-+-----------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 70
+
+    * - Package
+      - Description
+    * - `gaitmap <https://github.com/mad-lab-fau/gaitmap>`_
+      - Gait analysis algorithms, evaluation helpers, and predefined challenges.
+    * - `gaitmap-datasets source <https://github.com/mad-lab-fau/gaitmap-datasets>`_
+      - Dataset loaders for open source gait datasets.
+    * - `gaitmap-bench <https://gaitmap-bench.readthedocs.io/en/latest/challenges/index.html>`_
+      - Reference results and visualizations for comparing gait analysis algorithms.
+    * - `tpcp <https://github.com/mad-lab-fau/tpcp>`_
+      - Pipelines, parameter optimization, and evaluation used by gaitmap and its challenges.
+
 
 
 Gaitmap implements easy to use and dataset-independent gait analysis algorithms.
@@ -75,7 +72,8 @@ These datasets can be used to prototype and validate your algorithms.
 If you simply want to know, how good your custom algorithms are in a typical context, or want to understand what
 happens if you change some parameters, we go a step further and provide pre-defined challenges that will give you
 extensive evaluation metrics calculated on the datasets described above.
-These are implemented in the `gaitmap-challenges <https://mad-lab-fau.github.io/gaitmap-bench/>`_ package.
+These are implemented in gaitmap, in the ``challenges`` submodules of stride segmentation, parameters, and pipeline.
+See :doc:`/modules/challenges` for installation and usage.
 
 How good are the provided algorithms?
 -------------------------------------

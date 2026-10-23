@@ -5,6 +5,7 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree, minkowski_distance
+from tpcp.validate import Aggregator
 
 from gaitmap.utils._evaluation_scores import f1_score, precision_recall_f1_score, precision_score, recall_score
 from gaitmap.utils._types import _Hashable
@@ -548,3 +549,14 @@ __all__ = [
     "precision_score",
     "recall_score",
 ]
+
+
+class SingleValuePrecisionRecallF1(Aggregator[pd.DataFrame]):
+    """Pool matched strides before calculating precision, recall, and F1."""
+
+    def aggregate(self, /, values: Sequence[pd.DataFrame], datapoints) -> dict[str, float]:  # noqa: ARG002
+        """Aggregate predictions from the supplied recordings."""
+        return precision_recall_f1_score(pd.concat(values))
+
+
+__all__ += ["SingleValuePrecisionRecallF1"]

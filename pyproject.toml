@@ -30,9 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+challenges = ["gaitmap-datasets>=0.15.0; python_version < '3.14'", "pingouin>=0.6.0"]
 hmm = []
 stats = ["pingouin>=0.6.0"]
-all = ["pingouin>=0.6.0"]
+all = ["pingouin>=0.6.0", "gaitmap-datasets>=0.15.0; python_version < '3.14'"]
 
 [project.urls]
 Homepage = "https://github.com/mad-lab-fau/gaitmap"
