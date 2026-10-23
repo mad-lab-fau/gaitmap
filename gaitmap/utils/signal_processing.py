@@ -68,3 +68,14 @@ def row_wise_autocorrelation(array: np.ndarray, lag_max: int):
         umax = array.shape[1] + tau
         out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
     return out
+
+
+@njit(nogil=True, parallel=True, cache=True)
+def _row_wise_autocorrelation_range(array: np.ndarray, lag_min: int, lag_max: int):
+    """Compute only requested lags using the public function's arithmetic and reduction order."""
+    out = np.empty((array.shape[0], lag_max - lag_min + 1))
+    for tau in range(lag_min, lag_max + 1):
+        tmax = array.shape[1] - tau
+        umax = array.shape[1] + tau
+        out[:, tau - lag_min] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
+    return out

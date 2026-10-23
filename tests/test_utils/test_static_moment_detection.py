@@ -47,6 +47,18 @@ class TestFindStaticSamples:
         assert min_vel_index == 2
         assert miv_vel_value == 0
 
+    def test_disjoint_windows_keep_discarded_tail_nonstatic(self) -> None:
+        """Discarded samples stay active and tied minima use the first complete window."""
+        signal = np.zeros((11, 3))
+        signal[6:] = 1
+        mask, min_index, min_value = find_static_samples(
+            signal, window_length=3, overlap=0, inactive_signal_th=0, metric="mean"
+        )
+
+        assert_array_equal(mask, [True] * 6 + [False] * 5)
+        assert min_index == 1
+        assert min_value == 0
+
     def test_max_overlap_metric_max_w4_default_overlap(self) -> None:
         """Test binary input data on max metric with window size 4."""
         test_input = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1])

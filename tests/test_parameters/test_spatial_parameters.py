@@ -7,6 +7,7 @@ from gaitmap.base import BaseType
 from gaitmap.parameters import SpatialParameterCalculation
 from gaitmap.parameters._spatial_parameters import (
     _calc_arc_length,
+    _calc_max_lateral_excursion,
     _calc_max_sensor_lift,
     _calc_stride_length,
     _calc_turning_angle,
@@ -117,6 +118,24 @@ class TestMetaFunctionality(TestAlgorithmMixin):
 
 
 class TestIndividualParameter:
+    @pytest.mark.parametrize("dtype", ["float64", "float32", "int64"])
+    def test_lateral_excursion_with_categorical_strides_and_missing_endpoint(self, dtype) -> None:
+        """Use observed stride order and the first nonmissing endpoint of each coordinate."""
+        positions = pd.DataFrame(
+            {"pos_x": [0, 1, 2, 1, 2, 3], "pos_y": [0, 2, 0, 1, -2, 1], "pos_z": [0] * 6},
+            index=pd.MultiIndex.from_arrays(
+                [pd.Categorical([5, 5, 5, 2, 2, 2], categories=[2, 5, 9], ordered=True), [0, 1, 2, 0, 1, 2]],
+                names=["s_id", "sample"],
+            ),
+        ).astype(dtype)
+        result = _calc_max_lateral_excursion(positions)
+        assert result.index.tolist() == [2, 5]
+        np.testing.assert_array_equal(result, [3, 2])
+
+        if dtype != "int64":
+            positions.iloc[0, 0] = np.nan
+            np.testing.assert_array_equal(_calc_max_lateral_excursion(positions), [3, 2])
+
     def test_stride_length(self, single_sensor_position_list_with_index, single_sensor_stride_length) -> None:
         assert_series_equal(_calc_stride_length(single_sensor_position_list_with_index), single_sensor_stride_length)
 

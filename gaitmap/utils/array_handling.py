@@ -303,21 +303,6 @@ def find_extrema_in_radius(
     return extrema_func(windows, axis=1) + actual_window_start - start_padding
 
 
-@njit(cache=True)
-def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) -> np.ndarray:
-    """Fill a preallocated array with bool_values.
-
-    This method iterates over the indices and adds the values to the array at the given indices using a logical or.
-    """
-    for i, idx in enumerate(indices):
-        index = idx
-        val = bool_values[i]
-        index = index[~np.isnan(index)]
-        # perform logical or operation to combine all overlapping window results
-        array[index] = np.logical_or(array[index], val)
-    return array
-
-
 def multi_array_interpolation(arrays: list[np.ndarray], n_samples, kind: str = "linear") -> np.ndarray:
     """Interpolate multiple 2D-arrays to the same length along axis 0.
 
