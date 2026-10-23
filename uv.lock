@@ -598,8 +598,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'all'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e" },
-    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'challenges'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e" },
+    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'all'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=cc48bab8c365923e3714d5a07264d11c18c3a4ce" },
+    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'challenges'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=cc48bab8c365923e3714d5a07264d11c18c3a4ce" },
     { name = "joblib", specifier = ">=1.5.2" },
     { name = "numba", specifier = ">=0.63.1" },
     { name = "numpy", specifier = ">=2.3.5,<3" },
@@ -636,14 +636,15 @@ dev = [
 
 [[package]]
 name = "gaitmap-datasets"
-version = "0.15.1"
-source = { git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e#1e87dbcf607f6d1d2148d221a4d9808c1b21485e" }
+version = "0.16.0"
+source = { git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=cc48bab8c365923e3714d5a07264d11c18c3a4ce#cc48bab8c365923e3714d5a07264d11c18c3a4ce" }
 dependencies = [
     { name = "c3d", marker = "python_full_version < '3.14'" },
     { name = "h5py", marker = "python_full_version < '3.14'" },
     { name = "imucal", marker = "python_full_version < '3.14'" },
     { name = "joblib", marker = "python_full_version < '3.14'" },
     { name = "nilspodlib", marker = "python_full_version < '3.14'" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
     { name = "pandas", marker = "python_full_version < '3.14'" },
     { name = "pytz", marker = "python_full_version < '3.14'" },
     { name = "scipy", marker = "python_full_version < '3.14'" },

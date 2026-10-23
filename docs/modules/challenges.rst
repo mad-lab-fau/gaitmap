@@ -6,7 +6,7 @@ They prescribe datasets, cross-validation splits, and scoring functions for comp
 The dataset files are downloaded separately and remain subject to their access conditions.
 Global challenge configuration, saved-run management, and Bokeh visualization are not included.
 
-The challenges require ``gaitmap-datasets>=0.15.1`` for compatibility with the supported pandas and tpcp versions.
+The challenges require ``gaitmap-datasets>=0.16.0`` for compatibility with the supported pandas and tpcp versions.
 Once that loader release is published, install the dataset loaders with::
 
     pip install "gaitmap[challenges]"
@@ -19,9 +19,11 @@ This allows testing the integration without merging or publishing the upstream c
     uv run --locked --all-extras pytest tests/test_challenges.py tests/test_pipeline.py
 
 The Git source is a development and CI override; package metadata requires the corrected release.
-Remove the override and refresh the lockfile after ``gaitmap-datasets 0.15.1`` is published.
+Remove the override and refresh the lockfile after ``gaitmap-datasets 0.16.0`` is published.
 
-``gaitmap-datasets`` supports Python 3.11 through 3.13 for use with gaitmap.
+``gaitmap-datasets 0.16.0`` shares gaitmap's Python 3.11 minimum and its shared package minimums:
+pandas 3, NumPy 2.3.5, SciPy 1.16.3, joblib 1.5.2, and tpcp 3.0.0.
+It supports Python 3.11 through 3.13.
 On Python 3.14 and newer, the extra does not install the loaders.
 Gaitmap algorithms and evaluation helpers can be used without these loaders.
 
