@@ -181,10 +181,10 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
             raise ValueError("pad_to_length must be positive!")
         n_elements = pad_to_length
 
-    bool_array = np.zeros(n_elements)
+    bool_array = np.zeros(n_elements, dtype=bool)
     for start, end in start_end_array:
-        bool_array[start:end] = 1
-    return bool_array.astype(bool)
+        bool_array[start:end] = True
+    return bool_array
 
 
 def split_array_at_nan(a: np.ndarray) -> list[tuple[int, np.ndarray]]:
