@@ -102,6 +102,7 @@ project.
 - One-to-one stride matching retains pairs within the per-boundary tolerance after earlier left strides
   are excluded from mutual nearest-neighbor matches. This can correct true-positive, false-positive and
   false-negative counts in stride segmentation evaluation.
+  ([#101](https://github.com/mad-lab-fau/gaitmap/pull/101))
 
 - Region-level trajectory intersection returns empty stride trajectories when no strides are fully
   contained in a region, including empty stride lists, instead of raising an error.
