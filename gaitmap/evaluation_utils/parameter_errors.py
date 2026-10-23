@@ -501,13 +501,16 @@ def _calculate_error(aligned_parameters: dict[_Hashable, pd.DataFrame]) -> dict[
     """Calculate the error between a reference and a predicted parameter."""
     final_error_dict = {}
     for k, v in aligned_parameters.items():
+        predicted, reference = v["predicted"], v["reference"]
+        error = predicted - reference
+        relative_error = error / reference
         error_dict = {
-            "predicted": v["predicted"],
-            "reference": v["reference"],
-            "error": v["predicted"] - v["reference"],
-            "abs_error": (v["predicted"] - v["reference"]).abs(),
-            "rel_error": (v["predicted"] - v["reference"]) / v["reference"],
-            "abs_rel_error": ((v["predicted"] - v["reference"]) / v["reference"]).abs(),
+            "predicted": predicted,
+            "reference": reference,
+            "error": error,
+            "abs_error": error.abs(),
+            "rel_error": relative_error,
+            "abs_rel_error": relative_error.abs(),
         }
         final_error_dict[k] = pd.concat(error_dict, axis=1, names=["error_type", "parameter"])
     return final_error_dict

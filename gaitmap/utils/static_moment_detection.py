@@ -8,7 +8,6 @@ import numpy as np
 from numpy.linalg import norm
 
 from gaitmap.utils import array_handling
-from gaitmap.utils.array_handling import _bool_fill
 from gaitmap.utils.consts import GRAV
 
 # supported metric functions
@@ -19,24 +18,19 @@ METRIC_FUNCTION_NAMES = Literal["maximum", "variance", "mean", "median", "square
 def _window_apply_threshold(
     data, window_length: int, overlap: int, func: Callable[[np.ndarray], np.ndarray], threshold: float
 ) -> tuple[np.ndarray, int, float]:
-    # allocate output array
-    inactive_signal_bool_array = np.zeros(len(data))
-
     windowed_norm = np.atleast_2d(array_handling.sliding_window_view(data, window_length, overlap, nan_padding=False))
     values = func(windowed_norm)
-    is_static = np.broadcast_to(values <= threshold, windowed_norm.shape[::-1]).T
-
-    # create the list of indices for sliding windows with overlap
-    windowed_indices = np.atleast_2d(
-        array_handling.sliding_window_view(np.arange(0, len(data)), window_length, overlap, nan_padding=False)
-    )
-
     # We also return the center of the window with the lowest value, as well as the value itself.
-    min_index = windowed_indices[np.argmin(values)][window_length // 2]
+    step = window_length - overlap
+    min_index = np.argmin(values) * step + window_length // 2
     min_value = np.min(values)
 
-    # iterate over sliding windows
-    return _bool_fill(windowed_indices, is_static, inactive_signal_bool_array).astype(bool), min_index, min_value
+    # Count overlapping static intervals without visiting every sample of every window.
+    starts = np.flatnonzero(values <= threshold) * step
+    coverage = np.zeros(len(data) + 1, dtype=np.int64)
+    np.add.at(coverage, starts, 1)
+    np.add.at(coverage, starts + window_length, -1)
+    return np.cumsum(coverage[:-1]) > 0, min_index, min_value
 
 
 def find_static_samples(

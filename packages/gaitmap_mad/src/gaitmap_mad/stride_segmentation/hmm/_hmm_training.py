@@ -99,7 +99,13 @@ def _expected_transitions(forward, posterior, scores, incoming, has_end):
 
 def _sequence_statistics(model, sequence, path, algorithm, update_emissions, collect_statistics):
     scores = model._scores(sequence)
-    forward, likelihood = _forward(scores, model._incoming, model._log_starts, model._log_ends)
+    forward, likelihood = _forward(
+        scores,
+        model._incoming,
+        model._log_starts,
+        model._log_ends,
+        return_history=collect_statistics and algorithm == "baum-welch",
+    )
     if algorithm != "labeled" and not np.isfinite(likelihood):
         raise ValueError("No valid state path exists for a training sequence.")
     if not collect_statistics:

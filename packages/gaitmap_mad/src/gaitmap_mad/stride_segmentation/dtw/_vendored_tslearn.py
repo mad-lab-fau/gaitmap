@@ -68,8 +68,18 @@ def _subsequence_path(acc_cost_mat, idx_path_end):
         elif j == 0:
             path.append((i - 1, 0))
         else:
-            arr = numpy.array([acc_cost_mat[i - 1][j - 1], acc_cost_mat[i - 1][j], acc_cost_mat[i][j - 1]])
-            argmin = numpy.argmin(arr)
+            value = acc_cost_mat[i - 1, j - 1]
+            argmin = 0
+            # Match argmin's first occurrence, including the first NaN.
+            if not numpy.isnan(value):
+                up = acc_cost_mat[i - 1, j]
+                if up < value or numpy.isnan(up):
+                    value = up
+                    argmin = 1
+                if not numpy.isnan(value):
+                    left = acc_cost_mat[i, j - 1]
+                    if left < value or numpy.isnan(left):
+                        argmin = 2
             if argmin == 0:
                 path.append((i - 1, j - 1))
             elif argmin == 1:

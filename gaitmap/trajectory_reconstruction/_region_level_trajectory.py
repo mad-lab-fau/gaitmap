@@ -421,13 +421,14 @@ class RegionLevelTrajectory(_TrajectoryReconstructionWrapperMixin, BaseTrajector
         stride_lists = intersect_stride_list(stride_event_list, regions_of_interest)
         output = {}
         for (region_id, _), stride_list in zip(regions_of_interest.iterrows(), stride_lists, strict=True):
+            if len(stride_list) == 0:
+                continue
+            region_data = data.loc[region_id]
             for s_id, stride in stride_list.iterrows():
                 # This cuts out the n+1 samples for each stride.
                 # The first sample is the value before the stride started.
                 # This is the equivalent to the "initial" position/orientation
-                output[s_id] = (
-                    data.loc[region_id].iloc[int(stride["start"]) : int(stride["end"] + 1)].reset_index(drop=True)
-                )
+                output[s_id] = region_data.iloc[int(stride["start"]) : int(stride["end"] + 1)].reset_index(drop=True)
         if not output:
             index = pd.MultiIndex.from_arrays(
                 [stride_event_list.index[:0], data.index.get_level_values("sample")[:0]], names=["s_id", "sample"]

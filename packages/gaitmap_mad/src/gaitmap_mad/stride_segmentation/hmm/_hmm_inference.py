@@ -46,20 +46,24 @@ def _emission_scores(samples, means, whitening, normalizers, component_weights, 
 
 
 @njit(cache=True, nogil=True)
-def _forward(scores, incoming, starts, ends):
+def _forward(scores, incoming, starts, ends, return_history=True):
     n_samples, n_states = scores.shape
     offsets, sources, transitions = incoming
-    forward = np.empty_like(scores)
+    # Posterior statistics need every row; likelihood-only callers need two.
+    forward = np.empty_like(scores) if return_history else np.empty((2, n_states))
     forward[0] = starts + scores[0]
+    current = 0
     for observation in range(1, n_samples):
+        previous = current
+        current = observation if return_history else 1 - current
         for state in range(n_states):
             total = -np.inf
             for edge in range(offsets[state], offsets[state + 1]):
-                total = _logaddexp(total, forward[observation - 1, sources[edge]] + transitions[edge])
-            forward[observation, state] = total + scores[observation, state]
+                total = _logaddexp(total, forward[previous, sources[edge]] + transitions[edge])
+            forward[current, state] = total + scores[observation, state]
     likelihood = -np.inf
     for state in range(n_states):
-        likelihood = _logaddexp(likelihood, forward[-1, state] + ends[state])
+        likelihood = _logaddexp(likelihood, forward[current, state] + ends[state])
     return forward, likelihood
 
 
@@ -103,8 +107,8 @@ def _viterbi(scores, incoming, starts, ends):
     dense = len(sources) == n_states * n_states
     predecessors = np.zeros((n_samples, n_states), dtype=np.int64)
     previous_scores = starts + scores[0]
+    next_scores = np.empty(n_states)
     for observation in range(1, n_samples):
-        next_scores = np.full(n_states, -np.inf)
         for state in range(n_states):
             best = -np.inf
             if dense:
@@ -122,7 +126,7 @@ def _viterbi(scores, incoming, starts, ends):
                         best = candidate
                         predecessors[observation, state] = previous
             next_scores[state] = best + scores[observation, state]
-        previous_scores = next_scores
+        previous_scores, next_scores = next_scores, previous_scores
     return _traceback(predecessors, previous_scores + ends)
 
 
@@ -422,7 +426,9 @@ class HiddenMarkovModel:
 
     def log_probability(self, samples):
         """Return the summed log likelihood of all valid state paths."""
-        _, likelihood = _forward(self._scores(samples), self._incoming, self._log_starts, self._log_ends)
+        _, likelihood = _forward(
+            self._scores(samples), self._incoming, self._log_starts, self._log_ends, return_history=False
+        )
         return likelihood
 
     def predict_log_proba(self, samples):

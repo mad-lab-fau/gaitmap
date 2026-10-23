@@ -341,8 +341,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
         param_dict = {}
 
-        if self._should_calculate("stride_length") or self._should_calculate("gait_velocity"):
-            stride_length = _calc_stride_length(positions)
+        if any(self._should_calculate(p) for p in ("stride_length", "gait_velocity", "max_lateral_excursion")):
+            grouped_positions = positions.groupby(level="s_id")
+            start = grouped_positions.first()
+            end = grouped_positions.last()
+            stride_length = _calc_stride_length_from_endpoints(start, end)
         if self._should_calculate("stride_length"):
             param_dict["stride_length"] = stride_length
         if self._should_calculate("gait_velocity"):
@@ -365,7 +368,9 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
         if self._should_calculate("max_sensor_lift"):
             param_dict["max_sensor_lift"] = _calc_max_sensor_lift(positions)
         if self._should_calculate("max_lateral_excursion"):
-            param_dict["max_lateral_excursion"] = _calc_max_lateral_excursion(positions)
+            param_dict["max_lateral_excursion"] = _calc_max_lateral_excursion_from_endpoints(
+                positions, start, end, stride_length
+            )
         return param_dict
 
     def _ori_based_parameters(self, orientations, stride_event_list, angle_course):
@@ -398,8 +403,11 @@ class SpatialParameterCalculation(BaseSpatialParameterCalculation):
 
 
 def _calc_stride_length(positions: pd.DataFrame) -> pd.Series:
-    start = positions.groupby(level="s_id").first()
-    end = positions.groupby(level="s_id").last()
+    grouped_positions = positions.groupby(level="s_id")
+    return _calc_stride_length_from_endpoints(grouped_positions.first(), grouped_positions.last())
+
+
+def _calc_stride_length_from_endpoints(start: pd.DataFrame, end: pd.DataFrame) -> pd.Series:
     stride_length = end - start
     stride_length = pd.Series(norm(stride_length[["pos_x", "pos_y"]], axis=1), index=stride_length.index)
     return stride_length
@@ -494,9 +502,28 @@ def _calc_max_lateral_excursion(positions: SingleSensorPositionList) -> pd.Serie
     """
     if positions.empty:
         return pd.Series()
-    start = positions.groupby(level="s_id").first()
-    end = positions.groupby(level="s_id").last()
-    stride_length = _calc_stride_length(positions)
+    grouped_positions = positions.groupby(level="s_id")
+    start = grouped_positions.first()
+    end = grouped_positions.last()
+    return _calc_max_lateral_excursion_from_endpoints(
+        positions, start, end, _calc_stride_length_from_endpoints(start, end)
+    )
+
+
+def _calc_max_lateral_excursion_from_endpoints(positions, start, end, stride_length):
+    if positions.empty:
+        return pd.Series()
+
+    # Scalar extraction can promote mixed or nullable dtypes. Keep their original arithmetic.
+    if all(dtype == np.dtype("float64") for dtype in positions.dtypes):
+        ids = positions.index.get_level_values("s_id")
+        sample_start = start.reindex(ids).set_axis(positions.index)
+        sample_end = end.reindex(ids).set_axis(positions.index)
+        excursion = (
+            (sample_end["pos_x"] - sample_start["pos_x"]) * (sample_start["pos_y"] - positions["pos_y"])
+            - (sample_start["pos_x"] - positions["pos_x"]) * (sample_end["pos_y"] - sample_start["pos_y"])
+        ).abs()
+        return excursion.groupby(level="s_id").max() / stride_length
 
     def _calc_per_stride(start, end, length, data):
         excursion = (

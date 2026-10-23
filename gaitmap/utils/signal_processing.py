@@ -35,7 +35,7 @@ def butter_lowpass_filter_1d(data: np.ndarray, sampling_rate_hz: float, cutoff_f
     return lfilter(b, a, data)
 
 
-@njit(nogil=True, parallel=True, cache=True)
+@njit(nogil=True, cache=True)
 def row_wise_autocorrelation(array: np.ndarray, lag_max: int):
     """Compute the autocorrelation function row-wise for a 2d array.
 
@@ -62,9 +62,15 @@ def row_wise_autocorrelation(array: np.ndarray, lag_max: int):
        [2.38030226, 2.03883723, 1.68696752, 1.33807603, 1.00531772, 0.70139157]])
 
     """
-    out = np.empty((array.shape[0], lag_max + 1))
-    for tau in range(lag_max + 1):
+    return _row_wise_autocorrelation_range(array, 0, lag_max)
+
+
+@njit(nogil=True, parallel=True, cache=True)
+def _row_wise_autocorrelation_range(array: np.ndarray, lag_min: int, lag_max: int):
+    """Compute only requested lags using the public function's arithmetic and reduction order."""
+    out = np.empty((array.shape[0], lag_max - lag_min + 1))
+    for tau in range(lag_min, lag_max + 1):
         tmax = array.shape[1] - tau
         umax = array.shape[1] + tau
-        out[:, tau] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
+        out[:, tau - lag_min] = (array[:, :tmax] * array[:, tau:umax]).sum(axis=1)
     return out

@@ -543,7 +543,7 @@ class BaseDtw(BaseAlgorithm):
             matches_start_end_ = matches_start_end_[to_keep]
             costs_ = costs_[to_keep]
             self._post_postprocess_check(matches_start_end_)
-            paths_ = [p for i, p in enumerate(paths_) if i in np.where(to_keep)[0]]
+            paths_ = [paths_[i] for i in np.flatnonzero(to_keep)]
         return {
             "acc_cost_mat": acc_cost_mat_,
             "paths": paths_,

@@ -101,6 +101,8 @@ def test_ties_use_state_order_and_single_observation_is_supported():
     for samples in [np.array([1.0]), np.zeros(4)]:
         assert_array_equal(model.predict(samples), np.zeros(len(samples), dtype=int))
         assert_array_equal(model.predict(samples, algorithm="map"), np.zeros(len(samples), dtype=int))
+        expected = multivariate_normal.logpdf(samples.reshape(-1, 1), mean=[0.0], cov=[[1.0]])
+        assert_allclose(model.log_probability(samples), np.sum(expected), rtol=1e-13)
 
 
 def test_inference_serialization_does_not_mutate_or_alias_persisted_model():

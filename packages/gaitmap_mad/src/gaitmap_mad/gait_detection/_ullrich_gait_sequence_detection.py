@@ -340,12 +340,9 @@ class UllrichGaitSequenceDetection(BaseGaitDetection):
         lower_bound = int(np.floor(self.sampling_rate_hz / self.locomotion_band[1]))
         # (sampling_rate / locomotion_band_lower = upper bound of autocorrelation)
         upper_bound = int(np.ceil(self.sampling_rate_hz / self.locomotion_band[0]))
-        # autocorr from 0-upper motion band
-        auto_corr = signal_processing.row_wise_autocorrelation(s_1d, upper_bound)
+        auto_corr = signal_processing._row_wise_autocorrelation_range(s_1d, lower_bound, upper_bound)
         # calculate dominant frequency in Hz
-        dominant_frequency = (
-            1 / (np.argmax(auto_corr[:, lower_bound:], axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
-        )
+        dominant_frequency = 1 / (np.argmax(auto_corr, axis=-1) + lower_bound).astype(float) * self.sampling_rate_hz
 
         return dominant_frequency
 

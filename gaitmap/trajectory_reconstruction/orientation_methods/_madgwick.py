@@ -172,7 +172,7 @@ class MadgwickAHRS(BaseOrientationMethod):
 
 @njit()
 def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
-    q = np.copy(initial_orientation)
+    q = initial_orientation
     qdot = rate_of_change_from_gyro(gyro, q)
 
     # Note that we change the order of q components here as we use a different quaternion definition.
@@ -221,7 +221,7 @@ def _madgwick_update(gyro, acc, initial_orientation, sampling_rate_hz, beta):
 
 @njit()
 def _madgwick_update_mag(gyro, acc, mag, initial_orientation, sampling_rate_hz, beta):
-    q = np.copy(initial_orientation)
+    q = initial_orientation
     qdot = rate_of_change_from_gyro(gyro, q)
 
     # Note that we change the order of q components here as we use a different quaternion definition.

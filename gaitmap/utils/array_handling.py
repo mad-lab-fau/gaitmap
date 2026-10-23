@@ -181,10 +181,10 @@ def start_end_array_to_bool_array(start_end_array: np.ndarray, pad_to_length: in
             raise ValueError("pad_to_length must be positive!")
         n_elements = pad_to_length
 
-    bool_array = np.zeros(n_elements)
+    bool_array = np.zeros(n_elements, dtype=bool)
     for start, end in start_end_array:
-        bool_array[start:end] = 1
-    return bool_array.astype(bool)
+        bool_array[start:end] = True
+    return bool_array
 
 
 def split_array_at_nan(a: np.ndarray) -> list[tuple[int, np.ndarray]]:
@@ -301,21 +301,6 @@ def find_extrema_in_radius(
     actual_window_start = indices.astype("int64") - before + start_padding
     windows = strides[actual_window_start, :]
     return extrema_func(windows, axis=1) + actual_window_start - start_padding
-
-
-@njit(cache=True)
-def _bool_fill(indices: np.ndarray, bool_values: np.ndarray, array: np.ndarray) -> np.ndarray:
-    """Fill a preallocated array with bool_values.
-
-    This method iterates over the indices and adds the values to the array at the given indices using a logical or.
-    """
-    for i, idx in enumerate(indices):
-        index = idx
-        val = bool_values[i]
-        index = index[~np.isnan(index)]
-        # perform logical or operation to combine all overlapping window results
-        array[index] = np.logical_or(array[index], val)
-    return array
 
 
 def multi_array_interpolation(arrays: list[np.ndarray], n_samples, kind: str = "linear") -> np.ndarray:

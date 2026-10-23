@@ -17,6 +17,8 @@ from gaitmap.utils.datatype_helper import (
 )
 from gaitmap.utils.exceptions import ValidationError
 
+_SINGLE_WORKER_QUERY_MAX_SIZE = 1000
+
 
 def evaluate_segmented_stride_list(
     *,
@@ -501,8 +503,11 @@ def _match_label_lists(
     # that we have true one-to-one-matches and we have already the closest match based on our final criteria.
 
     # p = 1 is used to select the Manhatten distance
-    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, workers=-1)
-    _, r_nearest_neighbor = left_tree.query(list_right, p=1, workers=-1)
+    # Thread startup dominates short queries; retain parallel queries for longer recordings.
+    l_workers = 1 if len(list_left) <= _SINGLE_WORKER_QUERY_MAX_SIZE else -1
+    r_workers = 1 if len(list_right) <= _SINGLE_WORKER_QUERY_MAX_SIZE else -1
+    l_nearest_distance, l_nearest_neighbor = right_tree.query(list_left, p=1, workers=l_workers)
+    _, r_nearest_neighbor = left_tree.query(list_right, p=1, workers=r_workers)
 
     # Filter the once that are true one-to-one matches
     l_indices = np.arange(len(list_left))
