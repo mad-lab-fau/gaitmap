@@ -80,6 +80,7 @@ project.
 - Reduced repeated scans, arithmetic and temporary allocations in segmentation, trajectory reconstruction,
   alignment, static detection, spatial parameters and evaluation without changing numerical results.
   The optimized float64 lateral-excursion calculation can suppress division warnings for degenerate strides.
+  ([#100](https://github.com/mad-lab-fau/gaitmap/pull/100))
 
 - Sample-number columns and trajectory sample indices now require integer dtypes, including
   integer-valued positions previously stored as floats. Use nullable integer columns such as `Int64`
