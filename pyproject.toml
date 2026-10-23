@@ -30,10 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-challenges = ["gaitmap-datasets>=0.15.0; python_version < '3.14'", "pingouin>=0.6.0"]
+challenges = ["gaitmap-datasets>=0.15.1; python_version < '3.14'", "pingouin>=0.6.0"]
 hmm = []
 stats = ["pingouin>=0.6.0"]
-all = ["pingouin>=0.6.0", "gaitmap-datasets>=0.15.0; python_version < '3.14'"]
+all = ["pingouin>=0.6.0", "gaitmap-datasets>=0.15.1; python_version < '3.14'"]
 
 [project.urls]
 Homepage = "https://github.com/mad-lab-fau/gaitmap"
@@ -60,6 +60,9 @@ dev = [
 ]
 
 [tool.uv.sources]
+# Test gaitmap-datasets PR #24 before merging or publishing its 0.15.1 release.
+# Remove this source override after the corrected release is available on PyPI.
+gaitmap-datasets = { git = "https://github.com/mad-lab-fau/gaitmap-datasets.git", rev = "1e87dbcf607f6d1d2148d221a4d9808c1b21485e" }
 gaitmap-mad = { workspace = true }
 
 [tool.uv.workspace]

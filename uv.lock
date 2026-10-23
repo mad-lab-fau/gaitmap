@@ -598,8 +598,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'all'", specifier = ">=0.15.0" },
-    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'challenges'", specifier = ">=0.15.0" },
+    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'all'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e" },
+    { name = "gaitmap-datasets", marker = "python_full_version < '3.14' and extra == 'challenges'", git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e" },
     { name = "joblib", specifier = ">=1.5.2" },
     { name = "numba", specifier = ">=0.63.1" },
     { name = "numpy", specifier = ">=2.3.5,<3" },
@@ -636,8 +636,8 @@ dev = [
 
 [[package]]
 name = "gaitmap-datasets"
-version = "0.15.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.15.1"
+source = { git = "https://github.com/mad-lab-fau/gaitmap-datasets.git?rev=1e87dbcf607f6d1d2148d221a4d9808c1b21485e#1e87dbcf607f6d1d2148d221a4d9808c1b21485e" }
 dependencies = [
     { name = "c3d", marker = "python_full_version < '3.14'" },
     { name = "h5py", marker = "python_full_version < '3.14'" },
@@ -648,10 +648,6 @@ dependencies = [
     { name = "pytz", marker = "python_full_version < '3.14'" },
     { name = "scipy", marker = "python_full_version < '3.14'" },
     { name = "tpcp", marker = "python_full_version < '3.14'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/68/54/30a33330929739728c0e2393adcbf00785fbe8f0785adb193dc233c3735b/gaitmap_datasets-0.15.0.tar.gz", hash = "sha256:d97d2821b73de5abc6edcb0ecc4472ad8a2f16e4b9fe7bd32b035bfe136d0562", size = 47532, upload-time = "2026-03-07T17:23:02.086Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/45/4861921f16d601f4500bf766a544ba16b2d73ba9d43dc1ecccc1519d1575/gaitmap_datasets-0.15.0-py3-none-any.whl", hash = "sha256:bb55cb6dfc6b325747c4119c261f4e9f97899861c2cd0c7a0e334020a6ccf166", size = 69039, upload-time = "2026-03-07T17:23:03.305Z" },
 ]
 
 [[package]]
