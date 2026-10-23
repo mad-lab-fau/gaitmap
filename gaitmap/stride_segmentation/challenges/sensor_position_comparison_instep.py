@@ -84,8 +84,8 @@ def final_scorer(
 ):
     """Score a pipeline build for segmentation challenges of the SensorPositionComparison2019 dataset.
 
-    It compares the reference stride list (either the original or the new one) with the stride list returned by the
-    pipeline via the `stride_list_` attribute.
+    It compares the manually annotated reference borders from ``segmented_stride_list_per_sensor_``
+    for the selected sensor position with the pipeline's ``stride_list_``.
 
     It calculates the precision, recall and f1 score for the stride segmentation.
 
@@ -95,7 +95,7 @@ def final_scorer(
         The pipeline to score.
         The pipeline needs to have a `stride_list_` attribute that contains the segmented stride list after running.
     datapoint
-        The datapoint of the EgaitSegmentationValidation2014 dataset.
+        One recording from the SensorPositionComparison2019Segmentation dataset.
     tolerance_s
         The tolerance in seconds that is allowed between the calculated stride borders and the reference stride
         borders.

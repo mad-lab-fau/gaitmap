@@ -56,6 +56,11 @@ aggregators for use in custom evaluations.
 The integrated Kluge2017 challenge joins temporal and spatial reference columns for each stride before averaging them.
 Its ``run`` method and the sensor-position full-pipeline challenge return the challenge instance.
 These correct inconsistencies in the original challenge implementation.
+Sensor-position parameter and full-pipeline challenges calculate temporal and spatial references over the same
+IC-to-IC intervals, slicing the continuous marker data at those borders and including the endpoint sample.
+This corrects a reference-interval mismatch in the original package and can change benchmark scores.
+The affected sensor-position parameter and full-pipeline challenges therefore use ``VERSION = "2.0.0"``.
+Re-run those benchmarks before comparing results across versions.
 
 Migration from gaitmap-challenges
 ---------------------------------

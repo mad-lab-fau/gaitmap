@@ -117,6 +117,11 @@ def test_full_pipeline_scorers_accept_named_parameter_series(source):
         mocap_sampling_rate_hz_=100,
         marker_position_per_stride_=markers,
     )
+    if source == "sensor_position_comparison_instep":
+        import numpy as np
+
+        xyz = pd.DataFrame({"x": np.arange(201) / 100, "y": 0.0, "z": 0.0})
+        datapoint.marker_position_ = pd.concat({"l_fcc": xyz, "r_fcc": xyz}, axis=1)
     scores = module.final_scorer(NamedParameterPipeline(), datapoint)
     assert scores["stride_length__error"].get_value() == pytest.approx(0.2)
 
@@ -138,3 +143,47 @@ def test_original_label_exported_scorer_uses_original_annotations():
     )
     scores = module.final_scorer(OriginalLabelPipeline(), datapoint)
     assert scores["f1_score"] == pytest.approx(1.0)
+
+
+@pytest.mark.parametrize("family", ["parameters", "pipeline"])
+def test_sensor_position_reference_uses_ic_intervals_and_keeps_stride_ids(family):
+    import numpy as np
+
+    module = import_module(f"gaitmap.{family}.challenges.sensor_position_comparison_instep")
+    events = pd.DataFrame(
+        {
+            "start": [0, 100, 250],
+            "end": [100, 250, 400],
+            "tc": [40, 160, 320],
+            "ic": [80, 200, 370],
+            "min_vel": [90, 220, 390],
+        },
+        index=pd.Index([10, 20, 30], name="s_id"),
+    )
+    xyz = pd.DataFrame(
+        {"x": np.interp(np.arange(401), [0, 80, 100, 200, 250, 370, 400], [0, 1, 1.5, 3, 4, 8, 9]), "y": 0.0, "z": 0.0},
+        index=np.arange(401) / 100,
+    )
+    markers = pd.concat({"l_fcc": xyz, "r_fcc": xyz}, axis=1)
+    old_trajectories = {
+        foot: pd.concat(
+            {
+                stride_id: markers[[f"{foot[0]}_fcc"]].iloc[start : end + 1].reset_index(drop=True)
+                for stride_id, start, end in [(10, 0, 100), (20, 100, 250), (30, 250, 400)]
+            },
+            names=["s_id", "sample"],
+        )
+        for foot in ["left", "right"]
+    }
+    datapoint = SimpleNamespace(
+        mocap_events_={foot: events for foot in ["left", "right"]},
+        mocap_sampling_rate_hz_=100,
+        marker_position_=markers,
+        marker_position_per_stride_=old_trajectories,
+    )
+    parameters = module.Challenge.get_ground_truth_parameter(datapoint)
+    for frame in parameters.values():
+        assert list(frame.index) == [10, 20]
+        assert list(frame["stride_length"]) == pytest.approx([2.0, 5.0])
+        assert list(frame["stride_time"]) == pytest.approx([1.2, 1.7])
+        assert list(frame["gait_velocity"]) == pytest.approx([2 / 1.2, 5 / 1.7])

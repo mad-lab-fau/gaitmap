@@ -26,6 +26,11 @@ project.
 
 ### Scientific Changes
 
+- Sensor-position parameter challenges now slice continuous reference trajectories at the converted IC-to-IC stride
+  borders. Earlier gaitmap-challenges code reused trajectories cut at different stride borders, which could bias
+  reference stride length and gait velocity. Re-run affected benchmarks before comparing results across versions.
+  ([#102](https://github.com/mad-lab-fau/gaitmap/pull/102))
+
 - Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected
   constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.
   Existing constrained costs, warping paths and detected stride borders can change.

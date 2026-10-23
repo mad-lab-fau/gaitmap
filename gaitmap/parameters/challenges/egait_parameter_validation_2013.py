@@ -23,19 +23,14 @@ This means, that the data starts mid-movement and there is no resting period wit
 The start and end value of each stride in the provided segmented stride list follow the stride definitions by Barth et
 al. [2]_.
 This means the start and end-values are defined by the minimum in the gyr_ml axis right before the toe-off.
-The ground truth stride length is calculated from the marker position at the heel marker by calculating the distance
-traveled by this marker in the ground plane between the heel strike right before a stride and the heel strike within
-the stride.
-This means for the first stride in the segmented stride list and for each stride after a break, no ground truth stride
-length can be calculated.
-The pipeline should also not calculate parameters for these strides.
-To correctly handle these shifts in stride definition, you can use
-:func:`~gaitmap.utils.stride_list_conversion.convert_stride_list` or check the stride ids in the calculated
-ground truth parameters to remove strides without ground truth from your calculations.
-Further check the `dataset example <datasets_example_>`_ for more guidance on this.
-The final calculated parameters should match the provided stride list and should have the same stride ids.
-Note, that we assume that parameters are calculated for each stride.
-Missing strides are not handled by the evaluation.
+Reference stride lengths come from the GAITRite carpet through ``gaitrite_parameters_``.
+The IMU and GAITRite strides were matched manually in the dataset.
+Return stride lengths indexed by the supplied reference stride IDs, and use the reference tables to determine which
+strides have a ground-truth value. Do not infer exclusions from marker availability or from position within a recording.
+The scorer aligns predicted and reference parameters by stride ID and evaluates their common entries.
+Missing reference or predicted entries are not counted as segmentation errors by this parameter challenge.
+See the `dataset example <datasets_example_>`_ for the reference table format.
+
 
 
 References

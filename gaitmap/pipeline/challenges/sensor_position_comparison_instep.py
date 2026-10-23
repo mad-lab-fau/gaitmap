@@ -68,11 +68,10 @@ from tpcp import Pipeline
 from tpcp.optimize import BaseOptimize
 from tpcp.validate import DatasetSplitter, cross_validate, no_agg
 
-from gaitmap.parameters import SpatialParameterCalculation, TemporalParameterCalculation
+from gaitmap.parameters.challenges._sensor_position_comparison import calculate_reference_parameters
 from gaitmap.parameters.evaluation import calculate_parameter_errors
 from gaitmap.pipeline.evaluation import ParameterErrors
 from gaitmap.utils.challenges import BaseChallenge, resolve_dataset
-from gaitmap.utils.stride_list_conversion import convert_stride_list
 
 SensorNames = Literal["left_sensor", "right_sensor"]
 
@@ -169,7 +168,7 @@ class Challenge(BaseChallenge):
     data_padding_s: ClassVar[float] = 3.0
     sensor_pos: ClassVar[str] = "instep"
 
-    VERSION = "1.0.0"
+    VERSION = "2.0.0"
 
     cv_results_: dict = field(init=False)
 
@@ -210,30 +209,8 @@ class Challenge(BaseChallenge):
 
     @classmethod
     def get_ground_truth_parameter(cls, datapoint: ChallengeDataset):
-        """Calculate reference parameters from the reference system."""
-        events = convert_stride_list(datapoint.mocap_events_, target_stride_type="ic")
-        events = {f"{k}_sensor": v for k, v in events.items()}
-
-        tp = TemporalParameterCalculation(expected_stride_type="ic").calculate(
-            stride_event_list=events,
-            sampling_rate_hz=datapoint.mocap_sampling_rate_hz_,
-        )
-
-        marker_positions = {
-            f"{foot}_sensor": datapoint.marker_position_per_stride_[foot][
-                f"{foot[0]}_{cls.ground_truth_marker}"
-            ].rename(columns=lambda x: f"pos_{x}")
-            for foot in ["left", "right"]
-        }
-
-        sp = SpatialParameterCalculation(expected_stride_type="ic").calculate(
-            positions=marker_positions,
-            orientations=None,
-            stride_event_list=events,
-            sampling_rate_hz=datapoint.mocap_sampling_rate_hz_,
-        )
-
-        return {k: pd.concat([tp.parameters_[k], sp.parameters_[k]], axis=1) for k in ["left_sensor", "right_sensor"]}
+        """Calculate reference parameters on matched IC-to-IC marker intervals."""
+        return calculate_reference_parameters(datapoint, cls.ground_truth_marker)
 
     @classmethod
     def get_aggregated_ground_truth_parameter(cls, datapoint: ChallengeDataset):
