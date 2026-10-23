@@ -11,6 +11,11 @@ project.
 
 ## Unreleased
 
+### Added
+
+- Added algorithm-specific `evaluation` modules for stride segmentation, event detection, and parameters.
+  Existing `gaitmap.evaluation_utils` imports remain supported.
+
 ### Scientific Changes
 
 - Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected

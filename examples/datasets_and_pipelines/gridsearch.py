@@ -134,7 +134,7 @@ pipe = MyPipeline()
 # In this case we compare the calculated stride lists with the reference and identify which strides were correctly
 # found.
 # Based on these matches, we calculate the precision, the recall, and the f1-score using some helper functions.
-from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+from gaitmap.stride_segmentation.evaluation import evaluate_segmented_stride_list, precision_recall_f1_score
 
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):

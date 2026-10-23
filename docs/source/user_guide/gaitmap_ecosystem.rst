@@ -57,7 +57,7 @@ It provides a clear way of structuring and loading your data, building pipelines
 and evaluating the performance of your pipelines.
 Gaitmap is build on top of tpcp, so that all the gaitmap-algorithms can be directly used in tpcp pipelines and
 tpcp-tools can be used to optimize and evaluate gaitmap pipelines.
-In combination with the tooling provided in ``gaitmap.evaluation_utils``, this allows you to easily build and evaluate
+In combination with the tooling provided in the algorithm-specific ``evaluation`` modules, this allows you to easily build and evaluate
 gait analysis pipelines.
 
 Because of the way tpcp abstracts the interfaces between datasets, pipelines, algorithms, and evaluation

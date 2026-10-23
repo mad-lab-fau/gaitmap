@@ -66,3 +66,17 @@ See :ref:`hmm_models` for training and composing HMMs.
    :template: function.rst
 
     load_legacy_hmm_json
+
+
+Evaluation
+----------
+
+.. currentmodule:: gaitmap.stride_segmentation.evaluation
+
+.. autosummary::
+   :toctree: generated/stride_segmentation/evaluation
+   :template: function.rst
+
+    evaluate_segmented_stride_list
+    match_stride_lists
+    precision_recall_f1_score

@@ -124,7 +124,7 @@ class MyPipeline(OptimizablePipeline):
 # calculate the average performance as our expected "generalization" error.
 # For this example, we will use the "precision", the "recall" and the "f1_score" to score the stride detection
 # performance.
-from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+from gaitmap.stride_segmentation.evaluation import evaluate_segmented_stride_list, precision_recall_f1_score
 
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):

@@ -15,3 +15,16 @@ Classes
 
     TemporalParameterCalculation
     SpatialParameterCalculation
+
+
+Evaluation
+----------
+
+.. currentmodule:: gaitmap.parameters.evaluation
+
+.. autosummary::
+   :toctree: generated/parameters/evaluation
+   :template: function.rst
+
+    calculate_parameter_errors
+    calculate_aggregated_parameter_errors

@@ -26,6 +26,6 @@ def patch_gaitmap_mad_import(_gaitmap_mad_modules, current_module_name):
     def new_getattr(name: str):
         if name in _gaitmap_mad_modules:
             raise GaitmapMadImportError(name, current_module_name)
-        return globals()[name]
+        raise AttributeError(f"module {current_module_name!r} has no attribute {name!r}")
 
     return new_getattr
