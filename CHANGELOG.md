@@ -11,7 +11,25 @@ project.
 
 ## Unreleased
 
+### Added
+
+- Added `gaitmap.pipeline.GenericGaitPipeline` with injectable algorithms and a structural `BaseGaitDataset`
+  protocol requiring `data` and `sampling_rate_hz`. Dataset loaders need no gaitmap inheritance or dependency.
+
+- Integrated the eight runnable gaitmap-challenges benchmarks under `stride_segmentation.challenges`,
+  `parameters.challenges`, and `pipeline.challenges`, with current tpcp scoring and split support.
+  Install `gaitmap[challenges]` on Python 3.11 through 3.13 for the optional dataset loaders.
+  Configuration, saved-run management, and plotting remain outside gaitmap.
+
+- Added algorithm-specific `evaluation` modules for stride segmentation, event detection, and parameters.
+  Existing `gaitmap.evaluation_utils` imports remain supported.
+
 ### Scientific Changes
+
+- Sensor-position parameter challenges now slice continuous reference trajectories at the converted IC-to-IC stride
+  borders. Earlier gaitmap-challenges code reused trajectories cut at different stride borders, which could bias
+  reference stride length and gait velocity. Re-run affected benchmarks before comparing results across versions.
+  ([#102](https://github.com/mad-lab-fau/gaitmap/pull/102))
 
 - Corrected constrained subsequence DTW to retain separate direction/run-length states and trace the selected
   constrained predecessors. Returned paths now obey the stretch limits and agree with their reported costs.

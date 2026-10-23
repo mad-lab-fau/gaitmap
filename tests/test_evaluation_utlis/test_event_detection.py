@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.evaluation_utils import evaluate_stride_event_list
+from gaitmap.event_detection.evaluation import evaluate_stride_event_list
 from tests.conftest import group_matches_by_type
 
 

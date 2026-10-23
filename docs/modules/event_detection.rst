@@ -16,3 +16,16 @@ Classes
     RamppEventDetection
     FilteredRamppEventDetection
     HerzerEventDetection
+
+
+Evaluation
+----------
+
+.. currentmodule:: gaitmap.event_detection.evaluation
+
+.. autosummary::
+   :toctree: generated/event_detection/evaluation
+   :template: function.rst
+
+    evaluate_stride_event_list
+    precision_recall_f1_score

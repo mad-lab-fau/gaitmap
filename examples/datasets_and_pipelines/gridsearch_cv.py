@@ -142,7 +142,7 @@ class MyPipeline(OptimizablePipeline):
 # ----------
 # The scorer is identical to the scoring function used in the other examples.
 # The F1-score is still the most important parameter for our comparison.
-from gaitmap.evaluation_utils import evaluate_segmented_stride_list, precision_recall_f1_score
+from gaitmap.stride_segmentation.evaluation import evaluate_segmented_stride_list, precision_recall_f1_score
 
 
 def score(pipeline: MyPipeline, datapoint: MyDataset):

@@ -12,8 +12,8 @@ import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
-from gaitmap.evaluation_utils import calculate_aggregated_parameter_errors, parameter_errors
-from gaitmap.evaluation_utils.parameter_errors import calculate_parameter_errors
+from gaitmap.parameters import evaluation as parameter_errors
+from gaitmap.parameters.evaluation import calculate_aggregated_parameter_errors, calculate_parameter_errors
 from gaitmap.utils.exceptions import ValidationError
 
 

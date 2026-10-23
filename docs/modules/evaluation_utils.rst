@@ -22,3 +22,7 @@ Functions
     evaluate_stride_event_list
     calculate_parameter_errors
     calculate_aggregated_parameter_errors
+
+The preferred imports are now in :mod:`gaitmap.stride_segmentation.evaluation`,
+:mod:`gaitmap.event_detection.evaluation`, and :mod:`gaitmap.parameters.evaluation`.
+The imports in this module remain supported.

@@ -3,8 +3,11 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 
-from gaitmap.evaluation_utils import evaluate_segmented_stride_list, match_stride_lists
-from gaitmap.evaluation_utils.stride_segmentation import _match_label_lists
+from gaitmap.stride_segmentation.evaluation import (
+    _match_label_lists,
+    evaluate_segmented_stride_list,
+    match_stride_lists,
+)
 from gaitmap.utils.exceptions import ValidationError
 from tests.conftest import group_matches_by_type
 

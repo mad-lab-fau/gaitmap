@@ -16,6 +16,8 @@ This is the API Reference for gaitmap sorted by algorithm types.
     ZUPT Detection <zupt_detection>
     Trajectory Reconstruction <trajectory_reconstruction>
     Parameter Calculation <parameters>
+    Pipelines <pipeline>
+    Evaluation Challenges <challenges>
     Evaluation Utils <evaluation_utils>
     Generic Data Transformations <data_transform>
     Utils <utils/index>
