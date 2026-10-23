@@ -145,8 +145,9 @@ def test_original_label_exported_scorer_uses_original_annotations():
     assert scores["f1_score"] == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize("empty_left", [False, True])
 @pytest.mark.parametrize("family", ["parameters", "pipeline"])
-def test_sensor_position_reference_uses_ic_intervals_and_keeps_stride_ids(family):
+def test_sensor_position_reference_uses_ic_intervals_and_keeps_stride_ids(family, empty_left):
     import numpy as np
 
     module = import_module(f"gaitmap.{family}.challenges.sensor_position_comparison_instep")
@@ -181,8 +182,13 @@ def test_sensor_position_reference_uses_ic_intervals_and_keeps_stride_ids(family
         marker_position_=markers,
         marker_position_per_stride_=old_trajectories,
     )
+    if empty_left:
+        datapoint.mocap_events_["left"] = events.iloc[:1]
     parameters = module.Challenge.get_ground_truth_parameter(datapoint)
-    for frame in parameters.values():
+    for sensor, frame in parameters.items():
+        if sensor == "left_sensor" and empty_left:
+            assert frame.empty
+            continue
         assert list(frame.index) == [10, 20]
         assert list(frame["stride_length"]) == pytest.approx([2.0, 5.0])
         assert list(frame["stride_time"]) == pytest.approx([1.2, 1.7])
