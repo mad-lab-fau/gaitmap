@@ -13,6 +13,9 @@ project.
 
 ### Added
 
+- Added `gaitmap.pipeline.GenericGaitPipeline` with injectable algorithms and a structural `BaseGaitDataset`
+  protocol requiring `data` and `sampling_rate_hz`. Dataset loaders need no gaitmap inheritance or dependency.
+
 - Integrated the eight runnable gaitmap-challenges benchmarks under `stride_segmentation.challenges`,
   `parameters.challenges`, and `pipeline.challenges`, with current tpcp scoring and split support.
   Install `gaitmap[challenges]` on Python 3.11 through 3.13 for the optional dataset loaders.
